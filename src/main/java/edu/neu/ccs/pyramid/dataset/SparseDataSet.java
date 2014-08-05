@@ -84,7 +84,7 @@ public class SparseDataSet implements DataSet{
     }
 
     @Override
-    public void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
+    public synchronized void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
         this.rowMatrix[dataPointIndex].set(featureIndex,featureValue);
         this.columnMatrix[featureIndex].set(dataPointIndex,featureValue);
     }

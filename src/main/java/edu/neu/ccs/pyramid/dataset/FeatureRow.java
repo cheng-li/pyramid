@@ -9,4 +9,12 @@ public interface FeatureRow {
     int getDataPointIndex();
     Vector getVector();
     Setting getSetting();
+    default String print(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("data point index = ").append(getDataPointIndex()).append("\n");
+        sb.append("vector = ").append(getVector()).append("\n");
+        sb.append("setting = ").append(getSetting());
+        return sb.toString();
+    }
+
 }
