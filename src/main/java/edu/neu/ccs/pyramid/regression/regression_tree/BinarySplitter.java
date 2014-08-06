@@ -7,7 +7,7 @@ import org.apache.mahout.math.Vector;
 /**
  * Created by chengli on 8/5/14.
  */
-public class BinaryFeatureSplitter {
+public class BinarySplitter {
 
     static SplitResult split(RegTreeConfig regTreeConfig,
                              int[] dataAppearance,

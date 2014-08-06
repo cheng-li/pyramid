@@ -1,9 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.SparseDataSet;
-import org.junit.Assert;
-
-import static org.junit.Assert.*;
 
 public class BinaryFeatureSplitterTest {
 
@@ -25,7 +22,7 @@ public class BinaryFeatureSplitterTest {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
         regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinaryFeatureSplitter.split(regTreeConfig,dataAppearance,0);
+        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0);
         System.out.println(splitResult);
     }
 
@@ -40,7 +37,7 @@ public class BinaryFeatureSplitterTest {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
         regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinaryFeatureSplitter.split(regTreeConfig,dataAppearance,0);
+        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0);
         System.out.println(splitResult);
         System.out.println(21-81.0/4);
     }
@@ -56,7 +53,7 @@ public class BinaryFeatureSplitterTest {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
         regTreeConfig.setMinDataPerLeaf(2).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinaryFeatureSplitter.split(regTreeConfig,dataAppearance,0);
+        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0);
         System.out.println(splitResult);
         System.out.println(21-81.0/4);
     }

@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
  * Created by chengli on 8/5/14.
  */
 public class RegTreeConfig {
+    private int numSplitIntervals=4;
     private int maxNumLeaves;
     private int minDataPerLeaf;
     private DataSet dataSet;
@@ -73,6 +74,14 @@ public class RegTreeConfig {
         return this;
     }
 
+    public RegTreeConfig setNumSplitIntervals(int numSplitIntervals) {
+        if (numSplitIntervals<=1){
+            throw new IllegalArgumentException("numSplitIntervals must be greater than 2");
+        }
+        this.numSplitIntervals = numSplitIntervals;
+        return this;
+    }
+
     int getMaxNumLeaves() {
         return maxNumLeaves;
     }
@@ -95,6 +104,10 @@ public class RegTreeConfig {
 
     int[] getActiveFeatures() {
         return activeFeatures;
+    }
+
+    int getNumSplitIntervals() {
+        return numSplitIntervals;
     }
 
 }
