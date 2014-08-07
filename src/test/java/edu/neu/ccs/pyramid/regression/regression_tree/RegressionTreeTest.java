@@ -1,0 +1,238 @@
+package edu.neu.ccs.pyramid.regression.regression_tree;
+
+import edu.neu.ccs.pyramid.dataset.FeatureSetting;
+import edu.neu.ccs.pyramid.dataset.SparseRegDataSet;
+import edu.neu.ccs.pyramid.eval.MSE;
+import edu.neu.ccs.pyramid.feature.FeatureType;
+import org.apache.commons.lang3.time.StopWatch;
+import org.apache.mahout.math.Vector;
+
+import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.*;
+
+public class RegressionTreeTest {
+
+
+    public static void main(String[] args) throws Exception{
+//        test1();
+//        test2();
+        test3();
+//        test4();
+    }
+
+    static void test1() throws Exception{
+        int numLeaves = 2;
+
+        SparseRegDataSet dataSet = new SparseRegDataSet(5,1);
+        dataSet.setFeatureValue(0,0,1.5);
+        dataSet.setFeatureValue(1,0,1);
+        dataSet.setFeatureValue(2,0,1.6);
+        dataSet.setFeatureValue(3,0,4);
+        dataSet.setFeatureValue(4,0,2);
+        dataSet.setLabel(0,1);
+        dataSet.setLabel(1,2);
+        dataSet.setLabel(2,3);
+        dataSet.setLabel(3,4);
+        dataSet.setLabel(4,1);
+        for (int i=0;i<dataSet.getNumFeatures();i++){
+            FeatureSetting setting = new FeatureSetting();
+            setting.setFeatureType(FeatureType.NUMERICAL);
+            dataSet.putFeatureSetting(i,setting);
+        }
+        double[] labels = dataSet.getLabels();
+        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setActiveFeatures(activeFeatures);
+        regTreeConfig.setDataSet(dataSet);
+        regTreeConfig.setLabels(labels);
+        regTreeConfig.setMaxNumLeaves(numLeaves);
+        regTreeConfig.setMinDataPerLeaf(1);
+        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        regTreeConfig.useDefaultOutputCalculator();
+        regTreeConfig.setNumSplitIntervals(50000);
+
+        RegressionTree regressionTree = new RegressionTree();
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        regressionTree.fit(regTreeConfig);
+
+        System.out.println(stopWatch);
+
+        double mseValue = MSE.mse(regressionTree, dataSet);
+        System.out.println(mseValue);
+        System.out.println(regressionTree);
+        System.out.println(regressionTree.getRootReduction()    );
+    }
+    
+    /**
+     * slice location data
+     */
+    static void test2() throws Exception {
+        int numLeaves = 2;
+
+        SparseRegDataSet dataSet = SparseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
+                new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
+
+        for (int i=0;i<dataSet.getNumFeatures();i++){
+            FeatureSetting setting = new FeatureSetting();
+            setting.setFeatureType(FeatureType.NUMERICAL);
+            dataSet.putFeatureSetting(i,setting);
+        }
+
+
+        double[] labels = dataSet.getLabels();
+
+        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setActiveFeatures(activeFeatures);
+        regTreeConfig.setDataSet(dataSet);
+        regTreeConfig.setLabels(labels);
+        regTreeConfig.setMaxNumLeaves(numLeaves);
+        regTreeConfig.setMinDataPerLeaf(1);
+        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        regTreeConfig.useDefaultOutputCalculator();
+        regTreeConfig.setNumSplitIntervals(50000);
+
+        RegressionTree regressionTree = new RegressionTree();
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        regressionTree.fit(regTreeConfig);
+
+        System.out.println(stopWatch);
+
+        double mseValue = MSE.mse(regressionTree, dataSet);
+        System.out.println(mseValue);
+        System.out.println(regressionTree);
+        System.out.println(regressionTree.getRootReduction()    );
+
+    }
+
+    /**
+     * slice location data, one column
+     */
+    static void test3() throws Exception {
+        int numLeaves = 2;
+        int featureIndex = 19;
+
+        SparseRegDataSet dataSet1 = SparseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
+                new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
+        SparseRegDataSet dataSet = new SparseRegDataSet(dataSet1.getNumDataPoints(),1);
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataSet.setFeatureValue(i,0,dataSet1.getFeatureColumn(featureIndex).getVector().get(i));
+            dataSet.setLabel(i,dataSet1.getLabels()[i]);
+        }
+
+
+
+        for (int i=0;i<dataSet.getNumFeatures();i++){
+            FeatureSetting setting = new FeatureSetting();
+            setting.setFeatureType(FeatureType.NUMERICAL);
+            dataSet.putFeatureSetting(i,setting);
+        }
+        System.out.println(dataSet.getFeatureColumn(0).getVector());
+        System.out.println("max="+dataSet.getFeatureColumn(0).getVector().maxValue());
+
+        double[] labels = dataSet.getLabels();
+        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setActiveFeatures(activeFeatures);
+        regTreeConfig.setDataSet(dataSet);
+        regTreeConfig.setLabels(labels);
+        regTreeConfig.setMaxNumLeaves(numLeaves);
+        regTreeConfig.setMinDataPerLeaf(1);
+        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        regTreeConfig.useDefaultOutputCalculator();
+        regTreeConfig.setNumSplitIntervals(5000000);
+
+        RegressionTree regressionTree = new RegressionTree();
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        regressionTree.fit(regTreeConfig);
+
+        System.out.println(stopWatch);
+
+        double mseValue = MSE.mse(regressionTree, dataSet);
+        System.out.println(mseValue);
+        System.out.println(regressionTree);
+        System.out.println(regressionTree.getRootReduction()    );
+
+
+        double threshold = 0.9927031171464085;
+        Vector vector = dataSet.getFeatureColumn(0).getVector();
+        double leftSum=0;
+        double rightSum=0;
+        int leftcount=0;
+        int rightcount=0;
+        double sumlabel=0;
+        for (int i=0;i<vector.size();i++){
+            sumlabel+=labels[i];
+            if (vector.get(i)<=threshold){
+                leftSum += labels[i];
+                leftcount += 1;
+            } else {
+                rightSum += labels[i];
+                rightcount += 1;
+            }
+        }
+        double myreduction = leftSum*leftSum/leftcount + rightSum*rightSum/rightcount - sumlabel*sumlabel/vector.size();
+        System.out.println("my reduction="+myreduction);
+    }
+
+    static void test4() throws Exception{
+        int numLeaves = 2;
+
+        SparseRegDataSet dataSet = new SparseRegDataSet(5,1);
+        dataSet.setFeatureValue(0,0,-1.5);
+        dataSet.setFeatureValue(1,0,-1);
+        dataSet.setFeatureValue(2,0,-1.6);
+        dataSet.setFeatureValue(3,0,-4);
+        dataSet.setFeatureValue(4,0,-2);
+        dataSet.setLabel(0,1);
+        dataSet.setLabel(1,2);
+        dataSet.setLabel(2,3);
+        dataSet.setLabel(3,4);
+        dataSet.setLabel(4,1);
+        for (int i=0;i<dataSet.getNumFeatures();i++){
+            FeatureSetting setting = new FeatureSetting();
+            setting.setFeatureType(FeatureType.NUMERICAL);
+            dataSet.putFeatureSetting(i,setting);
+        }
+        double[] labels = dataSet.getLabels();
+        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setActiveFeatures(activeFeatures);
+        regTreeConfig.setDataSet(dataSet);
+        regTreeConfig.setLabels(labels);
+        regTreeConfig.setMaxNumLeaves(numLeaves);
+        regTreeConfig.setMinDataPerLeaf(1);
+        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        regTreeConfig.useDefaultOutputCalculator();
+        regTreeConfig.setNumSplitIntervals(50000);
+
+        RegressionTree regressionTree = new RegressionTree();
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        regressionTree.fit(regTreeConfig);
+
+        System.out.println(stopWatch);
+
+        double mseValue = MSE.mse(regressionTree, dataSet);
+        System.out.println(mseValue);
+        System.out.println(regressionTree);
+        System.out.println(regressionTree.getRootReduction()    );
+    }
+
+}

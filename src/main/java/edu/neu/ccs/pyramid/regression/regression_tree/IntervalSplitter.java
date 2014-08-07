@@ -95,21 +95,32 @@ public class IntervalSplitter {
                 existValid = true;
                 double lrNormalizedSquareSum = leftSum*leftSum/leftCount +
                         rightSum*rightSum/rightCount;
-                if (lrNormalizedSquareSum > maxlrNormalizedSquareSum){
+                boolean update = false;
+                if(lrNormalizedSquareSum > maxlrNormalizedSquareSum){
+                    update = true;
+                } else if(lrNormalizedSquareSum == maxlrNormalizedSquareSum){
+                    // for equally good threshold, we prefer the one close to the middle
+                    double distance = Math.abs(minFeature + i*intervalLength - (minFeature+maxFeature)/2.0);
+                    double lastDistance = Math.abs(bestThreshold - (minFeature+maxFeature)/2.0);
+                    if (distance < lastDistance){
+//                        update=true;
+                    }
+                }
+
+                if (update){
                     maxlrNormalizedSquareSum = lrNormalizedSquareSum;
                     bestThreshold = minFeature + i*intervalLength;
                 }
             }
         }
+        SplitResult splitResult;
         if (existValid){
             double reduction = maxlrNormalizedSquareSum - labelSum*labelSum/numDataPoints;
-            SplitResult splitResult = new SplitResult(featureIndex,bestThreshold,reduction);
-            return splitResult;
-
+            splitResult = new SplitResult(featureIndex,bestThreshold,reduction);
         } else {
-            SplitResult splitResult = new SplitResult(featureIndex,0,0);
+            splitResult = new SplitResult(featureIndex,0,0);
             splitResult.setValid(false);
-            return splitResult;
         }
+        return splitResult;
     }
 }

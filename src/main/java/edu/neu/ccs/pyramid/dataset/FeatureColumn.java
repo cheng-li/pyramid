@@ -8,7 +8,7 @@ import org.apache.mahout.math.Vector;
 public interface FeatureColumn {
     int getFeatureIndex();
     Vector getVector();
-    Setting getSetting();
+    FeatureSetting getSetting();
     default String print(){
         StringBuilder sb = new StringBuilder();
         sb.append("feature index = ").append(getFeatureIndex()).append("\n");

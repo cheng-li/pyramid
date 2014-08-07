@@ -9,7 +9,7 @@ import org.apache.mahout.math.Vector;
 public class SparseFeatureColumn implements FeatureColumn{
     private int featureIndex;
     private RandomAccessSparseVector vector;
-    private Setting setting;
+    private FeatureSetting setting;
     @Override
     public int getFeatureIndex() {
         return this.featureIndex;
@@ -21,7 +21,7 @@ public class SparseFeatureColumn implements FeatureColumn{
     }
 
     @Override
-    public Setting getSetting() {
+    public FeatureSetting getSetting() {
         return this.setting;
     }
 }

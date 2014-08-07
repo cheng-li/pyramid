@@ -11,12 +11,12 @@ import java.util.Arrays;
  * Created by chengli on 8/4/14.
  */
 public class SparseDataSet implements DataSet{
-    private int numDataPoints;
-    private int numFeatures;
-    private RandomAccessSparseVector[] rowMatrix;
-    private RandomAccessSparseVector[] columnMatrix;
-    private Setting[] dataSettings;
-    private Setting[] featureSettings;
+    protected int numDataPoints;
+    protected int numFeatures;
+    protected RandomAccessSparseVector[] rowMatrix;
+    protected RandomAccessSparseVector[] columnMatrix;
+    protected DataSetting[] dataSettings;
+    protected FeatureSetting[] featureSettings;
 
     public SparseDataSet(int numDataPoints, int numFeatures) {
         this.numDataPoints = numDataPoints;
@@ -29,8 +29,8 @@ public class SparseDataSet implements DataSet{
         for (int j=0;j<numFeatures;j++){
             columnMatrix[j] = new RandomAccessSparseVector(numDataPoints);
         }
-        this.dataSettings = new Setting[numDataPoints];
-        this.featureSettings = new Setting[numFeatures];
+        this.dataSettings = new DataSetting[numDataPoints];
+        this.featureSettings = new FeatureSetting[numFeatures];
     }
 
     @Override
@@ -57,7 +57,7 @@ public class SparseDataSet implements DataSet{
             }
 
             @Override
-            public Setting getSetting() {
+            public FeatureSetting getSetting() {
                 return featureSettings[featureIndex];
             }
         };
@@ -77,7 +77,7 @@ public class SparseDataSet implements DataSet{
             }
 
             @Override
-            public Setting getSetting() {
+            public DataSetting getSetting() {
                 return dataSettings[dataPointIndex];
             }
         };
@@ -90,22 +90,22 @@ public class SparseDataSet implements DataSet{
     }
 
     @Override
-    public void putDataSetting(int dataPointIndex, Setting setting) {
+    public void putDataSetting(int dataPointIndex, DataSetting setting) {
         this.dataSettings[dataPointIndex] = setting;
     }
 
     @Override
-    public void putFeatureSetting(int featureIndex, Setting setting) {
+    public void putFeatureSetting(int featureIndex, FeatureSetting setting) {
         this.featureSettings[featureIndex] = setting;
     }
 
     @Override
-    public Setting getDataSetting(int dataPointIndex) {
+    public DataSetting getDataSetting(int dataPointIndex) {
         return this.dataSettings[dataPointIndex];
     }
 
     @Override
-    public Setting getFeatureSetting(int featureIndex) {
+    public FeatureSetting getFeatureSetting(int featureIndex) {
         return this.featureSettings[featureIndex];
     }
 

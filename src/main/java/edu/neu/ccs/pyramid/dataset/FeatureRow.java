@@ -8,7 +8,7 @@ import org.apache.mahout.math.Vector;
 public interface FeatureRow {
     int getDataPointIndex();
     Vector getVector();
-    Setting getSetting();
+    DataSetting getSetting();
     default String print(){
         StringBuilder sb = new StringBuilder();
         sb.append("data point index = ").append(getDataPointIndex()).append("\n");

@@ -10,9 +10,9 @@ public interface DataSet {
     FeatureRow getFeatureRow(int dataPointIndex);
     void setFeatureValue(int dataPointIndex,
                                 int featureIndex, double featureValue);
-    void putDataSetting(int dataPointIndex, Setting setting);
-    void putFeatureSetting(int featureIndex, Setting setting);
-    Setting getDataSetting(int dataPointIndex);
-    Setting getFeatureSetting(int featureIndex);
+    void putDataSetting(int dataPointIndex, DataSetting setting);
+    void putFeatureSetting(int featureIndex, FeatureSetting setting);
+    DataSetting getDataSetting(int dataPointIndex);
+    FeatureSetting getFeatureSetting(int featureIndex);
 
 }
