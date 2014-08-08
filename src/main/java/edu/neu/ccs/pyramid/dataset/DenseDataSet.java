@@ -1,28 +1,24 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import org.apache.mahout.math.RandomAccessSparseVector;
-import org.apache.mahout.math.SparseColumnMatrix;
-import org.apache.mahout.math.SparseRowMatrix;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.Arrays;
-
 /**
- * Created by chengli on 8/4/14.
+ * Created by chengli on 8/7/14.
  */
-public class SparseDataSet extends AbstractDataSet implements DataSet{
-    protected RandomAccessSparseVector[] rowMatrix;
-    protected RandomAccessSparseVector[] columnMatrix;
+public class DenseDataSet extends AbstractDataSet implements DataSet{
+    protected DenseVector[] rowMatrix;
+    protected DenseVector[] columnMatrix;
 
-    public SparseDataSet(int numDataPoints, int numFeatures) {
+    public DenseDataSet(int numDataPoints, int numFeatures) {
         super(numDataPoints,numFeatures);
-        this.rowMatrix = new RandomAccessSparseVector[numDataPoints];
+        this.rowMatrix = new DenseVector[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            rowMatrix[i] = new RandomAccessSparseVector(numFeatures);
+            rowMatrix[i] = new DenseVector(numFeatures);
         }
-        this.columnMatrix = new RandomAccessSparseVector[numFeatures];
+        this.columnMatrix = new DenseVector[numFeatures];
         for (int j=0;j<numFeatures;j++){
-            columnMatrix[j] = new RandomAccessSparseVector(numDataPoints);
+            columnMatrix[j] = new DenseVector(numDataPoints);
         }
     }
 
@@ -68,9 +64,8 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
     }
 
     @Override
-    public synchronized void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
+    public void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
         this.rowMatrix[dataPointIndex].set(featureIndex,featureValue);
         this.columnMatrix[featureIndex].set(dataPointIndex,featureValue);
     }
-
 }

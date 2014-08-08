@@ -58,7 +58,7 @@ public class IntervalSplitter {
         //order: from small value to big value
         //counts and sum of labels in each interval
         int[] intervalCounts = new int[numIntervals];
-        int[] intervalLabelSums = new int[numIntervals];
+        double[] intervalLabelSums = new double[numIntervals];
         for (int i=0;i<numDataPoints;i++){
             double featureValue = featureValues[i];
             double label = labels[i];
@@ -78,6 +78,13 @@ public class IntervalSplitter {
             intervalCounts[intervalIndex] += 1;
             intervalLabelSums[intervalIndex] += label;
         }
+//        System.out.println("threshods:");
+//        for (int i=1;i<=numIntervals-1;i++){
+//            System.out.println(minFeature+i*intervalLength);
+//        }
+//        System.out.println("label sum = "+labelSum);
+//        System.out.println("interval counts "+ Arrays.toString(intervalCounts));
+//        System.out.println("interval label sums "+Arrays.toString(intervalLabelSums));
 
         //find best
         double maxlrNormalizedSquareSum = 0;
@@ -110,6 +117,12 @@ public class IntervalSplitter {
                 if (update){
                     maxlrNormalizedSquareSum = lrNormalizedSquareSum;
                     bestThreshold = minFeature + i*intervalLength;
+//                    System.out.println("best threshold ="+bestThreshold);
+//                    System.out.println("left count "+leftCount);
+//                    System.out.println("right count "+rightCount);
+//                    System.out.println("left sum "+leftSum);
+//                    System.out.println("right sum "+rightSum);
+//                    System.out.println("maxlrNormalizedSquareSum "+maxlrNormalizedSquareSum);
                 }
             }
         }

@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureSetting;
 import edu.neu.ccs.pyramid.dataset.SparseRegDataSet;
 import edu.neu.ccs.pyramid.eval.MSE;
@@ -8,8 +9,10 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
@@ -20,8 +23,9 @@ public class RegressionTreeTest {
     public static void main(String[] args) throws Exception{
 //        test1();
 //        test2();
-        test3();
+//        test3();
 //        test4();
+        test5();
     }
 
     static void test1() throws Exception{
@@ -54,7 +58,7 @@ public class RegressionTreeTest {
         regTreeConfig.setMinDataPerLeaf(1);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
         regTreeConfig.useDefaultOutputCalculator();
-        regTreeConfig.setNumSplitIntervals(50000);
+        regTreeConfig.setNumSplitIntervals(4);
 
         RegressionTree regressionTree = new RegressionTree();
 
@@ -66,15 +70,15 @@ public class RegressionTreeTest {
 
         double mseValue = MSE.mse(regressionTree, dataSet);
         System.out.println(mseValue);
-        System.out.println(regressionTree);
-        System.out.println(regressionTree.getRootReduction()    );
+//        System.out.println(regressionTree);
+//        System.out.println(regressionTree.getRootReduction()    );
     }
     
     /**
      * slice location data
      */
     static void test2() throws Exception {
-        int numLeaves = 2;
+        int numLeaves = 70;
 
         SparseRegDataSet dataSet = SparseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
                 new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
@@ -98,7 +102,7 @@ public class RegressionTreeTest {
         regTreeConfig.setMinDataPerLeaf(1);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
         regTreeConfig.useDefaultOutputCalculator();
-        regTreeConfig.setNumSplitIntervals(50000);
+        regTreeConfig.setNumSplitIntervals(4);
 
         RegressionTree regressionTree = new RegressionTree();
 
@@ -110,8 +114,8 @@ public class RegressionTreeTest {
 
         double mseValue = MSE.mse(regressionTree, dataSet);
         System.out.println(mseValue);
-        System.out.println(regressionTree);
-        System.out.println(regressionTree.getRootReduction()    );
+//        System.out.println(regressionTree);
+//        System.out.println(regressionTree.getRootReduction()    );
 
     }
 
@@ -141,7 +145,9 @@ public class RegressionTreeTest {
         System.out.println(dataSet.getFeatureColumn(0).getVector());
         System.out.println("max="+dataSet.getFeatureColumn(0).getVector().maxValue());
 
+
         double[] labels = dataSet.getLabels();
+        System.out.println("my label sum = "+ Arrays.stream(labels).sum());
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
@@ -152,7 +158,7 @@ public class RegressionTreeTest {
         regTreeConfig.setMinDataPerLeaf(1);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
         regTreeConfig.useDefaultOutputCalculator();
-        regTreeConfig.setNumSplitIntervals(5000000);
+        regTreeConfig.setNumSplitIntervals(50);
 
         RegressionTree regressionTree = new RegressionTree();
 
@@ -162,13 +168,14 @@ public class RegressionTreeTest {
 
         System.out.println(stopWatch);
 
-        double mseValue = MSE.mse(regressionTree, dataSet);
-        System.out.println(mseValue);
+//        double mseValue = MSE.mse(regressionTree, dataSet);
+//        System.out.println(mseValue);
         System.out.println(regressionTree);
         System.out.println(regressionTree.getRootReduction()    );
 
 
-        double threshold = 0.9927031171464085;
+//        double threshold = 0.9927031171464085;
+        double threshold = -0.22514464020729064;
         Vector vector = dataSet.getFeatureColumn(0).getVector();
         double leftSum=0;
         double rightSum=0;
@@ -185,6 +192,11 @@ public class RegressionTreeTest {
                 rightcount += 1;
             }
         }
+        System.out.println("leftsum"+leftSum);
+        System.out.println("rightsum"+rightSum);
+        System.out.println("leftcount"+leftcount);
+        System.out.println("rightcount"+rightcount);
+        System.out.println("maxlrNormalizedSquareSum "+leftSum*leftSum/leftcount + rightSum*rightSum/rightcount);
         double myreduction = leftSum*leftSum/leftcount + rightSum*rightSum/rightcount - sumlabel*sumlabel/vector.size();
         System.out.println("my reduction="+myreduction);
     }
@@ -219,7 +231,7 @@ public class RegressionTreeTest {
         regTreeConfig.setMinDataPerLeaf(1);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
         regTreeConfig.useDefaultOutputCalculator();
-        regTreeConfig.setNumSplitIntervals(50000);
+        regTreeConfig.setNumSplitIntervals(50);
 
         RegressionTree regressionTree = new RegressionTree();
 
@@ -235,4 +247,49 @@ public class RegressionTreeTest {
         System.out.println(regressionTree.getRootReduction()    );
     }
 
+
+    /**
+     * slice location data, dense
+     */
+    static void test5() throws Exception {
+        int numLeaves = 70;
+
+        DenseRegDataSet dataSet = DenseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
+                new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
+
+        for (int i=0;i<dataSet.getNumFeatures();i++){
+            FeatureSetting setting = new FeatureSetting();
+            setting.setFeatureType(FeatureType.NUMERICAL);
+            dataSet.putFeatureSetting(i,setting);
+        }
+
+
+        double[] labels = dataSet.getLabels();
+
+        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setActiveFeatures(activeFeatures);
+        regTreeConfig.setDataSet(dataSet);
+        regTreeConfig.setLabels(labels);
+        regTreeConfig.setMaxNumLeaves(numLeaves);
+        regTreeConfig.setMinDataPerLeaf(1);
+        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        regTreeConfig.useDefaultOutputCalculator();
+        regTreeConfig.setNumSplitIntervals(40);
+
+        RegressionTree regressionTree = new RegressionTree();
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        regressionTree.fit(regTreeConfig);
+
+        System.out.println(stopWatch);
+
+        double mseValue = MSE.mse(regressionTree, dataSet);
+        System.out.println(mseValue);
+//        System.out.println(regressionTree);
+//        System.out.println(regressionTree.getRootReduction()    );
+
+    }
 }
