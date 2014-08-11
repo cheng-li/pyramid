@@ -12,10 +12,10 @@ import java.util.Optional;
 public class BinarySplitter {
 
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
-                             int[] dataAppearance,
-                             int featureIndex){
-        DataSet dataSet = regTreeConfig.getDataSet();
-        double[] labels = regTreeConfig.getLabels();
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       int[] dataAppearance,
+                                       int featureIndex){
         Vector featureValues;
         Vector inputVector = dataSet.getFeatureColumn(featureIndex).getVector();
         if (inputVector.isDense()){
@@ -58,7 +58,10 @@ public class BinarySplitter {
         double reduction = (zeroLabelSum * zeroLabelSum / numZeros) +
                 (oneLabelSum * oneLabelSum / numOnes) -
                 (totalLabelSum * totalLabelSum / featureValues.length);
-        SplitResult splitResult = new SplitResult(featureIndex,0,reduction);
+        SplitResult splitResult = new SplitResult();
+        splitResult.setFeatureIndex(featureIndex)
+                .setThreshold(0).setReduction(reduction)
+                .setLeftCount(numZeros).setRightCount(numOnes);
         int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
         boolean valid = (numOnes >= minDataPerLeaf)&&(numZeros >= minDataPerLeaf);
         if (valid){

@@ -13,11 +13,7 @@ class SplitResult {
     SplitResult() {
     }
 
-    SplitResult(int featureIndex, double threshold, double reduction) {
-        this.featureIndex = featureIndex;
-        this.threshold = threshold;
-        this.reduction = reduction;
-    }
+
 
     SplitResult setFeatureIndex(int featureIndex) {
         this.featureIndex = featureIndex;

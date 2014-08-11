@@ -5,7 +5,7 @@ import edu.neu.ccs.pyramid.dataset.SparseDataSet;
 public class BinaryFeatureSplitterTest {
 
     public static void main(String[] args) {
-        test3();
+        test2();
 
     }
 
@@ -19,8 +19,8 @@ public class BinaryFeatureSplitterTest {
         double[] labels = {1,2,3,2,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
-        regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0).get();
+        regTreeConfig.setMinDataPerLeaf(1);
+        SplitResult splitResult = BinarySplitter.split(regTreeConfig,dataSet,labels, dataAppearance, 0).get();
         System.out.println(splitResult);
     }
 
@@ -34,8 +34,8 @@ public class BinaryFeatureSplitterTest {
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
-        regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0).get();
+        regTreeConfig.setMinDataPerLeaf(1);
+        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataSet,labels,dataAppearance, 0).get();
         System.out.println(splitResult);
         System.out.println(21-81.0/4);
     }
@@ -53,9 +53,9 @@ public class BinaryFeatureSplitterTest {
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
-        regTreeConfig.setMinDataPerLeaf(2).setDataSet(dataSet).setLabels(labels);
-        System.out.println(BinarySplitter.split(regTreeConfig, dataAppearance, 0));
-        System.out.println(BinarySplitter.split(regTreeConfig, dataAppearance, 0).isPresent());
+        regTreeConfig.setMinDataPerLeaf(2);
+        System.out.println(BinarySplitter.split(regTreeConfig, dataSet,labels,dataAppearance, 0));
+        System.out.println(BinarySplitter.split(regTreeConfig, dataSet,labels,dataAppearance, 0).isPresent());
 
     }
 

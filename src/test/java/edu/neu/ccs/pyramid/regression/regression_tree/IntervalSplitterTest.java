@@ -26,9 +26,9 @@ public class IntervalSplitterTest {
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
-        regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet)
-                .setLabels(labels).setNumSplitIntervals(2);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataAppearance,0));
+        regTreeConfig.setMinDataPerLeaf(1)
+             .setNumSplitIntervals(2);
+        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
 
 
     }
@@ -43,9 +43,9 @@ public class IntervalSplitterTest {
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
-        regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet)
-                .setLabels(labels).setNumSplitIntervals(200);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataAppearance,0));
+        regTreeConfig.setMinDataPerLeaf(1)
+                .setNumSplitIntervals(200);
+        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
 
 
     }
@@ -60,9 +60,9 @@ public class IntervalSplitterTest {
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
-        regTreeConfig.setMinDataPerLeaf(2).setDataSet(dataSet)
-                .setLabels(labels).setNumSplitIntervals(200);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataAppearance,0));
+        regTreeConfig.setMinDataPerLeaf(2)
+                .setNumSplitIntervals(200);
+        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
 
 
     }
@@ -80,9 +80,8 @@ public class IntervalSplitterTest {
         double[] labels = {1,2,3,3,1,5,5,5};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3,4,5,6,7};
-        regTreeConfig.setMinDataPerLeaf(2).setDataSet(dataSet)
-                .setLabels(labels).setNumSplitIntervals(4);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataAppearance,0));
+        regTreeConfig.setMinDataPerLeaf(2).setNumSplitIntervals(4);
+        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
 
 
     }
@@ -103,9 +102,8 @@ public class IntervalSplitterTest {
         double[] labels = {1,2,3,3,1,5,5,5};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3,4,5,6,7};
-        regTreeConfig.setMinDataPerLeaf(5).setDataSet(dataSet)
-                .setLabels(labels).setNumSplitIntervals(4);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataAppearance,0));
+        regTreeConfig.setMinDataPerLeaf(5).setNumSplitIntervals(4);
+        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
 
 
     }

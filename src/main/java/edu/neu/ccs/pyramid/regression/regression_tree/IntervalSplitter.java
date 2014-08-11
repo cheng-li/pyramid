@@ -14,10 +14,10 @@ import java.util.Optional;
  */
 class IntervalSplitter {
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
-                             int[] dataAppearance,
-                             int featureIndex){
-        DataSet dataSet = regTreeConfig.getDataSet();
-        double[] labels = regTreeConfig.getLabels();
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       int[] dataAppearance,
+                                       int featureIndex){
         Vector featureValues;
         Vector inputVector = dataSet.getFeatureColumn(featureIndex).getVector();
         if (inputVector.isDense()){

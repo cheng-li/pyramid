@@ -39,32 +39,36 @@ class Node implements Serializable {
         return splitable;
     }
 
-    void setSplitable(boolean splitable) {
+    Node setSplitable(boolean splitable) {
         this.splitable = splitable;
+        return this;
     }
 
     Node getLeftChild() {
         return leftChild;
     }
 
-    void setLeftChild(Node leftChild) {
+    Node setLeftChild(Node leftChild) {
         this.leftChild = leftChild;
+        return this;
     }
 
     Node getRightChild() {
         return rightChild;
     }
 
-    void setRightChild(Node rightChild) {
+    Node setRightChild(Node rightChild) {
         this.rightChild = rightChild;
+        return this;
     }
 
     double getReduction() {
         return reduction;
     }
 
-    void setReduction(double reduction) {
+    Node setReduction(double reduction) {
         this.reduction = reduction;
+        return this;
     }
 
     boolean isLeaf() {
@@ -75,16 +79,18 @@ class Node implements Serializable {
         return !isLeaf();
     }
 
-    void setLeaf(boolean leaf) {
+    Node setLeaf(boolean leaf) {
         this.leaf = leaf;
+        return this;
     }
 
     int[] getDataAppearance() {
         return dataAppearance;
     }
 
-    void setDataAppearance(int[] dataAppearance) {
+    Node setDataAppearance(int[] dataAppearance) {
         this.dataAppearance = dataAppearance;
+        return this;
     }
 
     double getValue() {
@@ -92,8 +98,9 @@ class Node implements Serializable {
     }
 
 
-    void setValue(double value) {
+    Node setValue(double value) {
         this.value = value;
+        return this;
     }
 
 
@@ -101,24 +108,27 @@ class Node implements Serializable {
         return featureIndex;
     }
 
-    void setFeatureIndex(int featureIndex) {
+    Node setFeatureIndex(int featureIndex) {
         this.featureIndex = featureIndex;
+        return this;
     }
 
     double getThreshold() {
         return threshold;
     }
 
-    void setThreshold(double threshold) {
+    Node setThreshold(double threshold) {
         this.threshold = threshold;
+        return this;
     }
 
     Node getParent() {
         return parent;
     }
 
-    void setParent(Node parent) {
+    Node setParent(Node parent) {
         this.parent = parent;
+        return this;
     }
 
     /**

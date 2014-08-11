@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.feature.FeatureType;
 
 
@@ -18,26 +19,33 @@ class Splitter {
      * @return best valid splitResult, possibly nothing
      */
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
-                             int[] dataAppearance){
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       int[] dataAppearance){
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
         return Arrays.stream(activeFeatures).parallel()
-                .mapToObj(featureIndex -> split(regTreeConfig,dataAppearance,featureIndex))
+                .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
+                        dataAppearance,featureIndex))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
     }
 
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
-                             int[] dataAppearance,
-                             int featureIndex){
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       int[] dataAppearance,
+                                       int featureIndex){
         Optional<SplitResult> splitResult;
-        FeatureType featureType = regTreeConfig.getDataSet()
+        FeatureType featureType = dataSet
                 .getFeatureColumn(featureIndex).getSetting()
                 .getFeatureType();
         if (featureType==FeatureType.NUMERICAL){
-            splitResult = IntervalSplitter.split(regTreeConfig,dataAppearance,featureIndex);
+            splitResult = IntervalSplitter.split(regTreeConfig,dataSet,labels,
+                    dataAppearance,featureIndex);
         } else if(featureType==FeatureType.BINARY){
-            splitResult = BinarySplitter.split(regTreeConfig,dataAppearance,featureIndex);
+            splitResult = BinarySplitter.split(regTreeConfig,dataSet,labels,
+                    dataAppearance,featureIndex);
         } else{
             throw new IllegalArgumentException("unsupported feature type");
         }

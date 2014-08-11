@@ -9,13 +9,9 @@ import java.util.concurrent.ExecutorService;
  */
 public class RegTreeConfig {
     private int numSplitIntervals=100;
-    private int maxNumLeaves;
-    private int minDataPerLeaf;
-    private DataSet dataSet;
-    /**
-     * fit regression tree with labels
-     */
-    private double[] labels;
+    private int maxNumLeaves=2;
+    private int minDataPerLeaf=1;
+
     /**
      * features to consider in the tree
      */
@@ -24,35 +20,6 @@ public class RegTreeConfig {
      * data points to consider in the tree
      */
     private int[] activeDataPoints;
-
-    private LeafOutputCalculator leafOutputCalculator;
-
-    public LeafOutputCalculator getLeafOutputCalculator() {
-        return leafOutputCalculator;
-    }
-
-    public RegTreeConfig setDataSet(DataSet dataSet) {
-        this.dataSet = dataSet;
-        return this;
-    }
-
-    public RegTreeConfig setLabels(double[] labels) {
-        this.labels = labels;
-        return this;
-    }
-
-    public RegTreeConfig setLeafOutputCalculator(LeafOutputCalculator leafOutputCalculator) {
-        this.leafOutputCalculator = leafOutputCalculator;
-        return this;
-    }
-
-    public RegTreeConfig useDefaultOutputCalculator(){
-        if (this.labels==null){
-            throw new RuntimeException("labels are not assigned");
-        }
-        this.leafOutputCalculator = new AverageOutputCalculator(this.labels);
-        return this;
-    }
 
     public RegTreeConfig setActiveFeatures(int[] activeFeatures) {
         this.activeFeatures = activeFeatures;
@@ -92,14 +59,6 @@ public class RegTreeConfig {
 
     int getMinDataPerLeaf() {
         return minDataPerLeaf;
-    }
-
-    DataSet getDataSet() {
-        return dataSet;
-    }
-
-    double[] getLabels() {
-        return labels;
     }
 
     int[] getActiveFeatures() {
