@@ -29,17 +29,10 @@ class Interval {
         return count;
     }
 
-    public void setCount(int count) {
-        this.count = count;
-    }
-
     public double getSum() {
         return sum;
     }
 
-    public void setSum(double sum) {
-        this.sum = sum;
-    }
 
     void incrementSum(double amount){
         this.sum += amount;

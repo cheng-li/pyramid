@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
  * Created by chengli on 8/5/14.
  */
 public class RegTreeConfig {
-    private int numSplitIntervals=4;
+    private int numSplitIntervals=100;
     private int maxNumLeaves;
     private int minDataPerLeaf;
     private DataSet dataSet;

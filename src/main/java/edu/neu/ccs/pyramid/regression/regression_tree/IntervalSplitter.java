@@ -5,13 +5,15 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by chengli on 8/6/14.
  */
-public class IntervalSplitter {
-    static SplitResult split(RegTreeConfig regTreeConfig,
+class IntervalSplitter {
+    static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                              int[] dataAppearance,
                              int featureIndex){
         DataSet dataSet = regTreeConfig.getDataSet();
@@ -37,10 +39,8 @@ public class IntervalSplitter {
         }
         List<Interval> possibleIntervals = generateIntervals(regTreeConfig,partialFeatures,partialLabels);
         List<Interval> compressedIntervals = compress(possibleIntervals);
-        SplitResult splitResult = findBest(regTreeConfig,compressedIntervals,
+        return findBest(regTreeConfig,compressedIntervals,
                 labelSum,numDataPoints,featureIndex);
-        return splitResult;
-
     }
 
     private static List<Interval> generateIntervals(RegTreeConfig regTreeConfig,
@@ -138,56 +138,93 @@ public class IntervalSplitter {
         return compressed;
     }
 
-    private static SplitResult findBest(RegTreeConfig regTreeConfig,
+    private static Optional<SplitResult> findBest(RegTreeConfig regTreeConfig,
                                         List<Interval> intervals,
                                         double labelSum,
                                         int numDataPoints,
                                         int featureIndex){
+        List<SplitResult> splitResults = new ArrayList<>(intervals.size());
         int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
-        double maxlrNormalizedSquareSum = -1;
-        double bestThreshold = 0;
+
         double leftSum = 0;
         int leftCount = 0;
-        boolean existValid = false;
-        for (int i=0;i<=intervals.size()-2;i++){
+        for (int i=0;i<=intervals.size()-2;i++) {
             Interval interval = intervals.get(i);
             leftCount += interval.getCount();
             leftSum += interval.getSum();
             double rightSum = labelSum - leftSum;
             int rightCount = numDataPoints - leftCount;
-            boolean valid = (leftCount>=minDataPerLeaf)&&(rightCount>=minDataPerLeaf);
-            if (valid){
-                existValid = true;
-                double lrNormalizedSquareSum = leftSum*leftSum/leftCount +
-                        rightSum*rightSum/rightCount;
-                boolean update = false;
-                if(lrNormalizedSquareSum > maxlrNormalizedSquareSum){
-                    update = true;
-                } else if(lrNormalizedSquareSum == maxlrNormalizedSquareSum){
-                    // for equally good threshold, we flip a coin
-                    if (Math.random()<=0.5){
-                        update = true;
-                    }
-                }
-
-                if (update){
-                    maxlrNormalizedSquareSum = lrNormalizedSquareSum;
-                    bestThreshold = interval.getUpper();
-                }
-            }
+            double reduction = leftSum * leftSum / leftCount +
+                    rightSum * rightSum / rightCount
+                    - labelSum * labelSum / numDataPoints;
+            SplitResult splitResult = new SplitResult();
+            splitResult.setFeatureIndex(featureIndex)
+                    .setLeftCount(leftCount)
+                    .setRightCount(rightCount)
+                    .setReduction(reduction)
+                    .setThreshold(interval.getUpper());
+            splitResults.add(splitResult);
         }
-        SplitResult splitResult;
-        if (existValid){
-            double reduction = maxlrNormalizedSquareSum - labelSum*labelSum/numDataPoints;
-            splitResult = new SplitResult(featureIndex,bestThreshold,reduction);
-        } else {
-            splitResult = new SplitResult(featureIndex,0,0);
-            splitResult.setValid(false);
-        }
-        return splitResult;
+        return splitResults.stream().filter(splitResult
+                -> splitResult.getLeftCount() >= minDataPerLeaf
+                && splitResult.getRightCount() >= minDataPerLeaf)
+                .max(Comparator.comparing(SplitResult::getReduction));
     }
+}
 
-    //old implementation
+
+//==========================    old implementations  =======================
+
+//    private static SplitResult findBest(RegTreeConfig regTreeConfig,
+//                                        List<Interval> intervals,
+//                                        double labelSum,
+//                                        int numDataPoints,
+//                                        int featureIndex){
+//        int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
+//        double maxlrNormalizedSquareSum = -1;
+//        double bestThreshold = 0;
+//        double leftSum = 0;
+//        int leftCount = 0;
+//        boolean existValid = false;
+//        for (int i=0;i<=intervals.size()-2;i++){
+//            Interval interval = intervals.get(i);
+//            leftCount += interval.getCount();
+//            leftSum += interval.getSum();
+//            double rightSum = labelSum - leftSum;
+//            int rightCount = numDataPoints - leftCount;
+//            boolean valid = (leftCount>=minDataPerLeaf)&&(rightCount>=minDataPerLeaf);
+//            if (valid){
+//                existValid = true;
+//                double lrNormalizedSquareSum = leftSum*leftSum/leftCount +
+//                        rightSum*rightSum/rightCount;
+//                boolean update = false;
+//                if(lrNormalizedSquareSum > maxlrNormalizedSquareSum){
+//                    update = true;
+//                } else if(lrNormalizedSquareSum == maxlrNormalizedSquareSum){
+//                    // for equally good threshold, we flip a coin
+//                    if (Math.random()<=0.5){
+//                        update = true;
+//                    }
+//                }
+//
+//                if (update){
+//                    maxlrNormalizedSquareSum = lrNormalizedSquareSum;
+//                    bestThreshold = interval.getUpper();
+//                }
+//            }
+//        }
+//        SplitResult splitResult;
+//        if (existValid){
+//            double reduction = maxlrNormalizedSquareSum - labelSum*labelSum/numDataPoints;
+//            splitResult = new SplitResult(featureIndex,bestThreshold,reduction);
+//        } else {
+//            splitResult = new SplitResult(featureIndex,0,0);
+//            splitResult.setValid(false);
+//        }
+//        return splitResult;
+//    }
+
+
 
 //    private static SplitResult splitPartial(RegTreeConfig regTreeConfig,
 //                                            double[] featureValues,
@@ -295,4 +332,4 @@ public class IntervalSplitter {
 //        }
 //        return splitResult;
 //    }
-}
+

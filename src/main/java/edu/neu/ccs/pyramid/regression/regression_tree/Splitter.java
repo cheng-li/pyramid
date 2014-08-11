@@ -22,14 +22,15 @@ class Splitter {
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
         return Arrays.stream(activeFeatures).parallel()
                 .mapToObj(featureIndex -> split(regTreeConfig,dataAppearance,featureIndex))
-                .filter(SplitResult::isValid)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
     }
 
-    static SplitResult split(RegTreeConfig regTreeConfig,
+    static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                              int[] dataAppearance,
                              int featureIndex){
-        SplitResult splitResult;
+        Optional<SplitResult> splitResult;
         FeatureType featureType = regTreeConfig.getDataSet()
                 .getFeatureColumn(featureIndex).getSetting()
                 .getFeatureType();

@@ -4,12 +4,14 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.Optional;
+
 /**
  * Created by chengli on 8/5/14.
  */
 public class BinarySplitter {
 
-    static SplitResult split(RegTreeConfig regTreeConfig,
+    static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                              int[] dataAppearance,
                              int featureIndex){
         DataSet dataSet = regTreeConfig.getDataSet();
@@ -33,7 +35,7 @@ public class BinarySplitter {
         return splitPartial(regTreeConfig,partialFeatures,partialLabels,featureIndex);
     }
 
-    private static SplitResult splitPartial(RegTreeConfig regTreeConfig,
+    private static Optional<SplitResult> splitPartial(RegTreeConfig regTreeConfig,
                                      double[] featureValues,
                                      double[] labels,
                                      int featureIndex){
@@ -59,9 +61,11 @@ public class BinarySplitter {
         SplitResult splitResult = new SplitResult(featureIndex,0,reduction);
         int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
         boolean valid = (numOnes >= minDataPerLeaf)&&(numZeros >= minDataPerLeaf);
-        if (!valid){
-            splitResult.setValid(false);
+        if (valid){
+            return Optional.of(splitResult);
+        } else {
+            return Optional.empty();
         }
-        return splitResult;
+
     }
 }

@@ -7,7 +7,11 @@ class SplitResult {
     private int featureIndex;
     private double threshold;
     private double reduction;
-    private boolean valid = true;
+    private int leftCount;
+    private int rightCount;
+
+    SplitResult() {
+    }
 
     SplitResult(int featureIndex, double threshold, double reduction) {
         this.featureIndex = featureIndex;
@@ -15,14 +19,39 @@ class SplitResult {
         this.reduction = reduction;
     }
 
-
-    boolean isValid() {
-        return valid;
+    SplitResult setFeatureIndex(int featureIndex) {
+        this.featureIndex = featureIndex;
+        return this;
     }
 
-    void setValid(boolean valid) {
-        this.valid = valid;
+    SplitResult setThreshold(double threshold) {
+        this.threshold = threshold;
+        return this;
     }
+
+    SplitResult setReduction(double reduction) {
+        this.reduction = reduction;
+        return this;
+    }
+
+    int getLeftCount() {
+        return leftCount;
+    }
+
+    SplitResult setLeftCount(int leftCount) {
+        this.leftCount = leftCount;
+        return this;
+    }
+
+    int getRightCount() {
+        return rightCount;
+    }
+
+    SplitResult setRightCount(int rightCount) {
+        this.rightCount = rightCount;
+        return this;
+    }
+
 
     int getFeatureIndex() {
         return featureIndex;
@@ -42,7 +71,8 @@ class SplitResult {
                 "featureIndex=" + featureIndex +
                 ", threshold=" + threshold +
                 ", reduction=" + reduction +
-                ", valid=" + valid +
+                ", leftCount=" + leftCount +
+                ", rightCount=" + rightCount +
                 '}';
     }
 }

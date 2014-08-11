@@ -5,8 +5,6 @@ import edu.neu.ccs.pyramid.dataset.SparseDataSet;
 public class BinaryFeatureSplitterTest {
 
     public static void main(String[] args) {
-        test1();
-        test2();
         test3();
 
     }
@@ -22,7 +20,7 @@ public class BinaryFeatureSplitterTest {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
         regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0);
+        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0).get();
         System.out.println(splitResult);
     }
 
@@ -37,11 +35,14 @@ public class BinaryFeatureSplitterTest {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
         regTreeConfig.setMinDataPerLeaf(1).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0);
+        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0).get();
         System.out.println(splitResult);
         System.out.println(21-81.0/4);
     }
 
+    /**
+     * test empty
+     */
     static void test3(){
         SparseDataSet dataSet = new SparseDataSet(5,2);
         dataSet.setFeatureValue(0,0,0);
@@ -53,9 +54,9 @@ public class BinaryFeatureSplitterTest {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] dataAppearance = {0,1,2,3};
         regTreeConfig.setMinDataPerLeaf(2).setDataSet(dataSet).setLabels(labels);
-        SplitResult splitResult = BinarySplitter.split(regTreeConfig, dataAppearance, 0);
-        System.out.println(splitResult);
-        System.out.println(21-81.0/4);
+        System.out.println(BinarySplitter.split(regTreeConfig, dataAppearance, 0));
+        System.out.println(BinarySplitter.split(regTreeConfig, dataAppearance, 0).isPresent());
+
     }
 
 

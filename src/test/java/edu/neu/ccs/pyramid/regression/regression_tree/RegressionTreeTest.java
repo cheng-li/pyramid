@@ -271,7 +271,7 @@ public class RegressionTreeTest {
         regTreeConfig.setDataSet(dataSet);
         regTreeConfig.setLabels(labels);
         regTreeConfig.setMaxNumLeaves(numLeaves);
-        regTreeConfig.setMinDataPerLeaf(1);
+        regTreeConfig.setMinDataPerLeaf(5);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
         regTreeConfig.useDefaultOutputCalculator();
         regTreeConfig.setNumSplitIntervals(100);
