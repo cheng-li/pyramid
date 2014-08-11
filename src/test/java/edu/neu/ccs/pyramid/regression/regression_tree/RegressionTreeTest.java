@@ -10,6 +10,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.DoubleStream;
@@ -21,11 +22,8 @@ public class RegressionTreeTest {
 
 
     public static void main(String[] args) throws Exception{
-//        test1();
-//        test2();
-//        test3();
-//        test4();
         test5();
+
     }
 
     static void test1() throws Exception{
@@ -276,7 +274,7 @@ public class RegressionTreeTest {
         regTreeConfig.setMinDataPerLeaf(1);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
         regTreeConfig.useDefaultOutputCalculator();
-        regTreeConfig.setNumSplitIntervals(40);
+        regTreeConfig.setNumSplitIntervals(100);
 
         RegressionTree regressionTree = new RegressionTree();
 
@@ -292,4 +290,34 @@ public class RegressionTreeTest {
 //        System.out.println(regressionTree.getRootReduction()    );
 
     }
+
+//    static void test6(){
+//        RegTreeConfig regTreeConfig = new RegTreeConfig();
+//        regTreeConfig.setNumSplitIntervals(4);
+//        double[] features = {1,1,2,2};
+//        double[] labels = {3,4,5,6};
+//        System.out.println(IntervalSplitter.generateIntervals(regTreeConfig,features,labels));
+//
+//    }
+
+//    static void test7(){
+//        RegTreeConfig regTreeConfig = new RegTreeConfig();
+//        regTreeConfig.setNumSplitIntervals(4);
+//        double[] features = {1,1,2,2,3,4};
+//        double[] labels = {3,4,5,6,7,8};
+//        System.out.println(IntervalSplitter.generateIntervals(regTreeConfig,features,labels));
+//
+//    }
+
+//    static void test8(){
+//        RegTreeConfig regTreeConfig = new RegTreeConfig();
+//        regTreeConfig.setNumSplitIntervals(10);
+//        double[] features = {1,1,2,2,3,4};
+//        double[] labels = {3,4,5,6,7,8};
+//        List<Interval> intervals = IntervalSplitter.generateIntervals(regTreeConfig, features, labels);
+//        System.out.println(intervals);
+//        List<Interval> compressed = IntervalSplitter.compress(intervals);
+//        System.out.println(compressed);
+//
+//    }
 }

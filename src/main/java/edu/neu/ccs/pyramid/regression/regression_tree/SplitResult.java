@@ -15,6 +15,7 @@ class SplitResult {
         this.reduction = reduction;
     }
 
+
     boolean isValid() {
         return valid;
     }
