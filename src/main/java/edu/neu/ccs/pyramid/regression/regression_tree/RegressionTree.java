@@ -25,7 +25,7 @@ public class RegressionTree implements Regressor, Serializable {
 
     protected List<Node> leaves;
 
-    public RegressionTree() {
+    protected RegressionTree() {
         this.leaves = new ArrayList<>();
     }
 
@@ -111,12 +111,12 @@ public class RegressionTree implements Regressor, Serializable {
                 if (!node1.isLeaf()){
                     Node node2 = stack.peek();
                     if (node2 == node1.getLeftChild()){
-                        sb.append(node1.getFeatureIndex()+"<="+node1.getThreshold()+"   ");
+                        sb.append(node1.getFeatureIndex()).append("<=").append(node1.getThreshold()).append("   ");
                     } else {
-                        sb.append(node1.getFeatureIndex()+">"+node1.getThreshold()+"   ");
+                        sb.append(node1.getFeatureIndex()).append(">").append(node1.getThreshold()).append("   ");
                     }
                 } else{
-                    sb.append(": "+node1.getValue()+"\n");
+                    sb.append(": ").append(node1.getValue()).append("\n");
                 }
             }
         }
