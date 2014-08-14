@@ -19,7 +19,7 @@ public class RegTreeTrainerTest {
 
     public static void main(String[] args) throws Exception{
 //        test3();
-        test5();
+        test3();
 
     }
 
@@ -89,7 +89,7 @@ public class RegTreeTrainerTest {
 
         DenseRegDataSet dataSet = DenseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
                 new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
-
+        System.out.println(dataSet.isDense());
         for (int i=0;i<dataSet.getNumFeatures();i++){
             FeatureSetting setting = new FeatureSetting();
             setting.setFeatureType(FeatureType.NUMERICAL);
@@ -131,7 +131,7 @@ public class RegTreeTrainerTest {
 
         SparseRegDataSet dataSet = SparseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
                 new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
-
+        System.out.println(dataSet.isDense());
         for (int i=0;i<dataSet.getNumFeatures();i++){
             FeatureSetting setting = new FeatureSetting();
             setting.setFeatureType(FeatureType.NUMERICAL);

@@ -68,4 +68,9 @@ public class DenseDataSet extends AbstractDataSet implements DataSet{
         this.rowMatrix[dataPointIndex].set(featureIndex,featureValue);
         this.columnMatrix[featureIndex].set(dataPointIndex,featureValue);
     }
+
+    @Override
+    public boolean isDense() {
+        return true;
+    }
 }

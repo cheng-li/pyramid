@@ -73,4 +73,9 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
         this.columnMatrix[featureIndex].set(dataPointIndex,featureValue);
     }
 
+    @Override
+    public boolean isDense() {
+        return false;
+    }
+
 }

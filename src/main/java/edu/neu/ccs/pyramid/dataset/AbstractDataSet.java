@@ -14,7 +14,11 @@ public abstract class AbstractDataSet implements DataSet{
         this.numDataPoints = numDataPoints;
         this.numFeatures = numFeatures;
         this.dataSettings = new DataSetting[numDataPoints];
+        //todo initialize
         this.featureSettings = new FeatureSetting[numFeatures];
+        for (int i=0;i<numFeatures;i++){
+            featureSettings[i] = new FeatureSetting();
+        }
     }
 
     @Override
