@@ -12,8 +12,6 @@ public interface DataSet {
                                 int featureIndex, double featureValue);
     void putDataSetting(int dataPointIndex, DataSetting setting);
     void putFeatureSetting(int featureIndex, FeatureSetting setting);
-    DataSetting getDataSetting(int dataPointIndex);
-    FeatureSetting getFeatureSetting(int featureIndex);
     boolean isDense();
 
 }

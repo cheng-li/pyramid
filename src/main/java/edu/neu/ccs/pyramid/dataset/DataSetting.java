@@ -10,6 +10,9 @@ public class DataSetting implements Serializable{
     private String extId = "unKnown";
     private String extLabel = "unKnown";
 
+    public DataSetting() {
+    }
+
     public String getExtId() {
         return extId;
     }
@@ -26,5 +29,13 @@ public class DataSetting implements Serializable{
     public DataSetting setExtLabel(String extLabel) {
         this.extLabel = extLabel;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "DataSetting{" +
+                "extId='" + extId + '\'' +
+                ", extLabel='" + extLabel + '\'' +
+                '}';
     }
 }

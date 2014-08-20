@@ -43,19 +43,8 @@ public class SparseRegDataSet extends SparseDataSet implements RegDataSet{
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("number of data points = ").append(numDataPoints).append("\n");
-        sb.append("number of features = ").append(numFeatures).append("\n");
-        sb.append("=====================================").append("\n");
-        sb.append("row matrix:").append("\n");
-        for (int i=0;i<numDataPoints;i++){
-            sb.append(i).append(":\t").append(getFeatureRow(i).getVector().asFormatString()).append("\n");
-        }
-        sb.append("=====================================").append("\n");
-        sb.append("column matrix:").append("\n");
-        for (int j=0;j<numFeatures;j++){
-            sb.append(j).append(":\t").append(getFeatureColumn(j).getVector().asFormatString()).append("\n");
-        }
-        sb.append("labels = ").append(Arrays.toString(this.labels));
+        sb.append(super.toString());
+        sb.append("labels = ").append(Arrays.toString(labels));
         return sb.toString();
     }
 

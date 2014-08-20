@@ -10,8 +10,13 @@ import java.io.Serializable;
 public class FeatureSetting implements Serializable{
     private static final long serialVersionUID = 1L;
 
-    private FeatureType featureType = FeatureType.NUMERICAL;
     private String featureName = "unKnown";
+    private FeatureType featureType = FeatureType.NUMERICAL;
+
+    public FeatureSetting() {
+    }
+
+
 
     public FeatureType getFeatureType() {
         return featureType;
@@ -29,5 +34,13 @@ public class FeatureSetting implements Serializable{
     public FeatureSetting setFeatureName(String featureName) {
         this.featureName = featureName;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "FeatureSetting{" +
+                "featureName='" + featureName + '\'' +
+                ", featureType=" + featureType +
+                '}';
     }
 }

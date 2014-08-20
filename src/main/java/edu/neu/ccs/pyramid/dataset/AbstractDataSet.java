@@ -4,23 +4,14 @@ package edu.neu.ccs.pyramid.dataset;
 /**
  * Created by chengli on 8/7/14.
  */
-public abstract class AbstractDataSet implements DataSet{
+abstract class AbstractDataSet implements DataSet{
     protected int numDataPoints;
     protected int numFeatures;
-    protected DataSetting[] dataSettings;
-    protected FeatureSetting[] featureSettings;
 
-    public AbstractDataSet(int numDataPoints, int numFeatures) {
+
+    AbstractDataSet(int numDataPoints, int numFeatures) {
         this.numDataPoints = numDataPoints;
         this.numFeatures = numFeatures;
-        this.dataSettings = new DataSetting[numDataPoints];
-        for (int i=0;i<numDataPoints;i++){
-            dataSettings[i] = new DataSetting();
-        }
-        this.featureSettings = new FeatureSetting[numFeatures];
-        for (int i=0;i<numFeatures;i++){
-            featureSettings[i] = new FeatureSetting();
-        }
     }
 
     @Override
@@ -44,30 +35,26 @@ public abstract class AbstractDataSet implements DataSet{
 
 
     @Override
-    public void putDataSetting(int dataPointIndex, DataSetting setting) {
-        this.dataSettings[dataPointIndex] = setting;
-    }
+    public abstract void putDataSetting(int dataPointIndex, DataSetting setting);
 
     @Override
-    public void putFeatureSetting(int featureIndex, FeatureSetting setting) {
-        this.featureSettings[featureIndex] = setting;
-    }
-
-    @Override
-    public DataSetting getDataSetting(int dataPointIndex) {
-        return this.dataSettings[dataPointIndex];
-    }
-
-    @Override
-    public FeatureSetting getFeatureSetting(int featureIndex) {
-        return this.featureSettings[featureIndex];
-    }
+    public abstract void putFeatureSetting(int featureIndex, FeatureSetting setting);
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("number of data points = ").append(numDataPoints).append("\n");
         sb.append("number of features = ").append(numFeatures).append("\n");
+        sb.append("data settings:").append("\n");
+        for (int i=0;i<numDataPoints;i++){
+            sb.append(i).append(":").append(getFeatureRow(i).getSetting()).append(", ");
+        }
+        sb.append("\n");
+        sb.append("feature settings:").append("\n");
+        for (int i=0;i<numFeatures;i++){
+            sb.append(i).append(":").append(getFeatureColumn(i).getSetting()).append(", ");
+        }
+        sb.append("\n");
         sb.append("=====================================").append("\n");
         sb.append("row matrix:").append("\n");
         for (int i=0;i<numDataPoints;i++){
@@ -78,6 +65,7 @@ public abstract class AbstractDataSet implements DataSet{
         for (int j=0;j<numFeatures;j++){
             sb.append(j).append(":\t").append(getFeatureColumn(j).getVector().asFormatString()).append("\n");
         }
+        sb.append("\n");
 
         return sb.toString();
     }

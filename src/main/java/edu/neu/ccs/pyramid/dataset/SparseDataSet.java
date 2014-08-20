@@ -1,76 +1,50 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import org.apache.mahout.math.RandomAccessSparseVector;
-import org.apache.mahout.math.SparseColumnMatrix;
-import org.apache.mahout.math.SparseRowMatrix;
-import org.apache.mahout.math.Vector;
-
-import java.util.Arrays;
 
 /**
  * Created by chengli on 8/4/14.
  */
 public class SparseDataSet extends AbstractDataSet implements DataSet{
-    protected RandomAccessSparseVector[] rowMatrix;
-    protected RandomAccessSparseVector[] columnMatrix;
+    protected SparseFeatureRow[] featureRows;
+    protected SparseFeatureColumn[] featureColumns;
 
     public SparseDataSet(int numDataPoints, int numFeatures) {
         super(numDataPoints,numFeatures);
-        this.rowMatrix = new RandomAccessSparseVector[numDataPoints];
+        this.featureRows = new SparseFeatureRow[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            rowMatrix[i] = new RandomAccessSparseVector(numFeatures);
+            this.featureRows[i] = new SparseFeatureRow(i,numFeatures);
         }
-        this.columnMatrix = new RandomAccessSparseVector[numFeatures];
+        this.featureColumns = new SparseFeatureColumn[numFeatures];
         for (int j=0;j<numFeatures;j++){
-            columnMatrix[j] = new RandomAccessSparseVector(numDataPoints);
+            this.featureColumns[j] = new SparseFeatureColumn(j,numDataPoints);
         }
     }
 
 
     @Override
     public FeatureColumn getFeatureColumn(int featureIndex) {
-        return new FeatureColumn() {
-            @Override
-            public int getFeatureIndex() {
-                return featureIndex;
-            }
-
-            @Override
-            public Vector getVector() {
-                return columnMatrix[featureIndex];
-            }
-
-            @Override
-            public FeatureSetting getSetting() {
-                return featureSettings[featureIndex];
-            }
-        };
+        return this.featureColumns[featureIndex];
     }
 
     @Override
     public FeatureRow getFeatureRow(int dataPointIndex) {
-        return new FeatureRow() {
-            @Override
-            public int getDataPointIndex() {
-                return dataPointIndex;
-            }
-
-            @Override
-            public Vector getVector() {
-                return rowMatrix[dataPointIndex];
-            }
-
-            @Override
-            public DataSetting getSetting() {
-                return dataSettings[dataPointIndex];
-            }
-        };
+        return this.featureRows[dataPointIndex];
     }
 
     @Override
-    public synchronized void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
-        this.rowMatrix[dataPointIndex].set(featureIndex,featureValue);
-        this.columnMatrix[featureIndex].set(dataPointIndex,featureValue);
+    public void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
+        this.featureRows[dataPointIndex].getVector().set(featureIndex,featureValue);
+        this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
+    }
+
+    @Override
+    public void putDataSetting(int dataPointIndex, DataSetting setting) {
+        this.featureRows[dataPointIndex].setting = setting;
+    }
+
+    @Override
+    public void putFeatureSetting(int featureIndex, FeatureSetting setting) {
+        this.featureColumns[featureIndex].setting = setting;
     }
 
     @Override

@@ -12,15 +12,23 @@ import java.util.Properties;
 public class Config {
     private Properties properties;
 
-    public Config(String configFile) throws Exception{
+    public Config(String configFile) {
         this.properties = new Properties();
-        properties.load(new FileInputStream(configFile));
+        try {
+            properties.load(new FileInputStream(configFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 //        System.out.println("config file "+configFile+" loaded.");
     }
 
-    public Config(File configFile) throws Exception{
+    public Config(File configFile) {
         this.properties = new Properties();
-        properties.load(new FileInputStream(configFile));
+        try {
+            properties.load(new FileInputStream(configFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

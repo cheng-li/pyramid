@@ -1,72 +1,51 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.Vector;
 
 /**
  * Created by chengli on 8/7/14.
  */
-public class DenseDataSet extends AbstractDataSet implements DataSet{
-    protected DenseVector[] rowMatrix;
-    protected DenseVector[] columnMatrix;
+class DenseDataSet extends AbstractDataSet implements DataSet{
 
-    public DenseDataSet(int numDataPoints, int numFeatures) {
+    protected DenseFeatureRow[] featureRows;
+    protected DenseFeatureColumn[] featureColumns;
+
+    DenseDataSet(int numDataPoints, int numFeatures) {
         super(numDataPoints,numFeatures);
-        this.rowMatrix = new DenseVector[numDataPoints];
+        this.featureRows = new DenseFeatureRow[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            rowMatrix[i] = new DenseVector(numFeatures);
+            this.featureRows[i] = new DenseFeatureRow(i,numFeatures);
         }
-        this.columnMatrix = new DenseVector[numFeatures];
+        this.featureColumns = new DenseFeatureColumn[numFeatures];
         for (int j=0;j<numFeatures;j++){
-            columnMatrix[j] = new DenseVector(numDataPoints);
+            this.featureColumns[j] = new DenseFeatureColumn(j,numDataPoints);
         }
     }
 
 
     @Override
     public FeatureColumn getFeatureColumn(int featureIndex) {
-        return new FeatureColumn() {
-            @Override
-            public int getFeatureIndex() {
-                return featureIndex;
-            }
-
-            @Override
-            public Vector getVector() {
-                return columnMatrix[featureIndex];
-            }
-
-            @Override
-            public FeatureSetting getSetting() {
-                return featureSettings[featureIndex];
-            }
-        };
+        return this.featureColumns[featureIndex];
     }
 
     @Override
     public FeatureRow getFeatureRow(int dataPointIndex) {
-        return new FeatureRow() {
-            @Override
-            public int getDataPointIndex() {
-                return dataPointIndex;
-            }
-
-            @Override
-            public Vector getVector() {
-                return rowMatrix[dataPointIndex];
-            }
-
-            @Override
-            public DataSetting getSetting() {
-                return dataSettings[dataPointIndex];
-            }
-        };
+        return this.featureRows[dataPointIndex];
     }
 
     @Override
     public void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
-        this.rowMatrix[dataPointIndex].set(featureIndex,featureValue);
-        this.columnMatrix[featureIndex].set(dataPointIndex,featureValue);
+        this.featureRows[dataPointIndex].getVector().set(featureIndex,featureValue);
+        this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
+    }
+
+    @Override
+    public void putDataSetting(int dataPointIndex, DataSetting setting) {
+        this.featureRows[dataPointIndex].setting = setting;
+    }
+
+    @Override
+    public void putFeatureSetting(int featureIndex, FeatureSetting setting) {
+        this.featureColumns[featureIndex].setting = setting;
     }
 
     @Override

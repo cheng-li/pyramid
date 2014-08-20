@@ -1,34 +1,34 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import org.apache.mahout.math.RandomAccessSparseVector;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 /**
- * Created by chengli on 8/4/14.
+ * Created by chengli on 8/20/14.
  */
-class SparseFeatureColumn implements FeatureColumn{
+class DenseFeatureColumn implements FeatureColumn{
     int featureIndex;
-    RandomAccessSparseVector vector;
+    DenseVector vector;
     FeatureSetting setting;
 
-    SparseFeatureColumn(int featureIndex, int numDataPoints) {
+    DenseFeatureColumn(int featureIndex, int numDataPoints) {
         this.featureIndex = featureIndex;
-        this.vector = new RandomAccessSparseVector(numDataPoints);
+        this.vector = new DenseVector(numDataPoints);
         this.setting = new FeatureSetting();
     }
 
     @Override
     public int getFeatureIndex() {
-        return this.featureIndex;
+        return featureIndex;
     }
 
     @Override
     public Vector getVector() {
-        return this.vector;
+        return vector;
     }
 
     @Override
     public FeatureSetting getSetting() {
-        return this.setting;
+        return setting;
     }
 }
