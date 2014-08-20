@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import java.io.File;
 import java.util.Arrays;
 
 /**
@@ -21,22 +20,6 @@ public class DenseClfDataSet extends DenseDataSet implements ClfDataSet{
     @Override
     public void setLabel(int dataPointIndex, int label) {
         this.labels[dataPointIndex]=label;
-    }
-
-    public static DenseClfDataSet loadStandard(File featureFile,
-                                               File labelFile,
-                                               String delimiter) throws Exception{
-        int[] stats = DataSetUtil.parseStandard(featureFile,labelFile,delimiter);
-        int numDataPoints = stats[0];
-        int numFeatures = stats[1];
-        System.out.println("loading data set from "+featureFile.getAbsolutePath()+
-                " and "+labelFile.getAbsolutePath());
-        System.out.println("number of data points = "+numDataPoints);
-        System.out.println("number of features = "+numFeatures);
-        DenseClfDataSet dataSet = new DenseClfDataSet(numDataPoints,numFeatures);
-        DataSetUtil.loadStandard(dataSet,featureFile,labelFile,delimiter);
-        System.out.println("data set loaded");
-        return dataSet;
     }
 
     @Override

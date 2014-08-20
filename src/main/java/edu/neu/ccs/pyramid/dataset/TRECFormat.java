@@ -13,8 +13,9 @@ import java.util.stream.IntStream;
  */
 public class TRECFormat {
     /**
-     * internally, trecFile is a directory with 2 files in it
-     * one for sparse feature matrix, one for config
+     * internally, trecFile is a directory with 4 files in it
+     * one for sparse feature matrix, one for config,
+     * one for data settings, one for feature settings
      */
     private static final String TREC_MATRIX_FILE_NAME = "feature_matrix.txt";
     private static final String TREC_CONFIG_FILE_NAME = "config.txt";
@@ -52,16 +53,19 @@ public class TRECFormat {
 
     }
 
-    public static ClfDataSet loadClfDataSet(String trecFile, DataSetType dataSetType) throws IOException, ClassNotFoundException {
-        return loadClfDataSet(new File(trecFile),dataSetType);
+    public static ClfDataSet loadClfDataSet(String trecFile, DataSetType dataSetType,
+                                            boolean loadSettings) throws IOException, ClassNotFoundException {
+        return loadClfDataSet(new File(trecFile),dataSetType, loadSettings);
     }
 
-    public static RegDataSet loadRegDataSet(String trecFile, DataSetType dataSetType) throws IOException, ClassNotFoundException {
-        return loadRegDataSet(new File(trecFile),dataSetType);
+    public static RegDataSet loadRegDataSet(String trecFile, DataSetType dataSetType,
+                                            boolean loadSettings) throws IOException, ClassNotFoundException {
+        return loadRegDataSet(new File(trecFile),dataSetType, loadSettings);
     }
 
 
-    public static ClfDataSet loadClfDataSet(File trecFile, DataSetType dataSetType) throws IOException, ClassNotFoundException {
+    public static ClfDataSet loadClfDataSet(File trecFile, DataSetType dataSetType,
+                                            boolean loadSettings) throws IOException, ClassNotFoundException {
         boolean legalArg = ((dataSetType == DataSetType.CLF_DENSE)
                 ||(dataSetType==DataSetType.CLF_SPARSE));
         if (!legalArg){
@@ -77,12 +81,16 @@ public class TRECFormat {
             clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures);
         }
         fillClfDataSet(clfDataSet,trecFile);
-        loadDataSettings(clfDataSet,trecFile);
-        loadFeatureSettings(clfDataSet,trecFile);
+        if (loadSettings){
+            loadDataSettings(clfDataSet,trecFile);
+            loadFeatureSettings(clfDataSet,trecFile);
+        }
+
         return clfDataSet;
     }
 
-    public static RegDataSet loadRegDataSet(File trecFile, DataSetType dataSetType) throws IOException, ClassNotFoundException {
+    public static RegDataSet loadRegDataSet(File trecFile, DataSetType dataSetType,
+                                            boolean loadSettings) throws IOException, ClassNotFoundException {
         boolean legalArg = ((dataSetType == DataSetType.REG_DENSE)
                 ||(dataSetType==DataSetType.REG_SPARSE));
         if (!legalArg){
@@ -98,8 +106,11 @@ public class TRECFormat {
             throw new RuntimeException("currently not supported ");
         }
         fillRegDataSet(regDataSet, trecFile);
-        loadDataSettings(regDataSet,trecFile);
-        loadFeatureSettings(regDataSet,trecFile);
+        if (loadSettings){
+            loadDataSettings(regDataSet,trecFile);
+            loadFeatureSettings(regDataSet,trecFile);
+        }
+
         return regDataSet;
     }
 

@@ -29,7 +29,7 @@ public class TRECFormatTest {
         clfDataSet.putFeatureSetting(1,new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
         clfDataSet.putFeatureSetting(2,new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
         TRECFormat.save(clfDataSet,"/Users/chengli/tmp/tmp_clfdata.trec");
-        ClfDataSet clfDataSet1 = TRECFormat.loadClfDataSet("/Users/chengli/tmp/tmp_clfdata.trec",DataSetType.CLF_SPARSE);
+        ClfDataSet clfDataSet1 = TRECFormat.loadClfDataSet("/Users/chengli/tmp/tmp_clfdata.trec",DataSetType.CLF_SPARSE,true);
         System.out.println(clfDataSet1);
 
 
