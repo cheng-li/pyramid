@@ -33,7 +33,7 @@ public class RegressionTree implements Regressor, Serializable {
      *
      * @return number of leaves
      */
-    protected int getNumLeaves(){
+    public int getNumLeaves(){
         return leaves.size();
     }
 

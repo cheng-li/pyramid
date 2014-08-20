@@ -2,17 +2,13 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DenseClfDataSet;
-import edu.neu.ccs.pyramid.dataset.SparseClfDataSet;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static org.junit.Assert.*;
 
 public class LKTreeBoostTest {
     public static void main(String[] args) throws Exception {
@@ -135,14 +131,17 @@ public class LKTreeBoostTest {
 
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+
+        lkTreeBoost.setPriorProbs(dataSet);
+
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
-                .numLeaves(7).learningRate(0.1).
-                        dataSamplingRate(1).featureSamplingRate(1).build();
+                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(5)
+                        .dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (int round =0;round<100;round++){
+        for (int round =0;round<200;round++){
             System.out.println("round="+round);
             lkTreeBoost.boostOneRound();
         }
@@ -217,7 +216,7 @@ public class LKTreeBoostTest {
 
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println(accuracy);
-        System.out.println(lkTreeBoost.getTrees(0).size());
+        System.out.println(lkTreeBoost.getRegressors(0).size());
         executor.shutdown();
 
 

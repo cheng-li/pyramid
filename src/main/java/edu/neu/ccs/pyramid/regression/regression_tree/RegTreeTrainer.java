@@ -63,6 +63,15 @@ public class RegTreeTrainer {
         return tree;
     }
 
+    public static RegressionTree constantTree(double score){
+        RegressionTree tree = new RegressionTree();
+        tree.root = new Node();
+        tree.root.setValue(score);
+        tree.root.setLeaf(true);
+        tree.leaves.add(tree.root);
+        return tree;
+    }
+
     /**
      * split a splitable node
      * @param leafToSplit

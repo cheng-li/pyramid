@@ -3,7 +3,6 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.util.Sampling;
 
-import java.util.concurrent.ExecutorService;
 import java.util.stream.IntStream;
 
 /**
@@ -14,19 +13,15 @@ public class LKTBConfig {
     private double learningRate;
     private int numLeaves;
     private int minDataPerLeaf;
-    private double dataSamplingRate;
-    private double featureSamplingRate;
     private int numClasses;
     private int[] activeFeatures;
     private int[] activeDataPoints;
+    private int numSplitIntervals;
 
 
     ClfDataSet getDataSet() {
         return dataSet;
     }
-
-
-
 
     double getLearningRate() {
         return learningRate;
@@ -60,6 +55,11 @@ public class LKTBConfig {
         this.activeDataPoints = activeDataPoints;
     }
 
+    int getNumSplitIntervals() {
+        return numSplitIntervals;
+    }
+
+
     public static class Builder {
         /**
          * required
@@ -75,6 +75,7 @@ public class LKTBConfig {
         int minDataPerLeaf = 1;
         double dataSamplingRate=1;
         double featureSamplingRate=1;
+        private int numSplitIntervals =100;
 
         public Builder(ClfDataSet dataSet, int numClasses) {
             this.dataSet = dataSet;
@@ -107,6 +108,11 @@ public class LKTBConfig {
             return this;
         }
 
+        public Builder numSplitIntervals(int numSplitIntervals) {
+            this.numSplitIntervals = numSplitIntervals;
+            return this;
+        }
+
         public LKTBConfig build() {
             return new LKTBConfig(this);
         }
@@ -120,11 +126,12 @@ public class LKTBConfig {
         this.learningRate = builder.learningRate;
         this.numLeaves = builder.numLeaves;
         this.minDataPerLeaf = builder.minDataPerLeaf;
-        this.dataSamplingRate = builder.dataSamplingRate;
-        this.featureSamplingRate = builder.featureSamplingRate;
+        double dataSamplingRate = builder.dataSamplingRate;
+        double featureSamplingRate = builder.featureSamplingRate;
         this.numClasses = builder.numClasses;
+        this.numSplitIntervals = builder.numSplitIntervals;
         int numDataPoints = dataSet.getNumDataPoints();
-        if (this.dataSamplingRate == 1) {
+        if (dataSamplingRate == 1) {
             /**
              * preserve orders (seems does not matter for data)
              */
@@ -134,10 +141,10 @@ public class LKTBConfig {
              * does not preserve orders
              */
             this.activeDataPoints = Sampling.sampleByPercentage(numDataPoints,
-                    this.dataSamplingRate);
+                    dataSamplingRate);
         }
 
-        if (this.featureSamplingRate == 1) {
+        if (featureSamplingRate == 1) {
             /**
              * preserve orders
              */
@@ -148,7 +155,7 @@ public class LKTBConfig {
              * does not preserve orders
              */
             this.activeFeatures = Sampling.sampleByPercentage(this.dataSet.getNumFeatures(),
-                    this.featureSamplingRate);
+                    featureSamplingRate);
         }
     }
 }

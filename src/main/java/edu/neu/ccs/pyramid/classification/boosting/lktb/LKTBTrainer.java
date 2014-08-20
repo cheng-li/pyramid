@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
+import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
@@ -46,7 +47,7 @@ class LKTBTrainer {
      * when setting up a config in LKTB, also set up a trainer
      * @param lktbConfig
      */
-    LKTBTrainer(LKTBConfig lktbConfig, List<List<RegressionTree>> trees){
+    LKTBTrainer(LKTBConfig lktbConfig, List<List<Regressor>> regressors){
         this.lktbConfig = lktbConfig;
         int numClasses = lktbConfig.getNumClasses();
         ClfDataSet dataSet= lktbConfig.getDataSet();
@@ -58,7 +59,7 @@ class LKTBTrainer {
             int label = trueLabels[i];
             this.classLabels[label][i] = 1;
         }
-        this.initStagedScores(trees);
+        this.initStagedScores(regressors);
         this.classProbabilities = new double[numClasses][numDataPoints];
         this.updateClassProbs();
         this.classGradients = new double[numClasses][numDataPoints];
@@ -80,16 +81,16 @@ class LKTBTrainer {
 
     /**
      * sum scores up
-     * @param trees
+     * @param regressors
      */
-    private void initStagedScores(List<List<RegressionTree>> trees){
+    private void initStagedScores(List<List<Regressor>> regressors){
         int numClasses = this.lktbConfig.getNumClasses();
         ClfDataSet dataSet= this.lktbConfig.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
         this.stagedScore = new double[numClasses][numDataPoints];
         for (int k=0;k<numClasses;k++){
-            for (RegressionTree regressionTree: trees.get(k)){
-                this.updateStagedScores(regressionTree,k);
+            for (Regressor regressor: regressors.get(k)){
+                this.updateStagedScores(regressor,k);
             }
         }
     }
@@ -144,27 +145,27 @@ class LKTBTrainer {
     /**
      * parallel by data points
      * update stagedScore of class k
-     * @param regressionTree
+     * @param regressor
      * @param k
      */
-    void updateStagedScores(RegressionTree regressionTree, int k){
+    void updateStagedScores(Regressor regressor, int k){
         ClfDataSet dataSet= this.lktbConfig.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
         IntStream.range(0, numDataPoints).parallel()
-                .forEach(dataIndex -> this.updateStagedScore(regressionTree,k,dataIndex));
+                .forEach(dataIndex -> this.updateStagedScore(regressor,k,dataIndex));
     }
 
     /**
      * update one score
-     * @param regressionTree
+     * @param regressor
      * @param k class index
      * @param dataIndex
      */
-    private void updateStagedScore(RegressionTree regressionTree, int k,
+    private void updateStagedScore(Regressor regressor, int k,
                                    int dataIndex){
         DataSet dataSet= this.lktbConfig.getDataSet();
         FeatureRow featureRow = dataSet.getFeatureRow(dataIndex);
-        double prediction = regressionTree.predict(featureRow);
+        double prediction = regressor.predict(featureRow);
         this.stagedScore[k][dataIndex] += prediction;
     }
 
@@ -187,7 +188,7 @@ class LKTBTrainer {
      * @return regressionTreeLk, shrunk
      * @throws Exception
      */
-    RegressionTree fitClassK(int k) throws Exception{
+    RegressionTree fitClassK(int k){
         double[] pseudoResponse = this.classGradients[k];
         int numClasses = this.lktbConfig.getNumClasses();
         double learningRate = this.lktbConfig.getLearningRate();
@@ -206,8 +207,18 @@ class LKTBTrainer {
             } else {
                 out = ((numClasses - 1) * nominator) / (numClasses * denominator);
             }
+            //protection from numerically unstable issue
+            if (out>2){
+                out=2;
+            }
+            if (out<-2){
+                out=-2;
+            }
             if (Double.isNaN(out)) {
                 throw new RuntimeException("leaf value is NaN");
+            }
+            if (Double.isInfinite(out)){
+                throw new RuntimeException("leaf value is Infinite");
             }
             out *= learningRate;
             return out;
@@ -218,6 +229,7 @@ class LKTBTrainer {
         regTreeConfig.setMinDataPerLeaf(this.lktbConfig.getMinDataPerLeaf());
         regTreeConfig.setActiveDataPoints(this.lktbConfig.getActiveDataPoints());
         regTreeConfig.setActiveFeatures(this.lktbConfig.getActiveFeatures());
+        regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
 
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
                 this.lktbConfig.getDataSet(),

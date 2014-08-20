@@ -1,9 +1,12 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
+import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
+import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
 
 import java.io.*;
@@ -15,21 +18,49 @@ import java.util.*;
 public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable {
     private static final long serialVersionUID = 1L;
     /**
-     * trees.get(k).get(i) is the ith tree for class k
+     * regressors.get(k).get(i) is the ith regressor for class k
      */
-    private List<List<RegressionTree>> trees;
+    private List<List<Regressor>> regressors;
     private int numClasses;
     private transient LKTBTrainer lktbTrainer;
 
     public LKTreeBoost(int numClasses) {
         this.numClasses = numClasses;
-        this.trees = new ArrayList<>(this.numClasses);
+        this.regressors = new ArrayList<>(this.numClasses);
         for (int k=0;k<this.numClasses;k++){
-            List<RegressionTree> treesClassK  = new ArrayList<>();
-            this.trees.add(treesClassK);
+            List<Regressor> regressorsClassK  = new ArrayList<>();
+            this.regressors.add(regressorsClassK);
         }
     }
 
+
+    /**
+     * start with prior probabilities
+     * should be called before setTrainConfig
+     * @param probs
+     */
+    public void setPriorProbs(double[] probs){
+        if (probs.length!=this.numClasses){
+            throw new IllegalArgumentException("probs.length!=this.numClasses");
+        }
+        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+        for (int k=0;k<this.numClasses;k++){
+            double score = Math.log(probs[k] - average);
+            Regressor constant = new ConstantRegressor(score);
+            this.addRegressor(constant, k);
+        }
+    }
+
+    /**
+     * start with prior probabilities
+     * should be called before setTrainConfig
+     */
+    public void setPriorProbs(ClfDataSet dataSet){
+        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.numClasses);
+        priorProbClassifier.fit(dataSet);
+        double[] probs = priorProbClassifier.getClassProbs();
+        this.setPriorProbs(probs);
+    }
 
     /**
      * to start/resume training, set train config
@@ -39,14 +70,14 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
         if (lktbConfig.getNumClasses()!=this.numClasses){
             throw new RuntimeException("number of classes given in the config does not match number of classes in LKTB");
         }
-        this.lktbTrainer = new LKTBTrainer(lktbConfig,this.trees);
+        this.lktbTrainer = new LKTBTrainer(lktbConfig,this.regressors);
     }
 
     /**
      * default boosting method should follow this order
      * @throws Exception
      */
-    public void boostOneRound() throws Exception {
+    public void boostOneRound()  {
         if (this.lktbTrainer==null){
             throw new RuntimeException("set train config first");
         }
@@ -54,7 +85,7 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
         //for non-standard experiments
         //we can do something here
         //for example, we can add more columns and call setActiveFeatures() here
-        this.fitTrees();
+        this.fitRegressors();
     }
 
     /**
@@ -64,17 +95,17 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
         this.lktbTrainer.calGradients();
     }
 
-    public void fitTrees() throws Exception{
+    public void fitRegressors(){
         for (int k=0;k<this.numClasses;k++){
             /**
              * parallel by feature
              */
-            RegressionTree regressionTree = this.lktbTrainer.fitClassK(k);
-            this.addTree(regressionTree,k);
+            Regressor regressor = this.lktbTrainer.fitClassK(k);
+            this.addRegressor(regressor, k);
             /**
              * parallel by data
              */
-            this.lktbTrainer.updateStagedScores(regressionTree,k);
+            this.lktbTrainer.updateStagedScores(regressor,k);
         }
 
         /**
@@ -128,9 +159,7 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
 
 
 
-    void addTree(RegressionTree regressionTree, int k){
-        this.trees.get(k).add(regressionTree);
-    }
+
 
     public int getNumClasses() {
         return this.numClasses;
@@ -148,9 +177,6 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
 //    }
 
 
-
-
-
     /**
      *
      * @param featureRow
@@ -158,10 +184,10 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
      * @return
      */
     public double predictClassScore(FeatureRow featureRow, int k){
-        List<RegressionTree> treesClassK = this.trees.get(k);
+        List<Regressor> regressorsClassK = this.regressors.get(k);
         double score = 0;
-        for (RegressionTree regressionTree: treesClassK){
-            score += regressionTree.predict(featureRow);
+        for (Regressor regressor: regressorsClassK){
+            score += regressor.predict(featureRow);
         }
         return score;
     }
@@ -231,22 +257,26 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
      * @param k class index
      * @return
      */
-    public RegressionTree getTree(int round, int k){
-        return this.trees.get(k).get(round);
+    public Regressor getRegressor(int round, int k){
+        return this.regressors.get(k).get(round);
 
     }
 
-    public List<RegressionTree> getTrees(int k){
-        return this.trees.get(k);
+    public List<Regressor> getRegressors(int k){
+        return this.regressors.get(k);
+    }
+
+    void addRegressor(Regressor regressor, int k){
+        this.regressors.get(k).add(regressor);
     }
 
     //TODO FIX THIS
 //    public String showTreesClassK(int k){
 //        List<Feature> features = this.dataSet.getFeatures();
 //        StringBuilder sb = new StringBuilder();
-//        List<RegressionTree> trees = this.trees.get(k);
+//        List<RegressionTree> regressors = this.regressors.get(k);
 //        int i=0;
-//        for (RegressionTree regressionTree: trees){
+//        for (RegressionTree regressionTree: regressors){
 //            sb.append("tree "+i+":\n");
 //            sb.append(regressionTree.display(features));
 //            i += 1;
@@ -263,7 +293,7 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
 //     */
 //    public Set<String> getSkipNgramNames(int k,List<Feature> features){
 //        Set<String> set = new HashSet<String>();
-//        for (RegressionTree regressionTree:this.trees.get(k)){
+//        for (RegressionTree regressionTree:this.regressors.get(k)){
 //            Set<String> names = regressionTree.getSkipNgramNames(features);
 //            set.addAll(names);
 //        }
@@ -276,7 +306,7 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
      */
 //    public List<String> getTopNgrams(int k,int threshold, List<Feature> features){
 //        Map<String,Double> map = new HashMap<String, Double>();
-//        for (RegressionTree regressionTree:this.trees.get(k)){
+//        for (RegressionTree regressionTree:this.regressors.get(k)){
 //            if (regressionTree.getNumLeaves()>=2){
 //                String featureName = regressionTree.getRootFeatureName(features);
 //                Ngram ngram = new Ngram(featureName);
@@ -347,8 +377,8 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
 //    public String getDecisionProcess(float [] featureRow,List<Feature> features,
 //                                     int k, int top){
 //        List<DecisionProcess> decisions = new ArrayList<DecisionProcess>();
-//        for (int i=0;i<this.getTrees(k).size();i++){
-//            RegressionTree regressionTree = this.getTrees(k).get(i);
+//        for (int i=0;i<this.getRegressors(k).size();i++){
+//            RegressionTree regressionTree = this.getRegressors(k).get(i);
 //            DecisionProcess decisionProcess = regressionTree.getDecisionProcess(featureRow,features);
 //            decisionProcess.setTreeIndex(i);
 //            decisions.add(decisionProcess);
@@ -412,8 +442,8 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
 //     * @param k class index
 //     */
 //    private void removeFirstTree(int k){
-//        RegressionTree regressionTree = this.trees.get(k).get(0);
-//        this.trees.get(k).remove(0);
+//        RegressionTree regressionTree = this.regressors.get(k).get(0);
+//        this.regressors.get(k).remove(0);
 //
 //        //update stagedScore of class k
 //        for (int i=0;i<this.numDataPoints;i++){
