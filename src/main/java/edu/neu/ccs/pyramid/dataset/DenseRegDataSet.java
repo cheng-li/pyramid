@@ -24,21 +24,6 @@ public class DenseRegDataSet extends DenseDataSet implements RegDataSet {
         this.labels[dataPointIndex]=label;
     }
 
-    public static DenseRegDataSet loadStandard(File featureFile,
-                                                File labelFile,
-                                                String delimiter) throws Exception{
-        int[] stats = DataSetUtil.parseStandard(featureFile,labelFile,delimiter);
-        int numDataPoints = stats[0];
-        int numFeatures = stats[1];
-        System.out.println("loading data set from "+featureFile.getAbsolutePath()+
-                " and "+labelFile.getAbsolutePath());
-        System.out.println("number of data points = "+numDataPoints);
-        System.out.println("number of features = "+numFeatures);
-        DenseRegDataSet dataSet = new DenseRegDataSet(numDataPoints,numFeatures);
-        DataSetUtil.loadStandard(dataSet,featureFile,labelFile,delimiter);
-        System.out.println("data set loaded");
-        return dataSet;
-    }
 
     @Override
     public String toString() {
