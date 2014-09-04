@@ -111,9 +111,13 @@ public class RegressionTree implements Regressor, Serializable {
                 if (!node1.isLeaf()){
                     Node node2 = stack.peek();
                     if (node2 == node1.getLeftChild()){
-                        sb.append(node1.getFeatureIndex()).append("<=").append(node1.getThreshold()).append("   ");
+                        sb.append(node1.getFeatureIndex()).append("(")
+                                .append(node1.getFeatureName()).append(")")
+                                .append("<=").append(node1.getThreshold()).append("   ");
                     } else {
-                        sb.append(node1.getFeatureIndex()).append(">").append(node1.getThreshold()).append("   ");
+                        sb.append(node1.getFeatureIndex()).append("(")
+                                .append(node1.getFeatureName()).append(")").
+                                append(">").append(node1.getThreshold()).append("   ");
                     }
                 } else{
                     sb.append(": ").append(node1.getValue()).append("\n");
@@ -151,37 +155,30 @@ public class RegressionTree implements Regressor, Serializable {
 //        return sb.toString();
 //    }
 
-//    public Set<String> getSkipNgramNames(List<Feature> features){
-//        Set<String> names = new HashSet<String>();
-//        List<Integer> indices = this.getFeatureIndices();
-//        for (int i:indices){
-//            Feature ngram = features.get(i);
-//            if (((Ngram)ngram).getNumTerms()>=2){
-//                names.add(ngram.getFeatureName());
-//            }
-//        }
-//        return names;
-//    }
 
-//    public String getRootFeatureName(List<Feature> features){
-//        int featureIndex= this.root.getFeatureIndex();
-//        return features.get(featureIndex).getFeatureName();
-//    }
 
-    public int getRootFeatureIndex(){
-        return this.root.getFeatureIndex();
+
+
+
+    /**
+     * pre-order traverse
+     * http://en.wikipedia.org/wiki/Tree_traversal
+     * no duplicates
+     * @return all nodes
+     */
+    List<Node> traverse(){
+        List<Node> list = new ArrayList<>();
+        Deque<Node> deque = new ArrayDeque<>();
+        deque.addFirst(this.root);
+        while(deque.size()!=0){
+            Node visit = deque.removeFirst();
+            list.add(visit);
+            if (!visit.isLeaf()){
+                deque.addFirst(visit.getRightChild());
+                deque.addFirst(visit.getLeftChild());
+            }
+        }
+        return list;
     }
-
-    public double getRootRightOutput(){
-        return this.root.getRightChild().getValue();
-    }
-
-    public double getRootReduction(){
-        return this.root.getReduction();
-    }
-
-
-
-
 
 }

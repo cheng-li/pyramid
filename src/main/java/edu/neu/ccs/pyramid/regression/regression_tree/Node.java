@@ -23,10 +23,11 @@ class Node implements Serializable {
     private double threshold;
     private Node leftChild;
     private Node rightChild;
-    private transient double reduction;
+    private double reduction;
     private boolean leaf;
     private Node parent;
     private boolean splitable;
+    private String featureName = "unknown";
 
     /**
      * stores the indices of the data points on this node
@@ -131,6 +132,14 @@ class Node implements Serializable {
         return this;
     }
 
+    String getFeatureName() {
+        return featureName;
+    }
+
+    void setFeatureName(String featureName) {
+        this.featureName = featureName;
+    }
+
     /**
      * after split, free memory
      */
@@ -143,8 +152,11 @@ class Node implements Serializable {
         return "Node{" +
                 "value=" + value +
                 ", featureIndex=" + featureIndex +
+                ", featureName='" + featureName +
                 ", threshold=" + threshold +
+                ", reduction=" + reduction +
                 ", leaf=" + leaf +
+                ", splitable=" + splitable +
                 '}';
     }
 }

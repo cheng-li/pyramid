@@ -1,9 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
-import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureSetting;
-import edu.neu.ccs.pyramid.dataset.RegDataSet;
-import edu.neu.ccs.pyramid.dataset.SparseRegDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.feature.FeatureType;
 import org.apache.commons.lang3.time.StopWatch;
@@ -18,9 +15,7 @@ import static org.junit.Assert.*;
 public class RegTreeTrainerTest {
 
     public static void main(String[] args) throws Exception{
-//        test3();
-        test3();
-
+        test6();
     }
 
     static void test1(){
@@ -45,8 +40,8 @@ public class RegTreeTrainerTest {
     static void test2() throws Exception {
         int numLeaves = 70;
 
-        DenseRegDataSet dataSet = DenseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
-                new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
+                "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE);
 
         for (int i=0;i<dataSet.getNumFeatures();i++){
             FeatureSetting setting = new FeatureSetting();
@@ -87,8 +82,8 @@ public class RegTreeTrainerTest {
     static void test3() throws Exception {
         int numLeaves = 4;
 
-        DenseRegDataSet dataSet = DenseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
-                new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
+                "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE);
         System.out.println(dataSet.isDense());
         for (int i=0;i<dataSet.getNumFeatures();i++){
             FeatureSetting setting = new FeatureSetting();
@@ -118,7 +113,7 @@ public class RegTreeTrainerTest {
         double mseValue = MSE.mse(regressionTree, dataSet);
         System.out.println(mseValue);
         System.out.println(regressionTree.getNumLeaves());
-//        System.out.println(regressionTree);
+        System.out.println(regressionTree);
 //        System.out.println(regressionTree.getRootReduction()    );
 
     }
@@ -129,8 +124,8 @@ public class RegTreeTrainerTest {
     static void test4() throws Exception {
         int numLeaves = 4;
 
-        SparseRegDataSet dataSet = SparseRegDataSet.loadStandard(new File("/Users/chengli/Datasets/slice_location/standard/features.txt"),
-                new File("/Users/chengli/Datasets/slice_location/standard/labels.txt"), ",");
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
+                "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.RANK_SPARSE);
         System.out.println(dataSet.isDense());
         for (int i=0;i<dataSet.getNumFeatures();i++){
             FeatureSetting setting = new FeatureSetting();
@@ -214,6 +209,36 @@ public class RegTreeTrainerTest {
         System.out.println(regressionTree.getNumLeaves());
 //        System.out.println(regressionTree);
 //        System.out.println(regressionTree.getRootReduction()    );
+
+    }
+
+    /**
+     * housing
+     * @throws Exception
+     */
+    static void test6() throws Exception{
+
+        RegDataSet dataSet = TRECFormat.loadRegDataSet("/Users/chengli/Datasets/housing/trec_format/all.trec",
+                DataSetType.REG_DENSE,true);
+
+        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setActiveFeatures(activeFeatures);
+        int numLeaves = 10;
+        regTreeConfig.setMaxNumLeaves(numLeaves);
+        regTreeConfig.setMinDataPerLeaf(5);
+        regTreeConfig.setActiveDataPoints(activeDataPoints);
+
+        regTreeConfig.setNumSplitIntervals(100);
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,dataSet);
+        System.out.println(regressionTree);
+        double mseValue = MSE.mse(regressionTree, dataSet);
+        System.out.println(mseValue);
+        System.out.println(stopWatch);
+        System.out.println(RegTreeInspector.featureImportance(regressionTree));
 
     }
 

@@ -60,6 +60,7 @@ public class RegTreeTrainer {
         //parallel
         setLeavesOutputs(tree.leaves,leafOutputCalculator);
         cleanLeaves(tree.leaves);
+        normalizeReductions(tree,regTreeConfig);
         return tree;
     }
 
@@ -158,6 +159,8 @@ public class RegTreeTrainer {
         if (splitResultOptional.isPresent()){
             SplitResult splitResult = splitResultOptional.get();
             node.setFeatureIndex(splitResult.getFeatureIndex());
+            node.setFeatureName(dataSet.getFeatureColumn(splitResult.getFeatureIndex())
+            .getSetting().getFeatureName());
             node.setThreshold(splitResult.getThreshold());
             node.setReduction(splitResult.getReduction());
             node.setSplitable(true);
@@ -190,5 +193,21 @@ public class RegTreeTrainer {
     private static Optional<Node> findLeafToSplit(List<Node> leaves){
         return leaves.stream().filter(Node::isSplitable)
                 .max(Comparator.comparing(Node::getReduction));
+    }
+
+    /**
+     * does not affect split
+     * just make the numbers smaller,
+     * and make trees trained with different number of data comparable
+     * @param tree
+     * @param regTreeConfig
+     */
+    private static void normalizeReductions(RegressionTree tree, RegTreeConfig regTreeConfig){
+        int numDataPoints = regTreeConfig.getActiveDataPoints().length;
+        List<Node> nodes = tree.traverse();
+        for (Node node: nodes){
+            double oldReduction = node.getReduction();
+            node.setReduction(oldReduction/numDataPoints);
+        }
     }
 }

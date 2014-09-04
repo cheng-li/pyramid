@@ -2,6 +2,10 @@ package edu.neu.ccs.pyramid.dataset;
 
 import org.apache.mahout.math.Vector;
 
+import java.io.*;
+import java.util.Arrays;
+import java.util.regex.Pattern;
+
 /**
  * Created by chengli on 8/7/14.
  */
@@ -50,7 +54,56 @@ public class DataSetUtil {
         }
         return trimmed;
     }
-    
+
+    /**
+     *
+     * @param inputFile
+     * @param outputFile
+     * @param start inclusive, first column is 0
+     * @param end inclusive
+     */
+    public static void extractColumns(String inputFile, String outputFile,
+                                      int start, int end, String delimiter) throws IOException{
+        try(BufferedReader br = new BufferedReader(new FileReader(new File(inputFile)));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(new File(outputFile)))
+        ){
+            String line;
+            while((line = br.readLine())!=null){
+                String[] split = line.split(Pattern.quote(delimiter));
+                System.out.println(Arrays.toString(split));
+                System.out.println(split.length);
+                for (int i=start;i<=end;i++){
+                    System.out.println(i);
+                    bw.write(split[i]);
+                    if (i<end){
+                        bw.write(delimiter);
+                    }
+                }
+                bw.newLine();
+            }
+        }
+    }
+
+    public static void extractColumns(String inputFile, String outputFile,
+                                      int start, int end, Pattern pattern) throws IOException{
+        try(BufferedReader br = new BufferedReader(new FileReader(new File(inputFile)));
+            BufferedWriter bw = new BufferedWriter(new FileWriter(new File(outputFile)))
+        ){
+            String line;
+            while((line = br.readLine())!=null){
+                //remove leading spaces
+                String[] split = line.trim().split(pattern.pattern());
+                for (int i=start;i<=end;i++){
+                    bw.write(split[i]);
+                    if (i<end){
+                        bw.write(",");
+                    }
+                }
+                bw.newLine();
+            }
+        }
+    }
+
 
 
 
