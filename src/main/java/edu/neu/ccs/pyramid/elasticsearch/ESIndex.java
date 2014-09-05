@@ -34,64 +34,32 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 public class ESIndex {
     private static final Logger logger = LogManager.getLogger();
 
-    private Client client;
-    private Node node;
-    private String indexName;
-    private int numDocs;
-    private String labelField = "label";
-    private String extLabelField = "real_label";
-    private String type = "document";
+    Client client;
+    Node node;
+    String indexName;
+    int numDocs;
+    String labelField;
+    String extLabelField;
+    String type;
+    String clientType;
+    String clusterName;
 
-
-    public ESIndex(String indexName,String clusterName) throws Exception{
-//        Settings settings = ImmutableSettings.settingsBuilder()
-//                .put("http.enabled", "false")
-//                .put("transport.tcp.port", "9300-9400")
-//                .put("discovery.zen.ping.multicast.enabled", "false")
-//                .put("discovery.zen.ping.unicast.hosts", "fiji11:9300").build();
-
-        this.indexName = indexName;
-        /**
-         * don't hold data
-         */
-        Node node = nodeBuilder().client(true).
-//                settings(settings).
-        clusterName(clusterName).node();
-        this.node = node;
-        this.client = node.client();
-        this.numDocs = fetchNumDocs();
-    }
-
-    /**
-     * use default cluster name
-     * @param indexName
-     * @throws Exception
-     */
-    public ESIndex(String indexName) throws Exception{
-        this(indexName,"elasticsearch");
-    }
-
-    public ESIndex setLabelField(String labelField) {
-        this.labelField = labelField;
-        return this;
-    }
-
-    public ESIndex setExtLabelField(String extLabelField) {
-        this.extLabelField = extLabelField;
-        return this;
-    }
-
-    public ESIndex setType(String type) {
-        this.type = type;
-        return this;
-    }
 
     public int getNumDocs() {
         return numDocs;
     }
 
+    public Client getClient() {
+        return client;
+    }
 
+    public String getIndexName() {
+        return indexName;
+    }
 
+    public String getLabelField() {
+        return labelField;
+    }
 
     /**
      *
@@ -487,7 +455,9 @@ public class ESIndex {
 
     public void close() {
         this.client.close();
-        this.node.close();
+        if (this.clientType.equals("node")){
+            this.node.close();
+        }
     }
 
 
@@ -505,6 +475,12 @@ public class ESIndex {
 
 
 
+
+//    protected TermFilterResponsePOJO parseTermFilterResponse(String termFilterResponse) throws Exception {
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        TermFilterResponsePOJO termFilterResponsePOJO = objectMapper.readValue(termFilterResponse,TermFilterResponsePOJO.class);
+//        return termFilterResponsePOJO;
+//    }
 
     protected String getTermVectorResponse(String type, String field, String id) throws Exception {
         TermVectorResponse response = client.prepareTermVector(indexName, type, id)
@@ -524,6 +500,13 @@ public class ESIndex {
                 setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
         //todo safe?
         return (int)response.getHits().totalHits();
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        response.toXContent(builder, ToXContent.EMPTY_PARAMS);
+//        builder.endObject();
+//        String termFilterResponse= builder.string();
+//        TermFilterResponsePOJO termFilterResponsePOJO =parseTermFilterResponse(termFilterResponse);
+//        return termFilterResponsePOJO.getNumberHits();
 
     }
 
@@ -543,6 +526,139 @@ public class ESIndex {
         return response.getField(field).getValue();
     }
 
+
+    public SearchResponse matchPhrase(String field, String phrase, int slop){
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.matchPhraseQuery(field, phrase).slop(slop)).
+                execute().actionGet();
+        return response;
+
+//        debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
+//        builder.endObject();
+//        System.out.println(builder.string());
+    }
+
+
+    public SearchResponse matchPhrase(String field, String phrase,
+                                      String[] ids, int slop) throws IOException {
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder("document");
+        idsFilterBuilder.addIds(ids);
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(field, phrase).slop(slop),
+                        idsFilterBuilder))
+                .execute().actionGet();
+
+
+//        debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
+//        builder.endObject();
+//        System.out.println(builder.string());
+
+        return response;
+    }
+
+
+    /**
+     * simple match
+     * @param field
+     * @param phrase
+     * @param operator and /or
+     * @return
+     */
+    public SearchResponse match(String field, String phrase, MatchQueryBuilder.Operator operator){
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.matchQuery(field, phrase).operator(operator)).
+                execute().actionGet();
+        return response;
+
+//        debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
+//        builder.endObject();
+//        System.out.println(builder.string());
+    }
+
+    public SearchResponse matchPhraseForClass(String bodyField, String phrase,
+                                              int slop,
+                                              String labelField, int label){
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(bodyField,phrase).slop(slop),
+                        FilterBuilders.termFilter(labelField,label))).
+                execute().actionGet();
+
+        //        debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
+//        builder.endObject();
+//        System.out.println(builder.string());
+
+        return response;
+    }
+
+    public SearchResponse matchForClass(String bodyField, String phrase,
+                                        MatchQueryBuilder.Operator operator,
+                                        String labelField, int label){
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(bodyField,phrase).operator(operator),
+                        FilterBuilders.termFilter(labelField,label))).
+                execute().actionGet();
+
+        //        debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
+//        builder.endObject();
+//        System.out.println(builder.string());
+
+        return response;
+    }
+
+    public long phraseDF(String field, String phrase, int slop){
+        SearchResponse response = this.matchPhrase(field,phrase,slop);
+        return response.getHits().getTotalHits();
+
+    }
+
+    public long phraseDFForClass(String bodyField, String phrase,
+                                 int slop,
+                                 String labelField, int label) {
+        SearchResponse response = this.matchPhraseForClass(bodyField,phrase,
+                slop,labelField,label);
+        return response.getHits().getTotalHits();
+    }
+
+    public long DF(String field, String phrase, MatchQueryBuilder.Operator operator){
+        SearchResponse response = this.match(field,phrase,operator);
+        return response.getHits().getTotalHits();
+
+    }
+
+    public long DFForClass(String bodyField, String phrase,
+                           MatchQueryBuilder.Operator operator,
+                           String labelField, int label) {
+        SearchResponse response = this.matchForClass(bodyField,phrase,operator,labelField,label);
+        return response.getHits().getTotalHits();
+    }
 
     //=================old implementations========================
 
@@ -730,4 +846,5 @@ public class ESIndex {
 //        }
 //        return list;
 //    }
+
 }
