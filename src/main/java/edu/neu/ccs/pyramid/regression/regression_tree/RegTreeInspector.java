@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import edu.neu.ccs.pyramid.util.Pair;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,17 +11,24 @@ import java.util.Map;
  */
 public class RegTreeInspector {
 
-    public static Map<Integer, Double> featureImportance(RegressionTree tree){
-        Map<Integer, Double> map = new HashMap<>();
+
+    /**
+     * pair contains feature name and reduction
+     * @param tree
+     * @return
+     */
+    public static Map<Integer, Pair<String,Double>> featureImportance(RegressionTree tree){
+        Map<Integer, Pair<String,Double>> map = new HashMap<>();
         List<Node> nodes = tree.traverse();
         nodes.stream().filter(node -> !node.isLeaf())
                 .forEach(node -> {
-            int featureIndex = node.getFeatureIndex();
-            double reduction = node.getReduction();
-            double oldValue = map.getOrDefault(featureIndex, 0.0);
-            double newValue = oldValue + reduction;
-            map.put(featureIndex, newValue);
-        });
+                    int featureIndex = node.getFeatureIndex();
+                    String featureName = node.getFeatureName();
+                    double reduction = node.getReduction();
+                    Pair<String,Double> oldPair = map.getOrDefault(featureIndex, new Pair<>(featureName,0.0));
+                    Pair<String, Double> newPair = new Pair<>(featureName,oldPair.getSecond()+reduction);
+                    map.put(featureIndex, newPair);
+                });
         return map;
     }
 }
