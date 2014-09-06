@@ -17,7 +17,6 @@ public class FeatureSetting implements Serializable{
     }
 
 
-
     public FeatureType getFeatureType() {
         return featureType;
     }

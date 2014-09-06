@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public class Formatter {
     public static void main(String[] args) throws Exception{
-
+        saveTrainData();
         saveTestData();
 
     }
@@ -35,13 +35,14 @@ public class Formatter {
 
     static void saveTrainData()throws Exception{
         List<String> featureNames = loadFeatures();
-        ClfDataSet trainData = StandardFormat.loadClfDataSet("/Users/chengli/Datasets/spam/train_data.txt",
+        ClfDataSet data = StandardFormat.loadClfDataSet("/Users/chengli/Datasets/spam/train_data.txt",
                 "/Users/chengli/Datasets/spam/train_label.txt", ",", DataSetType.CLF_DENSE);
 
-        for (int i=0;i<57;i++){
-            trainData.putFeatureSetting(i, new FeatureSetting().setFeatureName(featureNames.get(i)));
-        }
-        TRECFormat.save(trainData,"/Users/chengli/tmp/train.trec");
+        DataSetUtil.setFeatureNames(data,featureNames);
+        String[] extLabels = {"non-spam","spam"};
+
+        DataSetUtil.setExtLabels(data,extLabels);
+        TRECFormat.save(data,"/Users/chengli/tmp/train.trec");
     }
 
     static void saveTestData()throws Exception{
@@ -49,9 +50,10 @@ public class Formatter {
         ClfDataSet data = StandardFormat.loadClfDataSet("/Users/chengli/Datasets/spam/test_data.txt",
                 "/Users/chengli/Datasets/spam/test_label.txt", ",", DataSetType.CLF_DENSE);
 
-        for (int i=0;i<57;i++){
-            data.putFeatureSetting(i, new FeatureSetting().setFeatureName(featureNames.get(i)));
-        }
+        DataSetUtil.setFeatureNames(data,featureNames);
+        String[] extLabels = {"non-spam","spam"};
+
+        DataSetUtil.setExtLabels(data,extLabels);
         TRECFormat.save(data,"/Users/chengli/tmp/test.trec");
     }
 }

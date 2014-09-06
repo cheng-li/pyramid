@@ -44,9 +44,7 @@ public class RegTreeTrainerTest {
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE);
 
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            FeatureSetting setting = new FeatureSetting();
-            setting.setFeatureType(FeatureType.NUMERICAL);
-            dataSet.putFeatureSetting(i,setting);
+            dataSet.getFeatureColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
         }
 
 
@@ -86,9 +84,7 @@ public class RegTreeTrainerTest {
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE);
         System.out.println(dataSet.isDense());
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            FeatureSetting setting = new FeatureSetting();
-            setting.setFeatureType(FeatureType.NUMERICAL);
-            dataSet.putFeatureSetting(i,setting);
+            dataSet.getFeatureColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
         }
 
 
@@ -128,9 +124,7 @@ public class RegTreeTrainerTest {
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.RANK_SPARSE);
         System.out.println(dataSet.isDense());
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            FeatureSetting setting = new FeatureSetting();
-            setting.setFeatureType(FeatureType.NUMERICAL);
-            dataSet.putFeatureSetting(i,setting);
+            dataSet.getFeatureColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
         }
 
 
@@ -180,9 +174,7 @@ public class RegTreeTrainerTest {
 
 
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            FeatureSetting setting = new FeatureSetting();
-            setting.setFeatureType(FeatureType.NUMERICAL);
-            dataSet.putFeatureSetting(i,setting);
+            dataSet.getFeatureColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
         }
 
 

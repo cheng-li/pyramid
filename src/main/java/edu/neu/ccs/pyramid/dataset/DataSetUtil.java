@@ -4,7 +4,9 @@ import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 8/7/14.
@@ -47,11 +49,13 @@ public class DataSetUtil {
         }
         //just copy settings
         for (int i=0;i<trimmed.getNumDataPoints();i++){
-            trimmed.putDataSetting(i,clfDataSet.getFeatureRow(i).getSetting());
+            trimmed.getFeatureRow(i).putSetting(clfDataSet.getFeatureRow(i).getSetting());
         }
         for (int j=0;j<numFeatures;j++){
-            trimmed.putFeatureSetting(j,clfDataSet.getFeatureColumn(j).getSetting());
+            trimmed.getFeatureColumn(j).putSetting(clfDataSet.getFeatureColumn(j).getSetting());
         }
+        //todo double-check
+        trimmed.putSetting(clfDataSet.getSetting());
         return trimmed;
     }
 
@@ -104,6 +108,47 @@ public class DataSetUtil {
         }
     }
 
+    /**
+     *
+     * @param dataSet
+     * @param extLabels in order
+     */
+    public static void setExtLabels(ClfDataSet dataSet, List<String> extLabels){
+        int[] labels = dataSet.getLabels();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataSet.getFeatureRow(i).getSetting()
+                    .setExtLabel(extLabels.get(labels[i]));
+        }
+        dataSet.getSetting().setLabelMap(extLabels.toArray(new String[extLabels.size()]));
+    }
+
+    /**
+     *
+     * @param dataSet
+     * @param extLabels in order
+     */
+    public static void setExtLabels(ClfDataSet dataSet, String[] extLabels){
+        int[] labels = dataSet.getLabels();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataSet.getFeatureRow(i).getSetting()
+                    .setExtLabel(extLabels[labels[i]]);
+        }
+        dataSet.getSetting().setLabelMap(extLabels);
+    }
+
+    public static void setFeatureNames(DataSet dataSet, List<String> featureNames){
+        if (featureNames.size()!=dataSet.getNumFeatures()){
+            throw new IllegalArgumentException("featureNames.size()!=dataSet.getNumFeatures()");
+        }
+        for (int j=0;j<dataSet.getNumFeatures();j++){
+            dataSet.getFeatureColumn(j).getSetting().setFeatureName(featureNames.get(j));
+        }
+    }
+
+    public static void setFeatureNames(DataSet dataSet, String[] featureNames){
+        List<String> list = Arrays.stream(featureNames).collect(Collectors.toList());
+        setFeatureNames(dataSet,list);
+    }
 
 
 

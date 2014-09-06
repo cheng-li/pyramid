@@ -26,14 +26,13 @@ public class ConfusionMatrix {
 
     public ConfusionMatrix(int numClasses, Classifier classifier, ClfDataSet dataSet) {
         this(numClasses,dataSet.getLabels(),classifier.predict(dataSet));
+        this.labelMap = dataSet.getSetting().getLabelMap();
     }
 
-    public void setLabelMap(Map<Integer, String> labelMap) {
-        this.labelMap = labelMap;
-    }
 
-    @Override
-    public String toString() {
+
+
+    public String printWithIntLabels() {
         StringBuilder sb = new StringBuilder();
         sb.append("\t");
         for (int k=0;k<this.numClasses;k++){
@@ -55,15 +54,14 @@ public class ConfusionMatrix {
      * use real label
      * @return
      */
-    public String prettyPrint() {
+    public String printWithExtLabels() {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.labelMap.toString()).append("\n");
 
         sb.append("\n");
         for (int i=0;i<this.numClasses;i++){
-            sb.append(i).append("=>").append("\t");
+            sb.append(this.labelMap.get(i)).append("=>").append("\t");
             for (int j=0;j<this.numClasses;j++){
-                sb.append(j).append(":").append(matrix[i][j]).append("\t");
+                sb.append(this.labelMap.get(j)).append(":").append(matrix[i][j]).append("\t");
             }
             sb.append("\n");
         }

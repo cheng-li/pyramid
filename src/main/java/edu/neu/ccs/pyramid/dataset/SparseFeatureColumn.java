@@ -31,4 +31,9 @@ class SparseFeatureColumn implements FeatureColumn{
     public FeatureSetting getSetting() {
         return this.setting;
     }
+
+    @Override
+    public void putSetting(FeatureSetting setting) {
+        this.setting = setting;
+    }
 }

@@ -37,15 +37,6 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
         this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
     }
 
-    @Override
-    public void putDataSetting(int dataPointIndex, DataSetting setting) {
-        this.featureRows[dataPointIndex].setting = setting;
-    }
-
-    @Override
-    public void putFeatureSetting(int featureIndex, FeatureSetting setting) {
-        this.featureColumns[featureIndex].setting = setting;
-    }
 
     @Override
     public boolean isDense() {

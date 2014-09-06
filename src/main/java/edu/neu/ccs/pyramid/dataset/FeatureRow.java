@@ -9,6 +9,7 @@ public interface FeatureRow {
     int getDataPointIndex();
     Vector getVector();
     DataSetting getSetting();
+    void putSetting(DataSetting setting);
     default String print(){
         StringBuilder sb = new StringBuilder();
         sb.append("data point index = ").append(getDataPointIndex()).append("\n");

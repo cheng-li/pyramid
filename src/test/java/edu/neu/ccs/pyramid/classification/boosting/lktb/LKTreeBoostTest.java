@@ -113,7 +113,7 @@ public class LKTreeBoostTest {
         System.out.println(accuracy);
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(2,lkTreeBoost,dataSet);
         System.out.println("confusion matrix:");
-        System.out.println(confusionMatrix);
+        System.out.println(confusionMatrix.printWithExtLabels());
         System.out.println("top features for class 0");
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));

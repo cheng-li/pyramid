@@ -32,4 +32,9 @@ class SparseFeatureRow implements FeatureRow{
     public DataSetting getSetting() {
         return setting;
     }
+
+    @Override
+    public void putSetting(DataSetting setting) {
+        this.setting = setting;
+    }
 }

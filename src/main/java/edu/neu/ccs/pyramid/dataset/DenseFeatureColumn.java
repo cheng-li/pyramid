@@ -31,4 +31,9 @@ class DenseFeatureColumn implements FeatureColumn{
     public FeatureSetting getSetting() {
         return setting;
     }
+
+    @Override
+    public void putSetting(FeatureSetting setting) {
+        this.setting = setting;
+    }
 }

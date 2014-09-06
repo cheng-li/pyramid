@@ -7,11 +7,23 @@ package edu.neu.ccs.pyramid.dataset;
 abstract class AbstractDataSet implements DataSet{
     protected int numDataPoints;
     protected int numFeatures;
+    protected DataSetSetting settings;
 
 
     AbstractDataSet(int numDataPoints, int numFeatures) {
         this.numDataPoints = numDataPoints;
         this.numFeatures = numFeatures;
+        this.settings = new DataSetSetting();
+    }
+
+    @Override
+    public DataSetSetting getSetting() {
+        return this.settings;
+    }
+
+    @Override
+    public void putSetting(DataSetSetting setting) {
+        this.settings = setting;
     }
 
     @Override
@@ -33,12 +45,6 @@ abstract class AbstractDataSet implements DataSet{
     @Override
     public abstract void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue);
 
-
-    @Override
-    public abstract void putDataSetting(int dataPointIndex, DataSetting setting);
-
-    @Override
-    public abstract void putFeatureSetting(int featureIndex, FeatureSetting setting);
 
     @Override
     public String toString() {

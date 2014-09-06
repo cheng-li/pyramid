@@ -9,6 +9,7 @@ public interface FeatureColumn {
     int getFeatureIndex();
     Vector getVector();
     FeatureSetting getSetting();
+    void putSetting(FeatureSetting setting);
     default String print(){
         StringBuilder sb = new StringBuilder();
         sb.append("feature index = ").append(getFeatureIndex()).append("\n");

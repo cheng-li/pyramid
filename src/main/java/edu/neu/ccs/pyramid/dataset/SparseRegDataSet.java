@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import java.io.File;
 import java.util.Arrays;
 
 /**

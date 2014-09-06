@@ -44,9 +44,7 @@ public class Formatter {
         RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/housing/standard_format/features.txt",
                 "/Users/chengli/Datasets/housing/standard_format/labels.txt", ",", DataSetType.REG_DENSE);
         List<String> names = loadFeatures();
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.putFeatureSetting(i,new FeatureSetting().setFeatureName(names.get(i)));
-        }
+        DataSetUtil.setFeatureNames(dataSet,names);
         TRECFormat.save(dataSet,"/Users/chengli/Datasets/housing/trec_format/all.trec");
     }
 
