@@ -1,9 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import edu.neu.ccs.pyramid.feature.FeatureType;
-
-import static org.junit.Assert.*;
-
 public class TRECFormatTest {
     public static void main(String[] args) throws Exception{
         test1();

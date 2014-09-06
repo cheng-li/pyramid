@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import edu.neu.ccs.pyramid.feature.FeatureType;
-
 import java.io.Serializable;
 
 /**

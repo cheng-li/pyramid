@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.feature.FeatureType;
+import edu.neu.ccs.pyramid.dataset.FeatureType;
 
 
 import java.util.Arrays;

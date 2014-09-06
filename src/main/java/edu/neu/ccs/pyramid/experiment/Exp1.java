@@ -2,11 +2,10 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureSetting;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.SparseRegDataSet;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.feature.FeatureType;
+import edu.neu.ccs.pyramid.dataset.FeatureType;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;

@@ -2,15 +2,12 @@ package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.feature.FeatureType;
+import edu.neu.ccs.pyramid.dataset.FeatureType;
 import org.apache.commons.lang3.time.StopWatch;
 
-import java.io.File;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.stream.IntStream;
-
-import static org.junit.Assert.*;
 
 public class RegTreeTrainerTest {
 

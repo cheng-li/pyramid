@@ -18,9 +18,10 @@ public class ESIndexBuilder {
     private String indexName = "unknown_index";
     private String labelField = "label";
     private String extLabelField = "real_label";
-    private String type = "document";
+    private String documentType = "document";
     private String clientType = "transport";
     private String clusterName = "elasticsearch";
+    private String bodyField = "body";
     private List<String> hosts = new ArrayList<>();
     private List<Integer> ports = new ArrayList<>();
 
@@ -43,8 +44,8 @@ public class ESIndexBuilder {
         return this;
     }
 
-    public ESIndexBuilder setType(String type) {
-        this.type = type;
+    public ESIndexBuilder setDocumentType(String documentType) {
+        this.documentType = documentType;
         return this;
     }
 
@@ -71,6 +72,11 @@ public class ESIndexBuilder {
         return this;
     }
 
+    public ESIndexBuilder setBodyField(String bodyField) {
+        this.bodyField = bodyField;
+        return this;
+    }
+
     public ESIndex build() throws Exception {
         boolean legal = (clientType.equals("node"))||(clientType.equals("transport"));
         if (!legal){
@@ -80,9 +86,10 @@ public class ESIndexBuilder {
         esIndex.indexName = indexName;
         esIndex.labelField = labelField;
         esIndex.extLabelField = extLabelField;
-        esIndex.type = type;
+        esIndex.documentType = documentType;
         esIndex.clientType = clientType;
         esIndex.clusterName = clusterName;
+        esIndex.bodyField = bodyField;
 
         if (clientType.equals("node")){
             /**

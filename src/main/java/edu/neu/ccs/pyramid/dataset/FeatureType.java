@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.feature;
+package edu.neu.ccs.pyramid.dataset;
 
 /**
  * Created by chengli on 8/6/14.
