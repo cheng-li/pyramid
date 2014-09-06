@@ -3,12 +3,20 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
+import edu.neu.ccs.pyramid.util.DirWalker;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 9/5/14.
- * follow golden_features exp57
+ * follow golden_features exp61
+ * check manually extracted ngrams
  */
 public class Exp2 {
     public static void main(String[] args) throws Exception{
@@ -20,6 +28,17 @@ public class Exp2 {
         System.out.println(config);
 
         ESIndex index = loadIndex(config);
+        String dir = config.getString("ngram_folder");
+        List<File> files = DirWalker.getFiles(dir)
+                .stream().filter(file -> file.getName().endsWith(".txt"))
+                .collect(Collectors.toList());
+        System.out.println(files);
+        files.sort(Comparator.comparing(file ->
+                Integer.parseInt(file.getName().split(Pattern.quote("."))[0])));
+
+        for (File file: files){
+            processOneFile(file,index,config);
+        }
         System.out.println(index.getNumDocs());
         index.close();
 
@@ -40,6 +59,70 @@ public class Exp2 {
         }
         ESIndex index = builder.build();
         return index;
+    }
+
+    public static void processOneFile(File file, ESIndex index, Config config ) throws Exception{
+        int slop = config.getInt("slop");
+        String docid = file.getName().split(Pattern.quote("."))[0];
+        int label = index.getLabel(docid);
+        String extLabel = index.getExtLabel(docid);
+        System.out.println("==============================");
+        System.out.println("document "+docid+", "+"class = "+extLabel);
+        List<String> phrases = new ArrayList<>();
+        try(BufferedReader br = new BufferedReader(new FileReader(file))){
+            String line;
+            while((line=br.readLine())!=null){
+                phrases.add(line);
+            }
+        }
+
+        Set<String> terms = new HashSet<>();
+        for (String phrase: phrases){
+            String[] split = phrase.split(" ");
+            for (String term: split){
+                terms.add(term);
+            }
+        }
+
+
+        for (String phrase:phrases){
+            StringBuilder sb = new StringBuilder();
+            sb.append(phrase);
+            int align = 35;
+            while(sb.length()<align){
+                sb.append(" ");
+            }
+            sb.append("phrase matches with slop 0 = ").append(index.phraseDFForClass("body",phrase,0,"label",label))
+                    .append("/").append(index.phraseDF("body",phrase,0));
+            align += 40;
+            while(sb.length()<align){
+                sb.append(" ");
+            }
+            sb.append("phrase matches with slop ").append(slop).append(" = ")
+                    .append(index.phraseDFForClass("body",phrase,slop,"label",label)).append("/")
+                    .append(index.phraseDF("body",phrase,slop));
+            align += 40;
+            while(sb.length()<align){
+                sb.append(" ");
+            }
+            sb.append("AND matches = ").append(index.DFForClass("body",phrase,MatchQueryBuilder.Operator.AND,"label",label))
+                    .append("/").append(index.DF("body",phrase, MatchQueryBuilder.Operator.AND));
+            System.out.println(sb.toString());
+        }
+        System.out.println("---------------");
+        for (String phrase:terms){
+            StringBuilder sb = new StringBuilder();
+            sb.append(phrase);
+            int align = 35;
+            while(sb.length()<align){
+                sb.append(" ");
+            }
+            sb.append("matches = ").append(index.DFForClass("body",phrase,MatchQueryBuilder.Operator.AND,"label",label))
+                    .append("/").append(index.DF("body",phrase, MatchQueryBuilder.Operator.AND));
+            System.out.println(sb.toString());
+        }
+
+
     }
 
 }
