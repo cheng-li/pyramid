@@ -38,7 +38,9 @@ public class RegressionTree implements Regressor, Serializable {
     }
 
 
-
+    public Node getRoot() {
+        return root;
+    }
 
     public double predict(FeatureRow featureRow){
         return predict(featureRow.getVector());

@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by chengli on 8/6/14.
  */
-class Node implements Serializable {
+public class Node implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -63,7 +63,7 @@ class Node implements Serializable {
         return this;
     }
 
-    double getReduction() {
+    public double getReduction() {
         return reduction;
     }
 

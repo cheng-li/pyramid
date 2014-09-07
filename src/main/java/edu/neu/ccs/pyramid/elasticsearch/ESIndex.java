@@ -55,6 +55,22 @@ public class ESIndex {
         return labelField;
     }
 
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public String getClientType() {
+        return clientType;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getBodyField() {
+        return bodyField;
+    }
+
     /**
      *
      * @return
@@ -368,6 +384,19 @@ public class ESIndex {
 //        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
 //        builder.endObject();
 //        System.out.println(builder.string());
+    }
+
+    public SearchResponse match(String field, String phrase, String[] ids,
+                                MatchQueryBuilder.Operator operator){
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+        idsFilterBuilder.addIds(ids);
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(field, phrase).operator(operator),
+                        idsFilterBuilder)).
+                execute().actionGet();
+        return response;
     }
 
     public SearchResponse matchPhraseForClass(String bodyField, String phrase,
