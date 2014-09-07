@@ -296,11 +296,14 @@ public class ESIndex {
 
     protected int fetchNumDocs() throws Exception{
         //todo cast saft?
-        return (int)client.admin().indices().prepareStats(this.indexName)
-                .get().getIndex(this.indexName).getTotal().getDocs().getCount();
-//        SearchResponse response = client.prepareSearch(indexName).setSize(10000000).
-//                addField("").
-//                setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
+        //todo  this admin method seems buggy!
+//        return (int)client.admin().indices().prepareStats(this.indexName)
+//                .get().getIndex(this.indexName).getTotal().getDocs().getCount();
+        SearchResponse response = client.prepareSearch(indexName).setSize(10000000).
+                addField("").
+                setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
+        //todo safe?
+        return (int)response.getHits().totalHits();
     }
 
     private Object getField(String id, String field){

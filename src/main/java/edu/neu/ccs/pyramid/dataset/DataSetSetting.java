@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +14,7 @@ public class DataSetSetting implements Serializable{
     private static final long serialVersionUID = 1L;
 
     private Map<Integer, String> labelMap;
+    private IdTranslator idTranslator;
 
     public Map<Integer, String> getLabelMap() {
         return labelMap;
@@ -26,5 +29,18 @@ public class DataSetSetting implements Serializable{
         for (int i=0;i<extLabels.length;i++){
             this.labelMap.put(i,extLabels[i]);
         }
+    }
+
+
+    public IdTranslator getIdTranslator() {
+        return idTranslator;
+    }
+
+    /**
+     * should use the utility method instead
+     * @param idTranslator
+     */
+    void setIdTranslator(IdTranslator idTranslator) {
+        this.idTranslator = idTranslator;
     }
 }

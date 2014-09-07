@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test5();
+        test4();
 
     }
 
@@ -34,6 +34,7 @@ public class ESIndexTest {
                 .build();
         System.out.println(index.getLabel("0"));
         System.out.println(index.getExtLabel("0"));
+        System.out.println(index.getStringField("0","split"));
 
         index.close();
     }

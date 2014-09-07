@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -55,6 +56,7 @@ public class DataSetUtil {
             trimmed.getFeatureColumn(j).putSetting(clfDataSet.getFeatureColumn(j).getSetting());
         }
         //todo double-check
+        //todo: something like featuremappers
         trimmed.putSetting(clfDataSet.getSetting());
         return trimmed;
     }
@@ -150,6 +152,11 @@ public class DataSetUtil {
         setFeatureNames(dataSet,list);
     }
 
-
+    public static void setIdTranslator(DataSet dataSet, IdTranslator idTranslator){
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataSet.getFeatureRow(i).getSetting().setExtId(idTranslator.toIndexId(i));
+        }
+        dataSet.getSetting().setIdTranslator(idTranslator);
+    }
 
 }
