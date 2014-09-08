@@ -31,8 +31,14 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
         return this.featureRows[dataPointIndex];
     }
 
+    /**
+     * must be synchronized, otherwise may get ArrayIndexOutOfBoundsException
+     * @param dataPointIndex
+     * @param featureIndex
+     * @param featureValue
+     */
     @Override
-    public void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
+    public synchronized void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
         this.featureRows[dataPointIndex].getVector().set(featureIndex,featureValue);
         this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
     }

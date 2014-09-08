@@ -1,43 +1,56 @@
-package edu.neu.ccs.pyramid.elasticsearch;
+package edu.neu.ccs.pyramid.dataset;
 
 import java.io.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * a one to one mapping between int ids and ext ids
+ * extids can be indexIds
+ * duplicate ids are not allowed
+ * for duplicate extids, should just save them as extids in dataset, cannot be translated back
  * Created by chengli on 8/20/14.
  */
 public class IdTranslator implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Map<Integer,String> algorithmToIndex;
-    private Map<String, Integer> indexToAlgorithm;
+    private Map<Integer,String> intToExt;
+    private Map<String, Integer> extToInt;
 
     public IdTranslator() {
-        algorithmToIndex = new ConcurrentHashMap<>();
-        indexToAlgorithm = new ConcurrentHashMap<>();
+        intToExt = new ConcurrentHashMap<>();
+        extToInt = new ConcurrentHashMap<>();
     }
 
     public int numData(){
-        return algorithmToIndex.size();
+        return intToExt.size();
     }
 
-    public String[] dataIndexIds(){
-
-        return indexToAlgorithm.keySet().toArray(new String[0]);
-
+    public String[] getAllExtIds(){
+        return extToInt.keySet().toArray(new String[0]);
     }
 
-    public void addData(String dataIndexId, int dataAlgorithmId){
-        algorithmToIndex.put(dataAlgorithmId,dataIndexId);
-        indexToAlgorithm.put(dataIndexId,dataAlgorithmId);
+    /**
+     * assume extIds are different
+     * @param extId
+     * @param intId
+     */
+    public void addData(int intId, String extId){
+        if (intToExt.containsKey(intId)){
+            throw new IllegalArgumentException(intId+"already exists");
+        }
+        if (extToInt.containsKey(extId)){
+            throw new IllegalArgumentException(extId+"already exists");
+        }
+        intToExt.put(intId, extId);
+        extToInt.put(extId, intId);
     }
 
-    public int toAlgorithmId(String dataIndexId){
-        return indexToAlgorithm.get(dataIndexId);
+    public int toIntId(String extId){
+        return extToInt.get(extId);
     }
 
-    public String toIndexId(int dataAlgorithmId){
-        return algorithmToIndex.get(dataAlgorithmId);
+    public String toExtId(int intId){
+        return intToExt.get(intId);
     }
 
     public void serialize(File file) throws Exception{

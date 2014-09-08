@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 
 public class SparseDataSetTest {
     public static void main(String[] args) {
-        test1();
+        test5();
 //        test2();
 //        test3();
 //        test4();

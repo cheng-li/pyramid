@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
+import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
@@ -83,7 +83,7 @@ public class TfidfExtractor {
         //we don't union sets as we need to combine stats
         List<Set<TermStat>> termStatSetList = dataPoints.parallelStream()
                 .map(dataPoint ->
-                {String indexId = idTranslator.toIndexId(dataPoint);
+                {String indexId = idTranslator.toExtId(dataPoint);
                     Set<TermStat> termStats = null;
                     try {
                         termStats = index.getTermStats(indexId);

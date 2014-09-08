@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureMappers;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -15,32 +15,54 @@ public class DataSetSetting implements Serializable{
 
     private Map<Integer, String> labelMap;
     private IdTranslator idTranslator;
+    private FeatureMappers featureMappers;
 
     public Map<Integer, String> getLabelMap() {
         return labelMap;
     }
 
-    public void setLabelMap(Map<Integer, String> labelMap) {
+    public IdTranslator getIdTranslator() {
+        return idTranslator;
+    }
+
+    public FeatureMappers getFeatureMappers() {
+        return featureMappers;
+    }
+
+    /**
+     * just for ClfDataSet
+     * users should use the utility method
+     * @param labelMap
+     */
+    void setLabelMap(Map<Integer, String> labelMap) {
         this.labelMap = labelMap;
     }
 
-    public void setLabelMap(String[] extLabels){
+    /***
+     * just for ClfDataSet
+     * users should use the utility method
+     * @param extLabels
+     */
+    void setLabelMap(String[] extLabels){
         this.labelMap = new HashMap<>();
         for (int i=0;i<extLabels.length;i++){
             this.labelMap.put(i,extLabels[i]);
         }
     }
 
-
-    public IdTranslator getIdTranslator() {
-        return idTranslator;
-    }
-
     /**
-     * should use the utility method instead
+     * users should use the utility method instead
      * @param idTranslator
      */
     void setIdTranslator(IdTranslator idTranslator) {
         this.idTranslator = idTranslator;
+    }
+
+    /**
+     * users should use the utility method instead
+     * @param featureMappers
+     */
+    void setFeatureMappers(FeatureMappers featureMappers) {
+        this.featureMappers = featureMappers;
     }
 }

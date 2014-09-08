@@ -3,7 +3,7 @@ package edu.neu.ccs.pyramid.feature_extraction;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
+import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
@@ -118,7 +118,7 @@ public class TfidfSplitExtractor {
         //we don't union sets as we need to combine stats
         List<Set<TermStat>> termStatSetList = dataPoints.parallelStream()
                 .map(dataPoint ->
-                {String indexId = idTranslator.toIndexId(dataPoint);
+                {String indexId = idTranslator.toExtId(dataPoint);
                     Set<TermStat> termStats = null;
                     try {
                         termStats = index.getTermStats(indexId);
@@ -168,7 +168,7 @@ public class TfidfSplitExtractor {
                                      List<Double> residuals){
         //translate once
         String[] validationIndexIds = validationSet.parallelStream()
-                .map(this.idTranslator::toIndexId)
+                .map(this.idTranslator::toExtId)
                 .toArray(String[]::new);
 
         // this is stupid
@@ -207,7 +207,7 @@ public class TfidfSplitExtractor {
             matchingScores.put(indexId,matchingScore);
         }
         for (int i=0;i<numDataPoints;i++){
-            double value = matchingScores.getOrDefault(validationSet[i],0f);
+            double value = matchingScores.getOrDefault(validationSet[i], 0f);
             dataSet.setFeatureValue(i,0,value);
         }
 

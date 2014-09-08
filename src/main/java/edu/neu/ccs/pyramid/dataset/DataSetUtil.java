@@ -1,11 +1,12 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureMappers;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -138,6 +139,15 @@ public class DataSetUtil {
         dataSet.getSetting().setLabelMap(extLabels);
     }
 
+    public static void setExtLabels(ClfDataSet dataSet, Map<Integer,String> intToExtLabel){
+        int[] labels = dataSet.getLabels();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataSet.getFeatureRow(i).getSetting()
+                    .setExtLabel(intToExtLabel.get(labels[i]));
+        }
+        dataSet.getSetting().setLabelMap(intToExtLabel);
+    }
+
     public static void setFeatureNames(DataSet dataSet, List<String> featureNames){
         if (featureNames.size()!=dataSet.getNumFeatures()){
             throw new IllegalArgumentException("featureNames.size()!=dataSet.getNumFeatures()");
@@ -152,9 +162,28 @@ public class DataSetUtil {
         setFeatureNames(dataSet,list);
     }
 
+    /**
+     * should use after featureMappers are finalized
+     * @param dataSet
+     * @param featureMappers
+     */
+    public static void setFeatureMappers(DataSet dataSet, FeatureMappers featureMappers){
+        if (dataSet.getNumFeatures()!=featureMappers.getTotalDim()){
+            throw new IllegalArgumentException("dataSet.getNumFeatures()!=featureMappers.getTotalDim()");
+        }
+        dataSet.getSetting().setFeatureMappers(featureMappers);
+        setFeatureNames(dataSet,featureMappers.getAllNames());
+    }
+
+    /**
+     * keep both local intId->extIds and global extId <-> intId translations
+     * may fail because the intIds in idTranslator may not correspond to [0,numDataPoints)
+     * @param dataSet
+     * @param idTranslator
+     */
     public static void setIdTranslator(DataSet dataSet, IdTranslator idTranslator){
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSet.getFeatureRow(i).getSetting().setExtId(idTranslator.toIndexId(i));
+            dataSet.getFeatureRow(i).getSetting().setExtId(idTranslator.toExtId(i));
         }
         dataSet.getSetting().setIdTranslator(idTranslator);
     }

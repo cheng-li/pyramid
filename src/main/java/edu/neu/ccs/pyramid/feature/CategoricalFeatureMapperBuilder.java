@@ -16,6 +16,11 @@ public class CategoricalFeatureMapperBuilder {
         this.categories = new HashSet<>();
     }
 
+    /**
+     * can accept duplicate categories, will use a set to keep unique categories
+     * @param category
+     * @return
+     */
     public CategoricalFeatureMapperBuilder addCategory(String category){
         this.categories.add(category);
         return this;

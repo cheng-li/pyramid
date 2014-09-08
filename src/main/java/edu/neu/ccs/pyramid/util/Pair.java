@@ -19,16 +19,18 @@ public class Pair<A,B> {
         return first;
     }
 
-    public void setFirst(A first) {
+    public Pair<A, B> setFirst(A first) {
         this.first = first;
+        return this;
     }
 
     public B getSecond() {
         return second;
     }
 
-    public void setSecond(B second) {
+    public Pair<A, B> setSecond(B second) {
         this.second = second;
+        return this;
     }
 
     @Override

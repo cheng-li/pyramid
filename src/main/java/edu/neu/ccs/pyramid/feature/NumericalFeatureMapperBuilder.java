@@ -4,7 +4,7 @@ package edu.neu.ccs.pyramid.feature;
  * Created by chengli on 9/7/14.
  */
 public class NumericalFeatureMapperBuilder {
-    private String featureName = "non name";
+    private String featureName = "no name";
     private int featureIndex;
     private String source = "unknown";
     private boolean featureIndexSet = false;

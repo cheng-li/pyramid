@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
+ * features are arranged contiguously, no skip is allowed
+ * not thread safe
  * Created by chengli on 9/7/14.
  */
 public class FeatureMappers implements Serializable {
@@ -16,27 +18,22 @@ public class FeatureMappers implements Serializable {
     private List<CategoricalFeatureMapper> categoricalFeatureMappers;
     private List<NumericalFeatureMapper> numericalFeatureMappers;
     private Map<Integer, String> nameMap;
-    /**
-     * last feature index occupied
-     */
-    private int lastFeatureIndex;
-
     private int totalDim;
 
     public FeatureMappers() {
         this.categoricalFeatureMappers = new ArrayList<>();
         this.numericalFeatureMappers = new ArrayList<>();
-        this.lastFeatureIndex = -1;
         this.totalDim = 0;
         this.nameMap = new HashMap<>();
     }
 
-    public int getLastFeatureIndex() {
-        return lastFeatureIndex;
-    }
-
-    public int getAvailableFeatureIndex(){
-        return lastFeatureIndex+1;
+    /**
+     * usage: should not be called repeatedly without adding mappers
+     * DO: nextAvailable(), addMapper,nextAvailable(), addMapper..
+     * @return
+     */
+    public int nextAvailable(){
+        return this.totalDim;
     }
 
     /**
@@ -48,12 +45,13 @@ public class FeatureMappers implements Serializable {
         return totalDim;
     }
 
+
     public void addMapper(CategoricalFeatureMapper categoricalFeatureMapper){
+        if (categoricalFeatureMapper.getStart()!= nextAvailable()){
+            throw new IllegalArgumentException("categoricalFeatureMapper.getStart()!=nextAvailable()");
+        }
         this.categoricalFeatureMappers.add(categoricalFeatureMapper);
         this.totalDim += categoricalFeatureMapper.getNumCategories();
-        if (categoricalFeatureMapper.getEnd()> this.lastFeatureIndex){
-            this.lastFeatureIndex = categoricalFeatureMapper.getEnd();
-        }
         String featureName = categoricalFeatureMapper.getFeatureName();
         Map<Integer, String> indexCategoryMap = categoricalFeatureMapper.getIndexCategoryMap();
         for (Map.Entry<Integer, String> entry: indexCategoryMap.entrySet()){
@@ -66,11 +64,11 @@ public class FeatureMappers implements Serializable {
     }
 
     public void addMapper(NumericalFeatureMapper numericalFeatureMapper){
+        if (numericalFeatureMapper.getFeatureIndex()!= nextAvailable()){
+            throw new IllegalArgumentException("numericalFeatureMapper.getFeatureIndex()!=nextAvailable()");
+        }
         this.numericalFeatureMappers.add(numericalFeatureMapper);
         this.totalDim += 1;
-        if (numericalFeatureMapper.getFeatureIndex()> this.lastFeatureIndex){
-            this.lastFeatureIndex = numericalFeatureMapper.getFeatureIndex();
-        }
         String featureName = numericalFeatureMapper.getFeatureName();
         int featureIndex = numericalFeatureMapper.getFeatureIndex();
         this.nameMap.put(featureIndex,featureName);
@@ -89,7 +87,7 @@ public class FeatureMappers implements Serializable {
         return this.nameMap.get(featureIndex);
     }
 
-    public List<String> getAll(){
+    public List<String> getAllNames(){
         return IntStream.range(0, totalDim).mapToObj(this::getName)
                 .collect(Collectors.toList());
     }

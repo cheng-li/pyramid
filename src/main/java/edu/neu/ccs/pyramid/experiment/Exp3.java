@@ -6,7 +6,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
-import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
+import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.FocusSet;
@@ -56,7 +56,7 @@ public class Exp3 {
 
     static void train(Config config, ESIndex index) throws Exception{
         int numDocsInIndex = index.getNumDocs();
-        String[] trainIndexIds = sampleTrain(config,index,numDocsInIndex);
+        String[] trainIndexIds = sampleTrain(config,index);
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureMappers featureMappers = new FeatureMappers();
@@ -65,31 +65,30 @@ public class Exp3 {
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
 
-        ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator);
+        ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelMap);
         System.out.println("in training set :");
         showDistribution(config,trainDataSet,labelMap);
 
-
-
-        trainModel(config,trainDataSet,featureMappers,index, trainIdTranslator,labelMap);
-
-
+        trainModel(config,trainDataSet,featureMappers,index, trainIdTranslator);
 
         //only keep used columns
-        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet,featureMappers.getLastFeatureIndex());
+        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet,featureMappers.getTotalDim());
+
         saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
-        saveFeatureMappers(config,featureMappers);
-        trainIdTranslator.serialize(new File(config.getString("archive.folder"),
-                config.getString("archive.trainIdTranslator")));
+        DataSetUtil.setFeatureMappers(trainDataSet,featureMappers);
+//        saveFeatureMappers(config,featureMappers);
+//        trainIdTranslator.serialize(new File(config.getString("archive.folder"),
+//                config.getString("archive.trainIdTranslator")));
 
 
         String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
-        testIdTranslator.serialize(new File(config.getString("archive.folder"),
-                config.getString("archive.testIdTranslator")));
+//        testIdTranslator.serialize(new File(config.getString("archive.folder"),
+//                config.getString("archive.testIdTranslator")));
 
-        ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator);
-        saveDataSet(config,testDataSet,config.getString("archive.testSet"));
+        ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelMap);
+        DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
+        saveDataSet(config, testDataSet, config.getString("archive.testSet"));
     }
 
 
@@ -101,7 +100,7 @@ public class Exp3 {
                 .setClientType(config.getString("index.clientType"))
                 .setLabelField(config.getString("index.labelField"))
                 .setExtLabelField(config.getString("index.extLabelField"))
-                .setDocumentType("document");
+                .setDocumentType(config.getString("index.documentType"));
         if (config.getString("index.clientType").equals("transport")){
             String[] hosts = config.getString("index.hosts").split(Pattern.quote(","));
             String[] ports = config.getString("index.ports").split(Pattern.quote(","));
@@ -129,7 +128,8 @@ public class Exp3 {
      */
     static ClfDataSet loadData(Config config, ESIndex index,
                                FeatureMappers featureMappers,
-                               IdTranslator idTranslator, int totalDim) throws Exception{
+                               IdTranslator idTranslator, int totalDim,
+                               Map<Integer,String> labelMap) throws Exception{
         int numDataPoints = idTranslator.numData();
         ClfDataSet dataSet;
         if(config.getBoolean("featureMatrix.sparse")){
@@ -138,12 +138,12 @@ public class Exp3 {
             dataSet= new DenseClfDataSet(numDataPoints,totalDim);
         }
         for(int i=0;i<numDataPoints;i++){
-            String dataIndexId = idTranslator.toIndexId(i);
+            String dataIndexId = idTranslator.toExtId(i);
             int label = index.getLabel(dataIndexId);
             dataSet.setLabel(i,label);
         }
 
-        String[] dataIndexIds = idTranslator.dataIndexIds();
+        String[] dataIndexIds = idTranslator.getAllExtIds();
 
         featureMappers.getCategoricalFeatureMappers().stream().parallel().
                 forEach(categoricalFeatureMapper -> {
@@ -151,7 +151,7 @@ public class Exp3 {
                     String source = categoricalFeatureMapper.getSource();
                     if (source.equalsIgnoreCase("field")){
                         for (String id: dataIndexIds){
-                            int algorithmId = idTranslator.toAlgorithmId(id);
+                            int algorithmId = idTranslator.toIntId(id);
                             String category = index.getStringField(id,featureName);
                             // might be a new category unseen in training
                             if (categoricalFeatureMapper.hasCategory(category)){
@@ -171,7 +171,7 @@ public class Exp3 {
 
                     if (source.equalsIgnoreCase("field")){
                         for (String id: dataIndexIds){
-                            int algorithmId = idTranslator.toAlgorithmId(id);
+                            int algorithmId = idTranslator.toIntId(id);
                             float value = index.getFloatField(id,featureName);
                             dataSet.setFeatureValue(algorithmId,featureIndex,value);
                         }
@@ -189,17 +189,18 @@ public class Exp3 {
                         for (SearchHit hit: hits){
                             String indexId = hit.getId();
                             float score = hit.getScore();
-                            int algorithmId = idTranslator.toAlgorithmId(indexId);
+                            int algorithmId = idTranslator.toIntId(indexId);
                             dataSet.setFeatureValue(algorithmId,featureIndex,score);
                         }
                     }
                 });
         DataSetUtil.setIdTranslator(dataSet,idTranslator);
+        DataSetUtil.setExtLabels(dataSet,labelMap);
         return dataSet;
     }
 
     static ClfDataSet loadTrainData(Config config, ESIndex index, FeatureMappers featureMappers,
-                                    IdTranslator idTranslator) throws Exception{
+                                    IdTranslator idTranslator, Map<Integer,String> labelMap) throws Exception{
         System.out.println("creating training set");
         int numNgramsToExtract = config.getInt("extraction.numNgramsToExtract");
         int numIterations = config.getInt("train.numIterations");
@@ -210,25 +211,25 @@ public class Exp3 {
         int addedDimensions = (int)(numNgramsToExtract*numIterations*numClasses*extractionFrequency*2);
         int totalDim = Math.min(featureMappers.getTotalDim() + addedDimensions, maxDim);
         System.out.println("allocating "+totalDim+" columns for training set");
-        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim);
+        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelMap);
         System.out.println("training set created");
         return dataSet;
     }
 
     static ClfDataSet loadTestData(Config config, ESIndex index,
-                                   FeatureMappers featureMappers, IdTranslator idTranslator) throws Exception{
+                                   FeatureMappers featureMappers, IdTranslator idTranslator,
+                                   Map<Integer,String> labelMap) throws Exception{
         System.out.println("creating test set");
 
         int totalDim = featureMappers.getTotalDim();
 
-        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim);
+        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelMap);
         System.out.println("test set created");
         return dataSet;
     }
 
     static void trainModel(Config config, ClfDataSet dataSet, FeatureMappers featureMappers,
-                           ESIndex index, IdTranslator trainIdTranslator,
-                           Map<Integer,String> labelMap) throws Exception{
+                           ESIndex index, IdTranslator trainIdTranslator) throws Exception{
         String archive = config.getString("archive.folder");
         int numIterations = config.getInt("train.numIterations");
         int numClasses = config.getInt("numClasses");
@@ -245,6 +246,8 @@ public class Exp3 {
         if (extractionFrequency>1 || extractionFrequency<0){
             throw new IllegalArgumentException("0<=extraction.frequency<=1");
         }
+
+        Map<Integer,String> labelMap = dataSet.getSetting().getLabelMap();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -328,9 +331,7 @@ public class Exp3 {
                     }
                 }
 
-
                 List<Integer> validationSet = focusSet.getAll();
-
 
                 for (int k=0;k<numClasses;k++){
                                        
@@ -354,7 +355,7 @@ public class Exp3 {
                     }
 
                     List<String> focusSetIndexIds = focusSet.getDataClassK(k)
-                            .parallelStream().map(trainIdTranslator::toIndexId)
+                            .parallelStream().map(trainIdTranslator::toExtId)
                             .collect(Collectors.toList());
                     System.out.println("focus set for class " +k+ "("+labelMap.get(k)+ "):");
                     System.out.println(focusSetIndexIds.toString());
@@ -362,12 +363,12 @@ public class Exp3 {
                     System.out.println(goodNgrams);
 
                     for (String ngram:goodNgrams){
-                        int featureIndex = featureMappers.getAvailableFeatureIndex();
+                        int featureIndex = featureMappers.nextAvailable();
                         SearchResponse response = index.match(index.getBodyField(),
-                                ngram,trainIdTranslator.dataIndexIds(), MatchQueryBuilder.Operator.AND);
+                                ngram,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
                         for (SearchHit hit: response.getHits().getHits()){
                             String indexId = hit.getId();
-                            int algorithmId = trainIdTranslator.toAlgorithmId(indexId);
+                            int algorithmId = trainIdTranslator.toIntId(indexId);
                             float score = hit.getScore();
                             dataSet.setFeatureValue(algorithmId, featureIndex,score);
                         }
@@ -379,36 +380,32 @@ public class Exp3 {
                         blackList.add(ngram);
                     }
                 }
-
             }
 
             /**
-             * from representative set
+             * from easy set
              */
             if (shouldExtractFeatures){
-                //generate focus set
+                //generate easy set
                 FocusSet focusSet = new FocusSet(numClasses);
                 for (int k=0;k<numClasses;k++){
                     double[] gradient = lkTreeBoost.getGradient(k);
                     Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
-                    List<Integer> hardExamples = IntStream.range(0,gradient.length)
+                    List<Integer> easyExamples = IntStream.range(0,gradient.length)
                             .mapToObj(i -> new Pair<>(i,gradient[i]))
                             .filter(pair -> pair.getSecond()>0)
                             .sorted(comparator)
                             .limit(numDocsToSelect)
                             .map(Pair::getFirst)
                             .collect(Collectors.toList());
-                    for(Integer doc: hardExamples){
+                    for(Integer doc: easyExamples){
                         focusSet.add(doc,k);
                     }
                 }
 
-
                 List<Integer> validationSet = focusSet.getAll();
 
-
                 for (int k=0;k<numClasses;k++){
-
                     double[] allGradients = lkTreeBoost.getGradient(k);
                     List<Double> gradientsForValidation = validationSet.stream()
                             .map(i -> allGradients[i]).collect(Collectors.toList());
@@ -429,7 +426,7 @@ public class Exp3 {
                     }
 
                     List<String> focusSetIndexIds = focusSet.getDataClassK(k)
-                            .parallelStream().map(trainIdTranslator::toIndexId)
+                            .parallelStream().map(trainIdTranslator::toExtId)
                             .collect(Collectors.toList());
                     System.out.println("easy set for class " +k+ "("+labelMap.get(k)+ "):");
                     System.out.println(focusSetIndexIds.toString());
@@ -437,12 +434,12 @@ public class Exp3 {
                     System.out.println(goodNgrams);
 
                     for (String ngram:goodNgrams){
-                        int featureIndex = featureMappers.getAvailableFeatureIndex();
+                        int featureIndex = featureMappers.nextAvailable();
                         SearchResponse response = index.match(index.getBodyField(),
-                                ngram,trainIdTranslator.dataIndexIds(), MatchQueryBuilder.Operator.AND);
+                                ngram,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
                         for (SearchHit hit: response.getHits().getHits()){
                             String indexId = hit.getId();
-                            int algorithmId = trainIdTranslator.toAlgorithmId(indexId);
+                            int algorithmId = trainIdTranslator.toIntId(indexId);
                             float score = hit.getScore();
                             dataSet.setFeatureValue(algorithmId, featureIndex,score);
                         }
@@ -454,7 +451,6 @@ public class Exp3 {
                         blackList.add(ngram);
                     }
                 }
-
             }
 
             int[] activeFeatures = IntStream.range(0, featureMappers.getTotalDim()).toArray();
@@ -475,7 +471,8 @@ public class Exp3 {
 
     }
 
-    static String[] sampleTrain(Config config, ESIndex index, int numDocsInIndex){
+    static String[] sampleTrain(Config config, ESIndex index){
+        int numDocsInIndex = index.getNumDocs();
         String[] trainIds = null;
         if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
             String splitField = config.getString("index.splitField");
@@ -486,7 +483,7 @@ public class Exp3 {
                     toArray(new String[0]);
         } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
             double trainPercentage = config.getDouble("split.random.trainPercentage");
-            int[] labels = new int[index.getNumDocs()];
+            int[] labels = new int[numDocsInIndex];
             for (int i=0;i<labels.length;i++){
                 labels[i] = index.getLabel(""+i);
             }
@@ -519,7 +516,7 @@ public class Exp3 {
     static IdTranslator loadIdTranslator(String[] indexIds) throws Exception{
         IdTranslator idTranslator = new IdTranslator();
         for (int i=0;i<indexIds.length;i++){
-            idTranslator.addData(""+indexIds[i],i);
+            idTranslator.addData(i,""+indexIds[i]);
         }
         return idTranslator;
     }
@@ -536,6 +533,14 @@ public class Exp3 {
         return map;
     }
 
+    /**
+     *
+     * @param config
+     * @param index
+     * @param featureMappers to be updated
+     * @param ids pull features from train ids
+     * @throws Exception
+     */
     static void addInitialFeatures(Config config, ESIndex index,
                                    FeatureMappers featureMappers,
                                    String[] ids) throws Exception{
@@ -552,7 +557,7 @@ public class Exp3 {
             if (featureType.equalsIgnoreCase("string")){
                 CategoricalFeatureMapperBuilder builder = new CategoricalFeatureMapperBuilder();
                 builder.setFeatureName(field);
-                builder.setStart(featureMappers.getAvailableFeatureIndex());
+                builder.setStart(featureMappers.nextAvailable());
                 builder.setSource("field");
                 for (String id: ids){
                     String category = index.getStringField(id, field);
@@ -576,7 +581,7 @@ public class Exp3 {
             } else {
                 NumericalFeatureMapperBuilder builder = new NumericalFeatureMapperBuilder();
                 builder.setFeatureName(field);
-                builder.setFeatureIndex(featureMappers.getAvailableFeatureIndex());
+                builder.setFeatureIndex(featureMappers.nextAvailable());
                 builder.setSource("field");
                 NumericalFeatureMapper mapper = builder.build();
                 featureMappers.addMapper(mapper);
@@ -607,10 +612,5 @@ public class Exp3 {
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 
-    static void saveFeatureMappers(Config config, FeatureMappers featureMappers) throws Exception{
-        String archive = config.getString("archive.folder");
-        File file = new File(archive,config.getString("archive.featureMappers"));
-        featureMappers.serialize(file);
-    }
 
 }

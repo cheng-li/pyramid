@@ -3,7 +3,7 @@ package edu.neu.ccs.pyramid.feature_extraction;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.IdTranslator;
+import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -93,7 +93,7 @@ public class SplitExtractor {
         //we don't union sets as we need to combine stats
         List<Set<String>> termSetList = dataPoints.parallelStream()
                 .map(dataPoint ->
-                {String indexId = idTranslator.toIndexId(dataPoint);
+                {String indexId = idTranslator.toExtId(dataPoint);
                     Set<String> terms = null;
                     try {
                         terms = index.getTerms(indexId);
@@ -115,7 +115,7 @@ public class SplitExtractor {
                                      List<Double> residuals){
         //translate once
         String[] validationIndexIds = validationSet.parallelStream()
-                .map(this.idTranslator::toIndexId)
+                .map(this.idTranslator::toExtId)
                 .toArray(String[]::new);
 
         // this is stupid
@@ -154,7 +154,7 @@ public class SplitExtractor {
             matchingScores.put(indexId,matchingScore);
         }
         for (int i=0;i<numDataPoints;i++){
-            double value = matchingScores.getOrDefault(validationSet[i],0f);
+            double value = matchingScores.getOrDefault(validationSet[i], 0f);
             dataSet.setFeatureValue(i,0,value);
         }
 
