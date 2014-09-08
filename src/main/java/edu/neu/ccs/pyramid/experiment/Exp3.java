@@ -73,18 +73,11 @@ public class Exp3 {
 
         //only keep used columns
         ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet,featureMappers.getTotalDim());
-
+        DataSetUtil.setFeatureMappers(trimmedTrainDataSet,featureMappers);
         saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
-        DataSetUtil.setFeatureMappers(trainDataSet,featureMappers);
-//        saveFeatureMappers(config,featureMappers);
-//        trainIdTranslator.serialize(new File(config.getString("archive.folder"),
-//                config.getString("archive.trainIdTranslator")));
-
 
         String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
-//        testIdTranslator.serialize(new File(config.getString("archive.folder"),
-//                config.getString("archive.testIdTranslator")));
 
         ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelMap);
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
