@@ -1,12 +1,12 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.feature.FeatureMappers;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.mahout.math.Vector;
 
+
 import java.io.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -186,6 +186,85 @@ public class DataSetUtil {
             dataSet.getFeatureRow(i).getSetting().setExtId(idTranslator.toExtId(i));
         }
         dataSet.getSetting().setIdTranslator(idTranslator);
+    }
+
+    /**
+     * stratified bootstrap sample
+     * each class has the same number of data points as in the original data set
+     * @param clfDataSet
+     * @return
+     */
+    public static ClfDataSet bootstrap(ClfDataSet clfDataSet){
+        Map<Integer, List<Integer>> labelIndicesMap = new HashMap<>();
+        int[] labels = clfDataSet.getLabels();
+        for (int i=0;i<clfDataSet.getNumDataPoints();i++){
+            int label = labels[i];
+            if (!labelIndicesMap.containsKey(label)){
+                labelIndicesMap.put(label, new ArrayList<>());
+            }
+            labelIndicesMap.get(label).add(i);
+        }
+        List<Integer> sampledIndices = new ArrayList<>(clfDataSet.getNumDataPoints());
+        //sample for each class
+        for (Map.Entry<Integer,List<Integer>> entry: labelIndicesMap.entrySet()) {
+            List<Integer> indices = entry.getValue();
+            int[] sampleForClass = Sampling.sampleWithReplacement(indices.size(), indices).toArray();
+            for (int index: sampleForClass){
+                sampledIndices.add(index);
+            }
+        }
+
+        return subSet(clfDataSet,sampledIndices);
+    }
+
+    /**
+     * create a subset with the indices
+     * it's fine to have duplicate indices
+     * idTranslator is not saved in subSet as we may have duplicate extIds
+     * @param clfDataSet
+     * @param indices
+     * @return
+     */
+    public static ClfDataSet subSet(ClfDataSet clfDataSet, List<Integer> indices){
+        ClfDataSet sample;
+        if (clfDataSet instanceof DenseClfDataSet){
+            sample = new DenseClfDataSet(indices.size(),clfDataSet.getNumFeatures());
+        } else {
+            sample = new SparseClfDataSet(indices.size(),clfDataSet.getNumFeatures());
+        }
+        int[] labels = clfDataSet.getLabels();
+        for (int i=0;i<indices.size();i++){
+            int indexInOld = indices.get(i);
+            FeatureRow oldFeatureRow = clfDataSet.getFeatureRow(indexInOld);
+            int label = labels[indexInOld];
+            //copy label
+            sample.setLabel(i,label);
+            //copy row feature values, optimized for sparse vector
+            for (Vector.Element element: oldFeatureRow.getVector().nonZeroes()){
+                sample.setFeatureValue(i,element.index(),element.get());
+            }
+            //copy data settings
+            sample.getFeatureRow(i).putSetting(oldFeatureRow.getSetting());
+        }
+
+        //copy feature settings
+        for (int j=0;j<clfDataSet.getNumFeatures();j++){
+            sample.getFeatureColumn(j)
+                    .putSetting(clfDataSet.getFeatureColumn(j).getSetting());
+        }
+
+        //safe to copy label map
+        if (clfDataSet.getSetting().getLabelMap()!=null){
+            DataSetUtil.setExtLabels(sample,clfDataSet.getSetting().getLabelMap());
+        }
+
+        //safe to copy feature mappers
+        if (clfDataSet.getSetting().getFeatureMappers()!=null){
+            DataSetUtil.setFeatureMappers(sample,clfDataSet.getSetting().getFeatureMappers());
+        }
+
+        //ignore idTranslator as we may have duplicate extIds
+        return sample;
     }
 
 }

@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.util;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 8/14/14.
@@ -64,6 +65,23 @@ public class Sampling {
         int sampleSize = (int)Math.ceil(percentage*totalSize);
         return indices.subList(0,sampleSize);
 
+    }
+
+    /**
+     *
+     * @param sampleSize
+     * @param start inclusive
+     * @param end exclusive
+     * @return
+     */
+    public static IntStream sampleWithReplacement(int sampleSize, int start, int end){
+        return new Random().ints(sampleSize, start, end);
+
+    }
+
+    public static IntStream sampleWithReplacement(int sampleSize, List<Integer> indices){
+        return sampleWithReplacement(sampleSize,0,indices.size())
+                .map(indices::get);
     }
 
 }

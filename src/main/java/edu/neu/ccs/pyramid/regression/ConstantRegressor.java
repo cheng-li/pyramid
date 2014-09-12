@@ -25,6 +25,6 @@ public class ConstantRegressor implements Regressor, Serializable{
     public String toString() {
         return "ConstantRegressor{" +
                 "score=" + score +
-                '}';
+                '}' +"\n";
     }
 }

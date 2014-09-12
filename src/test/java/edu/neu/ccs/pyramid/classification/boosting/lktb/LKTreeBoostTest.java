@@ -118,6 +118,7 @@ public class LKTreeBoostTest {
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
+        System.out.println(lkTreeBoost);
 
     }
 

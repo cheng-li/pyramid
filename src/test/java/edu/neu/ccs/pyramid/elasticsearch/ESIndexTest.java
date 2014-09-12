@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test4();
+
 
     }
 
@@ -47,5 +47,7 @@ public class ESIndexTest {
 
         index.close();
     }
+
+
 
 }

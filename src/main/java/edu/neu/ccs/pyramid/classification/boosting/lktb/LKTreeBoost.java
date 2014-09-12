@@ -366,14 +366,6 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
         }
     }
 
-    /**
-     * return decision process for class k, sorted by decreasing score absolute values
-     * @param featureRow
-     * @param features
-     * @param k class index
-     * @param top only return top decisions
-     * @return
-     */
 //    public String getDecisionProcess(float [] featureRow,List<Feature> features,
 //                                     int k, int top){
 //        List<DecisionProcess> decisions = new ArrayList<DecisionProcess>();
@@ -466,6 +458,19 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
 //        }
 //    }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (int k=0;k<this.numClasses;k++){
+            sb.append("for class ").append(k).append("\n");
+            List<Regressor> trees = this.getRegressors(k);
+            for (int i=0;i<trees.size();i++){
+                sb.append("tree ").append(i).append(":");
+                sb.append(trees.get(i).toString());
+            }
+        }
+        return sb.toString();
+    }
 
 
 }
