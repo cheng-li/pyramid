@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * return top tfidf terms
  * Created by chengli on 9/6/14.
  */
-public class TfidfExtractor {
+public class TermTfidfExtractor {
     private static final Logger logger = LogManager.getLogger();
     private ESIndex index;
     /**
@@ -32,15 +32,15 @@ public class TfidfExtractor {
     private int minDf=1;
 
 
-    public TfidfExtractor(ESIndex index,
-                          IdTranslator idTranslator,
-                          int topN) {
+    public TermTfidfExtractor(ESIndex index,
+                              IdTranslator idTranslator,
+                              int topN) {
         this.index = index;
         this.idTranslator = idTranslator;
         this.topN = topN;
     }
 
-    public TfidfExtractor setMinDf(int minDf) {
+    public TermTfidfExtractor setMinDf(int minDf) {
         this.minDf = minDf;
         return this;
     }

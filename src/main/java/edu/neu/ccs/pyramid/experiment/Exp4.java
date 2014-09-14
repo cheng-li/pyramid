@@ -16,6 +16,7 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 /**
 * Created by chengli on 9/9/14.
@@ -359,7 +360,7 @@ public class Exp4 {
 
     //todo get overall top features
     static void getTopFeatures(Config config) throws Exception{
-
+        Map<Integer,String> labelMap = loadLabelMap(config);
         String archive = config.getString("archive.folder");
         int firstModel = config.getInt("verify.firstModel");
         int lastModel = config.getInt("verify.lastModel");
@@ -371,7 +372,7 @@ public class Exp4 {
             System.out.println("==========top features==========");
             for (int k=0;k<config.getInt("numClasses");k++){
                 List<String> features = LKTBInspector.topFeatureNames(lkTreeBoost, k);
-                System.out.println("top features for class "+k+":");
+                System.out.println("top features for class "+k+"("+labelMap.get(k)+"):");
                 System.out.println(features);
             }
         }
@@ -394,6 +395,19 @@ public class Exp4 {
                                     ClfDataSet dataSet){
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(numClasses,classifier,dataSet);
         System.out.println("==========confusion matrix==========");
-        System.out.println(confusionMatrix.toString());
+        System.out.println(confusionMatrix.printWithExtLabels());
+    }
+
+    static Map<Integer,String> loadLabelMap(Config config) throws Exception{
+        String trainFile = new File(config.getString("input.folder"),
+                config.getString("input.trainData")).getAbsolutePath();
+        ClfDataSet dataSet;
+        if (config.getBoolean("featureMatrix.sparse")){
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,true);
+        } else {
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,true);
+        }
+
+        return dataSet.getSetting().getLabelMap();
     }
 }

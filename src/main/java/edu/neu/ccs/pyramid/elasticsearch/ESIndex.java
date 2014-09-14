@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.elasticsearch;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.similarities.DefaultSimilarity;
@@ -283,6 +284,38 @@ public class ESIndex {
         return set;
     }
 
+    public Map<Integer,String> getTermVector(String id){
+        Map<Integer,String> map = null;
+        try {
+            map = getTermVectorWithException(id);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+    private Map<Integer,String> getTermVectorWithException(String id) throws IOException {
+        TermVectorResponse response = client.prepareTermVector(indexName, documentType, id)
+                .setOffsets(false).setPositions(true).setFieldStatistics(false)
+                .setTermStatistics(false)
+                .setSelectedFields(this.bodyField).
+                        execute().actionGet();
+
+        Map<Integer,String> map = new HashMap<>();
+        Terms terms = response.getFields().terms(this.bodyField);
+        TermsEnum iterator = terms.iterator(null);
+        for (int i=0;i<terms.size();i++){
+            String term = iterator.next().utf8ToString();
+            int tf = iterator.docsAndPositions(null, null).freq();
+            //must declare docsAndPositionsEnum as a local variable and reuse it for positions
+            DocsAndPositionsEnum docsAndPositionsEnum = iterator.docsAndPositions(null, null);
+            for (int j=0;j<tf;j++){
+                int pos = docsAndPositionsEnum.nextPosition();
+                map.put(pos,term);
+            }
+        }
+        return map;
+    }
+
 
     public void close() {
         this.client.close();
@@ -342,7 +375,7 @@ public class ESIndex {
 
 
     public SearchResponse matchPhrase(String field, String phrase,
-                                      String[] ids, int slop) throws IOException {
+                                      String[] ids, int slop) {
         IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
         idsFilterBuilder.addIds(ids);
 

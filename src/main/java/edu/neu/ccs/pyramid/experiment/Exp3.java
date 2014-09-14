@@ -10,9 +10,9 @@ import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.FocusSet;
-import edu.neu.ccs.pyramid.feature_extraction.SplitExtractor;
-import edu.neu.ccs.pyramid.feature_extraction.TfidfExtractor;
-import edu.neu.ccs.pyramid.feature_extraction.TfidfSplitExtractor;
+import edu.neu.ccs.pyramid.feature_extraction.TermSplitExtractor;
+import edu.neu.ccs.pyramid.feature_extraction.TermTfidfExtractor;
+import edu.neu.ccs.pyramid.feature_extraction.TermTfidfSplitExtractor;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.lang3.time.StopWatch;
@@ -172,12 +172,10 @@ public class Exp3 {
 
                     if (source.equalsIgnoreCase("matching_score")){
                         SearchResponse response = null;
-                        try {
+
                             //todo assume unigram, so slop doesn't matter
                             response = index.matchPhrase(index.getBodyField(), featureName, dataIndexIds, 0);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+
                         SearchHit[] hits = response.getHits().getHits();
                         for (SearchHit hit: hits){
                             String indexId = hit.getId();
@@ -255,15 +253,15 @@ public class Exp3 {
         lkTreeBoost.setPriorProbs(dataSet);
         lkTreeBoost.setTrainConfig(trainConfig);
 
-        SplitExtractor splitExtractor = new SplitExtractor(index, trainIdTranslator,
+        TermSplitExtractor splitExtractor = new TermSplitExtractor(index, trainIdTranslator,
                 numNgramsToExtract)
                 .setMinDataPerLeaf(config.getInt("extraction.splitExtractor.minDataPerLeaf"));
 
-        TfidfExtractor tfidfExtractor = new TfidfExtractor(index,trainIdTranslator,
+        TermTfidfExtractor tfidfExtractor = new TermTfidfExtractor(index,trainIdTranslator,
                 numNgramsToExtract).
                 setMinDf(config.getInt("extraction.tfidfExtractor.minDf"));
 
-        TfidfSplitExtractor tfidfSplitExtractor = new TfidfSplitExtractor(index,
+        TermTfidfSplitExtractor tfidfSplitExtractor = new TermTfidfSplitExtractor(index,
                 trainIdTranslator,numNgramsToExtract).
                 setMinDf(config.getInt("extraction.tfidfSplitExtractor.minDf")).
                 setNumSurvivors(config.getInt("extraction.tfidfSplitExtractor.numSurvivors")).

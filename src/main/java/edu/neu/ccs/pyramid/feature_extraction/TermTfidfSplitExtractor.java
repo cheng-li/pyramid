@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
  * return ngrams with highest variance reduction
  * Created by chengli on 9/6/14.
  */
-public class TfidfSplitExtractor {
+public class TermTfidfSplitExtractor {
     private static final Logger logger = LogManager.getLogger();
     private ESIndex index;
     /**
@@ -52,25 +52,25 @@ public class TfidfSplitExtractor {
      */
     int minDataPerLeaf=1;
 
-    public TfidfSplitExtractor(ESIndex index,
-                               IdTranslator idTranslator,
-                               int topN) {
+    public TermTfidfSplitExtractor(ESIndex index,
+                                   IdTranslator idTranslator,
+                                   int topN) {
         this.index = index;
         this.idTranslator = idTranslator;
         this.topN = topN;
     }
 
-    public TfidfSplitExtractor setMinDf(int minDf) {
+    public TermTfidfSplitExtractor setMinDf(int minDf) {
         this.minDf = minDf;
         return this;
     }
 
-    public TfidfSplitExtractor setNumSurvivors(int numSurvivors) {
+    public TermTfidfSplitExtractor setNumSurvivors(int numSurvivors) {
         this.numSurvivors = numSurvivors;
         return this;
     }
 
-    public TfidfSplitExtractor setMinDataPerLeaf(int minDataPerLeaf) {
+    public TermTfidfSplitExtractor setMinDataPerLeaf(int minDataPerLeaf) {
         this.minDataPerLeaf = minDataPerLeaf;
         return this;
     }

@@ -2,8 +2,8 @@ package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
+import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -12,105 +12,93 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.query.MatchQueryBuilder;
+
 import org.elasticsearch.search.SearchHit;
 
-import java.io.IOException;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * consider all terms in the focus set
- * for each term, build a regression stump for the validation set
- * return terms with highest variance reduction
- * Created by chengli on 9/7/14.
+ * filter by minDf
+ * rank by split
+ * Created by chengli on 9/13/14.
  */
-public class SplitExtractor {
+public class PhraseSplitExtractor {
     private static final Logger logger = LogManager.getLogger();
+    int minDf = 10;
     private ESIndex index;
-    /**
-     * max number of good ngrams to return for each class
-     */
-    //TODO: different for different class
-    private int topN;
-    private int minDataPerLeaf=1;
+    private int topN =20;
     private IdTranslator idTranslator;
+    int minDataPerLeaf = 2;
 
-    public SplitExtractor(ESIndex index, IdTranslator idTranslator,
-                          int topN) {
+    public PhraseSplitExtractor(ESIndex index, IdTranslator idTranslator) {
         this.index = index;
-        this.topN = topN;
         this.idTranslator = idTranslator;
     }
 
-    public SplitExtractor setMinDataPerLeaf(int minDataPerLeaf) {
+    public PhraseSplitExtractor setTopN(int topN) {
+        this.topN = topN;
+        return this;
+    }
+
+    public PhraseSplitExtractor setMinDf(int minDf) {
+        this.minDf = minDf;
+        return this;
+    }
+
+    public PhraseSplitExtractor setMinDataPerLeaf(int minDataPerLeaf) {
         this.minDataPerLeaf = minDataPerLeaf;
         return this;
     }
 
-
-    /**
-     *
-     * @param focusSet
-     * @param validationSet algorithm ids
-     * @param blacklist
-     * @param classIndex
-     * @param residuals  residuals of calidationSet, column vector
-     * @return
-     * @throws Exception
-     */
-    public List<String> getGoodTerms(FocusSet focusSet,
+    public List<String> getGoodPhrases(FocusSet focusSet,
                                      List<Integer> validationSet,
                                      Set<String> blacklist,
                                      int classIndex,
-                                     List<Double> residuals) throws Exception{
+                                     List<Double> residuals,
+                                     Set<String> seeds) throws Exception{
         StopWatch stopWatch = null;
         if (logger.isDebugEnabled()){
             stopWatch = new StopWatch();
             stopWatch.start();
         }
-        List<String> goodTerms = new ArrayList<String>();
+        List<String> goodPhrases = new ArrayList<String>();
         if (this.topN==0){
-            return goodTerms;
+            return goodPhrases;
         }
 
-        Collection<String> terms = gather(focusSet,classIndex,blacklist);
-        return rankBySplit(terms,validationSet,residuals);
+        Collection<String> allPhrases = gather(focusSet,classIndex,seeds);
+        List<String> candidates = filter(allPhrases,blacklist);
+        return rankBySplit(candidates,validationSet,residuals);
     }
 
+    public List<String> filter(Collection<String> phrases,Set<String> blacklist){
+        return phrases.parallelStream()
+                .filter(phrase -> (index.phraseDF(index.getBodyField(), phrase, 0) > minDf)
+                        && (!blacklist.contains(phrase)))
+                .collect(Collectors.toList());
+    }
 
-    /**
-     * don't need to fetch stats information
-     * @param focusSet
-     * @param classIndex
-     * @return
-     */
     private Collection<String> gather(FocusSet focusSet,
                                         int classIndex,
-                                        Set<String> blacklist){
+                                        Set<String> seeds){
         List<Integer> dataPoints = focusSet.getDataClassK(classIndex);
-        //we don't union sets as we need to combine stats
-        List<Set<String>> termSetList = dataPoints.parallelStream()
+
+        List<Set<String>> phrasesList = dataPoints.parallelStream()
                 .map(dataPoint ->
                 {String indexId = idTranslator.toExtId(dataPoint);
-                    Set<String> terms = null;
-                    try {
-                        terms = index.getTerms(indexId);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return terms;})
+                  Map<Integer,String> termVector = index.getTermVector(indexId);
+                    return PhraseDetector.getPhrases(termVector,seeds);})
                 .collect(Collectors.toList());
 
-        //it is easier to do this in a single thread
-        Set<String> allTerms = new HashSet<>();
-        termSetList.forEach(allTerms::addAll);
-        allTerms.removeAll(blacklist);
-        return allTerms;
+        Set<String> all = new HashSet<>();
+        phrasesList.forEach(all::addAll);
+        return all;
     }
 
-    private List<String> rankBySplit(Collection<String> terms,
+    private List<String> rankBySplit(Collection<String> phrases,
                                      List<Integer> validationSet,
                                      List<Double> residuals){
         //translate once
@@ -122,31 +110,24 @@ public class SplitExtractor {
         double[] residualsArray = residuals.stream().mapToDouble(a -> a).toArray();
 
         Comparator<Pair<String,Double>> pairComparator = Comparator.comparing(Pair::getSecond);
-        List<String> goodTerms = terms.stream().parallel()
-                .map(term ->
-                        new Pair<>(term, splitScore(term, validationIndexIds, residualsArray)))
+        List<String> goodPhrases = phrases.stream().parallel()
+                .map(phrase ->
+                        new Pair<>(phrase, splitScore(phrase, validationIndexIds, residualsArray)))
                 .sorted(pairComparator.reversed())
                 .map(Pair::getFirst)
                 .limit(this.topN)
                 .collect(Collectors.toList());
-        return goodTerms;
+        return goodPhrases;
 
     }
 
-    /**
-     * use matching scores as feature values
-     * @param term
-     * @param validationSet
-     * @param residuals
-     * @return
-     */
-    private double splitScore(String term,
+    private double splitScore(String phrase,
                               String[] validationSet,
                               double[] residuals){
         int numDataPoints = validationSet.length;
         DataSet dataSet = new DenseRegDataSet(numDataPoints,1);
-        SearchResponse response = this.index.match(this.index.getBodyField(),
-                term,validationSet, MatchQueryBuilder.Operator.AND);
+        SearchResponse response = this.index.matchPhrase(this.index.getBodyField(),
+                phrase, validationSet, 0);
         Map<String,Float> matchingScores = new HashMap<>();
         for (SearchHit hit: response.getHits().getHits()){
             String indexId = hit.getId();
@@ -167,4 +148,6 @@ public class SplitExtractor {
         RegressionTree tree = RegTreeTrainer.fit(regTreeConfig, dataSet, residuals);
         return tree.getRoot().getReduction();
     }
+
+
 }

@@ -12,15 +12,18 @@ public class ConfusionMatrix {
     private int[][] matrix;
     private int numClasses;
     private Map<Integer, String> labelMap;
+    private int[] total;
 
     public ConfusionMatrix(int numClasses, int[] labels, int[] predictions) {
         this.numClasses = numClasses;
         this.matrix = new int[numClasses][numClasses];
+        this.total = new int[numClasses];
         int numDataPoints = labels.length;
         for (int i=0;i<numDataPoints;i++){
             int label = labels[i];
             int prediction = predictions[i];
             this.matrix[label][prediction] += 1;
+            this.total[label] += 1;
         }
     }
 
@@ -59,9 +62,10 @@ public class ConfusionMatrix {
 
         sb.append("\n");
         for (int i=0;i<this.numClasses;i++){
-            sb.append(this.labelMap.get(i)).append("=>").append("\t");
+            sb.append(this.labelMap.get(i)).append("(").append(this.total[i]).append(")")
+                    .append("=>").append("   ");
             for (int j=0;j<this.numClasses;j++){
-                sb.append(this.labelMap.get(j)).append(":").append(matrix[i][j]).append("\t");
+                sb.append(this.labelMap.get(j)).append(":").append(matrix[i][j]).append("   ");
             }
             sb.append("\n");
         }
