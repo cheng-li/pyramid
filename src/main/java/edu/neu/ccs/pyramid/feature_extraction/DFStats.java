@@ -126,6 +126,14 @@ public class DFStats implements Serializable {
                 .collect(Collectors.toList());
     }
 
+    public List<String> getSortedTerms(int classIndex, int dfThreshold, int top){
+        return this.sortedForClasses.get(classIndex).stream()
+                .filter(dfStat -> dfStat.getDf()>dfThreshold)
+                .map(DFStat::getPhrase)
+                .limit(top)
+                .collect(Collectors.toList());
+    }
+
 
 
     @Override
