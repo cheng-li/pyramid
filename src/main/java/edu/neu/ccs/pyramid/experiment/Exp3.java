@@ -311,103 +311,7 @@ public class Exp3 {
                 }
             }
 
-            /**
-             * focus set
-             */
-            if (shouldExtractFeatures){
-                //generate focus set
-                FocusSet focusSet = new FocusSet(numClasses);
-                for (int k=0;k<numClasses;k++){
-                    double[] gradient = lkTreeBoost.getGradient(k);
-                    Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
-                    List<Integer> hardExamples = IntStream.range(0,gradient.length)
-                            .mapToObj(i -> new Pair<>(i,gradient[i]))
-                            .filter(pair -> pair.getSecond()>0)
-                            .sorted(comparator.reversed())
-                            .limit(numDocsToSelect)
-                            .map(Pair::getFirst)
-                            .collect(Collectors.toList());
-                    for(Integer doc: hardExamples){
-                        focusSet.add(doc,k);
-                    }
-                }
 
-                List<Integer> validationSet = focusSet.getAll();
-
-                for (int k=0;k<numClasses;k++){
-                                       
-                    double[] allGradients = lkTreeBoost.getGradient(k);
-                    List<Double> gradientsForValidation = validationSet.stream()
-                            .map(i -> allGradients[i]).collect(Collectors.toList());
-  
-                    List<String> goodTerms = null;
-                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
-                        goodTerms = splitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
-                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfSplitExtractor")){
-                        goodTerms = tfidfSplitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else {
-                        throw new RuntimeException("ngram extractor is not specified correctly");
-                    }
-                    seedsForAllClasses.get(k).addAll(goodTerms);
-
-                    List<String> focusSetIndexIds = focusSet.getDataClassK(k)
-                            .parallelStream().map(trainIdTranslator::toExtId)
-                            .collect(Collectors.toList());
-                    System.out.println("focus set for class " +k+ "("+labelMap.get(k)+ "):");
-                    System.out.println(focusSetIndexIds.toString());
-                    System.out.println("terms extracted from focus set for class " + k+" ("+labelMap.get(k)+"):");
-                    System.out.println(goodTerms);
-
-                    //phrases
-
-                    List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
-                    gradientsForValidation,seedsForAllClasses.get(k));
-                    System.out.println("phrases extracted from focus set for class " + k+" ("+labelMap.get(k)+"):");
-                    System.out.println(goodPhrases);
-                    blackList.addAll(goodPhrases);
-
-                    for (String ngram:goodTerms){
-                        int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.match(index.getBodyField(),
-                                ngram,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
-                        for (SearchHit hit: response.getHits().getHits()){
-                            String indexId = hit.getId();
-                            int algorithmId = trainIdTranslator.toIntId(indexId);
-                            float score = hit.getScore();
-                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
-                        }
-
-                        NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                                setFeatureIndex(featureIndex).setFeatureName(ngram).
-                                setSource("matching_score").build();
-                        featureMappers.addMapper(mapper);
-                        blackList.add(ngram);
-                    }
-
-                    for (String phrase:goodPhrases){
-                        int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.matchPhrase(index.getBodyField(),
-                                phrase,trainIdTranslator.getAllExtIds(), 0);
-                        for (SearchHit hit: response.getHits().getHits()){
-                            String indexId = hit.getId();
-                            int algorithmId = trainIdTranslator.toIntId(indexId);
-                            float score = hit.getScore();
-                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
-                        }
-
-                        NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                                setFeatureIndex(featureIndex).setFeatureName(phrase).
-                                setSource("matching_score").build();
-                        featureMappers.addMapper(mapper);
-                    }
-                }
-            }
 
             /**
              * from easy set
@@ -466,13 +370,113 @@ public class Exp3 {
 
 
                     //phrases
-
+                    System.out.println("seeds for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println(seedsForAllClasses.get(k));
                     List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
                             gradientsForValidation,seedsForAllClasses.get(k));
                     System.out.println("phrases extracted from easy set for class " + k+" ("+labelMap.get(k)+"):");
                     System.out.println(goodPhrases);
                     blackList.addAll(goodPhrases);
 
+
+                    for (String ngram:goodTerms){
+                        int featureIndex = featureMappers.nextAvailable();
+                        SearchResponse response = index.match(index.getBodyField(),
+                                ngram,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
+                        for (SearchHit hit: response.getHits().getHits()){
+                            String indexId = hit.getId();
+                            int algorithmId = trainIdTranslator.toIntId(indexId);
+                            float score = hit.getScore();
+                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
+                        }
+
+                        NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
+                                setFeatureIndex(featureIndex).setFeatureName(ngram).
+                                setSource("matching_score").build();
+                        featureMappers.addMapper(mapper);
+                        blackList.add(ngram);
+                    }
+
+                    for (String phrase:goodPhrases){
+                        int featureIndex = featureMappers.nextAvailable();
+                        SearchResponse response = index.matchPhrase(index.getBodyField(),
+                                phrase,trainIdTranslator.getAllExtIds(), 0);
+                        for (SearchHit hit: response.getHits().getHits()){
+                            String indexId = hit.getId();
+                            int algorithmId = trainIdTranslator.toIntId(indexId);
+                            float score = hit.getScore();
+                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
+                        }
+
+                        NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
+                                setFeatureIndex(featureIndex).setFeatureName(phrase).
+                                setSource("matching_score").build();
+                        featureMappers.addMapper(mapper);
+                    }
+                }
+            }
+
+            /**
+             * focus set
+             */
+            //todo change back
+            if (false){
+                //generate focus set
+                FocusSet focusSet = new FocusSet(numClasses);
+                for (int k=0;k<numClasses;k++){
+                    double[] gradient = lkTreeBoost.getGradient(k);
+                    Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
+                    List<Integer> hardExamples = IntStream.range(0,gradient.length)
+                            .mapToObj(i -> new Pair<>(i,gradient[i]))
+                            .filter(pair -> pair.getSecond()>0)
+                            .sorted(comparator.reversed())
+                            .limit(numDocsToSelect)
+                            .map(Pair::getFirst)
+                            .collect(Collectors.toList());
+                    for(Integer doc: hardExamples){
+                        focusSet.add(doc,k);
+                    }
+                }
+
+                List<Integer> validationSet = focusSet.getAll();
+
+                for (int k=0;k<numClasses;k++){
+
+                    double[] allGradients = lkTreeBoost.getGradient(k);
+                    List<Double> gradientsForValidation = validationSet.stream()
+                            .map(i -> allGradients[i]).collect(Collectors.toList());
+
+                    List<String> goodTerms = null;
+                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
+                        goodTerms = splitExtractor.getGoodTerms(focusSet,
+                                validationSet,
+                                blackList, k, gradientsForValidation);
+                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
+                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
+                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfSplitExtractor")){
+                        goodTerms = tfidfSplitExtractor.getGoodTerms(focusSet,
+                                validationSet,
+                                blackList, k, gradientsForValidation);
+                    } else {
+                        throw new RuntimeException("ngram extractor is not specified correctly");
+                    }
+                    seedsForAllClasses.get(k).addAll(goodTerms);
+
+                    List<String> focusSetIndexIds = focusSet.getDataClassK(k)
+                            .parallelStream().map(trainIdTranslator::toExtId)
+                            .collect(Collectors.toList());
+                    System.out.println("focus set for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println(focusSetIndexIds.toString());
+                    System.out.println("terms extracted from focus set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println(goodTerms);
+
+                    //phrases
+
+                    List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
+                            gradientsForValidation,seedsForAllClasses.get(k));
+                    System.out.println("phrases extracted from focus set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println(goodPhrases);
+                    blackList.addAll(goodPhrases);
 
                     for (String ngram:goodTerms){
                         int featureIndex = featureMappers.nextAvailable();

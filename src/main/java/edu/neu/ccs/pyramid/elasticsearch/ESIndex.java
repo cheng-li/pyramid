@@ -74,7 +74,7 @@ public class ESIndex {
 
     /**
      *
-     * @return
+     * @return terms stemmed
      */
     public Set<String> getTerms(String id) throws IOException {
         StopWatch stopWatch=null;
@@ -356,12 +356,21 @@ public class ESIndex {
     }
 
 
+    /**
+     * phrase query
+     * use whitespace analyzer in the query
+     * @param field
+     * @param phrase already stemmed
+     * @param slop
+     * @return
+     */
     public SearchResponse matchPhrase(String field, String phrase, int slop){
 
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.matchPhraseQuery(field, phrase).slop(slop)).
+                setQuery(QueryBuilders.matchPhraseQuery(field, phrase).slop(slop)
+                    .analyzer("whitespace")).
                 execute().actionGet();
         return response;
 
@@ -374,6 +383,15 @@ public class ESIndex {
     }
 
 
+    /**
+     * phrase query
+     * use whitespace analyzer in the query
+     * @param field
+     * @param phrase already stemmed
+     * @param ids
+     * @param slop
+     * @return
+     */
     public SearchResponse matchPhrase(String field, String phrase,
                                       String[] ids, int slop) {
         IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
@@ -382,7 +400,8 @@ public class ESIndex {
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(field, phrase).slop(slop),
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(field, phrase)
+                                .slop(slop).analyzer("whitespace"),
                         idsFilterBuilder))
                 .execute().actionGet();
 
@@ -400,8 +419,9 @@ public class ESIndex {
 
     /**
      * simple match
+     * use whitespace analyzer
      * @param field
-     * @param phrase
+     * @param phrase already stemmed
      * @param operator and /or
      * @return
      */
@@ -410,7 +430,8 @@ public class ESIndex {
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.matchQuery(field, phrase).operator(operator)).
+                setQuery(QueryBuilders.matchQuery(field, phrase).operator(operator)
+                        .analyzer("whitespace")).
                 execute().actionGet();
         return response;
 
@@ -422,6 +443,15 @@ public class ESIndex {
 //        System.out.println(builder.string());
     }
 
+    /**
+     * simple match
+     * use whitespace analyzer
+     * @param field
+     * @param phrase already stemmed
+     * @param ids
+     * @param operator
+     * @return
+     */
     public SearchResponse match(String field, String phrase, String[] ids,
                                 MatchQueryBuilder.Operator operator){
         IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
@@ -429,19 +459,30 @@ public class ESIndex {
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(field, phrase).operator(operator),
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(field, phrase)
+                                .operator(operator).analyzer("whitespace"),
                         idsFilterBuilder)).
                 execute().actionGet();
         return response;
     }
 
+    /**
+     * use whitespace analyzer
+     * @param bodyField
+     * @param phrase already stemmed
+     * @param slop
+     * @param labelField
+     * @param label
+     * @return
+     */
     public SearchResponse matchPhraseForClass(String bodyField, String phrase,
                                               int slop,
                                               String labelField, int label){
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(bodyField,phrase).slop(slop),
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(bodyField,phrase)
+                                .slop(slop).analyzer("whitespace"),
                         FilterBuilders.termFilter(labelField,label))).
                 execute().actionGet();
 
@@ -461,7 +502,8 @@ public class ESIndex {
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(bodyField,phrase).operator(operator),
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(bodyField,phrase)
+                                .operator(operator).analyzer("whitespace"),
                         FilterBuilders.termFilter(labelField,label))).
                 execute().actionGet();
 

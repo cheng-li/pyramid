@@ -15,6 +15,7 @@ import edu.neu.ccs.pyramid.eval.MRR;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -365,17 +366,30 @@ public class Exp4 {
         int firstModel = config.getInt("verify.firstModel");
         int lastModel = config.getInt("verify.lastModel");
         String modelName = config.getString("archive.model");
+        List<LKTreeBoost> lkTreeBoosts = new ArrayList<>();
         for (int modelIndex =firstModel;modelIndex<=lastModel;modelIndex++) {
             File serializedModel =  new File(archive,modelName+"_"+modelIndex);
             LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(serializedModel);
-            System.out.println("model "+modelIndex);
-            System.out.println("==========top features==========");
+            lkTreeBoosts.add(lkTreeBoost);
+            if (config.getBoolean("verify.topFeatures.model")){
+                System.out.println("model "+modelIndex);
+                System.out.println("==========top features==========");
+                for (int k=0;k<config.getInt("numClasses");k++){
+                    List<String> features = LKTBInspector.topFeatureNames(lkTreeBoost, k);
+                    System.out.println("top features for class "+k+"("+labelMap.get(k)+"):");
+                    System.out.println(features);
+                }
+            }
+        }
+        if (config.getBoolean("verify.topFeatures.overall")){
+            System.out.println("overall top features among all models:");
             for (int k=0;k<config.getInt("numClasses");k++){
-                List<String> features = LKTBInspector.topFeatureNames(lkTreeBoost, k);
+                List<String> features = LKTBInspector.topFeatureNames(lkTreeBoosts, k);
                 System.out.println("top features for class "+k+"("+labelMap.get(k)+"):");
                 System.out.println(features);
             }
         }
+
     }
 
     static void showTrees(Config config) throws Exception{

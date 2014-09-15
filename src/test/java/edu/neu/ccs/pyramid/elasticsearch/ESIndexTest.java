@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test6();
+        test7();
 
     }
 
@@ -54,6 +54,14 @@ public class ESIndexTest {
         System.out.println(index.getTermVector("0"));
 
 
+        index.close();
+    }
+
+    static void test7() throws Exception{
+        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+                .build();
+        System.out.println(index.phraseDF(index.getBodyField(),"its mission",0));
+        System.out.println(index.phraseDF(index.getBodyField(),"it mission",0));
         index.close();
     }
 
