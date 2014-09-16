@@ -69,36 +69,39 @@ public class PhraseSplitExtractor {
             return goodPhrases;
         }
 
-        Collection<String> allPhrases = gather(focusSet,classIndex,seeds);
-        List<String> candidates = filter(allPhrases,blacklist);
+        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds);
+        List<PhraseInfo> candidates = filter(allPhrases,blacklist);
         return rankBySplit(candidates,validationSet,residuals);
     }
 
-    public List<String> filter(Collection<String> phrases,Set<String> blacklist){
-        return phrases.parallelStream()
-                .filter(phrase -> (index.phraseDF(index.getBodyField(), phrase, 0) > minDf)
-                        && (!blacklist.contains(phrase)))
+    public List<PhraseInfo> filter(Collection<PhraseInfo> phraseInfos, Set<String> blacklist){
+        return phraseInfos.parallelStream()
+                .filter(phraseInfo ->
+                        ((phraseInfo.getSearchResponse().getHits().totalHits() > minDf)
+                        && (!blacklist.contains(phraseInfo.getPhrase()))))
                 .collect(Collectors.toList());
     }
 
-    private Collection<String> gather(FocusSet focusSet,
+    //todo
+    private Collection<PhraseInfo> gather(FocusSet focusSet,
                                         int classIndex,
                                         Set<String> seeds){
         List<Integer> dataPoints = focusSet.getDataClassK(classIndex);
 
-        List<Set<String>> phrasesList = dataPoints.parallelStream()
+        List<Set<PhraseInfo>> phrasesList = dataPoints.parallelStream()
                 .map(dataPoint ->
                 {String indexId = idTranslator.toExtId(dataPoint);
                   Map<Integer,String> termVector = index.getTermVector(indexId);
-                    return PhraseDetector.getPhrases(termVector,seeds);})
+                    PhraseDetector phraseDetector = new PhraseDetector(index).setMinDf(this.minDf);
+                    return phraseDetector.getPhraseInfos(termVector, seeds);})
                 .collect(Collectors.toList());
 
-        Set<String> all = new HashSet<>();
+        Set<PhraseInfo> all = new HashSet<>();
         phrasesList.forEach(all::addAll);
         return all;
     }
 
-    private List<String> rankBySplit(Collection<String> phrases,
+    private List<String> rankBySplit(Collection<PhraseInfo> phraseInfos,
                                      List<Integer> validationSet,
                                      List<Double> residuals){
         //translate once
@@ -109,25 +112,24 @@ public class PhraseSplitExtractor {
         // this is stupid
         double[] residualsArray = residuals.stream().mapToDouble(a -> a).toArray();
 
-        Comparator<Pair<String,Double>> pairComparator = Comparator.comparing(Pair::getSecond);
-        List<String> goodPhrases = phrases.stream().parallel()
-                .map(phrase ->
-                        new Pair<>(phrase, splitScore(phrase, validationIndexIds, residualsArray)))
+        Comparator<Pair<PhraseInfo,Double>> pairComparator = Comparator.comparing(Pair::getSecond);
+        List<String> goodPhrases = phraseInfos.stream().parallel()
+                .map(phraseInfo ->
+                        new Pair<>(phraseInfo, splitScore(phraseInfo, validationIndexIds, residualsArray)))
                 .sorted(pairComparator.reversed())
-                .map(Pair::getFirst)
+                .map(pair -> pair.getFirst().getPhrase())
                 .limit(this.topN)
                 .collect(Collectors.toList());
         return goodPhrases;
 
     }
 
-    private double splitScore(String phrase,
+    private double splitScore(PhraseInfo phraseInfo,
                               String[] validationSet,
                               double[] residuals){
         int numDataPoints = validationSet.length;
         DataSet dataSet = new DenseRegDataSet(numDataPoints,1);
-        SearchResponse response = this.index.matchPhrase(this.index.getBodyField(),
-                phrase, validationSet, 0);
+        SearchResponse response = phraseInfo.getSearchResponse();
         Map<String,Float> matchingScores = new HashMap<>();
         for (SearchHit hit: response.getHits().getHits()){
             String indexId = hit.getId();
