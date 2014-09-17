@@ -25,26 +25,6 @@ public class PhraseInfo {
         return phrase;
     }
 
-    /**
-     * just connect strings, need search again
-     * @param left
-     * @param right
-     * @return
-     */
-    public static PhraseInfo connect(PhraseInfo left, PhraseInfo right){
-        String[] leftSplit = left.phrase.split(" ");
-        String[] rightSplit = right.phrase.split(" ");
-        if (!leftSplit[leftSplit.length-1].equals(rightSplit[0])){
-            throw new IllegalArgumentException("don't share the same term, cannot connect");
-        }
-        int pivotLength = rightSplit[0].length();
-        String connected = "";
-        connected = connected.concat(left.phrase);
-        connected = connected.concat(right.phrase.substring(pivotLength));
-        return new PhraseInfo(connected);
-    }
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -27,15 +27,18 @@ import java.util.stream.IntStream;
  */
 public class PhraseSplitExtractor {
     private static final Logger logger = LogManager.getLogger();
-    int minDf = 10;
+    private int minDf = 10;
     private ESIndex index;
     private int topN =20;
     private IdTranslator idTranslator;
-    int minDataPerLeaf = 2;
+    private int minDataPerLeaf = 2;
+    private PhraseDetector phraseDetector;
 
     public PhraseSplitExtractor(ESIndex index, IdTranslator idTranslator) {
         this.index = index;
         this.idTranslator = idTranslator;
+        this.phraseDetector = new PhraseDetector(index).setMinDf(this.minDf);
+
     }
 
     public PhraseSplitExtractor setTopN(int topN) {
@@ -45,6 +48,7 @@ public class PhraseSplitExtractor {
 
     public PhraseSplitExtractor setMinDf(int minDf) {
         this.minDf = minDf;
+        this.phraseDetector.setMinDf(minDf);
         return this;
     }
 
@@ -92,7 +96,6 @@ public class PhraseSplitExtractor {
                 .map(dataPoint ->
                 {String indexId = idTranslator.toExtId(dataPoint);
                   Map<Integer,String> termVector = index.getTermVector(indexId);
-                    PhraseDetector phraseDetector = new PhraseDetector(index).setMinDf(this.minDf);
                     return phraseDetector.getPhraseInfos(termVector, seeds);})
                 .collect(Collectors.toList());
 

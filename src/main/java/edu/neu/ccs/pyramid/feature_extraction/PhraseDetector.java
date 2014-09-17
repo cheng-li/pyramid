@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by chengli on 9/13/14.
@@ -11,9 +12,13 @@ import java.util.*;
 public class PhraseDetector {
     private int minDf=10;
     private ESIndex index;
+    //keep phraseInfos explored so far
+    //todo can be optimized, for bad phrases, don't need to keep the actual search response
+    private Map<String,PhraseInfo> phraseInfoCache;
 
     public PhraseDetector(ESIndex index) {
         this.index = index;
+        this.phraseInfoCache = new ConcurrentHashMap<>();
     }
 
     public PhraseDetector setMinDf(int minDf) {
@@ -67,13 +72,24 @@ public class PhraseDetector {
             }
             String leftTerm = termVector.get(currentLeft);
             String currentPhrase = leftTerm.concat(" ").concat(phrase);
-            SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                    currentPhrase,0);
-            if (searchResponse.getHits().totalHits()<this.minDf){
+            PhraseInfo phraseInfo;
+            //if in the cache, just get it
+            if (this.phraseInfoCache.containsKey(currentPhrase)){
+                phraseInfo = this.phraseInfoCache.get(currentPhrase);
+            } else {
+                // if not, do a search, and cache it
+                phraseInfo = new PhraseInfo(currentPhrase);
+                SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
+                        currentPhrase,0);
+                phraseInfo.setSearchResponse(searchResponse);
+                this.phraseInfoCache.put(currentPhrase,phraseInfo);
+            }
+
+
+            if (phraseInfo.getSearchResponse().getHits().totalHits()<this.minDf){
                 break;
             }
-            PhraseInfo phraseInfo = new PhraseInfo(currentPhrase);
-            phraseInfo.setSearchResponse(searchResponse);
+
             phraseInfos.add(phraseInfo);
             phrase = currentPhrase;
             currentLeft -= 1;
@@ -98,13 +114,23 @@ public class PhraseDetector {
             }
             String rightTerm = termVector.get(currentRight);
             String currentPhrase = phrase.concat(" ").concat(rightTerm);
-            SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                    currentPhrase,0);
-            if (searchResponse.getHits().totalHits()<this.minDf){
+            PhraseInfo phraseInfo;
+            //if in the cache, just get it
+            if (this.phraseInfoCache.containsKey(currentPhrase)){
+                phraseInfo = this.phraseInfoCache.get(currentPhrase);
+            } else {
+                // if not, do a search, and cache it
+                phraseInfo = new PhraseInfo(currentPhrase);
+                SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
+                        currentPhrase,0);
+                phraseInfo.setSearchResponse(searchResponse);
+                this.phraseInfoCache.put(currentPhrase,phraseInfo);
+            }
+
+
+            if (phraseInfo.getSearchResponse().getHits().totalHits()<this.minDf){
                 break;
             }
-            PhraseInfo phraseInfo = new PhraseInfo(currentPhrase);
-            phraseInfo.setSearchResponse(searchResponse);
             phraseInfos.add(phraseInfo);
             phrase = currentPhrase;
             currentRight += 1;
@@ -124,14 +150,21 @@ public class PhraseDetector {
                 //just try it
                 if (i==0){
                     PhraseInfo right = rightList.get(j);
-                    PhraseInfo connected = PhraseInfo.connect(left,right);
-                    SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                            connected.getPhrase(),0);
-                    if (searchResponse.getHits().totalHits()<this.minDf){
+                    PhraseInfo connected;
+                    String connectedString = connect(left.getPhrase(),right.getPhrase());
+                    if (this.phraseInfoCache.containsKey(connectedString)){
+                        connected = this.phraseInfoCache.get(connectedString);
+                    } else {
+                        connected = new PhraseInfo(connectedString);
+                        SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
+                                connected.getPhrase(),0);
+                        connected.setSearchResponse(searchResponse);
+                        this.phraseInfoCache.put(connectedString,connected);
+                    }
+                    if (connected.getSearchResponse().getHits().totalHits()<this.minDf){
                         //skip j
                         break;
                     }
-                    connected.setSearchResponse(searchResponse);
                     allConnected.add(connected);
                     valid[i][j] = true;
                 } else {
@@ -140,20 +173,40 @@ public class PhraseDetector {
                         break;
                     }
                     PhraseInfo right = rightList.get(j);
-                    PhraseInfo connected = PhraseInfo.connect(left,right);
-                    SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                            connected.getPhrase(),0);
-                    if (searchResponse.getHits().totalHits()<this.minDf){
+                    PhraseInfo connected;
+                    String connectedString = connect(left.getPhrase(),right.getPhrase());
+                    if (this.phraseInfoCache.containsKey(connectedString)){
+                        connected = this.phraseInfoCache.get(connectedString);
+                    } else {
+                        connected = new PhraseInfo(connectedString);
+                        SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
+                                connected.getPhrase(),0);
+                        connected.setSearchResponse(searchResponse);
+                        this.phraseInfoCache.put(connectedString,connected);
+                    }
+                    if (connected.getSearchResponse().getHits().totalHits()<this.minDf){
                         //skip j
                         break;
                     }
-                    connected.setSearchResponse(searchResponse);
                     allConnected.add(connected);
                     valid[i][j] = true;
                 }
             }
         }
         return allConnected;
+    }
+
+    static String connect(String left, String right){
+        String[] leftSplit = left.split(" ");
+        String[] rightSplit = right.split(" ");
+        if (!leftSplit[leftSplit.length-1].equals(rightSplit[0])){
+            throw new IllegalArgumentException("don't share the same term, cannot connect");
+        }
+        int pivotLength = rightSplit[0].length();
+        String connected = "";
+        connected = connected.concat(left);
+        connected = connected.concat(right.substring(pivotLength));
+        return connected;
     }
 
 
