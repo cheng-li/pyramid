@@ -316,7 +316,7 @@ public class Exp3 {
             /**
              * from easy set
              */
-            if (shouldExtractFeatures){
+            if (shouldExtractFeatures&&config.getBoolean("extraction.fromEasySet")){
                 //generate easy set
                 FocusSet focusSet = new FocusSet(numClasses);
                 for (int k=0;k<numClasses;k++){
@@ -420,7 +420,7 @@ public class Exp3 {
              * focus set
              */
             //todo change back
-            if (false){
+            if (shouldExtractFeatures&&config.getBoolean("extraction.fromHardSet")){
                 //generate focus set
                 FocusSet focusSet = new FocusSet(numClasses);
                 for (int k=0;k<numClasses;k++){
@@ -465,16 +465,17 @@ public class Exp3 {
                     List<String> focusSetIndexIds = focusSet.getDataClassK(k)
                             .parallelStream().map(trainIdTranslator::toExtId)
                             .collect(Collectors.toList());
-                    System.out.println("focus set for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println("hard set for class " +k+ "("+labelMap.get(k)+ "):");
                     System.out.println(focusSetIndexIds.toString());
-                    System.out.println("terms extracted from focus set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println("terms extracted from hard set for class " + k+" ("+labelMap.get(k)+"):");
                     System.out.println(goodTerms);
 
                     //phrases
-
+                    System.out.println("seeds for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println(seedsForAllClasses.get(k));
                     List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
                             gradientsForValidation,seedsForAllClasses.get(k));
-                    System.out.println("phrases extracted from focus set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println("phrases extracted from hard set for class " + k+" ("+labelMap.get(k)+"):");
                     System.out.println(goodPhrases);
                     blackList.addAll(goodPhrases);
 
