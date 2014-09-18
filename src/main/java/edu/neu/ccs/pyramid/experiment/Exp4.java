@@ -14,7 +14,9 @@ import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
 import edu.neu.ccs.pyramid.eval.MRR;
 import org.apache.commons.lang3.time.StopWatch;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -387,10 +389,27 @@ public class Exp4 {
                 List<String> features = LKTBInspector.topFeatureNames(lkTreeBoosts, k);
                 System.out.println("top features for class "+k+"("+labelMap.get(k)+"):");
                 System.out.println(features);
+                if (config.getBoolean("verify.topFeatures.writeToFiles")){
+                    File featureFolder = new File(archive,"top_features");
+                    if (!featureFolder.exists()){
+                        featureFolder.mkdirs();
+                    }
+                    File featureFile = new File(featureFolder,""+k);
+                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureFile))
+                        ){
+                        bw.write(labelMap.get(k));
+                        bw.newLine();
+                      for (String feature: features){
+                          bw.write(feature);
+                          bw.newLine();
+                        }
+                    }
+                }
             }
         }
-
     }
+
+
 
     static void showTrees(Config config) throws Exception{
         String archive = config.getString("archive.folder");

@@ -15,6 +15,7 @@ public class PhraseDetector {
     //keep phraseInfos explored so far
     //todo can be optimized, for bad phrases, don't need to keep the actual search response
     private Map<String,PhraseInfo> phraseInfoCache;
+    //todo use a term vector cache
 
     public PhraseDetector(ESIndex index) {
         this.index = index;
