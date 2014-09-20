@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
+import com.google.common.cache.LoadingCache;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +21,7 @@ import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -38,6 +40,10 @@ public class ESIndex {
     String clientType;
     String clusterName;
     String bodyField;
+    /**
+     * concurrent LRU cache for termvectors
+     */
+    LoadingCache<String,Map<Integer,String>> termVectorCache;
 
 
     public int getNumDocs() {
@@ -285,6 +291,16 @@ public class ESIndex {
     }
 
     public Map<Integer,String> getTermVector(String id){
+        Map<Integer,String> termVector = null;
+        try {
+            termVector = this.termVectorCache.get(id);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return termVector;
+    }
+
+    Map<Integer,String> getTermVectorFromIndex(String id){
         Map<Integer,String> map = null;
         try {
             map = getTermVectorWithException(id);
@@ -293,6 +309,7 @@ public class ESIndex {
         }
         return map;
     }
+
     private Map<Integer,String> getTermVectorWithException(String id) throws IOException {
         TermVectorResponse response = client.prepareTermVector(indexName, documentType, id)
                 .setOffsets(false).setPositions(true).setFieldStatistics(false)

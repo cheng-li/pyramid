@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -8,6 +10,7 @@ import org.elasticsearch.node.Node;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -24,6 +27,7 @@ public class ESIndexBuilder {
     private String bodyField = "body";
     private List<String> hosts = new ArrayList<>();
     private List<Integer> ports = new ArrayList<>();
+    private int termVectorCacheSize = 10000;
 
     public static ESIndexBuilder builder(){
         return new ESIndexBuilder();
@@ -77,6 +81,11 @@ public class ESIndexBuilder {
         return this;
     }
 
+    public ESIndexBuilder setTermVectorCacheSize(int termVectorCacheSize) {
+        this.termVectorCacheSize = termVectorCacheSize;
+        return this;
+    }
+
     public ESIndex build() throws Exception {
         boolean legal = (clientType.equals("node"))||(clientType.equals("transport"));
         if (!legal){
@@ -111,6 +120,15 @@ public class ESIndexBuilder {
             }
         }
         esIndex.numDocs = esIndex.fetchNumDocs();
+
+        esIndex.termVectorCache = CacheBuilder.newBuilder()
+                .maximumSize(this.termVectorCacheSize)
+                .build(new CacheLoader<String, Map<Integer, String>>() {
+                    @Override
+                    public Map<Integer, String> load(String id) throws Exception {
+                        return esIndex.getTermVectorFromIndex(id);
+                    }
+                });
 
         return esIndex;
     }

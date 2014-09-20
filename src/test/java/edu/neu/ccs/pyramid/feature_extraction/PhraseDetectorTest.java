@@ -2,14 +2,13 @@ package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
-import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
+
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
 
 public class PhraseDetectorTest {
     public static void main(String[] args) throws Exception{

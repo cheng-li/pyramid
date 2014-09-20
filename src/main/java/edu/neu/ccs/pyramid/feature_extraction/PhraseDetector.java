@@ -1,10 +1,13 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by chengli on 9/13/14.
@@ -14,12 +17,23 @@ public class PhraseDetector {
     private ESIndex index;
     //keep phraseInfos explored so far
     //todo can be optimized, for bad phrases, don't need to keep the actual search response
-    private Map<String,PhraseInfo> phraseInfoCache;
-    //todo use a term vector cache
+    //todo this only use slop 0
+    private LoadingCache<String, PhraseInfo> phraseInfoCache;
+
 
     public PhraseDetector(ESIndex index) {
         this.index = index;
-        this.phraseInfoCache = new ConcurrentHashMap<>();
+        this.phraseInfoCache = CacheBuilder.newBuilder().maximumSize(10000)
+                .build(new CacheLoader<String, PhraseInfo>() {
+                    @Override
+                    public PhraseInfo load(String phrase) throws Exception {
+                        PhraseInfo phraseInfo = new PhraseInfo(phrase);
+                        SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
+                                phrase,0);
+                        phraseInfo.setSearchResponse(searchResponse);
+                        return phraseInfo;
+                    }
+                });
     }
 
     public PhraseDetector setMinDf(int minDf) {
@@ -73,19 +87,12 @@ public class PhraseDetector {
             }
             String leftTerm = termVector.get(currentLeft);
             String currentPhrase = leftTerm.concat(" ").concat(phrase);
-            PhraseInfo phraseInfo;
-            //if in the cache, just get it
-            if (this.phraseInfoCache.containsKey(currentPhrase)){
+            PhraseInfo phraseInfo = null;
+            try {
                 phraseInfo = this.phraseInfoCache.get(currentPhrase);
-            } else {
-                // if not, do a search, and cache it
-                phraseInfo = new PhraseInfo(currentPhrase);
-                SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                        currentPhrase,0);
-                phraseInfo.setSearchResponse(searchResponse);
-                this.phraseInfoCache.put(currentPhrase,phraseInfo);
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
-
 
             if (phraseInfo.getSearchResponse().getHits().totalHits()<this.minDf){
                 break;
@@ -115,19 +122,12 @@ public class PhraseDetector {
             }
             String rightTerm = termVector.get(currentRight);
             String currentPhrase = phrase.concat(" ").concat(rightTerm);
-            PhraseInfo phraseInfo;
-            //if in the cache, just get it
-            if (this.phraseInfoCache.containsKey(currentPhrase)){
+            PhraseInfo phraseInfo = null;
+            try {
                 phraseInfo = this.phraseInfoCache.get(currentPhrase);
-            } else {
-                // if not, do a search, and cache it
-                phraseInfo = new PhraseInfo(currentPhrase);
-                SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                        currentPhrase,0);
-                phraseInfo.setSearchResponse(searchResponse);
-                this.phraseInfoCache.put(currentPhrase,phraseInfo);
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
-
 
             if (phraseInfo.getSearchResponse().getHits().totalHits()<this.minDf){
                 break;
@@ -151,17 +151,15 @@ public class PhraseDetector {
                 //just try it
                 if (i==0){
                     PhraseInfo right = rightList.get(j);
-                    PhraseInfo connected;
+
                     String connectedString = connect(left.getPhrase(),right.getPhrase());
-                    if (this.phraseInfoCache.containsKey(connectedString)){
+                    PhraseInfo connected = null;
+                    try {
                         connected = this.phraseInfoCache.get(connectedString);
-                    } else {
-                        connected = new PhraseInfo(connectedString);
-                        SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                                connected.getPhrase(),0);
-                        connected.setSearchResponse(searchResponse);
-                        this.phraseInfoCache.put(connectedString,connected);
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
                     }
+
                     if (connected.getSearchResponse().getHits().totalHits()<this.minDf){
                         //skip j
                         break;
@@ -174,17 +172,15 @@ public class PhraseDetector {
                         break;
                     }
                     PhraseInfo right = rightList.get(j);
-                    PhraseInfo connected;
+
                     String connectedString = connect(left.getPhrase(),right.getPhrase());
-                    if (this.phraseInfoCache.containsKey(connectedString)){
+                    PhraseInfo connected = null;
+                    try {
                         connected = this.phraseInfoCache.get(connectedString);
-                    } else {
-                        connected = new PhraseInfo(connectedString);
-                        SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                                connected.getPhrase(),0);
-                        connected.setSearchResponse(searchResponse);
-                        this.phraseInfoCache.put(connectedString,connected);
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
                     }
+
                     if (connected.getSearchResponse().getHits().totalHits()<this.minDf){
                         //skip j
                         break;
