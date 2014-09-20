@@ -214,7 +214,7 @@ public class RegTreeTrainerTest {
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         regTreeConfig.setActiveFeatures(activeFeatures);
-        int numLeaves = 10;
+        int numLeaves = 1000;
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
         regTreeConfig.setActiveDataPoints(activeDataPoints);

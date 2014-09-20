@@ -148,10 +148,13 @@ public class Exp4 {
         String trainFile = new File(config.getString("input.folder"),
                 config.getString("input.trainData")).getAbsolutePath();
         ClfDataSet dataSet;
+
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
 
         ClfDataSet trainDataSet;
@@ -174,9 +177,11 @@ public class Exp4 {
 
         ClfDataSet dataSet;
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
         double aveAcc = 0;
         for (int modelIndex =firstModel;modelIndex<=lastModel;modelIndex++){
@@ -202,9 +207,11 @@ public class Exp4 {
 
         ClfDataSet dataSet;
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
 
         Voting voting = new Voting(numClasses);
@@ -234,9 +241,11 @@ public class Exp4 {
 
         ClfDataSet dataSet;
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
         ProbabilityVoting probabilityVoting = new ProbabilityVoting(numClasses);
 
@@ -275,9 +284,11 @@ public class Exp4 {
 
         ClfDataSet dataSet;
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
         double aveAcc = 0;
         for (int modelIndex =firstModel;modelIndex<=lastModel;modelIndex++){
@@ -303,9 +314,11 @@ public class Exp4 {
 
         ClfDataSet dataSet;
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
 
         Voting voting = new Voting(numClasses);
@@ -334,9 +347,11 @@ public class Exp4 {
 
         ClfDataSet dataSet;
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
         ProbabilityVoting probabilityVoting = new ProbabilityVoting(numClasses);
 
@@ -436,9 +451,11 @@ public class Exp4 {
                 config.getString("input.trainData")).getAbsolutePath();
         ClfDataSet dataSet;
         if (config.getBoolean("featureMatrix.sparse")){
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_SPARSE,
+                    config.getBoolean("input.loadSettings"));
         } else {
-            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,true);
+            dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,
+                    config.getBoolean("input.loadSettings"));
         }
 
         return dataSet.getSetting().getLabelMap();
