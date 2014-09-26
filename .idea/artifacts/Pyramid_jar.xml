@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="Pyramid:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/Pyramid_jar</output-path>
-    <root id="archive" name="Pyramid.jar">
-      <element id="module-output" name="Pyramid" />
-    </root>
-  </artifact>
-</component>

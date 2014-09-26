@@ -24,5 +24,4 @@ public class Exp7 {
         DataSetUtil.dumpFeatureSettings(dataSet,new File(config.getString("trecFolder"),"feature_settings.txt"));
     }
 
-
 }
