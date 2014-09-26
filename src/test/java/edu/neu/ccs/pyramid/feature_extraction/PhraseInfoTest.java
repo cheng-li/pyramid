@@ -10,13 +10,13 @@ public class PhraseInfoTest {
     static void test1(){
         PhraseInfo left = new PhraseInfo("a b c");
         PhraseInfo right = new PhraseInfo("c d");
-        System.out.println(PhraseInfo.connect(left,right));
+
     }
 
     static void test2(){
         PhraseInfo left = new PhraseInfo("a b c");
         PhraseInfo right = new PhraseInfo("a c d");
-        System.out.println(PhraseInfo.connect(left,right));
+
     }
 
 }

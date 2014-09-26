@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import static org.junit.Assert.*;
+
 
 public class DenseClfDataSetTest {
     public static void main(String[] args) {
