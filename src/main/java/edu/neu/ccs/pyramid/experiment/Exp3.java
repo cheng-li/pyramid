@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- *  unigram feature extraction using elasticsearch,
+ *  feature extraction using elasticsearch,
  *  can start with initial features in ESindex
  * can use default train/test split or random split
  * follow golden_features, exp57

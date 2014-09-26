@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * feature sampling gradient boosting
 * Created by chengli on 9/9/14.
 */
 public class Exp4 {

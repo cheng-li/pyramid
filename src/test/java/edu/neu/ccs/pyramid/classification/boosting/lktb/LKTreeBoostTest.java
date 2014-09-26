@@ -11,7 +11,6 @@ import java.util.concurrent.Executors;
 
 public class LKTreeBoostTest {
     public static void main(String[] args) throws Exception {
-        System.out.println("");
         spam_test();
 //        newsgroup_test();
 //        spam_build();
