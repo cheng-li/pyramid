@@ -190,14 +190,11 @@ public class Exp3 {
     static ClfDataSet loadTrainData(Config config, ESIndex index, FeatureMappers featureMappers,
                                     IdTranslator idTranslator, Map<Integer,String> labelMap) throws Exception{
         System.out.println("creating training set");
-        int numNgramsToExtract = config.getInt("extraction.numNgramsToExtract");
-        int numIterations = config.getInt("train.numIterations");
-        int numClasses = config.getInt("numClasses");
-        int maxDim = config.getInt("maxNumColumns");
-        double extractionFrequency = config.getDouble("extraction.frequency");
+
+
         //todo fix
-        int addedDimensions = (int)(numNgramsToExtract*numIterations*numClasses*extractionFrequency*2);
-        int totalDim = Math.min(featureMappers.getTotalDim() + addedDimensions, maxDim);
+
+        int totalDim = config.getInt("maxNumColumns");
         System.out.println("allocating "+totalDim+" columns for training set");
         ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelMap);
         System.out.println("training set created");
@@ -292,6 +289,7 @@ public class Exp3 {
 
             boolean condition1 = (featureMappers.getTotalDim()
                     +numNgramsToExtract*numClasses*2
+                    +config.getInt("extraction.phraseSplitExtractor.topN")*2
                     <dataSet.getNumFeatures());
             boolean condition2 = (Math.random()<extractionFrequency);
             //should start with some feature
@@ -672,6 +670,8 @@ public class Exp3 {
         String archive = config.getString("archive.folder");
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
+        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
+        DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 
