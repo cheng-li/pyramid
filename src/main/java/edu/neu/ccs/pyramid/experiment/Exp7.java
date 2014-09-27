@@ -9,6 +9,7 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import java.io.File;
 
 /**
+ * dump data set info for exp3
  * Created by chengli on 9/26/14.
  */
 public class Exp7 {
