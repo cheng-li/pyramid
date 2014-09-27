@@ -9,9 +9,9 @@ public class MultiLabelTest {
         MultiLabel multiLabel = new MultiLabel(3);
         multiLabel.addLabel(0).addLabel(2);
         System.out.println(multiLabel);
-        System.out.println(multiLabel.getLabelForClass(0));
-        System.out.println(multiLabel.getLabelForClass(1));
-        System.out.println(multiLabel.getLabelForClass(2));
+        System.out.println(multiLabel.matchClass(0));
+        System.out.println(multiLabel.matchClass(1));
+        System.out.println(multiLabel.matchClass(2));
         System.out.println(multiLabel.getMatchedLabels());
     }
 

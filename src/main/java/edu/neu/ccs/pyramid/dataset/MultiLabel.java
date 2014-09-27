@@ -9,20 +9,20 @@ import java.util.Set;
  */
 public class MultiLabel {
     private Set<Integer> labels;
-    private int[] labelsVector;
+    private boolean[] labelsVector;
 
     public MultiLabel(int numClasses) {
         this.labels = new HashSet<>();
-        this.labelsVector= new int[numClasses];
+        this.labelsVector= new boolean[numClasses];
     }
 
     public MultiLabel addLabel(int k){
         this.labels.add(k);
-        this.labelsVector[k]=1;
+        this.labelsVector[k]=true;
         return this;
     }
 
-    public int getLabelForClass(int k){
+    public boolean matchClass(int k){
         return labelsVector[k];
     }
 
