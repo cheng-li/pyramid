@@ -5,6 +5,4 @@ import static org.junit.Assert.*;
 public class Tmp3Test {
 
 
-
-
 }
