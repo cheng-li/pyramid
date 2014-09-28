@@ -1,12 +1,18 @@
 package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
 
+import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MLPriorProbClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -31,6 +37,37 @@ public class HMLGradientBoosting implements MultiLabelClassifier, Serializable{
             this.regressors.add(regressorsClassK);
         }
     }
+
+    /**
+     * not sure whether this is good for performance
+     * start with prior probabilities
+     * should be called before setTrainConfig
+     * @param probs
+     */
+    public void setPriorProbs(double[] probs){
+        if (probs.length!=this.numClasses){
+            throw new IllegalArgumentException("probs.length!=this.numClasses");
+        }
+        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+        for (int k=0;k<this.numClasses;k++){
+            double score = Math.log(probs[k] - average);
+            Regressor constant = new ConstantRegressor(score);
+            this.addRegressor(constant, k);
+        }
+    }
+
+    /**
+     * not sure whether this is good for performance
+     * start with prior probabilities
+     * should be called before setTrainConfig
+     */
+    public void setPriorProbs(MultiLabelClfDataSet dataSet, List<MultiLabel> assignments){
+        MLPriorProbClassifier priorProbClassifier = new MLPriorProbClassifier(this.numClasses,assignments);
+        priorProbClassifier.fit(dataSet);
+        double[] probs = priorProbClassifier.getClassProbs();
+        this.setPriorProbs(probs);
+    }
+
 
     /**
      * to start/resume training, set train config
@@ -166,6 +203,50 @@ public class HMLGradientBoosting implements MultiLabelClassifier, Serializable{
             }
         }
         return sb.toString();
+    }
+
+    public void serialize(String file) throws Exception{
+        serialize(new File(file));
+    }
+
+    /**
+     * serialize to file
+     * @param file
+     * @throws Exception
+     */
+    public void serialize(File file) throws Exception{
+        File parent = file.getParentFile();
+        if (!parent.exists()){
+            parent.mkdirs();
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    public static HMLGradientBoosting deserialize(String file) throws Exception{
+        return deserialize(new File(file));
+    }
+
+    /**
+     * de-serialize from file
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    public static HMLGradientBoosting deserialize(File file) throws Exception{
+        try(
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            HMLGradientBoosting boosting = (HMLGradientBoosting)objectInputStream.readObject();
+            return boosting;
+        }
     }
 
 

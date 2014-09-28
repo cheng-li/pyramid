@@ -118,7 +118,7 @@ public class LKTreeBoostTest {
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
-        System.out.println(lkTreeBoost);
+//        System.out.println(lkTreeBoost);
 
     }
 
@@ -134,7 +134,7 @@ public class LKTreeBoostTest {
         lkTreeBoost.setPriorProbs(dataSet);
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
-                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(5)
+                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
                         .dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
 
