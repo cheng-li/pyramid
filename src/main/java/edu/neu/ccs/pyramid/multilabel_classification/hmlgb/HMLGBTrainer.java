@@ -3,7 +3,12 @@ package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +25,10 @@ public class HMLGBTrainer {
     private static final Logger logger = LogManager.getLogger();
     private HMLGBConfig config;
     /**
+     * legal assignments of labels
+     */
+    private List<MultiLabel> assignments;
+    /**
      * F_k(x), used to speed up training. stagedClassScoreMatrix.[i][k] = F_k(x_i)
      */
     private double[][] stagedClassScoreMatrix;
@@ -35,15 +44,32 @@ public class HMLGBTrainer {
     private double[][] classGradientMatrix;
 
 
+    public HMLGBTrainer(HMLGBConfig config,
+                        List<List<Regressor>> regressors,
+                        List<MultiLabel> assignments) {
+        this.config = config;
+        this.assignments = assignments;
+        MultiLabelClfDataSet dataSet = config.getDataSet();
+        int numClasses = dataSet.getNumClasses();
+        int numDataPoints = dataSet.getNumDataPoints();
+        int numAssignments = this.assignments.size();
+        this.stagedClassScoreMatrix = new double[numDataPoints][numClasses];
+        this.initStagedClassScoreMatrix(regressors);
+        this.assignmentProbabilityMatrix = new double[numDataPoints][numAssignments];
+        this.updateAssignmentProbMatrix();
+        this.classGradientMatrix = new double[numClasses][numDataPoints];
+    }
+
+    double[] getGradients(int k){
+        return this.classGradientMatrix[k];
+    }
+
     /**
      * sum scores up
      * @param regressors
      */
     private void initStagedClassScoreMatrix(List<List<Regressor>> regressors){
         int numClasses = this.config.getDataSet().getNumClasses();
-        DataSet dataSet= this.config.getDataSet();
-        int numDataPoints = dataSet.getNumDataPoints();
-        this.stagedClassScoreMatrix = new double[numDataPoints][numClasses];
         for (int k=0;k<numClasses;k++){
             for (Regressor regressor: regressors.get(k)){
                 this.updateStagedClassScores(regressor, k);
@@ -94,7 +120,6 @@ public class HMLGBTrainer {
      * probability = exp(log(nominator)-log(denominator))
      */
     private void updateAssignmentProbs(int dataPoint){
-        List<MultiLabel> assignments = config.getAssignments();
         int numAssignments = assignments.size();
         double[] assignmentScores = new double[numAssignments];
         for (int a=0;a<numAssignments;a++){
@@ -128,7 +153,6 @@ public class HMLGBTrainer {
     private double[] calClassProbs(int dataPoint){
         double[] assignmentProbs = this.assignmentProbabilityMatrix[dataPoint];
         double[] classProbs = new double[this.config.getDataSet().getNumClasses()];
-        List<MultiLabel> assignments = config.getAssignments();
         int numAssignments = assignments.size();
         for (int a=0;a<numAssignments;a++){
             MultiLabel assignment = assignments.get(a);
@@ -160,6 +184,72 @@ public class HMLGBTrainer {
             }
             this.classGradientMatrix[k][dataPoint] = gradient;
         }
+    }
+
+    /**
+     * parallel
+     * find the best regression tree for class k
+     * apply newton step and learning rate
+     * @param k class index
+     * @return regressionTreeLk, shrunk
+     * @throws Exception
+     */
+    RegressionTree fitClassK(int k){
+        double[] gradients = this.classGradientMatrix[k];
+        int numClasses = this.config.getDataSet().getNumClasses();
+        double learningRate = this.config.getLearningRate();
+
+        LeafOutputCalculator leafOutputCalculator = dataAppearance -> {
+            double nominator = 0;
+            double denominator = 0;
+            for (int dataIndex : dataAppearance) {
+                double label = gradients[dataIndex];
+                nominator += label;
+                denominator += Math.abs(label) * (1 - Math.abs(label));
+            }
+            double out;
+            if (denominator == 0) {
+                out = 0;
+            } else {
+                out = ((numClasses - 1) * nominator) / (numClasses * denominator);
+            }
+            //protection from numerically unstable issue
+            if (out>2){
+                out=2;
+            }
+            if (out<-2){
+                out=-2;
+            }
+            if (Double.isNaN(out)) {
+                throw new RuntimeException("leaf value is NaN");
+            }
+            if (Double.isInfinite(out)){
+                throw new RuntimeException("leaf value is Infinite");
+            }
+            out *= learningRate;
+            return out;
+        };
+
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setMaxNumLeaves(this.config.getNumLeaves());
+        regTreeConfig.setMinDataPerLeaf(this.config.getMinDataPerLeaf());
+        regTreeConfig.setActiveDataPoints(this.config.getActiveDataPoints());
+        regTreeConfig.setActiveFeatures(this.config.getActiveFeatures());
+        regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
+
+        RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
+                this.config.getDataSet(),
+                gradients,
+                leafOutputCalculator);
+        return regressionTree;
+    }
+
+    void setActiveFeatures(int[] activeFeatures) {
+        this.config.setActiveFeatures(activeFeatures);
+    }
+
+    void setActiveDataPoints(int[] activeDataPoints) {
+        this.config.setActiveDataPoints(activeDataPoints);
     }
 
 

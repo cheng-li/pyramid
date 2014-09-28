@@ -2,7 +2,7 @@ package edu.neu.ccs.pyramid.dataset;
 
 public class MultiLabelTest {
     public static void main(String[] args) {
-        test1();
+        test3();
     }
 
     static void test1(){
@@ -19,6 +19,12 @@ public class MultiLabelTest {
         MultiLabel multiLabel = new MultiLabel(3);
         multiLabel.addLabel(0).addLabel(3);
 
+    }
+
+    static void test3(){
+        MultiLabel multiLabel1 = new MultiLabel(3).addLabel(0).addLabel(2);
+        MultiLabel multiLabel2 = new MultiLabel(4).addLabel(0).addLabel(1);
+        System.out.println(MultiLabel.equivalent(multiLabel1,multiLabel2));
     }
 
 

@@ -18,7 +18,6 @@ public class HMLGBConfig {
     private int[] activeFeatures;
     private int[] activeDataPoints;
     private int numSplitIntervals;
-    private List<MultiLabel> assignments;
 
 
     MultiLabelClfDataSet getDataSet() {
@@ -57,16 +56,12 @@ public class HMLGBConfig {
         return numSplitIntervals;
     }
 
-    List<MultiLabel> getAssignments() {
-        return assignments;
-    }
 
     public static class Builder {
         /**
          * required
          */
         private MultiLabelClfDataSet dataSet;
-        private List<MultiLabel> assignments;
 
         /**
          * optional
@@ -78,9 +73,8 @@ public class HMLGBConfig {
         double featureSamplingRate=1;
         private int numSplitIntervals =100;
 
-        public Builder(MultiLabelClfDataSet dataSet, List<MultiLabel> assignments) {
+        public Builder(MultiLabelClfDataSet dataSet) {
             this.dataSet = dataSet;
-            this.assignments = assignments;
         }
 
         public Builder numLeaves(int numLeaves){
@@ -130,7 +124,6 @@ public class HMLGBConfig {
         double dataSamplingRate = builder.dataSamplingRate;
         double featureSamplingRate = builder.featureSamplingRate;
         this.numSplitIntervals = builder.numSplitIntervals;
-        this.assignments=builder.assignments;
         int numDataPoints = dataSet.getNumDataPoints();
         if (dataSamplingRate == 1) {
             /**

@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -7,7 +8,8 @@ import java.util.Set;
 /**
  * Created by chengli on 9/27/14.
  */
-public class MultiLabel {
+public class MultiLabel implements Serializable{
+    private static final long serialVersionUID = 1L;
     private Set<Integer> labels;
     private boolean[] labelsVector;
 
@@ -28,6 +30,19 @@ public class MultiLabel {
 
     public Set<Integer> getMatchedLabels(){
         return labels;
+    }
+
+    public static boolean equivalent(MultiLabel multiLabel1, MultiLabel multiLabel2){
+        if (multiLabel1.labelsVector.length!=multiLabel2.labelsVector.length){
+            return false;
+        }
+
+        for (int i=0;i<multiLabel1.labelsVector.length;i++){
+            if (multiLabel1.labelsVector[i]!=multiLabel2.labelsVector[i]){
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
