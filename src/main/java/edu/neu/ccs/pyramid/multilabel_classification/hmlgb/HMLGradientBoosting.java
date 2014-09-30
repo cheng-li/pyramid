@@ -16,6 +16,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * hierarchical multi-label gradient boosting
+ * training guide:
+ * use very deep tree, run only a few iterations
+ * the class-gradient is very complicated, and requires a deep tree to fit well
  * Created by chengli on 9/27/14.
  */
 public class HMLGradientBoosting implements MultiLabelClassifier, Serializable{
