@@ -12,28 +12,28 @@ import static org.junit.Assert.*;
 
 public class PhraseSplitExtractorTest {
     public static void main(String[] args) throws Exception{
-        test1();
+//        test1();
 
     }
 
-    static void test1() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
-                .build();
-        Map<Integer,String> map = index.getTermVector("0");
-
-
-
-//        System.out.println(map);
-        DFStats dfStats = DFStats.deserialize("/Users/chengli/tmp/dfstats.ser");
-        Set<String> references = new HashSet<>();
-        List<DFStat> list = dfStats.getSortedDFStats(0,20);
-        list.stream().limit(100).forEach(dfStat -> references.add(dfStat.getPhrase()));
-        System.out.println(references);
-        Set<String> phrases = PhraseDetector.getPhrases(map, references);
-        PhraseSplitExtractor extractor = new PhraseSplitExtractor(index,null);
-        Set<String> blackList = new HashSet<>();
-        System.out.println(extractor.filter(phrases,blackList));
-        index.close();
-    }
+//    static void test1() throws Exception{
+//        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+//                .build();
+//        Map<Integer,String> map = index.getTermVector("0");
+//
+//
+//
+////        System.out.println(map);
+//        DFStats dfStats = DFStats.deserialize("/Users/chengli/tmp/dfstats.ser");
+//        Set<String> references = new HashSet<>();
+//        List<DFStat> list = dfStats.getSortedDFStats(0,20);
+//        list.stream().limit(100).forEach(dfStat -> references.add(dfStat.getPhrase()));
+//        System.out.println(references);
+//        Set<String> phrases = PhraseDetector.getPhrases(map, references);
+//        PhraseSplitExtractor extractor = new PhraseSplitExtractor(index,null);
+//        Set<String> blackList = new HashSet<>();
+//        System.out.println(extractor.filter(phrases,blackList));
+//        index.close();
+//    }
 
 }

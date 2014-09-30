@@ -275,6 +275,8 @@ public class Exp3 {
             seedsForAllClasses.add(set);
         }
 
+        //todo should start the matrix with the seeds?
+        //todo add seeds to black list, so that they are not extracted again.
         Set<String> blackList = new HashSet<>();
 
 //        //todo
@@ -393,6 +395,7 @@ public class Exp3 {
                                 setSource("matching_score").build();
                         featureMappers.addMapper(mapper);
                         blackList.add(ngram);
+                        //todo move this operation to another place
                     }
 
                     for (String phrase:goodPhrases){
@@ -417,7 +420,6 @@ public class Exp3 {
             /**
              * focus set
              */
-            //todo change back
             if (shouldExtractFeatures&&config.getBoolean("extraction.fromHardSet")){
                 //generate focus set
                 FocusSet focusSet = new FocusSet(numClasses);
