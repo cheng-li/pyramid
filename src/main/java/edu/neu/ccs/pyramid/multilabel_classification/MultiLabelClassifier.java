@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 public interface MultiLabelClassifier {
     MultiLabel predict(FeatureRow featureRow);
     default List<MultiLabel> predict(MultiLabelClfDataSet dataSet){
-        return IntStream.range(0,dataSet.getNumDataPoints())
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .mapToObj(i -> predict(dataSet.getFeatureRow(i)))
                 .collect(Collectors.toList());
     }
