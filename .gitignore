@@ -2,4 +2,4 @@ out/
 .idea/
 *.iml
 .DS_Store
-lib
+lib/
