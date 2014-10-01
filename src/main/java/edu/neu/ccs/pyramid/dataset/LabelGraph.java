@@ -7,6 +7,14 @@ import java.util.*;
  * Created by Ying on 10/1/14.
  */
 public class LabelGraph implements Serializable {
+    //todo
+    /**
+     * parent-node hierarchy children-list
+     * node children-exclusive none
+     * node exclusive list
+     * none destination list
+     *
+     */
 
     int numLabels;
     private Map<Integer, String> intExtLabelMap;
@@ -206,6 +214,7 @@ public class LabelGraph implements Serializable {
         return true;
     }
 
+    //todo
     public boolean isAssignmentLegal(boolean[] assignment) {
         for (int i = 0; i < numLabels; i++) {
             Set<Integer> descendants = getDescendantLabels(i);
@@ -234,6 +243,7 @@ public class LabelGraph implements Serializable {
         return true;
     }
 
+    //todo
     public List<boolean[]> getLegalAssignments() {
         List<boolean[]> assignments = new ArrayList<boolean[]>();
         for (int i = 1; i < Math.pow(2, numLabels); i++) {
@@ -258,41 +268,6 @@ public class LabelGraph implements Serializable {
         return assignments;
     }
 
-    public static void main(String[] args) {
-        int numLabels = 7;
-        LabelGraph graph = new LabelGraph(numLabels);
-        graph.setHierarchyEdge(0, 1);
-        graph.setHierarchyEdge(0, 2);
-        graph.setHierarchyEdge(3, 4);
-        graph.setExclusionEdge(0, 3);
-        graph.setExclusionEdge(3, 5);
-        graph.setExclusionEdge(4, 6);
-        graph.setHierarchyEdge(4, 6);
-        graph.setHierarchyEdge(6, 3);
-        //test1
-        System.out.println("Ancestors: " + graph.getAncestorLabels(4).toString());
-        System.out.println("Descendants: " + graph.getDescendantLabels(0).toString());
-        System.out.println("Exclusions: " + graph.getExclusiveLabels(5).toString());
-        System.out.println("Overlapping: " + graph.getOverlappingLabels(2).toString());  //?1
-        //test2
-        System.out.println("Consistency: " + graph.isConsistent());
-        //test3
-        if (!graph.isHierarchySubGraphDag()) {
-            System.out.println("Graph is not a DAG!");
-        }
-        else {
-            //test4
-            List<boolean[]> assignments = graph.getLegalAssignments();
-            System.out.println("Assignments: ");
-            for (int i = 0; i < assignments.size(); i++) {
-                for (int j = 0; j < numLabels; j++) {
-                    if (assignments.get(i)[j] == true) {
-                        System.out.print(j + " ");
-                    }
-                }
-                System.out.println();
-            }
-        }
-    }
+
 
 }
