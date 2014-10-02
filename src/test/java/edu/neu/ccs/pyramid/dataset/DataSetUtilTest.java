@@ -1,8 +1,19 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import java.io.FileInputStream;
+import java.util.Properties;
+
 public class DataSetUtilTest {
+
+    final static String CONFIG_PATH="property/local.properties";
+    final static String INPUT_PATH="inputpath";
+    static Properties prop;
+
     public static void main(String[] args) throws Exception{
-        test4();
+
+        prop = new Properties();
+        prop.load(new FileInputStream(CONFIG_PATH));
+        test3();
     }
 
     static void test1(){
@@ -55,10 +66,10 @@ public class DataSetUtilTest {
     }
 
     static void test3() throws Exception{
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/train.trec",
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(prop.getProperty(INPUT_PATH) + "/spam/trec_data/train.trec",
                 DataSetType.CLF_DENSE,true);
-        DataSetUtil.dumpDataSettings(dataSet,"/Users/chengli/tmp/data_settings.txt");
-        DataSetUtil.dumpFeatureSettings(dataSet,"/Users/chengli/tmp/feature_settings.txt");
+        DataSetUtil.dumpDataSettings(dataSet,"~/tmp/data_settings.txt");
+        DataSetUtil.dumpFeatureSettings(dataSet,"~/tmp/feature_settings.txt");
     }
 
 
@@ -81,8 +92,8 @@ public class DataSetUtilTest {
         clfDataSet.getFeatureColumn(0).putSetting(new FeatureSetting().setFeatureName("color").setFeatureType(FeatureType.BINARY));
         clfDataSet.getFeatureColumn(1).putSetting(new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
         clfDataSet.getFeatureColumn(2).putSetting(new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
-        DataSetUtil.dumpDataSettings(clfDataSet,"/Users/chengli/tmp/data_settings.txt");
-        DataSetUtil.dumpFeatureSettings(clfDataSet,"/Users/chengli/tmp/feature_settings.txt");
+        DataSetUtil.dumpDataSettings(clfDataSet,prop.getProperty(INPUT_PATH));
+        DataSetUtil.dumpFeatureSettings(clfDataSet,prop.getProperty((INPUT_PATH)));
     }
 
 

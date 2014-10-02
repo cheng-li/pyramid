@@ -23,7 +23,7 @@ public class DataSetUtil {
      */
     public static ClfDataSet trim(ClfDataSet clfDataSet, int numFeatures){
         if (numFeatures> clfDataSet.getNumFeatures()){
-            throw new IllegalArgumentException("numFeatures> clfDataSet.getNumFeatures()");
+            throw new IllegalArgumentException("numFeatures > clfDataSet.getNumFeatures()");
         }
         ClfDataSet trimmed ;
         // keep density
