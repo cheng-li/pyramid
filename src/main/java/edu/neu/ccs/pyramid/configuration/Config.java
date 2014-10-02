@@ -52,13 +52,6 @@ public class Config {
         this.properties.setProperty(key,value);
     }
 
-    public void display() throws Exception{
-        //TODO: preserve order
-        PrintWriter writer = new PrintWriter(System.out);
-        properties.store(writer,"");
-        writer.flush();
-    }
-
     public int getInt(String key){
         return Integer.parseInt(this.properties.getProperty(key));
     }
