@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
+import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
@@ -10,7 +11,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LKTreeBoostTest {
+    private static final Config config = new Config("configs/local.config");
+
+
     public static void main(String[] args) throws Exception {
+        System.out.println(config);
         spam_test();
 //        newsgroup_test();
 //        spam_build();
@@ -97,8 +102,8 @@ public class LKTreeBoostTest {
     }
     static void spam_load() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/test.trec",
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(config.getString("output.tmp"),"/LKTreeBoostTest/ensemble.ser"));
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(config.getString("input.datasets"),"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE,true);
 
         int numDataPoints = dataSet.getNumDataPoints();
@@ -125,9 +130,9 @@ public class LKTreeBoostTest {
     static void spam_build() throws Exception{
 
 
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/train.trec",
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(config.getString("input.datasets"),"/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE,true);
-
+        System.out.println(dataSet.getMetaInfo());
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
 
@@ -152,19 +157,18 @@ public class LKTreeBoostTest {
         System.out.println(accuracy);
 
 
-        LKTreeBoost.serialize(lkTreeBoost,new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
+        LKTreeBoost.serialize(lkTreeBoost,new File(config.getString("output.tmp"),"/LKTreeBoostTest/ensemble.ser"));
     }
 
+    /**
+     * test resume training
+     * first stage
+     * @throws Exception
+     */
     static void spam_resume_train_1() throws Exception{
-        ExecutorService executor = Executors.newFixedThreadPool(4);
 
-        File featureFile = new File("/Users/chengli/Datasets/spam/train_data.txt");
-        File labelFile = new File("/Users/chengli/Datasets/spam/train_label.txt");
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/train.trec",
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(config.getString("input.datasets"),"spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE,true);
-
-
-
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
@@ -184,20 +188,19 @@ public class LKTreeBoostTest {
 
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println(accuracy);
-
-        executor.shutdown();
-        LKTreeBoost.serialize(lkTreeBoost,new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
+        LKTreeBoost.serialize(lkTreeBoost,new File(config.getString("output.tmp"),"/LKTreeBoostTest/ensemble.ser"));
 
     }
 
+    /**
+     * second stage
+     * @throws Exception
+     */
     static void spam_resume_train_2() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(config.getString("output.tmp"),"/LKTreeBoostTest/ensemble.ser"));
 
-        File featureFile = new File("/Users/chengli/Datasets/spam/train_data.txt");
-        File labelFile = new File("/Users/chengli/Datasets/spam/train_label.txt");
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/train.trec",
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(config.getString("input.datasets"),"spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE,true);
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
@@ -218,44 +221,33 @@ public class LKTreeBoostTest {
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println(accuracy);
         System.out.println(lkTreeBoost.getRegressors(0).size());
-        executor.shutdown();
-
-
-
-
-
     }
 
+    /**
+     * test lktb's performance on feature selection
+     * @throws Exception
+     */
     static void spam_polluted_load() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
-        File featureFile = new File("/Users/chengli/Datasets/spam/polluted/test_feature.txt");
-        File labelFile = new File("/Users/chengli/Datasets/spam/polluted/test_label.txt");
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(config.getString("output.tmp"),"/LKTreeBoostTest/ensemble.ser"));
+        File featureFile = new File(config.getString("input.datasets"),"/spam/polluted/test_feature.txt");
+        File labelFile = new File(config.getString("input.datasets"),"spam/polluted/test_label.txt");
         ClfDataSet dataSet = StandardFormat.loadClfDataSet(featureFile, labelFile, " ", DataSetType.CLF_DENSE);
 
-        int numFeatures = dataSet.getNumFeatures();
-        int numDataPoints = dataSet.getNumDataPoints();
-        int [] labels = dataSet.getLabels();
 
-
-        int[] prediction = new int[numDataPoints];
-        for (int i=0;i<numDataPoints;i++){
-            prediction[i] = lkTreeBoost.predict(dataSet.getFeatureRow(i));
-        }
-        double accuracy = Accuracy.accuracy(labels, prediction);
+        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
         System.out.println(accuracy);
 //        TRECDataSet.save(dataSet,new File("/Users/chengli/tmp/test.trec"));
     }
 
+    /**
+     * test lktb's performance on feature selection
+     * @throws Exception
+     */
     static void spam_polluted_build() throws Exception{
-        ExecutorService executor = Executors.newFixedThreadPool(4);
-
-        File featureFile = new File("/Users/chengli/Datasets/spam/polluted/train_feature.txt");
-        File labelFile = new File("/Users/chengli/Datasets/spam/polluted/train_label.txt");
+        File featureFile = new File(config.getString("input.datasets"),"spam/polluted/train_feature.txt");
+        File labelFile = new File(config.getString("input.datasets"),"spam/polluted/train_label.txt");
         ClfDataSet dataSet = StandardFormat.loadClfDataSet(featureFile, labelFile, " ", DataSetType.CLF_DENSE);
-
-
-
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
@@ -265,7 +257,7 @@ public class LKTreeBoostTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (int round =0;round<1;round++){
+        for (int round =0;round<100;round++){
             System.out.println("round="+round);
             lkTreeBoost.boostOneRound();
         }
@@ -276,18 +268,15 @@ public class LKTreeBoostTest {
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println(accuracy);
 
-        executor.shutdown();
-        LKTreeBoost.serialize(lkTreeBoost,new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
+        LKTreeBoost.serialize(lkTreeBoost,new File(config.getString("output.tmp"),"/LKTreeBoostTest/ensemble.ser"));
 //        TRECDataSet.save(dataSet,new File("/Users/chengli/tmp/train.trec"));
     }
 
 
     static void spam_fake_build() throws Exception{
         double ratio=0.001;
-        ExecutorService executor = Executors.newFixedThreadPool(4);
-
-        File featureFile = new File("/Users/chengli/Datasets/spam/train_data.txt");
-        File labelFile = new File("/Users/chengli/Datasets/spam/train_label.txt");
+        File featureFile = new File(config.getString("input.datasets"),"/spam/train_data.txt");
+        File labelFile = new File(config.getString("input.datasets"),"/spam/train_label.txt");
 //        ClfDataSet dataSet = DenseClfDataSet.loadStandard(featureFile, labelFile, ",");
         ClfDataSet dataSet = StandardFormat.loadClfDataSet(featureFile, labelFile, ",", DataSetType.CLF_DENSE);
         for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -296,9 +285,6 @@ public class LKTreeBoostTest {
                 dataSet.setLabel(i,1);
             }
         }
-
-
-
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
@@ -319,7 +305,6 @@ public class LKTreeBoostTest {
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println(accuracy);
 
-        executor.shutdown();
 //        LKTreeBoost.serialize(lkTreeBoost,new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
     }
 
