@@ -43,6 +43,8 @@ public class RegTreeTrainerTest {
         for (int i=0;i<dataSet.getNumFeatures();i++){
             dataSet.getFeatureColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
         }
+        System.out.println(dataSet.getNumDataPoints());
+        System.out.println(dataSet.getNumFeatures());
 
 
         double[] labels = dataSet.getLabels();

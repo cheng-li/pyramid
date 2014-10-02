@@ -269,15 +269,37 @@ public class Exp3 {
         DFStats dfStats = loadDFStats(config,index,trainIdTranslator);
         List<Set<String>> seedsForAllClasses = new ArrayList<>();
         for (int i=0;i<numClasses;i++){
-            //todo
+            //todo parameters
             Set<String> set = new HashSet<>();
             set.addAll(dfStats.getSortedTerms(i,50,100));
             seedsForAllClasses.add(set);
         }
 
-        //todo should start the matrix with the seeds?
-        //todo add seeds to black list, so that they are not extracted again.
         Set<String> blackList = new HashSet<>();
+
+        //start the matrix with the seeds
+        //may have duplicates, but should not be a big deal
+        for(Set<String> seeds: seedsForAllClasses){
+            for (String term: seeds){
+                int featureIndex = featureMappers.nextAvailable();
+                SearchResponse response = index.match(index.getBodyField(),
+                        term,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
+                for (SearchHit hit: response.getHits().getHits()){
+                    String indexId = hit.getId();
+                    int algorithmId = trainIdTranslator.toIntId(indexId);
+                    float score = hit.getScore();
+                    dataSet.setFeatureValue(algorithmId, featureIndex,score);
+                }
+
+                NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
+                        setFeatureIndex(featureIndex).setFeatureName(term).
+                        setSource("matching_score").build();
+                featureMappers.addMapper(mapper);
+                blackList.add(term);
+            }
+        }
+
+
 
 //        //todo
 //        List<Integer> validationSet = new ArrayList<>();
@@ -395,7 +417,6 @@ public class Exp3 {
                                 setSource("matching_score").build();
                         featureMappers.addMapper(mapper);
                         blackList.add(ngram);
-                        //todo move this operation to another place
                     }
 
                     for (String phrase:goodPhrases){
