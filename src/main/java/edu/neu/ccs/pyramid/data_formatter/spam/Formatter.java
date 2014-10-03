@@ -23,7 +23,7 @@ public class Formatter {
     }
 
     static List<String> loadFeatures() throws IOException {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         try(BufferedReader br = new BufferedReader(new FileReader(new File(DATASETS, "spam/feature_names.txt")))
         ){
             String line;
@@ -44,7 +44,7 @@ public class Formatter {
         String[] extLabels = {"non-spam","spam"};
 
         DataSetUtil.setExtLabels(data,extLabels);
-        TRECFormat.save(data, new File(TMP, "test.trec"));
+        TRECFormat.save(data, new File(TMP, "train.trec"));
     }
 
     static void saveTestData()throws Exception{
