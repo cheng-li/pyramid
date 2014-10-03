@@ -9,6 +9,9 @@ import java.util.Map;
  * Created by chengli on 8/14/14.
  */
 public class ConfusionMatrix {
+    /**
+     * row: label, column:prediction
+     */
     private int[][] matrix;
     private int numClasses;
     private Map<Integer, String> labelMap;
@@ -32,8 +35,13 @@ public class ConfusionMatrix {
         this.labelMap = dataSet.getSetting().getLabelMap();
     }
 
+    public int[][] getMatrix() {
+        return matrix;
+    }
 
-
+    public int getNumClasses() {
+        return numClasses;
+    }
 
     public String printWithIntLabels() {
         StringBuilder sb = new StringBuilder();
