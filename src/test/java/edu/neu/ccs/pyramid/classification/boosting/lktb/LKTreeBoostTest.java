@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
+import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -122,6 +123,9 @@ public class LKTreeBoostTest {
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
+
+        System.out.println(new PerClassMeasures(confusionMatrix,0));
+        System.out.println(new PerClassMeasures(confusionMatrix,1));
 //        System.out.println(lkTreeBoost);
 
     }
