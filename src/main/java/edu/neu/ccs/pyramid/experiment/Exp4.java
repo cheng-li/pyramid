@@ -8,10 +8,7 @@ import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.AppearanceAtTop;
-import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
-import edu.neu.ccs.pyramid.eval.MRR;
+import edu.neu.ccs.pyramid.eval.*;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.BufferedWriter;
@@ -445,6 +442,12 @@ public class Exp4 {
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(numClasses,classifier,dataSet);
         System.out.println("==========confusion matrix==========");
         System.out.println(confusionMatrix.printWithExtLabels());
+        System.out.println("==========micro averaged measures==========");
+        MicroAveragedMeasures microAveragedMeasures = new MicroAveragedMeasures(confusionMatrix);
+        System.out.println(microAveragedMeasures);
+        System.out.println("==========macro averaged measures==========");
+        MacroAveragedMeasures macroAveragedMeasures = new MacroAveragedMeasures(confusionMatrix);
+        System.out.println(macroAveragedMeasures);
     }
 
     static Map<Integer,String> loadLabelMap(Config config) throws Exception{

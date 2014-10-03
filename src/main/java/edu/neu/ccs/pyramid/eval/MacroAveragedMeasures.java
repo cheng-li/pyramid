@@ -22,7 +22,7 @@ public class MacroAveragedMeasures {
 
     @Override
     public String toString() {
-        return "MacroAveraged{" +
+        return "MacroAveragedMeasures{" +
                 "f1=" + f1 +
                 '}';
     }
