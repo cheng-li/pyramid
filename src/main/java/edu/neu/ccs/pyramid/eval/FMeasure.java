@@ -24,6 +24,9 @@ public class FMeasure {
      * @return
      */
     public static double fBeta(double precision, double recall, double beta){
+        if (precision==0 || recall==0){
+            return 0;
+        }
         return (1+beta*beta)*precision*recall/(beta*beta*precision + recall);
     }
 }
