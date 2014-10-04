@@ -1,12 +1,20 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import edu.neu.ccs.pyramid.configuration.Config;
+
+import java.io.File;
+
 public class TRECFormatTest {
+    private static final Config config = new Config("configs/local.config");
+    private static final String DATASETS = config.getString("input.datasets");
+    private static final String TMP = config.getString("output.tmp");
+
     public static void main(String[] args) throws Exception{
         test1();
     }
 
     static void test1() throws Exception{
-        ClfDataSet clfDataSet = new SparseClfDataSet(5,3);
+        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,6);
         clfDataSet.setFeatureValue(0,0,3.5);
         clfDataSet.setFeatureValue(1,2,5.5);
         clfDataSet.setFeatureValue(4,1,2.5);
@@ -24,8 +32,9 @@ public class TRECFormatTest {
         clfDataSet.getFeatureColumn(0).putSetting(new FeatureSetting().setFeatureName("color").setFeatureType(FeatureType.BINARY));
         clfDataSet.getFeatureColumn(1).putSetting(new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
         clfDataSet.getFeatureColumn(2).putSetting(new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
-        TRECFormat.save(clfDataSet,"/Users/chengli/tmp/tmp_clfdata.trec");
-        ClfDataSet clfDataSet1 = TRECFormat.loadClfDataSet("/Users/chengli/tmp/tmp_clfdata.trec",DataSetType.CLF_SPARSE,true);
+        TRECFormat.save(clfDataSet,new File(TMP,"/tmp_clfdata.trec"));
+        ClfDataSet clfDataSet1 = TRECFormat.loadClfDataSet(new File(TMP,"/tmp_clfdata.trec"),DataSetType.CLF_SPARSE,true);
+        System.out.println(clfDataSet1.getMetaInfo());
         System.out.println(clfDataSet1);
 
 

@@ -37,7 +37,7 @@ public class Formatter {
 
     static void saveTrainData()throws Exception{
         List<String> featureNames = loadFeatures();
-        ClfDataSet data = StandardFormat.loadClfDataSet(new File(DATASETS, "spam/train_data.txt"),
+        ClfDataSet data = StandardFormat.loadClfDataSet(2,new File(DATASETS, "spam/train_data.txt"),
                 new File(DATASETS, "spam/train_label.txt"), ",", DataSetType.CLF_DENSE);
 
         DataSetUtil.setFeatureNames(data,featureNames);
@@ -49,7 +49,7 @@ public class Formatter {
 
     static void saveTestData()throws Exception{
         List<String> featureNames = loadFeatures();
-        ClfDataSet data = StandardFormat.loadClfDataSet(new File(DATASETS, "spam/test_data.txt"),
+        ClfDataSet data = StandardFormat.loadClfDataSet(2,new File(DATASETS, "spam/test_data.txt"),
                 new File(DATASETS, "spam/test_label.txt"), ",", DataSetType.CLF_DENSE);
 
         DataSetUtil.setFeatureNames(data,featureNames);

@@ -8,11 +8,12 @@ import java.io.*;
  * Created by chengli on 8/20/14.
  */
 public class StandardFormat {
-    public static ClfDataSet loadClfDataSet(String featureFile,
+    public static ClfDataSet loadClfDataSet(int numClasses,
+                                            String featureFile,
                                             String labelFile,
                                             String delimiter,
                                             DataSetType dataSetType) throws IOException {
-        return loadClfDataSet(new File(featureFile),
+        return loadClfDataSet(numClasses,new File(featureFile),
                 new File(labelFile),delimiter,dataSetType);
     }
 
@@ -25,7 +26,8 @@ public class StandardFormat {
     }
 
 
-    public static ClfDataSet loadClfDataSet(File featureFile,
+    public static ClfDataSet loadClfDataSet(int numClasses,
+                                            File featureFile,
                                             File labelFile,
                                             String delimiter,
                                             DataSetType dataSetType) throws IOException {
@@ -39,10 +41,10 @@ public class StandardFormat {
             throw new IllegalArgumentException("illegal data set type");
         }
         if (dataSetType==DataSetType.CLF_DENSE){
-            dataSet = new DenseClfDataSet(numDataPoints,numFeatures);
+            dataSet = new DenseClfDataSet(numDataPoints,numFeatures,numClasses);
         }
         if (dataSetType==DataSetType.CLF_SPARSE){
-            dataSet = new SparseClfDataSet(numDataPoints,numFeatures);
+            dataSet = new SparseClfDataSet(numDataPoints,numFeatures,numClasses);
         }
         fill(dataSet,featureFile,labelFile,delimiter);
         return dataSet;

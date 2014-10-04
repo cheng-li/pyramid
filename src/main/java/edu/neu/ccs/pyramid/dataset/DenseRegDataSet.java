@@ -32,4 +32,12 @@ public class DenseRegDataSet extends DenseDataSet implements RegDataSet {
         sb.append("labels = ").append(Arrays.toString(labels));
         return sb.toString();
     }
+
+    @Override
+    public String getMetaInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.getMetaInfo());
+        sb.append("type = ").append("dense regression");
+        return sb.toString();
+    }
 }

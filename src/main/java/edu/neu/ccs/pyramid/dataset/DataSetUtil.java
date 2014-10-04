@@ -26,11 +26,12 @@ public class DataSetUtil {
             throw new IllegalArgumentException("numFeatures > clfDataSet.getNumFeatures()");
         }
         ClfDataSet trimmed ;
+        int numClasses = clfDataSet.getNumClasses();
         // keep density
         if (clfDataSet.isDense()) {
-            trimmed = new DenseClfDataSet(clfDataSet.getNumDataPoints(), numFeatures);
+            trimmed = new DenseClfDataSet(clfDataSet.getNumDataPoints(), numFeatures, numClasses);
         } else{
-            trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),numFeatures);
+            trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),numFeatures, numClasses);
         }
         for (int i=0;i<trimmed.getNumDataPoints();i++){
             FeatureRow featureRow = clfDataSet.getFeatureRow(i);
@@ -227,10 +228,11 @@ public class DataSetUtil {
      */
     public static ClfDataSet subSet(ClfDataSet clfDataSet, List<Integer> indices){
         ClfDataSet sample;
+        int numClasses = clfDataSet.getNumClasses();
         if (clfDataSet instanceof DenseClfDataSet){
-            sample = new DenseClfDataSet(indices.size(),clfDataSet.getNumFeatures());
+            sample = new DenseClfDataSet(indices.size(),clfDataSet.getNumFeatures(), numClasses);
         } else {
-            sample = new SparseClfDataSet(indices.size(),clfDataSet.getNumFeatures());
+            sample = new SparseClfDataSet(indices.size(),clfDataSet.getNumFeatures(), numClasses);
         }
         int[] labels = clfDataSet.getLabels();
         for (int i=0;i<indices.size();i++){

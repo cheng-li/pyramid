@@ -75,4 +75,12 @@ abstract class AbstractDataSet implements DataSet{
 
         return sb.toString();
     }
+
+    public String getMetaInfo(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("data set meta information:").append("\n");
+        sb.append("number of data points = ").append(getNumDataPoints()).append("\n");
+        sb.append("number of features = ").append(getNumFeatures()).append("\n");
+        return sb.toString();
+    }
 }

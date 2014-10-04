@@ -121,11 +121,12 @@ public class Exp3 {
                                IdTranslator idTranslator, int totalDim,
                                Map<Integer,String> labelMap) throws Exception{
         int numDataPoints = idTranslator.numData();
+        int numClasses = config.getInt("numClasses");
         ClfDataSet dataSet;
         if(config.getBoolean("featureMatrix.sparse")){
-            dataSet= new SparseClfDataSet(numDataPoints,totalDim);
+            dataSet= new SparseClfDataSet(numDataPoints,totalDim,numClasses);
         } else {
-            dataSet= new DenseClfDataSet(numDataPoints,totalDim);
+            dataSet= new DenseClfDataSet(numDataPoints,totalDim,numClasses);
         }
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);

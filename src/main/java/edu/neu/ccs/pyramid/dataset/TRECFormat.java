@@ -21,6 +21,7 @@ public class TRECFormat {
     private static final String TREC_CONFIG_FILE_NAME = "config.txt";
     private static final String TREC_CONFIG_NUM_DATA_POINTS = "numDataPoints";
     private static final String TREC_CONFIG_NUM_FEATURES = "numFeatures";
+    private static final String TREC_CONFIG_NUM_CLASSES = "numClasses";
     private static final String TREC_DATA_SETTINGS_FILE_NAME = "data_settings.ser";
     private static final String TREC_FEATURE_SETTINGS_FILE_NAME = "feature_settings.ser";
     private static final String TREC_DATASET_SETTINGS_FILE_NAME = "dataset_settings.ser";
@@ -76,12 +77,13 @@ public class TRECFormat {
         }
         int numDataPoints = parseNumDataPoints(trecFile);
         int numFeatures = parseNumFeaturess(trecFile);
+        int numClasses = parseNumClasses(trecFile);
         ClfDataSet clfDataSet = null;
         if (dataSetType==DataSetType.CLF_DENSE){
-            clfDataSet = new DenseClfDataSet(numDataPoints,numFeatures);
+            clfDataSet = new DenseClfDataSet(numDataPoints,numFeatures,numClasses);
         }
         if (dataSetType==DataSetType.CLF_SPARSE){
-            clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures);
+            clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures,numClasses);
         }
         fillClfDataSet(clfDataSet,trecFile);
         if (loadSettings){
@@ -192,6 +194,18 @@ public class TRECFormat {
         return numFeatures;
     }
 
+    private static int parseNumClasses(File trecFile) throws IOException {
+        File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
+        int numClasses;
+        try(
+                BufferedReader br = new BufferedReader(new FileReader(configFile));
+        ){
+            Config config = new Config(configFile);
+            numClasses = config.getInt(TREC_CONFIG_NUM_CLASSES);
+        }
+        return numClasses;
+    }
+
     private static void fillClfDataSet(ClfDataSet dataSet, File trecFile) throws IOException {
         File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
         try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
@@ -270,7 +284,34 @@ public class TRECFormat {
         }
     }
 
-    private static void writeConfigFile(DataSet dataSet, File trecFile) {
+
+
+    private static void writeConfigFile(ClfDataSet dataSet, File trecFile) {
+        File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
+        Config config = new Config();
+        config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
+        config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
+        config.setInt(TREC_CONFIG_NUM_CLASSES,dataSet.getNumClasses());
+        try {
+            config.store(configFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeConfigFile(RegDataSet dataSet, File trecFile) {
+        File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
+        Config config = new Config();
+        config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
+        config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
+        try {
+            config.store(configFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeConfigFile(RankDataSet dataSet, File trecFile) {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         Config config = new Config();
         config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());

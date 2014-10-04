@@ -32,4 +32,12 @@ public class SparseRegDataSet extends SparseDataSet implements RegDataSet{
         return sb.toString();
     }
 
+    @Override
+    public String getMetaInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.getMetaInfo());
+        sb.append("type = ").append("sparse regression");
+        return sb.toString();
+    }
+
 }

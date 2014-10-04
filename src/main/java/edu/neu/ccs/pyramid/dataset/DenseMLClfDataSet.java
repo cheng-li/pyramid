@@ -45,4 +45,13 @@ public class DenseMLClfDataSet extends DenseDataSet implements MultiLabelClfData
         }
         return sb.toString();
     }
+
+    @Override
+    public String getMetaInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.getMetaInfo());
+        sb.append("type = ").append("dense multi-label classification").append("\n");
+        sb.append("number of classes = ").append(this.numClasses);
+        return sb.toString();
+    }
 }

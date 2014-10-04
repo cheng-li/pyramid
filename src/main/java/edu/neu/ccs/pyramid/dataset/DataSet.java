@@ -14,12 +14,6 @@ public interface DataSet {
     boolean isDense();
     DataSetSetting getSetting();
     void putSetting(DataSetSetting setting);
-    default String getMetaInfo(){
-        StringBuilder sb = new StringBuilder();
-        sb.append("data set meta information:").append("\n");
-        sb.append("number of data points = ").append(getNumDataPoints()).append("\n");
-        sb.append("number of features = ").append(getNumFeatures()).append("\n");
-        return sb.toString();
-    }
+    String getMetaInfo();
 
 }

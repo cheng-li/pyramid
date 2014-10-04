@@ -105,16 +105,11 @@ public class LKTreeBoostTest {
         LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE,true);
+        System.out.println("test data:");
+        System.out.println(dataSet.getMetaInfo());
 
-        int numDataPoints = dataSet.getNumDataPoints();
-        int [] labels = dataSet.getLabels();
 
-
-        int[] prediction = new int[numDataPoints];
-        for (int i=0;i<numDataPoints;i++){
-            prediction[i] = lkTreeBoost.predict(dataSet.getFeatureRow(i));
-        }
-        double accuracy = Accuracy.accuracy(labels, prediction);
+        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
         System.out.println(accuracy);
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(2,lkTreeBoost,dataSet);
         System.out.println("confusion matrix:");
@@ -235,7 +230,7 @@ public class LKTreeBoostTest {
         LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
         File featureFile = new File(DATASETS,"/spam/polluted/test_feature.txt");
         File labelFile = new File(DATASETS,"spam/polluted/test_label.txt");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(featureFile, labelFile, " ", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE);
 
 
         double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
@@ -250,7 +245,7 @@ public class LKTreeBoostTest {
     static void spam_polluted_build() throws Exception{
         File featureFile = new File(DATASETS,"spam/polluted/train_feature.txt");
         File labelFile = new File(DATASETS,"spam/polluted/train_label.txt");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(featureFile, labelFile, " ", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE);
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
@@ -281,7 +276,7 @@ public class LKTreeBoostTest {
         File featureFile = new File(DATASETS,"/spam/train_data.txt");
         File labelFile = new File(DATASETS,"/spam/train_label.txt");
 //        ClfDataSet dataSet = DenseClfDataSet.loadStandard(featureFile, labelFile, ",");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(featureFile, labelFile, ",", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, ",", DataSetType.CLF_DENSE);
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             boolean set = Math.random()<ratio;
             if (set){

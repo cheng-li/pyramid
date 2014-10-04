@@ -14,6 +14,7 @@ public class DenseMLClfDataSetTest {
         dataSet.addLabel(0,1);
         dataSet.addLabel(0,2);
         dataSet.addLabel(1,0);
+        System.out.println(dataSet.getMetaInfo());
         System.out.println(dataSet);
     }
 
