@@ -329,25 +329,6 @@ public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable
 //        return topNgrams;
 //    }
 
-    /**
-     * serialize to file
-     * @param lkTreeBoost
-     * @param file
-     * @throws Exception
-     */
-    public static void serialize(LKTreeBoost lkTreeBoost, File file) throws Exception{
-        File parent = file.getParentFile();
-        if (!parent.exists()){
-            parent.mkdirs();
-        }
-        try (
-                FileOutputStream fileOutputStream = new FileOutputStream(file);
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
-        ){
-            objectOutputStream.writeObject(lkTreeBoost);
-        }
-    }
 
     /**
      * de-serialize from file
