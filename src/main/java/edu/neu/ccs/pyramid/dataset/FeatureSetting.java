@@ -40,4 +40,11 @@ public class FeatureSetting implements Serializable{
                 ", featureType=" + featureType +
                 '}';
     }
+
+    public FeatureSetting copy(){
+        FeatureSetting featureSetting = new FeatureSetting();
+        featureSetting.setFeatureName(this.featureName);
+        featureSetting.setFeatureType(this.featureType);
+        return featureSetting;
+    }
 }

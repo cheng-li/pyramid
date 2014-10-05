@@ -65,4 +65,12 @@ public class DataSetSetting implements Serializable{
     void setFeatureMappers(FeatureMappers featureMappers) {
         this.featureMappers = featureMappers;
     }
+
+    public DataSetSetting copy(){
+        DataSetSetting dataSetSetting = new DataSetSetting();
+        dataSetSetting.setFeatureMappers(this.featureMappers);
+        dataSetSetting.setIdTranslator(this.idTranslator);
+        dataSetSetting.setLabelMap(this.labelMap);
+        return dataSetSetting;
+    }
 }

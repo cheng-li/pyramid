@@ -38,4 +38,11 @@ public class DataSetting implements Serializable{
                 ", extLabel='" + extLabel + '\'' +
                 '}';
     }
+
+    public DataSetting copy(){
+        DataSetting dataSetting = new DataSetting();
+        dataSetting.setExtId(this.extId);
+        dataSetting.setExtLabel(this.extLabel);
+        return dataSetting;
+    }
 }
