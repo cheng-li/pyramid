@@ -314,7 +314,7 @@ public class Exp3 {
 
             boolean condition1 = (featureMappers.getTotalDim()
                     +numNgramsToExtract*numClasses*2
-                    +config.getInt("extraction.phraseSplitExtractor.topN")*2
+                    +config.getInt("extraction.phraseSplitExtractor.topN")*numClasses*2
                     <dataSet.getNumFeatures());
             boolean condition2 = (Math.random()<extractionFrequency);
             //should start with some feature
