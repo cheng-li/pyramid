@@ -53,18 +53,30 @@ public class Config {
     }
 
     public int getInt(String key){
+        if (!containsKey(key)){
+            throw new IllegalArgumentException("config does not contain the key "+key);
+        }
         return Integer.parseInt(this.properties.getProperty(key));
     }
 
     public double getDouble(String key){
+        if (!containsKey(key)){
+            throw new IllegalArgumentException("config does not contain the key "+key);
+        }
         return Double.parseDouble(this.properties.getProperty(key));
     }
 
     public boolean getBoolean(String key){
+        if (!containsKey(key)){
+            throw new IllegalArgumentException("config does not contain the key "+key);
+        }
         return Boolean.parseBoolean(this.properties.getProperty(key));
     }
 
     public String getString(String key){
+        if (!containsKey(key)){
+            throw new IllegalArgumentException("config does not contain the key "+key);
+        }
         return this.properties.getProperty(key);
     }
 
