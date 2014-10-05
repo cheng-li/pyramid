@@ -60,6 +60,54 @@ public class DataSetUtil {
     }
 
     /**
+     * only keep the selected features
+     * @param clfDataSet
+     * @return
+     */
+    public static ClfDataSet trim(ClfDataSet clfDataSet, List<Integer> columnsToKeep){
+        ClfDataSet trimmed ;
+        int numClasses = clfDataSet.getNumClasses();
+        // keep density
+        if (clfDataSet.isDense()) {
+            trimmed = new DenseClfDataSet(clfDataSet.getNumDataPoints(), columnsToKeep.size(), numClasses);
+        } else{
+            trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),columnsToKeep.size(), numClasses);
+        }
+
+
+        for (int j=0;j<trimmed.getNumFeatures();j++){
+            int oldColumnIndex = columnsToKeep.get(j);
+            FeatureColumn featureColumn = clfDataSet.getFeatureColumn(oldColumnIndex);
+            Vector vector = featureColumn.getVector();
+            for (Vector.Element element: vector.nonZeroes()){
+                int dataPointIndex = element.index();
+                double value = element.get();
+                trimmed.setFeatureValue(dataPointIndex,j,value);
+            }
+        }
+        //copy labels
+        int[] labels = clfDataSet.getLabels();
+        for (int i=0;i<trimmed.getNumDataPoints();i++){
+            trimmed.setLabel(i,labels[i]);
+        }
+        //just copy settings
+        for (int i=0;i<trimmed.getNumDataPoints();i++){
+            trimmed.getFeatureRow(i).putSetting(clfDataSet.getFeatureRow(i).getSetting().copy());
+        }
+        for (int j=0;j<trimmed.getNumFeatures();j++){
+            int oldColumnIndex = columnsToKeep.get(j);
+            trimmed.getFeatureColumn(j).putSetting(clfDataSet.getFeatureColumn(oldColumnIndex).getSetting().copy());
+        }
+        //todo double-check
+        //todo: something like featuremappers
+        DataSetSetting dataSetSetting = clfDataSet.getSetting().copy();
+        dataSetSetting.setFeatureMappers(null);
+        trimmed.putSetting(dataSetSetting);
+        return trimmed;
+    }
+
+    /**
+     * //todo change implementation
      * only keep the first numFeatures features
      * @param clfDataSet
      * @param numFeatures
