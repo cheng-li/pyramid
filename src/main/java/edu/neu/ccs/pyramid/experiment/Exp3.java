@@ -240,7 +240,7 @@ public class Exp3 {
 
         System.out.println("training model ");
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,numClasses)
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .learningRate(learningRate).minDataPerLeaf(trainMinDataPerLeaf)
                 .numLeaves(numLeaves)
                 .build();
@@ -548,7 +548,7 @@ public class Exp3 {
             throw new RuntimeException(serializedModel.getAbsolutePath()+"already exists");
         }
 
-        LKTreeBoost.serialize(lkTreeBoost,serializedModel);
+        lkTreeBoost.serialize(serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());
         System.out.println("accuracy on training set = "+ Accuracy.accuracy(lkTreeBoost,
                 dataSet));

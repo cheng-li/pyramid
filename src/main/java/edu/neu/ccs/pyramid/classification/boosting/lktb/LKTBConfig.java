@@ -77,9 +77,9 @@ public class LKTBConfig {
         double featureSamplingRate=1;
         private int numSplitIntervals =100;
 
-        public Builder(ClfDataSet dataSet, int numClasses) {
+        public Builder(ClfDataSet dataSet) {
             this.dataSet = dataSet;
-            this.numClasses = numClasses;
+            this.numClasses = dataSet.getNumClasses();
         }
 
         public Builder numLeaves(int numLeaves){

@@ -136,7 +136,7 @@ public class LKTreeBoostTest {
 
         lkTreeBoost.setPriorProbs(dataSet);
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
                         .dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
@@ -155,7 +155,7 @@ public class LKTreeBoostTest {
         System.out.println(accuracy);
 
 
-        LKTreeBoost.serialize(lkTreeBoost,new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
     }
 
     /**
@@ -169,7 +169,7 @@ public class LKTreeBoostTest {
                 DataSetType.CLF_DENSE,true);
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
@@ -186,7 +186,7 @@ public class LKTreeBoostTest {
 
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println(accuracy);
-        LKTreeBoost.serialize(lkTreeBoost,new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
 
     }
 
@@ -201,7 +201,7 @@ public class LKTreeBoostTest {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE,true);
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
@@ -248,7 +248,7 @@ public class LKTreeBoostTest {
         ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE);
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
@@ -266,7 +266,7 @@ public class LKTreeBoostTest {
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println(accuracy);
 
-        LKTreeBoost.serialize(lkTreeBoost,new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
 //        TRECDataSet.save(dataSet,new File("/Users/chengli/tmp/train.trec"));
     }
 
@@ -285,7 +285,7 @@ public class LKTreeBoostTest {
         }
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet,2)
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
