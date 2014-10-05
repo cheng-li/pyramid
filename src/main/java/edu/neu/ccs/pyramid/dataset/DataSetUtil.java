@@ -16,6 +16,50 @@ import java.util.stream.Collectors;
 public class DataSetUtil {
 
     /**
+     *
+     * @param dataSet
+     * @param numClasses for new dataset
+     * @return
+     */
+    public static ClfDataSet changeLabels(ClfDataSet dataSet, int numClasses){
+        ClfDataSet dataSet1;
+        int numDataPoints = dataSet.getNumDataPoints();
+        int numFeatures = dataSet.getNumFeatures();
+        if (dataSet.isDense()){
+            dataSet1 = new DenseClfDataSet(numDataPoints,numFeatures,numClasses);
+        } else {
+            dataSet1 = new SparseClfDataSet(numDataPoints,numFeatures,numClasses);
+        }
+        for (int i=0;i<numDataPoints;i++){
+            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            //only copy non-zero elements
+            Vector vector = featureRow.getVector();
+            for (Vector.Element element: vector.nonZeroes()){
+                int featureIndex = element.index();
+                double value = element.get();
+                if (featureIndex<numFeatures){
+                    dataSet1.setFeatureValue(i,featureIndex,value);
+                }
+            }
+        }
+        for (int i=0;i<numDataPoints;i++){
+            DataSetting dataSetting = dataSet.getFeatureRow(i).getSetting().copy();
+            dataSetting.setExtLabel("unknown");
+            dataSet1.getFeatureRow(i).putSetting(dataSetting);
+        }
+
+        for (int j=0;j<numFeatures;j++){
+            FeatureSetting featureSetting = dataSet.getFeatureColumn(j).getSetting().copy();
+            dataSet1.getFeatureColumn(j).putSetting(featureSetting);
+        }
+
+        DataSetSetting dataSetSetting = dataSet.getSetting().copy();
+        dataSetSetting.setLabelMap(new HashMap<Integer, String>());
+
+        return dataSet1;
+    }
+
+    /**
      * only keep the first numFeatures features
      * @param clfDataSet
      * @param numFeatures
@@ -52,10 +96,10 @@ public class DataSetUtil {
         }
         //just copy settings
         for (int i=0;i<trimmed.getNumDataPoints();i++){
-            trimmed.getFeatureRow(i).putSetting(clfDataSet.getFeatureRow(i).getSetting());
+            trimmed.getFeatureRow(i).putSetting(clfDataSet.getFeatureRow(i).getSetting().copy());
         }
         for (int j=0;j<numFeatures;j++){
-            trimmed.getFeatureColumn(j).putSetting(clfDataSet.getFeatureColumn(j).getSetting());
+            trimmed.getFeatureColumn(j).putSetting(clfDataSet.getFeatureColumn(j).getSetting().copy());
         }
         //todo double-check
         //todo: something like featuremappers
