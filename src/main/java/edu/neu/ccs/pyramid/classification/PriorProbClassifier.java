@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 8/19/14.
  */
-public class PriorProbClassifier implements Classifier, ProbabilityEstimator, Serializable{
+public class PriorProbClassifier implements Classifier, ProbabilityEstimator{
     private static final long serialVersionUID = 1L;
 
     private int numClasses;

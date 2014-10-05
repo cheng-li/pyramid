@@ -15,7 +15,7 @@ import java.util.*;
 /**
  * Created by chengli on 8/14/14.
  */
-public class LKTreeBoost implements Classifier,ProbabilityEstimator,Serializable {
+public class LKTreeBoost implements Classifier,ProbabilityEstimator{
     private static final long serialVersionUID = 1L;
     /**
      * regressors.get(k).get(i) is the ith regressor for class k

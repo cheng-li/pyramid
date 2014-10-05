@@ -3,16 +3,13 @@ package edu.neu.ccs.pyramid.classification;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 8/13/14.
  */
-public interface Classifier {
+public interface Classifier extends Serializable{
     int predict(FeatureRow featureRow);
 
     default int[] predict(ClfDataSet dataSet){
