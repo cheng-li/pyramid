@@ -374,7 +374,6 @@ public class Exp4 {
 
 
 
-    //todo get overall top features
     static void getTopFeatures(Config config) throws Exception{
         Map<Integer,String> labelMap = loadLabelMap(config);
         String archive = config.getString("archive.folder");
@@ -399,22 +398,34 @@ public class Exp4 {
         if (config.getBoolean("verify.topFeatures.overall")){
             System.out.println("overall top features among all models:");
             for (int k=0;k<config.getInt("numClasses");k++){
-                List<String> features = LKTBInspector.topFeatureNames(lkTreeBoosts, k);
+                List<String> featureNames = LKTBInspector.topFeatureNames(lkTreeBoosts, k);
+                List<Integer> featureIndices = LKTBInspector.topFeatureIndices(lkTreeBoosts,k);
                 System.out.println("top features for class "+k+"("+labelMap.get(k)+"):");
-                System.out.println(features);
+                System.out.println(featureNames);
                 if (config.getBoolean("verify.topFeatures.writeToFiles")){
                     File featureFolder = new File(archive,"top_features");
                     if (!featureFolder.exists()){
                         featureFolder.mkdirs();
                     }
-                    File featureFile = new File(featureFolder,""+k);
-                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureFile))
-                        ){
-                        bw.write(labelMap.get(k));
-                        bw.newLine();
-                      for (String feature: features){
-                          bw.write(feature);
-                          bw.newLine();
+                    File featureNamesFile = new File(featureFolder,""+k+".names");
+                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureNamesFile))
+                    ){
+//                        bw.write(labelMap.get(k));
+//                        bw.newLine();
+                        for (String feature: featureNames){
+                            bw.write(feature);
+                            bw.newLine();
+                        }
+                    }
+
+                    File featureIndicesFile = new File(featureFolder,""+k+".indices");
+                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureIndicesFile))
+                    ){
+//                        bw.write(labelMap.get(k));
+//                        bw.newLine();
+                        for (Integer featureIndex: featureIndices){
+                            bw.write(""+featureIndex);
+                            bw.newLine();
                         }
                     }
                 }
