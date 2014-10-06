@@ -98,7 +98,7 @@ public class LKTreeBoostTest {
 
     static void spam_test() throws Exception{
         spam_build();
-        spam_load();
+//        spam_load();
     }
     static void spam_load() throws Exception{
         System.out.println("loading ensemble");
