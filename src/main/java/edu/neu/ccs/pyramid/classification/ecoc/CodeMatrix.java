@@ -2,6 +2,9 @@ package edu.neu.ccs.pyramid.classification.ecoc;
 
 
 
+import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
+import edu.neu.ccs.pyramid.util.Sampling;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +42,21 @@ public class CodeMatrix implements Serializable {
         }
         return codeMatrix;
     }
+
+    public static CodeMatrix randomCodes(int numClasses, int numFunctions){
+        CodeMatrix codeMatrix = new CodeMatrix(numClasses,numFunctions);
+        CodeMatrix exhaustiveCodes = exhaustiveCodes(numClasses);
+        int[] sample = Sampling.sampleBySize(exhaustiveCodes.getNumFunctions(),numFunctions);
+        for (int i=0;i<numClasses;i++){
+            for (int j=0;j<numFunctions;j++){
+                int oldColumn = sample[j];
+                boolean value = exhaustiveCodes.getCodeRow(i)[oldColumn];
+                codeMatrix.setCode(i,j,value);
+            }
+        }
+        return codeMatrix;
+    }
+
 
     public int[] aggregateLabels(int column, int[] oldLabels){
         boolean[] codeColumn = this.getCodeColumn(column);
@@ -162,5 +180,9 @@ public class CodeMatrix implements Serializable {
             sb.append(Arrays.toString(this.getCodeRow(i))).append("\n");
         }
         return sb.toString();
+    }
+
+    public static enum CodeType{
+        EXHAUSTIVE,RANDOM
     }
 }

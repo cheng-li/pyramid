@@ -52,10 +52,13 @@ public class ECOCTest {
 
         ClassifierFactory classifierFactory = new LKTBFactory();
         TrainConfig trainConfig = new LKTBTrainConfig();
-        ECOC ecoc = new ECOC(dataSet,
+        ECOCConfig ecocConfig = new ECOCConfig().setCodeType(CodeMatrix.CodeType.EXHAUSTIVE);
+        ECOC ecoc = new ECOC(ecocConfig,
+                dataSet,
                 new File(TMP,"ecoc/models").getAbsolutePath(),
                 classifierFactory,
                 trainConfig);
+        System.out.println(ecoc.getCodeMatrix().toString());
 
         ecoc.train();
         ecoc.serialize(new File(TMP,"ecoc/ecoc.ser"));

@@ -26,7 +26,9 @@ public class ECOC implements Classifier{
     private ClassifierFactory classifierFactory;
     private transient TrainConfig trainConfig;
 
-    public ECOC(ClfDataSet dataSet, String archive,
+    public ECOC(ECOCConfig ecocConfig,
+                ClfDataSet dataSet,
+                String archive,
                 ClassifierFactory classifierFactory,
                 TrainConfig trainConfig) {
         this.binaryDataSet = DataSetUtil.changeLabels(dataSet,2);
@@ -35,12 +37,20 @@ public class ECOC implements Classifier{
         this.trainConfig = trainConfig;
         this.archive = archive;
         int numClasses = dataSet.getNumClasses();
-        this.codeMatrix = CodeMatrix.exhaustiveCodes(numClasses);
+        if (ecocConfig.getCodeType()== CodeMatrix.CodeType.EXHAUSTIVE) {
+            this.codeMatrix = CodeMatrix.exhaustiveCodes(numClasses);
+        } else if (ecocConfig.getCodeType()== CodeMatrix.CodeType.RANDOM){
+            this.codeMatrix = CodeMatrix.randomCodes(numClasses,ecocConfig.getNumFunctions());
+        } else {
+            throw new IllegalArgumentException("unknown code type");
+        }
         this.originalLabels = new int[this.numDataPoints];
         System.arraycopy(dataSet.getLabels(),0,this.originalLabels,0,this.numDataPoints);
     }
 
-
+    public CodeMatrix getCodeMatrix() {
+        return codeMatrix;
+    }
 
     public void train() throws Exception{
         StopWatch stopWatch = new StopWatch();
