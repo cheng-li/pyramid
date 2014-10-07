@@ -18,6 +18,7 @@ public class LabelGraph implements Serializable {
      */
 
     int numLabels;
+    private Set<Integer> destLabelSet;
     private Map<Integer, String> intExtLabelMap;
     private Map<String, Integer> extIntLabelMap;
     private Map<Integer, Set<Integer>> DirectedEdgeMap;
@@ -25,6 +26,7 @@ public class LabelGraph implements Serializable {
     private Map<Integer, Set<Integer>> UndirectedEdgeMap;
     public LabelGraph(int numLabels) {
         this.numLabels = numLabels;
+        this.destLabelSet = new HashSet<Integer>();
         this.intExtLabelMap = new HashMap<Integer, String>();
         this.extIntLabelMap = new HashMap<String, Integer>();
         this.DirectedEdgeMap = new HashMap<Integer, Set<Integer>>();
@@ -220,9 +222,9 @@ public class LabelGraph implements Serializable {
         for (int i = 0; i < numLabels; i++) {
             Set<Integer> descendants = getDescendantLabels(i);
             if (DirectedEdgeMap.containsKey(i)) {
-                if (assignment.matchClass(i) == false) {
+                if (!assignment.matchClass(i)) {
                     for (int j : descendants) {
-                        if (assignment.matchClass(j) == true) {
+                        if (assignment.matchClass(j)) {
                             return false;
                         }
                     }
@@ -232,9 +234,9 @@ public class LabelGraph implements Serializable {
         for (int i = 0; i < numLabels; i++) {
             Set<Integer> exclusions = getExclusiveLabels(i);
             if (UndirectedEdgeMap.containsKey(i)) {
-                if (assignment.matchClass(i) == true) {
+                if (assignment.matchClass(i)) {
                     for (int j : exclusions) {
-                        if (assignment.matchClass(j) == true) {
+                        if (assignment.matchClass(j)) {
                             return false;
                         }
                     }
@@ -247,15 +249,19 @@ public class LabelGraph implements Serializable {
     public List<MultiLabel> getLegalAssignments() {
         List<MultiLabel> assignments = new ArrayList<MultiLabel>();
         for (int i = 1; i < Math.pow(2, numLabels); i++) {
+            int flag = 0;
             String biLabel = Integer.toBinaryString(i);
             MultiLabel assignment = new MultiLabel(numLabels);
             int j = numLabels - biLabel.length();
             for (int k = numLabels - biLabel.length(); j < numLabels; j++, k++) {
                 if (biLabel.charAt(j - numLabels + biLabel.length()) == '1') {
                     assignment.addLabel(k);
+                    if (destLabelSet.contains(k)) {
+                        flag = 1;
+                    }
                 }
             }
-            if (isAssignmentLegal(assignment)) {
+            if (flag == 1 && isAssignmentLegal(assignment)) {
                 assignments.add(assignment);
             }
         }
@@ -281,14 +287,18 @@ public class LabelGraph implements Serializable {
 
     public boolean isMinimallySparse() {
         for (int i = 0; i < numLabels; i++) {
-            for (int j : DirectedEdgeMap.get(i)) {
-                if (isRedundantDirectedEdge(i, j)) {
-                    return false;
+            if (DirectedEdgeMap.containsKey(i)) {
+                for (int j : DirectedEdgeMap.get(i)) {
+                    if (isRedundantDirectedEdge(i, j)) {
+                        return false;
+                    }
                 }
             }
-            for (int j : UndirectedEdgeMap.get(i)) {
-                if (isRedundantUndirectedEdge(i, j)) {
-                    return false;
+            if (UndirectedEdgeMap.containsKey(i)) {
+                for (int j : UndirectedEdgeMap.get(i)) {
+                    if (isRedundantUndirectedEdge(i, j)) {
+                        return false;
+                    }
                 }
             }
         }
@@ -297,14 +307,18 @@ public class LabelGraph implements Serializable {
 
     public boolean isMaximallyDense() {
         for (int i = 0; i < numLabels; i++) {
-            for (int j : DirectedEdgeMap.get(i)) {
-                if (!isRedundantDirectedEdge(i, j)) {
-                    return false;
+            if (DirectedEdgeMap.containsKey(i)) {
+                for (int j : DirectedEdgeMap.get(i)) {
+                    if (!isRedundantDirectedEdge(i, j)) {
+                        return false;
+                    }
                 }
             }
-            for (int j : UndirectedEdgeMap.get(i)) {
-                if (!isRedundantUndirectedEdge(i, j)) {
-                    return false;
+            if (UndirectedEdgeMap.containsKey(i)) {
+                for (int j : UndirectedEdgeMap.get(i)) {
+                    if (!isRedundantUndirectedEdge(i, j)) {
+                        return false;
+                    }
                 }
             }
         }
@@ -314,10 +328,11 @@ public class LabelGraph implements Serializable {
     public boolean isRedundantDirectedEdge(int srcLabel, int destLabel) {
         if (DirectedEdgeMap.get(srcLabel).contains(destLabel)) {
             Set<Integer> descendants = DirectedEdgeMap.get(srcLabel);
-            descendants.remove(destLabel);
             Set<Integer> labels = new HashSet<Integer>();
             for (int i : descendants) {
-                labels.addAll(getDescendantLabels(i));
+                if (i != destLabel) {
+                    labels.addAll(getDescendantLabels(i));
+                }
             }
             if (labels.contains(destLabel)) {
                 return true;
@@ -334,10 +349,11 @@ public class LabelGraph implements Serializable {
     public boolean isRedundantUndirectedEdge(int srcLabel, int destLabel) {
         if (UndirectedEdgeMap.get(srcLabel).contains(destLabel)) {
             Set<Integer> exclusions = UndirectedEdgeMap.get(srcLabel);
-            exclusions.remove(destLabel);
             Set<Integer> labels = new HashSet<Integer>();
             for (int i : exclusions) {
-                labels.addAll(getExclusiveLabels(i));
+                if (i != destLabel) {
+                    labels.addAll(getExclusiveLabels(i));
+                }
             }
             if (labels.contains(destLabel)) {
                 return true;
@@ -353,35 +369,44 @@ public class LabelGraph implements Serializable {
 
     public static LabelGraph sparsify(LabelGraph labelGraph) {
         for (int i = 0; i < labelGraph.numLabels; i++) {
-            for (int j : labelGraph.DirectedEdgeMap.get(i)) {
-                if (labelGraph.isRedundantDirectedEdge(i, j)) {
-                    labelGraph.DirectedEdgeMap.get(i).remove(j);
+            if (labelGraph.DirectedEdgeMap.containsKey(i)) {
+                for (int j : labelGraph.DirectedEdgeMap.get(i)) {
+                    if (labelGraph.isRedundantDirectedEdge(i, j)) {
+                        labelGraph.DirectedEdgeMap.get(i).remove(j);
+                    }
                 }
             }
-            for (int j : labelGraph.UndirectedEdgeMap.get(i)) {
-                if (labelGraph.isRedundantUndirectedEdge(i, j)) {
-                    labelGraph.UndirectedEdgeMap.get(i).remove(j);
+            if (labelGraph.UndirectedEdgeMap.containsKey(i)) {
+                for (int j : labelGraph.UndirectedEdgeMap.get(i)) {
+                    if (labelGraph.isRedundantUndirectedEdge(i, j)) {
+                        labelGraph.UndirectedEdgeMap.get(i).remove(j);
+                    }
                 }
             }
         }
         return labelGraph;
     }
 
+    /*
     public static LabelGraph densify(LabelGraph labelGraph) {
         for (int i = 0; i < labelGraph.numLabels; i++) {
-            for (int j : labelGraph.DirectedEdgeMap.get(i)) {
-                if (!labelGraph.isRedundantDirectedEdge(i, j)) {
-                    labelGraph.DirectedEdgeMap.get(i).add(j);
+            if (labelGraph.DirectedEdgeMap.containsKey(i)) {
+                for (int j : labelGraph.DirectedEdgeMap.get(i)) {
+                    if (!labelGraph.isRedundantDirectedEdge(i, j)) {
+                        labelGraph.DirectedEdgeMap.get(i).add(j);
+                    }
                 }
             }
-            for (int j : labelGraph.UndirectedEdgeMap.get(i)) {
-                if (!labelGraph.isRedundantUndirectedEdge(i, j)) {
-                    labelGraph.UndirectedEdgeMap.get(i).add(j);
+            if (labelGraph.UndirectedEdgeMap.containsKey(i)) {
+                for (int j : labelGraph.UndirectedEdgeMap.get(i)) {
+                    if (!labelGraph.isRedundantUndirectedEdge(i, j)) {
+                        labelGraph.UndirectedEdgeMap.get(i).add(j);
+                    }
                 }
             }
         }
         return labelGraph;
-    }
+    }*/
 
     public void parser(String operator) {
         String[] words = operator.split(" ");
@@ -400,11 +425,13 @@ public class LabelGraph implements Serializable {
                 }
             }
             else {
-                //destination??
+                //destination
                 String dest = words[1];
                 String[] dests = dest.split(",");
                 for (int i = 0; i < dests.length; i++) {
-                    DirectedEdgeMap.put(Integer.parseInt(dests[i]), new HashSet<Integer>());
+                    if (!destLabelSet.contains(dests[i])) {
+                        destLabelSet.add(Integer.parseInt(dests[i]));
+                    }
                 }
             }
         }

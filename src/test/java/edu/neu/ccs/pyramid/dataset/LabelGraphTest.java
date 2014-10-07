@@ -11,12 +11,14 @@ public class LabelGraphTest {
         test1();
         test2();
         test3();
+        test4();
+        test5();
 
     }
 
     static void test1() {
 
-        int numLabels = 7;
+        int numLabels = 4;
         LabelGraph graph = new LabelGraph(numLabels);
         graph.parser("1 hierarchy 2,3");
         graph.parser("0 exclusive 1");
@@ -30,7 +32,7 @@ public class LabelGraphTest {
 
     static void test2() {
 
-        int numLabels = 7;
+        int numLabels = 4;
         LabelGraph graph = new LabelGraph(numLabels);
         graph.parser("1 hierarchy 2,3");
         graph.parser("0 exclusive 1");
@@ -59,5 +61,37 @@ public class LabelGraphTest {
                 System.out.println(assignments.get(i).toString());
             }
         }
+
+    }
+
+    static void test4() {
+
+        int numLabels = 4;
+        LabelGraph graph1 = new LabelGraph(numLabels);
+        graph1.parser("1 hierarchy 2,3");
+        graph1.parser("0 exclusive 1");
+        graph1.parser("destination 0,2,3");
+        LabelGraph graph2 = new LabelGraph(numLabels);
+        graph2.parser("0 exclusive 1");
+        graph2.parser("1 hierarchy 2,3");
+        graph2.parser("destination 0,2,3");
+        System.out.println(LabelGraph.isEquivalent(graph1, graph2));
+
+    }
+
+    static void test5() {
+
+        int numLabels = 4;
+        LabelGraph graph = new LabelGraph(numLabels);
+        graph.parser("1 hierarchy 2,3");
+        graph.parser("2 hier 3");
+        graph.parser("0 exclusive 1");
+        graph.parser("destination 0,2,3");
+
+        System.out.println(graph.isMinimallySparse());
+        System.out.println(graph.isMaximallyDense());
+        LabelGraph.sparsify(graph);
+        System.out.println(graph.isMinimallySparse());
+
     }
 }
