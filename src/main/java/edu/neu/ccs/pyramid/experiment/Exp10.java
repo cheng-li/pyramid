@@ -38,8 +38,8 @@ public class Exp10 {
         TrainConfig trainConfig = new LKTBTrainConfig()
                 .setNumLeaves(2)
                 .setLearningRate(0.1)
-                .setNumIterations(200);
-        ECOCConfig ecocConfig = new ECOCConfig().setCodeType(CodeMatrix.CodeType.RANDOM)
+                .setNumIterations(500);
+        ECOCConfig ecocConfig = new ECOCConfig().setCodeType(CodeMatrix.CodeType.EXHAUSTIVE)
                 .setNumFunctions(20);
         ECOC ecoc = new ECOC(ecocConfig,
                 dataSet,
