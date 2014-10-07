@@ -262,6 +262,127 @@ public class LabelGraph implements Serializable {
         return assignments;
     }
 
+    public static boolean isEquivalent(LabelGraph lg1, LabelGraph lg2) {
+        if (!lg1.isHierarchySubGraphDag() || (!lg2.isHierarchySubGraphDag())) {
+            return false;
+        }
+        List<MultiLabel> assignments1 = lg1.getLegalAssignments();
+        List<MultiLabel> assignments2 = lg2.getLegalAssignments();
+        if (assignments1.size() != assignments2.size()) {
+            return false;
+        }
+        for (int i = 0; i < assignments1.size(); i++) {
+            if (!MultiLabel.equivalent(assignments1.get(i), assignments2.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean isMinimallySparse() {
+        for (int i = 0; i < numLabels; i++) {
+            for (int j : DirectedEdgeMap.get(i)) {
+                if (isRedundantDirectedEdge(i, j)) {
+                    return false;
+                }
+            }
+            for (int j : UndirectedEdgeMap.get(i)) {
+                if (isRedundantUndirectedEdge(i, j)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean isMaximallyDense() {
+        for (int i = 0; i < numLabels; i++) {
+            for (int j : DirectedEdgeMap.get(i)) {
+                if (!isRedundantDirectedEdge(i, j)) {
+                    return false;
+                }
+            }
+            for (int j : UndirectedEdgeMap.get(i)) {
+                if (!isRedundantUndirectedEdge(i, j)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean isRedundantDirectedEdge(int srcLabel, int destLabel) {
+        if (DirectedEdgeMap.get(srcLabel).contains(destLabel)) {
+            Set<Integer> descendants = DirectedEdgeMap.get(srcLabel);
+            descendants.remove(destLabel);
+            Set<Integer> labels = new HashSet<Integer>();
+            for (int i : descendants) {
+                labels.addAll(getDescendantLabels(i));
+            }
+            if (labels.contains(destLabel)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+
+    public boolean isRedundantUndirectedEdge(int srcLabel, int destLabel) {
+        if (UndirectedEdgeMap.get(srcLabel).contains(destLabel)) {
+            Set<Integer> exclusions = UndirectedEdgeMap.get(srcLabel);
+            exclusions.remove(destLabel);
+            Set<Integer> labels = new HashSet<Integer>();
+            for (int i : exclusions) {
+                labels.addAll(getExclusiveLabels(i));
+            }
+            if (labels.contains(destLabel)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+
+    public static LabelGraph sparsify(LabelGraph labelGraph) {
+        for (int i = 0; i < labelGraph.numLabels; i++) {
+            for (int j : labelGraph.DirectedEdgeMap.get(i)) {
+                if (labelGraph.isRedundantDirectedEdge(i, j)) {
+                    labelGraph.DirectedEdgeMap.get(i).remove(j);
+                }
+            }
+            for (int j : labelGraph.UndirectedEdgeMap.get(i)) {
+                if (labelGraph.isRedundantUndirectedEdge(i, j)) {
+                    labelGraph.UndirectedEdgeMap.get(i).remove(j);
+                }
+            }
+        }
+        return labelGraph;
+    }
+
+    public static LabelGraph densify(LabelGraph labelGraph) {
+        for (int i = 0; i < labelGraph.numLabels; i++) {
+            for (int j : labelGraph.DirectedEdgeMap.get(i)) {
+                if (!labelGraph.isRedundantDirectedEdge(i, j)) {
+                    labelGraph.DirectedEdgeMap.get(i).add(j);
+                }
+            }
+            for (int j : labelGraph.UndirectedEdgeMap.get(i)) {
+                if (!labelGraph.isRedundantUndirectedEdge(i, j)) {
+                    labelGraph.UndirectedEdgeMap.get(i).add(j);
+                }
+            }
+        }
+        return labelGraph;
+    }
+
     public void parser(String operator) {
         String[] words = operator.split(" ");
         Pattern pattern = Pattern.compile("^[-\\+]?[\\d]*$");
