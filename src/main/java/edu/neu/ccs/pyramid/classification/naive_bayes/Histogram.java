@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.classification.naive_bayes;
 import edu.neu.ccs.pyramid.dataset.FeatureColumn;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
+
 /**
  * Created by Rainicy on 10/6/14.
  */
@@ -40,6 +42,11 @@ public class Histogram implements Distribution {
 
         public void setValue(double value) {
             this.value = value;
+        }
+
+        public String toString(){
+            return "[Lower: " + getLower() + "; Upper: " + getUpper() + "; " +
+                    "Value: " + getValue() + "]";
         }
     }
 
@@ -87,10 +94,10 @@ public class Histogram implements Distribution {
         for (int i=0; i<getBins(); i++) {
             Interval unit;
             if (i == 0) {   // the first bin
-                unit = new Interval(Double.MIN_VALUE, start+step);
+                unit = new Interval(Double.NEGATIVE_INFINITY, start+step);
             }
             else if (i==getBins()-1) {  // the last bin
-                unit = new Interval(start, Double.MAX_VALUE);
+                unit = new Interval(start, Double.POSITIVE_INFINITY);
             }
             else {
                 unit = new Interval(start, start+step);
@@ -98,6 +105,7 @@ public class Histogram implements Distribution {
             start += step;
             units[i] = unit;
         }
+
 
         // value for each bin
         int[] counts = new int[getBins()];
@@ -108,24 +116,23 @@ public class Histogram implements Distribution {
             counts[binIndex] += 1;
         }
 
+
         for (int i=0; i<getBins(); i++) {
-            double value = (double)(counts[i]/totalNumVariables);
+            double value = ((double)counts[i])/(totalNumVariables);
             units[i].setValue(value);
         }
     }
 
     /** By given a variable, find the index bin for this variable. */
     private int getIndexOfBins(double x) {
-        int i = 0;
-        for ( ; i<getBins(); i++) {
+        for (int i=0; i<getBins(); i++) {
             double lower = units[i].getLower();
             double upper = units[i].getUpper();
-
             if ((x>lower) && (x<=upper)) {
-                break;
+                return i;
             }
         }
-        return i;
+        return getBins();
     }
 
     @Override
@@ -165,6 +172,15 @@ public class Histogram implements Distribution {
     @Override
     public boolean isValid() {
         return false;
+    }
+
+    public String toString() {
+        String str;
+        str = "Total number of bins: " + getBins() + "\n";
+        for (int i=0; i<getBins(); i++) {
+            str += "(" + i + ") \t" + units[i].toString() + "\n";
+        }
+        return str;
     }
 
     public int getBins() {

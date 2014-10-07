@@ -27,6 +27,9 @@ public class HistogramNBTest {
         Histogram histgram = new Histogram();
         System.out.println("Total bins: \t" + histgram.getBins());
 
+        histgram.fit(dataSet.getFeatureColumn(0));
+
+        System.out.println(histgram);
 
     }
 
