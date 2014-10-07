@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.dataset;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Created by Ying on 10/1/14.
@@ -146,6 +147,7 @@ public class LabelGraph implements Serializable {
         return exclusions;
     }
 
+    /*
     public Set<Integer> getOverlappingLabels(int label) {
         Set<Integer> overlappingLabels = new HashSet<Integer>();
         for (int i = 0; i < numLabels; i++) {
@@ -163,7 +165,7 @@ public class LabelGraph implements Serializable {
             overlappingLabels.removeAll(getExclusiveLabels(i));
         }
         return overlappingLabels;
-    }
+    }*/
 
     public boolean isConsistent() {
         for (int i = 0; i < numLabels; i++) {
@@ -214,14 +216,13 @@ public class LabelGraph implements Serializable {
         return true;
     }
 
-    //todo
-    public boolean isAssignmentLegal(boolean[] assignment) {
+    public boolean isAssignmentLegal(MultiLabel assignment) {
         for (int i = 0; i < numLabels; i++) {
             Set<Integer> descendants = getDescendantLabels(i);
             if (DirectedEdgeMap.containsKey(i)) {
-                if (assignment[i] == false) {
+                if (assignment.matchClass(i) == false) {
                     for (int j : descendants) {
-                        if (assignment[j] == true) {
+                        if (assignment.matchClass(j) == true) {
                             return false;
                         }
                     }
@@ -231,9 +232,9 @@ public class LabelGraph implements Serializable {
         for (int i = 0; i < numLabels; i++) {
             Set<Integer> exclusions = getExclusiveLabels(i);
             if (UndirectedEdgeMap.containsKey(i)) {
-                if (assignment[i] == true) {
+                if (assignment.matchClass(i) == true) {
                     for (int j : exclusions) {
-                        if (assignment[j] == true) {
+                        if (assignment.matchClass(j) == true) {
                             return false;
                         }
                     }
@@ -243,22 +244,15 @@ public class LabelGraph implements Serializable {
         return true;
     }
 
-    //todo
-    public List<boolean[]> getLegalAssignments() {
-        List<boolean[]> assignments = new ArrayList<boolean[]>();
+    public List<MultiLabel> getLegalAssignments() {
+        List<MultiLabel> assignments = new ArrayList<MultiLabel>();
         for (int i = 1; i < Math.pow(2, numLabels); i++) {
             String biLabel = Integer.toBinaryString(i);
-            boolean[] assignment = new boolean[numLabels];
-            int j;
-            for (j = 0; j < numLabels - biLabel.length(); j++) {
-                assignment[j] = false;
-            }
+            MultiLabel assignment = new MultiLabel(numLabels);
+            int j = numLabels - biLabel.length();
             for (int k = numLabels - biLabel.length(); j < numLabels; j++, k++) {
                 if (biLabel.charAt(j - numLabels + biLabel.length()) == '1') {
-                    assignment[k] = true;
-                }
-                else{
-                    assignment[k] = false;
+                    assignment.addLabel(k);
                 }
             }
             if (isAssignmentLegal(assignment)) {
@@ -268,6 +262,49 @@ public class LabelGraph implements Serializable {
         return assignments;
     }
 
-
+    public void parser(String operator) {
+        String[] words = operator.split(" ");
+        Pattern pattern = Pattern.compile("^[-\\+]?[\\d]*$");
+        if (words.length == 2) {
+            if (pattern.matcher(words[0]).matches()) {
+                //children_exclusive
+                int parent = Integer.parseInt(words[0]);
+                Set<Integer> children = DirectedEdgeMap.get(parent);
+                for (int i : children) {
+                    for (int j : children) {
+                        if (i < j) {
+                            setExclusionEdge(i, j);
+                        }
+                    }
+                }
+            }
+            else {
+                //destination??
+                String dest = words[1];
+                String[] dests = dest.split(",");
+                for (int i = 0; i < dests.length; i++) {
+                    DirectedEdgeMap.put(Integer.parseInt(dests[i]), new HashSet<Integer>());
+                }
+            }
+        }
+        else {
+            if (words[1].contains("hier")) {
+                //hierarchy
+                int parent = Integer.parseInt(words[0]);
+                String[] children = words[2].split(",");
+                for (int i = 0; i < children.length; i++) {
+                    setHierarchyEdge(parent, Integer.parseInt(children[i]));
+                }
+            }
+            else {
+                //exclusive
+                int left = Integer.parseInt(words[0]);
+                String[] rights = words[2].split(",");
+                for (int i = 0; i < rights.length; i++) {
+                    setExclusionEdge(left, Integer.parseInt(rights[i]));
+                }
+            }
+        }
+    }
 
 }
