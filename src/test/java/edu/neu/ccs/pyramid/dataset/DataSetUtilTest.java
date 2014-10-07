@@ -14,7 +14,7 @@ public class DataSetUtilTest {
 
     public static void main(String[] args) throws Exception{
 
-        test1();
+        test4();
     }
 
     static void test1(){

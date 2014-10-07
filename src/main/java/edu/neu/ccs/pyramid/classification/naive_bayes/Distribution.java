@@ -14,26 +14,27 @@ public interface Distribution extends Probability{
     /**
      * Given by batch of data, fits its distribution.
      */
-    public void fit(FeatureColumn featureColumn);
+    public void fit(FeatureColumn featureColumn)
+            throws IllegalArgumentException;
 
     /**
      * Given a variable, calculate its probability.
      */
-    public Double probability(double x);
+    public double probability(double x);
 
     /**
      * Given a varibale, return its cumulative probability.
      */
-    public Double cumulativeProbability(double x);
+    public double cumulativeProbability(double x);
 
 
     /**
      * Returns the mean value of this distribution.
      */
-    public Double getMean();
+    public double getMean();
 
     /**
      * Returns the variance of this distribution.
      */
-    public Double getVariance();
+    public double getVariance();
 }

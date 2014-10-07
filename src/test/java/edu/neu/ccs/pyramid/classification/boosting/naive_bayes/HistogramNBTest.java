@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.classification.boosting.naive_bayes;
 
+import edu.neu.ccs.pyramid.classification.naive_bayes.Histogram;
 import edu.neu.ccs.pyramid.classification.naive_bayes.HistogramNaiveBayes;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
@@ -23,8 +24,8 @@ public class HistogramNBTest {
 
         System.out.println(dataSet.getMetaInfo());
 
-        HistogramNaiveBayes histNB = new HistogramNaiveBayes();
-
+        Histogram histgram = new Histogram();
+        System.out.println("Total bins: \t" + histgram.getBins());
 
 
     }
