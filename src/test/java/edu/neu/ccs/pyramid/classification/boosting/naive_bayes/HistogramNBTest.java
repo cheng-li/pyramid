@@ -24,10 +24,10 @@ public class HistogramNBTest {
 
         System.out.println(dataSet.getMetaInfo());
 
-        Histogram histgram = new Histogram();
+        Histogram histgram = new Histogram(1000);
         System.out.println("Total bins: \t" + histgram.getBins());
 
-        histgram.fit(dataSet.getFeatureColumn(0));
+        histgram.fit(dataSet.getFeatureColumn(1));
 
         System.out.println(histgram);
 

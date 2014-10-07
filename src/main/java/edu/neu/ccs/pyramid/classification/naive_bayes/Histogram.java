@@ -10,50 +10,18 @@ import java.util.Arrays;
  */
 public class Histogram implements Distribution {
 
-    protected class Interval {
-        double lower;
-        double upper;
-        double value;
-
-        public Interval(double lower, double upper) {
-            this.lower = lower;
-            this.upper = upper;
-        }
-
-        public double getLower() {
-            return lower;
-        }
-
-        public double getUpper() {
-            return upper;
-        }
-
-        public double getValue() {
-            return value;
-        }
-
-        public void setLower(double lower) {
-            this.lower = lower;
-        }
-
-        public void setUpper(double upper) {
-            this.upper = upper;
-        }
-
-        public void setValue(double value) {
-            this.value = value;
-        }
-
-        public String toString(){
-            return "[Lower: " + getLower() + "; Upper: " + getUpper() + "; " +
-                    "Value: " + getValue() + "]";
-        }
-    }
 
     /** Number of bins. */
     protected int bins;
-    /** Histogram units. */
-    protected Interval[] units;
+    /** Values for each bin. */
+    protected double[] values;
+
+    /** Minimum value in the histogram. */
+    protected double min;
+    /** Maximum value in the histogram. */
+    protected double max;
+    /** Each step */
+    protected double step;
 
 
     /** Default constructor, set bins equals 2. */
@@ -64,6 +32,7 @@ public class Histogram implements Distribution {
     /**  Constructor by given number of bins. */
     public Histogram(int bins) {
         this.bins = bins;
+        values = new double[bins];
     }
 
     /** Constructor by given bins and variables. */
@@ -75,37 +44,16 @@ public class Histogram implements Distribution {
     @Override
     public void fit(FeatureColumn featureColumn) throws IllegalArgumentException{
 
-        this.units = new Interval[bins];    // initialize the bins;
+        setMin(featureColumn.getVector().minValue());
+        setMax(featureColumn.getVector().maxValue());
 
-        double max;
-        double min;
-        max = featureColumn.getVector().maxValue();
-        min = featureColumn.getVector().minValue();
-
-        if (min >= max) {
+        if (getMin() >= getMax()) {
             throw new IllegalArgumentException("Minimum value" +
                     " should be smaller than Maximum");
         }
 
-        double step = (double)(max-min)/(getBins());
-        double start = min;
-
-        // lower and upper for each bin
-        for (int i=0; i<getBins(); i++) {
-            Interval unit;
-            if (i == 0) {   // the first bin
-                unit = new Interval(Double.NEGATIVE_INFINITY, start+step);
-            }
-            else if (i==getBins()-1) {  // the last bin
-                unit = new Interval(start, Double.POSITIVE_INFINITY);
-            }
-            else {
-                unit = new Interval(start, start+step);
-            }
-            start += step;
-            units[i] = unit;
-        }
-
+        setStep( (double)(max-min) / getBins() );
+        double start = getMin();
 
         // value for each bin
         int[] counts = new int[getBins()];
@@ -119,25 +67,24 @@ public class Histogram implements Distribution {
 
         for (int i=0; i<getBins(); i++) {
             double value = ((double)counts[i])/(totalNumVariables);
-            units[i].setValue(value);
+            setValues(value, i);
         }
     }
 
     /** By given a variable, find the index bin for this variable. */
     private int getIndexOfBins(double x) {
-        for (int i=0; i<getBins(); i++) {
-            double lower = units[i].getLower();
-            double upper = units[i].getUpper();
-            if ((x>lower) && (x<=upper)) {
-                return i;
-            }
+        double distance = x - getMin();
+        int index = (int) (distance / getStep());
+
+        if (index >= getBins()-1) {
+            return getBins()-1;
         }
-        return getBins();
+        return index;
     }
 
     @Override
     public double probability(double x) {
-        return units[getIndexOfBins(x)].getValue();
+        return getValues(getIndexOfBins(x));
     }
 
     @Override
@@ -145,7 +92,7 @@ public class Histogram implements Distribution {
         int index = getIndexOfBins(x);
         double cum = 0;
         for (int i=0; i<=index; i++) {
-            cum += units[i].getValue();
+            cum += getValues(i);
         }
         return cum;
     }
@@ -178,13 +125,49 @@ public class Histogram implements Distribution {
         String str;
         str = "Total number of bins: " + getBins() + "\n";
         for (int i=0; i<getBins(); i++) {
-            str += "(" + i + ") \t" + units[i].toString() + "\n";
+            str += "(" + i + ") \t" + getValues(i) + "\n";
         }
         return str;
     }
 
     public int getBins() {
         return bins;
+    }
+
+    public void setBins(int bins) {
+        this.bins = bins;
+    }
+
+    public double getValues(int index) {
+        return values[index];
+    }
+
+    public void setValues(double value, int index) {
+        this.values[index] = value;
+    }
+
+    public double getMax() {
+        return max;
+    }
+
+    public void setMax(double max) {
+        this.max = max;
+    }
+
+    public double getMin() {
+        return min;
+    }
+
+    public void setMin(double min) {
+        this.min = min;
+    }
+
+    public double getStep() {
+        return step;
+    }
+
+    public void setStep(double step) {
+        this.step = step;
     }
 
 }
