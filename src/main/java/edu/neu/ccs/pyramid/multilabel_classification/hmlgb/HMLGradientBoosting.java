@@ -22,7 +22,7 @@ import java.util.List;
  * the class-gradient is very complicated, and requires a deep tree to fit well
  * Created by chengli on 9/27/14.
  */
-public class HMLGradientBoosting implements MultiLabelClassifier, Serializable{
+public class HMLGradientBoosting implements MultiLabelClassifier{
     private static final long serialVersionUID = 1L;
     private List<List<Regressor>> regressors;
     private int numClasses;
@@ -66,7 +66,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier, Serializable{
      * should be called before setTrainConfig
      */
     public void setPriorProbs(MultiLabelClfDataSet dataSet, List<MultiLabel> assignments){
-        MLPriorProbClassifier priorProbClassifier = new MLPriorProbClassifier(this.numClasses,assignments);
+        MLPriorProbClassifier priorProbClassifier = new MLPriorProbClassifier(this.numClasses);
         priorProbClassifier.fit(dataSet);
         double[] probs = priorProbClassifier.getClassProbs();
         this.setPriorProbs(probs);
