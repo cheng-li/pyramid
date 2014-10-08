@@ -14,7 +14,7 @@ public interface Distribution extends Probability{
     /**
      * Given by batch of data, fits its distribution.
      */
-    public void fit(FeatureColumn featureColumn)
+    public void fit(double[] variables)
             throws IllegalArgumentException;
 
     /**

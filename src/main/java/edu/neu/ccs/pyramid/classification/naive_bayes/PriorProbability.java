@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.classification.naive_bayes;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,45 +16,31 @@ import java.util.Map;
 public class PriorProbability implements Probability {
 
     /** Prior probabilities map. */
-    protected Map<Integer, Double> priors;
+    protected double[] priors;
 
     private int numClasses;
 
-    /** Default constructor */
-    public PriorProbability() {
-        priors = new HashMap<Integer, Double>();
-        this.numClasses = 0;
+    /** Constructor by given number of classes. */
+    public PriorProbability(int numClasses) throws IllegalArgumentException {
+        if (numClasses <= 0) {
+            throw new IllegalArgumentException("Number of " +
+                    "classes cannot be a negtive");
+        }
+        this.numClasses = numClasses;
+        priors = new double[numClasses];
     }
 
-    /** Constructor by given labels
-     * @param labels*/
-    public PriorProbability(int[] labels) {
-        priors = new HashMap<Integer, Double>();
-
-        if (labels.length  == 0) {
-            throw new IllegalArgumentException("Given labels' " +
-                    "length equals zero.");
-        }
-        // calculate the prior probabilities.
-        for ( Integer label : labels ) {
-            if (!priors.containsKey(label)) {
-                priors.put(label, new Double(1));
-            }
-            else {
-                priors.put(label, priors.get(label) + 1);
-            }
-        }
-
-        for ( Integer label : priors.keySet() ) {
-            priors.put(label, (double)priors.get(label) / labels.length);
-        }
-
-        this.numClasses = priors.size();
+    /** Constructor by given number of classes and labels */
+    public PriorProbability(int numClasses, int[] labels)
+            throws IllegalArgumentException
+    {
+        this(numClasses);
+        setPriors(labels);
     }
 
     /** Constructor by given classic data set */
     public PriorProbability(ClfDataSet clfDataSet) {
-        this(clfDataSet.getLabels());
+        this(clfDataSet.getNumClasses(), clfDataSet.getLabels());
     }
 
 
@@ -63,41 +50,64 @@ public class PriorProbability implements Probability {
     }
 
     /** Getter the prior probabilities. */
-    public Map getPriors() {
+    public double[] getPriors() {
         return this.priors;
     }
 
+    /** Given by the labels, fitting the priors. */
+    public void setPriors(int[] labels) {
+        if (labels.length  == 0) {
+            throw new IllegalArgumentException("Given labels' " +
+                    "length equals zero.");
+        }
+
+        // calculate the prior probabilities.
+        int[] counts = new int[numClasses];
+        for (int i=0; i<labels.length; i++) {
+            counts[labels[i]] += 1;
+        }
+
+        for ( int i=0; i<numClasses; i++ ) {
+            priors[i] = (double)counts[i] / labels.length;
+        }
+    }
+
     /** Getter the prior probability by given label. */
-    public double getPriorProb(Integer label) throws IllegalArgumentException {
+    public double getPriorProb(int label) throws IllegalArgumentException {
         checkLabel(label);
-        return priors.get(label);
+        return priors[label];
     }
 
     /** Getter the log prior probability by given label. */
-    public double logPriorProb(Integer label) throws IllegalArgumentException {
+    public double logPriorProb(int label) throws IllegalArgumentException {
         checkLabel(label);
-        return Math.log(priors.get(label));
+        return Math.log(priors[label]);
     }
 
     /** Check whether the given label is illegal */
-    protected void checkLabel(Integer label) throws IllegalArgumentException {
-        if (!priors.containsKey(label)) {
+    protected void checkLabel(int label) throws IllegalArgumentException {
+        if ((label<0) || (label>=numClasses))  {
             throw new IllegalArgumentException("Label does not exist.");
         }
     }
 
 
     public String toString() {
-        return "Prior Probability Class {" +
+        String str = "Prior Probability Class {" +
                 "number of classes = " + getNumClasses() +
-                ", priors = " + priors.values() + "}";
+                ", priors = [";
+        for (int i=0; i<numClasses; i++) {
+            str += i + ": " + priors[i] + "; ";
+        }
+        str += "]}";
+        return str;
     }
 
     @Override
     public boolean isValid() {
         double sum = 0;
-        for (Integer label : priors.keySet()) {
-            double prob = priors.get(label);
+        for (int i=0; i<numClasses; i++) {
+            double prob = priors[i];
             if (prob < 0 || prob > 1) {
                 return false;
             }

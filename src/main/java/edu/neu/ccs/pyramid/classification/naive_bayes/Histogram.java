@@ -36,16 +36,17 @@ public class Histogram implements Distribution {
     }
 
     /** Constructor by given bins and variables. */
-    public Histogram(int bins, FeatureColumn featureColumn) {
+    public Histogram(int bins, double[] variables) {
         this(bins);
-        fit(featureColumn);
+        fit(variables);
     }
 
     @Override
-    public void fit(FeatureColumn featureColumn) throws IllegalArgumentException{
+    public void fit(double[] variables) throws IllegalArgumentException{
 
-        setMin(featureColumn.getVector().minValue());
-        setMax(featureColumn.getVector().maxValue());
+        Arrays.sort(variables);
+        setMin(variables[0]);
+        setMax(variables[variables.length-1]);
 
         if (getMin() >= getMax()) {
             throw new IllegalArgumentException("Minimum value" +
@@ -57,10 +58,9 @@ public class Histogram implements Distribution {
 
         // value for each bin
         int[] counts = new int[getBins()];
-        Vector featureVector = featureColumn.getVector();
-        int totalNumVariables = featureVector.size();
+        int totalNumVariables = variables.length;
         for (int i=0; i<totalNumVariables; i++) {
-            int binIndex = getIndexOfBins(featureVector.get(i));
+            int binIndex = getIndexOfBins(variables[i]);
             counts[binIndex] += 1;
         }
 

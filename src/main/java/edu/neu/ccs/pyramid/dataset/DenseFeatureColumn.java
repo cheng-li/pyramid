@@ -6,12 +6,12 @@ import org.apache.mahout.math.Vector;
 /**
  * Created by chengli on 8/20/14.
  */
-class DenseFeatureColumn implements FeatureColumn{
+public class DenseFeatureColumn implements FeatureColumn{
     int featureIndex;
     DenseVector vector;
     FeatureSetting setting;
 
-    DenseFeatureColumn(int featureIndex, int numDataPoints) {
+    public DenseFeatureColumn(int featureIndex, int numDataPoints) {
         this.featureIndex = featureIndex;
         this.vector = new DenseVector(numDataPoints);
         this.setting = new FeatureSetting();

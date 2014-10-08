@@ -2,10 +2,12 @@ package edu.neu.ccs.pyramid.classification.boosting.naive_bayes;
 
 import edu.neu.ccs.pyramid.classification.naive_bayes.Histogram;
 import edu.neu.ccs.pyramid.classification.naive_bayes.HistogramNaiveBayes;
+import edu.neu.ccs.pyramid.classification.naive_bayes.PriorProbability;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import org.apache.mahout.math.Vector;
 
 import java.io.File;
 
@@ -24,13 +26,20 @@ public class HistogramNBTest {
 
         System.out.println(dataSet.getMetaInfo());
 
-        Histogram histgram = new Histogram(1000);
+        Histogram histgram = new Histogram(2);
         System.out.println("Total bins: \t" + histgram.getBins());
 
-        histgram.fit(dataSet.getFeatureColumn(1));
+        Vector vector = dataSet.getFeatureColumn(0).getVector();
+        double[] variables = new double[vector.size()];
+        for (int i=0; i<vector.size(); i++) {
+            variables[i] = vector.get(i);
+        }
+        histgram.fit(variables);
 
         System.out.println(histgram);
 
+        PriorProbability priorProbability = new PriorProbability(dataSet);
+        System.out.println(priorProbability.toString());
     }
 
 }
