@@ -25,8 +25,30 @@ public class HistogramNBTest {
     public static void main(String[] args) throws Exception {
 
 //        histogramNBTest(100);
-        gassianNBTest();
+//        gassianNBTest();
+        gammaNBTest();
     }
+
+    private static void gammaNBTest() throws IOException, ClassNotFoundException {
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        NaiveBayes naiveBayes = new NaiveBayes(dataSet, DistributionType.GAMMA);
+
+        double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
+        System.out.println("Accuracy on training set: " + accuracy);
+        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
+
+        accuracy = Accuracy.accuracy(naiveBayes, testDataset);
+        System.out.println("Accuracy on testing set: " + accuracy);
+        System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
+        System.out.println();
+
+    }
+
 
     private static void gassianNBTest() throws IOException, ClassNotFoundException {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),

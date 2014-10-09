@@ -47,8 +47,14 @@ public class NaiveBayes implements Classifier, ProbabilityEstimator {
 
         switch (type) {
             case GAUSSIAN:
+                System.out.println("Gaussian Distribution.");
                 this.distribution = new Gaussian[numClasses][numFeatures];
                 setupDistribution(clfDataSet, GAUSSIAN);
+                break;
+            case GAMMA:
+                System.out.println("Gamma Distribution.");
+                this.distribution = new Gamma[numClasses][numFeatures];
+                setupDistribution(clfDataSet, GAMMA);
                 break;
         }
 
@@ -88,17 +94,37 @@ public class NaiveBayes implements Classifier, ProbabilityEstimator {
     /**
      * Setup the distributions by given classification dataset and distribution type
      * */
-    private void setupDistribution(ClfDataSet clfDataSet, DistributionType gaussian) {
+    private void setupDistribution(ClfDataSet clfDataSet, DistributionType type) {
+        switch (type) {
+            case GAUSSIAN:
+            {
+                for (int i=0; i<numClasses; i++) {
+                    for (int j=0; j<numFeatures; j++) {
+                        double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
 
-        for (int i=0; i<numClasses; i++) {
-            for (int j=0; j<numFeatures; j++) {
-                double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
+                        // fitting the Gaussian
+                        this.distribution[i][j] = new Gaussian(variables);
+                    }
+                }
+                break;
+            }
+            case GAMMA:
+            {
+                for (int i=0; i<numClasses; i++) {
+                    for (int j=0; j<numFeatures; j++) {
+                        double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
 
-                // fitting the Gaussian
-                this.distribution[i][j] = new Gaussian(variables);
+                        // fitting the Gamma
+                        this.distribution[i][j] = new Gamma(variables);
+                    }
+                }
+                break;
             }
         }
+
     }
+
+
 
     private double[] getVariablesByLabelFeature(ClfDataSet clfDataSet,
                                                  int label, int feature) {
