@@ -13,6 +13,8 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 9/9/14.
  */
+
+//todo: there seems to be a bug, see HistogramNBTest
 public class AUC {
     public static double auc(ProbabilityEstimator probEstimator, ClfDataSet dataSet){
         double[] probForOne = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
