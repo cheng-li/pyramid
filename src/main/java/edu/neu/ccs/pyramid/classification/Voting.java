@@ -37,4 +37,9 @@ public class Voting implements Classifier{
         }
         return out;
     }
+
+    @Override
+    public int getNumClasses() {
+        return this.numClasses;
+    }
 }

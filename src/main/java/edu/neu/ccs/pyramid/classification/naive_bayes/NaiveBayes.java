@@ -16,7 +16,7 @@ import static edu.neu.ccs.pyramid.classification.naive_bayes.DistributionType.*;
 /**
  * Created by Rainicy on 10/8/14.
  */
-public class NaiveBayes implements Classifier, ProbabilityEstimator {
+public class NaiveBayes implements ProbabilityEstimator {
 
     /** Prior Probability. */
     protected PriorProbability priors;

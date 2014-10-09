@@ -12,6 +12,8 @@ import java.util.stream.IntStream;
 public interface Classifier extends Serializable{
     int predict(FeatureRow featureRow);
 
+    int  getNumClasses();
+
     default int[] predict(ClfDataSet dataSet){
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel().
                 map(i -> predict(dataSet.getFeatureRow(i))).toArray();

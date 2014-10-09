@@ -17,6 +17,7 @@ import java.util.List;
  */
 public class ECOC implements Classifier{
     private static final long serialVersionUID = 1L;
+    private int numClasses;
     private CodeMatrix codeMatrix;
     private transient ClfDataSet binaryDataSet;
     private String archive;
@@ -36,7 +37,7 @@ public class ECOC implements Classifier{
         this.classifierFactory = classifierFactory;
         this.trainConfig = trainConfig;
         this.archive = archive;
-        int numClasses = dataSet.getNumClasses();
+        this.numClasses = dataSet.getNumClasses();
         if (ecocConfig.getCodeType()== CodeMatrix.CodeType.EXHAUSTIVE) {
             this.codeMatrix = CodeMatrix.exhaustiveCodes(numClasses);
         } else if (ecocConfig.getCodeType()== CodeMatrix.CodeType.RANDOM){
@@ -50,6 +51,11 @@ public class ECOC implements Classifier{
 
     public CodeMatrix getCodeMatrix() {
         return codeMatrix;
+    }
+
+    @Override
+    public int getNumClasses() {
+        return this.numClasses;
     }
 
     public void train() throws Exception{

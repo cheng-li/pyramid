@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by chengli on 9/9/14.
  */
-public class ProbabilityVoting implements Classifier, ProbabilityEstimator{
+public class ProbabilityVoting implements ProbabilityEstimator{
     private int numClasses;
     private List<ProbabilityEstimator> estimatorList;
 
