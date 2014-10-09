@@ -1,8 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import edu.neu.ccs.pyramid.dataset.FeatureColumn;
-import org.apache.mahout.math.Vector;
-
 import java.util.Arrays;
 
 /**
@@ -41,12 +38,18 @@ public class Histogram implements Distribution {
         fit(variables);
     }
 
+    /**
+     * Use the Laplace smoothing.
+     * (counts + 1) / (Total_counts + bins.)
+     *
+     * @param variables double array.
+     * @throws IllegalArgumentException
+     */
     @Override
     public void fit(double[] variables) throws IllegalArgumentException{
 
-        Arrays.sort(variables);
-        setMin(variables[0]);
-        setMax(variables[variables.length-1]);
+        setMin(Arrays.stream(variables).min().getAsDouble());
+        setMax(Arrays.stream(variables).max().getAsDouble());
 
         if (getMin() >= getMax()) {
             throw new IllegalArgumentException("Minimum value" +
@@ -65,26 +68,37 @@ public class Histogram implements Distribution {
         }
 
 
+        // Smoothing here.
         for (int i=0; i<getBins(); i++) {
-            double value = ((double)counts[i])/(totalNumVariables);
-            setValues(value, i);
+            double value = ((double)counts[i]+1)/(totalNumVariables + getBins());
+            setValue(value, i);
         }
     }
 
     /** By given a variable, find the index bin for this variable. */
     private int getIndexOfBins(double x) {
+
         double distance = x - getMin();
         int index = (int) (distance / getStep());
 
-        if (index >= getBins()-1) {
+        if (index < 0) {
+            return 0;
+        }
+        else if (index > getBins()-1) {
             return getBins()-1;
         }
+
         return index;
     }
 
     @Override
     public double probability(double x) {
-        return getValues(getIndexOfBins(x));
+        return getValue(getIndexOfBins(x));
+    }
+
+    @Override
+    public double logProbability(double x) throws IllegalArgumentException {
+        return Math.log(probability(x));
     }
 
     @Override
@@ -92,40 +106,50 @@ public class Histogram implements Distribution {
         int index = getIndexOfBins(x);
         double cum = 0;
         for (int i=0; i<=index; i++) {
-            cum += getValues(i);
+            cum += getValue(i);
         }
         return cum;
     }
 
-    /*
-     TODO
+    /**
+     Not Support in Histogram.
       */
     @Override
-    public double getMean() {
-        return 0;
+    public double getMean() throws IllegalAccessException {
+        throw new IllegalAccessException("Histogram does not support" +
+                "getMean() operation.");
     }
 
-    /*
-    TODO
+    /**
+    Not Support in Histogram.
      */
     @Override
-    public double getVariance() {
-        return 0;
+    public double getVariance() throws IllegalAccessException {
+        throw new IllegalAccessException("Histogram does not support" +
+                "getVariance() operation.");
     }
 
-    /*
-    TODO
-     */
     @Override
     public boolean isValid() {
-        return false;
+        double sum = 0;
+        for (int i=0; i<getBins(); i++) {
+            double prob = getValue(i);
+            if (prob < 0 || prob > 1) {
+                return false;
+            }
+            sum += prob;
+        }
+        if (Math.abs(1-sum) > THRESHOLD) {
+            return false;
+        }
+        return true;
     }
 
     public String toString() {
         String str;
         str = "Total number of bins: " + getBins() + "\n";
         for (int i=0; i<getBins(); i++) {
-            str += "(" + i + ") \t" + getValues(i) + "\n";
+            str += "(" + i + ") \t" + getValue(i) + "\n";
         }
         return str;
     }
@@ -134,39 +158,39 @@ public class Histogram implements Distribution {
         return bins;
     }
 
-    public void setBins(int bins) {
+    private void setBins(int bins) {
         this.bins = bins;
     }
 
-    public double getValues(int index) {
+    private double getValue(int index) {
         return values[index];
     }
 
-    public void setValues(double value, int index) {
+    private void setValue(double value, int index) {
         this.values[index] = value;
     }
 
-    public double getMax() {
+    private double getMax() {
         return max;
     }
 
-    public void setMax(double max) {
+    private void setMax(double max) {
         this.max = max;
     }
 
-    public double getMin() {
+    private double getMin() {
         return min;
     }
 
-    public void setMin(double min) {
+    private void setMin(double min) {
         this.min = min;
     }
 
-    public double getStep() {
+    private double getStep() {
         return step;
     }
 
-    public void setStep(double step) {
+    private void setStep(double step) {
         this.step = step;
     }
 

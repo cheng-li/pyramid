@@ -20,7 +20,12 @@ public interface Distribution extends Probability{
     /**
      * Given a variable, calculate its probability.
      */
-    public double probability(double x);
+    public double probability(double x) throws IllegalArgumentException;
+
+    /**
+     * GIven a variable, calculate its log probability.
+     */
+    public double logProbability(double x) throws  IllegalArgumentException;
 
     /**
      * Given a varibale, return its cumulative probability.
@@ -31,10 +36,10 @@ public interface Distribution extends Probability{
     /**
      * Returns the mean value of this distribution.
      */
-    public double getMean();
+    public double getMean() throws IllegalAccessException;
 
     /**
      * Returns the variance of this distribution.
      */
-    public double getVariance();
+    public double getVariance() throws IllegalAccessException;
 }
