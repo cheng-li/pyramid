@@ -19,5 +19,5 @@ public interface Probability {
      *
      * @return true, if valid, false otherwise.
      */
-    boolean isValid();
+    boolean isValid() throws IllegalAccessException;
 }

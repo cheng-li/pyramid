@@ -4,12 +4,17 @@ import java.util.Arrays;
 
 /**
  * Created by Rainicy on 10/6/14.
+ *
+ * Histogram ditribution, implementing Distribution.
+ * And using Laplace Smoothing during the fit operation.
+ *
+ * @see edu.neu.ccs.pyramid.classification.naive_bayes.Distribution
  */
 public class Histogram implements Distribution {
 
 
-    /** Number of bins. */
-    protected int bins;
+    /** numBins. */
+    protected int numBins;
     /** Values for each bin. */
     protected double[] values;
 
@@ -21,26 +26,26 @@ public class Histogram implements Distribution {
     protected double step;
 
 
-    /** Default constructor, set bins equals 2. */
+    /** Default constructor, set numBins equals 2. */
     public Histogram() {
         this(2);
     }
 
-    /**  Constructor by given number of bins. */
-    public Histogram(int bins) {
-        this.bins = bins;
-        values = new double[bins];
+    /**  Constructor by given numBins. */
+    public Histogram(int numBins) {
+        this.numBins = numBins;
+        values = new double[numBins];
     }
 
-    /** Constructor by given bins and variables. */
-    public Histogram(int bins, double[] variables) {
-        this(bins);
+    /** Constructor by given numBins and variables. */
+    public Histogram(int numBins, double[] variables) {
+        this(numBins);
         fit(variables);
     }
 
     /**
      * Use the Laplace smoothing.
-     * (counts + 1) / (Total_counts + bins.)
+     * (counts + 1) / (Total_counts + numBins.)
      *
      * @param variables double array.
      * @throws IllegalArgumentException
@@ -147,7 +152,7 @@ public class Histogram implements Distribution {
 
     public String toString() {
         String str;
-        str = "Total number of bins: " + getBins() + "\n";
+        str = "Total numBins: " + getBins() + "\n";
         for (int i=0; i<getBins(); i++) {
             str += "(" + i + ") \t" + getValue(i) + "\n";
         }
@@ -155,11 +160,11 @@ public class Histogram implements Distribution {
     }
 
     public int getBins() {
-        return bins;
+        return numBins;
     }
 
-    private void setBins(int bins) {
-        this.bins = bins;
+    private void setBins(int numBins) {
+        this.numBins = numBins;
     }
 
     private double getValue(int index) {

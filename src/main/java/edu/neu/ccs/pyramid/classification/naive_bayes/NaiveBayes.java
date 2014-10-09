@@ -6,9 +6,12 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+
+import static edu.neu.ccs.pyramid.classification.naive_bayes.DistributionType.*;
 
 /**
  * Created by Rainicy on 10/8/14.
@@ -27,34 +30,49 @@ public class NaiveBayes implements Classifier, ProbabilityEstimator {
     protected DistributionType distributionType;
 
     protected int numClasses;
+    protected int numFeatures;
 
 
     /** Constructor of not Histogram Naive Bayes. */
     public NaiveBayes(ClfDataSet clfDataSet, DistributionType type) {
+        if (type == HISTOGRAM) {
+            throw new IllegalArgumentException("Given distribution should " +
+                    "not be a histogram.");
+        }
+
+        this.numClasses = clfDataSet.getNumClasses();
+        this.numFeatures = clfDataSet.getNumFeatures();
+        this.distributionType = type;
+        this.priors = new PriorProbability(clfDataSet);
+
+        switch (type) {
+            case GAUSSIAN:
+                this.distribution = new Gaussian[numClasses][numFeatures];
+                setupDistribution(clfDataSet, GAUSSIAN);
+                break;
+        }
 
     }
 
     /** Constructor of Histogram Naive Bayes. */
-    public NaiveBayes(ClfDataSet clfDataSet, DistributionType type, int bins) {
-        if (type != DistributionType.HISTOGRAM) {
+    public NaiveBayes(ClfDataSet clfDataSet, DistributionType type, int numBins) {
+        if (type != HISTOGRAM) {
             throw new IllegalArgumentException("Given distribution should " +
                     "be a histogram.");
         }
 
         this.numClasses = clfDataSet.getNumClasses();
+        this.numFeatures = clfDataSet.getNumFeatures();
         this.distributionType = type;
         this.priors = new PriorProbability(clfDataSet);
-        this.distribution = new Histogram[clfDataSet.getNumClasses()]
-                [clfDataSet.getNumFeatures()];
+        this.distribution = new Histogram[numClasses][numFeatures];
 
         // setupDistribution.
-        setupDistribution(clfDataSet, bins);
+        setupDistribution(clfDataSet, numBins);
     }
 
-    /** Setup the distributions by given classific dataset and bins. */
-    private void setupDistribution(ClfDataSet clfDataSet, int bins) {
-        int numClasses = clfDataSet.getNumClasses();
-        int numFeatures = clfDataSet.getNumFeatures();
+    /** Setup the distributions by given classification dataset and numBins. */
+    private void setupDistribution(ClfDataSet clfDataSet, int numBins) {
 
         for (int i=0; i<numClasses; i++) {
             for (int j=0; j<numFeatures; j++) {
@@ -62,7 +80,22 @@ public class NaiveBayes implements Classifier, ProbabilityEstimator {
                         clfDataSet, i, j);
 
                 // fitting the histogram distribution
-                this.distribution[i][j] = new Histogram(bins, variables);
+                this.distribution[i][j] = new Histogram(numBins, variables);
+            }
+        }
+    }
+
+    /**
+     * Setup the distributions by given classification dataset and distribution type
+     * */
+    private void setupDistribution(ClfDataSet clfDataSet, DistributionType gaussian) {
+
+        for (int i=0; i<numClasses; i++) {
+            for (int j=0; j<numFeatures; j++) {
+                double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
+
+                // fitting the Gaussian
+                this.distribution[i][j] = new Gaussian(variables);
             }
         }
     }
@@ -99,9 +132,8 @@ public class NaiveBayes implements Classifier, ProbabilityEstimator {
      *
      */
     public int predict(FeatureRow featureRow) {
-        Vector featureVector = featureRow.getVector();
 
-        double[] logProbs = predictClassLogProbs(featureVector);
+        double[] logProbs = predictClassLogProbs(featureRow);
 
         double maxLogProb = Double.NEGATIVE_INFINITY;
         int predictLabel = -1;
@@ -129,7 +161,7 @@ public class NaiveBayes implements Classifier, ProbabilityEstimator {
      *        = exp(Log)
      */
     public double[] predictClassProbs(FeatureRow featureRow) {
-        double[] logProbs = predictClassLogProbs(featureRow.getVector());
+        double[] logProbs = predictClassLogProbs(featureRow);
 
         double logDenominator = MathUtil.logSumExp(logProbs);
         double[] probs = new double[logProbs.length];
@@ -143,10 +175,12 @@ public class NaiveBayes implements Classifier, ProbabilityEstimator {
 
     /**
      * Returns the posterior probabilities for each label.
-     * @param vector
+     * @param featureRow
      * @return
      */
-    private double[] predictClassLogProbs(Vector vector) {
+    private double[] predictClassLogProbs(FeatureRow featureRow) {
+        DenseVector vector = new DenseVector(featureRow.getVector());
+
         double[] logProbs = new double[numClasses];
 
         for (int label=0; label<numClasses; label++) {

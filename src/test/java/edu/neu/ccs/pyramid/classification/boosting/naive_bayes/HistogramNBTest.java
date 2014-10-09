@@ -2,16 +2,14 @@ package edu.neu.ccs.pyramid.classification.boosting.naive_bayes;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.naive_bayes.DistributionType;
-import edu.neu.ccs.pyramid.classification.naive_bayes.Histogram;
 import edu.neu.ccs.pyramid.classification.naive_bayes.NaiveBayes;
-import edu.neu.ccs.pyramid.classification.naive_bayes.PriorProbability;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.AUC;
 import edu.neu.ccs.pyramid.eval.Accuracy;
-import org.apache.mahout.math.Vector;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +24,27 @@ public class HistogramNBTest {
 
     public static void main(String[] args) throws Exception {
 
-        histogramNBTest(1000);
+//        histogramNBTest(100);
+        gassianNBTest();
+    }
+
+    private static void gassianNBTest() throws IOException, ClassNotFoundException {
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        NaiveBayes naiveBayes = new NaiveBayes(dataSet, DistributionType.GAUSSIAN);
+
+        double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
+        System.out.println("Accuracy on training set: " + accuracy);
+        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
+
+        accuracy = Accuracy.accuracy(naiveBayes, testDataset);
+        System.out.println("Accuracy on testing set: " + accuracy);
+        System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
+        System.out.println();
     }
 
     protected static void histogramNBTest(int maxBins) throws IOException, ClassNotFoundException {

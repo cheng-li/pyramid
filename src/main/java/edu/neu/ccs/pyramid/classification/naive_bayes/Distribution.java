@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import edu.neu.ccs.pyramid.dataset.FeatureColumn;
-
 /**
  * Created by Rainicy on 10/6/14.
  *
