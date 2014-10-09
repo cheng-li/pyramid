@@ -17,6 +17,9 @@ import java.util.stream.IntStream;
 //todo: there seems to be a bug, see HistogramNBTest
 public class AUC {
     public static double auc(ProbabilityEstimator probEstimator, ClfDataSet dataSet){
+        if (dataSet.getNumClasses()!=2){
+            throw new IllegalArgumentException("dataSet.getNumClasses()!=2");
+        }
         double[] probForOne = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i -> probEstimator.predictClassProbs(dataSet.getFeatureRow(i))[1])
                 .toArray();
