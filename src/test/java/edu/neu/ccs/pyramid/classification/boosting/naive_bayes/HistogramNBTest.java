@@ -24,9 +24,9 @@ public class HistogramNBTest {
 
     public static void main(String[] args) throws Exception {
 
-//        histogramNBTest(100);
+        histogramNBTest(100);
 //        gassianNBTest();
-        gammaNBTest();
+//        gammaNBTest();
     }
 
     private static void gammaNBTest() throws IOException, ClassNotFoundException {

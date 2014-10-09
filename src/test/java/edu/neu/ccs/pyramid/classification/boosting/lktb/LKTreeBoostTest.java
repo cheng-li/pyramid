@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.eval.AUC;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
@@ -98,7 +99,7 @@ public class LKTreeBoostTest {
 
     static void spam_test() throws Exception{
         spam_build();
-//        spam_load();
+        spam_load();
     }
     static void spam_load() throws Exception{
         System.out.println("loading ensemble");
@@ -111,6 +112,7 @@ public class LKTreeBoostTest {
 
         double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
         System.out.println(accuracy);
+        System.out.println("auc = "+ AUC.auc(lkTreeBoost,dataSet));
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(2,lkTreeBoost,dataSet);
         System.out.println("confusion matrix:");
         System.out.println(confusionMatrix.printWithExtLabels());
