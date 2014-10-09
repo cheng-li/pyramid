@@ -13,6 +13,7 @@ import org.elasticsearch.node.Node;
 
 import java.io.File;
 import java.io.FileReader;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,17 +40,25 @@ public class Exp8 {
         Client client = node.client();
 
         List<File> list = DirWalker.getFiles(dir);
+        //make sure each file is indexed only once
+        Set<String> added = new HashSet<>();
+
         Map<String, Set<String>> nameToCodesMap = IndexBuilder.collectCodes(dir);
         int id = 0;
         for (File file: list){
-            System.out.println("id = "+id);
-            XContentBuilder builder = IndexBuilder.getBuilder(file,nameToCodesMap);
-            System.out.println(builder.string());
-//            IndexResponse response = client.prepareIndex("ohsumed_20000", "document",""+id)
-//                    .setSource(builder)
-//                    .execute()
-//                    .actionGet();
-            id += 1;
+            if (!added.contains(file.getName())){
+                System.out.println("id = "+id);
+                XContentBuilder builder = IndexBuilder.getBuilder(file,nameToCodesMap);
+//               System.out.println(builder.string());
+                IndexResponse response = client.prepareIndex("ohsumed_20000", "document",""+id)
+                        .setSource(builder)
+                        .execute()
+                        .actionGet();
+                id += 1;
+                added.add(file.getName());
+            } else {
+                System.out.println(file.getName()+" already indexed, skip");
+            }
         }
         node.close();
     }
