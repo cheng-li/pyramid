@@ -22,16 +22,16 @@ public class Accuracy {
         return accuracy(clfDataSet.getLabels(),prediction);
     }
 
+    /**
+     * multi-threaded
+     */
     public static double accuracy(int[] labels, int[] predictions){
-        double numCorrect = 0;
         if (labels.length!=predictions.length){
             throw new IllegalArgumentException("labels.length!=predictions.length");
         }
-        for (int i=0;i<labels.length;i++){
-            if (labels[i] == predictions[i]){
-                numCorrect += 1;
-            }
-        }
+        double numCorrect =  IntStream.range(0,labels.length).parallel()
+                .filter(i-> labels[i]==predictions[i])
+                .count();
         return numCorrect/labels.length;
     }
 
