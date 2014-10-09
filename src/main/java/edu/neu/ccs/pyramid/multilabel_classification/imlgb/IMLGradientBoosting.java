@@ -1,7 +1,5 @@
-package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
+package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
-import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
@@ -16,25 +14,20 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * hierarchical multi-label gradient boosting
- * training guide:
- * use very deep tree, run only a few iterations
- * the class-gradient is very complicated, and requires a deep tree to fit well
- * Created by chengli on 9/27/14.
+ * gradient boosting for independent labels
+ * Created by chengli on 10/8/14.
  */
-public class HMLGradientBoosting implements MultiLabelClassifier{
+public class IMLGradientBoosting implements MultiLabelClassifier{
     private static final long serialVersionUID = 1L;
     private List<List<Regressor>> regressors;
     private int numClasses;
     /**
      * legal assignments of labels
      */
-    private List<MultiLabel> assignments;
-    private transient HMLGBTrainer trainer;
+    private transient IMLGBTrainer trainer;
 
-    public HMLGradientBoosting(int numClasses, List<MultiLabel> assignments) {
+    public IMLGradientBoosting(int numClasses) {
         this.numClasses = numClasses;
-        this.assignments = assignments;
         this.regressors = new ArrayList<>(this.numClasses);
         for (int k=0;k<this.numClasses;k++){
             List<Regressor> regressorsClassK  = new ArrayList<>();
@@ -65,7 +58,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
      * start with prior probabilities
      * should be called before setTrainConfig
      */
-    public void setPriorProbs(MultiLabelClfDataSet dataSet, List<MultiLabel> assignments){
+    public void setPriorProbs(MultiLabelClfDataSet dataSet){
         MLPriorProbClassifier priorProbClassifier = new MLPriorProbClassifier(this.numClasses);
         priorProbClassifier.fit(dataSet);
         double[] probs = priorProbClassifier.getClassProbs();
@@ -77,11 +70,11 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
      * to start/resume training, set train config
      * @param config
      */
-    public void setTrainConfig(HMLGBConfig config) {
+    public void setTrainConfig(IMLGBConfig config) {
         if (config.getDataSet().getNumClasses()!=this.numClasses){
             throw new RuntimeException("number of classes given in the config does not match number of classes in boosting");
         }
-        this.trainer = new HMLGBTrainer(config,this.regressors, this.assignments);
+        this.trainer = new IMLGBTrainer(config,this.regressors);
     }
 
     /**
@@ -127,11 +120,6 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
              */
             this.trainer.updateStagedClassScores(regressor,k);
         }
-
-        /**
-         * parallel by data
-         */
-        this.trainer.updateAssignmentProbMatrix();
     }
 
     void addRegressor(Regressor regressor, int k){
@@ -155,25 +143,16 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
     }
 
     public MultiLabel predict(FeatureRow featureRow){
-        double maxScore = Double.NEGATIVE_INFINITY;
-        MultiLabel prediction = null;
-        for (MultiLabel assignment: this.assignments){
-            double score = this.calAssignmentScores(featureRow,assignment);
-            if (score > maxScore){
-                maxScore = score;
-                prediction = assignment;
+        MultiLabel prediction = new MultiLabel(this.numClasses);
+        for (int k=0;k<numClasses;k++){
+            double score = this.calClassScore(featureRow,k);
+            if (score > 0){
+                prediction.addLabel(k);
             }
         }
         return prediction;
     }
 
-    double calAssignmentScores(FeatureRow featureRow, MultiLabel assignment){
-        double score = 0;
-        for (Integer label : assignment.getMatchedLabels()){
-            score += this.calClassScore(featureRow,label);
-        }
-        return score;
-    }
 
     /**
      *
@@ -209,30 +188,9 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         return sb.toString();
     }
 
-    public void serialize(String file) throws Exception{
-        serialize(new File(file));
-    }
 
-    /**
-     * serialize to file
-     * @param file
-     * @throws Exception
-     */
-    public void serialize(File file) throws Exception{
-        File parent = file.getParentFile();
-        if (!parent.exists()){
-            parent.mkdirs();
-        }
-        try (
-                FileOutputStream fileOutputStream = new FileOutputStream(file);
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
-        ){
-            objectOutputStream.writeObject(this);
-        }
-    }
 
-    public static HMLGradientBoosting deserialize(String file) throws Exception{
+    public static IMLGradientBoosting deserialize(String file) throws Exception{
         return deserialize(new File(file));
     }
 
@@ -242,16 +200,15 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
      * @return
      * @throws Exception
      */
-    public static HMLGradientBoosting deserialize(File file) throws Exception{
+    public static IMLGradientBoosting deserialize(File file) throws Exception{
         try(
                 FileInputStream fileInputStream = new FileInputStream(file);
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
                 ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
         ){
-            HMLGradientBoosting boosting = (HMLGradientBoosting)objectInputStream.readObject();
+            IMLGradientBoosting boosting = (IMLGradientBoosting)objectInputStream.readObject();
             return boosting;
         }
     }
-
 
 }

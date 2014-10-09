@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.data_formatter.ohsumed.IndexBuilder;
 
 import edu.neu.ccs.pyramid.util.DirWalker;
@@ -13,30 +14,41 @@ import org.elasticsearch.node.Node;
 import java.io.File;
 import java.io.FileReader;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
- * index Ohsumed_20000 on fiji
+ * index Ohsumed_20000
  * Created by chengli on 10/1/14.
  */
 public class Exp8 {
     public static void main(String[] args) throws Exception{
-        String dir  = "/huge1/people/chengli/Datasets/Ohsumed/original/ohsumed-first-20000-docs";
 
-        Node node = nodeBuilder().client(true).clusterName("fijielasticsearch").node();
+        if (args.length !=1){
+            throw new IllegalArgumentException("please specify the config file");
+        }
+
+        Config config = new Config(args[0]);
+        System.out.println(config);
+
+        String dir  = config.getString("folder");
+
+        Node node = nodeBuilder().client(true).clusterName(config.getString("index.name")).node();
         Client client = node.client();
 
         List<File> list = DirWalker.getFiles(dir);
+        Map<String, Set<String>> nameToCodesMap = IndexBuilder.collectCodes(dir);
         int id = 0;
         for (File file: list){
             System.out.println("id = "+id);
-            XContentBuilder builder = IndexBuilder.getBuilder(file);
-//            System.out.println(builder.string());
-            IndexResponse response = client.prepareIndex("ohsumed_20000", "document",""+id)
-                    .setSource(builder)
-                    .execute()
-                    .actionGet();
+            XContentBuilder builder = IndexBuilder.getBuilder(file,nameToCodesMap);
+            System.out.println(builder.string());
+//            IndexResponse response = client.prepareIndex("ohsumed_20000", "document",""+id)
+//                    .setSource(builder)
+//                    .execute()
+//                    .actionGet();
             id += 1;
         }
         node.close();

@@ -41,12 +41,7 @@ public class MLPriorProbClassifierTest {
 
 
 
-        List<MultiLabel> assignments = new ArrayList<>();
-        assignments.add(new MultiLabel(3).addLabel(0));
-        assignments.add(new MultiLabel(3).addLabel(1));
-        assignments.add(new MultiLabel(3).addLabel(1).addLabel(2));
-
-        MLPriorProbClassifier classifier = new MLPriorProbClassifier(3,assignments);
+        MLPriorProbClassifier classifier = new MLPriorProbClassifier(3);
         classifier.fit(dataSet);
         System.out.println(classifier);
 
