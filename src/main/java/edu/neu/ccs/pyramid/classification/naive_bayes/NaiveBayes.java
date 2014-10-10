@@ -5,7 +5,6 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.math3.util.DoubleArray;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -13,8 +12,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 
-import static edu.neu.ccs.pyramid.classification.naive_bayes.DistributionType.*;
 
 /**
  * Created by Rainicy on 10/8/14.
@@ -126,7 +126,7 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
     public int predict(FeatureRow featureRow) {
 
         double[] logProbs = predictClassLogProbs(featureRow);
-
+//        System.out.println(Arrays.toString(logProbs));
         double maxLogProb = Double.NEGATIVE_INFINITY;
         int predictLabel = -1;
 

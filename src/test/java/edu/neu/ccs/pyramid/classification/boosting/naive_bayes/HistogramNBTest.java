@@ -24,9 +24,9 @@ public class HistogramNBTest {
 
     public static void main(String[] args) throws Exception {
 
-        histogramNBTest(100);
+//        histogramNBTest(100);
 //        gassianNBTest();
-//        gammaNBTest();
+        gammaNBTest();
     }
 
     private static void gammaNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
@@ -36,7 +36,7 @@ public class HistogramNBTest {
         ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
 
-        NaiveBayes naiveBayes = new NaiveBayes(Gamma.class);
+        NaiveBayes<Gamma> naiveBayes = new NaiveBayes<>(Gamma.class);
         naiveBayes.build(dataSet);
 
         double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
@@ -58,7 +58,7 @@ public class HistogramNBTest {
         ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
 
-        NaiveBayes naiveBayes = new NaiveBayes(Gaussian.class);
+        NaiveBayes<Gaussian> naiveBayes = new NaiveBayes<>(Gaussian.class);
         naiveBayes.build(dataSet);
 
         double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
@@ -80,7 +80,7 @@ public class HistogramNBTest {
 
         for (int bins=1; bins<maxBins; bins++) {
 
-            NaiveBayes naiveBayes = new NaiveBayes(Histogram.class);
+            NaiveBayes<Histogram> naiveBayes = new NaiveBayes<>(Histogram.class);
             naiveBayes.build(dataSet, bins);
 
             double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
