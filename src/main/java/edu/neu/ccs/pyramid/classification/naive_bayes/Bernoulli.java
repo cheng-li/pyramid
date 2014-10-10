@@ -4,6 +4,10 @@ import org.apache.commons.math3.util.FastMath;
 
 /**
  * Created by Rainicy on 10/10/14.
+ *
+ * Bernoulli distribution.
+ *
+ * @see edu.neu.ccs.pyramid.classification.naive_bayes.Distribution
  */
 public class Bernoulli implements Distribution {
 

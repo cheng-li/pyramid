@@ -28,7 +28,7 @@ public interface Distribution extends Probability{
     /**
      * Given a varibale, return its cumulative probability.
      */
-    public double cumulativeProbability(double x);
+    public double cumulativeProbability(double x) throws IllegalAccessException;
 
 
     /**
