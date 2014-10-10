@@ -26,7 +26,29 @@ public class HistogramNBTest {
 
 //        histogramNBTest(100);
 //        gassianNBTest();
-        gammaNBTest();
+//        gammaNBTest();
+        bernoulliNBTest();
+    }
+
+    private static void bernoulliNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        NaiveBayes<Bernoulli> naiveBayes = new NaiveBayes<>(Bernoulli.class);
+        naiveBayes.build(dataSet);
+
+        double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
+        System.out.println("Accuracy on training set: " + accuracy);
+        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
+
+        accuracy = Accuracy.accuracy(naiveBayes, testDataset);
+        System.out.println("Accuracy on testing set: " + accuracy);
+        System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
+        System.out.println();
+
     }
 
     private static void gammaNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
