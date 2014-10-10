@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test8();
+        test9();
 
     }
 
@@ -72,12 +72,27 @@ public class ESIndexTest {
     static void test8() throws Exception{
         ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("ohsumed_20000")
                 .build();
-        XContentBuilder builder = XContentFactory.jsonBuilder();
-        builder.startObject();
-        index.getClient().prepareGet().setIndex("ohsumed_20000").setType("document").setFields("code").setId("0")
-                .execute().actionGet().toXContent(builder, ToXContent.EMPTY_PARAMS);
-        builder.endObject();
-        System.out.println(builder.prettyPrint().string());
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+        System.out.println(index.getClient().prepareGet().setIndex("ohsumed_20000").setType("document").setFields("codes").setId("0")
+                .execute().actionGet().getField("codes").getValues());
+        System.out.println(index.getClient().prepareGet().setIndex("ohsumed_20000").setType("document").setFields("real_labels").setId("0")
+                .execute().actionGet().getField("real_labels").getValues());
+//        builder.endObject();
+//        System.out.println(builder.prettyPrint().string());
+        index.close();
+    }
+
+    static void test9() throws Exception{
+        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("ohsumed_20000")
+                .build();
+        System.out.println(index.getListField("0","codes"));
+        System.out.println(index.getListField("0","real_labels"));
+        System.out.println(index.getListField("0","file_name"));
+        System.out.println(index.getStringListField("0","codes"));
+        System.out.println(index.getIntListField("0","multi_label"));
+        System.out.println(index.getStringListField("0","real_labels"));
+        System.out.println(index.getStringListField("0","file_name"));
         index.close();
     }
 

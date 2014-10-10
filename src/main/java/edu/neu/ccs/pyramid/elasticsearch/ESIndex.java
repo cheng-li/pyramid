@@ -22,6 +22,7 @@ import org.elasticsearch.search.SearchHit;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 
 /**
@@ -231,6 +232,21 @@ public class ESIndex {
         return map.get("type").toString();
     }
 
+    public List<String> getStringListField(String id, String field){
+        return getListField(id,field).stream().map(object -> (String) object)
+                .collect(Collectors.toList());
+    }
+
+    public List<Integer> getIntListField(String id, String field){
+        return getListField(id,field).stream().map(object -> Integer.parseInt(object.toString()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Float> getFloatListField(String id, String field){
+        return getListField(id,field).stream().map(object -> Float.parseFloat(object.toString()))
+                .collect(Collectors.toList());
+    }
+
     public String getStringField(String id, String field){
         return getField(id,field).toString();
     }
@@ -370,6 +386,22 @@ public class ESIndex {
             }
         }
         return response.getField(field).getValue();
+    }
+
+    public List<Object> getListField(String id, String field){
+        GetResponse response = client.prepareGet(this.indexName, this.documentType, id).
+                setFields(field)
+                .execute()
+                .actionGet();
+        if (logger.isErrorEnabled()){
+            if (response==null){
+                logger.error("no response from document "+id+" when fetching field "+field+"!");
+            }
+            else if (response.getField(field)==null){
+                logger.error("document "+id+" has no field "+field+"!");
+            }
+        }
+        return response.getField(field).getValues();
     }
 
 
