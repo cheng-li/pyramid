@@ -1,8 +1,7 @@
 package edu.neu.ccs.pyramid.classification.boosting.naive_bayes;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
-import edu.neu.ccs.pyramid.classification.naive_bayes.DistributionType;
-import edu.neu.ccs.pyramid.classification.naive_bayes.NaiveBayes;
+import edu.neu.ccs.pyramid.classification.naive_bayes.*;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
@@ -13,6 +12,7 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by Rainicy on 10/3/14.
@@ -29,14 +29,15 @@ public class HistogramNBTest {
 //        gammaNBTest();
     }
 
-    private static void gammaNBTest() throws IOException, ClassNotFoundException {
+    private static void gammaNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE, true);
 
         ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
 
-        NaiveBayes naiveBayes = new NaiveBayes(dataSet, DistributionType.GAMMA);
+        NaiveBayes naiveBayes = new NaiveBayes(Gamma.class);
+        naiveBayes.build(dataSet);
 
         double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
         System.out.println("Accuracy on training set: " + accuracy);
@@ -50,14 +51,15 @@ public class HistogramNBTest {
     }
 
 
-    private static void gassianNBTest() throws IOException, ClassNotFoundException {
+    private static void gassianNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE, true);
 
         ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
 
-        NaiveBayes naiveBayes = new NaiveBayes(dataSet, DistributionType.GAUSSIAN);
+        NaiveBayes naiveBayes = new NaiveBayes(Gaussian.class);
+        naiveBayes.build(dataSet);
 
         double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
         System.out.println("Accuracy on training set: " + accuracy);
@@ -69,7 +71,7 @@ public class HistogramNBTest {
         System.out.println();
     }
 
-    protected static void histogramNBTest(int maxBins) throws IOException, ClassNotFoundException {
+    protected static void histogramNBTest(int maxBins) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE, true);
 
@@ -78,7 +80,8 @@ public class HistogramNBTest {
 
         for (int bins=1; bins<maxBins; bins++) {
 
-            NaiveBayes naiveBayes = new NaiveBayes(dataSet, DistributionType.HISTOGRAM, bins);
+            NaiveBayes naiveBayes = new NaiveBayes(Histogram.class);
+            naiveBayes.build(dataSet, bins);
 
             double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
             System.out.println("#Bins: " + bins + " Accuracy on training set: " + accuracy);

@@ -1,14 +1,17 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.math3.util.DoubleArray;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import static edu.neu.ccs.pyramid.classification.naive_bayes.DistributionType.*;
@@ -16,7 +19,9 @@ import static edu.neu.ccs.pyramid.classification.naive_bayes.DistributionType.*;
 /**
  * Created by Rainicy on 10/8/14.
  */
-public class NaiveBayes implements ProbabilityEstimator {
+public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator {
+
+    private Class<T> clazz;
 
     /** Prior Probability. */
     protected PriorProbability priors;
@@ -26,104 +31,65 @@ public class NaiveBayes implements ProbabilityEstimator {
      * each feature. The total distribution size should be
      * (Number_Classes * Number_Features)
      */
-    protected Distribution[][] distribution;
-    protected DistributionType distributionType;
+    private T[][] distribution;
 
     protected int numClasses;
     protected int numFeatures;
 
 
-    /** Constructor of not Histogram Naive Bayes. */
-    public NaiveBayes(ClfDataSet clfDataSet, DistributionType type) {
-        if (type == HISTOGRAM) {
-            throw new IllegalArgumentException("Given distribution should " +
-                    "not be a histogram.");
-        }
+    public NaiveBayes(Class<T> type) {
+        this.clazz = type;
+    }
 
+    // initialize the basic fields.
+    private void init(ClfDataSet clfDataSet) {
         this.numClasses = clfDataSet.getNumClasses();
         this.numFeatures = clfDataSet.getNumFeatures();
-        this.distributionType = type;
+        this.distribution = (T[][])Array.newInstance(clazz, numClasses, numFeatures);
         this.priors = new PriorProbability(clfDataSet);
-
-        switch (type) {
-            case GAUSSIAN:
-                System.out.println("Gaussian Distribution.");
-                this.distribution = new Gaussian[numClasses][numFeatures];
-                setupDistribution(clfDataSet, GAUSSIAN);
-                break;
-            case GAMMA:
-                System.out.println("Gamma Distribution.");
-                this.distribution = new Gamma[numClasses][numFeatures];
-                setupDistribution(clfDataSet, GAMMA);
-                break;
-        }
 
     }
 
-    /** Constructor of Histogram Naive Bayes. */
-    public NaiveBayes(ClfDataSet clfDataSet, DistributionType type, int numBins) {
-        if (type != HISTOGRAM) {
-            throw new IllegalArgumentException("Given distribution should " +
-                    "be a histogram.");
+    public void build(ClfDataSet clfDataSet)
+            throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException, InstantiationException {
+        if(this.clazz == Histogram.class) {
+            throw new RuntimeException("Histogram distribution needs" +
+                    "the numBins.");
         }
 
-        this.numClasses = clfDataSet.getNumClasses();
-        this.numFeatures = clfDataSet.getNumFeatures();
-        this.distributionType = type;
-        this.priors = new PriorProbability(clfDataSet);
-        this.distribution = new Histogram[numClasses][numFeatures];
+        init(clfDataSet);
 
-        // setupDistribution.
-        setupDistribution(clfDataSet, numBins);
-    }
-
-    /** Setup the distributions by given classification dataset and numBins. */
-    private void setupDistribution(ClfDataSet clfDataSet, int numBins) {
-
+        // initialize the specific distribution class.
+        Constructor constructor = clazz.getConstructor(double[].class);
         for (int i=0; i<numClasses; i++) {
             for (int j=0; j<numFeatures; j++) {
-                double[] variables = getVariablesByLabelFeature(
-                        clfDataSet, i, j);
-
-                // fitting the histogram distribution
-                this.distribution[i][j] = new Histogram(numBins, variables);
+                double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
+                // fitting non-histogram distribution class
+                this.distribution[i][j] = (T)constructor.newInstance(variables);
             }
         }
     }
 
-    /**
-     * Setup the distributions by given classification dataset and distribution type
-     * */
-    private void setupDistribution(ClfDataSet clfDataSet, DistributionType type) {
-        switch (type) {
-            case GAUSSIAN:
-            {
-                for (int i=0; i<numClasses; i++) {
-                    for (int j=0; j<numFeatures; j++) {
-                        double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
-
-                        // fitting the Gaussian
-                        this.distribution[i][j] = new Gaussian(variables);
-                    }
-                }
-                break;
-            }
-            case GAMMA:
-            {
-                for (int i=0; i<numClasses; i++) {
-                    for (int j=0; j<numFeatures; j++) {
-                        double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
-
-                        // fitting the Gamma
-                        this.distribution[i][j] = new Gamma(variables);
-                    }
-                }
-                break;
-            }
+    public void build(ClfDataSet clfDataSet, int numBins)
+            throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException, InstantiationException {
+        if(this.clazz != Histogram.class) {
+            throw new RuntimeException("Histogram distribution should be " +
+                    "given.");
         }
 
-    }
+        init(clfDataSet);
 
+        Constructor constructor = clazz.getConstructor(int.class, double[].class);
+        for (int i=0; i<numClasses; i++) {
+            for (int j=0; j<numFeatures; j++) {
+                double[] variables = getVariablesByLabelFeature(clfDataSet, i, j);
+                // fitting the histogram distribution.
+                this.distribution[i][j] = (T)constructor.newInstance(numBins, variables);
+            }
+        }
+    }
 
 
     private double[] getVariablesByLabelFeature(ClfDataSet clfDataSet,
@@ -172,19 +138,24 @@ public class NaiveBayes implements ProbabilityEstimator {
             }
         }
 
+        // Cannot predict the label.
+        if (predictLabel == -1) {
+            throw new RuntimeException("Failed to predict the label.");
+        }
+
         return predictLabel;
     }
 
     @Override
     public int getNumClasses() {
-        return this.numClasses;
+        return numClasses;
     }
+
 
     @Override
     /**
      * Calculate the posterior probability.
      * P(y|X) = P(X|y)*P(y) / P(X)
-     *        = exp(Log)
      */
     public double[] predictClassProbs(FeatureRow featureRow) {
         double[] logProbs = predictClassLogProbs(featureRow);
@@ -229,4 +200,5 @@ public class NaiveBayes implements ProbabilityEstimator {
     private Distribution getDistribution(int label, int feature) {
         return this.distribution[label][feature];
     }
+
 }

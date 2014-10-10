@@ -18,7 +18,7 @@ public class Gaussian implements Distribution {
     /** Mean */
     private double mean;
     /** Variance */
-    private double standardVariance;
+    private double standardDeviation;
     /** The value of {log(std) + 0.5*log(2*pi) } */
     private double logStandardVariancePlusHalfLog2Pi;
 
@@ -28,11 +28,11 @@ public class Gaussian implements Distribution {
     }
 
     /** Gaussian constructor by given mean and variance. */
-    public Gaussian(double mean, double standardVariance) {
+    public Gaussian(double mean, double standardDeviation) {
         this.mean = mean;
-        this.standardVariance = standardVariance;
+        this.standardDeviation = standardDeviation;
         this.logStandardVariancePlusHalfLog2Pi =
-                FastMath.log(standardVariance) +
+                FastMath.log(standardDeviation) +
                         0.5 * FastMath.log(2 * FastMath.PI);
     }
 
@@ -49,7 +49,7 @@ public class Gaussian implements Distribution {
                     "be more than 0.");
         }
         setMean(StatUtils.mean(variables));
-        setStandardVariance(FastMath.sqrt(StatUtils.variance(variables)));
+        setStandardDeviation(FastMath.sqrt(StatUtils.variance(variables)));
     }
 
     @Override
@@ -60,17 +60,17 @@ public class Gaussian implements Distribution {
     @Override
     public double logProbability(double x) throws IllegalArgumentException {
         double x0 = x - mean;
-        double x1 = x0 / standardVariance;
+        double x1 = x0 / standardDeviation;
         return -0.5 * x1 * x1 - logStandardVariancePlusHalfLog2Pi;
     }
 
     @Override
     public double cumulativeProbability(double x) {
         double dev = x - mean;
-        if (FastMath.abs(dev) > 40 * standardVariance) {
+        if (FastMath.abs(dev) > 40 * standardDeviation) {
             return dev < 0 ? 0.0d : 1.0d;
         }
-        return 0.5 * (1 + Erf.erf(dev / (standardVariance * FastMath.sqrt(2.0))));
+        return 0.5 * (1 + Erf.erf(dev / (standardDeviation * FastMath.sqrt(2.0))));
     }
 
     @Override
@@ -80,7 +80,7 @@ public class Gaussian implements Distribution {
 
     @Override
     public double getVariance() throws IllegalAccessException {
-        return this.standardVariance * this.standardVariance;
+        return this.standardDeviation * this.standardDeviation;
     }
 
     @Override
@@ -90,8 +90,8 @@ public class Gaussian implements Distribution {
     }
 
 
-    private void setStandardVariance(double standardVariance) {
-        this.standardVariance = standardVariance;
+    private void setStandardDeviation(double standardDeviation) {
+        this.standardDeviation = standardDeviation;
     }
 
     private void setMean(double mean) {
