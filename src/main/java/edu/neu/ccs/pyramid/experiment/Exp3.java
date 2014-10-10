@@ -17,7 +17,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -72,6 +74,9 @@ public class Exp3 {
         ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet,featureMappers.getTotalDim());
         DataSetUtil.setFeatureMappers(trimmedTrainDataSet,featureMappers);
         saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
+        if (config.getBoolean("archive.dumpFields")){
+            dumpTrainFeatures(config,index,trainIdTranslator);
+        }
 
         String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
@@ -79,6 +84,9 @@ public class Exp3 {
         ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelMap);
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
+        if (config.getBoolean("archive.dumpFields")){
+            dumpTestFeatures(config,index,testIdTranslator);
+        }
     }
 
 
@@ -705,6 +713,49 @@ public class Exp3 {
         dfStats.update(index,trainIds);
         dfStats.sort();
         return dfStats;
+    }
+
+    static void dumpTrainFeatures(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
+        String archive = config.getString("archive.folder");
+        String trecFile = new File(archive,config.getString("archive.trainingSet")).getAbsolutePath();
+        String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
+        dumpFeatures(config,index,idTranslator,file);
+    }
+
+    static void dumpTestFeatures(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
+        String archive = config.getString("archive.folder");
+        String trecFile = new File(archive,config.getString("archive.testSet")).getAbsolutePath();
+        String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
+        dumpFeatures(config,index,idTranslator,file);
+    }
+
+    static void dumpFeatures(Config config, ESIndex index, IdTranslator idTranslator, String fileName) throws Exception{
+
+        String[] fields = config.getString("archive.dumpedFields").split(",");
+        int numDocs = idTranslator.numData();
+        try(BufferedWriter bw = new BufferedWriter(new FileWriter(fileName))
+        ){
+            for (int intId=0;intId<numDocs;intId++){
+                bw.write("intId=");
+                bw.write(""+intId);
+                bw.write(",");
+                bw.write("extId=");
+                String extId = idTranslator.toExtId(intId);
+                bw.write(extId);
+                bw.write(",");
+                for (int i=0;i<fields.length;i++){
+                    String field = fields[i];
+                    bw.write(field+"=");
+                    bw.write(index.getStringField(extId,field));
+                    if (i!=fields.length-1){
+                        bw.write(",");
+                    }
+
+                }
+                bw.write("\n");
+            }
+        }
+
     }
 
 
