@@ -1,10 +1,14 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+
 import static org.junit.Assert.*;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test7();
+        test8();
 
     }
 
@@ -62,6 +66,18 @@ public class ESIndexTest {
                 .build();
         System.out.println(index.phraseDF(index.getBodyField(),"its mission",0));
         System.out.println(index.phraseDF(index.getBodyField(),"it mission",0));
+        index.close();
+    }
+
+    static void test8() throws Exception{
+        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("ohsumed_20000")
+                .build();
+        XContentBuilder builder = XContentFactory.jsonBuilder();
+        builder.startObject();
+        index.getClient().prepareGet().setIndex("ohsumed_20000").setType("document").setFields("code").setId("0")
+                .execute().actionGet().toXContent(builder, ToXContent.EMPTY_PARAMS);
+        builder.endObject();
+        System.out.println(builder.prettyPrint().string());
         index.close();
     }
 

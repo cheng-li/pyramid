@@ -356,7 +356,7 @@ public class ESIndex {
         return (int)response.getHits().totalHits();
     }
 
-    private Object getField(String id, String field){
+    public Object getField(String id, String field){
         GetResponse response = client.prepareGet(this.indexName, this.documentType, id).
                 setFields(field)
                 .execute()
