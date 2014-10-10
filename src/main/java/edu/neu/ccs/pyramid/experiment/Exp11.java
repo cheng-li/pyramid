@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
+import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
@@ -24,13 +25,17 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/10/14.
  */
 public class Exp11 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("please specify the config file");
         }
 
         Config config = new Config(args[0]);
         System.out.println(config);
+
+        ESIndex index = loadIndex(config);
+        build(config,index);
+        index.close();
     }
 
     static ESIndex loadIndex(Config config) throws Exception{
@@ -155,15 +160,13 @@ public class Exp11 {
     }
 
     static List<String> gatherUnigrams(Config config, ESIndex index,
-                                   String[] ids){
+                                   String[] ids) throws Exception{
+        int minDf = config.getInt("minDf");
         Set<String> unigrams = new HashSet<>();
-        for (String id: ids){
-            Map<Integer, String> termVector = index.getTermVector(id);
-            for (Map.Entry<Integer, String> entry: termVector.entrySet()){
-                String unigram = entry.getValue();
-                    unigrams.add(unigram);
-                }
-            }
+        for (String id: ids) {
+            Set<TermStat> termStats = index.getTermStats(id);
+            termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(termStat -> unigrams.add(termStat.getTerm()));
+        }
         return unigrams.stream().sorted().collect(Collectors.toList());
     }
 
@@ -357,10 +360,15 @@ public class Exp11 {
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureMappers featureMappers = new FeatureMappers();
+
         Map<Integer, String> labelMap = intToExtLabel(config,index);
         if (config.getBoolean("useInitialFeatures")){
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
+
+        List<String> unigrams = gatherUnigrams(config,index,trainIndexIds);
+        addUnigramFeatures(featureMappers,unigrams);
+
 
         ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelMap);
         System.out.println("in training set :");
