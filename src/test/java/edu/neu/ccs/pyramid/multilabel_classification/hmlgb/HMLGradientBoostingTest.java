@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
 
 
+import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -13,10 +14,14 @@ import java.util.List;
 
 
 public class HMLGradientBoostingTest {
+    private static final Config config = new Config("configs/local.config");
+    private static final String DATASETS = config.getString("input.datasets");
+    private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
 //       spam_all();
 //        test2_all();
-        test3_all();
+//        test3_all();
+        test4();
     }
 
     static void spam_all() throws Exception{
@@ -35,7 +40,7 @@ public class HMLGradientBoostingTest {
     }
 
     static void spam_load() throws Exception{
-        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/test.trec",
+        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
@@ -50,14 +55,14 @@ public class HMLGradientBoostingTest {
             }
         }
 
-        HMLGradientBoosting boosting = HMLGradientBoosting.deserialize("/Users/chengli/tmp/hmlgb/boosting.ser");
+        HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
     }
 
     static void spam_build() throws Exception{
 
 
-        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/train.trec",
+        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE, true);
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
@@ -110,7 +115,7 @@ public class HMLGradientBoostingTest {
 //        }
         System.out.println("accuracy");
         System.out.println(Accuracy.accuracy(boosting,dataSet));
-        boosting.serialize("/Users/chengli/tmp/hmlgb/boosting.ser");
+        boosting.serialize(new File(TMP,"/hmlgb/boosting.ser"));
 
     }
 
@@ -121,7 +126,7 @@ public class HMLGradientBoostingTest {
     static void test2_build() throws Exception{
 
 
-        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/train.trec",
+        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE, true);
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
@@ -186,14 +191,14 @@ public class HMLGradientBoostingTest {
         }
         System.out.println("accuracy");
         System.out.println(Accuracy.accuracy(boosting,dataSet));
-        boosting.serialize("/Users/chengli/tmp/hmlgb/boosting.ser");
+        boosting.serialize(new File(TMP,"/hmlgb/boosting.ser"));
 
     }
 
     static void test2_load() throws Exception{
 
 
-        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/test.trec",
+        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
@@ -212,7 +217,7 @@ public class HMLGradientBoostingTest {
         }
 
 
-        HMLGradientBoosting boosting = HMLGradientBoosting.deserialize("/Users/chengli/tmp/hmlgb/boosting.ser");
+        HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
         for (int i=0;i<numDataPoints;i++){
             FeatureRow featureRow = dataSet.getFeatureRow(i);
@@ -242,7 +247,7 @@ public class HMLGradientBoostingTest {
     static void test3_build() throws Exception{
 
 
-        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/train.trec",
+        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE, true);
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
@@ -314,7 +319,8 @@ public class HMLGradientBoostingTest {
         }
         System.out.println("accuracy");
         System.out.println(Accuracy.accuracy(boosting,dataSet));
-        boosting.serialize("/Users/chengli/tmp/hmlgb/boosting.ser");
+        boosting.serialize(new File(TMP,"/hmlgb/boosting.ser"));
+
 
     }
 
@@ -322,7 +328,7 @@ public class HMLGradientBoostingTest {
 
 
 
-        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet("/Users/chengli/Datasets/spam/trec_data/test.trec",
+        ClfDataSet singleLabeldataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
@@ -344,7 +350,7 @@ public class HMLGradientBoostingTest {
         }
 
 
-        HMLGradientBoosting boosting = HMLGradientBoosting.deserialize("/Users/chengli/tmp/hmlgb/boosting.ser");
+        HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
         for (int i=0;i<numDataPoints;i++){
             FeatureRow featureRow = dataSet.getFeatureRow(i);
@@ -360,9 +366,68 @@ public class HMLGradientBoostingTest {
 //                System.out.println("prediction="+prediction);
 //            }
         }
+    }
+
+    private static void test4() throws Exception{
+        test4_build();
+        test4_load();
+    }
+
+    /**
+     * same as test3, the only difference is we now load data directly
+     * @throws Exception
+     */
+    static void test4_build() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"spam/4labels/train.trec"),
+                DataSetType.ML_CLF_DENSE,true);
+
+        List<MultiLabel> assignments = new ArrayList<>();
+        assignments.add(new MultiLabel(4).addLabel(0));
+        assignments.add(new MultiLabel(4).addLabel(1));
+        assignments.add(new MultiLabel(4).addLabel(1).addLabel(2));
+        assignments.add(new MultiLabel(4).addLabel(1).addLabel(3));
+        assignments.add(new MultiLabel(4).addLabel(1).addLabel(2).addLabel(3));
+        HMLGradientBoosting boosting = new HMLGradientBoosting(4,assignments);
 
 
+        HMLGBConfig trainConfig = new HMLGBConfig.Builder(dataSet)
+                .numLeaves(100).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
+                .dataSamplingRate(1).featureSamplingRate(1).build();
+        System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
+
+        boosting.setPriorProbs(dataSet,assignments);
+        boosting.setTrainConfig(trainConfig);
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int round =0;round<10;round++){
+            System.out.println("round="+round);
+            boosting.boostOneRound();
+            System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
+            System.out.println(Arrays.toString(boosting.getGradients(0)));
+            System.out.println(Arrays.toString(boosting.getGradients(1)));
+            System.out.println(Arrays.toString(boosting.getGradients(2)));
+            System.out.println(Arrays.toString(boosting.getGradients(3)));
+
+        }
+        stopWatch.stop();
+        System.out.println(stopWatch);
+//        System.out.println(boosting);
+        System.out.println("accuracy");
+        System.out.println(Accuracy.accuracy(boosting,dataSet));
+        boosting.serialize(new File(TMP,"/hmlgb/boosting.ser"));
+
+
+    }
+
+    static void test4_load() throws Exception{
+
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"spam/4labels/test.trec"),
+                DataSetType.ML_CLF_DENSE,true);
+
+        HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
+        System.out.println(Accuracy.accuracy(boosting,dataSet));
 
     }
 
