@@ -41,6 +41,8 @@ public class ESIndex {
     String clientType;
     String clusterName;
     String bodyField;
+    String multiLabelField;
+    String extMultiLabelField;
     /**
      * concurrent LRU cache for termvectors
      */
@@ -208,6 +210,10 @@ public class ESIndex {
                 .execute()
                 .actionGet();
         return (String) response.getField(this.extLabelField).getValue();
+    }
+
+    public List<String> getExtMultiLabel(String id){
+        return getStringListField(id,this.extMultiLabelField);
     }
 
 

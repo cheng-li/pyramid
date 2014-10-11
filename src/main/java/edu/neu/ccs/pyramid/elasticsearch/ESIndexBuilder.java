@@ -21,6 +21,8 @@ public class ESIndexBuilder {
     private String indexName = "unknown_index";
     private String labelField = "label";
     private String extLabelField = "real_label";
+    private String multiLabelField = "multi_label";
+    private String extMultiLabelField ="real_multi_label";
     private String documentType = "document";
     private String clientType = "transport";
     private String clusterName = "elasticsearch";
@@ -86,6 +88,16 @@ public class ESIndexBuilder {
         return this;
     }
 
+    public ESIndexBuilder setMultiLabelField(String multiLabelField) {
+        this.multiLabelField = multiLabelField;
+        return this;
+    }
+
+    public ESIndexBuilder setExtMultiLabelField(String extMultiLabelField) {
+        this.extMultiLabelField = extMultiLabelField;
+        return this;
+    }
+
     public ESIndex build() throws Exception {
         boolean legal = (clientType.equals("node"))||(clientType.equals("transport"));
         if (!legal){
@@ -99,6 +111,8 @@ public class ESIndexBuilder {
         esIndex.clientType = clientType;
         esIndex.clusterName = clusterName;
         esIndex.bodyField = bodyField;
+        esIndex.multiLabelField = multiLabelField;
+        esIndex.extMultiLabelField = extMultiLabelField;
 
         if (clientType.equals("node")){
             /**
