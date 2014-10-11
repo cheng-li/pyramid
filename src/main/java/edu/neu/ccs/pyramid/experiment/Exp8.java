@@ -34,9 +34,9 @@ public class Exp8 {
         Config config = new Config(args[0]);
         System.out.println(config);
 
-        String dir  = config.getString("folder");
+        String dir  = config.getString("input.folder");
 
-        Node node = nodeBuilder().client(true).clusterName(config.getString("index.name")).node();
+        Node node = nodeBuilder().client(true).clusterName(config.getString("index.clusterName")).node();
         Client client = node.client();
 
         List<File> list = DirWalker.getFiles(dir);
