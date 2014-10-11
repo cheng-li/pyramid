@@ -289,7 +289,7 @@ public class IMLGradientBoostingTest {
 //            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(0)));
 //            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(1)));
 //            System.out.println("prediction="+prediction);
-            if (!MultiLabel.equivalent(label,prediction)){
+            if (!label.equals(prediction)){
                 System.out.println(i);
                 System.out.println("label="+label);
                 System.out.println("prediction="+prediction);

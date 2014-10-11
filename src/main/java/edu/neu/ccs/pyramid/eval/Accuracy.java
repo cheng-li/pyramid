@@ -39,7 +39,7 @@ public class Accuracy {
 
     public static double accuracy(MultiLabel[] multiLabels, List<MultiLabel> predictions){
         double numCorrect = IntStream.range(0,multiLabels.length).parallel()
-                .filter(i-> MultiLabel.equivalent(multiLabels[i],predictions.get(i)))
+                .filter(i-> multiLabels[i].equals(predictions.get(i)))
                 .count();
         return numCorrect/multiLabels.length;
     }

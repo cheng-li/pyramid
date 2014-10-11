@@ -278,7 +278,7 @@ public class LabelGraph implements Serializable {
             return false;
         }
         for (int i = 0; i < assignments1.size(); i++) {
-            if (!MultiLabel.equivalent(assignments1.get(i), assignments2.get(i))) {
+            if (!assignments1.get(i).equals( assignments2.get(i))) {
                 return false;
             }
         }

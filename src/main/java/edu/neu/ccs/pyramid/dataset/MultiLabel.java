@@ -32,18 +32,6 @@ public class MultiLabel implements Serializable{
         return labels;
     }
 
-    public static boolean equivalent(MultiLabel multiLabel1, MultiLabel multiLabel2){
-        if (multiLabel1.labelsVector.length!=multiLabel2.labelsVector.length){
-            return false;
-        }
-
-        for (int i=0;i<multiLabel1.labelsVector.length;i++){
-            if (multiLabel1.labelsVector[i]!=multiLabel2.labelsVector[i]){
-                return false;
-            }
-        }
-        return true;
-    }
 
     @Override
     public String toString() {
@@ -51,5 +39,22 @@ public class MultiLabel implements Serializable{
                 "labels=" + labels +
                 ", labelsVector=" + Arrays.toString(labelsVector)
                 +"}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MultiLabel that = (MultiLabel) o;
+
+        if (!Arrays.equals(labelsVector, that.labelsVector)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(labelsVector);
     }
 }
