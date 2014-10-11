@@ -4,3 +4,4 @@ out/
 .DS_Store
 lib/
 configs/
+src/main/java/edu/neu/ccs/pyramid/tmp/
