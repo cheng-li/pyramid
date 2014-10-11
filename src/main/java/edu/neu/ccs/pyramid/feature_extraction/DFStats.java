@@ -69,6 +69,9 @@ public class DFStats implements Serializable {
                         execute().actionGet();
 
         Terms terms = response.getFields().terms("body");
+        if (terms==null){
+            throw new NullPointerException(docid+"has no term in the body field");
+        }
         TermsEnum iterator = terms.iterator(null);
         for (int i=0;i<terms.size();i++) {
             String term = iterator.next().utf8ToString();
