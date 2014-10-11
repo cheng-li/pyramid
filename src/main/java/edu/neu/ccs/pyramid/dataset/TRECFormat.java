@@ -6,6 +6,8 @@ import org.apache.mahout.math.Vector;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 8/19/14.
@@ -34,7 +36,22 @@ public class TRECFormat {
         save(dataSet,new File(trecFile));
     }
 
+    public static void save(MultiLabelClfDataSet dataSet, String trecFile){
+        save(dataSet, new File(trecFile));
+    }
+
     public static void save(ClfDataSet dataSet, File trecFile){
+        if (!trecFile.exists()){
+            trecFile.mkdirs();
+        }
+        writeMatrixFile(dataSet, trecFile);
+        writeConfigFile(dataSet, trecFile);
+        writeDataSettings(dataSet,trecFile);
+        writeFeatureSettings(dataSet,trecFile);
+        writeDataSetSetting(dataSet,trecFile);
+    }
+
+    public static void save(MultiLabelClfDataSet dataSet, File trecFile){
         if (!trecFile.exists()){
             trecFile.mkdirs();
         }
@@ -67,6 +84,11 @@ public class TRECFormat {
         return loadRegDataSet(new File(trecFile),dataSetType, loadSettings);
     }
 
+    public static MultiLabelClfDataSet loaMultiLabelClfDataSet(String trecFile, DataSetType dataSetType,
+                                            boolean loadSettings) throws IOException, ClassNotFoundException {
+        return loadMultiLabelClfDataSet(new File(trecFile),dataSetType, loadSettings);
+    }
+
 
     public static ClfDataSet loadClfDataSet(File trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
@@ -93,6 +115,33 @@ public class TRECFormat {
         }
 
         return clfDataSet;
+    }
+
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSet(File trecFile, DataSetType dataSetType,
+                                            boolean loadSettings) throws IOException, ClassNotFoundException {
+        boolean legalArg = ((dataSetType == DataSetType.ML_CLF_DENSE)
+                ||(dataSetType==DataSetType.ML_CLF_SPARSE));
+        if (!legalArg){
+            throw new IllegalArgumentException("illegal data set type");
+        }
+        int numDataPoints = parseNumDataPoints(trecFile);
+        int numFeatures = parseNumFeaturess(trecFile);
+        int numClasses = parseNumClasses(trecFile);
+        MultiLabelClfDataSet dataSet = null;
+        if (dataSetType==DataSetType.ML_CLF_DENSE){
+            dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,numClasses);
+        }
+        if (dataSetType==DataSetType.ML_CLF_SPARSE){
+            dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,numClasses);
+        }
+        fillMultiLabelClfDataSet(dataSet,trecFile);
+        if (loadSettings){
+            loadDataSettings(dataSet,trecFile);
+            loadFeatureSettings(dataSet,trecFile);
+            loadDataSetSetting(dataSet,trecFile);
+        }
+
+        return dataSet;
     }
 
     public static RegDataSet loadRegDataSet(File trecFile, DataSetType dataSetType,
@@ -232,6 +281,36 @@ public class TRECFormat {
         }
     }
 
+    private static void fillMultiLabelClfDataSet(MultiLabelClfDataSet dataSet, File trecFile) throws IOException {
+        File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
+        try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
+        ) {
+            String line = null;
+            int dataIndex = 0;
+            while ((line=br.readLine())!=null){
+                String[] lineSplit = line.split(" ");
+                String multiLabelString = lineSplit[0];
+                String[] multiLabelSplit = multiLabelString.split(Pattern.quote(","));
+                for (String label: multiLabelSplit){
+                    dataSet.addLabel(dataIndex,Integer.parseInt(label));
+                }
+                for (int i=1;i<lineSplit.length;i++){
+                    String pair = lineSplit[i];
+                    // ignore things after #
+                    if (pair.startsWith("#")){
+                        break;
+                    }
+                    String[] pairSplit = pair.split(":");
+                    int featureIndex = Integer.parseInt(pairSplit[0]);
+                    double featureValue = Double.parseDouble(pairSplit[1]);
+                    dataSet.setFeatureValue(dataIndex, featureIndex,featureValue);
+                }
+                dataIndex += 1;
+            }
+        }
+    }
+
+
     private static void fillRegDataSet(RegDataSet dataSet, File trecFile) throws IOException {
         File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
         try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
@@ -287,6 +366,19 @@ public class TRECFormat {
 
 
     private static void writeConfigFile(ClfDataSet dataSet, File trecFile) {
+        File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
+        Config config = new Config();
+        config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
+        config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
+        config.setInt(TREC_CONFIG_NUM_CLASSES,dataSet.getNumClasses());
+        try {
+            config.store(configFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeConfigFile(MultiLabelClfDataSet dataSet, File trecFile) {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         Config config = new Config();
         config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
@@ -356,6 +448,38 @@ public class TRECFormat {
             for (int i=0;i<numDataPoints;i++){
                 double label = labels[i];
                 bw.write(label+" ");
+                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                Vector vector = featureRow.getVector();
+                // only write non-zeros
+                for (Vector.Element element: vector.nonZeroes()){
+                    int featureIndex = element.index();
+                    double featureValue = element.get();
+                    bw.write(featureIndex+":"+featureValue+" ");
+                }
+                bw.write("\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeMatrixFile(MultiLabelClfDataSet dataSet, File trecFile) {
+        File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
+        int numDataPoints = dataSet.getNumDataPoints();
+        MultiLabel[] multiLabels = dataSet.getMultiLabels();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(matrixFile));
+        ) {
+            for (int i=0;i<numDataPoints;i++){
+                MultiLabel multiLabel = multiLabels[i];
+                List<Integer> labels = multiLabel.getMatchedLabels().stream().sorted().collect(Collectors.toList());
+                for (int l=0;l<labels.size();l++){
+                    bw.write(labels.get(l).toString());
+                    if (l!=labels.size()-1){
+                        bw.write(",");
+                    } else {
+                        bw.write(" ");
+                    }
+                }
                 FeatureRow featureRow = dataSet.getFeatureRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
