@@ -75,6 +75,10 @@ public class TRECFormatTest {
             }
         }
 
+
+        String[] extLabels = {"non-spam","spam","spam_A","spam_B"};
+        DataSetUtil.setExtLabels(dataSet,extLabels);
+
         TRECFormat.save(dataSet,new File(TMP,"/4labels/train.trec"));
         MultiLabelClfDataSet loaded = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"/4labels/train.trec"),DataSetType.ML_CLF_DENSE,true);
         System.out.println(loaded.getMetaInfo());
@@ -105,9 +109,15 @@ public class TRECFormatTest {
             }
         }
 
+        String[] extLabels = {"non-spam","spam","spam_A","spam_B"};
+        DataSetUtil.setExtLabels(dataSet,extLabels);
+
         TRECFormat.save(dataSet,new File(TMP,"/4labels/test.trec"));
         MultiLabelClfDataSet loaded = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"/4labels/test.trec"),DataSetType.ML_CLF_DENSE,true);
         System.out.println(loaded.getMetaInfo());
+//        System.out.println(loaded.toString());
+        System.out.println(dataSet.getFeatureRow(0).getSetting());
     }
+
 
 }

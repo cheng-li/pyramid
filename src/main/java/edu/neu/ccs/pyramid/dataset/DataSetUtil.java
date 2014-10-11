@@ -241,6 +241,32 @@ public class DataSetUtil {
         dataSet.getSetting().setLabelMap(intToExtLabel);
     }
 
+    public static void setExtLabels(MultiLabelClfDataSet dataSet, Map<Integer,String> intToExtLabel){
+        MultiLabel[] multiLabels= dataSet.getMultiLabels();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = multiLabels[i];
+            List<String> extLabels = multiLabel.getMatchedLabels().stream()
+                    .map(intToExtLabel::get)
+                    .collect(Collectors.toList());
+            dataSet.getFeatureRow(i).getSetting()
+                    .setExtLabels(extLabels);
+        }
+        dataSet.getSetting().setLabelMap(intToExtLabel);
+    }
+
+    public static void setExtLabels(MultiLabelClfDataSet dataSet, String[] extLabels){
+        MultiLabel[] multiLabels= dataSet.getMultiLabels();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = multiLabels[i];
+            List<String> matchedExtLabels = multiLabel.getMatchedLabels().stream()
+                    .map(label -> extLabels[label])
+                    .collect(Collectors.toList());
+            dataSet.getFeatureRow(i).getSetting()
+                    .setExtLabels(matchedExtLabels);
+        }
+        dataSet.getSetting().setLabelMap(extLabels);
+    }
+
     public static void setFeatureNames(DataSet dataSet, List<String> featureNames){
         if (featureNames.size()!=dataSet.getNumFeatures()){
             throw new IllegalArgumentException("featureNames.size()!=dataSet.getNumFeatures()");

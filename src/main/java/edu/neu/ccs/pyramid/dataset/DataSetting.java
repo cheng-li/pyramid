@@ -43,18 +43,21 @@ public class DataSetting implements Serializable{
     }
 
 
-    @Override
-    public String toString() {
-        return "DataSetting{" +
-                "extId='" + extId + '\'' +
-                ", extLabel='" + extLabel + '\'' +
-                '}';
-    }
+
 
     public DataSetting copy(){
         DataSetting dataSetting = new DataSetting();
         dataSetting.setExtId(this.extId);
         dataSetting.setExtLabel(this.extLabel);
         return dataSetting;
+    }
+
+    @Override
+    public String toString() {
+        return "DataSetting{" +
+                "extId='" + extId + '\'' +
+                ", extLabel='" + extLabel + '\'' +
+                ", extLabels=" + extLabels +
+                '}';
     }
 }
