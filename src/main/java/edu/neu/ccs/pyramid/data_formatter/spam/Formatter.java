@@ -42,8 +42,9 @@ public class Formatter {
 
         DataSetUtil.setFeatureNames(data,featureNames);
         String[] extLabels = {"non-spam","spam"};
+        LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
-        DataSetUtil.setExtLabels(data,extLabels);
+        DataSetUtil.setLabelTranslator(data, labelTranslator);
         TRECFormat.save(data, new File(TMP, "train.trec"));
     }
 
@@ -55,7 +56,9 @@ public class Formatter {
         DataSetUtil.setFeatureNames(data,featureNames);
         String[] extLabels = {"non-spam","spam"};
 
-        DataSetUtil.setExtLabels(data,extLabels);
+        LabelTranslator labelTranslator = new LabelTranslator(extLabels);
+
+        DataSetUtil.setLabelTranslator(data, labelTranslator);
         TRECFormat.save(data, new File(TMP, "test.trec"));
     }
 }

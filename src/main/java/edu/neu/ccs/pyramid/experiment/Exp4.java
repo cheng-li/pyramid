@@ -375,7 +375,7 @@ public class Exp4 {
 
 
     static void getTopFeatures(Config config) throws Exception{
-        Map<Integer,String> labelMap = loadLabelMap(config);
+        LabelTranslator labelTranslator = loadLabelTranslator(config);
         String archive = config.getString("archive.folder");
         int firstModel = config.getInt("verify.firstModel");
         int lastModel = config.getInt("verify.lastModel");
@@ -390,7 +390,7 @@ public class Exp4 {
                 System.out.println("==========top features==========");
                 for (int k=0;k<config.getInt("numClasses");k++){
                     List<String> features = LKTBInspector.topFeatureNames(lkTreeBoost, k);
-                    System.out.println("top features for class "+k+"("+labelMap.get(k)+"):");
+                    System.out.println("top features for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(features);
                 }
             }
@@ -400,7 +400,7 @@ public class Exp4 {
             for (int k=0;k<config.getInt("numClasses");k++){
                 List<String> featureNames = LKTBInspector.topFeatureNames(lkTreeBoosts, k);
                 List<Integer> featureIndices = LKTBInspector.topFeatureIndices(lkTreeBoosts,k);
-                System.out.println("top features for class "+k+"("+labelMap.get(k)+"):");
+                System.out.println("top features for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
                 System.out.println(featureNames);
                 if (config.getBoolean("verify.topFeatures.writeToFiles")){
                     File featureFolder = new File(archive,"top_features");
@@ -410,7 +410,7 @@ public class Exp4 {
                     File featureNamesFile = new File(featureFolder,""+k+".names");
                     try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureNamesFile))
                     ){
-//                        bw.write(labelMap.get(k));
+//                        bw.write(labelTranslator.get(k));
 //                        bw.newLine();
                         for (String feature: featureNames){
                             bw.write(feature);
@@ -421,7 +421,7 @@ public class Exp4 {
                     File featureIndicesFile = new File(featureFolder,""+k+".indices");
                     try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureIndicesFile))
                     ){
-//                        bw.write(labelMap.get(k));
+//                        bw.write(labelTranslator.get(k));
 //                        bw.newLine();
                         for (Integer featureIndex: featureIndices){
                             bw.write(""+featureIndex);
@@ -461,7 +461,7 @@ public class Exp4 {
         System.out.println(macroAveragedMeasures);
     }
 
-    static Map<Integer,String> loadLabelMap(Config config) throws Exception{
+    static LabelTranslator loadLabelTranslator(Config config) throws Exception{
         String trainFile = new File(config.getString("input.folder"),
                 config.getString("input.trainData")).getAbsolutePath();
         ClfDataSet dataSet;
@@ -473,6 +473,6 @@ public class Exp4 {
                     config.getBoolean("input.loadSettings"));
         }
 
-        return dataSet.getSetting().getLabelMap();
+        return dataSet.getSetting().getLabelTranslator();
     }
 }

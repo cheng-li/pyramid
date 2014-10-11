@@ -100,7 +100,7 @@ public class Exp9 {
             int newLabel = Merger.merged(oldLabels[i]);
             merged.setLabel(i,newLabel);
         }
-        DataSetUtil.setExtLabels(merged,Merger.extLabels);
+        DataSetUtil.setLabelTranslator(merged, new LabelTranslator(Merger.extLabels));
         return merged;
     }
 

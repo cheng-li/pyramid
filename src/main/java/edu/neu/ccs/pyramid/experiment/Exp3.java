@@ -59,14 +59,14 @@ public class Exp3 {
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureMappers featureMappers = new FeatureMappers();
-        Map<Integer, String> labelMap = intToExtLabel(config,index);
+        LabelTranslator labelTranslator = loadLabelTranslator(config, index);
         if (config.getBoolean("useInitialFeatures")){
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
 
-        ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelMap);
+        ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelTranslator);
         System.out.println("in training set :");
-        showDistribution(config,trainDataSet,labelMap);
+        showDistribution(config,trainDataSet,labelTranslator);
 
         trainModel(config,trainDataSet,featureMappers,index, trainIdTranslator);
 
@@ -81,7 +81,7 @@ public class Exp3 {
         String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
 
-        ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelMap);
+        ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelTranslator);
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
         if (config.getBoolean("archive.dumpFields")){
@@ -127,7 +127,7 @@ public class Exp3 {
     static ClfDataSet loadData(Config config, ESIndex index,
                                FeatureMappers featureMappers,
                                IdTranslator idTranslator, int totalDim,
-                               Map<Integer,String> labelMap) throws Exception{
+                               LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
         int numClasses = config.getInt("numClasses");
         ClfDataSet dataSet;
@@ -192,12 +192,12 @@ public class Exp3 {
                     }
                 });
         DataSetUtil.setIdTranslator(dataSet,idTranslator);
-        DataSetUtil.setExtLabels(dataSet,labelMap);
+        DataSetUtil.setLabelTranslator(dataSet, labelTranslator);
         return dataSet;
     }
 
     static ClfDataSet loadTrainData(Config config, ESIndex index, FeatureMappers featureMappers,
-                                    IdTranslator idTranslator, Map<Integer,String> labelMap) throws Exception{
+                                    IdTranslator idTranslator, LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating training set");
 
 
@@ -205,19 +205,19 @@ public class Exp3 {
 
         int totalDim = config.getInt("maxNumColumns");
         System.out.println("allocating "+totalDim+" columns for training set");
-        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelMap);
+        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelTranslator);
         System.out.println("training set created");
         return dataSet;
     }
 
     static ClfDataSet loadTestData(Config config, ESIndex index,
                                    FeatureMappers featureMappers, IdTranslator idTranslator,
-                                   Map<Integer,String> labelMap) throws Exception{
+                                   LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating test set");
 
         int totalDim = featureMappers.getTotalDim();
 
-        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelMap);
+        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelTranslator);
         System.out.println("test set created");
         return dataSet;
     }
@@ -241,7 +241,7 @@ public class Exp3 {
             throw new IllegalArgumentException("0<=extraction.frequency<=1");
         }
 
-        Map<Integer,String> labelMap = dataSet.getSetting().getLabelMap();
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -392,20 +392,20 @@ public class Exp3 {
                     List<String> focusSetIndexIds = focusSet.getDataClassK(k)
                             .parallelStream().map(trainIdTranslator::toExtId)
                             .collect(Collectors.toList());
-                    System.out.println("easy set for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println("easy set for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
                     System.out.println(focusSetIndexIds.toString());
-                    System.out.println("terms extracted from easy set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println("terms extracted from easy set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(goodTerms);
 
 
 
 
                     //phrases
-                    System.out.println("seeds for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println("seeds for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
                     System.out.println(seedsForAllClasses.get(k));
                     List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
                             gradientsForValidation,seedsForAllClasses.get(k));
-                    System.out.println("phrases extracted from easy set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println("phrases extracted from easy set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(goodPhrases);
                     blackList.addAll(goodPhrases);
 
@@ -495,17 +495,17 @@ public class Exp3 {
                     List<String> focusSetIndexIds = focusSet.getDataClassK(k)
                             .parallelStream().map(trainIdTranslator::toExtId)
                             .collect(Collectors.toList());
-                    System.out.println("hard set for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println("hard set for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
                     System.out.println(focusSetIndexIds.toString());
-                    System.out.println("terms extracted from hard set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println("terms extracted from hard set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(goodTerms);
 
                     //phrases
-                    System.out.println("seeds for class " +k+ "("+labelMap.get(k)+ "):");
+                    System.out.println("seeds for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
                     System.out.println(seedsForAllClasses.get(k));
                     List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
                             gradientsForValidation,seedsForAllClasses.get(k));
-                    System.out.println("phrases extracted from hard set for class " + k+" ("+labelMap.get(k)+"):");
+                    System.out.println("phrases extracted from hard set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(goodPhrases);
                     blackList.addAll(goodPhrases);
 
@@ -614,7 +614,7 @@ public class Exp3 {
         return idTranslator;
     }
 
-    static Map<Integer, String> intToExtLabel(Config config, ESIndex index) throws Exception{
+    static LabelTranslator loadLabelTranslator(Config config, ESIndex index) throws Exception{
         int numClasses = config.getInt("numClasses");
         int numDocs = index.getNumDocs();
         Map<Integer, String> map = new HashMap<>(numClasses);
@@ -623,7 +623,7 @@ public class Exp3 {
             String extLabel = index.getExtLabel("" + i);
             map.put(intLabel,extLabel);
         }
-        return map;
+        return new LabelTranslator(map);
     }
 
     /**
@@ -682,7 +682,7 @@ public class Exp3 {
         }
     }
 
-    static void showDistribution(Config config, ClfDataSet dataSet, Map<Integer, String> labelMap){
+    static void showDistribution(Config config, ClfDataSet dataSet, LabelTranslator labelTranslator){
         int numClasses = config.getInt("numClasses");
         int[] counts = new int[numClasses];
         int[] labels = dataSet.getLabels();
@@ -693,7 +693,7 @@ public class Exp3 {
         }
         System.out.println("label distribution:");
         for (int i=0;i<numClasses;i++){
-            System.out.print(i+"("+labelMap.get(i)+"):"+counts[i]+", ");
+            System.out.print(i+"("+labelTranslator.toExtLabel(i)+"):"+counts[i]+", ");
         }
         System.out.println("");
     }

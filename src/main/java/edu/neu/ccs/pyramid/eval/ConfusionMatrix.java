@@ -2,8 +2,7 @@ package edu.neu.ccs.pyramid.eval;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-
-import java.util.Map;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 
 /**
  * Created by chengli on 8/14/14.
@@ -14,7 +13,7 @@ public class ConfusionMatrix {
      */
     private int[][] matrix;
     private int numClasses;
-    private Map<Integer, String> labelMap;
+    private LabelTranslator labelTranslator;
     private int[] total;
 
     public ConfusionMatrix(int numClasses, int[] labels, int[] predictions) {
@@ -32,7 +31,7 @@ public class ConfusionMatrix {
 
     public ConfusionMatrix(int numClasses, Classifier classifier, ClfDataSet dataSet) {
         this(numClasses,dataSet.getLabels(),classifier.predict(dataSet));
-        this.labelMap = dataSet.getSetting().getLabelMap();
+        this.labelTranslator = dataSet.getSetting().getLabelTranslator();
     }
 
     public int[][] getMatrix() {
@@ -70,10 +69,10 @@ public class ConfusionMatrix {
 
         sb.append("\n");
         for (int i=0;i<this.numClasses;i++){
-            sb.append(this.labelMap.get(i)).append("(").append(this.total[i]).append(")")
+            sb.append(this.labelTranslator.toExtLabel(i)).append("(").append(this.total[i]).append(")")
                     .append("=>").append("   ");
             for (int j=0;j<this.numClasses;j++){
-                sb.append(this.labelMap.get(j)).append(":").append(matrix[i][j]).append("   ");
+                sb.append(this.labelTranslator.toExtLabel(j)).append(":").append(matrix[i][j]).append("   ");
             }
             sb.append("\n");
         }

@@ -11,15 +11,12 @@ import java.util.Map;
  * Created by chengli on 9/6/14.
  */
 public class DataSetSetting implements Serializable{
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
-    private Map<Integer, String> labelMap;
+    private LabelTranslator labelTranslator;
     private IdTranslator idTranslator;
     private FeatureMappers featureMappers;
 
-    public Map<Integer, String> getLabelMap() {
-        return labelMap;
-    }
 
     public IdTranslator getIdTranslator() {
         return idTranslator;
@@ -29,26 +26,18 @@ public class DataSetSetting implements Serializable{
         return featureMappers;
     }
 
-    /**
-     * just for ClfDataSet
-     * users should use the utility method
-     * @param labelMap
-     */
-    void setLabelMap(Map<Integer, String> labelMap) {
-        this.labelMap = labelMap;
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
     }
 
-    /***
-     * just for ClfDataSet
+    /**
      * users should use the utility method
-     * @param extLabels
+     * @param labelTranslator
      */
-    void setLabelMap(String[] extLabels){
-        this.labelMap = new HashMap<>();
-        for (int i=0;i<extLabels.length;i++){
-            this.labelMap.put(i,extLabels[i]);
-        }
+    void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
+
 
     /**
      * users should use the utility method instead
@@ -70,7 +59,7 @@ public class DataSetSetting implements Serializable{
         DataSetSetting dataSetSetting = new DataSetSetting();
         dataSetSetting.setFeatureMappers(this.featureMappers);
         dataSetSetting.setIdTranslator(this.idTranslator);
-        dataSetSetting.setLabelMap(this.labelMap);
+        dataSetSetting.setLabelTranslator(this.labelTranslator);
         return dataSetSetting;
     }
 }
