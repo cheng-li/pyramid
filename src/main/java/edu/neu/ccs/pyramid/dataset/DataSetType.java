@@ -5,5 +5,5 @@ package edu.neu.ccs.pyramid.dataset;
  */
 public enum DataSetType {
     CLF_DENSE, CLF_SPARSE, REG_DENSE, REG_SPARSE, RANK_DENSE, RANK_SPARSE,
-    CLF_ML_DENSE, CLF_ML_SPARSE
+    ML_CLF_DENSE, ML_CLF_SPARSE
 }
