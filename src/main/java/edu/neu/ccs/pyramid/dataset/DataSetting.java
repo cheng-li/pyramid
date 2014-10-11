@@ -1,14 +1,17 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by chengli on 8/6/14.
  */
 public class DataSetting implements Serializable{
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private String extId = "unKnown";
     private String extLabel = "unKnown";
+    private List<String> extLabels = new ArrayList<>();
 
     public DataSetting() {
     }
@@ -30,6 +33,15 @@ public class DataSetting implements Serializable{
         this.extLabel = extLabel;
         return this;
     }
+
+    public List<String> getExtLabels() {
+        return extLabels;
+    }
+
+    public void setExtLabels(List<String> extLabels) {
+        this.extLabels = extLabels;
+    }
+
 
     @Override
     public String toString() {
