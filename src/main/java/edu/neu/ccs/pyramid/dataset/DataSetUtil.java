@@ -473,13 +473,13 @@ public class DataSetUtil {
         }
     }
 
-    public static Set<MultiLabel> gatherLabels(MultiLabelClfDataSet dataSet){
+    public static List<MultiLabel> gatherLabels(MultiLabelClfDataSet dataSet){
         Set<MultiLabel> multiLabels = new HashSet<>();
         MultiLabel[] multiLabelsArray = dataSet.getMultiLabels();
         for (MultiLabel multiLabel: multiLabelsArray){
             multiLabels.add(multiLabel);
         }
-        return multiLabels;
+        return multiLabels.stream().collect(Collectors.toList());
     }
 
 }
