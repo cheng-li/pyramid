@@ -5,6 +5,8 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
+import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -56,7 +58,9 @@ public class HMLGradientBoostingTest {
         }
 
         HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
-        System.out.println(Accuracy.accuracy(boosting,dataSet));
+        System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
+        System.out.println("macro-averaged:");
+        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
     }
 
     static void spam_build() throws Exception{
@@ -115,6 +119,11 @@ public class HMLGradientBoostingTest {
 //        }
         System.out.println("accuracy");
         System.out.println(Accuracy.accuracy(boosting,dataSet));
+        System.out.println("macro-averaged:");
+        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
+
+
+
         boosting.serialize(new File(TMP,"/hmlgb/boosting.ser"));
 
     }
@@ -416,6 +425,8 @@ public class HMLGradientBoostingTest {
 //        System.out.println(boosting);
         System.out.println("accuracy");
         System.out.println(Accuracy.accuracy(boosting,dataSet));
+        System.out.println("macro-averaged:");
+        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
         boosting.serialize(new File(TMP,"/hmlgb/boosting.ser"));
 
 
@@ -427,7 +438,9 @@ public class HMLGradientBoostingTest {
                 DataSetType.ML_CLF_DENSE,true);
 
         HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
-        System.out.println(Accuracy.accuracy(boosting,dataSet));
+        System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
+        System.out.println("macro-averaged:");
+        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
 
     }
 

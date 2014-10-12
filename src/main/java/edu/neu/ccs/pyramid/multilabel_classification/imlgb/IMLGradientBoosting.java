@@ -12,7 +12,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * gradient boosting for independent labels
@@ -198,8 +197,9 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     private MultiLabel predictWithConstraints(FeatureRow featureRow){
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
+        double[] classeScores = calClassScores(featureRow);
         for (MultiLabel assignment: this.assignments){
-            double score = this.calAssignmentScores(featureRow,assignment);
+            double score = this.calAssignmentScore(assignment,classeScores);
             if (score > maxScore){
                 maxScore = score;
                 prediction = assignment;
@@ -208,10 +208,10 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         return prediction;
     }
 
-    double calAssignmentScores(FeatureRow featureRow, MultiLabel assignment){
+    double calAssignmentScore(MultiLabel assignment, double[] classScores){
         double score = 0;
         for (Integer label : assignment.getMatchedLabels()){
-            score += this.calClassScore(featureRow,label);
+            score += classScores[label];
         }
         return score;
     }
@@ -229,6 +229,15 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
             score += regressor.predict(featureRow);
         }
         return score;
+    }
+
+    private double[] calClassScores(FeatureRow featureRow){
+        int numClasses = this.numClasses;
+        double[] scores = new double[numClasses];
+        for (int k=0;k<numClasses;k++){
+            scores[k] = this.calClassScore(featureRow,k);
+        }
+        return scores;
     }
 
 

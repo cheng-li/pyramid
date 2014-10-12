@@ -14,7 +14,7 @@ public class DataSetUtilTest {
 
     public static void main(String[] args) throws Exception{
 
-        test5();
+        test6();
     }
 
     static void test1(){
@@ -103,5 +103,14 @@ public class DataSetUtilTest {
         System.out.println(DataSetUtil.gatherLabels(dataSet));
 
     }
+
+    private static void test6() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"spam/4labels/train.trec"),
+                DataSetType.ML_CLF_DENSE,true);
+        ClfDataSet binary = DataSetUtil.toBinary(dataSet,2);
+        System.out.println(binary);
+
+    }
+
 
 }

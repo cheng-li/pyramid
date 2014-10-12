@@ -168,8 +168,8 @@ public class IMLGradientBoostingTest {
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(0)));
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(1)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(0)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(1)));
 //            System.out.println("prediction="+prediction);
 //            if (!MultiLabel.equivalent(label,prediction)){
 //                System.out.println(i);
@@ -212,8 +212,8 @@ public class IMLGradientBoostingTest {
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(0)));
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(1)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(0)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(1)));
 //            System.out.println("prediction="+prediction);
 //            if (!MultiLabel.equivalent(label,prediction)){
 //                System.out.println(i);
@@ -288,8 +288,8 @@ public class IMLGradientBoostingTest {
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(0)));
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(1)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(0)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(1)));
 //            System.out.println("prediction="+prediction);
             if (!label.equals(prediction)){
                 System.out.println(i);
@@ -337,8 +337,8 @@ public class IMLGradientBoostingTest {
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(0)));
-//            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(1)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(0)));
+//            System.out.println(boosting.calAssignmentScore(featureRow,assignments.get(1)));
 //            System.out.println("prediction="+prediction);
 //            if (!MultiLabel.equivalent(label,prediction)){
 //                System.out.println(i);

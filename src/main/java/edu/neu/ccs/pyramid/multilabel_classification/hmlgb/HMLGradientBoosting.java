@@ -157,8 +157,9 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
     public MultiLabel predict(FeatureRow featureRow){
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
+        double[] classeScores = calClassScores(featureRow);
         for (MultiLabel assignment: this.assignments){
-            double score = this.calAssignmentScores(featureRow,assignment);
+            double score = this.calAssignmentScore(assignment,classeScores);
             if (score > maxScore){
                 maxScore = score;
                 prediction = assignment;
@@ -167,13 +168,6 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         return prediction;
     }
 
-    double calAssignmentScores(FeatureRow featureRow, MultiLabel assignment){
-        double score = 0;
-        for (Integer label : assignment.getMatchedLabels()){
-            score += this.calClassScore(featureRow,label);
-        }
-        return score;
-    }
 
     /**
      *
@@ -186,6 +180,23 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         double score = 0;
         for (Regressor regressor: regressorsClassK){
             score += regressor.predict(featureRow);
+        }
+        return score;
+    }
+
+    private double[] calClassScores(FeatureRow featureRow){
+        int numClasses = this.numClasses;
+        double[] scores = new double[numClasses];
+        for (int k=0;k<numClasses;k++){
+            scores[k] = this.calClassScore(featureRow,k);
+        }
+        return scores;
+    }
+
+    double calAssignmentScore(MultiLabel assignment, double[] classScores){
+        double score = 0;
+        for (Integer label : assignment.getMatchedLabels()){
+            score += classScores[label];
         }
         return score;
     }

@@ -57,7 +57,8 @@ public class LKTBFactoryTest {
 
 
         double accuracy = Accuracy.accuracy(classifier,dataSet);
-        System.out.println(accuracy);
+        System.out.println("accuracy="+accuracy);
+
 
         classifier.serialize(new File(TMP,"classifier.ser"));
     }

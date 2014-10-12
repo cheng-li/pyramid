@@ -2,10 +2,7 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.AUC;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
-import edu.neu.ccs.pyramid.eval.PerClassMeasures;
+import edu.neu.ccs.pyramid.eval.*;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -16,7 +13,6 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        System.out.println(config);
         spam_test();
 //        newsgroup_test();
 //        spam_build();
@@ -123,6 +119,8 @@ public class LKTreeBoostTest {
 
         System.out.println(new PerClassMeasures(confusionMatrix,0));
         System.out.println(new PerClassMeasures(confusionMatrix,1));
+        System.out.println("macor-averaged:");
+        System.out.println(new MacroAveragedMeasures(confusionMatrix));
 //        System.out.println(lkTreeBoost);
 
     }
@@ -154,10 +152,10 @@ public class LKTreeBoostTest {
 
 
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
-        System.out.println(accuracy);
+        System.out.println("accuracy="+accuracy);
 
 
-        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkTreeBoost.serialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
     }
 
     /**
