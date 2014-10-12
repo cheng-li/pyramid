@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 
 /**
- * multi-label gradient boosting
+ * hmlgb
  * Created by chengli on 10/11/14.
  */
 public class Exp13 {
