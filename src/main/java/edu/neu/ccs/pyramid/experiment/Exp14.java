@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import org.apache.commons.lang3.time.StopWatch;
@@ -105,6 +106,7 @@ public class Exp14 {
             boosting.boostOneRound();
             System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
                     dataSet));
+            System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
         }
         File serializedModel =  new File(archive,modelName);
 
@@ -121,6 +123,7 @@ public class Exp14 {
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
         MultiLabelClfDataSet dataSet = loadTrainData(config);
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
+        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             System.out.println(""+i);
             System.out.println("true labels:");
@@ -137,6 +140,7 @@ public class Exp14 {
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
         MultiLabelClfDataSet dataSet = loadTestData(config);
         System.out.println("accuracy on test set = "+Accuracy.accuracy(boosting,dataSet));
+        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             System.out.println(""+i);
             System.out.println("true labels:");

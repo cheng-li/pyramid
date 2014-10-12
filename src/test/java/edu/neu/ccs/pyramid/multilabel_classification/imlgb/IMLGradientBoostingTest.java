@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.Overlap;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -298,6 +299,7 @@ public class IMLGradientBoostingTest {
         }
         System.out.println("accuracy");
         System.out.println(Accuracy.accuracy(boosting,dataSet));
+        System.out.println("overlap = "+ Overlap.overlap(boosting,dataSet));
         boosting.serialize(new File(TMP,"/imlgb/boosting.ser"));
 
     }
@@ -329,7 +331,7 @@ public class IMLGradientBoostingTest {
 
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(TMP,"/imlgb/boosting.ser"));
-        System.out.println(Accuracy.accuracy(boosting,dataSet));
+        System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
         for (int i=0;i<numDataPoints;i++){
             FeatureRow featureRow = dataSet.getFeatureRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
@@ -345,6 +347,7 @@ public class IMLGradientBoostingTest {
 //            }
         }
 
+        System.out.println("overlap = "+ Overlap.overlap(boosting,dataSet));
 
 
 
