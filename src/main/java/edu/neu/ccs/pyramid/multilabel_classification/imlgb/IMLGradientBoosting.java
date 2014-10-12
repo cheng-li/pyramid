@@ -12,19 +12,26 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * gradient boosting for independent labels
+ * the training part does not consider any label relations
+ * the prediction part can consider label relations
  * Created by chengli on 10/8/14.
  */
 public class IMLGradientBoosting implements MultiLabelClassifier{
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private List<List<Regressor>> regressors;
     private int numClasses;
     /**
      * legal assignments of labels
      */
     private transient IMLGBTrainer trainer;
+    /**
+     * legal assignments of labels, optional
+     */
+    private List<MultiLabel> assignments;
 
     public IMLGradientBoosting(int numClasses) {
         this.numClasses = numClasses;
@@ -33,6 +40,14 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
             List<Regressor> regressorsClassK  = new ArrayList<>();
             this.regressors.add(regressorsClassK);
         }
+    }
+
+    public List<MultiLabel> getAssignments() {
+        return assignments;
+    }
+
+    public void setAssignments(List<MultiLabel> assignments) {
+        this.assignments = assignments;
     }
 
     /**
@@ -142,7 +157,29 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         this.trainer.setActiveFeatures(activeFeatures);
     }
 
-    public MultiLabel predict(FeatureRow featureRow){
+    /**
+     * if legal assignments are not present, do prediction without any constraint;
+     * if legal assignments are present, only consider these assignments
+     * @param featureRow
+     * @return
+     */
+    @Override
+    public MultiLabel predict(FeatureRow featureRow) {
+        MultiLabel prediction;
+        if (this.assignments!=null){
+            prediction = predictWithConstraints(featureRow);
+        } else {
+            prediction = predictWithoutConstraints(featureRow);
+        }
+        return prediction;
+    }
+
+    /**
+     * do prediction without any constraint
+     * @param featureRow
+     * @return
+     */
+    private MultiLabel predictWithoutConstraints(FeatureRow featureRow){
         MultiLabel prediction = new MultiLabel(this.numClasses);
         for (int k=0;k<numClasses;k++){
             double score = this.calClassScore(featureRow,k);
@@ -153,6 +190,31 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         return prediction;
     }
 
+    /**
+     * only consider these assignments
+     * @param featureRow
+     * @return
+     */
+    private MultiLabel predictWithConstraints(FeatureRow featureRow){
+        double maxScore = Double.NEGATIVE_INFINITY;
+        MultiLabel prediction = null;
+        for (MultiLabel assignment: this.assignments){
+            double score = this.calAssignmentScores(featureRow,assignment);
+            if (score > maxScore){
+                maxScore = score;
+                prediction = assignment;
+            }
+        }
+        return prediction;
+    }
+
+    double calAssignmentScores(FeatureRow featureRow, MultiLabel assignment){
+        double score = 0;
+        for (Integer label : assignment.getMatchedLabels()){
+            score += this.calClassScore(featureRow,label);
+        }
+        return score;
+    }
 
     /**
      *

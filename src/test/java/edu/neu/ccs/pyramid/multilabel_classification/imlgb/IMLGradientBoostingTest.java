@@ -255,10 +255,11 @@ public class IMLGradientBoostingTest {
 
 
         IMLGradientBoosting boosting = new IMLGradientBoosting(4);
-
+        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        boosting.setAssignments(assignments);
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
-                .numLeaves(100).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
+                .numLeaves(10).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
@@ -268,14 +269,14 @@ public class IMLGradientBoostingTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (int round =0;round<10;round++){
+        for (int round =0;round<100;round++){
             System.out.println("round="+round);
             boosting.boostOneRound();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
-            System.out.println(Arrays.toString(boosting.getGradients(0)));
-            System.out.println(Arrays.toString(boosting.getGradients(1)));
-            System.out.println(Arrays.toString(boosting.getGradients(2)));
-            System.out.println(Arrays.toString(boosting.getGradients(3)));
+//            System.out.println(Arrays.toString(boosting.getGradients(0)));
+//            System.out.println(Arrays.toString(boosting.getGradients(1)));
+//            System.out.println(Arrays.toString(boosting.getGradients(2)));
+//            System.out.println(Arrays.toString(boosting.getGradients(3)));
 
         }
         stopWatch.stop();
