@@ -33,6 +33,9 @@ public class MultiLabel implements Serializable{
         return labels;
     }
 
+    public int getNumClasses(){
+        return this.labelsVector.length;
+    }
 
     @Override
     public String toString() {
