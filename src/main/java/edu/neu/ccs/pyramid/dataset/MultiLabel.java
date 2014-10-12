@@ -35,10 +35,7 @@ public class MultiLabel implements Serializable{
 
     @Override
     public String toString() {
-        return  "{"+
-                "labels=" + labels +
-                ", labelsVector=" + Arrays.toString(labelsVector)
-                +"}";
+        return labels.toString();
     }
 
     @Override
