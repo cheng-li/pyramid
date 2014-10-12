@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 9/27/14.
@@ -35,7 +36,7 @@ public class MultiLabel implements Serializable{
 
     @Override
     public String toString() {
-        return labels.toString();
+        return labels.stream().sorted().collect(Collectors.toList()).toString();
     }
 
     @Override
