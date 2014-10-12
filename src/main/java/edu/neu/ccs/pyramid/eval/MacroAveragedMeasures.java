@@ -1,20 +1,44 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+
+import java.util.List;
+
 /**
  * Created by chengli on 10/3/14.
  */
 public class MacroAveragedMeasures {
     private double f1;
 
+    /**
+     * this is for single label dataset
+     * @param confusionMatrix
+     */
     public MacroAveragedMeasures(ConfusionMatrix confusionMatrix){
-        int numClass = confusionMatrix.getNumClasses();
+        int numClasses = confusionMatrix.getNumClasses();
         double sum = 0;
-        for (int k=0;k<numClass;k++){
+        for (int k=0;k<numClasses;k++){
             PerClassMeasures measures = new PerClassMeasures(confusionMatrix,k);
             sum += measures.getF1();
         }
-        this.f1 = sum/numClass;
+        this.f1 = sum/numClasses;
     }
+
+    public MacroAveragedMeasures(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
+        int numClasses = dataSet.getNumClasses();
+        MultiLabel[] multiLabels = dataSet.getMultiLabels();
+        List<MultiLabel> predictions = classifier.predict(dataSet);
+        double sum = 0;
+        for (int k=0;k<numClasses;k++){
+            PerClassMeasures measures = new PerClassMeasures(multiLabels,predictions,k);
+            sum += measures.getF1();
+        }
+        this.f1 = sum/numClasses;
+    }
+
+
 
     public double getF1() {
         return f1;

@@ -1,5 +1,9 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+
+import java.util.List;
+
 /**
  * follow definition in
  * http://en.wikipedia.org/wiki/Receiver_operating_characteristic
@@ -22,6 +26,12 @@ public class PerClassMeasures {
     private double recall;
     private double f1;
 
+
+    /**
+     * for single label dataset
+     * @param confusionMatrix
+     * @param classIndex
+     */
     public PerClassMeasures(ConfusionMatrix confusionMatrix, int classIndex) {
         this.classIndex = classIndex;
         int numClasses = confusionMatrix.getNumClasses();
@@ -54,6 +64,17 @@ public class PerClassMeasures {
         precision = ((double)truePositive)/(truePositive+falsePositive);
         recall = truePositiveRate;
         f1 = FMeasure.f1(precision,recall);
+    }
+
+    /**
+     * for multi label dataset
+     * @param multiLabels
+     * @param predictions
+     */
+    public PerClassMeasures(MultiLabel[] multiLabels,
+                            List<MultiLabel> predictions,
+                            int classIndex){
+        this(getBinaryConfusionMatrix(multiLabels,predictions,classIndex),1);
     }
 
     public int getPositive() {
@@ -131,5 +152,26 @@ public class PerClassMeasures {
                 ", recall=" + recall +
                 ", f1=" + f1 +
                 '}';
+    }
+
+    private static ConfusionMatrix getBinaryConfusionMatrix(MultiLabel[] multiLabels, List<MultiLabel> predictions, int classIndex){
+        int numDataPoints = multiLabels.length;
+        int[] binaryLabels = new int[numDataPoints];
+        int[] binaryPredictions = new int[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            if (multiLabels[i].matchClass(classIndex)){
+                binaryLabels[i]=1;
+            } else {
+                binaryLabels[i]=0;
+            }
+
+            if (predictions.get(i).matchClass(classIndex)){
+                binaryPredictions[i]=1;
+            } else {
+                binaryPredictions[i]=0;
+            }
+        }
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(2,binaryLabels,binaryPredictions);
+        return confusionMatrix;
     }
 }
