@@ -65,7 +65,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
      * start with prior probabilities
      * should be called before setTrainConfig
      */
-    public void setPriorProbs(MultiLabelClfDataSet dataSet, List<MultiLabel> assignments){
+    public void setPriorProbs(MultiLabelClfDataSet dataSet){
         MLPriorProbClassifier priorProbClassifier = new MLPriorProbClassifier(this.numClasses);
         priorProbClassifier.fit(dataSet);
         double[] probs = priorProbClassifier.getClassProbs();

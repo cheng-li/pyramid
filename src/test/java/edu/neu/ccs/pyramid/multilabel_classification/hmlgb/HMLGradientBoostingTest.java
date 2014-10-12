@@ -90,7 +90,7 @@ public class HMLGradientBoostingTest {
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
-        boosting.setPriorProbs(dataSet,assignments);
+        boosting.setPriorProbs(dataSet);
         boosting.setTrainConfig(trainConfig);
 
         StopWatch stopWatch = new StopWatch();
@@ -159,7 +159,7 @@ public class HMLGradientBoostingTest {
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
 
-        boosting.setPriorProbs(dataSet,assignments);
+        boosting.setPriorProbs(dataSet);
         boosting.setTrainConfig(trainConfig);
 
         StopWatch stopWatch = new StopWatch();
@@ -285,7 +285,7 @@ public class HMLGradientBoostingTest {
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
 
-        boosting.setPriorProbs(dataSet,assignments);
+        boosting.setPriorProbs(dataSet);
         boosting.setTrainConfig(trainConfig);
 
         StopWatch stopWatch = new StopWatch();
@@ -396,7 +396,7 @@ public class HMLGradientBoostingTest {
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
 
-        boosting.setPriorProbs(dataSet,assignments);
+        boosting.setPriorProbs(dataSet);
         boosting.setTrainConfig(trainConfig);
 
         StopWatch stopWatch = new StopWatch();
