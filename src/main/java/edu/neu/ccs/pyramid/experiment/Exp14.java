@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
@@ -124,13 +125,16 @@ public class Exp14 {
         MultiLabelClfDataSet dataSet = loadTrainData(config);
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
         System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            System.out.println(""+i);
-            System.out.println("true labels:");
-            System.out.println(dataSet.getMultiLabels()[i]);
-            System.out.println("predictions:");
-            System.out.println(boosting.predict(dataSet.getFeatureRow(i)));
-        }
+        System.out.println("macro-averaged measure on training set:");
+        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
+//        List<MultiLabel> prediction = boosting.predict(dataSet);
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            System.out.println(""+i);
+//            System.out.println("true labels:");
+//            System.out.println(dataSet.getMultiLabels()[i]);
+//            System.out.println("predictions:");
+//            System.out.println(prediction.get(i));
+//        }
     }
 
     static void test(Config config) throws Exception{
@@ -140,13 +144,16 @@ public class Exp14 {
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
         MultiLabelClfDataSet dataSet = loadTestData(config);
         System.out.println("accuracy on test set = "+Accuracy.accuracy(boosting,dataSet));
-        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            System.out.println(""+i);
-            System.out.println("true labels:");
-            System.out.println(dataSet.getMultiLabels()[i]);
-            System.out.println("predictions:");
-            System.out.println(boosting.predict(dataSet.getFeatureRow(i)));
-        }
+        System.out.println("overlap on test set = "+ Overlap.overlap(boosting,dataSet));
+        System.out.println("macro-averaged measure on test set:");
+        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
+//        List<MultiLabel> prediction = boosting.predict(dataSet);
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            System.out.println(""+i);
+//            System.out.println("true labels:");
+//            System.out.println(dataSet.getMultiLabels()[i]);
+//            System.out.println("predictions:");
+//            System.out.println(prediction.get(i));
+//        }
     }
 }
