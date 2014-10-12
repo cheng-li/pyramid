@@ -482,4 +482,61 @@ public class DataSetUtil {
         return multiLabels.stream().collect(Collectors.toList());
     }
 
+    /**
+     * merge to binary dataset
+     * k=positive (1), others = negative(0)
+     * @param dataSet
+     * @param k
+     * @return
+     */
+    public static ClfDataSet toBinary(MultiLabelClfDataSet dataSet, int k){
+        int numDataPoints = dataSet.getNumDataPoints();
+        int numFeatures = dataSet.getNumFeatures();
+        ClfDataSet clfDataSet;
+        if (dataSet.isDense()){
+            clfDataSet = new DenseClfDataSet(numDataPoints,numFeatures,2);
+        } else {
+            clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures,2);
+        }
+
+        for (int i=0;i<numDataPoints;i++){
+            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            //only copy non-zero elements
+            Vector vector = featureRow.getVector();
+            for (Vector.Element element: vector.nonZeroes()){
+                int featureIndex = element.index();
+                double value = element.get();
+                clfDataSet.setFeatureValue(i,featureIndex,value);
+            }
+            if (dataSet.getMultiLabels()[i].matchClass(k)){
+                clfDataSet.setLabel(i,1);
+            } else {
+                clfDataSet.setLabel(i,0);
+            }
+        }
+
+        for (int i=0;i<numDataPoints;i++){
+            DataSetting dataSetting = dataSet.getFeatureRow(i).getSetting().copy();
+            LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+            int label = clfDataSet.getLabels()[i];
+            if (labelTranslator!=null){
+                if (label ==1){
+                    dataSetting.setExtLabel(labelTranslator.toExtLabel(k));
+                } else {
+                    dataSetting.setExtLabel("NOT "+labelTranslator.toExtLabel(k));
+                }
+            } else {
+                dataSetting.setExtLabel("unknown");
+            }
+            clfDataSet.getFeatureRow(i).putSetting(dataSetting);
+        }
+
+        for (int j=0;j<numFeatures;j++){
+            FeatureSetting featureSetting = dataSet.getFeatureColumn(j).getSetting().copy();
+            clfDataSet.getFeatureColumn(j).putSetting(featureSetting);
+        }
+
+        return clfDataSet;
+    }
+
 }
