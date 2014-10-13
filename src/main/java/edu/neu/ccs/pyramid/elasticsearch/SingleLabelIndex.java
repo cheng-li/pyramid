@@ -96,6 +96,27 @@ public class SingleLabelIndex extends ESIndex{
         return response.getHits().getTotalHits();
     }
 
+    public SearchResponse matchForClass(String bodyField, String phrase,
+                                        MatchQueryBuilder.Operator operator,
+                                        String labelField, int label){
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(bodyField,phrase)
+                                .operator(operator).analyzer("whitespace"),
+                        FilterBuilders.termFilter(labelField,label))).
+                execute().actionGet();
+
+        //        debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
+//        builder.endObject();
+//        System.out.println(builder.string());
+
+        return response;
+    }
+
 
     public static class Builder {
         private String indexName = "unknown_index";

@@ -2,17 +2,20 @@ package edu.neu.ccs.pyramid.elasticsearch;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -21,12 +24,55 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
  */
 public class MultiLabelIndex extends ESIndex{
     private static final Logger logger = LogManager.getLogger();
-    String multiLabelField;
     String extMultiLabelField;
 
     public List<String> getExtMultiLabel(String id){
         return getStringListField(id,this.extMultiLabelField);
     }
+
+
+    public SearchResponse matchForClass(String phrase, String extLabel){
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(bodyField, phrase)
+                                .operator(MatchQueryBuilder.Operator.AND).analyzer("whitespace"),
+                        FilterBuilders.termFilter(this.extMultiLabelField, extLabel))).
+                execute().actionGet();
+
+        //        debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//        builder.startObject();
+//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
+//        builder.endObject();
+//        System.out.println(builder.string());
+
+        return response;
+    }
+
+    public long DFForClass(String phrase, String extLabel) {
+        SearchResponse response = this.matchForClass(phrase,extLabel);
+        return response.getHits().getTotalHits();
+    }
+
+    public LabelTranslator loadLabelTranslator() throws Exception{
+
+        int numDocs = this.getNumDocs();
+        Set<String> extLabelSet = new HashSet<>();
+
+        for (int i=0;i<numDocs;i++){
+            List<String> extLabel = this.getExtMultiLabel(""+i);
+            extLabelSet.addAll(extLabel);
+        }
+
+        LabelTranslator labelTranslator = new LabelTranslator(extLabelSet);
+
+//            System.out.println("there are "+labelTranslator.getNumClasses()+" classes.");
+//            System.out.println(labelTranslator);
+        return labelTranslator;
+    }
+
+
 
     public static class Builder {
         private String indexName = "unknown_index";
@@ -95,6 +141,8 @@ public class MultiLabelIndex extends ESIndex{
             return this;
         }
 
+
+
         public MultiLabelIndex build() throws Exception {
             boolean legal = (clientType.equals("node"))||(clientType.equals("transport"));
             if (!legal){
@@ -107,7 +155,6 @@ public class MultiLabelIndex extends ESIndex{
             esIndex.clientType = clientType;
             esIndex.clusterName = clusterName;
             esIndex.bodyField = bodyField;
-            esIndex.multiLabelField = multiLabelField;
             esIndex.extMultiLabelField = extMultiLabelField;
 
             if (clientType.equals("node")){

@@ -2,8 +2,6 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.data_formatter.cnn.IndexBuilder;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
