@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
@@ -14,7 +16,11 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.termvector.TermVectorResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.SearchHit;
@@ -24,25 +30,23 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+
 
 /**
  * Created by chengli on 8/20/14.
  */
 public class ESIndex {
     private static final Logger logger = LogManager.getLogger();
-
     Client client;
     Node node;
     String indexName;
     int numDocs;
-    String labelField;
-    String extLabelField;
     String documentType;
     String clientType;
     String clusterName;
     String bodyField;
-    String multiLabelField;
-    String extMultiLabelField;
+
     /**
      * concurrent LRU cache for termvectors
      */
@@ -61,9 +65,7 @@ public class ESIndex {
         return indexName;
     }
 
-    public String getLabelField() {
-        return labelField;
-    }
+
 
     public String getDocumentType() {
         return documentType;
@@ -195,26 +197,9 @@ public class ESIndex {
     }
 
 
-    public int getLabel(String id){
-        GetResponse response = client.prepareGet(indexName, documentType, id).setFields(this.labelField)
-                .execute()
-                .actionGet();
-        if (logger.isDebugEnabled()){
-            logger.debug("getting label from id "+id+", field "+this.labelField);
-        }
-        return (int) response.getField(this.labelField).getValue();
-    }
 
-    public String getExtLabel(String id){
-        GetResponse response = client.prepareGet(indexName, documentType, id).setFields(this.extLabelField)
-                .execute()
-                .actionGet();
-        return (String) response.getField(this.extLabelField).getValue();
-    }
 
-    public List<String> getExtMultiLabel(String id){
-        return getStringListField(id,this.extMultiLabelField);
-    }
+
 
 
     public Set<String> listAllFields() throws Exception{
@@ -521,35 +506,7 @@ public class ESIndex {
         return response;
     }
 
-    /**
-     * use whitespace analyzer
-     * @param bodyField
-     * @param phrase already stemmed
-     * @param slop
-     * @param labelField
-     * @param label
-     * @return
-     */
-    public SearchResponse matchPhraseForClass(String bodyField, String phrase,
-                                              int slop,
-                                              String labelField, int label){
-        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
-                setHighlighterFilter(false).setTrackScores(false).
-                setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(bodyField,phrase)
-                                .slop(slop).analyzer("whitespace"),
-                        FilterBuilders.termFilter(labelField,label))).
-                execute().actionGet();
 
-        //        debug
-//        XContentBuilder builder = XContentFactory.jsonBuilder();
-//        builder.startObject();
-//        System.out.println(response.toXContent(builder, ToXContent.EMPTY_PARAMS));
-//        builder.endObject();
-//        System.out.println(builder.string());
-
-        return response;
-    }
 
     public SearchResponse matchForClass(String bodyField, String phrase,
                                         MatchQueryBuilder.Operator operator,
@@ -578,13 +535,7 @@ public class ESIndex {
 
     }
 
-    public long phraseDFForClass(String bodyField, String phrase,
-                                 int slop,
-                                 String labelField, int label) {
-        SearchResponse response = this.matchPhraseForClass(bodyField,phrase,
-                slop,labelField,label);
-        return response.getHits().getTotalHits();
-    }
+
 
     public long DF(String field, String phrase, MatchQueryBuilder.Operator operator){
         SearchResponse response = this.match(field,phrase,operator);
@@ -592,12 +543,7 @@ public class ESIndex {
 
     }
 
-    public long DFForClass(String bodyField, String phrase,
-                           MatchQueryBuilder.Operator operator,
-                           String labelField, int label) {
-        SearchResponse response = this.matchForClass(bodyField,phrase,operator,labelField,label);
-        return response.getHits().getTotalHits();
-    }
+
 
     //=================old implementations========================
 
@@ -785,5 +731,111 @@ public class ESIndex {
 //        }
 //        return list;
 //    }
+
+
+
+    public static class Builder {
+        private String indexName = "unknown_index";
+        private String documentType = "document";
+        private String clientType = "transport";
+        private String clusterName = "elasticsearch";
+        private String bodyField = "body";
+        private List<String> hosts = new ArrayList<>();
+        private List<Integer> ports = new ArrayList<>();
+        private int termVectorCacheSize = 10000;
+
+
+
+        public Builder setIndexName(String indexName) {
+            this.indexName = indexName;
+            return this;
+        }
+
+        public Builder setDocumentType(String documentType) {
+            this.documentType = documentType;
+            return this;
+        }
+
+        public Builder setClientType(String clientType) {
+            this.clientType = clientType;
+            return this;
+        }
+
+        public Builder setClusterName(String clusterName) {
+            this.clusterName = clusterName;
+            return this;
+        }
+
+        public Builder addHostAndPort(String host, int port){
+            this.hosts.add(host);
+            this.ports.add(port);
+            return this;
+        }
+
+        public Builder addHostsAndPorts(String[] hosts, String[] ports){
+            for (int i=0;i< hosts.length;i++){
+                addHostAndPort(hosts[i],Integer.parseInt(ports[i]));
+            }
+            return this;
+        }
+
+        public Builder setBodyField(String bodyField) {
+            this.bodyField = bodyField;
+            return this;
+        }
+
+        public Builder setTermVectorCacheSize(int termVectorCacheSize) {
+            this.termVectorCacheSize = termVectorCacheSize;
+            return this;
+        }
+
+
+        public ESIndex build() throws Exception {
+            boolean legal = (clientType.equals("node"))||(clientType.equals("transport"));
+            if (!legal){
+                throw new IllegalArgumentException("clientType = node or transport");
+            }
+            ESIndex esIndex = new ESIndex();
+            esIndex.indexName = indexName;
+            esIndex.documentType = documentType;
+            esIndex.clientType = clientType;
+            esIndex.clusterName = clusterName;
+            esIndex.bodyField = bodyField;
+
+
+            if (clientType.equals("node")){
+                /**
+                 * don't hold data
+                 */
+                Node node = nodeBuilder().client(true).
+                        clusterName(clusterName).node();
+                esIndex.node = node;
+                esIndex.client = node.client();
+            } else {
+                Settings settings = ImmutableSettings.settingsBuilder()
+                        .put("cluster.name", clusterName).build();
+
+                esIndex.client = new TransportClient(settings);
+                for (int i=0;i<this.hosts.size();i++){
+                    ((TransportClient)esIndex.client)
+                            .addTransportAddress(new InetSocketTransportAddress(this.hosts.get(i),
+                                    this.ports.get(i)));
+                }
+            }
+            esIndex.numDocs = esIndex.fetchNumDocs();
+
+            esIndex.termVectorCache = CacheBuilder.newBuilder()
+                    .maximumSize(this.termVectorCacheSize)
+                    .build(new CacheLoader<String, Map<Integer, String>>() {
+                        @Override
+                        public Map<Integer, String> load(String id) throws Exception {
+                            return esIndex.getTermVectorFromIndex(id);
+                        }
+                    });
+
+            return esIndex;
+        }
+
+    }
 
 }

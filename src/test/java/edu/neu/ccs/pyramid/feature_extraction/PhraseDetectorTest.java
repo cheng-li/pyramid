@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
+
 
 
 import java.util.HashSet;
@@ -17,7 +17,7 @@ public class PhraseDetectorTest {
     }
 
 //    static void test1() throws Exception {
-//        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+//        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
 //                .build();
 //        Map<Integer,String> map = index.getTermVector("0");
 //
@@ -28,7 +28,7 @@ public class PhraseDetectorTest {
 //    }
 //
     static void test2() throws Exception {
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("1");
 
@@ -46,7 +46,7 @@ public class PhraseDetectorTest {
     }
 
     static void test3() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
@@ -58,7 +58,7 @@ public class PhraseDetectorTest {
     }
 
     static void test4() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("648");
         System.out.println(map);
@@ -70,7 +70,7 @@ public class PhraseDetectorTest {
     }
 
     static void test5() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
@@ -82,7 +82,7 @@ public class PhraseDetectorTest {
     }
 
     static void test6() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("648");
         System.out.println(map);
@@ -94,7 +94,7 @@ public class PhraseDetectorTest {
     }
 
     static void test7() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
@@ -114,7 +114,7 @@ public class PhraseDetectorTest {
     }
 
     static void test8() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
@@ -127,7 +127,7 @@ public class PhraseDetectorTest {
     }
 
     static void test9() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
@@ -140,7 +140,7 @@ public class PhraseDetectorTest {
     }
 
     static void test10() throws Exception{
-        ESIndex index = ESIndexBuilder.builder().setClientType("node").setIndexName("cnn")
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);

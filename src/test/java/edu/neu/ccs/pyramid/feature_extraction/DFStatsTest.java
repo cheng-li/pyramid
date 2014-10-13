@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
-import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
+import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 
 import java.util.List;
 
@@ -17,7 +16,7 @@ public class DFStatsTest {
         DFStats dfStats = new DFStats(9);
         System.out.println(dfStats);
 
-        ESIndex index = ESIndexBuilder.builder().setIndexName("cnn").setClientType("node")
+        SingleLabelIndex index = new SingleLabelIndex.Builder().setIndexName("cnn").setClientType("node")
                 .setLabelField("label").build();
         dfStats.updateByOneDoc(index,"0");
         System.out.println(dfStats);
@@ -28,7 +27,7 @@ public class DFStatsTest {
     static void test2() throws Exception{
         DFStats dfStats = new DFStats(9);
         System.out.println(dfStats);
-        ESIndex index = ESIndexBuilder.builder().setIndexName("cnn").setClientType("node")
+        SingleLabelIndex index = new SingleLabelIndex.Builder().setIndexName("cnn").setClientType("node")
                 .setLabelField("label").build();
         dfStats.update(index);
         System.out.println(dfStats);
@@ -39,7 +38,7 @@ public class DFStatsTest {
     static void test3() throws Exception{
         DFStats dfStats = new DFStats(9);
 //        System.out.println(dfStats);
-        ESIndex index = ESIndexBuilder.builder().setIndexName("cnn").setClientType("node")
+        SingleLabelIndex index = new SingleLabelIndex.Builder().setIndexName("cnn").setClientType("node")
                 .setLabelField("label").build();
         dfStats.update(index);
 //        System.out.println(dfStats);

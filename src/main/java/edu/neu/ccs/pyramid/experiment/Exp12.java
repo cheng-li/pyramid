@@ -2,8 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
+import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
 import org.elasticsearch.action.search.SearchResponse;
@@ -32,13 +31,13 @@ public class Exp12 {
         Config config = new Config(args[0]);
         System.out.println(config);
 
-        ESIndex index = loadIndex(config);
+        MultiLabelIndex index = loadIndex(config);
         build(config,index);
         index.close();
     }
 
-    static ESIndex loadIndex(Config config) throws Exception{
-        ESIndexBuilder builder = ESIndexBuilder.builder()
+    static MultiLabelIndex loadIndex(Config config) throws Exception{
+        MultiLabelIndex.Builder builder = new MultiLabelIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
                 .setClientType(config.getString("index.clientType"))
@@ -49,7 +48,7 @@ public class Exp12 {
             String[] ports = config.getString("index.ports").split(Pattern.quote(","));
             builder.addHostsAndPorts(hosts,ports);
         }
-        ESIndex index = builder.build();
+        MultiLabelIndex index = builder.build();
         System.out.println("index loaded");
         System.out.println("there are "+index.getNumDocs()+" documents in the index.");
 //        for (int i=0;i<index.getNumDocs();i++){
@@ -59,7 +58,7 @@ public class Exp12 {
         return index;
     }
 
-    static String[] sampleTrain(Config config, ESIndex index){
+    static String[] sampleTrain(Config config, MultiLabelIndex index){
         int numDocsInIndex = index.getNumDocs();
         String[] trainIds = null;
         if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
@@ -111,7 +110,7 @@ public class Exp12 {
         return idTranslator;
     }
 
-    static void addInitialFeatures(Config config, ESIndex index,
+    static void addInitialFeatures(Config config, MultiLabelIndex index,
                                    FeatureMappers featureMappers,
                                    String[] ids) throws Exception{
         String featureFieldPrefix = config.getString("index.featureFieldPrefix");
@@ -159,7 +158,7 @@ public class Exp12 {
         }
     }
 
-    static List<String> gatherUnigrams(Config config, ESIndex index,
+    static List<String> gatherUnigrams(Config config, MultiLabelIndex index,
                                        String[] ids) throws Exception{
         int minDf = config.getInt("minDf");
         Set<String> unigrams = new HashSet<>();
@@ -180,7 +179,7 @@ public class Exp12 {
         }
     }
 
-    static MultiLabelClfDataSet loadData(Config config, ESIndex index,
+    static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
                                FeatureMappers featureMappers,
                                IdTranslator idTranslator, int totalDim,
                                LabelTranslator labelTranslator) throws Exception{
@@ -255,7 +254,7 @@ public class Exp12 {
         return dataSet;
     }
 
-    static MultiLabelClfDataSet loadTrainData(Config config, ESIndex index, FeatureMappers featureMappers,
+    static MultiLabelClfDataSet loadTrainData(Config config, MultiLabelIndex index, FeatureMappers featureMappers,
                                     IdTranslator idTranslator, LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating training set");
         int totalDim = featureMappers.getTotalDim();
@@ -265,7 +264,7 @@ public class Exp12 {
         return dataSet;
     }
 
-    static MultiLabelClfDataSet loadTestData(Config config, ESIndex index,
+    static MultiLabelClfDataSet loadTestData(Config config, MultiLabelIndex index,
                                    FeatureMappers featureMappers, IdTranslator idTranslator,
                                    LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating test set");
@@ -277,7 +276,7 @@ public class Exp12 {
         return dataSet;
     }
 
-    static LabelTranslator loadLabelTranslator(ESIndex index) throws Exception{
+    static LabelTranslator loadLabelTranslator(MultiLabelIndex index) throws Exception{
 
         int numDocs = index.getNumDocs();
         Set<String> extLabelSet = new HashSet<>();
@@ -320,21 +319,21 @@ public class Exp12 {
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 
-    static void dumpTrainFields(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
+    static void dumpTrainFields(Config config, MultiLabelIndex index, IdTranslator idTranslator) throws Exception{
         String archive = config.getString("archive.folder");
         String trecFile = new File(archive,config.getString("archive.trainingSet")).getAbsolutePath();
         String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
         dumpFields(config, index, idTranslator, file);
     }
 
-    static void dumpTestFields(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
+    static void dumpTestFields(Config config, MultiLabelIndex index, IdTranslator idTranslator) throws Exception{
         String archive = config.getString("archive.folder");
         String trecFile = new File(archive,config.getString("archive.testSet")).getAbsolutePath();
         String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
         dumpFields(config, index, idTranslator, file);
     }
 
-    static void dumpFields(Config config, ESIndex index, IdTranslator idTranslator, String fileName) throws Exception{
+    static void dumpFields(Config config, MultiLabelIndex index, IdTranslator idTranslator, String fileName) throws Exception{
 
         String[] fields = config.getString("archive.dumpedFields").split(",");
         int numDocs = idTranslator.numData();
@@ -363,7 +362,7 @@ public class Exp12 {
 
     }
 
-    static void build(Config config, ESIndex index) throws Exception{
+    static void build(Config config, MultiLabelIndex index) throws Exception{
         int numDocsInIndex = index.getNumDocs();
         String[] trainIndexIds = sampleTrain(config,index);
         System.out.println("number of training documents = "+trainIndexIds.length);

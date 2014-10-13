@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
+import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.elasticsearch.action.termvector.TermVectorResponse;
@@ -32,12 +33,12 @@ public class DFStats implements Serializable {
 
     }
 
-    public void update(ESIndex esIndex) throws IOException {
+    public void update(SingleLabelIndex esIndex) throws IOException {
         IntStream.range(0, esIndex.getNumDocs()).parallel()
                 .forEach(id -> this.updateByOneDoc(esIndex, "" + id));
     }
 
-    public void update(ESIndex esIndex, String[] docids) throws IOException{
+    public void update(SingleLabelIndex esIndex, String[] docids) throws IOException{
         Arrays.stream(docids).parallel()
                 .forEach(id -> this.updateByOneDoc(esIndex, "" + id));
     }
@@ -47,7 +48,7 @@ public class DFStats implements Serializable {
      * @param esIndex
      * @param docid
      */
-    public void updateByOneDoc(ESIndex esIndex, String docid){
+    public void updateByOneDoc(SingleLabelIndex esIndex, String docid){
         try {
             updateWithException(esIndex,docid);
         } catch (IOException e) {
@@ -60,7 +61,7 @@ public class DFStats implements Serializable {
      * @param esIndex
      * @param docid
      */
-    private void updateWithException(ESIndex esIndex, String docid) throws IOException {
+    private void updateWithException(SingleLabelIndex esIndex, String docid) throws IOException {
         TermVectorResponse response = esIndex.getClient()
                 .prepareTermVector(esIndex.getIndexName(), "document", docid)
                 .setOffsets(false).setPositions(false).setFieldStatistics(false)

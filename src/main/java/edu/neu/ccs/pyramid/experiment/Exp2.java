@@ -1,8 +1,7 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
+import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.util.DirWalker;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 
@@ -27,7 +26,7 @@ public class Exp2 {
         Config config = new Config(args[0]);
         System.out.println(config);
 
-        ESIndex index = loadIndex(config);
+        SingleLabelIndex index = loadIndex(config);
         String dir = config.getString("ngram_folder");
         List<File> files = DirWalker.getFiles(dir)
                 .stream().filter(file -> file.getName().endsWith(".txt"))
@@ -44,9 +43,9 @@ public class Exp2 {
 
     }
 
-    static ESIndex loadIndex(Config config) throws Exception{
+    static SingleLabelIndex loadIndex(Config config) throws Exception{
 
-        ESIndexBuilder builder = ESIndexBuilder.builder()
+        SingleLabelIndex.Builder builder = new SingleLabelIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
                 .setClientType(config.getString("index.clientType"))
@@ -57,11 +56,11 @@ public class Exp2 {
             String[] ports = config.getString("index.ports").split(Pattern.quote(","));
             builder.addHostsAndPorts(hosts,ports);
         }
-        ESIndex index = builder.build();
+        SingleLabelIndex index = builder.build();
         return index;
     }
 
-    public static void processOneFile(File file, ESIndex index, Config config ) throws Exception{
+    public static void processOneFile(File file, SingleLabelIndex index, Config config ) throws Exception{
         int slop = config.getInt("slop");
         String docid = file.getName().split(Pattern.quote("."))[0];
         int label = index.getLabel(docid);
