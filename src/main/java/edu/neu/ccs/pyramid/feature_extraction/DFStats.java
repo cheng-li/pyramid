@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
+import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -43,6 +45,16 @@ public class DFStats implements Serializable {
                 .forEach(id -> this.updateByOneDoc(esIndex, "" + id));
     }
 
+    public void update(MultiLabelIndex esIndex, LabelTranslator labelTranslator) throws IOException {
+        IntStream.range(0, esIndex.getNumDocs()).parallel()
+                .forEach(id -> this.updateByOneDoc(esIndex, labelTranslator, "" + id));
+    }
+
+    public void update(MultiLabelIndex esIndex, LabelTranslator labelTranslator, String[] docids) throws IOException{
+        Arrays.stream(docids).parallel()
+                .forEach(id -> this.updateByOneDoc(esIndex,labelTranslator, "" + id));
+    }
+
     /**
      * just handle exception, nothing else
      * @param esIndex
@@ -51,6 +63,19 @@ public class DFStats implements Serializable {
     public void updateByOneDoc(SingleLabelIndex esIndex, String docid){
         try {
             updateWithException(esIndex,docid);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * just handle exception, nothing else
+     * @param esIndex
+     * @param docid
+     */
+    public void updateByOneDoc(MultiLabelIndex esIndex, LabelTranslator labelTranslator, String docid){
+        try {
+            updateWithException(esIndex,labelTranslator,docid);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -84,6 +109,42 @@ public class DFStats implements Serializable {
                 for (int k = 0; k < numClasses; k++) {
                     long dfForClass = esIndex.DFForClass("body", term,
                             MatchQueryBuilder.Operator.AND, esIndex.getLabelField(), k);
+                    dfStat.setDfForClass(dfForClass, k);
+                }
+                this.put(dfStat);
+            }
+        }
+    }
+
+    /**
+     * update dfStats using docid
+     * @param esIndex
+     * @param docid
+     */
+    private void updateWithException(MultiLabelIndex esIndex, LabelTranslator labelTranslator,
+                                     String docid) throws IOException {
+        TermVectorResponse response = esIndex.getClient()
+                .prepareTermVector(esIndex.getIndexName(), esIndex.getDocumentType(), docid)
+                .setOffsets(false).setPositions(false).setFieldStatistics(false)
+                .setTermStatistics(true)
+                .setSelectedFields(esIndex.getBodyField()).
+                        execute().actionGet();
+
+        Terms terms = response.getFields().terms(esIndex.getBodyField());
+        if (terms==null){
+            throw new NullPointerException(docid+"has no term in the body field");
+        }
+        TermsEnum iterator = terms.iterator(null);
+        for (int i=0;i<terms.size();i++) {
+            String term = iterator.next().utf8ToString();
+            if (!containsPhrase(term)) {
+                DFStat dfStat = new DFStat(this.numClasses, term);
+                long df = esIndex.DF(esIndex.getBodyField(), term, MatchQueryBuilder.Operator.AND);
+                dfStat.setDf(df);
+                //todo can query only once, and then loop
+                for (int k = 0; k < numClasses; k++) {
+                    long dfForClass = esIndex.DFForClass(term,
+                            labelTranslator.toExtLabel(k));
                     dfStat.setDfForClass(dfForClass, k);
                 }
                 this.put(dfStat);
