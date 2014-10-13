@@ -104,6 +104,55 @@ public class DataSetUtil {
         return trimmed;
     }
 
+
+    /**
+     * only keep the selected features
+     * @param dataSet
+     * @return
+     */
+    public static MultiLabelClfDataSet trim(MultiLabelClfDataSet dataSet, List<Integer> columnsToKeep){
+        MultiLabelClfDataSet trimmed ;
+        int numClasses = dataSet.getNumClasses();
+        // keep density
+        if (dataSet.isDense()) {
+            trimmed = new DenseMLClfDataSet(dataSet.getNumDataPoints(), columnsToKeep.size(), numClasses);
+        } else{
+            trimmed = new SparseMLClfDataSet(dataSet.getNumDataPoints(),columnsToKeep.size(), numClasses);
+        }
+
+
+        for (int j=0;j<trimmed.getNumFeatures();j++){
+            int oldColumnIndex = columnsToKeep.get(j);
+            FeatureColumn featureColumn = dataSet.getFeatureColumn(oldColumnIndex);
+            Vector vector = featureColumn.getVector();
+            for (Vector.Element element: vector.nonZeroes()){
+                int dataPointIndex = element.index();
+                double value = element.get();
+                trimmed.setFeatureValue(dataPointIndex,j,value);
+            }
+        }
+        //copy labels
+        MultiLabel[] multiLabels = dataSet.getMultiLabels();
+
+        for (int i=0;i<trimmed.getNumDataPoints();i++){
+            trimmed.addLabels(i,multiLabels[i].getMatchedLabels());
+        }
+        //just copy settings
+        for (int i=0;i<trimmed.getNumDataPoints();i++){
+            trimmed.getFeatureRow(i).putSetting(dataSet.getFeatureRow(i).getSetting().copy());
+        }
+        for (int j=0;j<trimmed.getNumFeatures();j++){
+            int oldColumnIndex = columnsToKeep.get(j);
+            trimmed.getFeatureColumn(j).putSetting(dataSet.getFeatureColumn(oldColumnIndex).getSetting().copy());
+        }
+        //todo double-check
+        //todo: something like featuremappers
+        DataSetSetting dataSetSetting = dataSet.getSetting().copy();
+        dataSetSetting.setFeatureMappers(null);
+        trimmed.putSetting(dataSetSetting);
+        return trimmed;
+    }
+
     /**
      * //todo change implementation
      * only keep the first numFeatures features
