@@ -17,6 +17,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * feature sampling gradient boosting
@@ -429,6 +430,18 @@ public class Exp4 {
                         }
                     }
                 }
+            }
+        }
+
+        if (config.getBoolean("verify.topNgramFeatures.overall")){
+            System.out.println("overall top features among all models:");
+            for (int k=0;k<config.getInt("numClasses");k++){
+                List<String> featureNames = LKTBInspector.topFeatureNames(lkTreeBoosts, k)
+                        .stream().filter(name -> name.split(" ").length>1)
+                        .collect(Collectors.toList());
+                System.out.println("top ngram features for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
+                System.out.println(featureNames);
+
             }
         }
     }

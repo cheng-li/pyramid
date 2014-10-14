@@ -1,16 +1,19 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * imlgb
@@ -105,9 +108,9 @@ public class Exp14 {
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
             boosting.boostOneRound();
-            System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
-                    dataSet));
-            System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
+//            System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
+//                    dataSet));
+//            System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
         }
         File serializedModel =  new File(archive,modelName);
 
@@ -135,6 +138,26 @@ public class Exp14 {
 //            System.out.println("predictions:");
 //            System.out.println(prediction.get(i));
 //        }
+        if (config.getBoolean("verify.topFeatures")){
+            LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+            for (int k=0;k<dataSet.getNumClasses();k++) {
+                List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k);
+                System.out.println("top features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                System.out.println(featureNames);
+            }
+        }
+
+        if (config.getBoolean("verify.topNgramsFeatures")){
+            LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+            for (int k=0;k<dataSet.getNumClasses();k++) {
+                List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k)
+                        .stream().filter(name -> name.split(" ").length>1)
+                        .collect(Collectors.toList());
+                System.out.println("top ngram features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                System.out.println(featureNames);
+            }
+        }
+
     }
 
     static void test(Config config) throws Exception{
