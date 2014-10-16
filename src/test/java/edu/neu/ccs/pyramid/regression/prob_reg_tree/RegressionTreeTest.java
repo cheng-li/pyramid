@@ -1,10 +1,7 @@
-package edu.neu.ccs.pyramid.regression.m_regression_tree;
+package edu.neu.ccs.pyramid.regression.prob_reg_tree;
 
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-
-
-import static org.junit.Assert.*;
 
 public class RegressionTreeTest {
 

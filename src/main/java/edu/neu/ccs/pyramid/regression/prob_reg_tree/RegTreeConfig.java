@@ -1,8 +1,4 @@
-package edu.neu.ccs.pyramid.regression.m_regression_tree;
-
-import edu.neu.ccs.pyramid.dataset.DataSet;
-
-import java.util.concurrent.ExecutorService;
+package edu.neu.ccs.pyramid.regression.prob_reg_tree;
 
 /**
  * Created by chengli on 8/5/14.

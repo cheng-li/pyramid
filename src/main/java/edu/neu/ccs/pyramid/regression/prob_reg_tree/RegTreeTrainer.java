@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.regression.m_regression_tree;
+package edu.neu.ccs.pyramid.regression.prob_reg_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
