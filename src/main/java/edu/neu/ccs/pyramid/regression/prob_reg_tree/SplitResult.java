@@ -7,8 +7,8 @@ class SplitResult {
     private int featureIndex;
     private double threshold;
     private double reduction;
-    private int leftCount;
-    private int rightCount;
+    private double leftCount;
+    private double rightCount;
 
     SplitResult() {
     }
@@ -30,20 +30,20 @@ class SplitResult {
         return this;
     }
 
-    int getLeftCount() {
+    double getLeftCount() {
         return leftCount;
     }
 
-    SplitResult setLeftCount(int leftCount) {
+    SplitResult setLeftCount(double leftCount) {
         this.leftCount = leftCount;
         return this;
     }
 
-    int getRightCount() {
+    double getRightCount() {
         return rightCount;
     }
 
-    SplitResult setRightCount(int rightCount) {
+    SplitResult setRightCount(double rightCount) {
         this.rightCount = rightCount;
         return this;
     }

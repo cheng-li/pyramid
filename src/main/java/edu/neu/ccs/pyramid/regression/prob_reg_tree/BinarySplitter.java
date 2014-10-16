@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.regression.prob_reg_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.util.MathUtil;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -14,8 +16,9 @@ public class BinarySplitter {
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
-                                       int[] dataAppearance,
+                                       double[] probs,
                                        int featureIndex){
+        int numDataPoints = dataSet.getNumDataPoints();
         Vector featureValues;
         Vector inputVector = dataSet.getFeatureColumn(featureIndex).getVector();
         if (inputVector.isDense()){
@@ -23,52 +26,79 @@ public class BinarySplitter {
         } else {
             featureValues = new DenseVector(inputVector);
         }
-        int numDataPoints = dataAppearance.length;
-        double[] partialLabels = new double[numDataPoints];
-        double[] partialFeatures = new double[numDataPoints];
-        int pos = 0;
-        for (int dataIndex: dataAppearance){
-            partialFeatures[pos] = featureValues.get(dataIndex);
-            partialLabels[pos] = labels[dataIndex];
-            pos += 1;
-        }
-        return splitPartial(regTreeConfig,partialFeatures,partialLabels,featureIndex);
-    }
 
-    private static Optional<SplitResult> splitPartial(RegTreeConfig regTreeConfig,
-                                     double[] featureValues,
-                                     double[] labels,
-                                     int featureIndex){
-        int numZeros = 0;
-        int numOnes = 0;
-        double zeroLabelSum = 0;
-        double oneLabelSum = 0;
-        for (int i=0;i<featureValues.length;i++){
-            double featureValue = featureValues[i];
-            double label = labels[i];
+        double parentSSE = ProbabilisticSSE.sse(labels,probs);
+
+        //probabilistic counts
+        double leftCountExisting = 0;
+        double rightCountExisting = 0;
+        for (int i=0;i<numDataPoints;i++){
+            double featureValue = featureValues.get(i);
             if (featureValue==0){
-                numZeros += 1;
-                zeroLabelSum += label;
-            } else {
-                numOnes += 1;
-                oneLabelSum += label;
+                leftCountExisting += probs[i];
             }
+
+            if (featureValue==1){
+                rightCountExisting += probs[i];
+            }
+
+            //ignore NaN
         }
-        double totalLabelSum = zeroLabelSum + oneLabelSum;
-        double reduction = (zeroLabelSum * zeroLabelSum / numZeros) +
-                (oneLabelSum * oneLabelSum / numOnes) -
-                (totalLabelSum * totalLabelSum / featureValues.length);
-        SplitResult splitResult = new SplitResult();
-        splitResult.setFeatureIndex(featureIndex)
-                .setThreshold(0).setReduction(reduction)
-                .setLeftCount(numZeros).setRightCount(numOnes);
-        int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
-        boolean valid = (numOnes >= minDataPerLeaf)&&(numZeros >= minDataPerLeaf);
-        if (valid){
-            return Optional.of(splitResult);
-        } else {
+
+        double sumOfCounts = leftCountExisting + rightCountExisting;
+
+        // all values are missing
+        if (sumOfCounts==0){
             return Optional.empty();
         }
 
+        // the prior probability of going left, decided based on all existing values
+        double leftPriorProb = leftCountExisting/sumOfCounts;
+        // the prior probability of going right, decided based on all existing values
+        double rightPriorProb = rightCountExisting/sumOfCounts;
+
+        double[] leftProbs = new double[numDataPoints];
+        double[] rightProbs = new double[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            double label = labels[i];
+            // for missing values, just use prior probabilities
+            if (Double.isNaN(label)){
+                leftProbs[i] = probs[i]*leftPriorProb;
+                rightProbs[i] = probs[i]*rightPriorProb;
+            }
+
+            // for existing values, the partition is deterministic
+            // we only need to keep the parent probability
+            if (label==0){
+                leftProbs[i] = probs[i];
+                rightProbs[i] = 0;
+            }
+
+            if (label==1){
+                leftProbs[i] = 0;
+                rightProbs[i] = probs[i];
+            }
+        }
+
+        //probabilistic count, including missing values
+        double totalLeftCount = MathUtil.arraySum(leftProbs);
+        double totalRightCount = MathUtil.arraySum(rightProbs);
+        int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
+        boolean valid = (totalLeftCount>=minDataPerLeaf)&&(totalRightCount>=minDataPerLeaf);
+        if (!valid){
+            // no need to calculate reduction
+            return Optional.empty();
+        }
+
+        double leftSSE = ProbabilisticSSE.sse(labels,leftProbs);
+        double rightSSE = ProbabilisticSSE.sse(labels,rightProbs);
+        double reduction = parentSSE - leftSSE - rightSSE;
+        SplitResult splitResult = new SplitResult();
+        splitResult.setFeatureIndex(featureIndex)
+                .setThreshold(0).setReduction(reduction)
+                .setLeftCount(totalLeftCount).setRightCount(totalRightCount);
+        return Optional.of(splitResult);
     }
+
+
 }
