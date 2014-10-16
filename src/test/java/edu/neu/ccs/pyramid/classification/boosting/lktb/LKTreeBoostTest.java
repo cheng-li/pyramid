@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.eval.*;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 public class LKTreeBoostTest {
     private static final Config config = new Config("configs/local.config");
@@ -123,6 +125,22 @@ public class LKTreeBoostTest {
         System.out.println(new MacroAveragedMeasures(confusionMatrix));
 //        System.out.println(lkTreeBoost);
 
+
+        int[] labels = dataSet.getLabels();
+        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            int numMatches = 0;
+            double sumProbs = 0;
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                if (labels[i]==k){
+                    numMatches += 1;
+                }
+                sumProbs += classProbs.get(i)[k];
+            }
+            System.out.println("for class "+k);
+            System.out.println("number of matches ="+numMatches);
+            System.out.println("sum of probs = "+sumProbs);
+        }
     }
 
     static void spam_build() throws Exception{
@@ -153,6 +171,23 @@ public class LKTreeBoostTest {
 
         double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println("accuracy="+accuracy);
+
+        int[] labels = dataSet.getLabels();
+        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            int numMatches = 0;
+            double sumProbs = 0;
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                if (labels[i]==k){
+                    numMatches += 1;
+                }
+                sumProbs += classProbs.get(i)[k];
+            }
+            System.out.println("for class "+k);
+            System.out.println("number of matches ="+numMatches);
+            System.out.println("sum of probs = "+sumProbs);
+        }
+
 
 
         lkTreeBoost.serialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));

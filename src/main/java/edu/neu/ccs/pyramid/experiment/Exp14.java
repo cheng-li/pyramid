@@ -130,14 +130,16 @@ public class Exp14 {
         System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
         System.out.println("macro-averaged measure on training set:");
         System.out.println(new MacroAveragedMeasures(boosting,dataSet));
-//        List<MultiLabel> prediction = boosting.predict(dataSet);
-//        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            System.out.println(""+i);
-//            System.out.println("true labels:");
-//            System.out.println(dataSet.getMultiLabels()[i]);
-//            System.out.println("predictions:");
-//            System.out.println(prediction.get(i));
-//        }
+        if (config.getBoolean("verify.showPredictions")){
+            List<MultiLabel> prediction = boosting.predict(dataSet);
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                System.out.println(""+i);
+                System.out.println("true labels:");
+                System.out.println(dataSet.getMultiLabels()[i]);
+                System.out.println("predictions:");
+                System.out.println(prediction.get(i));
+            }
+        }
         if (config.getBoolean("verify.topFeatures")){
             LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
             for (int k=0;k<dataSet.getNumClasses();k++) {
@@ -170,13 +172,16 @@ public class Exp14 {
         System.out.println("overlap on test set = "+ Overlap.overlap(boosting,dataSet));
         System.out.println("macro-averaged measure on test set:");
         System.out.println(new MacroAveragedMeasures(boosting,dataSet));
-//        List<MultiLabel> prediction = boosting.predict(dataSet);
-//        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            System.out.println(""+i);
-//            System.out.println("true labels:");
-//            System.out.println(dataSet.getMultiLabels()[i]);
-//            System.out.println("predictions:");
-//            System.out.println(prediction.get(i));
-//        }
+        if (config.getBoolean("test.showPredictions")){
+            List<MultiLabel> prediction = boosting.predict(dataSet);
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                System.out.println(""+i);
+                System.out.println("true labels:");
+                System.out.println(dataSet.getMultiLabels()[i]);
+                System.out.println("predictions:");
+                System.out.println(prediction.get(i));
+            }
+        }
+
     }
 }

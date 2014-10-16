@@ -1,9 +1,12 @@
 package edu.neu.ccs.pyramid.classification;
 
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -11,6 +14,12 @@ import java.util.stream.IntStream;
  */
 public interface ProbabilityEstimator extends Classifier{
     double[] predictClassProbs(FeatureRow featureRow);
+
+    default List<double[]> predictClassProbs(DataSet dataSet){
+        return IntStream.range(0,dataSet.getNumDataPoints())
+                .parallel().mapToObj(i -> predictClassProbs(dataSet.getFeatureRow(i)))
+                .collect(Collectors.toList());
+    }
 
     /**
      * by default, probabilities can be used for classification.
