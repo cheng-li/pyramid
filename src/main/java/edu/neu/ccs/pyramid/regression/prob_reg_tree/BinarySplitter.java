@@ -6,6 +6,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -27,6 +28,7 @@ public class BinarySplitter {
             featureValues = new DenseVector(inputVector);
         }
 
+        System.out.println(featureValues);
         double parentSSE = ProbabilisticSSE.sse(labels,probs);
 
         //probabilistic counts
@@ -59,26 +61,32 @@ public class BinarySplitter {
 
         double[] leftProbs = new double[numDataPoints];
         double[] rightProbs = new double[numDataPoints];
+
         for (int i=0;i<numDataPoints;i++){
-            double label = labels[i];
+            double featureValue = featureValues.get(i);
             // for missing values, just use prior probabilities
-            if (Double.isNaN(label)){
+            if (Double.isNaN(featureValue)){
                 leftProbs[i] = probs[i]*leftPriorProb;
                 rightProbs[i] = probs[i]*rightPriorProb;
             }
 
             // for existing values, the partition is deterministic
             // we only need to keep the parent probability
-            if (label==0){
+            if (featureValue==0){
                 leftProbs[i] = probs[i];
                 rightProbs[i] = 0;
             }
 
-            if (label==1){
+            if (featureValue==1){
                 leftProbs[i] = 0;
                 rightProbs[i] = probs[i];
             }
         }
+
+        System.out.println("left probs:");
+        System.out.println(Arrays.toString(leftProbs));
+        System.out.println("right probs:");
+        System.out.println(Arrays.toString(rightProbs));
 
         //probabilistic count, including missing values
         double totalLeftCount = MathUtil.arraySum(leftProbs);
