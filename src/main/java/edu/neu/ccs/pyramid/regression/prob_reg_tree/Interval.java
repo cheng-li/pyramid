@@ -6,8 +6,22 @@ package edu.neu.ccs.pyramid.regression.prob_reg_tree;
 class Interval {
     private double lower;
     private double upper;
-    private int count=0;
-    private double sum=0;
+    // probabilistic probabilisticCount
+    private double probabilisticCount =0;
+    // sum of labels weighted by probabilities
+    private double weightedSum = 0;
+
+    // the percentage of probability mass in this interval among total
+    // probability mass at the ode
+    private double percentage;
+
+    public double getWeightedSum() {
+        return weightedSum;
+    }
+
+    public void setWeightedSum(double weightedSum) {
+        this.weightedSum = weightedSum;
+    }
 
     public double getLower() {
         return lower;
@@ -25,21 +39,20 @@ class Interval {
         this.upper = upper;
     }
 
-    public int getCount() {
-        return count;
+    public double getProbabilisticCount() {
+        return probabilisticCount;
     }
 
-    public double getSum() {
-        return sum;
+    public void setProbabilisticCount(double probabilisticCount) {
+        this.probabilisticCount = probabilisticCount;
     }
 
-
-    void incrementSum(double amount){
-        this.sum += amount;
+    public double getPercentage() {
+        return percentage;
     }
 
-    void incrementCount(){
-        this.count += 1;
+    public void setPercentage(double percentage) {
+        this.percentage = percentage;
     }
 
     @Override
@@ -47,8 +60,7 @@ class Interval {
         return "Interval{" +
                 "lower=" + lower +
                 ", upper=" + upper +
-                ", count=" + count +
-                ", sum=" + sum +
+                ", probabilisticCount=" + probabilisticCount +
                 '}';
     }
 }

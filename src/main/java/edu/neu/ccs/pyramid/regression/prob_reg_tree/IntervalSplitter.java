@@ -45,18 +45,26 @@ class IntervalSplitter {
 
     private static List<Interval> generateIntervals(RegTreeConfig regTreeConfig,
                                                     double[] featureValues,
+                                                    double[] probs,
                                                     double[] labels){
         int numDataPoints = featureValues.length;
         int numIntervals = regTreeConfig.getNumSplitIntervals();
         // find min and max
-        double maxFeature = featureValues[0];
-        double minFeature = featureValues[0];
-        for (double featureValue: featureValues){
-            if (featureValue > maxFeature){
-                maxFeature = featureValue;
-            }
-            if (featureValue < minFeature){
-                minFeature = featureValue;
+        // we cannot start with featureValues[0] as it may be NaN
+        double maxFeature = Double.NEGATIVE_INFINITY;
+        double minFeature = Double.POSITIVE_INFINITY;
+        for (int i=0;i<numDataPoints;i++){
+            double featureValue = featureValues[i];
+            // only estimate min and max with actually present values
+            // as the tree grows, we want to focus on smaller regions
+            // if we don't impose probs[i]!=0, we will always use the global min and max
+            if (!Double.isNaN(featureValue) && probs[i]!=0){
+                if (featureValue > maxFeature){
+                    maxFeature = featureValue;
+                }
+                if (featureValue < minFeature){
+                    minFeature = featureValue;
+                }
             }
         }
 
@@ -70,25 +78,62 @@ class IntervalSplitter {
             interval.setUpper(upper);
             intervals.add(interval);
         }
+
+        // first scan, only deal with existing values,
+        // assign each existing value to one interval deterministically
+        // conditional probability = 1 for matched interval and 0 for other intervals
+        double numExisting = 0;
         for (int i=0;i<numDataPoints;i++){
             double featureValue = featureValues[i];
             double label = labels[i];
+            // if probs[i]==0, its feature value may be bigger than max or smaller than min,
+            // so we should skip it
+            if (!Double.isNaN(featureValue) && probs[i]!=0){
+                numExisting += probs[i];
+                int ceil = (int)Math.ceil((featureValue-minFeature)/intervalLength);
+                //this should not happen in theory
+                //add this to handle round error
+                if (ceil>numIntervals){
+                    ceil=numIntervals;
+                }
+                int intervalIndex;
+                if (ceil==0){
+                    intervalIndex = 0;
+                } else {
+                    intervalIndex = ceil-1;
+                }
+                Interval interval = intervals.get(intervalIndex);
+                // conditional probability = 1 for matched interval
+                double probability = probs[i];
+                double oldCount = interval.getProbabilisticCount();
+                interval.setProbabilisticCount(oldCount + probability);
+                double oldSum = interval.getWeightedSum();
+                interval.setWeightedSum(oldSum + label*probability);
+            }
+        }
 
-            int ceil = (int)Math.ceil((featureValue-minFeature)/intervalLength);
-            //this should not happen in theory
-            //add this to handle round error
-            if (ceil>numIntervals){
-                ceil=numIntervals;
+        // estimate percentage for each interval
+        for (Interval interval: intervals){
+            interval.setPercentage(interval.getProbabilisticCount()/numExisting);
+        }
+
+
+        // second scan, only deal with missing values
+        // assign missing values to every interval probabilistically
+        // follow estimated percentages
+        // conditional probability = percentage
+        for (int i=0;i<numDataPoints;i++){
+            double featureValue = featureValues[i];
+            double label = labels[i];
+            if (Double.isNaN(featureValue)){
+                for (Interval interval: intervals){
+                    double probability = probs[i] * interval.getPercentage();
+                    double oldCount = interval.getProbabilisticCount();
+                    interval.setProbabilisticCount(oldCount + probability);
+                    double oldSum = interval.getWeightedSum();
+                    interval.setWeightedSum(oldSum + label*probability);
+                }
             }
-            int intervalIndex;
-            if (ceil==0){
-                intervalIndex = 0;
-            } else {
-                intervalIndex = ceil-1;
-            }
-            Interval interval = intervals.get(intervalIndex);
-            interval.incrementCount();
-            interval.incrementSum(label);
         }
 
         return intervals;
@@ -106,7 +151,7 @@ class IntervalSplitter {
         int end = 0;
 
         for (int i=0;i<intervals.size();i++){
-            if (intervals.get(i).getCount()==0){
+            if (intervals.get(i).getProbabilisticCount()==0){
                 // enter block
                 if (!inBlock){
                     inBlock=true;
@@ -131,7 +176,7 @@ class IntervalSplitter {
         }
         List<Interval> compressed = new ArrayList<>(intervals.size());
         for (Interval interval: intervals){
-            if (interval.getCount()!=0){
+            if (interval.getProbabilisticCount()!=0){
                 compressed.add(interval);
             }
         }
@@ -150,7 +195,7 @@ class IntervalSplitter {
         int leftCount = 0;
         for (int i=0;i<=intervals.size()-2;i++) {
             Interval interval = intervals.get(i);
-            leftCount += interval.getCount();
+            leftCount += interval.getProbabilisticCount();
             leftSum += interval.getSum();
             double rightSum = labelSum - leftSum;
             int rightCount = numDataPoints - leftCount;
@@ -188,7 +233,7 @@ class IntervalSplitter {
 //        boolean existValid = false;
 //        for (int i=0;i<=intervals.size()-2;i++){
 //            Interval interval = intervals.get(i);
-//            leftCount += interval.getCount();
+//            leftCount += interval.getProbabilisticCount();
 //            leftSum += interval.getSum();
 //            double rightSum = labelSum - leftSum;
 //            int rightCount = numDataPoints - leftCount;
