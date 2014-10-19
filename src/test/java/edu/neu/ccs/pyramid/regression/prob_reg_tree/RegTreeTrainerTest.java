@@ -1,35 +1,18 @@
-package edu.neu.ccs.pyramid.regression.regression_tree;
+package edu.neu.ccs.pyramid.regression.prob_reg_tree;
 
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.dataset.FeatureType;
 import org.apache.commons.lang3.time.StopWatch;
 
-import java.util.Comparator;
-import java.util.PriorityQueue;
 import java.util.stream.IntStream;
 
-public class RegTreeTrainerTest {
+import static org.junit.Assert.*;
 
+public class RegTreeTrainerTest {
     public static void main(String[] args) throws Exception{
         test5();
     }
 
-    static void test1(){
-        PriorityQueue<Node> leaves = new PriorityQueue<>(Comparator.comparing(Node::getReduction).reversed());
-        leaves.add(new Node().setReduction(8));
-        leaves.add(new Node().setReduction(1));
-        leaves.add(new Node().setReduction(3));
-        leaves.add(new Node().setReduction(2));
-        leaves.add(new Node().setReduction(4));
-        leaves.add(new Node().setReduction(5));
-        leaves.add(new Node().setReduction(1.7));
-        System.out.println(leaves.poll().getReduction());
-        System.out.println(leaves.poll().getReduction());
-        System.out.println(leaves.poll().getReduction());
-        System.out.println(leaves.poll().getReduction());
-
-    }
 
     /**
      * slice location data, dense
@@ -50,7 +33,7 @@ public class RegTreeTrainerTest {
         double[] labels = dataSet.getLabels();
 
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
-        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
+        int[] activeDataPoints = IntStream.range(0, dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         regTreeConfig.setActiveFeatures(activeFeatures);
 
@@ -120,7 +103,7 @@ public class RegTreeTrainerTest {
         int numLeaves = 4;
 
         RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
-                "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.RANK_SPARSE);
+                "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_SPARSE);
         System.out.println(dataSet.isDense());
         for (int i=0;i<dataSet.getNumFeatures();i++){
             dataSet.getFeatureColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
@@ -162,13 +145,13 @@ public class RegTreeTrainerTest {
         RegDataSet dataSet = new SparseRegDataSet(50000,5000);
         IntStream.range(0,dataSet.getNumDataPoints())
                 .forEach(i-> IntStream.range(0,dataSet.getNumFeatures())
-                .forEach(j-> {
-                    boolean set = Math.random()<0.01;
-                    if (set){
-                        dataSet.setFeatureValue(i,j,Math.random());
-                    }
-                    dataSet.setLabel(i,Math.random());
-                }));
+                        .forEach(j-> {
+                            boolean set = Math.random()<0.01;
+                            if (set){
+                                dataSet.setFeatureValue(i,j,Math.random());
+                            }
+                            dataSet.setLabel(i,Math.random());
+                        }));
         System.out.println("created");
 
 
