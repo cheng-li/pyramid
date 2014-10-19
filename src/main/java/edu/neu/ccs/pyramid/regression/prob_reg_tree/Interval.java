@@ -61,6 +61,8 @@ class Interval {
                 "lower=" + lower +
                 ", upper=" + upper +
                 ", probabilisticCount=" + probabilisticCount +
+                ", weightedSum=" + weightedSum +
+                ", percentage=" + percentage +
                 '}';
     }
 }

@@ -32,7 +32,7 @@ class IntervalSplitter {
         return findBest(regTreeConfig,compressedIntervals,featureIndex);
     }
 
-    private static List<Interval> generateIntervals(RegTreeConfig regTreeConfig,
+    static List<Interval> generateIntervals(RegTreeConfig regTreeConfig,
                                                     Vector featureValues,
                                                     double[] probs,
                                                     double[] labels){
@@ -42,14 +42,16 @@ class IntervalSplitter {
         // we cannot start with featureValues[0] as it may be NaN
         double maxFeature = Double.NEGATIVE_INFINITY;
         double minFeature = Double.POSITIVE_INFINITY;
-        double numExisting = 0;
+        double existingProbCount = 0;
+        int existingBinaryCount = 0;
         for (int i=0;i<numDataPoints;i++){
             double featureValue = featureValues.get(i);
             // only estimate min and max with actually present values
             // as the tree grows, we want to focus on smaller regions
             // if we don't impose probs[i]!=0, we will always use the global min and max
             if (!Double.isNaN(featureValue) && probs[i]!=0){
-                numExisting += probs[i];
+                existingProbCount += probs[i];
+                existingBinaryCount += 1;
                 if (featureValue > maxFeature){
                     maxFeature = featureValue;
                 }
@@ -62,7 +64,7 @@ class IntervalSplitter {
         List<Interval> intervals = new ArrayList<>(numIntervals);
 
         // if there is no more than 2 existing values, return empty intervals
-        if (numExisting < 2){
+        if (existingBinaryCount < 2){
             return intervals;
         }
 
@@ -111,7 +113,7 @@ class IntervalSplitter {
 
         // estimate percentage for each interval
         for (Interval interval: intervals){
-            interval.setPercentage(interval.getProbabilisticCount()/numExisting);
+            interval.setPercentage(interval.getProbabilisticCount()/existingProbCount);
         }
 
 
@@ -141,7 +143,7 @@ class IntervalSplitter {
      * @param intervals
      * @return
      */
-    private static List<Interval> compress(List<Interval> intervals){
+    static List<Interval> compress(List<Interval> intervals){
         //whether we are in a zero block
         boolean inBlock = false;
         int start = 0;
