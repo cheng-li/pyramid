@@ -14,8 +14,13 @@ public class AverageOutputCalculator implements LeafOutputCalculator{
     }
 
     @Override
-    public double getLeafOutput(int[] dataAppearance) {
-        return Arrays.stream(dataAppearance).mapToDouble(i -> this.labels[i])
-                .average().getAsDouble();
+    public double getLeafOutput(double[] probabilities) {
+        double sum = 0;
+        double count = 0;
+        for (int i=0;i<probabilities.length;i++){
+            sum += labels[i]*probabilities[i];
+            count += probabilities[i];
+        }
+        return sum/count;
     }
 }

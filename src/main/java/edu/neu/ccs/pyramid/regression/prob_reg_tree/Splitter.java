@@ -15,17 +15,17 @@ class Splitter {
     /**
      *
      * @param regTreeConfig
-     * @param dataAppearance
+     * @param probs
      * @return best valid splitResult, possibly nothing
      */
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
-                                       int[] dataAppearance){
+                                       double[] probs){
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
         return Arrays.stream(activeFeatures).parallel()
                 .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
-                        dataAppearance,featureIndex))
+                        probs,featureIndex))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
@@ -34,7 +34,7 @@ class Splitter {
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
-                                       int[] dataAppearance,
+                                       double[] probs,
                                        int featureIndex){
         Optional<SplitResult> splitResult;
         FeatureType featureType = dataSet
@@ -42,10 +42,10 @@ class Splitter {
                 .getFeatureType();
         if (featureType==FeatureType.NUMERICAL){
             splitResult = IntervalSplitter.split(regTreeConfig,dataSet,labels,
-                    dataAppearance,featureIndex);
+                    probs,featureIndex);
         } else if(featureType==FeatureType.BINARY){
             splitResult = BinarySplitter.split(regTreeConfig,dataSet,labels,
-                    dataAppearance,featureIndex);
+                    probs,featureIndex);
         } else{
             throw new IllegalArgumentException("unsupported feature type");
         }

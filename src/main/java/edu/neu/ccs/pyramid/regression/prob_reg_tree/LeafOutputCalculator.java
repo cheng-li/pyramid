@@ -10,7 +10,8 @@ public interface LeafOutputCalculator {
      * for example, using a newton step/ shrinkage rate
      * sometimes, we want to change the sign of output, depending on
      * whether we maximize or minimize something
+     * @param probabilities: the probability of each data point at the leaf node
      * @return output of the leaf node
      */
-    double getLeafOutput(int[] dataAppearance);
+    double getLeafOutput(double[] probabilities);
 }

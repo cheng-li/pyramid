@@ -33,7 +33,11 @@ public class RegTreeTrainer {
         tree.leaves = new ArrayList<>();
         tree.root = new Node();
         //root gets all active data points
-        tree.root.setDataAppearance(regTreeConfig.getActiveDataPoints());
+        double[] rootProbs = new double[dataSet.getNumDataPoints()];
+        for (int dataPoint: regTreeConfig.getActiveDataPoints()){
+            rootProbs[dataPoint]=1;
+        }
+        tree.root.setProbs(rootProbs);
         //parallel
         updateNode(tree.root, regTreeConfig,dataSet,labels);
         tree.leaves.add(tree.root);
@@ -83,7 +87,7 @@ public class RegTreeTrainer {
     private static void splitNode(Node leafToSplit, RegTreeConfig regTreeConfig,
                                   DataSet dataSet, double[] labels,
                                   List<Node> leaves) {
-
+        int numDataPoints = dataSet.getNumDataPoints();
 
         /**
          * split this leaf node
@@ -102,19 +106,31 @@ public class RegTreeTrainer {
          */
         Node leftChild = new Node();
         Node rightChild = new Node();
-        int[] parentDataAppearance = leafToSplit.getDataAppearance();
 
-        //update data appearance in children
-        //<= go left, > go right
+        double[] parentProbs = leafToSplit.getProbs();
+        double[] leftProbs = new double[numDataPoints];
+        double[] rightProbs = new double[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            double featureValue = columnVector.get(i);
+            if (Double.isNaN(featureValue)){
+                // go to both branches probabilistically
+                leftProbs[i] = parentProbs[i]*leafToSplit.getLeftProb();
+                rightProbs[i] = parentProbs[i]*leafToSplit.getRightProb();
+            } else {
+                //<= go left, > go right
+                if (featureValue<=threshold){
+                    leftProbs[i] = parentProbs[i];
+                    rightProbs[i] = 0;
+                } else {
+                    leftProbs[i] = 0;
+                    rightProbs[i] = parentProbs[i];
+                }
+            }
+        }
 
+        leftChild.setProbs(leftProbs);
+        rightChild.setProbs(rightProbs);
 
-        int[] leftDataAppearance = Arrays.stream(parentDataAppearance).parallel()
-                .filter(i -> columnVector.get(i) <= threshold).toArray();
-        int[] rightDataAppearance = Arrays.stream(parentDataAppearance).parallel()
-                .filter(i -> columnVector.get(i) > threshold).toArray();
-
-        leftChild.setDataAppearance(leftDataAppearance);
-        rightChild.setDataAppearance(rightDataAppearance);
 
         //the last two leaves need not to be updated completely
         //as we don't need to split them later
@@ -135,7 +151,7 @@ public class RegTreeTrainer {
          * update leaves, remove the parent, and add children
          */
         leafToSplit.setLeaf(false);
-        leafToSplit.clearDataAppearance();
+        leafToSplit.clearProbs();
         leaves.remove(leafToSplit);
         leftChild.setLeaf(true);
         rightChild.setLeaf(true);
@@ -145,7 +161,7 @@ public class RegTreeTrainer {
 
     /**
      * parallel
-     * given dataAppearance, fill other information
+     * given probs, fill other information
      * @param node
      */
     private static void updateNode(Node node,
@@ -153,7 +169,7 @@ public class RegTreeTrainer {
                                    DataSet dataSet,
                                    double[] labels) {
         Optional<SplitResult> splitResultOptional = Splitter.split(regTreeConfig,
-                dataSet,labels,node.getDataAppearance());
+                dataSet,labels,node.getProbs());
         if (splitResultOptional.isPresent()){
             SplitResult splitResult = splitResultOptional.get();
             node.setFeatureIndex(splitResult.getFeatureIndex());
@@ -161,6 +177,11 @@ public class RegTreeTrainer {
             .getSetting().getFeatureName());
             node.setThreshold(splitResult.getThreshold());
             node.setReduction(splitResult.getReduction());
+            double leftCount = splitResult.getLeftCount();
+            double rightCount = splitResult.getRightCount();
+            double totalCount = leftCount + rightCount;
+            node.setLeftProb(leftCount/totalCount);
+            node.setRightProb(rightCount/totalCount);
             node.setSplitable(true);
         } else{
             node.setSplitable(false);
@@ -169,7 +190,7 @@ public class RegTreeTrainer {
 
     private static void cleanLeaves(List<Node> leaves){
         for (Node leaf: leaves){
-            leaf.clearDataAppearance();
+            leaf.clearProbs();
         }
     }
 
@@ -183,8 +204,8 @@ public class RegTreeTrainer {
     }
 
     private static void setLeafOutput(Node leaf, LeafOutputCalculator calculator){
-        int[] dataAppearance = leaf.getDataAppearance();
-        double output = calculator.getLeafOutput(dataAppearance);
+        double[] probs = leaf.getProbs();
+        double output = calculator.getLeafOutput(probs);
         leaf.setValue(output);
     }
 

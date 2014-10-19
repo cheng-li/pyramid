@@ -40,12 +40,7 @@ public class Node implements Serializable {
     private double rightProb;
     private String featureName = "unknown";
 
-    /**
-     * stores the indices of the data points on this node
-     * just for training
-     * will be cleaned later
-     */
-    private transient int[] dataAppearance;
+    private double[] probs;
 
     boolean isSplitable() {
         return splitable;
@@ -98,12 +93,12 @@ public class Node implements Serializable {
         return this;
     }
 
-    int[] getDataAppearance() {
-        return dataAppearance;
+    double[] getProbs() {
+        return probs;
     }
 
-    Node setDataAppearance(int[] dataAppearance) {
-        this.dataAppearance = dataAppearance;
+    Node setProbs(double[] probs) {
+        this.probs = probs;
         return this;
     }
 
@@ -152,8 +147,8 @@ public class Node implements Serializable {
     /**
      * after split, free memory
      */
-    void clearDataAppearance(){
-        this.dataAppearance=null;
+    void clearProbs(){
+        this.probs=null;
     }
 
     double getLeftProb() {
