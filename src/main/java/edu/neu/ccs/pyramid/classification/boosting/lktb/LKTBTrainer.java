@@ -193,13 +193,13 @@ class LKTBTrainer {
         int numClasses = this.lktbConfig.getNumClasses();
         double learningRate = this.lktbConfig.getLearningRate();
 
-        LeafOutputCalculator leafOutputCalculator = dataAppearance -> {
+        LeafOutputCalculator leafOutputCalculator = probabilities -> {
             double nominator = 0;
             double denominator = 0;
-            for (int dataIndex : dataAppearance) {
-                double label = pseudoResponse[dataIndex];
-                nominator += label;
-                denominator += Math.abs(label) * (1 - Math.abs(label));
+            for (int i=0;i<probabilities.length;i++) {
+                double label = pseudoResponse[i];
+                nominator += label*probabilities[i];
+                denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
             }
             double out;
             if (denominator == 0) {

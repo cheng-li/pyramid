@@ -23,7 +23,7 @@ public class LKTreeBoostTest {
 //        spam_polluted_build();
 //        spam_polluted_load();
 //        spam_fake_build();
-
+//        spam_missing_test();
     }
 
     static void spam_resume_train() throws Exception{
@@ -339,6 +339,126 @@ public class LKTreeBoostTest {
         System.out.println(accuracy);
 
 //        LKTreeBoost.serialize(lkTreeBoost,new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
+    }
+
+
+    /**
+     * spam with missing values
+     * @throws Exception
+     */
+    static void spam_missing_test() throws Exception{
+        spam_missing_build();
+        spam_missing_load();
+    }
+    static void spam_missing_load() throws Exception{
+        System.out.println("loading ensemble");
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
+                DataSetType.CLF_DENSE,true);
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            for (int j=0;j<dataSet.getNumFeatures();j++){
+                if (Math.random()<0.5){
+                    dataSet.setFeatureValue(i,j,Double.NaN);
+                }
+            }
+        }
+        System.out.println("test data:");
+        System.out.println(dataSet.getMetaInfo());
+
+
+        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        System.out.println(accuracy);
+        System.out.println("auc = "+ AUC.auc(lkTreeBoost,dataSet));
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(2,lkTreeBoost,dataSet);
+        System.out.println("confusion matrix:");
+        System.out.println(confusionMatrix.printWithExtLabels());
+        System.out.println("top features for class 0");
+        System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
+        System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
+        System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
+
+        System.out.println(new PerClassMeasures(confusionMatrix,0));
+        System.out.println(new PerClassMeasures(confusionMatrix,1));
+        System.out.println("macor-averaged:");
+        System.out.println(new MacroAveragedMeasures(confusionMatrix));
+//        System.out.println(lkTreeBoost);
+
+
+        int[] labels = dataSet.getLabels();
+        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            int numMatches = 0;
+            double sumProbs = 0;
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                if (labels[i]==k){
+                    numMatches += 1;
+                }
+                sumProbs += classProbs.get(i)[k];
+            }
+            System.out.println("for class "+k);
+            System.out.println("number of matches ="+numMatches);
+            System.out.println("sum of probs = "+sumProbs);
+        }
+    }
+
+    static void spam_missing_build() throws Exception{
+
+
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
+                DataSetType.CLF_DENSE,true);
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            for (int j=0;j<dataSet.getNumFeatures();j++){
+                if (Math.random()<0.5){
+                    dataSet.setFeatureValue(i,j,Double.NaN);
+                }
+            }
+        }
+
+        System.out.println(dataSet.getMetaInfo());
+
+        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+
+        lkTreeBoost.setPriorProbs(dataSet);
+
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
+                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .dataSamplingRate(1).featureSamplingRate(1).build();
+        lkTreeBoost.setTrainConfig(trainConfig);
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int round =0;round<200;round++){
+            System.out.println("round="+round);
+            lkTreeBoost.boostOneRound();
+        }
+        stopWatch.stop();
+        System.out.println(stopWatch);
+
+
+        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        System.out.println("accuracy="+accuracy);
+
+        int[] labels = dataSet.getLabels();
+        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            int numMatches = 0;
+            double sumProbs = 0;
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                if (labels[i]==k){
+                    numMatches += 1;
+                }
+                sumProbs += classProbs.get(i)[k];
+            }
+            System.out.println("for class "+k);
+            System.out.println("number of matches ="+numMatches);
+            System.out.println("sum of probs = "+sumProbs);
+        }
+
+
+
+        lkTreeBoost.serialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
     }
 
 }
