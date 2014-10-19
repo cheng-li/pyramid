@@ -199,13 +199,13 @@ public class HMLGBTrainer {
         int numClasses = this.config.getDataSet().getNumClasses();
         double learningRate = this.config.getLearningRate();
 
-        LeafOutputCalculator leafOutputCalculator = dataAppearance -> {
+        LeafOutputCalculator leafOutputCalculator = probabilities -> {
             double nominator = 0;
             double denominator = 0;
-            for (int dataIndex : dataAppearance) {
-                double label = gradients[dataIndex];
-                nominator += label;
-                denominator += Math.abs(label) * (1 - Math.abs(label));
+            for (int i=0;i<probabilities.length;i++) {
+                double label = gradients[i];
+                nominator += label*probabilities[i];
+                denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
             }
             double out;
             if (denominator == 0) {
