@@ -14,6 +14,7 @@ import java.util.Optional;
  */
 public class BinarySplitter {
 
+    //todo optimize, there is no need to use SSE
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
