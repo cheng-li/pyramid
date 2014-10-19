@@ -13,10 +13,11 @@ import java.util.Optional;
  * Created by chengli on 8/6/14.
  */
 class IntervalSplitter {
+
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
-                                       int[] dataAppearance,
+                                       double[] probs,
                                        int featureIndex){
         Vector featureValues;
         Vector inputVector = dataSet.getFeatureColumn(featureIndex).getVector();
@@ -25,40 +26,30 @@ class IntervalSplitter {
         } else {
             featureValues = new DenseVector(inputVector);
         }
-        int numDataPoints = dataAppearance.length;
-        double[] partialLabels = new double[numDataPoints];
-        double[] partialFeatures = new double[numDataPoints];
-        int pos = 0;
-        double labelSum = 0;
-        for (int dataIndex: dataAppearance){
-            partialFeatures[pos] = featureValues.get(dataIndex);
-            double label = labels[dataIndex];
-            partialLabels[pos] = label;
-            labelSum += label;
-            pos += 1;
-        }
-        List<Interval> possibleIntervals = generateIntervals(regTreeConfig,partialFeatures,partialLabels);
+
+        List<Interval> possibleIntervals = generateIntervals(regTreeConfig,featureValues,probs,labels);
         List<Interval> compressedIntervals = compress(possibleIntervals);
-        return findBest(regTreeConfig,compressedIntervals,
-                labelSum,numDataPoints,featureIndex);
+        return findBest(regTreeConfig,compressedIntervals,featureIndex);
     }
 
     private static List<Interval> generateIntervals(RegTreeConfig regTreeConfig,
-                                                    double[] featureValues,
+                                                    Vector featureValues,
                                                     double[] probs,
                                                     double[] labels){
-        int numDataPoints = featureValues.length;
+        int numDataPoints = featureValues.size();
         int numIntervals = regTreeConfig.getNumSplitIntervals();
         // find min and max
         // we cannot start with featureValues[0] as it may be NaN
         double maxFeature = Double.NEGATIVE_INFINITY;
         double minFeature = Double.POSITIVE_INFINITY;
+        double numExisting = 0;
         for (int i=0;i<numDataPoints;i++){
-            double featureValue = featureValues[i];
+            double featureValue = featureValues.get(i);
             // only estimate min and max with actually present values
             // as the tree grows, we want to focus on smaller regions
             // if we don't impose probs[i]!=0, we will always use the global min and max
             if (!Double.isNaN(featureValue) && probs[i]!=0){
+                numExisting += probs[i];
                 if (featureValue > maxFeature){
                     maxFeature = featureValue;
                 }
@@ -68,8 +59,15 @@ class IntervalSplitter {
             }
         }
 
-        double intervalLength = (maxFeature-minFeature)/numIntervals;
         List<Interval> intervals = new ArrayList<>(numIntervals);
+
+        // if there is no more than 2 existing values, return empty intervals
+        if (numExisting < 2){
+            return intervals;
+        }
+
+        double intervalLength = (maxFeature-minFeature)/numIntervals;
+
         for (int i=0;i<numIntervals;i++){
             Interval interval = new Interval();
             double lower = minFeature + i*intervalLength;
@@ -82,14 +80,13 @@ class IntervalSplitter {
         // first scan, only deal with existing values,
         // assign each existing value to one interval deterministically
         // conditional probability = 1 for matched interval and 0 for other intervals
-        double numExisting = 0;
+
         for (int i=0;i<numDataPoints;i++){
-            double featureValue = featureValues[i];
+            double featureValue = featureValues.get(i);
             double label = labels[i];
             // if probs[i]==0, its feature value may be bigger than max or smaller than min,
             // so we should skip it
             if (!Double.isNaN(featureValue) && probs[i]!=0){
-                numExisting += probs[i];
                 int ceil = (int)Math.ceil((featureValue-minFeature)/intervalLength);
                 //this should not happen in theory
                 //add this to handle round error
@@ -123,7 +120,7 @@ class IntervalSplitter {
         // follow estimated percentages
         // conditional probability = percentage
         for (int i=0;i<numDataPoints;i++){
-            double featureValue = featureValues[i];
+            double featureValue = featureValues.get(i);
             double label = labels[i];
             if (Double.isNaN(featureValue)){
                 for (Interval interval: intervals){
@@ -185,23 +182,28 @@ class IntervalSplitter {
 
     private static Optional<SplitResult> findBest(RegTreeConfig regTreeConfig,
                                         List<Interval> intervals,
-                                        double labelSum,
-                                        int numDataPoints,
                                         int featureIndex){
         List<SplitResult> splitResults = new ArrayList<>(intervals.size());
         int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
+        double totalSum=0;
+        double totalCount=0;
+        for (Interval interval: intervals){
+            totalCount += interval.getProbabilisticCount();
+            totalSum += interval.getWeightedSum();
+        }
+
 
         double leftSum = 0;
-        int leftCount = 0;
+        double leftCount = 0;
         for (int i=0;i<=intervals.size()-2;i++) {
             Interval interval = intervals.get(i);
             leftCount += interval.getProbabilisticCount();
-            leftSum += interval.getSum();
-            double rightSum = labelSum - leftSum;
-            int rightCount = numDataPoints - leftCount;
+            leftSum += interval.getWeightedSum();
+            double rightSum = totalSum - leftSum;
+            double rightCount = totalCount - leftCount;
             double reduction = leftSum * leftSum / leftCount +
                     rightSum * rightSum / rightCount
-                    - labelSum * labelSum / numDataPoints;
+                    - totalSum * totalSum / totalCount;
             SplitResult splitResult = new SplitResult();
             splitResult.setFeatureIndex(featureIndex)
                     .setLeftCount(leftCount)
@@ -218,163 +220,4 @@ class IntervalSplitter {
 }
 
 
-//==========================    old implementations  =======================
-
-//    private static SplitResult findBest(RegTreeConfig regTreeConfig,
-//                                        List<Interval> intervals,
-//                                        double labelSum,
-//                                        int numDataPoints,
-//                                        int featureIndex){
-//        int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
-//        double maxlrNormalizedSquareSum = -1;
-//        double bestThreshold = 0;
-//        double leftSum = 0;
-//        int leftCount = 0;
-//        boolean existValid = false;
-//        for (int i=0;i<=intervals.size()-2;i++){
-//            Interval interval = intervals.get(i);
-//            leftCount += interval.getProbabilisticCount();
-//            leftSum += interval.getSum();
-//            double rightSum = labelSum - leftSum;
-//            int rightCount = numDataPoints - leftCount;
-//            boolean valid = (leftCount>=minDataPerLeaf)&&(rightCount>=minDataPerLeaf);
-//            if (valid){
-//                existValid = true;
-//                double lrNormalizedSquareSum = leftSum*leftSum/leftCount +
-//                        rightSum*rightSum/rightCount;
-//                boolean update = false;
-//                if(lrNormalizedSquareSum > maxlrNormalizedSquareSum){
-//                    update = true;
-//                } else if(lrNormalizedSquareSum == maxlrNormalizedSquareSum){
-//                    // for equally good threshold, we flip a coin
-//                    if (Math.random()<=0.5){
-//                        update = true;
-//                    }
-//                }
-//
-//                if (update){
-//                    maxlrNormalizedSquareSum = lrNormalizedSquareSum;
-//                    bestThreshold = interval.getUpper();
-//                }
-//            }
-//        }
-//        SplitResult splitResult;
-//        if (existValid){
-//            double reduction = maxlrNormalizedSquareSum - labelSum*labelSum/numDataPoints;
-//            splitResult = new SplitResult(featureIndex,bestThreshold,reduction);
-//        } else {
-//            splitResult = new SplitResult(featureIndex,0,0);
-//            splitResult.setValid(false);
-//        }
-//        return splitResult;
-//    }
-
-
-
-//    private static SplitResult splitPartial(RegTreeConfig regTreeConfig,
-//                                            double[] featureValues,
-//                                            double[] labels,
-//                                            int featureIndex){
-//        int numDataPoints = featureValues.length;
-//        int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
-//        int numIntervals = regTreeConfig.getNumSplitIntervals();
-//
-//        // find min and max
-//        double maxFeature = featureValues[0];
-//        double minFeature = featureValues[0];
-//        for (double featureValue: featureValues){
-//            if (featureValue > maxFeature){
-//                maxFeature = featureValue;
-//            }
-//            if (featureValue < minFeature){
-//                minFeature = featureValue;
-//            }
-//        }
-//
-//        //generate statistics
-//        double labelSum=0;
-//        double intervalLength = (maxFeature-minFeature)/numIntervals;
-//        //order: from small value to big value
-//        //counts and sum of labels in each interval
-//        int[] intervalCounts = new int[numIntervals];
-//        double[] intervalLabelSums = new double[numIntervals];
-//        for (int i=0;i<numDataPoints;i++){
-//            double featureValue = featureValues[i];
-//            double label = labels[i];
-//            labelSum += label;
-//            int ceil = (int)Math.ceil((featureValue-minFeature)/intervalLength);
-//            //this should not happen in theory
-//            //add this to handle round error
-//            if (ceil>numIntervals){
-//                ceil=numIntervals;
-//            }
-//            int intervalIndex;
-//            if (ceil==0){
-//                intervalIndex = 0;
-//            } else {
-//                intervalIndex = ceil-1;
-//            }
-//            intervalCounts[intervalIndex] += 1;
-//            intervalLabelSums[intervalIndex] += label;
-//        }
-////        System.out.println("threshods:");
-////        for (int i=1;i<=numIntervals-1;i++){
-////            System.out.println(minFeature+i*intervalLength);
-////        }
-////        System.out.println("label sum = "+labelSum);
-////        System.out.println("interval counts "+ Arrays.toString(intervalCounts));
-////        System.out.println("interval label sums "+Arrays.toString(intervalLabelSums));
-//
-//        //find best
-//        double maxlrNormalizedSquareSum = 0;
-//        double bestThreshold = 0;
-//        double bestStartThreshold = 0;
-//        double bestEndThreshold = 0;
-//        double leftSum = 0;
-//        int leftCount = 0;
-//        boolean existValid = false;
-//        for (int i=1;i<=numIntervals-1;i++){
-//            leftCount += intervalCounts[i-1];
-//            leftSum += intervalLabelSums[i-1];
-//            double rightSum = labelSum - leftSum;
-//            int rightCount = numDataPoints - leftCount;
-//            boolean valid = (leftCount>=minDataPerLeaf)&&(rightCount>=minDataPerLeaf);
-//            if (valid){
-//                existValid = true;
-//                double lrNormalizedSquareSum = leftSum*leftSum/leftCount +
-//                        rightSum*rightSum/rightCount;
-//                boolean update = false;
-//                if(lrNormalizedSquareSum > maxlrNormalizedSquareSum){
-//                    update = true;
-//                } else if(lrNormalizedSquareSum == maxlrNormalizedSquareSum){
-//                    // for equally good threshold, we prefer the one close to the middle
-//                    double distance = Math.abs(minFeature + i*intervalLength - (minFeature+maxFeature)/2.0);
-//                    double lastDistance = Math.abs(bestThreshold - (minFeature+maxFeature)/2.0);
-//                    if (distance < lastDistance){
-////                        update=true;
-//                    }
-//                }
-//
-//                if (update){
-//                    maxlrNormalizedSquareSum = lrNormalizedSquareSum;
-//                    bestThreshold = minFeature + i*intervalLength;
-////                    System.out.println("best threshold ="+bestThreshold);
-////                    System.out.println("left count "+leftCount);
-////                    System.out.println("right count "+rightCount);
-////                    System.out.println("left sum "+leftSum);
-////                    System.out.println("right sum "+rightSum);
-////                    System.out.println("maxlrNormalizedSquareSum "+maxlrNormalizedSquareSum);
-//                }
-//            }
-//        }
-//        SplitResult splitResult;
-//        if (existValid){
-//            double reduction = maxlrNormalizedSquareSum - labelSum*labelSum/numDataPoints;
-//            splitResult = new SplitResult(featureIndex,bestThreshold,reduction);
-//        } else {
-//            splitResult = new SplitResult(featureIndex,0,0);
-//            splitResult.setValid(false);
-//        }
-//        return splitResult;
-//    }
 

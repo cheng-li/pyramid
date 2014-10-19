@@ -1,26 +1,21 @@
-package edu.neu.ccs.pyramid.regression.regression_tree;
+package edu.neu.ccs.pyramid.regression.prob_reg_tree;
 
 import edu.neu.ccs.pyramid.dataset.SparseDataSet;
+
 
 import static org.junit.Assert.*;
 
 public class IntervalSplitterTest {
     public static void main(String[] args) {
-
+//        test1();
 //        test2();
 //        test3();
-//    test4();
-//        test5();
-        test6();
-    }
-    static void test1(){
-        System.out.println(Math.ceil(1.5));
-        System.out.println((int)Math.ceil(1.5));
-        System.out.println(Math.ceil(-1.5));
-        System.out.println((int)Math.ceil(-1.5));
+//        test4();
+        test5();
     }
 
-    static void test2(){
+
+    private static void test1(){
         SparseDataSet dataSet = new SparseDataSet(5,2);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
@@ -29,15 +24,13 @@ public class IntervalSplitterTest {
         dataSet.setFeatureValue(4,0,1);
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        int[] dataAppearance = {0,1,2,3};
+        double[] probs = {1,1,1,1,0};
         regTreeConfig.setMinDataPerLeaf(1)
-             .setNumSplitIntervals(2);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
-
-
+                .setNumSplitIntervals(2);
+        System.out.println(IntervalSplitter.split(regTreeConfig, dataSet, labels, probs, 0));
     }
 
-    static void test3(){
+    private static void test2(){
         SparseDataSet dataSet = new SparseDataSet(5,2);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
@@ -46,15 +39,13 @@ public class IntervalSplitterTest {
         dataSet.setFeatureValue(4,0,1);
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        int[] dataAppearance = {0,1,2,3};
+        double[] probs = {1,1,1,1,0};
         regTreeConfig.setMinDataPerLeaf(1)
                 .setNumSplitIntervals(200);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
-
-
+        System.out.println(IntervalSplitter.split(regTreeConfig, dataSet, labels, probs, 0));
     }
 
-    static void test4(){
+    private static void test3(){
         SparseDataSet dataSet = new SparseDataSet(5,2);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
@@ -63,12 +54,27 @@ public class IntervalSplitterTest {
         dataSet.setFeatureValue(4,0,1);
         double[] labels = {1,2,3,3,1};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        int[] dataAppearance = {0,1,2,3};
+        double[] probs = {1,1,1,1,0};
         regTreeConfig.setMinDataPerLeaf(2)
                 .setNumSplitIntervals(200);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
+        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,probs,0));
+    }
 
-
+    private static void test4(){
+        SparseDataSet dataSet = new SparseDataSet(8,1);
+        dataSet.setFeatureValue(0,0,0);
+        dataSet.setFeatureValue(1,0,0);
+        dataSet.setFeatureValue(2,0,0);
+        dataSet.setFeatureValue(3,0,1);
+        dataSet.setFeatureValue(4,0,1);
+        dataSet.setFeatureValue(5,0,2);
+        dataSet.setFeatureValue(6,0,2);
+        dataSet.setFeatureValue(6,0,3);
+        double[] labels = {1,2,3,3,1,5,5,5};
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        double[] probs = {1,1,1,1,1,1,1,1};
+        regTreeConfig.setMinDataPerLeaf(2).setNumSplitIntervals(4);
+        System.out.println(IntervalSplitter.split(regTreeConfig, dataSet, labels, probs, 0));
     }
 
     static void test5(){
@@ -83,33 +89,11 @@ public class IntervalSplitterTest {
         dataSet.setFeatureValue(6,0,3);
         double[] labels = {1,2,3,3,1,5,5,5};
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        int[] dataAppearance = {0,1,2,3,4,5,6,7};
-        regTreeConfig.setMinDataPerLeaf(2).setNumSplitIntervals(4);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
-
-
-    }
-
-    /**
-     * test empty
-     */
-    static void test6(){
-        SparseDataSet dataSet = new SparseDataSet(8,1);
-        dataSet.setFeatureValue(0,0,0);
-        dataSet.setFeatureValue(1,0,0);
-        dataSet.setFeatureValue(2,0,0);
-        dataSet.setFeatureValue(3,0,1);
-        dataSet.setFeatureValue(4,0,1);
-        dataSet.setFeatureValue(5,0,2);
-        dataSet.setFeatureValue(6,0,2);
-        dataSet.setFeatureValue(6,0,3);
-        double[] labels = {1,2,3,3,1,5,5,5};
-        RegTreeConfig regTreeConfig = new RegTreeConfig();
-        int[] dataAppearance = {0,1,2,3,4,5,6,7};
+        double[] probs = {1,1,1,1,1,1,1,1};
         regTreeConfig.setMinDataPerLeaf(5).setNumSplitIntervals(4);
-        System.out.println(IntervalSplitter.split(regTreeConfig,dataSet,labels,dataAppearance,0));
-
-
+        System.out.println(IntervalSplitter.split(regTreeConfig, dataSet, labels, probs, 0));
     }
 
+
+    
 }
