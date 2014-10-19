@@ -1,6 +1,4 @@
-package edu.neu.ccs.pyramid.regression.prob_reg_tree;
-
-import static org.junit.Assert.*;
+package edu.neu.ccs.pyramid.regression.regression_tree;
 
 public class ProbabilisticSSETest {
     public static void main(String[] args) {

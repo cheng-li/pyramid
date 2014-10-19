@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.regression.prob_reg_tree;
+package edu.neu.ccs.pyramid.regression.regression_tree;
 
 /**
  * Created by chengli on 8/5/14.

@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.regression.prob_reg_tree;
+package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.SparseDataSet;
 import org.apache.mahout.math.DenseVector;
@@ -6,8 +6,6 @@ import org.apache.mahout.math.Vector;
 
 
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class IntervalSplitterTest {
     public static void main(String[] args) {

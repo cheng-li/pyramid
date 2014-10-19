@@ -1,6 +1,4 @@
-package edu.neu.ccs.pyramid.regression.prob_reg_tree;
-
-import java.util.Arrays;
+package edu.neu.ccs.pyramid.regression.regression_tree;
 
 /**
  * default output of regression tree

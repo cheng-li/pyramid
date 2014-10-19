@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.regression.prob_reg_tree;
+package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
@@ -7,8 +7,6 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.stream.IntStream;
-
-import static org.junit.Assert.*;
 
 public class RegTreeTrainerTest {
     private static final Config config = new Config("configs/local.config");

@@ -1,8 +1,7 @@
-package edu.neu.ccs.pyramid.regression.prob_reg_tree;
+package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 

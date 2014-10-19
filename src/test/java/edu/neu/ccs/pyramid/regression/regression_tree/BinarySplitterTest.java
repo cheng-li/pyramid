@@ -1,9 +1,6 @@
-package edu.neu.ccs.pyramid.regression.prob_reg_tree;
+package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.SparseDataSet;
-
-
-import static org.junit.Assert.*;
 
 public class BinarySplitterTest {
     public static void main(String[] args) {
