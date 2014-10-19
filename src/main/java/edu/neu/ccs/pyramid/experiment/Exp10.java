@@ -33,13 +33,13 @@ public class Exp10 {
     private static void train(Config config) throws Exception{
         String folder = config.getString("input.folder");
         File data = new File(folder,config.getString("input.trainData"));
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(data, DataSetType.CLF_DENSE,true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(data, DataSetType.CLF_DENSE,false);
         ClassifierFactory classifierFactory = new LKTBFactory();
         TrainConfig trainConfig = new LKTBTrainConfig()
                 .setNumLeaves(2)
                 .setLearningRate(0.1)
-                .setNumIterations(500);
-        ECOCConfig ecocConfig = new ECOCConfig().setCodeType(CodeMatrix.CodeType.EXHAUSTIVE)
+                .setNumIterations(200);
+        ECOCConfig ecocConfig = new ECOCConfig().setCodeType(CodeMatrix.CodeType.RANDOM)
                 .setNumFunctions(20);
         ECOC ecoc = new ECOC(ecocConfig,
                 dataSet,
@@ -54,7 +54,7 @@ public class Exp10 {
     private static void test(Config config) throws Exception{
         String folder = config.getString("input.folder");
         File data = new File(folder,config.getString("input.testData"));
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(data, DataSetType.CLF_DENSE,true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(data, DataSetType.CLF_DENSE,false);
         ECOC ecoc = ECOC.deserialize(new File(config.getString("archive"),"ecoc/ecoc.ser"));
         System.out.println(Accuracy.accuracy(ecoc,dataSet));
     }
