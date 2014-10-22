@@ -21,9 +21,9 @@ public class HMLGradientBoostingTest {
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
 //       spam_all();
-//        test2_all();
+        test2_all();
 //        test3_all();
-        test4();
+//        test4();
     }
 
     static void spam_all() throws Exception{
@@ -163,7 +163,7 @@ public class HMLGradientBoostingTest {
 
 
         HMLGBConfig trainConfig = new HMLGBConfig.Builder(dataSet)
-                .numLeaves(60).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
+                .numLeaves(100).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
