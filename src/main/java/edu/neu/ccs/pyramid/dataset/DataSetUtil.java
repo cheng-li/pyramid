@@ -489,6 +489,34 @@ public class DataSetUtil {
         }
     }
 
+    public static void dumpDataSettings(MultiLabelClfDataSet dataSet, String file) throws IOException{
+        dumpDataSettings(dataSet,new File(file));
+    }
+
+    public static void dumpDataSettings(MultiLabelClfDataSet dataSet, File file) throws IOException {
+        int numDataPoints = dataSet.getNumDataPoints();
+        MultiLabel[] labels = dataSet.getMultiLabels();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
+        ) {
+            for (int i = 0; i < numDataPoints; i++) {
+                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                DataSetting dataSetting = featureRow.getSetting();
+                bw.write("intId=");
+                bw.write("" + i);
+                bw.write(",");
+                bw.write("extId=");
+                bw.write(dataSetting.getExtId());
+                bw.write(",");
+                bw.write("intLabel=");
+                bw.write("" + labels[i]);
+                bw.write(",");
+                bw.write("extLabel=");
+                bw.write(dataSetting.getExtLabels().toString());
+                bw.newLine();
+            }
+        }
+    }
+
     /**
      * dump feature settings to plain text file
      * @param dataSet
@@ -499,6 +527,35 @@ public class DataSetUtil {
         dumpFeatureSettings(dataSet,new File(file));
     }
     public static void dumpFeatureSettings(ClfDataSet dataSet, File file) throws IOException {
+        int numFeatures = dataSet.getNumFeatures();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
+        ) {
+            for (int j=0;j<numFeatures;j++){
+                FeatureSetting featureSetting = dataSet.getFeatureColumn(j).getSetting();
+                bw.write("featureIndex=");
+                bw.write(""+j);
+                bw.write(",");
+                bw.write("featureType=");
+                if (featureSetting.getFeatureType()==FeatureType.NUMERICAL){
+                    bw.write("numerical");
+                } else {
+                    bw.write("binary");
+                }
+                bw.write(",");
+                bw.write("featureName=");
+                bw.write(featureSetting.getFeatureName());
+
+                bw.newLine();
+            }
+        }
+    }
+
+
+    public static void dumpFeatureSettings(MultiLabelClfDataSet dataSet, String file) throws IOException {
+        dumpFeatureSettings(dataSet,new File(file));
+    }
+
+    public static void dumpFeatureSettings(MultiLabelClfDataSet dataSet, File file) throws IOException {
         int numFeatures = dataSet.getNumFeatures();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
         ) {
