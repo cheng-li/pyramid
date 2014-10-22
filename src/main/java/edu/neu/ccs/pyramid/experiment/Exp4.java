@@ -463,7 +463,7 @@ public class Exp4 {
 
     static void showConfusionMatrix(int numClasses, Classifier classifier,
                                     ClfDataSet dataSet){
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(numClasses,classifier,dataSet);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(classifier,dataSet);
         System.out.println("==========confusion matrix==========");
         System.out.println(confusionMatrix.printWithExtLabels());
         System.out.println("==========micro averaged measures==========");

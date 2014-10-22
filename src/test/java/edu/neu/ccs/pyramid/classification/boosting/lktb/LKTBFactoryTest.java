@@ -35,7 +35,7 @@ public class LKTBFactoryTest {
 
         double accuracy = Accuracy.accuracy(classifier, dataSet);
         System.out.println(accuracy);
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(2,classifier,dataSet);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(classifier,dataSet);
         System.out.println("confusion matrix:");
         System.out.println(confusionMatrix.printWithExtLabels());
 
