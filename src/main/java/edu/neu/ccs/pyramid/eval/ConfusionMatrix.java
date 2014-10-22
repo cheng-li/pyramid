@@ -29,8 +29,8 @@ public class ConfusionMatrix {
         }
     }
 
-    public ConfusionMatrix(int numClasses, Classifier classifier, ClfDataSet dataSet) {
-        this(numClasses,dataSet.getLabels(),classifier.predict(dataSet));
+    public ConfusionMatrix(Classifier classifier, ClfDataSet dataSet) {
+        this(dataSet.getNumClasses(),dataSet.getLabels(),classifier.predict(dataSet));
         this.labelTranslator = dataSet.getSetting().getLabelTranslator();
     }
 
