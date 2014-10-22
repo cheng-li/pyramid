@@ -108,9 +108,12 @@ public class Exp14 {
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
             boosting.boostOneRound();
-//            System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
-//                    dataSet));
-//            System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
+            if (config.getBoolean("train.showPerformanceEachRound")){
+                System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
+                        dataSet));
+                System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
+            }
+
         }
         File serializedModel =  new File(archive,modelName);
 
