@@ -36,11 +36,11 @@ public class Exp10 {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(data, DataSetType.CLF_DENSE,false);
         ClassifierFactory classifierFactory = new LKTBFactory();
         TrainConfig trainConfig = new LKTBTrainConfig()
-                .setNumLeaves(2)
+                .setNumLeaves(config.getInt("numLeaves"))
                 .setLearningRate(0.1)
-                .setNumIterations(200);
+                .setNumIterations(config.getInt("numIterations"));
         ECOCConfig ecocConfig = new ECOCConfig().setCodeType(CodeMatrix.CodeType.RANDOM)
-                .setNumFunctions(20);
+                .setNumFunctions(config.getInt("numFunctions"));
         ECOC ecoc = new ECOC(ecocConfig,
                 dataSet,
                 new File(config.getString("archive"),"ecoc/models").getAbsolutePath(),
