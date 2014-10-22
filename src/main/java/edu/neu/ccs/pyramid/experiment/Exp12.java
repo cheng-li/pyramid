@@ -70,8 +70,10 @@ public class Exp12 {
                     mapToObj(i -> "" + i).collect(Collectors.toList()).
                     toArray(new String[0]);
         } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
-            throw new IllegalArgumentException("random is not supported");
-            //todo : how to do stratified sampling?
+            trainIds =  IntStream.range(0,numDocsInIndex).mapToObj(i -> "" + i).collect(Collectors.toList()).
+                    toArray(new String[0]);
+//            throw new IllegalArgumentException("random is not supported");
+//            todo : how to do stratified sampling?
 //            double trainPercentage = config.getDouble("split.random.trainPercentage");
 //            int[] labels = new int[numDocsInIndex];
 //            for (int i=0;i<labels.length;i++){
