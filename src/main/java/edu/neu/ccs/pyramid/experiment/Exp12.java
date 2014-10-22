@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
@@ -130,7 +131,10 @@ public class Exp12 {
                 builder.setSource("field");
                 for (String id: ids){
                     String category = index.getStringField(id, field);
-                    builder.addCategory(category);
+                    // missing value is not a category
+                    if (!category.equals(ESIndex.STRING_MISSING_VALUE)){
+                        builder.addCategory(category);
+                    }
                 }
                 boolean toAdd = true;
                 CategoricalFeatureMapper mapper = builder.build();
@@ -179,6 +183,8 @@ public class Exp12 {
         }
     }
 
+
+    //todo keep track of feature types(numerical /binary)
     static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
                                FeatureMappers featureMappers,
                                IdTranslator idTranslator, int totalDim,
@@ -210,6 +216,12 @@ public class Exp12 {
                         for (String id: dataIndexIds){
                             int algorithmId = idTranslator.toIntId(id);
                             String category = index.getStringField(id,featureName);
+                            // if a value is missing, set nan
+                            if (category.equals(ESIndex.STRING_MISSING_VALUE)){
+                                for (int featureIndex=categoricalFeatureMapper.getStart();featureIndex<categoricalFeatureMapper.getEnd();featureIndex++){
+                                    dataSet.setFeatureValue(algorithmId,featureIndex,Double.NaN);
+                                }
+                            }
                             // might be a new category unseen in training
                             if (categoricalFeatureMapper.hasCategory(category)){
                                 int featureIndex = categoricalFeatureMapper.getFeatureIndex(category);
@@ -229,6 +241,7 @@ public class Exp12 {
                     if (source.equalsIgnoreCase("field")){
                         for (String id: dataIndexIds){
                             int algorithmId = idTranslator.toIntId(id);
+                            // if it is missing, it is nan automatically
                             float value = index.getFloatField(id,featureName);
                             dataSet.setFeatureValue(algorithmId,featureIndex,value);
                         }
@@ -313,9 +326,9 @@ public class Exp12 {
         String archive = config.getString("archive.folder");
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
-        //todo
-//        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
-//        DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
+
+        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
+        DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 

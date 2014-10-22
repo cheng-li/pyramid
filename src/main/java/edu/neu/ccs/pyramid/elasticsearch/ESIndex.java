@@ -37,6 +37,8 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
  * Created by chengli on 8/20/14.
  */
 public class ESIndex {
+    public static final String STRING_MISSING_VALUE = "MISSING";
+
     private static final Logger logger = LogManager.getLogger();
     Client client;
     Node node;
@@ -228,10 +230,11 @@ public class ESIndex {
                 .collect(Collectors.toList());
     }
 
-    public List<Integer> getIntListField(String id, String field){
-        return getListField(id,field).stream().map(object -> Integer.parseInt(object.toString()))
-                .collect(Collectors.toList());
-    }
+    // should not support
+//    public List<Integer> getIntListField(String id, String field){
+//        return getListField(id,field).stream().map(object -> Integer.parseInt(object.toString()))
+//                .collect(Collectors.toList());
+//    }
 
     public List<Float> getFloatListField(String id, String field){
         return getListField(id,field).stream().map(object -> Float.parseFloat(object.toString()))
@@ -239,15 +242,24 @@ public class ESIndex {
     }
 
     public String getStringField(String id, String field){
-        return getField(id,field).toString();
+        Object object = getField(id,field);
+        if (object==null){
+            return STRING_MISSING_VALUE;
+        }
+        return object.toString();
     }
 
-    public int getIntField(String id, String field){
-        return Integer.parseInt(getField(id,field).toString());
-    }
+    // it seems we should allow int field, as it seems difficult to handle missing values
+//    public int getIntField(String id, String field){
+//        return Integer.parseInt(getField(id,field).toString());
+//    }
 
     public float getFloatField(String id, String field){
-        return Float.parseFloat(getField(id,field).toString());
+        Object object = getField(id,field);
+        if (object==null){
+            return Float.NaN;
+        }
+        return Float.parseFloat(object.toString());
     }
 
     /**
@@ -368,17 +380,22 @@ public class ESIndex {
                 setFields(field)
                 .execute()
                 .actionGet();
-        if (logger.isErrorEnabled()){
-            if (response==null){
-                logger.error("no response from document "+id+" when fetching field "+field+"!");
+        if (response==null){
+            if (logger.isWarnEnabled()){
+                logger.warn("no response from document "+id+" when fetching field "+field+"!");
             }
-            else if (response.getField(field)==null){
-                logger.error("document "+id+" has no field "+field+"!");
+            return null;
+        }else if (response.getField(field)==null){
+            if (logger.isWarnEnabled()) {
+                logger.warn("document " + id + " has no field " + field + "!");
             }
+            return null;
         }
+
         return response.getField(field).getValue();
     }
 
+    //todo handle missing values
     public List<Object> getListField(String id, String field){
         GetResponse response = client.prepareGet(this.indexName, this.documentType, id).
                 setFields(field)
