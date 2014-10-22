@@ -126,6 +126,7 @@ public class Exp14 {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
         MultiLabelClfDataSet dataSet = loadTrainData(config);
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
         System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
         System.out.println("macro-averaged measure on training set:");
@@ -136,12 +137,24 @@ public class Exp14 {
                 System.out.println(""+i);
                 System.out.println("true labels:");
                 System.out.println(dataSet.getMultiLabels()[i]);
+                StringBuilder trueExtLabels = new StringBuilder();
+                for (int matched: dataSet.getMultiLabels()[i].getMatchedLabels()){
+                    trueExtLabels.append(labelTranslator.toExtLabel(matched));
+                    trueExtLabels.append(", ");
+                }
+                System.out.println(trueExtLabels);
                 System.out.println("predictions:");
                 System.out.println(prediction.get(i));
+                StringBuilder predictedExtLabels = new StringBuilder();
+                for (int matched: prediction.get(i).getMatchedLabels()){
+                    predictedExtLabels.append(labelTranslator.toExtLabel(matched));
+                    predictedExtLabels.append(", ");
+                }
+                System.out.println(predictedExtLabels);
             }
         }
         if (config.getBoolean("verify.topFeatures")){
-            LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+
             for (int k=0;k<dataSet.getNumClasses();k++) {
                 List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k);
                 System.out.println("top features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
@@ -150,7 +163,6 @@ public class Exp14 {
         }
 
         if (config.getBoolean("verify.topNgramsFeatures")){
-            LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
             for (int k=0;k<dataSet.getNumClasses();k++) {
                 List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k)
                         .stream().filter(name -> name.split(" ").length>1)
