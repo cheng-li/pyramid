@@ -125,10 +125,10 @@ class LKTBTrainer {
             scores[k] = this.stagedScore[k][i];
         }
         double logDenominator = MathUtil.logSumExp(scores);
-        if (logger.isDebugEnabled()){
-            logger.debug("logDenominator for data point "+i+" with scores  = "+ Arrays.toString(scores)
-                    +" ="+logDenominator+", label = "+lktbConfig.getDataSet().getLabels()[i]);
-        }
+//        if (logger.isDebugEnabled()){
+//            logger.debug("logDenominator for data point "+i+" with scores  = "+ Arrays.toString(scores)
+//                    +" ="+logDenominator+", label = "+lktbConfig.getDataSet().getLabels()[i]);
+//        }
         for (int k=0;k<numClasses;k++){
             double logNominator = this.stagedScore[k][i];
             double pro = Math.exp(logNominator-logDenominator);
