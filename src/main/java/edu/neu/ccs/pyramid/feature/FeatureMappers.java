@@ -13,6 +13,8 @@ import java.util.stream.IntStream;
  * not thread safe
  * Created by chengli on 9/7/14.
  */
+
+//todo keep track of feature types
 public class FeatureMappers implements Serializable {
     private static final long serialVersionUID = 1L;
     private List<CategoricalFeatureMapper> categoricalFeatureMappers;
