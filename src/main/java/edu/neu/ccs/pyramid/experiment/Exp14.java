@@ -88,6 +88,8 @@ public class Exp14 {
         stopWatch.start();
 
         MultiLabelClfDataSet dataSet = loadTrainData(config);
+        MultiLabelClfDataSet testDataSet = loadTestData(config);
+
         int numClasses = dataSet.getNumClasses();
         System.out.println("number of class = "+numClasses);
         IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(dataSet)
@@ -112,6 +114,10 @@ public class Exp14 {
                 System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
                         dataSet));
                 System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
+
+                System.out.println("accuracy on test set = "+ Accuracy.accuracy(boosting,
+                        testDataSet));
+                System.out.println("overlap on test set = "+ Overlap.overlap(boosting,testDataSet));
             }
 
         }
@@ -129,6 +135,8 @@ public class Exp14 {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
         MultiLabelClfDataSet dataSet = loadTrainData(config);
+
+
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
         System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
