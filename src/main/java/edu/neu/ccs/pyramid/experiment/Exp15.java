@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -11,6 +12,7 @@ import edu.neu.ccs.pyramid.feature_extraction.*;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.util.Pair;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.MatchQueryBuilder;
@@ -80,8 +82,12 @@ public class Exp15 {
                     mapToObj(i -> "" + i).collect(Collectors.toList()).
                     toArray(new String[0]);
         } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
-            throw new IllegalArgumentException("random is not supported");
-            //todo : how to do stratified sampling?
+            trainIds = Arrays.stream(Sampling.sampleByPercentage(numDocsInIndex, config.getDouble("split.random.trainPercentage"))).
+                    mapToObj(i-> ""+i).
+                    collect(Collectors.toList()).
+                    toArray(new String[0]);
+//            throw new IllegalArgumentException("random is not supported");
+//            todo : how to do stratified sampling?
 //            double trainPercentage = config.getDouble("split.random.trainPercentage");
 //            int[] labels = new int[numDocsInIndex];
 //            for (int i=0;i<labels.length;i++){
@@ -141,7 +147,10 @@ public class Exp15 {
                 builder.setSource("field");
                 for (String id: ids){
                     String category = index.getStringField(id, field);
-                    builder.addCategory(category);
+                    // missing value is not a category
+                    if (!category.equals(ESIndex.STRING_MISSING_VALUE)){
+                        builder.addCategory(category);
+                    }
                 }
                 boolean toAdd = true;
                 CategoricalFeatureMapper mapper = builder.build();
@@ -169,6 +178,7 @@ public class Exp15 {
         }
     }
 
+    //todo keep track of feature types(numerical /binary)
     static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
                                          FeatureMappers featureMappers,
                                          IdTranslator idTranslator, int totalDim,
@@ -200,6 +210,12 @@ public class Exp15 {
                         for (String id: dataIndexIds){
                             int algorithmId = idTranslator.toIntId(id);
                             String category = index.getStringField(id,featureName);
+                            // if a value is missing, set nan
+                            if (category.equals(ESIndex.STRING_MISSING_VALUE)){
+                                for (int featureIndex=categoricalFeatureMapper.getStart();featureIndex<categoricalFeatureMapper.getEnd();featureIndex++){
+                                    dataSet.setFeatureValue(algorithmId,featureIndex,Double.NaN);
+                                }
+                            }
                             // might be a new category unseen in training
                             if (categoricalFeatureMapper.hasCategory(category)){
                                 int featureIndex = categoricalFeatureMapper.getFeatureIndex(category);
@@ -219,6 +235,7 @@ public class Exp15 {
                     if (source.equalsIgnoreCase("field")){
                         for (String id: dataIndexIds){
                             int algorithmId = idTranslator.toIntId(id);
+                            // if it is missing, it is nan automatically
                             float value = index.getFloatField(id,featureName);
                             dataSet.setFeatureValue(algorithmId,featureIndex,value);
                         }
@@ -288,9 +305,9 @@ public class Exp15 {
         String archive = config.getString("archive.folder");
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
-        //todo
-//        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
-//        DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
+
+        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
+        DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 
@@ -674,12 +691,12 @@ public class Exp15 {
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureMappers featureMappers = new FeatureMappers();
-        LabelTranslator labelTranslator = index.loadLabelTranslator();
+        LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(index,trainIndexIds);
         if (config.getBoolean("useInitialFeatures")){
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
 
-        MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelTranslator);
+        MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, trainLabelTranslator);
 
         trainModel(config,trainDataSet,featureMappers,index, trainIdTranslator);
 
@@ -695,13 +712,51 @@ public class Exp15 {
 
         String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
+        LabelTranslator testLabelTranslator = loadTestLabelTranslator(index,testIndexIds,trainLabelTranslator);
 
-        MultiLabelClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelTranslator);
+        MultiLabelClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,testLabelTranslator);
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
         if (config.getBoolean("archive.dumpFields")){
             dumpTestFields(config, index, testIdTranslator);
         }
+    }
+
+    static LabelTranslator loadTrainLabelTranslator(MultiLabelIndex index, String[] trainIndexIds) throws Exception{
+
+        Set<String> extLabelSet = new HashSet<>();
+
+        for (String i: trainIndexIds){
+            List<String> extLabel = index.getExtMultiLabel(i);
+            extLabelSet.addAll(extLabel);
+        }
+
+        LabelTranslator labelTranslator = new LabelTranslator(extLabelSet);
+
+        System.out.println("there are "+labelTranslator.getNumClasses()+" classes in the training set.");
+        System.out.println(labelTranslator);
+        return labelTranslator;
+    }
+
+    static LabelTranslator loadTestLabelTranslator(MultiLabelIndex index, String[] testIndexIds, LabelTranslator trainLabelTranslator){
+        List<String> extLabels = new ArrayList<>();
+        for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
+            extLabels.add(trainLabelTranslator.toExtLabel(i));
+        }
+
+        Set<String> testExtLabelSet = new HashSet<>();
+        for (String i: testIndexIds){
+            List<String> extLabel = index.getExtMultiLabel(i);
+            testExtLabelSet.addAll(extLabel);
+        }
+
+        testExtLabelSet.removeAll(extLabels);
+        for (String extLabel: testExtLabelSet){
+            extLabels.add(extLabel);
+        }
+
+        return new LabelTranslator(extLabels);
+
     }
 
 }
