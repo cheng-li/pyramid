@@ -139,9 +139,9 @@ public class Exp14 {
 
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
-        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
-        System.out.println("macro-averaged measure on training set:");
-        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
+//        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
+//        System.out.println("macro-averaged measure on training set:");
+//        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
         if (config.getBoolean("verify.showPredictions")){
             List<MultiLabel> prediction = boosting.predict(dataSet);
             for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -193,8 +193,8 @@ public class Exp14 {
         MultiLabelClfDataSet dataSet = loadTestData(config);
         System.out.println("accuracy on test set = "+Accuracy.accuracy(boosting,dataSet));
         System.out.println("overlap on test set = "+ Overlap.overlap(boosting,dataSet));
-        System.out.println("macro-averaged measure on test set:");
-        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
+//        System.out.println("macro-averaged measure on test set:");
+//        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
         if (config.getBoolean("test.showPredictions")){
             List<MultiLabel> prediction = boosting.predict(dataSet);
             for (int i=0;i<dataSet.getNumDataPoints();i++){
