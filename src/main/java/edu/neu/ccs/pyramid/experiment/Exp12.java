@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
@@ -70,7 +71,9 @@ public class Exp12 {
                     mapToObj(i -> "" + i).collect(Collectors.toList()).
                     toArray(new String[0]);
         } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
-            trainIds =  IntStream.range(0,numDocsInIndex).mapToObj(i -> "" + i).collect(Collectors.toList()).
+            trainIds = Arrays.stream(Sampling.sampleByPercentage(numDocsInIndex,config.getDouble("split.random.trainPercentage"))).
+                    mapToObj(i-> ""+i).
+                    collect(Collectors.toList()).
                     toArray(new String[0]);
 //            throw new IllegalArgumentException("random is not supported");
 //            todo : how to do stratified sampling?
