@@ -12,7 +12,7 @@ public class SparseMLClfDataSet extends SparseDataSet implements MultiLabelClfDa
         this.numClasses=numClasses;
         this.multiLabels=new MultiLabel[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.multiLabels[i]= new MultiLabel(numClasses);
+            this.multiLabels[i]= new MultiLabel();
         }
     }
 

@@ -179,7 +179,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
      * @return
      */
     private MultiLabel predictWithoutConstraints(FeatureRow featureRow){
-        MultiLabel prediction = new MultiLabel(this.numClasses);
+        MultiLabel prediction = new MultiLabel();
         for (int k=0;k<numClasses;k++){
             double score = this.calClassScore(featureRow,k);
             if (score > 0){

@@ -84,8 +84,8 @@ public class HMLGradientBoostingTest {
 
 
         List<MultiLabel> assignments = new ArrayList<>();
-        assignments.add(new MultiLabel(2).addLabel(0));
-        assignments.add(new MultiLabel(2).addLabel(1));
+        assignments.add(new MultiLabel().addLabel(0));
+        assignments.add(new MultiLabel().addLabel(1));
         HMLGradientBoosting boosting = new HMLGradientBoosting(2,assignments);
 
 
@@ -156,9 +156,9 @@ public class HMLGradientBoostingTest {
 
 
         List<MultiLabel> assignments = new ArrayList<>();
-        assignments.add(new MultiLabel(3).addLabel(0));
-        assignments.add(new MultiLabel(3).addLabel(1));
-        assignments.add(new MultiLabel(3).addLabel(1).addLabel(2));
+        assignments.add(new MultiLabel().addLabel(0));
+        assignments.add(new MultiLabel().addLabel(1));
+        assignments.add(new MultiLabel().addLabel(1).addLabel(2));
         HMLGradientBoosting boosting = new HMLGradientBoosting(3,assignments);
 
 
@@ -280,11 +280,11 @@ public class HMLGradientBoostingTest {
 
 
         List<MultiLabel> assignments = new ArrayList<>();
-        assignments.add(new MultiLabel(4).addLabel(0));
-        assignments.add(new MultiLabel(4).addLabel(1));
-        assignments.add(new MultiLabel(4).addLabel(1).addLabel(2));
-        assignments.add(new MultiLabel(4).addLabel(1).addLabel(3));
-        assignments.add(new MultiLabel(4).addLabel(1).addLabel(2).addLabel(3));
+        assignments.add(new MultiLabel().addLabel(0));
+        assignments.add(new MultiLabel().addLabel(1));
+        assignments.add(new MultiLabel().addLabel(1).addLabel(2));
+        assignments.add(new MultiLabel().addLabel(1).addLabel(3));
+        assignments.add(new MultiLabel().addLabel(1).addLabel(2).addLabel(3));
         HMLGradientBoosting boosting = new HMLGradientBoosting(4,assignments);
 
 
@@ -391,11 +391,11 @@ public class HMLGradientBoostingTest {
                 DataSetType.ML_CLF_DENSE,true);
 
         List<MultiLabel> assignments = new ArrayList<>();
-        assignments.add(new MultiLabel(4).addLabel(0));
-        assignments.add(new MultiLabel(4).addLabel(1));
-        assignments.add(new MultiLabel(4).addLabel(1).addLabel(2));
-        assignments.add(new MultiLabel(4).addLabel(1).addLabel(3));
-        assignments.add(new MultiLabel(4).addLabel(1).addLabel(2).addLabel(3));
+        assignments.add(new MultiLabel().addLabel(0));
+        assignments.add(new MultiLabel().addLabel(1));
+        assignments.add(new MultiLabel().addLabel(1).addLabel(2));
+        assignments.add(new MultiLabel().addLabel(1).addLabel(3));
+        assignments.add(new MultiLabel().addLabel(1).addLabel(2).addLabel(3));
         HMLGradientBoosting boosting = new HMLGradientBoosting(4,assignments);
 
 

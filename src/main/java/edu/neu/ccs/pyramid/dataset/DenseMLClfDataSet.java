@@ -15,7 +15,7 @@ public class DenseMLClfDataSet extends DenseDataSet implements MultiLabelClfData
         this.numClasses=numClasses;
         this.multiLabels=new MultiLabel[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.multiLabels[i]= new MultiLabel(numClasses);
+            this.multiLabels[i]= new MultiLabel();
         }
     }
 

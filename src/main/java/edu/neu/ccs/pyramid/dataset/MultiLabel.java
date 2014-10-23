@@ -10,32 +10,27 @@ import java.util.stream.Collectors;
  * Created by chengli on 9/27/14.
  */
 public class MultiLabel implements Serializable{
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private Set<Integer> labels;
-    private boolean[] labelsVector;
 
-    public MultiLabel(int numClasses) {
+
+    public MultiLabel() {
         this.labels = new HashSet<>();
-        this.labelsVector= new boolean[numClasses];
     }
 
     public MultiLabel addLabel(int k){
         this.labels.add(k);
-        this.labelsVector[k]=true;
         return this;
     }
 
     public boolean matchClass(int k){
-        return labelsVector[k];
+        return labels.contains(k);
     }
 
     public Set<Integer> getMatchedLabels(){
         return labels;
     }
 
-    public int getNumClasses(){
-        return this.labelsVector.length;
-    }
 
     @Override
     public String toString() {
@@ -49,13 +44,13 @@ public class MultiLabel implements Serializable{
 
         MultiLabel that = (MultiLabel) o;
 
-        if (!Arrays.equals(labelsVector, that.labelsVector)) return false;
+        if (!labels.equals(that.labels)) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(labelsVector);
+        return labels.hashCode();
     }
 }

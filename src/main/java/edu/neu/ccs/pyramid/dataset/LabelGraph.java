@@ -251,7 +251,7 @@ public class LabelGraph implements Serializable {
         for (int i = 1; i < Math.pow(2, numLabels); i++) {
             int flag = 0;
             String biLabel = Integer.toBinaryString(i);
-            MultiLabel assignment = new MultiLabel(numLabels);
+            MultiLabel assignment = new MultiLabel();
             int j = numLabels - biLabel.length();
             for (int k = numLabels - biLabel.length(); j < numLabels; j++, k++) {
                 if (biLabel.charAt(j - numLabels + biLabel.length()) == '1') {
