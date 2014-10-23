@@ -294,21 +294,43 @@ public class Exp12 {
         return dataSet;
     }
 
-    static LabelTranslator loadLabelTranslator(MultiLabelIndex index) throws Exception{
 
-        int numDocs = index.getNumDocs();
+
+    static LabelTranslator loadTrainLabelTranslator(MultiLabelIndex index, String[] trainIndexIds) throws Exception{
+
         Set<String> extLabelSet = new HashSet<>();
 
-        for (int i=0;i<numDocs;i++){
-            List<String> extLabel = index.getExtMultiLabel(""+i);
+        for (String i: trainIndexIds){
+            List<String> extLabel = index.getExtMultiLabel(i);
             extLabelSet.addAll(extLabel);
         }
 
         LabelTranslator labelTranslator = new LabelTranslator(extLabelSet);
 
-        System.out.println("there are "+labelTranslator.getNumClasses()+" classes.");
+        System.out.println("there are "+labelTranslator.getNumClasses()+" classes in the training set.");
         System.out.println(labelTranslator);
         return labelTranslator;
+    }
+
+    static LabelTranslator loadTestLabelTranslator(MultiLabelIndex index, String[] testIndexIds, LabelTranslator trainLabelTranslator){
+        List<String> extLabels = new ArrayList<>();
+        for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
+            extLabels.add(trainLabelTranslator.toExtLabel(i));
+        }
+
+        Set<String> testExtLabelSet = new HashSet<>();
+        for (String i: testIndexIds){
+            List<String> extLabel = index.getExtMultiLabel(i);
+            testExtLabelSet.addAll(extLabel);
+        }
+
+        testExtLabelSet.removeAll(extLabels);
+        for (String extLabel: testExtLabelSet){
+            extLabels.add(extLabel);
+        }
+
+        return new LabelTranslator(extLabels);
+
     }
 
 //    static void showDistribution(Config config, ClfDataSet dataSet, Map<Integer, String> labelTranslator){
@@ -387,7 +409,7 @@ public class Exp12 {
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureMappers featureMappers = new FeatureMappers();
 
-        LabelTranslator labelTranslator = loadLabelTranslator(index);
+        LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(index, trainIndexIds);
         if (config.getBoolean("useInitialFeatures")){
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
@@ -396,7 +418,7 @@ public class Exp12 {
         addUnigramFeatures(featureMappers,unigrams);
 
 
-        MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelTranslator);
+        MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, trainLabelTranslator);
         System.out.println("in training set :");
 //        showDistribution(config,trainDataSet,labelTranslator);
 
@@ -409,8 +431,9 @@ public class Exp12 {
 
         String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
+        LabelTranslator testLabelTranslator = loadTestLabelTranslator(index, testIndexIds,trainLabelTranslator);
 
-        MultiLabelClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelTranslator);
+        MultiLabelClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,testLabelTranslator);
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
         if (config.getBoolean("archive.dumpFields")){

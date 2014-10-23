@@ -15,7 +15,7 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-//        spam_test();
+        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
@@ -23,7 +23,7 @@ public class LKTreeBoostTest {
 //        spam_polluted_build();
 //        spam_polluted_load();
 //        spam_fake_build();
-        spam_missing_all();
+//        spam_missing_all();
 //        mnist_all();
     }
 
