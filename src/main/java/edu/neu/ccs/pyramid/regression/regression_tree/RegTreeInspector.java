@@ -1,7 +1,10 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,5 +33,30 @@ public class RegTreeInspector {
                     map.put(featureIndex, newPair);
                 });
         return map;
+    }
+
+    /**
+     * assume no missing values
+     * @param tree
+     * @param featureRow
+     * @return
+     */
+    public static int getMatchedLeaf(RegressionTree tree, FeatureRow featureRow){
+        Vector vector = featureRow.getVector();
+        for (int i=0;i<tree.getNumLeaves();i++){
+            double prob = tree.probability(vector,tree.leaves.get(i));
+            if (prob==1){
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    public static List<Integer> getMatchedPath(List<RegressionTree> trees, FeatureRow featureRow){
+        List list = new ArrayList<>();
+        for (RegressionTree tree: trees){
+            list.add(getMatchedLeaf(tree,featureRow));
+        }
+        return list;
     }
 }

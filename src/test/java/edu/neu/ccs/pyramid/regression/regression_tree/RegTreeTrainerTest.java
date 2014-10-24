@@ -13,7 +13,7 @@ public class RegTreeTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test8();
+        test2();
     }
 
 
@@ -54,6 +54,9 @@ public class RegTreeTrainerTest {
 
         double mseValue = MSE.mse(regressionTree, dataSet);
         System.out.println(mseValue);
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            System.out.println(RegTreeInspector.getMatchedLeaf(regressionTree,dataSet.getFeatureRow(i)));
+        }
 //        System.out.println(regressionTree);
 //        System.out.println(regressionTree.getRootReduction()    );
 
