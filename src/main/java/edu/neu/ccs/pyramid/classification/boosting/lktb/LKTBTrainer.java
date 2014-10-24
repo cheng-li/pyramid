@@ -30,7 +30,7 @@ class LKTBTrainer {
      */
     private int[][] classLabels;
     /**
-     * p_k(x) classProbabilities[k][i] = p_k(x_i)
+     * p_k(x) classProbabilities[i][k] = p_k(x_i)
      */
     private double[][] classProbabilities;
 
@@ -60,7 +60,7 @@ class LKTBTrainer {
             this.classLabels[label][i] = 1;
         }
         this.initStagedScores(regressors);
-        this.classProbabilities = new double[numClasses][numDataPoints];
+        this.classProbabilities = new double[numDataPoints][numClasses];
         this.updateClassProbs();
         this.classGradients = new double[numClasses][numDataPoints];
     }
@@ -77,6 +77,10 @@ class LKTBTrainer {
 
     double[] getGradient(int k){
         return this.classGradients[k];
+    }
+
+    double[] getClassProbs(int dataPointIndex){
+        return this.classProbabilities[dataPointIndex];
     }
 
     /**
@@ -104,10 +108,9 @@ class LKTBTrainer {
         ClfDataSet dataSet= this.lktbConfig.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
         int[] labelsClassK = this.classLabels[k];
-        double[] probsClassK = this.classProbabilities[k];
         double[] gradient = this.classGradients[k];
         for (int i=0;i<numDataPoints;i++){
-            gradient[i] = labelsClassK[i] - probsClassK[i];
+            gradient[i] = labelsClassK[i] - this.classProbabilities[i][k];
         }
     }
 
@@ -132,7 +135,7 @@ class LKTBTrainer {
         for (int k=0;k<numClasses;k++){
             double logNominator = this.stagedScore[k][i];
             double pro = Math.exp(logNominator-logDenominator);
-            this.classProbabilities[k][i] = pro;
+            this.classProbabilities[i][k] = pro;
             if (Double.isNaN(pro)){
                 throw new RuntimeException("pro=NaN, logNominator = "
                         +logNominator+", logDenominator="+logDenominator+

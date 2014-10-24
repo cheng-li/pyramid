@@ -158,7 +158,9 @@ public class LKTreeBoost implements ProbabilityEstimator{
     }
 
 
-
+    public double[] getClassProbs(int dataPointIndex){
+        return this.lktbTrainer.getClassProbs(dataPointIndex);
+    }
 
 
     public int getNumClasses() {

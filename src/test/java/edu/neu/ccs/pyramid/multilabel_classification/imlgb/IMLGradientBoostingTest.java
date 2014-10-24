@@ -7,9 +7,8 @@ import edu.neu.ccs.pyramid.eval.Overlap;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -19,7 +18,7 @@ public class IMLGradientBoostingTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test3();
+        test1();
     }
 
     private static void test1() throws Exception{
@@ -80,7 +79,7 @@ public class IMLGradientBoostingTest {
 
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(3)
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
@@ -109,6 +108,9 @@ public class IMLGradientBoostingTest {
         System.out.println("accuracy");
         System.out.println(Accuracy.accuracy(boosting,dataSet));
         boosting.serialize(new File(TMP,"/imlgb/boosting.ser"));
+        Comparator<Map.Entry<List<Integer>,Double>> comparator = Comparator.comparing(entry -> entry.getValue());
+        System.out.println(IMLGBInspector.countPathMatches(boosting,dataSet,0).entrySet().stream().sorted(comparator.reversed()).collect(Collectors.toList()).get(0));
+//        System.out.println(pathcount.values().stream().sorted().collect(Collectors.toList()));
 
     }
 
