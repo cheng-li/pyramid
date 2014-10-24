@@ -556,6 +556,8 @@ public class Exp3 {
                 Comparator<Pair<Integer,BestVsSecond>> comparator = Comparator.comparing(pair -> pair.getSecond().getDifference());
                 List<Integer> examples = IntStream.range(0,dataSet.getNumDataPoints())
                         .mapToObj(i -> new Pair<>(i,new BestVsSecond(lkTreeBoost.getClassProbs(i))))
+                        .filter(pair -> (dataSet.getLabels()[pair.getFirst()]==pair.getSecond().getBestClass())
+                                ||(dataSet.getLabels()[pair.getFirst()]==pair.getSecond().getSecondClass()))
                         .sorted(comparator).map(Pair::getFirst)
                         .limit(numClasses*numDocsToSelect).collect(Collectors.toList());
                 for (Integer dataPoint: examples){
