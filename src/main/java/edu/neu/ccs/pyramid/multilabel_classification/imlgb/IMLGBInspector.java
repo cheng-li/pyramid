@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -98,5 +99,21 @@ public class IMLGBInspector {
     public static List<String> topFeatureNames(List<IMLGradientBoosting> boostings, int classIndex){
         return topFeatures(boostings,classIndex).stream().map(Pair::getSecond)
                 .collect(Collectors.toList());
+    }
+
+
+    public static Map<List<Integer>, Double> countPathMatches(IMLGradientBoosting boosting, DataSet dataSet, int classIndex){
+        List<RegressionTree> trees = boosting.getRegressors(classIndex)
+                .stream().filter(regressor ->
+                regressor instanceof RegressionTree)
+                .map(regressor -> (RegressionTree) regressor)
+                .collect(Collectors.toList());
+        Map<List<Integer>, Double> map = new HashMap<>();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            List<Integer> path = RegTreeInspector.getMatchedPath(trees,dataSet.getFeatureRow(i));
+            double oldCount = map.getOrDefault(path,0.0);
+            map.put(path,oldCount+1);
+        }
+        return map;
     }
 }
