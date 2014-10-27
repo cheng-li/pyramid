@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- *  feature extraction using elasticsearch,
+ *  single label feature extraction using elasticsearch,
  *  can start with initial features in ESindex
  * can use default train/test split or random split
  * follow golden_features, exp57
