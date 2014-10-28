@@ -11,6 +11,6 @@ public class FormatTranslator {
     }
 
     public static void trecToWeka(File trecFile, File wekaFile){
-        
+
     }
 }
