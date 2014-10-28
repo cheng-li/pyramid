@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.data_formatter.review_polarity.IndexBuilder;
+import edu.neu.ccs.pyramid.data_formatter.classic.Classic3IndexBuilder;
 import edu.neu.ccs.pyramid.util.DirWalker;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
@@ -38,7 +38,7 @@ public class Exp17 {
         int id = 0;
         for (File file : list) {
             System.out.println("id = "+id);
-            XContentBuilder builder = IndexBuilder.getBuilder(file);
+            XContentBuilder builder = Classic3IndexBuilder.getBuilder(file);
             //               System.out.println(builder.string());
             IndexResponse response = client.prepareIndex("classic3", "document",""+id)
                     .setSource(builder)
