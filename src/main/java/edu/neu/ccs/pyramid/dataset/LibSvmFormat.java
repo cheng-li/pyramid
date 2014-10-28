@@ -7,29 +7,29 @@ import java.io.IOException;
  */
 public class LibSvmFormat {
 
-    public static void save(ClfDataSet dataSet, String trecFile){
+    public static void save(ClfDataSet dataSet, String libSvmFile){
 
     }
 
-    public static void save(RegDataSet dataSet, String trecFile){
+    public static void save(RegDataSet dataSet, String libSvmFile){
 
     }
 
-    public static void save(MultiLabelClfDataSet dataSet, String trecFile){
+    public static void save(MultiLabelClfDataSet dataSet, String libSvmFile){
 
     }
 
-    public static ClfDataSet loadClfDataSet(String trecFile, DataSetType dataSetType,
+    public static ClfDataSet loadClfDataSet(String libSvmFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
         return null;
     }
 
-    public static RegDataSet loadRegDataSet(String trecFile, DataSetType dataSetType,
+    public static RegDataSet loadRegDataSet(String libSvmFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
         return null;
     }
 
-    public static MultiLabelClfDataSet loaMultiLabelClfDataSet(String trecFile, DataSetType dataSetType,
+    public static MultiLabelClfDataSet loaMultiLabelClfDataSet(String libSvmFile, DataSetType dataSetType,
                                                                boolean loadSettings) throws IOException, ClassNotFoundException {
         return null;
     }
