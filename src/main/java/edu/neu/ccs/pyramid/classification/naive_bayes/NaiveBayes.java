@@ -13,7 +13,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 
 
 /**
@@ -126,6 +125,7 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
     public int predict(FeatureRow featureRow) {
 
         double[] logProbs = predictClassLogProbs(featureRow);
+//        System.out.println(Arrays.toString(logProbs));
 //        System.out.println(Arrays.toString(logProbs));
         double maxLogProb = Double.NEGATIVE_INFINITY;
         int predictLabel = -1;

@@ -9,6 +9,11 @@ import java.util.Map;
  * Created by Rainicy on 10/10/14.
  *
  * Multinomial Distribution.
+ *
+ * @see edu.neu.ccs.pyramid.classification.naive_bayes.Distribution
+ *
+ * @reference
+ * http://nlp.stanford.edu/IR-book/html/htmledition/naive-bayes-text-classification-1.html
  */
 public class Multinomial implements Distribution {
 
@@ -85,12 +90,22 @@ public class Multinomial implements Distribution {
                 "support cumulative operation.");
     }
 
+    /**
+     * Because of smoothing, cannot get mean easily.
+     * @return
+     * @throws IllegalAccessException
+     */
     @Override
     public double getMean() throws IllegalAccessException {
         throw new IllegalAccessException("Mutinomial distribution cannot " +
                 "support getMean operation.");
     }
 
+    /**
+     * Because of smoothing, cannot get variance easily.
+     * @return
+     * @throws IllegalAccessException
+     */
     @Override
     public double getVariance() throws IllegalAccessException {
         throw new IllegalAccessException("Mutinomial distribution cannot " +
