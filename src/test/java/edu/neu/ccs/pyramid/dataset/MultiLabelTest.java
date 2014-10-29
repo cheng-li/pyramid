@@ -3,10 +3,11 @@ package edu.neu.ccs.pyramid.dataset;
 public class MultiLabelTest {
     public static void main(String[] args)
     {
-//        test3();
-        test4();
-        test5();
-        test6();
+////        test3();
+//        test4();
+//        test5();
+//        test6();
+        test7();
     }
 
     static void test1(){
@@ -49,7 +50,11 @@ public class MultiLabelTest {
         System.out.println(multiLabel1.equals(multiLabel2));
     }
 
-
+    static void test7(){
+        MultiLabel multiLabel1 = new MultiLabel().addLabel(0).addLabel(2).addLabel(3);
+        MultiLabel multiLabel2 = new MultiLabel().addLabel(0).addLabel(2).addLabel(4).addLabel(5);
+        System.out.println(MultiLabel.symmetricDifference(multiLabel1,multiLabel2));
+    }
 
 
 

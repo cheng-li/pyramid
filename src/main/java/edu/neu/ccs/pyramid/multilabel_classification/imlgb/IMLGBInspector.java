@@ -1,15 +1,17 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.FeatureRow;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.regression_tree.DecisionPath;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -115,5 +117,53 @@ public class IMLGBInspector {
             map.put(path,oldCount+1);
         }
         return map;
+    }
+
+    public static String analyzeMistake(IMLGradientBoosting boosting, FeatureRow featureRow,
+                                        MultiLabel trueLabel, MultiLabel prediction,
+                                        LabelTranslator labelTranslator, int limit){
+        StringBuilder sb = new StringBuilder();
+        List<Integer> difference = MultiLabel.symmetricDifference(trueLabel,prediction).stream().sorted().collect(Collectors.toList());
+
+        double[] classScores = boosting.calClassScores(featureRow);
+        sb.append("score for the true labels ").append(trueLabel)
+                .append("(").append(trueLabel.toStringWithExtLabels(labelTranslator)).append(") = ");
+        sb.append(boosting.calAssignmentScore(trueLabel,classScores)).append("\n");
+
+        sb.append("score for the predicted labels ").append(prediction)
+                .append("(").append(prediction.toStringWithExtLabels(labelTranslator)).append(") = ");;
+        sb.append(boosting.calAssignmentScore(prediction,classScores)).append("\n");
+
+        for (int k: difference){
+            sb.append("score for class ").append(k).append("(").append(labelTranslator.toExtLabel(k)).append(")")
+                    .append(" =").append(classScores[k]).append("\n");
+        }
+
+        for (int k: difference){
+            sb.append("decision process for class ").append(k).append("(").append(labelTranslator.toExtLabel(k)).append("):\n");
+            sb.append(decisionProcess(boosting,featureRow,k,limit));
+            sb.append("--------------------------------------------------").append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    public static String decisionProcess(IMLGradientBoosting boosting, FeatureRow featureRow, int classIndex, int limit){
+        StringBuilder sb = new StringBuilder();
+        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().limit(limit).collect(Collectors.toList());
+        for (Regressor regressor: regressors){
+            if (regressor instanceof ConstantRegressor){
+                sb.append("prior score for the class = ");
+                sb.append(((ConstantRegressor) regressor).getScore()).append("\n");
+            }
+
+            if (regressor instanceof RegressionTree){
+                RegressionTree tree = (RegressionTree)regressor;
+                DecisionPath decisionPath = new DecisionPath(tree,featureRow);
+                sb.append(decisionPath.toString()).append("\n");
+            }
+        }
+
+        return sb.toString();
     }
 }

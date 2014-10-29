@@ -22,7 +22,7 @@ public class IMLGradientBoostingTest {
     }
 
     private static void test1() throws Exception{
-        spam_build();
+//        spam_build();
         spam_load();
     }
 
@@ -54,6 +54,14 @@ public class IMLGradientBoostingTest {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(TMP,"/imlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting, dataSet));
+//        System.out.println(IMLGBInspector.decisionProcess(boosting,dataSet.getFeatureRow(0),0));
+        for (int i=0;i<10;i++){
+            MultiLabel trueLabel = dataSet.getMultiLabels()[i];
+            MultiLabel prediction = boosting.predict(dataSet.getFeatureRow(i));
+            if (!prediction.equals(trueLabel)){
+                System.out.println(IMLGBInspector.analyzeMistake(boosting,dataSet.getFeatureRow(i),trueLabel,prediction,singleLabeldataSet.getSetting().getLabelTranslator(),10));
+            }
+        }
     }
 
     private static void spam_build() throws Exception{

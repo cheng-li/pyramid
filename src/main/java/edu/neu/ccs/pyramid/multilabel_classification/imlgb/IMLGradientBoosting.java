@@ -197,9 +197,9 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     private MultiLabel predictWithConstraints(FeatureRow featureRow){
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
-        double[] classeScores = calClassScores(featureRow);
+        double[] classScores = calClassScores(featureRow);
         for (MultiLabel assignment: this.assignments){
-            double score = this.calAssignmentScore(assignment,classeScores);
+            double score = this.calAssignmentScore(assignment,classScores);
             if (score > maxScore){
                 maxScore = score;
                 prediction = assignment;
@@ -231,7 +231,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         return score;
     }
 
-    private double[] calClassScores(FeatureRow featureRow){
+    double[] calClassScores(FeatureRow featureRow){
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){
