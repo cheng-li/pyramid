@@ -31,10 +31,35 @@ public class MultiLabel implements Serializable{
         return labels;
     }
 
+    public static Set<Integer> union(MultiLabel multiLabel1, MultiLabel multiLabel2){
+        Set<Integer> union = new HashSet<>();
+        union.addAll(multiLabel1.getMatchedLabels());
+        union.addAll(multiLabel2.getMatchedLabels());
+        return union;
+    }
+
+    public static Set<Integer> intersection(MultiLabel multiLabel1, MultiLabel multiLabel2){
+        Set<Integer> intersection = new HashSet<>();
+        intersection.addAll(multiLabel1.getMatchedLabels());
+        intersection.retainAll(multiLabel2.getMatchedLabels());
+        return intersection;
+    }
+
+
+    public static Set<Integer> symmetricDifference(MultiLabel multiLabel1, MultiLabel multiLabel2){
+        Set<Integer> union = union(multiLabel1,multiLabel2);
+        Set<Integer> itersection = intersection(multiLabel1,multiLabel2);
+        union.removeAll(itersection);
+        return union;
+    }
 
     @Override
     public String toString() {
         return labels.stream().sorted().collect(Collectors.toList()).toString();
+    }
+
+    public String toStringWithExtLabels(LabelTranslator labelTranslator){
+        return labels.stream().sorted().map(labelTranslator::toExtLabel).collect(Collectors.toList()).toString();
     }
 
     @Override
