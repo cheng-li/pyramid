@@ -236,7 +236,7 @@ public class Exp14 {
             if (!prediction.equals(trueLabel)){
                 FeatureRow featureRow = dataSet.getFeatureRow(i);
                 System.out.println("data point "+i+" index id = "+featureRow.getSetting().getExtId());
-                if (prediction.outOfBound(numClassesInTrain)){
+                if (trueLabel.outOfBound(numClassesInTrain)){
                     System.out.println("true labels = "+trueLabel.toStringWithExtLabels(labelTranslator));
                     System.out.println("predicted labels = "+prediction.toStringWithExtLabels(labelTranslator));
                     System.out.println("it contains unseen labels");
