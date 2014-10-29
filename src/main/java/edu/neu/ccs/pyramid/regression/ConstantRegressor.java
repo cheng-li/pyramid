@@ -16,6 +16,10 @@ public class ConstantRegressor implements Regressor, Serializable{
         this.score = score;
     }
 
+    public double getScore() {
+        return score;
+    }
+
     @Override
     public double predict(FeatureRow featureRow) {
         return this.score;
