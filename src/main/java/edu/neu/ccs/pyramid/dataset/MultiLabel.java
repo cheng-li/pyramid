@@ -53,6 +53,15 @@ public class MultiLabel implements Serializable{
         return union;
     }
 
+    public boolean outOfBound(int numClasses){
+        for (int k:getMatchedLabels()){
+            if (k> numClasses-1){
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return labels.stream().sorted().collect(Collectors.toList()).toString();

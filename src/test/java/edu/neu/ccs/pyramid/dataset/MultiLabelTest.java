@@ -7,7 +7,7 @@ public class MultiLabelTest {
 //        test4();
 //        test5();
 //        test6();
-        test7();
+        test8();
     }
 
     static void test1(){
@@ -56,6 +56,11 @@ public class MultiLabelTest {
         System.out.println(MultiLabel.symmetricDifference(multiLabel1,multiLabel2));
     }
 
+    static void test8(){
+        MultiLabel multiLabel1 = new MultiLabel().addLabel(0).addLabel(2);
 
+        System.out.println(multiLabel1.outOfBound(2));
+        System.out.println(multiLabel1.outOfBound(3));
+    }
 
 }
