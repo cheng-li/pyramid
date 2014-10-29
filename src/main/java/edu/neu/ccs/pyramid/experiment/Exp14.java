@@ -13,6 +13,7 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -206,5 +207,52 @@ public class Exp14 {
             }
         }
 
+        if (config.getBoolean("test.analyzeMistakes")){
+            System.out.println("analyzing mistakes");
+            analyzeMistakes(config,boosting,dataSet);
+        }
+
     }
+
+
+    static void analyzeMistakes(Config config, IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet) throws Exception{
+        int numClassesInTrain = getNumClassesInTrain(config);
+        int numClassesInTest = dataSet.getNumClasses();
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        if (numClassesInTest>numClassesInTrain){
+            System.out.println("new labels not seen in the training set:");
+            for (int k=numClassesInTrain;k<numClassesInTest;k++){
+                System.out.println(""+k+"("+labelTranslator.toExtLabel(k)+")");
+            }
+        }
+        List<MultiLabel> predictions = boosting.predict(dataSet);
+        MultiLabel[] trueLabels = dataSet.getMultiLabels();
+
+        int limit = config.getInt("test.analyzeMistakes.limit");
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            System.out.println("=======================================");
+            MultiLabel prediction = predictions.get(i);
+            MultiLabel trueLabel = trueLabels[i];
+            if (!prediction.equals(trueLabel)){
+                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                System.out.println("data point "+i+" index id = "+featureRow.getSetting().getExtId());
+                if (prediction.outOfBound(numClassesInTrain)){
+                    System.out.println("true labels = "+trueLabel.toStringWithExtLabels(labelTranslator));
+                    System.out.println("predicted labels = "+prediction.toStringWithExtLabels(labelTranslator));
+                    System.out.println("it contains unseen labels");
+                } else{
+                    System.out.println(IMLGBInspector.analyzeMistake(boosting,featureRow,trueLabel,prediction,labelTranslator,limit));
+                }
+
+            }
+        }
+    }
+
+    static int getNumClassesInTrain(Config config) throws Exception{
+        MultiLabelClfDataSet dataSet = loadTrainData(config);
+        int numClasses = dataSet.getNumClasses();
+        return numClasses;
+    }
+
+
 }
