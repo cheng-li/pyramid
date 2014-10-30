@@ -13,13 +13,24 @@ public class LibSvmFormatTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception {
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/classic3/train.trec"),
+//                DataSetType.CLF_DENSE, true);
+//
+//        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/classic3/test.trec"),
+//                DataSetType.CLF_DENSE, true);
+//
+//        LibSvmFormat.save(dataSet, DATASETS + "classic3/libSvmFormat/classic3_train.txt");
+//        LibSvmFormat.save(testDataset, DATASETS + "classic3/libSvmFormat/classic3_test.txt");
+
+
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/classic3/classic3_exp11/train.trec"),
                 DataSetType.CLF_DENSE, true);
 
-        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/classic3/classic3_exp11/test.trec"),
                 DataSetType.CLF_DENSE, true);
 
-        LibSvmFormat.save(dataSet, TMP + "spam_train.txt");
-        LibSvmFormat.save(testDataset, TMP + "spam_test.txt");
+        LibSvmFormat.save(dataSet, DATASETS + "classic3/classic3_exp11/libSvmFormat/classic3_train.txt");
+        LibSvmFormat.save(testDataset, DATASETS + "classic3/classic3_exp11/libSvmFormat/classic3_test.txt");
+
     }
 }

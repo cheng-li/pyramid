@@ -26,8 +26,15 @@ public class LibSvmFormat {
                 FeatureRow featureRow = dataSet.getFeatureRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
+                int preIndex = -1;
+                int currIndex;
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index() + 1;
+                    currIndex = featureIndex;
+                    if (currIndex <=  preIndex) {
+                        System.out.println("Sequence Error!!!");
+                    }
+                    preIndex = currIndex;
                     double featureValue = element.get();
                     bw.write(featureIndex+":"+featureValue+" ");
                 }
