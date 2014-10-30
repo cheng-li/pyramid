@@ -16,6 +16,7 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import java.io.File;
 
 /**
+ * ecoc
  * Created by chengli on 10/5/14.
  */
 public class Exp10 {

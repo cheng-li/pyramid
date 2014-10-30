@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * feature sampling gradient boosting
+ * single label feature sampling gradient boosting
 * Created by chengli on 9/9/14.
 */
 public class Exp4 {
