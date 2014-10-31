@@ -723,6 +723,15 @@ public class Exp3 {
         return new LabelTranslator(map);
     }
 
+    private static boolean matchPrefixes(String name, Set<String> prefixes){
+        for (String prefix: prefixes){
+            if (name.startsWith(prefix)){
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      *
      * @param config
@@ -735,10 +744,11 @@ public class Exp3 {
                                    FeatureMappers featureMappers,
                                    String[] ids) throws Exception{
         String featureFieldPrefix = config.getString("index.featureFieldPrefix");
+        Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
 
         Set<String> allFields = index.listAllFields();
         List<String> featureFields = allFields.stream().
-                filter(field -> field.startsWith(featureFieldPrefix)).
+                filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
         System.out.println("all possible initial features:"+featureFields);
 
