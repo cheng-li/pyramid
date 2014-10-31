@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public class ArffFormat {
 
-    private static final String ARFF_MATRIX_FILE_NAME = "feature_matrix.txt";
+    private static final String ARFF_MATRIX_FILE_NAME = "feature_matrix.arff";
     private static final String ARFF_CONFIG_FILE_NAME = "config.txt";
     private static final String ARFF_CONFIG_NUM_DATA_POINTS = "numDataPoints";
     private static final String ARFF_CONFIG_NUM_FEATURES = "numFeatures";
@@ -70,7 +70,11 @@ public class ArffFormat {
             for (int i=0; i<numFeatures; i++){
                 bw.write("@ATTRIBUTE " + i + " NUMERIC" + "\n");
             }
-            bw.write("@ATTRIBUTE class NUMERIC" + "\n");
+            bw.write("@ATTRIBUTE class {0");
+            for (int i=1; i<dataSet.getNumClasses(); i++){
+                bw.write("," + i);
+            }
+            bw.write("}" + "\n");
             bw.write("@DATA" + "\n");
             for (int i=0; i<numDataPoints; i++){
                 int label = labels[i];
