@@ -12,6 +12,7 @@ public interface DataSet {
     void setFeatureValue(int dataPointIndex,
                                 int featureIndex, double featureValue);
     boolean isDense();
+    boolean hasMissingValue();
     DataSetSetting getSetting();
     void putSetting(DataSetSetting setting);
     String getMetaInfo();
