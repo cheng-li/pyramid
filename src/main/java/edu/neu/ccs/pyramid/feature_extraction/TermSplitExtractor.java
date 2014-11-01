@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
+import edu.neu.ccs.pyramid.dataset.RegDataSetBuilder;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -144,7 +145,7 @@ public class TermSplitExtractor {
                               String[] validationSet,
                               double[] residuals){
         int numDataPoints = validationSet.length;
-        DataSet dataSet = new DenseRegDataSet(numDataPoints,1);
+        DataSet dataSet = RegDataSetBuilder.getBuilder().numDataPoints(numDataPoints).numFeatures(1).dense(true).build();
         SearchResponse response = this.index.match(this.index.getBodyField(),
                 term,validationSet, MatchQueryBuilder.Operator.AND);
         Map<String,Float> matchingScores = new HashMap<>();
