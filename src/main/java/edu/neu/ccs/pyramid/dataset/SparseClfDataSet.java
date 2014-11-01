@@ -9,8 +9,9 @@ import java.util.Arrays;
 public class SparseClfDataSet extends SparseDataSet implements ClfDataSet {
     int numClasses;
     private int[] labels;
-    public SparseClfDataSet(int numDataPoints, int numFeatures, int numClasses) {
-        super(numDataPoints, numFeatures);
+    public SparseClfDataSet(int numDataPoints, int numFeatures,
+                            boolean missingValue, int numClasses) {
+        super(numDataPoints, numFeatures, missingValue);
         this.labels = new int[numDataPoints];
         this.numClasses = numClasses;
     }

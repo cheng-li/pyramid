@@ -10,8 +10,9 @@ public class DenseMLClfDataSet extends DenseDataSet implements MultiLabelClfData
     private MultiLabel[] multiLabels;
 
 
-    public DenseMLClfDataSet(int numDataPoints, int numFeatures, int numClasses){
-        super(numDataPoints, numFeatures);
+    public DenseMLClfDataSet(int numDataPoints, int numFeatures,
+                             boolean missingValue, int numClasses){
+        super(numDataPoints, numFeatures, missingValue);
         this.numClasses=numClasses;
         this.multiLabels=new MultiLabel[numDataPoints];
         for (int i=0;i<numDataPoints;i++){

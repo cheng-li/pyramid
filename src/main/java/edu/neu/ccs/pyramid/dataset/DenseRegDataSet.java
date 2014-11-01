@@ -9,8 +9,8 @@ import java.util.Arrays;
 public class DenseRegDataSet extends DenseDataSet implements RegDataSet {
     private double[] labels;
 
-    public DenseRegDataSet(int numDataPoints, int numFeatures) {
-        super(numDataPoints, numFeatures);
+    public DenseRegDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
+        super(numDataPoints, numFeatures, missingValue);
         this.labels = new double[numDataPoints];
     }
 

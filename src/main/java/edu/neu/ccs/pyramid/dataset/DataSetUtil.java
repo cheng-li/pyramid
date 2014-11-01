@@ -25,10 +25,11 @@ public class DataSetUtil {
         ClfDataSet dataSet1;
         int numDataPoints = dataSet.getNumDataPoints();
         int numFeatures = dataSet.getNumFeatures();
+        boolean missingValue = dataSet.hasMissingValue();
         if (dataSet.isDense()){
-            dataSet1 = new DenseClfDataSet(numDataPoints,numFeatures,numClasses);
+            dataSet1 = new DenseClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         } else {
-            dataSet1 = new SparseClfDataSet(numDataPoints,numFeatures,numClasses);
+            dataSet1 = new SparseClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         }
         for (int i=0;i<numDataPoints;i++){
             FeatureRow featureRow = dataSet.getFeatureRow(i);
@@ -65,11 +66,12 @@ public class DataSetUtil {
     public static ClfDataSet trim(ClfDataSet clfDataSet, List<Integer> columnsToKeep){
         ClfDataSet trimmed ;
         int numClasses = clfDataSet.getNumClasses();
+        boolean missingValue = clfDataSet.hasMissingValue();
         // keep density
         if (clfDataSet.isDense()) {
-            trimmed = new DenseClfDataSet(clfDataSet.getNumDataPoints(), columnsToKeep.size(), numClasses);
+            trimmed = new DenseClfDataSet(clfDataSet.getNumDataPoints(), columnsToKeep.size(), missingValue, numClasses);
         } else{
-            trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),columnsToKeep.size(), numClasses);
+            trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),columnsToKeep.size(), missingValue, numClasses);
         }
 
 
@@ -112,12 +114,13 @@ public class DataSetUtil {
      */
     public static MultiLabelClfDataSet trim(MultiLabelClfDataSet dataSet, List<Integer> columnsToKeep){
         MultiLabelClfDataSet trimmed ;
+        boolean missingValue = dataSet.hasMissingValue();
         int numClasses = dataSet.getNumClasses();
         // keep density
         if (dataSet.isDense()) {
-            trimmed = new DenseMLClfDataSet(dataSet.getNumDataPoints(), columnsToKeep.size(), numClasses);
+            trimmed = new DenseMLClfDataSet(dataSet.getNumDataPoints(), columnsToKeep.size(), missingValue, numClasses);
         } else{
-            trimmed = new SparseMLClfDataSet(dataSet.getNumDataPoints(),columnsToKeep.size(), numClasses);
+            trimmed = new SparseMLClfDataSet(dataSet.getNumDataPoints(),columnsToKeep.size(), missingValue, numClasses);
         }
 
 
@@ -166,11 +169,12 @@ public class DataSetUtil {
         }
         ClfDataSet trimmed ;
         int numClasses = clfDataSet.getNumClasses();
+        boolean missingValue = clfDataSet.hasMissingValue();
         // keep density
         if (clfDataSet.isDense()) {
-            trimmed = new DenseClfDataSet(clfDataSet.getNumDataPoints(), numFeatures, numClasses);
+            trimmed = new DenseClfDataSet(clfDataSet.getNumDataPoints(), numFeatures, missingValue, numClasses);
         } else{
-            trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),numFeatures, numClasses);
+            trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),numFeatures, missingValue, numClasses);
         }
         for (int i=0;i<trimmed.getNumDataPoints();i++){
             FeatureRow featureRow = clfDataSet.getFeatureRow(i);
@@ -416,10 +420,11 @@ public class DataSetUtil {
     public static ClfDataSet subSet(ClfDataSet clfDataSet, List<Integer> indices){
         ClfDataSet sample;
         int numClasses = clfDataSet.getNumClasses();
+        boolean missingValue = clfDataSet.hasMissingValue();
         if (clfDataSet instanceof DenseClfDataSet){
-            sample = new DenseClfDataSet(indices.size(),clfDataSet.getNumFeatures(), numClasses);
+            sample = new DenseClfDataSet(indices.size(),clfDataSet.getNumFeatures(), missingValue, numClasses);
         } else {
-            sample = new SparseClfDataSet(indices.size(),clfDataSet.getNumFeatures(), numClasses);
+            sample = new SparseClfDataSet(indices.size(),clfDataSet.getNumFeatures(), missingValue, numClasses);
         }
         int[] labels = clfDataSet.getLabels();
         for (int i=0;i<indices.size();i++){
@@ -598,11 +603,12 @@ public class DataSetUtil {
     public static ClfDataSet toBinary(MultiLabelClfDataSet dataSet, int k){
         int numDataPoints = dataSet.getNumDataPoints();
         int numFeatures = dataSet.getNumFeatures();
+        boolean missingValue = dataSet.hasMissingValue();
         ClfDataSet clfDataSet;
         if (dataSet.isDense()){
-            clfDataSet = new DenseClfDataSet(numDataPoints,numFeatures,2);
+            clfDataSet = new DenseClfDataSet(numDataPoints,numFeatures,missingValue, 2);
         } else {
-            clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures,2);
+            clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures,missingValue, 2);
         }
 
         for (int i=0;i<numDataPoints;i++){

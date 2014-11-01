@@ -24,6 +24,7 @@ public class TRECFormat {
     private static final String TREC_CONFIG_NUM_DATA_POINTS = "numDataPoints";
     private static final String TREC_CONFIG_NUM_FEATURES = "numFeatures";
     private static final String TREC_CONFIG_NUM_CLASSES = "numClasses";
+    private static final String TREC_CONFIG_MISSING_VALUE = "missingValue";
     private static final String TREC_DATA_SETTINGS_FILE_NAME = "data_settings.ser";
     private static final String TREC_FEATURE_SETTINGS_FILE_NAME = "feature_settings.ser";
     private static final String TREC_DATASET_SETTINGS_FILE_NAME = "dataset_settings.ser";
@@ -100,12 +101,13 @@ public class TRECFormat {
         int numDataPoints = parseNumDataPoints(trecFile);
         int numFeatures = parseNumFeaturess(trecFile);
         int numClasses = parseNumClasses(trecFile);
+        boolean missingValue = parseMissingValue(trecFile);
         ClfDataSet clfDataSet = null;
         if (dataSetType==DataSetType.CLF_DENSE){
-            clfDataSet = new DenseClfDataSet(numDataPoints,numFeatures,numClasses);
+            clfDataSet = new DenseClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         }
         if (dataSetType==DataSetType.CLF_SPARSE){
-            clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures,numClasses);
+            clfDataSet = new SparseClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         }
         fillClfDataSet(clfDataSet,trecFile);
         if (loadSettings){
@@ -127,12 +129,13 @@ public class TRECFormat {
         int numDataPoints = parseNumDataPoints(trecFile);
         int numFeatures = parseNumFeaturess(trecFile);
         int numClasses = parseNumClasses(trecFile);
+        boolean missingValue = parseMissingValue(trecFile);
         MultiLabelClfDataSet dataSet = null;
         if (dataSetType==DataSetType.ML_CLF_DENSE){
-            dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,numClasses);
+            dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         }
         if (dataSetType==DataSetType.ML_CLF_SPARSE){
-            dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,numClasses);
+            dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         }
         fillMultiLabelClfDataSet(dataSet,trecFile);
         if (loadSettings){
@@ -153,12 +156,13 @@ public class TRECFormat {
         }
         int numDataPoints = parseNumDataPoints(trecFile);
         int numFeatures = parseNumFeaturess(trecFile);
+        boolean missingValue = parseMissingValue(trecFile);
         RegDataSet regDataSet = null;
         if (dataSetType==DataSetType.REG_DENSE){
-            regDataSet = new DenseRegDataSet(numDataPoints,numFeatures);
+            regDataSet = new DenseRegDataSet(numDataPoints,numFeatures,missingValue);
         }
         if (dataSetType==DataSetType.REG_SPARSE){
-            throw new RuntimeException("currently not supported ");
+            regDataSet = new SparseRegDataSet(numDataPoints,numFeatures,missingValue);
         }
         fillRegDataSet(regDataSet, trecFile);
         if (loadSettings){
@@ -253,6 +257,18 @@ public class TRECFormat {
             numClasses = config.getInt(TREC_CONFIG_NUM_CLASSES);
         }
         return numClasses;
+    }
+
+    private static boolean parseMissingValue(File trecFile) throws IOException {
+        File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
+        boolean missingValue;
+        try(
+                BufferedReader br = new BufferedReader(new FileReader(configFile));
+        ){
+            Config config = new Config(configFile);
+            missingValue = config.getBoolean(TREC_CONFIG_MISSING_VALUE);
+        }
+        return missingValue;
     }
 
     private static void fillClfDataSet(ClfDataSet dataSet, File trecFile) throws IOException {
@@ -371,6 +387,7 @@ public class TRECFormat {
         config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
         config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
         config.setInt(TREC_CONFIG_NUM_CLASSES,dataSet.getNumClasses());
+        config.setBoolean(TREC_CONFIG_MISSING_VALUE,dataSet.hasMissingValue());
         try {
             config.store(configFile);
         } catch (Exception e) {
@@ -384,6 +401,7 @@ public class TRECFormat {
         config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
         config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
         config.setInt(TREC_CONFIG_NUM_CLASSES,dataSet.getNumClasses());
+        config.setBoolean(TREC_CONFIG_MISSING_VALUE,dataSet.hasMissingValue());
         try {
             config.store(configFile);
         } catch (Exception e) {
@@ -396,6 +414,7 @@ public class TRECFormat {
         Config config = new Config();
         config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
         config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
+        config.setBoolean(TREC_CONFIG_MISSING_VALUE,dataSet.hasMissingValue());
         try {
             config.store(configFile);
         } catch (Exception e) {
@@ -408,6 +427,7 @@ public class TRECFormat {
         Config config = new Config();
         config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
         config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
+        config.setBoolean(TREC_CONFIG_MISSING_VALUE,dataSet.hasMissingValue());
         try {
             config.store(configFile);
         } catch (Exception e) {

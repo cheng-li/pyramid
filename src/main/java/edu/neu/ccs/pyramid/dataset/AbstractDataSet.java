@@ -7,12 +7,14 @@ package edu.neu.ccs.pyramid.dataset;
 abstract class AbstractDataSet implements DataSet{
     protected int numDataPoints;
     protected int numFeatures;
+    protected boolean missingValue;
     protected DataSetSetting settings;
 
 
-    AbstractDataSet(int numDataPoints, int numFeatures) {
+    AbstractDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         this.numDataPoints = numDataPoints;
         this.numFeatures = numFeatures;
+        this.missingValue = missingValue;
         this.settings = new DataSetSetting();
     }
 
@@ -45,12 +47,17 @@ abstract class AbstractDataSet implements DataSet{
     @Override
     public abstract void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue);
 
+    @Override
+    public boolean hasMissingValue() {
+        return missingValue;
+    }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("number of data points = ").append(numDataPoints).append("\n");
         sb.append("number of features = ").append(numFeatures).append("\n");
+        sb.append("has missing value = ").append(missingValue).append("\n");
         sb.append("data settings:").append("\n");
         for (int i=0;i<numDataPoints;i++){
             sb.append(i).append(":").append(getFeatureRow(i).getSetting()).append(", ");
@@ -81,6 +88,7 @@ abstract class AbstractDataSet implements DataSet{
         sb.append("data set meta information:").append("\n");
         sb.append("number of data points = ").append(getNumDataPoints()).append("\n");
         sb.append("number of features = ").append(getNumFeatures()).append("\n");
+        sb.append("has missing value = ").append(missingValue).append("\n");
         return sb.toString();
     }
 }

@@ -8,8 +8,8 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
     protected SparseFeatureRow[] featureRows;
     protected SparseFeatureColumn[] featureColumns;
 
-    public SparseDataSet(int numDataPoints, int numFeatures) {
-        super(numDataPoints,numFeatures);
+    public SparseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
+        super(numDataPoints,numFeatures,missingValue);
         this.featureRows = new SparseFeatureRow[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
             this.featureRows[i] = new SparseFeatureRow(i,numFeatures);
@@ -39,6 +39,9 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
      */
     @Override
     public synchronized void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
+        if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
+            throw new IllegalArgumentException("missing value is not allowed in this data set");
+        }
         this.featureRows[dataPointIndex].getVector().set(featureIndex,featureValue);
         this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
     }

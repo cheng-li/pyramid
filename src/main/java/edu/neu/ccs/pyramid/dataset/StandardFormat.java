@@ -12,17 +12,19 @@ public class StandardFormat {
                                             String featureFile,
                                             String labelFile,
                                             String delimiter,
-                                            DataSetType dataSetType) throws IOException {
+                                            DataSetType dataSetType,
+                                            boolean missingValue) throws IOException {
         return loadClfDataSet(numClasses,new File(featureFile),
-                new File(labelFile),delimiter,dataSetType);
+                new File(labelFile),delimiter,dataSetType, missingValue);
     }
 
     public static RegDataSet loadRegDataSet(String featureFile,
                                             String labelFile,
                                             String delimiter,
-                                            DataSetType dataSetType) throws IOException {
+                                            DataSetType dataSetType,
+                                            boolean missingValue) throws IOException {
         return loadRegDataSet(new File(featureFile),
-                new File(labelFile), delimiter, dataSetType);
+                new File(labelFile), delimiter, dataSetType, missingValue);
     }
 
 
@@ -30,7 +32,8 @@ public class StandardFormat {
                                             File featureFile,
                                             File labelFile,
                                             String delimiter,
-                                            DataSetType dataSetType) throws IOException {
+                                            DataSetType dataSetType,
+                                            boolean missingValue) throws IOException {
         int[] stats = parseStandard(featureFile, labelFile, delimiter);
         int numDataPoints = stats[0];
         int numFeatures = stats[1];
@@ -41,10 +44,10 @@ public class StandardFormat {
             throw new IllegalArgumentException("illegal data set type");
         }
         if (dataSetType==DataSetType.CLF_DENSE){
-            dataSet = new DenseClfDataSet(numDataPoints,numFeatures,numClasses);
+            dataSet = new DenseClfDataSet(numDataPoints,numFeatures,missingValue, numClasses);
         }
         if (dataSetType==DataSetType.CLF_SPARSE){
-            dataSet = new SparseClfDataSet(numDataPoints,numFeatures,numClasses);
+            dataSet = new SparseClfDataSet(numDataPoints,numFeatures,missingValue, numClasses);
         }
         fill(dataSet,featureFile,labelFile,delimiter);
         return dataSet;
@@ -53,7 +56,8 @@ public class StandardFormat {
     public static RegDataSet loadRegDataSet(File featureFile,
                                             File labelFile,
                                             String delimiter,
-                                            DataSetType dataSetType) throws IOException {
+                                            DataSetType dataSetType,
+                                            boolean missingValue) throws IOException {
         int[] stats = parseStandard(featureFile, labelFile, delimiter);
         int numDataPoints = stats[0];
         int numFeatures = stats[1];
@@ -64,10 +68,10 @@ public class StandardFormat {
             throw new IllegalArgumentException("illegal data set type");
         }
         if (dataSetType==DataSetType.REG_DENSE){
-            dataSet = new DenseRegDataSet(numDataPoints,numFeatures);
+            dataSet = new DenseRegDataSet(numDataPoints,numFeatures, missingValue);
         }
         if (dataSetType==DataSetType.REG_SPARSE){
-            dataSet = new SparseRegDataSet(numDataPoints,numFeatures);
+            dataSet = new SparseRegDataSet(numDataPoints,numFeatures, missingValue);
         }
         fill(dataSet,featureFile,labelFile,delimiter);
         return dataSet;

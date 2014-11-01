@@ -9,8 +9,8 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
     protected DenseFeatureRow[] featureRows;
     protected DenseFeatureColumn[] featureColumns;
 
-    DenseDataSet(int numDataPoints, int numFeatures) {
-        super(numDataPoints,numFeatures);
+    DenseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
+        super(numDataPoints,numFeatures, missingValue);
         this.featureRows = new DenseFeatureRow[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
             this.featureRows[i] = new DenseFeatureRow(i,numFeatures);
@@ -34,6 +34,9 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
 
     @Override
     public void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
+        if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
+            throw new IllegalArgumentException("missing value is not allowed in this data set");
+        }
         this.featureRows[dataPointIndex].getVector().set(featureIndex,featureValue);
         this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
     }
