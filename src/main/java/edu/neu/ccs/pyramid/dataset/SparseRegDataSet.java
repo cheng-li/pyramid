@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class SparseRegDataSet extends SparseDataSet implements RegDataSet{
     private double[] labels;
 
-    public SparseRegDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
+    SparseRegDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints, numFeatures, missingValue);
         this.labels = new double[numDataPoints];
     }

@@ -8,7 +8,7 @@ public class SparseClfDataSetTest {
     }
 
     static void test1(){
-        ClfDataSet dataSet = new SparseClfDataSet(10,5,2);
+        ClfDataSet dataSet = new SparseClfDataSet(10,5,false,2);
         dataSet.setFeatureValue(1,3,-0.9);
         dataSet.setFeatureValue(1,4,-0.9);
         dataSet.setFeatureValue(1,4,-60.9);
@@ -19,7 +19,7 @@ public class SparseClfDataSetTest {
     }
 
     static void test2(){
-        ClfDataSet dataSet = new SparseClfDataSet(10,5,2);
+        ClfDataSet dataSet = new SparseClfDataSet(10,5,false,2);
         dataSet.setFeatureValue(1,3,-0.9);
         dataSet.setFeatureValue(1,4,-0.9);
         dataSet.setFeatureValue(1,4,-60.9);

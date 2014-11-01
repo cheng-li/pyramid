@@ -8,7 +8,7 @@ public class SparseMLClfDataSetTest {
     }
 
     static void test1(){
-        MultiLabelClfDataSet dataSet = new SparseMLClfDataSet(10,5,3);
+        MultiLabelClfDataSet dataSet = new SparseMLClfDataSet(10,5,false,3);
         dataSet.setFeatureValue(1,3,-0.9);
         dataSet.setFeatureValue(1,4,-0.9);
         dataSet.setFeatureValue(1,4,-60.9);
