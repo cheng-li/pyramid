@@ -7,9 +7,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -130,14 +128,13 @@ public class ArffFormat {
         int numDataPoints = dataSet.getNumDataPoints();
         int numFeatures = dataSet.getNumFeatures();
         MultiLabel[] multiLabels = dataSet.getMultiLabels();
-        Set<Integer> allLabels = unionLabels(multiLabels);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(matrixFile));
         ) {
             bw.write("@RELATION MATRIX" + "\n");
             for (int i=0; i<numFeatures; i++){
                 bw.write("@ATTRIBUTE " + i + " NUMERIC" + "\n");
             }
-            for (int i=0; i<allLabels.size(); i++){
+            for (int i=0; i<dataSet.getNumClasses(); i++){
                 bw.write("@ATTRIBUTE class " + i + " {0,1}" + "\n");
             }
             bw.write("@DATA" + "\n");
@@ -163,14 +160,6 @@ public class ArffFormat {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static Set<Integer> unionLabels(MultiLabel[] multiLabels) {
-        Set<Integer> labels = new HashSet<>();
-        for (int i=0; i<multiLabels.length; i++){
-            labels.addAll(multiLabels[i].getMatchedLabels());
-        }
-        return labels;
     }
 
     private static void writeConfigFile(ClfDataSet dataSet, File arffFile) {
