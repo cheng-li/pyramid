@@ -18,7 +18,7 @@ public class DataSetUtilTest {
     }
 
     static void test1(){
-        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,6);
+        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,false,6);
         clfDataSet.setFeatureValue(0,0,3.5);
         clfDataSet.setFeatureValue(1,2,5.5);
         clfDataSet.setFeatureValue(4,1,2.5);
@@ -42,7 +42,7 @@ public class DataSetUtilTest {
     }
 
     static void test2(){
-        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,3);
+        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,false,3);
         clfDataSet.setFeatureValue(0,0,3.5);
         clfDataSet.setFeatureValue(1,2,5.5);
         clfDataSet.setFeatureValue(4,1,2.5);
@@ -75,7 +75,7 @@ public class DataSetUtilTest {
 
 
     static  void test4() throws Exception{
-        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,6);
+        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,false,6);
         clfDataSet.setFeatureValue(0,0,3.5);
         clfDataSet.setFeatureValue(1,2,5.5);
         clfDataSet.setFeatureValue(4,1,2.5);

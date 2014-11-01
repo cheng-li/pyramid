@@ -52,6 +52,10 @@ abstract class AbstractDataSet implements DataSet{
         return missingValue;
     }
 
+    protected void allowMissingValue(){
+        this.missingValue=true;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

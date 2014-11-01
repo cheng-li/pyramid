@@ -15,7 +15,7 @@ public class TRECFormatTest {
     }
 
     static void test1() throws Exception{
-        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,6);
+        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,false,6);
         clfDataSet.setFeatureValue(0,0,3.5);
         clfDataSet.setFeatureValue(1,2,5.5);
         clfDataSet.setFeatureValue(4,1,2.5);
@@ -59,7 +59,7 @@ public class TRECFormatTest {
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
         MultiLabelClfDataSet dataSet = new DenseMLClfDataSet(numDataPoints,
-                numFeatures,4);
+                numFeatures,false,4);
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
@@ -94,7 +94,7 @@ public class TRECFormatTest {
         int numDataPoints = singleLabeldataSet.getNumDataPoints();
         int numFeatures = singleLabeldataSet.getNumFeatures();
         MultiLabelClfDataSet dataSet = new DenseMLClfDataSet(numDataPoints,
-                numFeatures,4);
+                numFeatures,false,4);
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);

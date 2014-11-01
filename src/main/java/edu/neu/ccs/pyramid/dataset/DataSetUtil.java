@@ -651,4 +651,11 @@ public class DataSetUtil {
         return clfDataSet;
     }
 
+
+    public static void allowMissingValue(DataSet dataSet){
+        if (dataSet instanceof AbstractDataSet){
+            ((AbstractDataSet)dataSet).allowMissingValue();
+        }
+    }
+
 }
