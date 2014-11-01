@@ -40,6 +40,7 @@ public class Node implements Serializable {
     private double rightProb;
     private String featureName = "unknown";
 
+    //todo this should be transient? maybe doesn't matter as it is cleaned
     private double[] probs;
 
     boolean isSplitable() {
