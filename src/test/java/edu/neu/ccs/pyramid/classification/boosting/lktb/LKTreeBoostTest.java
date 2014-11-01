@@ -15,7 +15,7 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        spam_test();
+//        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
@@ -23,7 +23,7 @@ public class LKTreeBoostTest {
 //        spam_polluted_build();
 //        spam_polluted_load();
 //        spam_fake_build();
-//        spam_missing_all();
+        spam_missing_all();
 //        mnist_all();
     }
 
@@ -266,7 +266,7 @@ public class LKTreeBoostTest {
         LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
         File featureFile = new File(DATASETS,"/spam/polluted/test_feature.txt");
         File labelFile = new File(DATASETS,"spam/polluted/test_label.txt");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE,false);
 
 
         double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
@@ -281,7 +281,7 @@ public class LKTreeBoostTest {
     static void spam_polluted_build() throws Exception{
         File featureFile = new File(DATASETS,"spam/polluted/train_feature.txt");
         File labelFile = new File(DATASETS,"spam/polluted/train_label.txt");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE,false);
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
@@ -312,7 +312,7 @@ public class LKTreeBoostTest {
         File featureFile = new File(DATASETS,"/spam/train_data.txt");
         File labelFile = new File(DATASETS,"/spam/train_label.txt");
 //        ClfDataSet dataSet = DenseClfDataSet.loadStandard(featureFile, labelFile, ",");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, ",", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, ",", DataSetType.CLF_DENSE,false);
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             boolean set = Math.random()<ratio;
             if (set){

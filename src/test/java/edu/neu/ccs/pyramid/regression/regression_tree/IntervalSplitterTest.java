@@ -112,7 +112,7 @@ public class IntervalSplitterTest {
         vector.set(3,3);
         double[] probs = {1,0.5,0.2,0.6};
         double[] labels = {1,2,3,4};
-        System.out.println(IntervalSplitter.generateIntervals(regTreeConfig,vector,probs,labels));
+        System.out.println(IntervalSplitter.generateIntervalsWithMissingValue(regTreeConfig, vector, probs, labels));
 
     }
 
@@ -125,7 +125,7 @@ public class IntervalSplitterTest {
         vector.set(3,3);
         double[] probs = {0,0.5,0.2,0.6};
         double[] labels = {1,2,3,4};
-        List<Interval> intervals = IntervalSplitter.generateIntervals(regTreeConfig, vector, probs, labels);
+        List<Interval> intervals = IntervalSplitter.generateIntervalsWithMissingValue(regTreeConfig, vector, probs, labels);
         System.out.println(intervals);
         System.out.println(IntervalSplitter.compress(intervals));
 
@@ -140,7 +140,7 @@ public class IntervalSplitterTest {
         vector.set(3,3);
         double[] probs = {1,0.5,0,0.6};
         double[] labels = {1,2,3,4};
-        List<Interval> intervals = IntervalSplitter.generateIntervals(regTreeConfig,vector,probs,labels);
+        List<Interval> intervals = IntervalSplitter.generateIntervalsWithMissingValue(regTreeConfig, vector, probs, labels);
         System.out.println(intervals);
         System.out.println(IntervalSplitter.compress(intervals));
 
@@ -155,7 +155,7 @@ public class IntervalSplitterTest {
         vector.set(3,3);
         double[] probs = {1,0.5,1,0.6};
         double[] labels = {1,2,3,4};
-        List<Interval> intervals = IntervalSplitter.generateIntervals(regTreeConfig,vector,probs,labels);
+        List<Interval> intervals = IntervalSplitter.generateIntervalsWithMissingValue(regTreeConfig, vector, probs, labels);
         System.out.println(intervals);
         System.out.println(IntervalSplitter.compress(intervals));
         System.out.println(1.5/(1.5+0.6));
@@ -172,7 +172,7 @@ public class IntervalSplitterTest {
         vector.set(3,3);
         double[] probs = {1,0.5,1,0.6};
         double[] labels = {1,2,3,4};
-        List<Interval> intervals = IntervalSplitter.generateIntervals(regTreeConfig,vector,probs,labels);
+        List<Interval> intervals = IntervalSplitter.generateIntervalsWithMissingValue(regTreeConfig, vector, probs, labels);
         System.out.println(intervals);
         System.out.println(IntervalSplitter.compress(intervals));
 
@@ -187,7 +187,7 @@ public class IntervalSplitterTest {
         vector.set(3,3);
         double[] probs = {1,0.5,1,0.6};
         double[] labels = {1,2,3,4};
-        List<Interval> intervals = IntervalSplitter.generateIntervals(regTreeConfig,vector,probs,labels);
+        List<Interval> intervals = IntervalSplitter.generateIntervalsWithMissingValue(regTreeConfig, vector, probs, labels);
         System.out.println(intervals);
         System.out.println(IntervalSplitter.compress(intervals));
 
@@ -202,7 +202,7 @@ public class IntervalSplitterTest {
         vector.set(3,3);
         double[] probs = {1,0.5,1,0.6};
         double[] labels = {1,2,3,4};
-        List<Interval> intervals = IntervalSplitter.generateIntervals(regTreeConfig,vector,probs,labels);
+        List<Interval> intervals = IntervalSplitter.generateIntervalsWithMissingValue(regTreeConfig, vector, probs, labels);
         System.out.println(intervals);
         System.out.println(IntervalSplitter.compress(intervals));
 
