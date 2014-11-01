@@ -23,7 +23,7 @@ public class Formatter {
     private static void dumpTrain() throws Exception{
         File featureFile = new File(DATASETS,"mnist/training_image.txt");
         File labelFile = new File(DATASETS,"mnist/training_label.txt");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(10, featureFile, labelFile, ",", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(10, featureFile, labelFile, ",", DataSetType.CLF_DENSE,false);
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<10;i++){
             extLabels.add(""+i);
@@ -37,7 +37,7 @@ public class Formatter {
     private static void dumpTest() throws Exception{
         File featureFile = new File(DATASETS,"mnist/testing_image.txt");
         File labelFile = new File(DATASETS,"mnist/testing_label.txt");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(10, featureFile, labelFile, ",", DataSetType.CLF_DENSE);
+        ClfDataSet dataSet = StandardFormat.loadClfDataSet(10, featureFile, labelFile, ",", DataSetType.CLF_DENSE,false);
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<10;i++){
             extLabels.add(""+i);
