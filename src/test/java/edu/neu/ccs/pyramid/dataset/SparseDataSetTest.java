@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.dataset;
 
 import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.SparseColumnMatrix;
+import org.apache.mahout.math.Vector;
 
 import java.util.stream.IntStream;
 
@@ -24,10 +25,10 @@ public class SparseDataSetTest {
         dataSet.setFeatureValue(1,4,-60.9);
         dataSet.setFeatureValue(7,4,18);
         System.out.println(dataSet);
-        System.out.println(dataSet.getRow(1).print());
-        System.out.println(dataSet.getRow(2).print());
-        System.out.println(dataSet.getRow(7).print());
-        System.out.println(dataSet.getColumn(4).print());
+        System.out.println(dataSet.getRow(1));
+        System.out.println(dataSet.getRow(2));
+        System.out.println(dataSet.getRow(7));
+        System.out.println(dataSet.getColumn(4));
     }
 
     static void test2(){
@@ -80,9 +81,9 @@ public class SparseDataSetTest {
         SparseDataSet dataSet1 = new SparseDataSet(100,10,false);
         IntStream.range(0,100).parallel().
                 forEach(i -> {
-                    FeatureRow featureRow = dataSet.getRow(i);
+                    Vector featureRow = dataSet.getRow(i);
                     IntStream.range(0,10).parallel()
-                            .forEach(j-> dataSet1.setFeatureValue(i,j,featureRow.getVector().get(j)));
+                            .forEach(j-> dataSet1.setFeatureValue(i,j,featureRow.get(j)));
 
                 });
         System.out.println(dataSet1);
