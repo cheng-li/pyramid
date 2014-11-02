@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import edu.neu.ccs.pyramid.data_formatter.classic.Classic3IndexBuilder;
 
 /**
  * Created by chengli on 11/1/14.

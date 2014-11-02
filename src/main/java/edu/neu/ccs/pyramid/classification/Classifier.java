@@ -1,7 +1,8 @@
 package edu.neu.ccs.pyramid.classification;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
+import org.apache.mahout.math.Vector;
+
 
 import java.io.*;
 import java.util.stream.IntStream;
@@ -10,7 +11,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 8/13/14.
  */
 public interface Classifier extends Serializable{
-    int predict(FeatureRow featureRow);
+    int predict(Vector vector);
 
     int  getNumClasses();
 

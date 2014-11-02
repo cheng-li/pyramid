@@ -38,7 +38,7 @@ class Splitter {
                                        int featureIndex){
         Optional<SplitResult> splitResult;
         FeatureType featureType = dataSet
-                .getColumn(featureIndex).getSetting()
+                .getFeatureSetting(featureIndex)
                 .getFeatureType();
         if (featureType==FeatureType.NUMERICAL){
             splitResult = IntervalSplitter.split(regTreeConfig,dataSet,labels,

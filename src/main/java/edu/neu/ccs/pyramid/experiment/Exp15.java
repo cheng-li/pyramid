@@ -187,6 +187,8 @@ public class Exp15 {
         }
     }
 
+
+    //todo allow missing value?
     //todo keep track of feature types(numerical /binary)
     static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
                                          FeatureMappers featureMappers,
@@ -194,12 +196,10 @@ public class Exp15 {
                                          LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
-        MultiLabelClfDataSet dataSet;
-        if(config.getBoolean("featureMatrix.sparse")){
-            dataSet= new SparseMLClfDataSet(numDataPoints,totalDim,numClasses);
-        } else {
-            dataSet= new DenseMLClfDataSet(numDataPoints,totalDim,numClasses);
-        }
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(totalDim)
+                .numClasses(numClasses).dense(!config.getBoolean("featureMatrix.sparse"))
+                .missingValue(false).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);

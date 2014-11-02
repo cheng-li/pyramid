@@ -21,7 +21,7 @@ public class BinarySplitter {
                                        int featureIndex){
         int numDataPoints = dataSet.getNumDataPoints();
         Vector featureValues;
-        Vector inputVector = dataSet.getColumn(featureIndex).getVector();
+        Vector inputVector = dataSet.getColumn(featureIndex);
         if (inputVector.isDense()){
             featureValues = inputVector;
         } else {

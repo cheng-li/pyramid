@@ -442,12 +442,12 @@ public class DataSetUtil {
         int[] labels = clfDataSet.getLabels();
         for (int i=0;i<indices.size();i++){
             int indexInOld = indices.get(i);
-            Vector oldFeatureRow = clfDataSet.getRow(indexInOld);
+            Vector oldVector = clfDataSet.getRow(indexInOld);
             int label = labels[indexInOld];
             //copy label
             sample.setLabel(i,label);
             //copy row feature values, optimized for sparse vector
-            for (Vector.Element element: oldFeatureRow.nonZeroes()){
+            for (Vector.Element element: oldVector.nonZeroes()){
                 sample.setFeatureValue(i,element.index(),element.get());
             }
             //copy data settings

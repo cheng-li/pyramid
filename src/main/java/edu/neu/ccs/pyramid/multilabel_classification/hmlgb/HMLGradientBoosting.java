@@ -2,13 +2,13 @@ package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MLPriorProbClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -154,10 +154,10 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         this.trainer.setActiveFeatures(activeFeatures);
     }
 
-    public MultiLabel predict(FeatureRow featureRow){
+    public MultiLabel predict(Vector vector){
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
-        double[] classeScores = calClassScores(featureRow);
+        double[] classeScores = calClassScores(vector);
         for (MultiLabel assignment: this.assignments){
             double score = this.calAssignmentScore(assignment,classeScores);
             if (score > maxScore){
@@ -171,24 +171,24 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
 
     /**
      *
-     * @param featureRow
+     * @param vector
      * @param k class index
      * @return
      */
-    public double calClassScore(FeatureRow featureRow, int k){
+    public double calClassScore(Vector vector, int k){
         List<Regressor> regressorsClassK = this.regressors.get(k);
         double score = 0;
         for (Regressor regressor: regressorsClassK){
-            score += regressor.predict(featureRow);
+            score += regressor.predict(vector);
         }
         return score;
     }
 
-    private double[] calClassScores(FeatureRow featureRow){
+    private double[] calClassScores(Vector vector){
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){
-            scores[k] = this.calClassScore(featureRow,k);
+            scores[k] = this.calClassScore(vector,k);
         }
         return scores;
     }

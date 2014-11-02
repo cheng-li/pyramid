@@ -20,7 +20,7 @@ class IntervalSplitter {
                                        double[] probs,
                                        int featureIndex){
         Vector featureValues;
-        Vector inputVector = dataSet.getColumn(featureIndex).getVector();
+        Vector inputVector = dataSet.getColumn(featureIndex);
         if (inputVector.isDense()){
             featureValues = inputVector;
         } else {

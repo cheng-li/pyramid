@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.classification;
 
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
+
+import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +25,11 @@ public class ProbabilityVoting implements ProbabilityEstimator{
         this.estimatorList.add(estimator);
     }
 
-    public int predict(FeatureRow featureRow){
+    public int predict(Vector vector){
         int numEstimators = this.estimatorList.size();
         double[] averageProbs = new double[this.numClasses];
         for (ProbabilityEstimator estimator: estimatorList){
-            double[] probs = estimator.predictClassProbs(featureRow);
+            double[] probs = estimator.predictClassProbs(vector);
             for (int k=0;k<this.numClasses;k++){
                 averageProbs[k] += probs[k];
             }
@@ -62,11 +63,11 @@ public class ProbabilityVoting implements ProbabilityEstimator{
     }
 
     @Override
-    public double[] predictClassProbs(FeatureRow featureRow) {
+    public double[] predictClassProbs(Vector vector) {
         int numEstimators = this.estimatorList.size();
         double[] averageProbs = new double[this.numClasses];
         for (ProbabilityEstimator estimator: estimatorList){
-            double[] probs = estimator.predictClassProbs(featureRow);
+            double[] probs = estimator.predictClassProbs(vector);
             for (int k=0;k<this.numClasses;k++){
                 averageProbs[k] += probs[k];
             }

@@ -9,14 +9,14 @@ import org.apache.mahout.math.Vector;
  */
 class DenseDataSet extends AbstractDataSet implements DataSet{
 
-    protected DenseVector[] featureRows;
+    protected DenseVector[] vectors;
     protected DenseVector[] featureColumns;
 
     DenseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures, missingValue);
-        this.featureRows = new DenseVector[numDataPoints];
+        this.vectors = new DenseVector[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.featureRows[i] = new DenseVector(numFeatures);
+            this.vectors[i] = new DenseVector(numFeatures);
         }
         this.featureColumns = new DenseVector[numFeatures];
         for (int j=0;j<numFeatures;j++){
@@ -32,7 +32,7 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
 
     @Override
     public Vector getRow(int dataPointIndex) {
-        return this.featureRows[dataPointIndex];
+        return this.vectors[dataPointIndex];
     }
 
     @Override
@@ -40,7 +40,7 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
         if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
             throw new IllegalArgumentException("missing value is not allowed in this data set");
         }
-        this.featureRows[dataPointIndex].set(featureIndex, featureValue);
+        this.vectors[dataPointIndex].set(featureIndex, featureValue);
         this.featureColumns[featureIndex].set(dataPointIndex, featureValue);
     }
 

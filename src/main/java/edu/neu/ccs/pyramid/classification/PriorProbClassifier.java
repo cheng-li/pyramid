@@ -1,8 +1,8 @@
 package edu.neu.ccs.pyramid.classification;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -43,7 +43,7 @@ public class PriorProbClassifier implements ProbabilityEstimator{
     }
 
     @Override
-    public int predict(FeatureRow featureRow) {
+    public int predict(Vector vector) {
         return this.topClass;
     }
 
@@ -53,7 +53,7 @@ public class PriorProbClassifier implements ProbabilityEstimator{
     }
 
     @Override
-    public double[] predictClassProbs(FeatureRow featureRow) {
+    public double[] predictClassProbs(Vector vector) {
         return this.probs;
     }
 

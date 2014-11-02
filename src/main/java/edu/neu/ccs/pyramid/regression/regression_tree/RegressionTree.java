@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import org.apache.mahout.math.Vector;
 
@@ -40,11 +39,8 @@ public class RegressionTree implements Regressor, Serializable {
         return root;
     }
 
-    public double predict(FeatureRow featureRow){
-        return predict(featureRow.getVector());
-    }
-
-    double predict(Vector vector){
+    @Override
+    public double predict(Vector vector){
         double prediction = 0;
         for (Node leaf: this.leaves){
             double prob = probability(vector,leaf);
@@ -100,20 +96,20 @@ public class RegressionTree implements Regressor, Serializable {
         return 1;
     }
 
-//    public DecisionProcess getDecisionProcess(float [] featureRow,List<Feature> features){
+//    public DecisionProcess getDecisionProcess(float [] vector,List<Feature> features){
 //        StringBuilder sb = new StringBuilder();
 //        Node nodeToCheck = this.root;
 //        while (! this.leaves.contains(nodeToCheck)){
 //            int featureIndex = nodeToCheck.getFeatureIndex();
 //            float threshold = nodeToCheck.getThreshold();
-//            if (featureRow[featureIndex] <= threshold){
+//            if (vector[featureIndex] <= threshold){
 //                nodeToCheck = nodeToCheck.getLeftChild();
 //                sb.append(features.get(featureIndex).getFeatureName());
-//                sb.append("(").append(featureRow[featureIndex]).append("<=").append(threshold).append(")  ");
+//                sb.append("(").append(vector[featureIndex]).append("<=").append(threshold).append(")  ");
 //            }else{
 //                nodeToCheck = nodeToCheck.getRightChild();
 //                sb.append(features.get(featureIndex).getFeatureName());
-//                sb.append("(").append(featureRow[featureIndex]).append(">").append(threshold).append(")  ");
+//                sb.append("(").append(vector[featureIndex]).append(">").append(threshold).append(")  ");
 //            }
 //        }
 //        return new DecisionProcess(sb.toString(),nodeToCheck.getValue());
