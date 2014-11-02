@@ -13,7 +13,7 @@ public class RegTreeTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test8();
+        test7();
     }
 
 
@@ -26,9 +26,6 @@ public class RegTreeTrainerTest {
         RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE,false);
 
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
-        }
         System.out.println(dataSet.getNumDataPoints());
         System.out.println(dataSet.getNumFeatures());
 
@@ -71,9 +68,7 @@ public class RegTreeTrainerTest {
         RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE,false);
         System.out.println(dataSet.isDense());
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
-        }
+
 
 
 
@@ -112,9 +107,7 @@ public class RegTreeTrainerTest {
         RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_SPARSE,false);
         System.out.println(dataSet.isDense());
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
-        }
+
 
 
 
@@ -149,7 +142,9 @@ public class RegTreeTrainerTest {
     static void test5() throws Exception {
         int numLeaves = 4;
 //        RegDataSet dataSet = new DenseRegDataSet(50000,10000);
-        RegDataSet dataSet = new SparseRegDataSet(50000,5000,false);
+        RegDataSet dataSet = RegDataSetBuilder.getBuilder()
+        .numDataPoints(50000).numFeatures(50000).dense(false)
+        .missingValue(false).build();
         IntStream.range(0,dataSet.getNumDataPoints())
                 .forEach(i-> IntStream.range(0,dataSet.getNumFeatures())
                         .forEach(j-> {
@@ -161,10 +156,6 @@ public class RegTreeTrainerTest {
                         }));
         System.out.println("created");
 
-
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
-        }
 
 
 
@@ -232,9 +223,6 @@ public class RegTreeTrainerTest {
         RegDataSet dataSet = StandardFormat.loadRegDataSet(new File(DATASETS, "spam/train_data.txt"),
                 new File(DATASETS, "spam/train_label.txt"), ",", DataSetType.REG_DENSE,false);
 
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
-        }
         System.out.println(dataSet.getNumDataPoints());
         System.out.println(dataSet.getNumFeatures());
 
@@ -278,10 +266,6 @@ public class RegTreeTrainerTest {
 
         RegDataSet dataSet = StandardFormat.loadRegDataSet(new File(DATASETS, "spam/train_data.txt"),
                 new File(DATASETS, "spam/train_label.txt"), ",", DataSetType.REG_DENSE,true);
-
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getColumn(i).getSetting().setFeatureType(FeatureType.NUMERICAL);
-        }
 
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int j=0;j<dataSet.getNumFeatures();j++){

@@ -25,7 +25,7 @@ public class IntervalSplitterTest {
 
 
     private static void test1(){
-        SparseDataSet dataSet = new SparseDataSet(5,2);
+        SparseDataSet dataSet = new SparseDataSet(5,2,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);
@@ -40,7 +40,7 @@ public class IntervalSplitterTest {
     }
 
     private static void test2(){
-        SparseDataSet dataSet = new SparseDataSet(5,2);
+        SparseDataSet dataSet = new SparseDataSet(5,2,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);
@@ -55,7 +55,7 @@ public class IntervalSplitterTest {
     }
 
     private static void test3(){
-        SparseDataSet dataSet = new SparseDataSet(5,2);
+        SparseDataSet dataSet = new SparseDataSet(5,2,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);
@@ -70,7 +70,7 @@ public class IntervalSplitterTest {
     }
 
     private static void test4(){
-        SparseDataSet dataSet = new SparseDataSet(8,1);
+        SparseDataSet dataSet = new SparseDataSet(8,1,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);
@@ -87,7 +87,7 @@ public class IntervalSplitterTest {
     }
 
     static void test5(){
-        SparseDataSet dataSet = new SparseDataSet(8,1);
+        SparseDataSet dataSet = new SparseDataSet(8,1,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);

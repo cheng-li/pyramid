@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndexBuilder;
+
 
 import java.util.HashSet;
 import java.util.List;
