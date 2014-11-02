@@ -422,7 +422,7 @@ public class LKTreeBoost implements ProbabilityEstimator{
 //
 //        //update stagedScore of class k
 //        for (int i=0;i<this.numDataPoints;i++){
-//            float[] featureRow = dataSet.getFeatureRow(i);
+//            float[] featureRow = dataSet.getRow(i);
 //            double prediction = regressionTree.predict(featureRow);
 //            if (Double.isNaN(prediction)){
 //                throw new RuntimeException("prediction is NaN");

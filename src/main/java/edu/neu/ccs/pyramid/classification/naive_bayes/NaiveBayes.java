@@ -12,7 +12,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
 /**
@@ -98,7 +97,7 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
 
         int numDataPoints = clfDataSet.getNumDataPoints();
         int[] labels = clfDataSet.getLabels();
-        Vector featureVector = clfDataSet.getFeatureColumn(feature).getVector();
+        Vector featureVector = clfDataSet.getColumn(feature).getVector();
 
         for (int i=0; i<numDataPoints; i++) {
             // label matches.

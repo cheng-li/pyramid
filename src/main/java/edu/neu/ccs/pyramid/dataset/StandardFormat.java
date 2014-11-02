@@ -89,7 +89,7 @@ public class StandardFormat {
                 BufferedWriter bw1 = new BufferedWriter(new FileWriter(featureFile));
         ){
             for (int i=0;i<numDataPoints;i++){
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 for (int j=0;j<numFeatures;j++){
                     bw1.write(""+vector.get(j));
@@ -123,7 +123,7 @@ public class StandardFormat {
                 BufferedWriter bw1 = new BufferedWriter(new FileWriter(featureFile));
         ){
             for (int i=0;i<numDataPoints;i++){
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 for (int j=0;j<numFeatures;j++){
                     bw1.write(""+vector.get(j));

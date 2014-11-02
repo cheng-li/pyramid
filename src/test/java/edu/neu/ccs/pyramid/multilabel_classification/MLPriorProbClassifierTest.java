@@ -3,11 +3,6 @@ package edu.neu.ccs.pyramid.multilabel_classification;
 import edu.neu.ccs.pyramid.dataset.*;
 
 
-import java.util.ArrayList;
-
-import java.util.List;
-
-
 public class MLPriorProbClassifierTest {
     public static void main(String[] args) throws Exception{
         test1();
@@ -30,11 +25,11 @@ public class MLPriorProbClassifierTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }

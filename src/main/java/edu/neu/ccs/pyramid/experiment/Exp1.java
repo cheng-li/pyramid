@@ -54,7 +54,7 @@ public class Exp1 {
         stopWatch.reset();
 
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getFeatureColumn(i).getSetting()
+            dataSet.getColumn(i).getSetting()
                     .setFeatureType(FeatureType.NUMERICAL);
         }
 

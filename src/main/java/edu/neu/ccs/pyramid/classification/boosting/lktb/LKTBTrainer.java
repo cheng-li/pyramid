@@ -167,7 +167,7 @@ class LKTBTrainer {
     private void updateStagedScore(Regressor regressor, int k,
                                    int dataIndex){
         DataSet dataSet= this.lktbConfig.getDataSet();
-        FeatureRow featureRow = dataSet.getFeatureRow(dataIndex);
+        FeatureRow featureRow = dataSet.getRow(dataIndex);
         double prediction = regressor.predict(featureRow);
         this.stagedScore[k][dataIndex] += prediction;
     }

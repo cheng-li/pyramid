@@ -63,7 +63,7 @@ public class LKTreeBoostTest {
 //
 //        int[] prediction = new int[numDataPoints];
 //        for (int i=0;i<numDataPoints;i++){
-//            prediction[i] = lkTreeBoost.predict(dataSet.getFeatureRow(i));
+//            prediction[i] = lkTreeBoost.predict(dataSet.getRow(i));
 //        }
 //        double accuracy = Accuracy.accuracy(labels, prediction);
 //        System.out.println(accuracy);
@@ -88,7 +88,7 @@ public class LKTreeBoostTest {
 //
 //        int[] prediction = new int[numDataPoints];
 //        for (int i=0;i<numDataPoints;i++){
-//            prediction[i] = lkTreeBoost.predict(dataSet.getFeatureRow(i));
+//            prediction[i] = lkTreeBoost.predict(dataSet.getRow(i));
 //        }
 //        double accuracy = Accuracy.accuracy(labels, prediction);
 //        System.out.println(accuracy);

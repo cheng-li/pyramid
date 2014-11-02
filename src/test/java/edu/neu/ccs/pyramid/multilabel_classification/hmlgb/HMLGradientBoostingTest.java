@@ -5,7 +5,6 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 
 import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
 import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
 import org.apache.commons.lang3.time.StopWatch;
 
@@ -52,7 +51,7 @@ public class HMLGradientBoostingTest {
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -76,7 +75,7 @@ public class HMLGradientBoostingTest {
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -111,7 +110,7 @@ public class HMLGradientBoostingTest {
         System.out.println(stopWatch);
         System.out.println(boosting);
 //        for (int i=0;i<numDataPoints;i++){
-//            FeatureRow featureRow = dataSet.getFeatureRow(i);
+//            FeatureRow featureRow = dataSet.getRow(i);
 //            System.out.println("label="+dataSet.getMultiLabels()[i]);
 //            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(0)));
 //            System.out.println(boosting.calAssignmentScores(featureRow,assignments.get(1)));
@@ -144,11 +143,11 @@ public class HMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -185,7 +184,7 @@ public class HMLGradientBoostingTest {
         System.out.println(stopWatch);
         System.out.println(boosting);
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
@@ -216,11 +215,11 @@ public class HMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -229,7 +228,7 @@ public class HMLGradientBoostingTest {
         HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
@@ -265,14 +264,14 @@ public class HMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(1)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(1)<0.1){
                 dataSet.addLabel(i,3);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -313,7 +312,7 @@ public class HMLGradientBoostingTest {
         System.out.println(stopWatch);
 //        System.out.println(boosting);
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
@@ -346,14 +345,14 @@ public class HMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(1)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(1)<0.1){
                 dataSet.addLabel(i,3);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -362,7 +361,7 @@ public class HMLGradientBoostingTest {
         HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);

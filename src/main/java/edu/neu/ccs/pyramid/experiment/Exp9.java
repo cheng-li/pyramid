@@ -77,8 +77,8 @@ public class Exp9 {
      */
     private static List<Integer> filter(List<Integer> indices, ClfDataSet dataSet){
         return indices.stream()
-                .filter(i -> !(dataSet.getFeatureColumn(i).getSetting().getFeatureName().split(Pattern.quote(".")).length >= 3))
-                .filter(i -> !(dataSet.getFeatureColumn(i).getSetting().getFeatureName().endsWith(".com")))
+                .filter(i -> !(dataSet.getColumn(i).getSetting().getFeatureName().split(Pattern.quote(".")).length >= 3))
+                .filter(i -> !(dataSet.getColumn(i).getSetting().getFeatureName().endsWith(".com")))
                 .collect(Collectors.toList());
     }
 

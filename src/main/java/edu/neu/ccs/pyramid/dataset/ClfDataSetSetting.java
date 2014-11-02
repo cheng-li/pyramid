@@ -3,15 +3,12 @@ package edu.neu.ccs.pyramid.dataset;
 import edu.neu.ccs.pyramid.feature.FeatureMappers;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * only hold global data structures
- * Created by chengli on 9/6/14.
+ * Created by chengli on 11/1/14.
  */
-public class DataSetSetting implements Serializable{
-    private static final long serialVersionUID = 2L;
+public class ClfDataSetSetting implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private LabelTranslator labelTranslator;
     private IdTranslator idTranslator;
@@ -55,8 +52,8 @@ public class DataSetSetting implements Serializable{
         this.featureMappers = featureMappers;
     }
 
-    public DataSetSetting copy(){
-        DataSetSetting dataSetSetting = new DataSetSetting();
+    public ClfDataSetSetting copy(){
+        ClfDataSetSetting dataSetSetting = new ClfDataSetSetting();
         dataSetSetting.setFeatureMappers(this.featureMappers);
         dataSetSetting.setIdTranslator(this.idTranslator);
         dataSetSetting.setLabelTranslator(this.labelTranslator);

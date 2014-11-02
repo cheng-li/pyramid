@@ -1,33 +1,36 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import org.apache.mahout.math.RandomAccessSparseVector;
+import org.apache.mahout.math.Vector;
+
 /**
  * Created by chengli on 8/4/14.
  */
 public class SparseDataSet extends AbstractDataSet implements DataSet{
-    protected SparseFeatureRow[] featureRows;
-    protected SparseFeatureColumn[] featureColumns;
+    protected RandomAccessSparseVector[] featureRows;
+    protected RandomAccessSparseVector[] featureColumns;
 
     public SparseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures,missingValue);
-        this.featureRows = new SparseFeatureRow[numDataPoints];
+        this.featureRows = new RandomAccessSparseVector[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.featureRows[i] = new SparseFeatureRow(i,numFeatures);
+            this.featureRows[i] = new RandomAccessSparseVector(numFeatures);
         }
-        this.featureColumns = new SparseFeatureColumn[numFeatures];
+        this.featureColumns = new RandomAccessSparseVector[numFeatures];
         for (int j=0;j<numFeatures;j++){
-            this.featureColumns[j] = new SparseFeatureColumn(j,numDataPoints);
+            this.featureColumns[j] = new RandomAccessSparseVector(numDataPoints);
         }
     }
 
 
     @Override
-    public FeatureColumn getFeatureColumn(int featureIndex) {
+    public Vector getColumn(int featureIndex) {
         return this.featureColumns[featureIndex];
     }
 
     @Override
-    public FeatureRow getFeatureRow(int dataPointIndex) {
+    public Vector getRow(int dataPointIndex) {
         return this.featureRows[dataPointIndex];
     }
 
@@ -42,8 +45,8 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
         if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
             throw new IllegalArgumentException("missing value is not allowed in this data set");
         }
-        this.featureRows[dataPointIndex].getVector().set(featureIndex,featureValue);
-        this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
+        this.featureRows[dataPointIndex].set(featureIndex, featureValue);
+        this.featureColumns[featureIndex].set(dataPointIndex, featureValue);
     }
 
 

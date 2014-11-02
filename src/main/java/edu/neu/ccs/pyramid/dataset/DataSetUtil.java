@@ -32,7 +32,7 @@ public class DataSetUtil {
             dataSet1 = new SparseClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         }
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             //only copy non-zero elements
             Vector vector = featureRow.getVector();
             for (Vector.Element element: vector.nonZeroes()){
@@ -44,14 +44,14 @@ public class DataSetUtil {
             }
         }
         for (int i=0;i<numDataPoints;i++){
-            DataSetting dataSetting = dataSet.getFeatureRow(i).getSetting().copy();
+            DataSetting dataSetting = dataSet.getRow(i).getSetting().copy();
             dataSetting.setExtLabel("unknown");
-            dataSet1.getFeatureRow(i).putSetting(dataSetting);
+            dataSet1.getRow(i).putSetting(dataSetting);
         }
 
         for (int j=0;j<numFeatures;j++){
-            FeatureSetting featureSetting = dataSet.getFeatureColumn(j).getSetting().copy();
-            dataSet1.getFeatureColumn(j).putSetting(featureSetting);
+            FeatureSetting featureSetting = dataSet.getColumn(j).getSetting().copy();
+            dataSet1.getColumn(j).putSetting(featureSetting);
         }
 
 
@@ -77,7 +77,7 @@ public class DataSetUtil {
 
         for (int j=0;j<trimmed.getNumFeatures();j++){
             int oldColumnIndex = columnsToKeep.get(j);
-            FeatureColumn featureColumn = clfDataSet.getFeatureColumn(oldColumnIndex);
+            FeatureColumn featureColumn = clfDataSet.getColumn(oldColumnIndex);
             Vector vector = featureColumn.getVector();
             for (Vector.Element element: vector.nonZeroes()){
                 int dataPointIndex = element.index();
@@ -92,11 +92,11 @@ public class DataSetUtil {
         }
         //just copy settings
         for (int i=0;i<trimmed.getNumDataPoints();i++){
-            trimmed.getFeatureRow(i).putSetting(clfDataSet.getFeatureRow(i).getSetting().copy());
+            trimmed.getRow(i).putSetting(clfDataSet.getRow(i).getSetting().copy());
         }
         for (int j=0;j<trimmed.getNumFeatures();j++){
             int oldColumnIndex = columnsToKeep.get(j);
-            trimmed.getFeatureColumn(j).putSetting(clfDataSet.getFeatureColumn(oldColumnIndex).getSetting().copy());
+            trimmed.getColumn(j).putSetting(clfDataSet.getColumn(oldColumnIndex).getSetting().copy());
         }
         //todo double-check
         //todo: something like featuremappers
@@ -126,7 +126,7 @@ public class DataSetUtil {
 
         for (int j=0;j<trimmed.getNumFeatures();j++){
             int oldColumnIndex = columnsToKeep.get(j);
-            FeatureColumn featureColumn = dataSet.getFeatureColumn(oldColumnIndex);
+            FeatureColumn featureColumn = dataSet.getColumn(oldColumnIndex);
             Vector vector = featureColumn.getVector();
             for (Vector.Element element: vector.nonZeroes()){
                 int dataPointIndex = element.index();
@@ -142,11 +142,11 @@ public class DataSetUtil {
         }
         //just copy settings
         for (int i=0;i<trimmed.getNumDataPoints();i++){
-            trimmed.getFeatureRow(i).putSetting(dataSet.getFeatureRow(i).getSetting().copy());
+            trimmed.getRow(i).putSetting(dataSet.getRow(i).getSetting().copy());
         }
         for (int j=0;j<trimmed.getNumFeatures();j++){
             int oldColumnIndex = columnsToKeep.get(j);
-            trimmed.getFeatureColumn(j).putSetting(dataSet.getFeatureColumn(oldColumnIndex).getSetting().copy());
+            trimmed.getColumn(j).putSetting(dataSet.getColumn(oldColumnIndex).getSetting().copy());
         }
         //todo double-check
         //todo: something like featuremappers
@@ -177,7 +177,7 @@ public class DataSetUtil {
             trimmed = new SparseClfDataSet(clfDataSet.getNumDataPoints(),numFeatures, missingValue, numClasses);
         }
         for (int i=0;i<trimmed.getNumDataPoints();i++){
-            FeatureRow featureRow = clfDataSet.getFeatureRow(i);
+            FeatureRow featureRow = clfDataSet.getRow(i);
             //only copy non-zero elements
             Vector vector = featureRow.getVector();
             for (Vector.Element element: vector.nonZeroes()){
@@ -195,10 +195,10 @@ public class DataSetUtil {
         }
         //just copy settings
         for (int i=0;i<trimmed.getNumDataPoints();i++){
-            trimmed.getFeatureRow(i).putSetting(clfDataSet.getFeatureRow(i).getSetting().copy());
+            trimmed.getRow(i).putSetting(clfDataSet.getRow(i).getSetting().copy());
         }
         for (int j=0;j<numFeatures;j++){
-            trimmed.getFeatureColumn(j).putSetting(clfDataSet.getFeatureColumn(j).getSetting().copy());
+            trimmed.getColumn(j).putSetting(clfDataSet.getColumn(j).getSetting().copy());
         }
         //todo double-check
         //todo: something like featuremappers
@@ -258,7 +258,7 @@ public class DataSetUtil {
     public static void setLabelTranslator(ClfDataSet dataSet, LabelTranslator labelTranslator){
         int[] labels = dataSet.getLabels();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSet.getFeatureRow(i).getSetting()
+            dataSet.getRow(i).getSetting()
                     .setExtLabel(labelTranslator.toExtLabel(labels[i]));
         }
         dataSet.getSetting().setLabelTranslator(labelTranslator);
@@ -272,7 +272,7 @@ public class DataSetUtil {
 //    public static void setLabelTranslator(ClfDataSet dataSet, List<String> extLabels){
 //        int[] labels = dataSet.getLabels();
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            dataSet.getFeatureRow(i).getSetting()
+//            dataSet.getRow(i).getSetting()
 //                    .setExtLabel(extLabels.get(labels[i]));
 //        }
 //        dataSet.getSetting().setLabelTranslator(new LabelTranslator(extLabels));
@@ -286,7 +286,7 @@ public class DataSetUtil {
 //    public static void setLabelTranslator(ClfDataSet dataSet, String[] extLabels){
 //        int[] labels = dataSet.getLabels();
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            dataSet.getFeatureRow(i).getSetting()
+//            dataSet.getRow(i).getSetting()
 //                    .setExtLabel(extLabels[labels[i]]);
 //        }
 //        dataSet.getSetting().setLabelTranslator(new LabelTranslator(extLabels));
@@ -295,7 +295,7 @@ public class DataSetUtil {
 //    public static void setLabelTranslator(ClfDataSet dataSet, Map<Integer, String> intToExtLabel){
 //        int[] labels = dataSet.getLabels();
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            dataSet.getFeatureRow(i).getSetting()
+//            dataSet.getRow(i).getSetting()
 //                    .setExtLabel(intToExtLabel.get(labels[i]));
 //        }
 //        dataSet.getSetting().setLabelTranslator(new LabelTranslator(intToExtLabel));
@@ -308,7 +308,7 @@ public class DataSetUtil {
             List<String> extLabels = multiLabel.getMatchedLabels().stream()
                     .map(labelTranslator::toExtLabel)
                     .collect(Collectors.toList());
-            dataSet.getFeatureRow(i).getSetting()
+            dataSet.getRow(i).getSetting()
                     .setExtLabels(extLabels);
         }
         dataSet.getSetting().setLabelTranslator(labelTranslator);
@@ -321,7 +321,7 @@ public class DataSetUtil {
 //            List<String> extLabels = multiLabel.getMatchedLabels().stream()
 //                    .map(intToExtLabel::get)
 //                    .collect(Collectors.toList());
-//            dataSet.getFeatureRow(i).getSetting()
+//            dataSet.getRow(i).getSetting()
 //                    .setExtLabels(extLabels);
 //        }
 //        dataSet.getSetting().setLabelTranslator(new LabelTranslator(intToExtLabel));
@@ -334,7 +334,7 @@ public class DataSetUtil {
 //            List<String> matchedExtLabels = multiLabel.getMatchedLabels().stream()
 //                    .map(label -> extLabels[label])
 //                    .collect(Collectors.toList());
-//            dataSet.getFeatureRow(i).getSetting()
+//            dataSet.getRow(i).getSetting()
 //                    .setExtLabels(matchedExtLabels);
 //        }
 //        dataSet.getSetting().setLabelTranslator(new LabelTranslator(extLabels));
@@ -345,7 +345,7 @@ public class DataSetUtil {
             throw new IllegalArgumentException("featureNames.size()!=dataSet.getNumFeatures()");
         }
         for (int j=0;j<dataSet.getNumFeatures();j++){
-            dataSet.getFeatureColumn(j).getSetting().setFeatureName(featureNames.get(j));
+            dataSet.getColumn(j).getSetting().setFeatureName(featureNames.get(j));
         }
     }
 
@@ -375,7 +375,7 @@ public class DataSetUtil {
      */
     public static void setIdTranslator(DataSet dataSet, IdTranslator idTranslator){
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSet.getFeatureRow(i).getSetting().setExtId(idTranslator.toExtId(i));
+            dataSet.getRow(i).getSetting().setExtId(idTranslator.toExtId(i));
         }
         dataSet.getSetting().setIdTranslator(idTranslator);
     }
@@ -429,7 +429,7 @@ public class DataSetUtil {
         int[] labels = clfDataSet.getLabels();
         for (int i=0;i<indices.size();i++){
             int indexInOld = indices.get(i);
-            FeatureRow oldFeatureRow = clfDataSet.getFeatureRow(indexInOld);
+            FeatureRow oldFeatureRow = clfDataSet.getRow(indexInOld);
             int label = labels[indexInOld];
             //copy label
             sample.setLabel(i,label);
@@ -438,13 +438,13 @@ public class DataSetUtil {
                 sample.setFeatureValue(i,element.index(),element.get());
             }
             //copy data settings
-            sample.getFeatureRow(i).putSetting(oldFeatureRow.getSetting());
+            sample.getRow(i).putSetting(oldFeatureRow.getSetting());
         }
 
         //copy feature settings
         for (int j=0;j<clfDataSet.getNumFeatures();j++){
-            sample.getFeatureColumn(j)
-                    .putSetting(clfDataSet.getFeatureColumn(j).getSetting());
+            sample.getColumn(j)
+                    .putSetting(clfDataSet.getColumn(j).getSetting());
         }
 
         //safe to copy label map
@@ -476,7 +476,7 @@ public class DataSetUtil {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
         ) {
             for (int i = 0; i < numDataPoints; i++) {
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 DataSetting dataSetting = featureRow.getSetting();
                 bw.write("intId=");
                 bw.write("" + i);
@@ -504,7 +504,7 @@ public class DataSetUtil {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
         ) {
             for (int i = 0; i < numDataPoints; i++) {
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 DataSetting dataSetting = featureRow.getSetting();
                 bw.write("intId=");
                 bw.write("" + i);
@@ -536,7 +536,7 @@ public class DataSetUtil {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
         ) {
             for (int j=0;j<numFeatures;j++){
-                FeatureSetting featureSetting = dataSet.getFeatureColumn(j).getSetting();
+                FeatureSetting featureSetting = dataSet.getColumn(j).getSetting();
                 bw.write("featureIndex=");
                 bw.write(""+j);
                 bw.write(",");
@@ -565,7 +565,7 @@ public class DataSetUtil {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
         ) {
             for (int j=0;j<numFeatures;j++){
-                FeatureSetting featureSetting = dataSet.getFeatureColumn(j).getSetting();
+                FeatureSetting featureSetting = dataSet.getColumn(j).getSetting();
                 bw.write("featureIndex=");
                 bw.write(""+j);
                 bw.write(",");
@@ -612,7 +612,7 @@ public class DataSetUtil {
         }
 
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             //only copy non-zero elements
             Vector vector = featureRow.getVector();
             for (Vector.Element element: vector.nonZeroes()){
@@ -628,7 +628,7 @@ public class DataSetUtil {
         }
 
         for (int i=0;i<numDataPoints;i++){
-            DataSetting dataSetting = dataSet.getFeatureRow(i).getSetting().copy();
+            DataSetting dataSetting = dataSet.getRow(i).getSetting().copy();
             LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
             int label = clfDataSet.getLabels()[i];
             if (labelTranslator!=null){
@@ -640,12 +640,12 @@ public class DataSetUtil {
             } else {
                 dataSetting.setExtLabel("unknown");
             }
-            clfDataSet.getFeatureRow(i).putSetting(dataSetting);
+            clfDataSet.getRow(i).putSetting(dataSetting);
         }
 
         for (int j=0;j<numFeatures;j++){
-            FeatureSetting featureSetting = dataSet.getFeatureColumn(j).getSetting().copy();
-            clfDataSet.getFeatureColumn(j).putSetting(featureSetting);
+            FeatureSetting featureSetting = dataSet.getColumn(j).getSetting().copy();
+            clfDataSet.getColumn(j).putSetting(featureSetting);
         }
 
         return clfDataSet;

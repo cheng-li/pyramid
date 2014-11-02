@@ -94,7 +94,7 @@ public class RegTreeTrainer {
          */
         int featureIndex = leafToSplit.getFeatureIndex();
         double threshold = leafToSplit.getThreshold();
-        Vector inputVector = dataSet.getFeatureColumn(featureIndex).getVector();
+        Vector inputVector = dataSet.getColumn(featureIndex).getVector();
         Vector columnVector;
         if (inputVector.isDense()){
             columnVector = inputVector;
@@ -173,7 +173,7 @@ public class RegTreeTrainer {
         if (splitResultOptional.isPresent()){
             SplitResult splitResult = splitResultOptional.get();
             node.setFeatureIndex(splitResult.getFeatureIndex());
-            node.setFeatureName(dataSet.getFeatureColumn(splitResult.getFeatureIndex())
+            node.setFeatureName(dataSet.getColumn(splitResult.getFeatureIndex())
             .getSetting().getFeatureName());
             node.setThreshold(splitResult.getThreshold());
             node.setReduction(splitResult.getReduction());

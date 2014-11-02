@@ -16,7 +16,7 @@ public class MRR {
         int[] labels = clfDataSet.getLabels();
         return IntStream.range(0, clfDataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i-> reciprocalRank(labels[i],
-                        probabilityEstimator.predictClassProbs(clfDataSet.getFeatureRow(i))))
+                        probabilityEstimator.predictClassProbs(clfDataSet.getRow(i))))
                 .average().getAsDouble();
     }
 

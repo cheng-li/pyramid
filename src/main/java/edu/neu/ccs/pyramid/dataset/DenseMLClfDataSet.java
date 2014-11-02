@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import java.util.Arrays;
 
 /**
  * Created by chengli on 9/27/14.
@@ -8,6 +7,8 @@ import java.util.Arrays;
 public class DenseMLClfDataSet extends DenseDataSet implements MultiLabelClfDataSet{
     private int numClasses;
     private MultiLabel[] multiLabels;
+    private MLClfDataSetSetting dataSetSetting;
+    private MLClfDataPointSetting[] dataPointSettings;
 
 
     public DenseMLClfDataSet(int numDataPoints, int numFeatures,
@@ -17,6 +18,11 @@ public class DenseMLClfDataSet extends DenseDataSet implements MultiLabelClfData
         this.multiLabels=new MultiLabel[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
             this.multiLabels[i]= new MultiLabel();
+        }
+        this.dataSetSetting = new MLClfDataSetSetting();
+        this.dataPointSettings = new MLClfDataPointSetting[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            this.dataPointSettings[i] = new MLClfDataPointSetting();
         }
     }
 
@@ -33,6 +39,26 @@ public class DenseMLClfDataSet extends DenseDataSet implements MultiLabelClfData
     @Override
     public void addLabel(int dataPointIndex, int classIndex) {
         this.multiLabels[dataPointIndex].addLabel(classIndex);
+    }
+
+    @Override
+    public MLClfDataSetSetting getSetting() {
+        return this.dataSetSetting;
+    }
+
+    @Override
+    public MLClfDataPointSetting getDataPointSetting(int dataPointIndex) {
+        return this.dataPointSettings[dataPointIndex];
+    }
+
+    @Override
+    public void putDataSetSetting(MLClfDataSetSetting dataSetSetting) {
+        this.dataSetSetting = dataSetSetting;
+    }
+
+    @Override
+    public void putDataPointSetting(int dataPointIndex, MLClfDataPointSetting dataPointSetting) {
+        this.dataPointSettings[dataPointIndex] = dataPointSetting;
     }
 
     @Override

@@ -24,10 +24,10 @@ public class SparseDataSetTest {
         dataSet.setFeatureValue(1,4,-60.9);
         dataSet.setFeatureValue(7,4,18);
         System.out.println(dataSet);
-        System.out.println(dataSet.getFeatureRow(1).print());
-        System.out.println(dataSet.getFeatureRow(2).print());
-        System.out.println(dataSet.getFeatureRow(7).print());
-        System.out.println(dataSet.getFeatureColumn(4).print());
+        System.out.println(dataSet.getRow(1).print());
+        System.out.println(dataSet.getRow(2).print());
+        System.out.println(dataSet.getRow(7).print());
+        System.out.println(dataSet.getColumn(4).print());
     }
 
     static void test2(){
@@ -80,7 +80,7 @@ public class SparseDataSetTest {
         SparseDataSet dataSet1 = new SparseDataSet(100,10,false);
         IntStream.range(0,100).parallel().
                 forEach(i -> {
-                    FeatureRow featureRow = dataSet.getFeatureRow(i);
+                    FeatureRow featureRow = dataSet.getRow(i);
                     IntStream.range(0,10).parallel()
                             .forEach(j-> dataSet1.setFeatureValue(i,j,featureRow.getVector().get(j)));
 

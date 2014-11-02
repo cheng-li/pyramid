@@ -17,7 +17,7 @@ public interface ProbabilityEstimator extends Classifier{
 
     default List<double[]> predictClassProbs(DataSet dataSet){
         return IntStream.range(0,dataSet.getNumDataPoints())
-                .parallel().mapToObj(i -> predictClassProbs(dataSet.getFeatureRow(i)))
+                .parallel().mapToObj(i -> predictClassProbs(dataSet.getRow(i)))
                 .collect(Collectors.toList());
     }
 

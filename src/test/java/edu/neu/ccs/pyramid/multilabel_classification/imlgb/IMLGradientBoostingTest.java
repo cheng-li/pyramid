@@ -10,8 +10,6 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
-
 public class IMLGradientBoostingTest {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
@@ -47,19 +45,19 @@ public class IMLGradientBoostingTest {
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(TMP,"/imlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting, dataSet));
-//        System.out.println(IMLGBInspector.decisionProcess(boosting,dataSet.getFeatureRow(0),0));
+//        System.out.println(IMLGBInspector.decisionProcess(boosting,dataSet.getRow(0),0));
         for (int i=0;i<10;i++){
             MultiLabel trueLabel = dataSet.getMultiLabels()[i];
-            MultiLabel prediction = boosting.predict(dataSet.getFeatureRow(i));
+            MultiLabel prediction = boosting.predict(dataSet.getRow(i));
             if (!prediction.equals(trueLabel)){
-                System.out.println(IMLGBInspector.analyzeMistake(boosting,dataSet.getFeatureRow(i),trueLabel,prediction,singleLabeldataSet.getSetting().getLabelTranslator(),10));
+                System.out.println(IMLGBInspector.analyzeMistake(boosting,dataSet.getRow(i),trueLabel,prediction,singleLabeldataSet.getSetting().getLabelTranslator(),10));
             }
         }
     }
@@ -77,7 +75,7 @@ public class IMLGradientBoostingTest {
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -108,7 +106,7 @@ public class IMLGradientBoostingTest {
         System.out.println(stopWatch);
         System.out.println(boosting);
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             System.out.println(""+i);
             System.out.println(dataSet.getMultiLabels()[i]);
             System.out.println(boosting.predict(featureRow));
@@ -138,11 +136,11 @@ public class IMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -174,7 +172,7 @@ public class IMLGradientBoostingTest {
         System.out.println(stopWatch);
         System.out.println(boosting);
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
@@ -205,11 +203,11 @@ public class IMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -218,7 +216,7 @@ public class IMLGradientBoostingTest {
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(TMP,"/imlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
@@ -252,14 +250,14 @@ public class IMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(1)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(1)<0.1){
                 dataSet.addLabel(i,3);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -294,7 +292,7 @@ public class IMLGradientBoostingTest {
         System.out.println(stopWatch);
 //        System.out.println(boosting);
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);
@@ -327,14 +325,14 @@ public class IMLGradientBoostingTest {
         int[] labels = singleLabeldataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             dataSet.addLabel(i,labels[i]);
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(0)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(0)<0.1){
                 dataSet.addLabel(i,2);
             }
-            if (labels[i]==1 && singleLabeldataSet.getFeatureRow(i).getVector().get(1)<0.1){
+            if (labels[i]==1 && singleLabeldataSet.getRow(i).getVector().get(1)<0.1){
                 dataSet.addLabel(i,3);
             }
             for (int j=0;j<numFeatures;j++){
-                double value = singleLabeldataSet.getFeatureRow(i).getVector().get(j);
+                double value = singleLabeldataSet.getRow(i).getVector().get(j);
                 dataSet.setFeatureValue(i,j,value);
             }
         }
@@ -343,7 +341,7 @@ public class IMLGradientBoostingTest {
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(TMP,"/imlgb/boosting.ser"));
         System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
         for (int i=0;i<numDataPoints;i++){
-            FeatureRow featureRow = dataSet.getFeatureRow(i);
+            FeatureRow featureRow = dataSet.getRow(i);
             MultiLabel label = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(featureRow);
 //            System.out.println("label="+label);

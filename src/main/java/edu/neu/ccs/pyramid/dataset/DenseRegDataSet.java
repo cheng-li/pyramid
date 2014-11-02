@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import java.io.File;
 import java.util.Arrays;
 
 /**
@@ -8,10 +7,17 @@ import java.util.Arrays;
  */
 public class DenseRegDataSet extends DenseDataSet implements RegDataSet {
     private double[] labels;
+    private RegDataSetSetting dataSetSetting;
+    private RegDataPointSetting[] dataPointSettings;
 
     DenseRegDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints, numFeatures, missingValue);
         this.labels = new double[numDataPoints];
+        this.dataSetSetting = new RegDataSetSetting();
+        this.dataPointSettings = new RegDataPointSetting[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            this.dataPointSettings[i] = new RegDataPointSetting();
+        }
     }
 
     @Override
@@ -24,6 +30,25 @@ public class DenseRegDataSet extends DenseDataSet implements RegDataSet {
         this.labels[dataPointIndex]=label;
     }
 
+    @Override
+    public RegDataSetSetting getSetting() {
+        return this.dataSetSetting;
+    }
+
+    @Override
+    public RegDataPointSetting getDataPointSetting(int dataPointIndex) {
+        return this.dataPointSettings[dataPointIndex];
+    }
+
+    @Override
+    public void putDataSetSetting(RegDataSetSetting dataSetSetting) {
+        this.dataSetSetting = dataSetSetting;
+    }
+
+    @Override
+    public void putDataPointSetting(int dataPointIndex, RegDataPointSetting dataPointSetting) {
+        this.dataPointSettings[dataPointIndex] = dataPointSetting;
+    }
 
     @Override
     public String toString() {

@@ -77,7 +77,7 @@ public class ArffFormat {
             for (int i=0; i<numDataPoints; i++){
                 int label = labels[i];
                 bw.write("{");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
@@ -108,7 +108,7 @@ public class ArffFormat {
             for (int i=0; i<numDataPoints; i++){
                 double label = labels[i];
                 bw.write("{");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
@@ -142,7 +142,7 @@ public class ArffFormat {
                 MultiLabel multiLabel = multiLabels[i];
                 List<Integer> labels = multiLabel.getMatchedLabels().stream().sorted().collect(Collectors.toList());
                 bw.write("{");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){

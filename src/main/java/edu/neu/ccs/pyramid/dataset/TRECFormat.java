@@ -444,7 +444,7 @@ public class TRECFormat {
             for (int i=0;i<numDataPoints;i++){
                 int label = labels[i];
                 bw.write(label+" ");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
@@ -468,7 +468,7 @@ public class TRECFormat {
             for (int i=0;i<numDataPoints;i++){
                 double label = labels[i];
                 bw.write(label+" ");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
@@ -500,7 +500,7 @@ public class TRECFormat {
                         bw.write(" ");
                     }
                 }
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
+                FeatureRow featureRow = dataSet.getRow(i);
                 Vector vector = featureRow.getVector();
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
@@ -519,7 +519,7 @@ public class TRECFormat {
         File file = new File(trecFile,TREC_DATA_SETTINGS_FILE_NAME);
         List<DataSetting> dataSettings = new ArrayList<>();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSettings.add(dataSet.getFeatureRow(i).getSetting());
+            dataSettings.add(dataSet.getRow(i).getSetting());
         }
         try (
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
@@ -537,7 +537,7 @@ public class TRECFormat {
         File file = new File(trecFile,TREC_FEATURE_SETTINGS_FILE_NAME);
         List<FeatureSetting> featureSettings = new ArrayList<>();
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            featureSettings.add(dataSet.getFeatureColumn(i).getSetting());
+            featureSettings.add(dataSet.getColumn(i).getSetting());
         }
         try (
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
@@ -576,7 +576,7 @@ public class TRECFormat {
 
         }
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSet.getFeatureRow(i).putSetting(dataSettings.get(i));
+            dataSet.getRow(i).putSetting(dataSettings.get(i));
         }
     }
 
@@ -592,7 +592,7 @@ public class TRECFormat {
 
         }
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getFeatureColumn(i).putSetting(featureSettings.get(i));
+            dataSet.getColumn(i).putSetting(featureSettings.get(i));
         }
     }
 

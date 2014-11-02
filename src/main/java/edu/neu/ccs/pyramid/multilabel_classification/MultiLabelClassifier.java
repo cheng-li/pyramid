@@ -16,7 +16,7 @@ public interface MultiLabelClassifier extends Serializable{
     MultiLabel predict(FeatureRow featureRow);
     default List<MultiLabel> predict(MultiLabelClfDataSet dataSet){
         return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .mapToObj(i -> predict(dataSet.getFeatureRow(i)))
+                .mapToObj(i -> predict(dataSet.getRow(i)))
                 .collect(Collectors.toList());
     }
 

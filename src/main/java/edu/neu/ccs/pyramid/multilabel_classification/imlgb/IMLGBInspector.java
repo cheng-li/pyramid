@@ -112,7 +112,7 @@ public class IMLGBInspector {
                 .collect(Collectors.toList());
         Map<List<Integer>, Double> map = new HashMap<>();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            List<Integer> path = RegTreeInspector.getMatchedPath(trees,dataSet.getFeatureRow(i));
+            List<Integer> path = RegTreeInspector.getMatchedPath(trees,dataSet.getRow(i));
             double oldCount = map.getOrDefault(path,0.0);
             map.put(path,oldCount+1);
         }

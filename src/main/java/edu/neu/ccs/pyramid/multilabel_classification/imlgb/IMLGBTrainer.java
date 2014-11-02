@@ -86,7 +86,7 @@ public class IMLGBTrainer {
     private void updateStagedClassScore(Regressor regressor, int k,
                                         int dataIndex){
         DataSet dataSet= this.config.getDataSet();
-        FeatureRow featureRow = dataSet.getFeatureRow(dataIndex);
+        FeatureRow featureRow = dataSet.getRow(dataIndex);
         double prediction = regressor.predict(featureRow);
         this.stagedClassScoreMatrix[dataIndex][k] += prediction;
     }

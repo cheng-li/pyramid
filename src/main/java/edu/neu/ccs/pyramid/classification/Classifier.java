@@ -16,7 +16,7 @@ public interface Classifier extends Serializable{
 
     default int[] predict(ClfDataSet dataSet){
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel().
-                map(i -> predict(dataSet.getFeatureRow(i))).toArray();
+                map(i -> predict(dataSet.getRow(i))).toArray();
     }
 
     default void serialize(File file) throws Exception{
