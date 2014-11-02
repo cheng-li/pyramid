@@ -83,20 +83,19 @@ public class ESIndexTest {
         index.close();
     }
 
-//    static void test9() throws Exception{
-//        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("ohsumed_20000")
-//                .build();
-//        System.out.println(index.getListField("0","codes"));
-//        System.out.println(index.getListField("0","real_labels"));
-//        System.out.println(index.getListField("0","file_name"));
-//        System.out.println(index.getStringListField("0","codes"));
-//        System.out.println(index.getIntListField("0","multi_label"));
-//        System.out.println(index.getStringListField("0","real_labels"));
-//        System.out.println(index.getStringListField("0","file_name"));
-//        index.close();
-//    }
-
     static void test9() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("ohsumed_20000")
+                .build();
+        System.out.println(index.getListField("0","codes"));
+        System.out.println(index.getListField("0","real_labels"));
+        System.out.println(index.getListField("0","file_name"));
+        System.out.println(index.getStringListField("0","codes"));
+        System.out.println(index.getStringListField("0","real_labels"));
+        System.out.println(index.getStringListField("0","file_name"));
+        index.close();
+    }
+
+    static void test10() throws Exception{
         ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         System.out.println(index.getField("0","a"));

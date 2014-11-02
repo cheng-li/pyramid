@@ -352,7 +352,7 @@ public class Exp15 {
                 for (int i=0;i<fields.length;i++){
                     String field = fields[i];
                     bw.write(field+"=");
-                    bw.write(index.getStringListField(extId,field).toString());
+                    bw.write(index.getListField(extId,field).toString());
                     if (i!=fields.length-1){
                         bw.write(",");
                     }

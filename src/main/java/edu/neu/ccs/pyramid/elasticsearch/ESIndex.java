@@ -226,7 +226,7 @@ public class ESIndex {
     }
 
     public List<String> getStringListField(String id, String field){
-        return getListField(id,field).stream().map(object -> (String) object)
+        return getListField(id,field).stream().map(object -> object.toString())
                 .collect(Collectors.toList());
     }
 
