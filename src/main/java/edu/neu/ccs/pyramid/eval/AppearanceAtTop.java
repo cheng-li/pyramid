@@ -17,7 +17,7 @@ public class AppearanceAtTop {
         int[] labels = clfDataSet.getLabels();
         long total = IntStream.range(0, clfDataSet.getNumDataPoints()).parallel()
                 .filter(i -> appear(labels[i],
-                        probabilityEstimator.predictClassProbs(clfDataSet.getFeatureRow(i)),
+                        probabilityEstimator.predictClassProbs(clfDataSet.getRow(i)),
                         top))
                 .count();
         return (double)total/clfDataSet.getNumDataPoints();

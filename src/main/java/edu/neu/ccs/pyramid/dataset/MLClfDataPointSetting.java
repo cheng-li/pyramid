@@ -1,19 +1,17 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by chengli on 8/6/14.
+ * Created by chengli on 11/1/14.
  */
-public class DataSetting implements Serializable{
-    private static final long serialVersionUID = 2L;
+public class MLClfDataPointSetting {
+    private static final long serialVersionUID = 1L;
     private String extId = "unKnown";
-    private String extLabel = "unKnown";
     private List<String> extLabels;
 
-    public DataSetting() {
+    public MLClfDataPointSetting() {
         this.extLabels = new ArrayList<>();
     }
 
@@ -21,19 +19,11 @@ public class DataSetting implements Serializable{
         return extId;
     }
 
-    public DataSetting setExtId(String extId) {
+    public MLClfDataPointSetting setExtId(String extId) {
         this.extId = extId;
         return this;
     }
 
-    public String getExtLabel() {
-        return extLabel;
-    }
-
-    public DataSetting setExtLabel(String extLabel) {
-        this.extLabel = extLabel;
-        return this;
-    }
 
     public List<String> getExtLabels() {
         return extLabels;
@@ -43,13 +33,9 @@ public class DataSetting implements Serializable{
         this.extLabels = extLabels;
     }
 
-
-
-
-    public DataSetting copy(){
-        DataSetting dataSetting = new DataSetting();
+    public MLClfDataPointSetting copy(){
+        MLClfDataPointSetting dataSetting = new MLClfDataPointSetting();
         dataSetting.setExtId(this.extId);
-        dataSetting.setExtLabel(this.extLabel);
         for (int i=0;i<this.extLabels.size();i++){
             dataSetting.extLabels.add(this.extLabels.get(i));
         }
@@ -58,9 +44,8 @@ public class DataSetting implements Serializable{
 
     @Override
     public String toString() {
-        return "DataSetting{" +
+        return "MLClfDataPointSetting{" +
                 "extId='" + extId + '\'' +
-                ", extLabel='" + extLabel + '\'' +
                 ", extLabels=" + extLabels +
                 '}';
     }

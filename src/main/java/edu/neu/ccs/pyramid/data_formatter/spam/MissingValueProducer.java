@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.data_formatter.spam;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 
 import java.io.File;
@@ -28,6 +29,8 @@ public class MissingValueProducer {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE, true);
 
+        DataSetUtil.allowMissingValue(dataSet);
+
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int j=0;j<dataSet.getNumFeatures();j++){
                 if (Math.random()<p){
@@ -43,6 +46,7 @@ public class MissingValueProducer {
     private static void produce_test(double p) throws Exception{
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE, true);
+        DataSetUtil.allowMissingValue(dataSet);
 
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int j=0;j<dataSet.getNumFeatures();j++){

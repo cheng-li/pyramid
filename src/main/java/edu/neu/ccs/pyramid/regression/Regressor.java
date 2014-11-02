@@ -1,10 +1,11 @@
 package edu.neu.ccs.pyramid.regression;
 
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
+
+import org.apache.mahout.math.Vector;
 
 /**
  * Created by chengli on 8/6/14.
  */
 public interface Regressor {
-    double predict(FeatureRow featureRow);
+    double predict(Vector vector);
 }

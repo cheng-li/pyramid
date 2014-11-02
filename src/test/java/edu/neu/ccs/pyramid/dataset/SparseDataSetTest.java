@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.dataset;
 
 import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.SparseColumnMatrix;
+import org.apache.mahout.math.Vector;
 
 import java.util.stream.IntStream;
 
@@ -18,16 +19,16 @@ public class SparseDataSetTest {
     }
 
     static void test1(){
-        SparseDataSet dataSet = new SparseDataSet(10,5);
+        SparseDataSet dataSet = new SparseDataSet(10,5,false);
         dataSet.setFeatureValue(1,3,-0.9);
         dataSet.setFeatureValue(1,4,-0.9);
         dataSet.setFeatureValue(1,4,-60.9);
         dataSet.setFeatureValue(7,4,18);
         System.out.println(dataSet);
-        System.out.println(dataSet.getFeatureRow(1).print());
-        System.out.println(dataSet.getFeatureRow(2).print());
-        System.out.println(dataSet.getFeatureRow(7).print());
-        System.out.println(dataSet.getFeatureColumn(4).print());
+        System.out.println(dataSet.getRow(1));
+        System.out.println(dataSet.getRow(2));
+        System.out.println(dataSet.getRow(7));
+        System.out.println(dataSet.getColumn(4));
     }
 
     static void test2(){
@@ -42,7 +43,7 @@ public class SparseDataSetTest {
     }
 
     static void test3(){
-        SparseDataSet dataSet = new SparseDataSet(500000,100000);
+        SparseDataSet dataSet = new SparseDataSet(500000,100000,false);
         while(true){
 
         }
@@ -54,7 +55,7 @@ public class SparseDataSetTest {
     }
 
     static void test5(){
-        SparseDataSet dataSet = new SparseDataSet(100,10);
+        SparseDataSet dataSet = new SparseDataSet(100,10,false);
         IntStream.range(0,100).parallel().
                 forEach(i -> IntStream.range(0, 10).parallel().
                         forEach(j -> dataSet.setFeatureValue(i, j, i + j)));
@@ -62,7 +63,7 @@ public class SparseDataSetTest {
     }
 
     static void test6(){
-        SparseDataSet dataSet = new SparseDataSet(100,10);
+        SparseDataSet dataSet = new SparseDataSet(100,10,false);
         for (int i=0;i<100;i++){
             for (int j=0;j<10;j++){
                 dataSet.setFeatureValue(i, j, i + j);
@@ -72,17 +73,17 @@ public class SparseDataSetTest {
     }
 
     static void test7(){
-        SparseDataSet dataSet = new SparseDataSet(100,10);
+        SparseDataSet dataSet = new SparseDataSet(100,10,false);
         IntStream.range(0,100).parallel().
                 forEach(i -> IntStream.range(0, 10).parallel().
                         forEach(j -> dataSet.setFeatureValue(i, j, i + j)));
 
-        SparseDataSet dataSet1 = new SparseDataSet(100,10);
+        SparseDataSet dataSet1 = new SparseDataSet(100,10,false);
         IntStream.range(0,100).parallel().
                 forEach(i -> {
-                    FeatureRow featureRow = dataSet.getFeatureRow(i);
+                    Vector featureRow = dataSet.getRow(i);
                     IntStream.range(0,10).parallel()
-                            .forEach(j-> dataSet1.setFeatureValue(i,j,featureRow.getVector().get(j)));
+                            .forEach(j-> dataSet1.setFeatureValue(i,j,featureRow.get(j)));
 
                 });
         System.out.println(dataSet1);

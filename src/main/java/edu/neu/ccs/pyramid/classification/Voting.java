@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.classification;
 
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
+
+
+import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,10 +23,10 @@ public class Voting implements Classifier{
         this.classifiers.add(classifier);
     }
 
-    public int predict(FeatureRow featureRow){
+    public int predict(Vector vector){
         int[] votes = new int[this.numClasses];
         for (Classifier classifier: this.classifiers){
-            int prediction = classifier.predict(featureRow);
+            int prediction = classifier.predict(vector);
             votes[prediction] += 1;
         }
         int max = 0;

@@ -1,16 +1,18 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
-import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import org.apache.mahout.math.Vector;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 /**
  * Created by chengli on 8/14/14.
@@ -132,14 +134,14 @@ public class LKTreeBoost implements ProbabilityEstimator{
 
     /**
      * predict the class label
-     * @param featureRow
+     * @param vector
      * @return the class that gives the max class score F
      */
-    public int predict(FeatureRow featureRow){
-        double maxScore = this.predictClassScore(featureRow, 0);
+    public int predict(Vector vector){
+        double maxScore = this.predictClassScore(vector, 0);
         int predictedClass = 0;
         for (int k=1;k<this.numClasses;k++){
-            double scoreClassK = this.predictClassScore(featureRow, k);
+            double scoreClassK = this.predictClassScore(vector, k);
             if (scoreClassK > maxScore){
                 maxScore = scoreClassK;
                 predictedClass = k;
@@ -181,29 +183,29 @@ public class LKTreeBoost implements ProbabilityEstimator{
 
     /**
      *
-     * @param featureRow
+     * @param vector
      * @param k class index
      * @return
      */
-    public double predictClassScore(FeatureRow featureRow, int k){
+    public double predictClassScore(Vector vector, int k){
         List<Regressor> regressorsClassK = this.regressors.get(k);
         double score = 0;
         for (Regressor regressor: regressorsClassK){
-            score += regressor.predict(featureRow);
+            score += regressor.predict(vector);
         }
         return score;
     }
 
-    public double[] predictClassScores(FeatureRow featureRow){
+    public double[] predictClassScores(Vector vector){
         double[] scoreVector = new double[this.numClasses];
         for (int k=0;k<this.numClasses;k++){
-            scoreVector[k] = this.predictClassScore(featureRow,k);
+            scoreVector[k] = this.predictClassScore(vector,k);
         }
         return scoreVector;
     }
 
-    public double[] predictClassProbs(FeatureRow featureRow){
-        double[] scoreVector = this.predictClassScores(featureRow);
+    public double[] predictClassProbs(Vector vector){
+        double[] scoreVector = this.predictClassScores(vector);
         double[] probVector = new double[this.numClasses];
         double logDenominator = MathUtil.logSumExp(scoreVector);
         for (int k=0;k<this.numClasses;k++){
@@ -349,12 +351,12 @@ public class LKTreeBoost implements ProbabilityEstimator{
         }
     }
 
-//    public String getDecisionProcess(float [] featureRow,List<Feature> features,
+//    public String getDecisionProcess(float [] vector,List<Feature> features,
 //                                     int k, int top){
 //        List<DecisionProcess> decisions = new ArrayList<DecisionProcess>();
 //        for (int i=0;i<this.getRegressors(k).size();i++){
 //            RegressionTree regressionTree = this.getRegressors(k).get(i);
-//            DecisionProcess decisionProcess = regressionTree.getDecisionProcess(featureRow,features);
+//            DecisionProcess decisionProcess = regressionTree.getDecisionProcess(vector,features);
 //            decisionProcess.setTreeIndex(i);
 //            decisions.add(decisionProcess);
 //        }
@@ -372,16 +374,16 @@ public class LKTreeBoost implements ProbabilityEstimator{
 
 //    /**
 //     * return decision process for class k, sorted by decreasing score absolute values
-//     * @param featureRow
+//     * @param vector
 //     * @param featureNames
 //     * @param k class index
 //     * @param top only return top decisions
 //     * @return
 //     */
-//    public String getDecisionProcess2(float [] featureRow,List<String> featureNames,
+//    public String getDecisionProcess2(float [] vector,List<String> featureNames,
 //                                     int k, int top){
 //        List<Feature> features = featureNames.stream().map(Feature::new).collect(Collectors.toList());
-//        return getDecisionProcess(featureRow,features,k,top);
+//        return getDecisionProcess(vector,features,k,top);
 //    }
 
 
@@ -422,8 +424,8 @@ public class LKTreeBoost implements ProbabilityEstimator{
 //
 //        //update stagedScore of class k
 //        for (int i=0;i<this.numDataPoints;i++){
-//            float[] featureRow = dataSet.getFeatureRow(i);
-//            double prediction = regressionTree.predict(featureRow);
+//            float[] vector = dataSet.getRow(i);
+//            double prediction = regressionTree.predict(vector);
 //            if (Double.isNaN(prediction)){
 //                throw new RuntimeException("prediction is NaN");
 //            }

@@ -23,8 +23,7 @@ public class LibSvmFormat {
             for (int i=0;i<numDataPoints;i++){
                 int label = labels[i];
                 bw.write(label+" ");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 int preIndex = -1;
                 int currIndex;
@@ -54,8 +53,7 @@ public class LibSvmFormat {
             for (int i=0;i<numDataPoints;i++){
                 double label = labels[i];
                 bw.write(label+" ");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index()+1;
@@ -86,8 +84,7 @@ public class LibSvmFormat {
                         bw.write(" ");
                     }
                 }
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index()+1;

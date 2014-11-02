@@ -1,41 +1,47 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
+
 /**
  * Created by chengli on 8/7/14.
  */
 class DenseDataSet extends AbstractDataSet implements DataSet{
 
-    protected DenseFeatureRow[] featureRows;
-    protected DenseFeatureColumn[] featureColumns;
+    protected DenseVector[] vectors;
+    protected DenseVector[] featureColumns;
 
-    DenseDataSet(int numDataPoints, int numFeatures) {
-        super(numDataPoints,numFeatures);
-        this.featureRows = new DenseFeatureRow[numDataPoints];
+    DenseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
+        super(numDataPoints,numFeatures, missingValue);
+        this.vectors = new DenseVector[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.featureRows[i] = new DenseFeatureRow(i,numFeatures);
+            this.vectors[i] = new DenseVector(numFeatures);
         }
-        this.featureColumns = new DenseFeatureColumn[numFeatures];
+        this.featureColumns = new DenseVector[numFeatures];
         for (int j=0;j<numFeatures;j++){
-            this.featureColumns[j] = new DenseFeatureColumn(j,numDataPoints);
+            this.featureColumns[j] = new DenseVector(numDataPoints);
         }
     }
 
 
     @Override
-    public FeatureColumn getFeatureColumn(int featureIndex) {
+    public Vector getColumn(int featureIndex) {
         return this.featureColumns[featureIndex];
     }
 
     @Override
-    public FeatureRow getFeatureRow(int dataPointIndex) {
-        return this.featureRows[dataPointIndex];
+    public Vector getRow(int dataPointIndex) {
+        return this.vectors[dataPointIndex];
     }
 
     @Override
     public void setFeatureValue(int dataPointIndex, int featureIndex, double featureValue) {
-        this.featureRows[dataPointIndex].getVector().set(featureIndex,featureValue);
-        this.featureColumns[featureIndex].getVector().set(dataPointIndex,featureValue);
+        if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
+            throw new IllegalArgumentException("missing value is not allowed in this data set");
+        }
+        this.vectors[dataPointIndex].set(featureIndex, featureValue);
+        this.featureColumns[featureIndex].set(dataPointIndex, featureValue);
     }
 
 

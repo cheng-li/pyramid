@@ -130,7 +130,7 @@ public class Exp13 {
             System.out.println("true labels:");
             System.out.println(dataSet.getMultiLabels()[i]);
             System.out.println("predictions:");
-            System.out.println(boosting.predict(dataSet.getFeatureRow(i)));
+            System.out.println(boosting.predict(dataSet.getRow(i)));
         }
     }
 
@@ -146,7 +146,7 @@ public class Exp13 {
             System.out.println("true labels:");
             System.out.println(dataSet.getMultiLabels()[i]);
             System.out.println("predictions:");
-            System.out.println(boosting.predict(dataSet.getFeatureRow(i)));
+            System.out.println(boosting.predict(dataSet.getRow(i)));
         }
     }
 

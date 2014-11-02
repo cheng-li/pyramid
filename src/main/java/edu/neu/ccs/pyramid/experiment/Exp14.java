@@ -1,19 +1,17 @@
 package edu.neu.ccs.pyramid.experiment;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -234,14 +232,14 @@ public class Exp14 {
             MultiLabel prediction = predictions.get(i);
             MultiLabel trueLabel = trueLabels[i];
             if (!prediction.equals(trueLabel)){
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
-                System.out.println("data point "+i+" index id = "+featureRow.getSetting().getExtId());
+                Vector vector = dataSet.getRow(i);
+                System.out.println("data point "+i+" index id = "+dataSet.getDataPointSetting(i).getExtId());
                 if (trueLabel.outOfBound(numClassesInTrain)){
                     System.out.println("true labels = "+trueLabel.toStringWithExtLabels(labelTranslator));
                     System.out.println("predicted labels = "+prediction.toStringWithExtLabels(labelTranslator));
                     System.out.println("it contains unseen labels");
                 } else{
-                    System.out.println(IMLGBInspector.analyzeMistake(boosting,featureRow,trueLabel,prediction,labelTranslator,limit));
+                    System.out.println(IMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
                 }
 
             }

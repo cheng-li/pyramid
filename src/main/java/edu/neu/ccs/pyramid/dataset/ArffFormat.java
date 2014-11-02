@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
  */
 public class ArffFormat {
 
+    //todo check missing values
     private static final String ARFF_MATRIX_FILE_NAME = "feature_matrix.arff";
     private static final String ARFF_CONFIG_FILE_NAME = "config.txt";
     private static final String ARFF_CONFIG_NUM_DATA_POINTS = "numDataPoints";
@@ -77,8 +78,7 @@ public class ArffFormat {
             for (int i=0; i<numDataPoints; i++){
                 int label = labels[i];
                 bw.write("{");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index();
@@ -108,8 +108,7 @@ public class ArffFormat {
             for (int i=0; i<numDataPoints; i++){
                 double label = labels[i];
                 bw.write("{");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index();
@@ -142,8 +141,7 @@ public class ArffFormat {
                 MultiLabel multiLabel = multiLabels[i];
                 List<Integer> labels = multiLabel.getMatchedLabels().stream().sorted().collect(Collectors.toList());
                 bw.write("{");
-                FeatureRow featureRow = dataSet.getFeatureRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index();

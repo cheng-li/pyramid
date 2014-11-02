@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.regression;
 
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
+
+import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
 
@@ -21,7 +22,7 @@ public class ConstantRegressor implements Regressor, Serializable{
     }
 
     @Override
-    public double predict(FeatureRow featureRow) {
+    public double predict(Vector vector) {
         return this.score;
     }
 

@@ -30,7 +30,7 @@ public class MSE {
         int numDataPoints = dataSet.getNumDataPoints();
         double[] labels = dataSet.getLabels();
         double result = IntStream.range(0, numDataPoints).parallel()
-                .mapToDouble(i -> Math.pow(regressor.predict(dataSet.getFeatureRow(i))-labels[i],2))
+                .mapToDouble(i -> Math.pow(regressor.predict(dataSet.getRow(i))-labels[i],2))
                 .average().getAsDouble();
         return result;
     }

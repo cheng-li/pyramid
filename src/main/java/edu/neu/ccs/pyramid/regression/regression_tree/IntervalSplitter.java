@@ -20,22 +20,30 @@ class IntervalSplitter {
                                        double[] probs,
                                        int featureIndex){
         Vector featureValues;
-        Vector inputVector = dataSet.getFeatureColumn(featureIndex).getVector();
+        Vector inputVector = dataSet.getColumn(featureIndex);
         if (inputVector.isDense()){
             featureValues = inputVector;
         } else {
             featureValues = new DenseVector(inputVector);
         }
 
-        List<Interval> possibleIntervals = generateIntervals(regTreeConfig,featureValues,probs,labels);
+
+
+        List<Interval> possibleIntervals;
+        if (dataSet.hasMissingValue()){
+            possibleIntervals = generateIntervalsWithMissingValue(regTreeConfig, featureValues, probs, labels);
+        } else {
+            possibleIntervals = generateIntervalsWithoutMissingValue(regTreeConfig,featureValues,probs,labels);
+        }
+
         List<Interval> compressedIntervals = compress(possibleIntervals);
         return findBest(regTreeConfig,compressedIntervals,featureIndex);
     }
 
-    static List<Interval> generateIntervals(RegTreeConfig regTreeConfig,
-                                                    Vector featureValues,
-                                                    double[] probs,
-                                                    double[] labels){
+    static List<Interval> generateIntervalsWithMissingValue(RegTreeConfig regTreeConfig,
+                                                            Vector featureValues,
+                                                            double[] probs,
+                                                            double[] labels){
         int numDataPoints = featureValues.size();
         int numIntervals = regTreeConfig.getNumSplitIntervals();
         // find min and max
@@ -133,6 +141,91 @@ class IntervalSplitter {
                     interval.setWeightedSum(oldSum + label*probability);
                 }
             }
+        }
+
+        return intervals;
+    }
+
+    static List<Interval> generateIntervalsWithoutMissingValue(RegTreeConfig regTreeConfig,
+                                                            Vector featureValues,
+                                                            double[] probs,
+                                                            double[] labels){
+        int numDataPoints = featureValues.size();
+        int numIntervals = regTreeConfig.getNumSplitIntervals();
+        // find min and max
+        double maxFeature = Double.NEGATIVE_INFINITY;
+        double minFeature = Double.POSITIVE_INFINITY;
+        double existingProbCount = 0;
+        int existingBinaryCount = 0;
+        for (int i=0;i<numDataPoints;i++){
+            double featureValue = featureValues.get(i);
+            // only estimate min and max with actually present values
+            // as the tree grows, we want to focus on smaller regions
+            // if we don't impose probs[i]!=0, we will always use the global min and max
+            if (probs[i]!=0){
+                existingProbCount += probs[i];
+                existingBinaryCount += 1;
+                if (featureValue > maxFeature){
+                    maxFeature = featureValue;
+                }
+                if (featureValue < minFeature){
+                    minFeature = featureValue;
+                }
+            }
+        }
+
+        List<Interval> intervals = new ArrayList<>(numIntervals);
+
+        // if there is no more than 2 existing values, return empty intervals
+        if (existingBinaryCount < 2){
+            return intervals;
+        }
+
+        double intervalLength = (maxFeature-minFeature)/numIntervals;
+
+        for (int i=0;i<numIntervals;i++){
+            Interval interval = new Interval();
+            double lower = minFeature + i*intervalLength;
+            double upper = lower + intervalLength;
+            interval.setLower(lower);
+            interval.setUpper(upper);
+            intervals.add(interval);
+        }
+
+        // assign each existing value to one interval deterministically
+        // conditional probability = 1 for matched interval and 0 for other intervals
+
+        for (int i=0;i<numDataPoints;i++){
+            double featureValue = featureValues.get(i);
+            double label = labels[i];
+            // if probs[i]==0, its feature value may be bigger than max or smaller than min,
+            // so we should skip it
+            if (probs[i]!=0){
+                int ceil = (int)Math.ceil((featureValue-minFeature)/intervalLength);
+                //this should not happen in theory
+                //add this to handle round error
+                if (ceil>numIntervals){
+                    ceil=numIntervals;
+                }
+                int intervalIndex;
+                if (ceil==0){
+                    intervalIndex = 0;
+                } else {
+                    intervalIndex = ceil-1;
+                }
+                Interval interval = intervals.get(intervalIndex);
+                // conditional probability = 1 for matched interval
+                double probability = probs[i];
+                double oldCount = interval.getProbabilisticCount();
+                interval.setProbabilisticCount(oldCount + probability);
+                double oldSum = interval.getWeightedSum();
+                interval.setWeightedSum(oldSum + label*probability);
+            }
+        }
+
+        // estimate percentage for each interval
+        for (Interval interval: intervals){
+            interval.setPercentage(interval.getProbabilisticCount()/existingProbCount);
         }
 
         return intervals;

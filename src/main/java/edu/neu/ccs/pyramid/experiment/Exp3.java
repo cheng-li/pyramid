@@ -10,7 +10,6 @@ import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.*;
-import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.lang3.time.StopWatch;
@@ -131,12 +130,11 @@ public class Exp3 {
                                LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
         int numClasses = config.getInt("numClasses");
-        ClfDataSet dataSet;
-        if(config.getBoolean("featureMatrix.sparse")){
-            dataSet= new SparseClfDataSet(numDataPoints,totalDim,numClasses);
-        } else {
-            dataSet= new DenseClfDataSet(numDataPoints,totalDim,numClasses);
-        }
+        ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(totalDim)
+                .numClasses(numClasses).dense(!config.getBoolean("featureMatrix.sparse"))
+                .build();
+
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             int label = index.getLabel(dataIndexId);
@@ -809,7 +807,7 @@ public class Exp3 {
         String archive = config.getString("archive.folder");
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
-        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
+        DataSetUtil.dumpDataPointSettings(dataSet, new File(dataFile, "data_settings.txt"));
         DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }

@@ -12,7 +12,7 @@ public class BinarySplitterTest {
     }
 
     static void test1(){
-        SparseDataSet dataSet = new SparseDataSet(5,2);
+        SparseDataSet dataSet = new SparseDataSet(5,2,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);
@@ -27,7 +27,7 @@ public class BinarySplitterTest {
     }
 
     static void test2(){
-        SparseDataSet dataSet = new SparseDataSet(5,2);
+        SparseDataSet dataSet = new SparseDataSet(5,2,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);
@@ -46,7 +46,7 @@ public class BinarySplitterTest {
      * test empty
      */
     static void test3(){
-        SparseDataSet dataSet = new SparseDataSet(5,2);
+        SparseDataSet dataSet = new SparseDataSet(5,2,false);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,0);
@@ -62,7 +62,7 @@ public class BinarySplitterTest {
     }
 
     static void test4(){
-        SparseDataSet dataSet = new SparseDataSet(5,2);
+        SparseDataSet dataSet = new SparseDataSet(5,2,true);
         dataSet.setFeatureValue(0,0,0);
         dataSet.setFeatureValue(1,0,0);
         dataSet.setFeatureValue(2,0,Double.NaN);

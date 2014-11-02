@@ -1,19 +1,22 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import org.apache.mahout.math.Vector;
+
 /**
  * Created by chengli on 8/4/14.
  */
 public interface DataSet {
     int getNumDataPoints();
     int getNumFeatures();
-    FeatureColumn getFeatureColumn(int featureIndex);
-    FeatureRow getFeatureRow(int dataPointIndex);
+    Vector getColumn(int featureIndex);
+    Vector getRow(int dataPointIndex);
     void setFeatureValue(int dataPointIndex,
                                 int featureIndex, double featureValue);
     boolean isDense();
-    DataSetSetting getSetting();
-    void putSetting(DataSetSetting setting);
+    boolean hasMissingValue();
     String getMetaInfo();
+    FeatureSetting getFeatureSetting(int featureIndex);
+    void putFeatureSetting(int featureIndex, FeatureSetting featureSetting);
 
 }

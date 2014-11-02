@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.classification.naive_bayes;
 
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.mahout.math.DenseVector;
@@ -12,7 +11,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
 /**
@@ -98,7 +96,7 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
 
         int numDataPoints = clfDataSet.getNumDataPoints();
         int[] labels = clfDataSet.getLabels();
-        Vector featureVector = clfDataSet.getFeatureColumn(feature).getVector();
+        Vector featureVector = clfDataSet.getColumn(feature);
 
         for (int i=0; i<numDataPoints; i++) {
             // label matches.
@@ -122,9 +120,9 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
      * log(p(y|X)) = log(p(y)) + log(p(X|y))
      *
      */
-    public int predict(FeatureRow featureRow) {
+    public int predict(Vector vector) {
 
-        double[] logProbs = predictClassLogProbs(featureRow);
+        double[] logProbs = predictClassLogProbs(vector);
 //        System.out.println(Arrays.toString(logProbs));
 //        System.out.println(Arrays.toString(logProbs));
         double maxLogProb = Double.NEGATIVE_INFINITY;
@@ -157,8 +155,8 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
      * Calculate the posterior probability.
      * P(y|X) = P(X|y)*P(y) / P(X)
      */
-    public double[] predictClassProbs(FeatureRow featureRow) {
-        double[] logProbs = predictClassLogProbs(featureRow);
+    public double[] predictClassProbs(Vector vector) {
+        double[] logProbs = predictClassLogProbs(vector);
 
         double logDenominator = MathUtil.logSumExp(logProbs);
         double[] probs = new double[logProbs.length];
@@ -172,11 +170,11 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
 
     /**
      * Returns the posterior probabilities for each label.
-     * @param featureRow
+     * @param vector
      * @return
      */
-    private double[] predictClassLogProbs(FeatureRow featureRow) {
-        DenseVector vector = new DenseVector(featureRow.getVector());
+    private double[] predictClassLogProbs(Vector vector) {
+//        DenseVector vector = new DenseVector(vector);
 
         double[] logProbs = new double[numClasses];
 

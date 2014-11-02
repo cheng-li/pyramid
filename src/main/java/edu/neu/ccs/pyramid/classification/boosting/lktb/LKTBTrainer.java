@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -11,6 +10,7 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
 import java.util.List;
@@ -167,8 +167,8 @@ class LKTBTrainer {
     private void updateStagedScore(Regressor regressor, int k,
                                    int dataIndex){
         DataSet dataSet= this.lktbConfig.getDataSet();
-        FeatureRow featureRow = dataSet.getFeatureRow(dataIndex);
-        double prediction = regressor.predict(featureRow);
+        Vector vector = dataSet.getRow(dataIndex);
+        double prediction = regressor.predict(vector);
         this.stagedScore[k][dataIndex] += prediction;
     }
 

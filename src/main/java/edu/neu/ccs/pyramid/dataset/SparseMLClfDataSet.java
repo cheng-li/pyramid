@@ -6,13 +6,21 @@ package edu.neu.ccs.pyramid.dataset;
 public class SparseMLClfDataSet extends SparseDataSet implements MultiLabelClfDataSet{
     private int numClasses;
     private MultiLabel[] multiLabels;
+    private MLClfDataSetSetting dataSetSetting;
+    private MLClfDataPointSetting[] dataPointSettings;
 
-    public SparseMLClfDataSet(int numDataPoints, int numFeatures, int numClasses){
-        super(numDataPoints, numFeatures);
+    public SparseMLClfDataSet(int numDataPoints, int numFeatures,
+                              boolean missingValue, int numClasses){
+        super(numDataPoints, numFeatures, missingValue);
         this.numClasses=numClasses;
         this.multiLabels=new MultiLabel[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
             this.multiLabels[i]= new MultiLabel();
+        }
+        this.dataSetSetting = new MLClfDataSetSetting();
+        this.dataPointSettings = new MLClfDataPointSetting[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            this.dataPointSettings[i] = new MLClfDataPointSetting();
         }
     }
 
@@ -29,6 +37,26 @@ public class SparseMLClfDataSet extends SparseDataSet implements MultiLabelClfDa
     @Override
     public void addLabel(int dataPointIndex, int classIndex) {
         this.multiLabels[dataPointIndex].addLabel(classIndex);
+    }
+
+    @Override
+    public MLClfDataSetSetting getSetting() {
+        return this.dataSetSetting;
+    }
+
+    @Override
+    public MLClfDataPointSetting getDataPointSetting(int dataPointIndex) {
+        return this.dataPointSettings[dataPointIndex];
+    }
+
+    @Override
+    public void putDataSetSetting(MLClfDataSetSetting dataSetSetting) {
+        this.dataSetSetting = dataSetSetting;
+    }
+
+    @Override
+    public void putDataPointSetting(int dataPointIndex, MLClfDataPointSetting dataPointSetting) {
+        this.dataPointSettings[dataPointIndex] = dataPointSetting;
     }
 
     @Override

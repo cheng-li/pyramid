@@ -1,11 +1,8 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.DenseRegDataSet;
-import edu.neu.ccs.pyramid.dataset.RegDataSet;
-import edu.neu.ccs.pyramid.dataset.SparseRegDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.dataset.FeatureType;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -28,12 +25,10 @@ public class Exp1 {
         int numDataPoints = config.getInt("numDataPoints");
         int numFeatures = config.getInt("numFeatures");
         int numLeaves = config.getInt("numLeaves");
-        RegDataSet dataSet;
-        if (config.getBoolean("sparse")){
-            dataSet= new SparseRegDataSet(numDataPoints,numFeatures);
-        }else {
-            dataSet = new DenseRegDataSet(numDataPoints,numFeatures);
-        }
+        RegDataSet dataSet = RegDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .dense(!config.getBoolean("sparse")).missingValue(false).build();
+
         double nonzeroPercentage = config.getDouble("nonzeroPercentage");
 
         StopWatch stopWatch = new StopWatch();
@@ -54,7 +49,7 @@ public class Exp1 {
         stopWatch.reset();
 
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getFeatureColumn(i).getSetting()
+            dataSet.getFeatureSetting(i)
                     .setFeatureType(FeatureType.NUMERICAL);
         }
 

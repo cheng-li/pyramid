@@ -5,3 +5,5 @@ out/
 lib/
 configs/
 src/main/java/edu/neu/ccs/pyramid/tmp/
+
+src/main/java/edu/neu/ccs/pyramid/dataset/DataSetting.java

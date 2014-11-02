@@ -42,7 +42,7 @@ public class Formatter {
 
     static void saveData() throws Exception{
         RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/housing/standard_format/features.txt",
-                "/Users/chengli/Datasets/housing/standard_format/labels.txt", ",", DataSetType.REG_DENSE);
+                "/Users/chengli/Datasets/housing/standard_format/labels.txt", ",", DataSetType.REG_DENSE,false);
         List<String> names = loadFeatures();
         DataSetUtil.setFeatureNames(dataSet,names);
         TRECFormat.save(dataSet,"/Users/chengli/Datasets/housing/trec_format/all.trec");

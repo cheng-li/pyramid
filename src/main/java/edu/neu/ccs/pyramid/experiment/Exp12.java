@@ -198,7 +198,7 @@ public class Exp12 {
         }
     }
 
-
+    //todo missing value type?
     //todo keep track of feature types(numerical /binary)
     static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
                                FeatureMappers featureMappers,
@@ -206,12 +206,10 @@ public class Exp12 {
                                LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
-        MultiLabelClfDataSet dataSet;
-        if(config.getBoolean("featureMatrix.sparse")){
-            dataSet= new SparseMLClfDataSet(numDataPoints,totalDim,numClasses);
-        } else {
-            dataSet= new DenseMLClfDataSet(numDataPoints,totalDim,numClasses);
-        }
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(totalDim)
+                .numClasses(numClasses).dense(!config.getBoolean("featureMatrix.sparse"))
+                .missingValue(false).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
@@ -364,7 +362,7 @@ public class Exp12 {
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
 
-        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
+        DataSetUtil.dumpDataPointSettings(dataSet, new File(dataFile, "data_settings.txt"));
         DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }

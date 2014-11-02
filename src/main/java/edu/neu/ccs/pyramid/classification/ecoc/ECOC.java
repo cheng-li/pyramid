@@ -5,8 +5,8 @@ import edu.neu.ccs.pyramid.classification.ClassifierFactory;
 import edu.neu.ccs.pyramid.classification.TrainConfig;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
-import edu.neu.ccs.pyramid.dataset.FeatureRow;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -72,12 +72,12 @@ public class ECOC implements Classifier{
         }
     }
 
-    public int predict(FeatureRow featureRow){
+    public int predict(Vector vector){
         int numFunctions = this.classifiers.size();
         int[] code = new int[numFunctions];
         for (int i=0;i<numFunctions;i++){
             Classifier classifier = this.classifiers.get(i);
-            int pred = classifier.predict(featureRow);
+            int pred = classifier.predict(vector);
             code[i] = pred;
         }
         return this.codeMatrix.matchClass(code);

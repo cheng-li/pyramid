@@ -5,7 +5,6 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +19,7 @@ public class AUC {
             throw new IllegalArgumentException("dataSet.getNumClasses()!=2");
         }
         double[] probForOne = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(i -> probEstimator.predictClassProbs(dataSet.getFeatureRow(i))[1])
+                .mapToDouble(i -> probEstimator.predictClassProbs(dataSet.getRow(i))[1])
                 .toArray();
         int[] labels = dataSet.getLabels();
         return auc(probForOne,labels);
