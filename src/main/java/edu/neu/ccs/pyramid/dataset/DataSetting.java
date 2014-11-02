@@ -11,9 +11,10 @@ public class DataSetting implements Serializable{
     private static final long serialVersionUID = 2L;
     private String extId = "unKnown";
     private String extLabel = "unKnown";
-    private List<String> extLabels = new ArrayList<>();
+    private List<String> extLabels;
 
     public DataSetting() {
+        this.extLabels = new ArrayList<>();
     }
 
     public String getExtId() {
@@ -49,6 +50,9 @@ public class DataSetting implements Serializable{
         DataSetting dataSetting = new DataSetting();
         dataSetting.setExtId(this.extId);
         dataSetting.setExtLabel(this.extLabel);
+        for (int i=0;i<this.extLabels.size();i++){
+            dataSetting.extLabels.add(this.extLabels.get(i));
+        }
         return dataSetting;
     }
 
