@@ -25,7 +25,7 @@ public class TRECFormat {
     private static final String TREC_CONFIG_NUM_FEATURES = "numFeatures";
     private static final String TREC_CONFIG_NUM_CLASSES = "numClasses";
     private static final String TREC_CONFIG_MISSING_VALUE = "missingValue";
-    private static final String TREC_DATA_SETTINGS_FILE_NAME = "data_settings.ser";
+    private static final String TREC_DATA_POINT_SETTINGS_FILE_NAME = "data_point_settings.ser";
     private static final String TREC_FEATURE_SETTINGS_FILE_NAME = "feature_settings.ser";
     private static final String TREC_DATASET_SETTINGS_FILE_NAME = "dataset_settings.ser";
 
@@ -47,7 +47,7 @@ public class TRECFormat {
         }
         writeMatrixFile(dataSet, trecFile);
         writeConfigFile(dataSet, trecFile);
-        writeDataSettings(dataSet,trecFile);
+        writeDataPointSettings(dataSet,trecFile);
         writeFeatureSettings(dataSet,trecFile);
         writeDataSetSetting(dataSet,trecFile);
     }
@@ -58,7 +58,7 @@ public class TRECFormat {
         }
         writeMatrixFile(dataSet, trecFile);
         writeConfigFile(dataSet, trecFile);
-        writeDataSettings(dataSet,trecFile);
+        writeDataPointSettings(dataSet,trecFile);
         writeFeatureSettings(dataSet,trecFile);
         writeDataSetSetting(dataSet,trecFile);
     }
@@ -69,7 +69,7 @@ public class TRECFormat {
         }
         writeMatrixFile(dataSet, trecFile);
         writeConfigFile(dataSet, trecFile);
-        writeDataSettings(dataSet,trecFile);
+        writeDataPointSettings(dataSet,trecFile);
         writeFeatureSettings(dataSet,trecFile);
         writeDataSetSetting(dataSet,trecFile);
 
@@ -111,7 +111,7 @@ public class TRECFormat {
         }
         fillClfDataSet(clfDataSet,trecFile);
         if (loadSettings){
-            loadDataSettings(clfDataSet,trecFile);
+            loadDataPointSettings(clfDataSet,trecFile);
             loadFeatureSettings(clfDataSet,trecFile);
             loadDataSetSetting(clfDataSet,trecFile);
         }
@@ -139,7 +139,7 @@ public class TRECFormat {
         }
         fillMultiLabelClfDataSet(dataSet,trecFile);
         if (loadSettings){
-            loadDataSettings(dataSet,trecFile);
+            loadDataPointSettings(dataSet,trecFile);
             loadFeatureSettings(dataSet,trecFile);
             loadDataSetSetting(dataSet,trecFile);
         }
@@ -166,7 +166,7 @@ public class TRECFormat {
         }
         fillRegDataSet(regDataSet, trecFile);
         if (loadSettings){
-            loadDataSettings(regDataSet,trecFile);
+            loadDataPointSettings(regDataSet,trecFile);
             loadFeatureSettings(regDataSet,trecFile);
             loadDataSetSetting(regDataSet,trecFile);
         }
@@ -444,8 +444,7 @@ public class TRECFormat {
             for (int i=0;i<numDataPoints;i++){
                 int label = labels[i];
                 bw.write(label+" ");
-                FeatureRow featureRow = dataSet.getRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index();
@@ -468,8 +467,7 @@ public class TRECFormat {
             for (int i=0;i<numDataPoints;i++){
                 double label = labels[i];
                 bw.write(label+" ");
-                FeatureRow featureRow = dataSet.getRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index();
@@ -500,8 +498,7 @@ public class TRECFormat {
                         bw.write(" ");
                     }
                 }
-                FeatureRow featureRow = dataSet.getRow(i);
-                Vector vector = featureRow.getVector();
+                Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 for (Vector.Element element: vector.nonZeroes()){
                     int featureIndex = element.index();
@@ -515,18 +512,52 @@ public class TRECFormat {
         }
     }
 
-    private static void writeDataSettings(DataSet dataSet, File trecFile) {
-        File file = new File(trecFile,TREC_DATA_SETTINGS_FILE_NAME);
-        List<DataSetting> dataSettings = new ArrayList<>();
+    private static void writeDataPointSettings(ClfDataSet dataSet, File trecFile) {
+        File file = new File(trecFile, TREC_DATA_POINT_SETTINGS_FILE_NAME);
+        List<ClfDataPointSetting> dataPointSettings = new ArrayList<>();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSettings.add(dataSet.getRow(i).getSetting());
+            dataPointSettings.add(dataSet.getDataPointSetting(i));
         }
         try (
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
         ){
-            objectOutputStream.writeObject(dataSettings);
+            objectOutputStream.writeObject(dataPointSettings);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeDataPointSettings(RegDataSet dataSet, File trecFile) {
+        File file = new File(trecFile, TREC_DATA_POINT_SETTINGS_FILE_NAME);
+        List<RegDataPointSetting> dataPointSettings = new ArrayList<>();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataPointSettings.add(dataSet.getDataPointSetting(i));
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(dataPointSettings);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeDataPointSettings(MultiLabelClfDataSet dataSet, File trecFile) {
+        File file = new File(trecFile, TREC_DATA_POINT_SETTINGS_FILE_NAME);
+        List<MLClfDataPointSetting> dataPointSettings = new ArrayList<>();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataPointSettings.add(dataSet.getDataPointSetting(i));
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(dataPointSettings);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -537,7 +568,7 @@ public class TRECFormat {
         File file = new File(trecFile,TREC_FEATURE_SETTINGS_FILE_NAME);
         List<FeatureSetting> featureSettings = new ArrayList<>();
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            featureSettings.add(dataSet.getColumn(i).getSetting());
+            featureSettings.add(dataSet.getFeatureSetting(i));
         }
         try (
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
@@ -550,7 +581,7 @@ public class TRECFormat {
         }
     }
 
-    private static void writeDataSetSetting(DataSet dataSet, File trecFile){
+    private static void writeDataSetSetting(ClfDataSet dataSet, File trecFile){
         File file = new File(trecFile,TREC_DATASET_SETTINGS_FILE_NAME);
 
         try (
@@ -564,19 +595,79 @@ public class TRECFormat {
         }
     }
 
-    private static void loadDataSettings(DataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
-        File file = new File(trecFile,TREC_DATA_SETTINGS_FILE_NAME);
-        ArrayList<DataSetting> dataSettings;
+    private static void writeDataSetSetting(RegDataSet dataSet, File trecFile){
+        File file = new File(trecFile,TREC_DATASET_SETTINGS_FILE_NAME);
+
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(dataSet.getSetting());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeDataSetSetting(MultiLabelClfDataSet dataSet, File trecFile){
+        File file = new File(trecFile,TREC_DATASET_SETTINGS_FILE_NAME);
+
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(dataSet.getSetting());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void loadDataPointSettings(ClfDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
+        File file = new File(trecFile, TREC_DATA_POINT_SETTINGS_FILE_NAME);
+        ArrayList<ClfDataPointSetting> dataPointSettings;
         try(
                 FileInputStream fileInputStream = new FileInputStream(file);
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
                 ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
         ){
-            dataSettings = (ArrayList)objectInputStream.readObject();
+            dataPointSettings = (ArrayList)objectInputStream.readObject();
 
         }
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSet.getRow(i).putSetting(dataSettings.get(i));
+            dataSet.putDataPointSetting(i, dataPointSettings.get(i));
+        }
+    }
+
+    private static void loadDataPointSettings(RegDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
+        File file = new File(trecFile, TREC_DATA_POINT_SETTINGS_FILE_NAME);
+        ArrayList<RegDataPointSetting> dataPointSettings;
+        try(
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            dataPointSettings = (ArrayList)objectInputStream.readObject();
+
+        }
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataSet.putDataPointSetting(i, dataPointSettings.get(i));
+        }
+    }
+
+    private static void loadDataPointSettings(MultiLabelClfDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
+        File file = new File(trecFile, TREC_DATA_POINT_SETTINGS_FILE_NAME);
+        ArrayList<MLClfDataPointSetting> dataPointSettings;
+        try(
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            dataPointSettings = (ArrayList)objectInputStream.readObject();
+
+        }
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            dataSet.putDataPointSetting(i, dataPointSettings.get(i));
         }
     }
 
@@ -592,21 +683,43 @@ public class TRECFormat {
 
         }
         for (int i=0;i<dataSet.getNumFeatures();i++){
-            dataSet.getColumn(i).putSetting(featureSettings.get(i));
+            dataSet.putFeatureSetting(i,featureSettings.get(i));
         }
     }
 
-    private static void loadDataSetSetting(DataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
+    private static void loadDataSetSetting(ClfDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
         File file = new File(trecFile,TREC_DATASET_SETTINGS_FILE_NAME);
-        DataSetSetting dataSetSetting;
+        ClfDataSetSetting dataSetSetting;
         try(    FileInputStream fileInputStream = new FileInputStream(file);
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
                 ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
         ){
-            dataSetSetting = (DataSetSetting)objectInputStream.readObject();
+            dataSetSetting = (ClfDataSetSetting)objectInputStream.readObject();
         }
-        dataSet.putSetting(dataSetSetting);
+        dataSet.putDataSetSetting(dataSetSetting);
     }
 
+    private static void loadDataSetSetting(RegDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
+        File file = new File(trecFile,TREC_DATASET_SETTINGS_FILE_NAME);
+        RegDataSetSetting dataSetSetting;
+        try(    FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            dataSetSetting = (RegDataSetSetting)objectInputStream.readObject();
+        }
+        dataSet.putDataSetSetting(dataSetSetting);
+    }
 
+    private static void loadDataSetSetting(MultiLabelClfDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
+        File file = new File(trecFile,TREC_DATASET_SETTINGS_FILE_NAME);
+        MLClfDataSetSetting dataSetSetting;
+        try(    FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            dataSetSetting = (MLClfDataSetSetting)objectInputStream.readObject();
+        }
+        dataSet.putDataSetSetting(dataSetSetting);
+    }
 }

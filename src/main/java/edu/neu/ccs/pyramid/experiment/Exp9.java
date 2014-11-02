@@ -89,7 +89,7 @@ public class Exp9 {
     private static void saveNew(Config config, ClfDataSet newData) throws Exception{
         String saveTo = config.getString("archive.dataset");
         TRECFormat.save(newData,saveTo);
-        DataSetUtil.dumpDataSettings(newData,new File(config.getString("archive.dataset"),"data_settings.txt"));
+        DataSetUtil.dumpDataPointSettings(newData, new File(config.getString("archive.dataset"), "data_settings.txt"));
         DataSetUtil.dumpFeatureSettings(newData,new File(config.getString("archive.dataset"),"feature_settings.txt"));
     }
 

@@ -21,7 +21,7 @@ public class Exp7 {
         Config config = new Config(args[0]);
         System.out.println(config);
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(config.getString("trecFolder"), DataSetType.CLF_SPARSE,true);
-        DataSetUtil.dumpDataSettings(dataSet,new File(config.getString("trecFolder"),"data_settings.txt"));
+        DataSetUtil.dumpDataPointSettings(dataSet, new File(config.getString("trecFolder"), "data_settings.txt"));
         DataSetUtil.dumpFeatureSettings(dataSet,new File(config.getString("trecFolder"),"feature_settings.txt"));
     }
 

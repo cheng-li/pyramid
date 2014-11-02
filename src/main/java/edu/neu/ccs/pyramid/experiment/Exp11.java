@@ -323,7 +323,7 @@ public class Exp11 {
         String archive = config.getString("archive.folder");
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
-        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
+        DataSetUtil.dumpDataPointSettings(dataSet, new File(dataFile, "data_settings.txt"));
         DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }

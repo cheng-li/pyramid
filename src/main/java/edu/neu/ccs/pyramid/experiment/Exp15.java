@@ -5,7 +5,6 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
-import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.*;
@@ -316,7 +315,7 @@ public class Exp15 {
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
 
-        DataSetUtil.dumpDataSettings(dataSet,new File(dataFile,"data_settings.txt"));
+        DataSetUtil.dumpDataPointSettings(dataSet, new File(dataFile, "data_settings.txt"));
         DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }

@@ -67,7 +67,7 @@ public class DataSetUtilTest {
     static void test3() throws Exception{
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE,true);
-        DataSetUtil.dumpDataSettings(dataSet,new File(TMP,"data_settings.txt"));
+        DataSetUtil.dumpDataPointSettings(dataSet, new File(TMP, "data_settings.txt"));
         DataSetUtil.dumpFeatureSettings(dataSet,new File(TMP,"feature_settings.txt"));
     }
 
@@ -91,7 +91,7 @@ public class DataSetUtilTest {
         clfDataSet.getColumn(0).putSetting(new FeatureSetting().setFeatureName("color").setFeatureType(FeatureType.BINARY));
         clfDataSet.getColumn(1).putSetting(new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
         clfDataSet.getColumn(2).putSetting(new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
-        DataSetUtil.dumpDataSettings(clfDataSet,new File(TMP,"datasettings.txt"));
+        DataSetUtil.dumpDataPointSettings(clfDataSet, new File(TMP, "datasettings.txt"));
         DataSetUtil.dumpFeatureSettings(clfDataSet,new File(TMP,"featuresettings.txt"));
     }
 
