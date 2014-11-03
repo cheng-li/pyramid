@@ -7,7 +7,11 @@ import java.io.Serializable;
  */
 public class Node implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
+    /**
+     * id of the node
+     */
+    private int id;
 
     /**
      * output value of the node
@@ -166,6 +170,15 @@ public class Node implements Serializable {
 
     void setRightProb(double rightProb) {
         this.rightProb = rightProb;
+    }
+
+    int getId() {
+        return id;
+    }
+
+    public Node setId(int id) {
+        this.id = id;
+        return this;
     }
 
     @Override
