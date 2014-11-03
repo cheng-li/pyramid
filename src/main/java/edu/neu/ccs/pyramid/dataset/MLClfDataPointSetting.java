@@ -1,12 +1,13 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by chengli on 11/1/14.
  */
-public class MLClfDataPointSetting {
+public class MLClfDataPointSetting implements Serializable{
     private static final long serialVersionUID = 1L;
     private String extId = "unKnown";
     private List<String> extLabels;
