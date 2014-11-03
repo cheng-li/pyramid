@@ -13,7 +13,12 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public class RegressionTree implements Regressor, Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
+
+    /**
+     * including intermediate nodes
+     */
+    int numNodes;
 
     protected Node root;
     /**
@@ -23,6 +28,7 @@ public class RegressionTree implements Regressor, Serializable {
     protected List<Node> leaves;
 
     protected RegressionTree() {
+        this.numNodes = 0;
         this.leaves = new ArrayList<>();
     }
 
@@ -41,9 +47,13 @@ public class RegressionTree implements Regressor, Serializable {
 
     @Override
     public double predict(Vector vector){
+        // use as a simple cache
+        int numNodes = this.numNodes;
+        boolean[] calculated = new boolean[numNodes];
+        double[] probs = new double[numNodes];
         double prediction = 0;
         for (Node leaf: this.leaves){
-            double prob = probability(vector,leaf);
+            double prob = probability(vector,leaf, calculated, probs);
             prediction += prob*leaf.getValue();
         }
         return prediction;
@@ -51,15 +61,23 @@ public class RegressionTree implements Regressor, Serializable {
 
 
     /**
-     * the probability of a vector falling into the leaf
+     * the probability of a vector falling into the node
+     * cache probabilities
      * @param vector
      * @param node
      * @return
      */
-     double probability(Vector vector, Node node){
+     double probability(Vector vector, Node node, boolean[] calculated, double[] probs){
+        int id = node.getId();
+
+        if (calculated[id]){
+            return probs[id];
+        }
+
         if (node == root){
             return 1;
         }
+
         Node parent = node.getParent();
         int featureIndex = parent.getFeatureIndex();
         double threshold = parent.getThreshold();
@@ -68,33 +86,110 @@ public class RegressionTree implements Regressor, Serializable {
         // for missing value
         if (Double.isNaN(vector.get(featureIndex))){
             if (isLeftChild){
-                return parent.getLeftProb()*probability(vector,parent);
+                double prob = parent.getLeftProb()*probability(vector,parent, calculated, probs);
+                calculated[id] = true;
+                probs[id] = prob;
+                return prob;
             } else {
-                return parent.getRightProb()*probability(vector,parent);
+                double prob = parent.getRightProb()*probability(vector,parent, calculated, probs);
+                calculated[id] = true;
+                probs[id] = prob;
+                return prob;
             }
         }
 
         // for existing value
         double value = vector.get(featureIndex);
         if (isLeftChild && value <= threshold){
-            return probability(vector,parent);
+            double prob = probability(vector,parent,calculated, probs);
+            calculated[id] = true;
+            probs[id] = prob;
+            return prob;
         }
 
         if (isLeftChild && value > threshold){
-            return 0;
+            double prob = 0;
+            calculated[id] = true;
+            probs[id] = prob;
+            return prob;
         }
 
         if (!isLeftChild && value <= threshold){
-            return 0;
+            double prob = 0;
+            calculated[id] = true;
+            probs[id] = prob;
+            return prob;
         }
 
         if (!isLeftChild && value > threshold){
-            return probability(vector,parent);
+            double prob = probability(vector,parent, calculated, probs);
+            calculated[id] = true;
+            probs[id] = prob;
+            return prob;
         }
 
         // this should not happen
         return 1;
     }
+
+
+    /**
+     * the probability of a vector falling into the node
+     * doesn't cache probabilities
+     * @param vector
+     * @param node
+     * @return
+     */
+    double probability(Vector vector, Node node){
+        int id = node.getId();
+
+        if (node == root){
+            return 1;
+        }
+
+        Node parent = node.getParent();
+        int featureIndex = parent.getFeatureIndex();
+        double threshold = parent.getThreshold();
+        boolean isLeftChild = (node==parent.getLeftChild());
+
+        // for missing value
+        if (Double.isNaN(vector.get(featureIndex))){
+            if (isLeftChild){
+                double prob = parent.getLeftProb()*probability(vector,parent);
+                return prob;
+            } else {
+                double prob = parent.getRightProb()*probability(vector,parent);
+                return prob;
+            }
+        }
+
+        // for existing value
+        double value = vector.get(featureIndex);
+        if (isLeftChild && value <= threshold){
+            double prob = probability(vector,parent);
+            return prob;
+        }
+
+        if (isLeftChild && value > threshold){
+            double prob = 0;
+            return prob;
+        }
+
+        if (!isLeftChild && value <= threshold){
+            double prob = 0;
+            return prob;
+        }
+
+        if (!isLeftChild && value > threshold){
+            double prob = probability(vector,parent);
+            return prob;
+        }
+
+        // this should not happen
+        return 1;
+    }
+
+
 
 //    public DecisionProcess getDecisionProcess(float [] vector,List<Feature> features){
 //        StringBuilder sb = new StringBuilder();

@@ -30,8 +30,12 @@ public class RegTreeTrainer {
                                      double[] labels,
                                      LeafOutputCalculator leafOutputCalculator){
         RegressionTree tree = new RegressionTree();
+
         tree.leaves = new ArrayList<>();
         tree.root = new Node();
+        tree.root.setId(tree.numNodes);
+        tree.numNodes += 1;
+
         //root gets all active data points
         double[] rootProbs = new double[dataSet.getNumDataPoints()];
         for (int dataPoint: regTreeConfig.getActiveDataPoints()){
@@ -55,7 +59,7 @@ public class RegTreeTrainer {
             Optional<Node> leafToSplitOptional = findLeafToSplit(tree.leaves);
             if (leafToSplitOptional.isPresent()){
                 Node leafToSplit = leafToSplitOptional.get();
-                splitNode(leafToSplit,regTreeConfig,dataSet,labels,tree.leaves);
+                splitNode(tree, leafToSplit,regTreeConfig,dataSet,labels);
             } else {
                 break;
             }
@@ -82,11 +86,9 @@ public class RegTreeTrainer {
      * @param leafToSplit
      * @param regTreeConfig
      * @param dataSet
-     * @param leaves
      */
-    private static void splitNode(Node leafToSplit, RegTreeConfig regTreeConfig,
-                                  DataSet dataSet, double[] labels,
-                                  List<Node> leaves) {
+    private static void splitNode(RegressionTree tree, Node leafToSplit, RegTreeConfig regTreeConfig,
+                                  DataSet dataSet, double[] labels) {
         int numDataPoints = dataSet.getNumDataPoints();
 
         /**
@@ -105,7 +107,11 @@ public class RegTreeTrainer {
          * create children
          */
         Node leftChild = new Node();
+        leftChild.setId(tree.numNodes);
+        tree.numNodes += 1;
         Node rightChild = new Node();
+        rightChild.setId(tree.numNodes);
+        tree.numNodes += 1;
 
         double[] parentProbs = leafToSplit.getProbs();
         double[] leftProbs = new double[numDataPoints];
@@ -135,7 +141,7 @@ public class RegTreeTrainer {
         //the last two leaves need not to be updated completely
         //as we don't need to split them later
         int maxNumLeaves = regTreeConfig.getMaxNumLeaves();
-        if (leaves.size()!=maxNumLeaves-1){
+        if (tree.leaves.size()!=maxNumLeaves-1){
             updateNode(leftChild,regTreeConfig,dataSet,labels);
             updateNode(rightChild,regTreeConfig,dataSet,labels);
         }
@@ -152,11 +158,11 @@ public class RegTreeTrainer {
          */
         leafToSplit.setLeaf(false);
         leafToSplit.clearProbs();
-        leaves.remove(leafToSplit);
+        tree.leaves.remove(leafToSplit);
         leftChild.setLeaf(true);
         rightChild.setLeaf(true);
-        leaves.add(leftChild);
-        leaves.add(rightChild);
+        tree.leaves.add(leftChild);
+        tree.leaves.add(rightChild);
     }
 
     /**
