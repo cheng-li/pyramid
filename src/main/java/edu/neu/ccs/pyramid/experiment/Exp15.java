@@ -199,7 +199,7 @@ public class Exp15 {
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(totalDim)
                 .numClasses(numClasses).dense(!config.getBoolean("featureMatrix.sparse"))
-                .missingValue(false).build();
+                .missingValue(config.getBoolean("featureMatrix.missingValue")).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);

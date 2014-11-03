@@ -206,6 +206,7 @@ public class Exp11 {
         ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(totalDim)
                 .numClasses(numClasses).dense(!config.getBoolean("featureMatrix.sparse"))
+                .missingValue(config.getBoolean("featureMatrix.missingValue"))
                 .build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
