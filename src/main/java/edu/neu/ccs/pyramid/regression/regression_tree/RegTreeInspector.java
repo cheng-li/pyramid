@@ -3,16 +3,24 @@ package edu.neu.ccs.pyramid.regression.regression_tree;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 9/4/14.
  */
 public class RegTreeInspector {
 
+    /**
+     *
+     * @param tree
+     * @return features used in the tree
+     */
+    public static Set<Integer> features(RegressionTree tree){
+        return tree.traverse().stream().filter(node -> !node.isLeaf()).
+                map(Node::getFeatureIndex)
+                .collect(Collectors.toSet());
+    }
 
     /**
      * pair contains feature name and reduction
