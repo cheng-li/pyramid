@@ -4,6 +4,9 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.feature.CategoricalFeatureMapper;
+import edu.neu.ccs.pyramid.feature.FeatureMappers;
+import edu.neu.ccs.pyramid.feature.NumericalFeatureMapper;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
@@ -11,8 +14,12 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * imlgb
@@ -89,6 +96,58 @@ public class Exp14 {
         MultiLabelClfDataSet dataSet = loadTrainData(config);
         MultiLabelClfDataSet testDataSet = loadTestData(config);
 
+
+        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.features").split(",")).map(string -> string.trim())
+                .collect(Collectors.toSet());
+        FeatureMappers featureMappers = dataSet.getSetting().getFeatureMappers();
+
+        Set<Integer> initialFeatures = new HashSet<>();
+        for (CategoricalFeatureMapper mapper: featureMappers.getCategoricalFeatureMappers()){
+            if (mapper.getSource().equalsIgnoreCase("field")){
+                for (int j = mapper.getStart();j<mapper.getEnd();j++){
+                    initialFeatures.add(j);
+                }
+            }
+        }
+        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
+            if (mapper.getSource().equalsIgnoreCase("field")){
+                initialFeatures.add(mapper.getFeatureIndex());
+            }
+        }
+
+        Set<Integer> unigramFeatures = new HashSet<>();
+        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
+            if (mapper.getSource().equalsIgnoreCase("matching_score")
+                    && mapper.getFeatureName().split(" ").length==1){
+                unigramFeatures.add(mapper.getFeatureIndex());
+            }
+        }
+
+        Set<Integer> ngramFeatures = new HashSet<>();
+        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
+            if (mapper.getSource().equalsIgnoreCase("matching_score")
+                    && mapper.getFeatureName().split(" ").length>1){
+                ngramFeatures.add(mapper.getFeatureIndex());
+            }
+        }
+
+        if (initialFeatures.size()+unigramFeatures.size()+ngramFeatures.size()!=dataSet.getNumFeatures()){
+            throw new RuntimeException("initialFeatures.size()+unigramFeatures.size()+ngramFeatures.size()!=dataSet.getNumFeatures()");
+        }
+
+        Set<Integer> featuresToUse = new HashSet<>();
+        if (featuresToUseOption.contains("initial")){
+            featuresToUse.addAll(initialFeatures);
+        }
+        if (featuresToUseOption.contains("unigram")){
+            featuresToUse.addAll(unigramFeatures);
+        }
+        if (featuresToUseOption.contains("ngram")){
+            featuresToUse.addAll(ngramFeatures);
+        }
+
+        int[] activeFeatures = featuresToUse.stream().mapToInt(i-> i).toArray();
+
         int numClasses = dataSet.getNumClasses();
         System.out.println("number of class = "+numClasses);
         IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(dataSet)
@@ -105,6 +164,8 @@ public class Exp14 {
         boosting.setAssignments(assignments);
         boosting.setPriorProbs(dataSet);
         boosting.setTrainConfig(imlgbConfig);
+        //todo make it better
+        boosting.setActiveFeatures(activeFeatures);
 
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
