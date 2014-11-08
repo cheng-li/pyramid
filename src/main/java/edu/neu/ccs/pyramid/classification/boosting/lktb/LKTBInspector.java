@@ -5,10 +5,7 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -99,5 +96,16 @@ public class LKTBInspector {
     public static List<String> topFeatureNames(List<LKTreeBoost> lkTreeBoosts, int classIndex){
         return topFeatures(lkTreeBoosts,classIndex).stream().map(Pair::getSecond)
                 .collect(Collectors.toList());
+    }
+
+    public static Set<Integer> recentlyUsedFeatures(LKTreeBoost boosting, int k){
+        Set<Integer> features = new HashSet<>();
+        List<Regressor> regressors = boosting.getRegressors(k);
+        int size = regressors.size();
+        Regressor lastOne = regressors.get(size-1);
+        if (lastOne instanceof RegressionTree){
+            features.addAll(RegTreeInspector.features((RegressionTree)lastOne));
+        }
+        return features;
     }
 }
