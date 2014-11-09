@@ -18,6 +18,9 @@ package edu.neu.ccs.pyramid.experiment;
  * 15: feature extraction for multi label dataset
  * 16: index review polarity
  * 17: index classic3
+ * 18:  * single label dataset, start with initial features + all unigram features
+ * use picked unigram features as seeds
+ * 19: single label gradient boosting without probabilistic voting
  */
 public class ExpIndex {
 
