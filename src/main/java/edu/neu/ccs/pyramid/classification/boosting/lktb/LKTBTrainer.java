@@ -211,11 +211,12 @@ class LKTBTrainer {
                 out = ((numClasses - 1) * nominator) / (numClasses * denominator);
             }
             //protection from numerically unstable issue
-            if (out>2){
-                out=2;
+            //todo does the threshold matter?
+            if (out>1){
+                out=1;
             }
-            if (out<-2){
-                out=-2;
+            if (out<-1){
+                out=-1;
             }
             if (Double.isNaN(out)) {
                 throw new RuntimeException("leaf value is NaN");
