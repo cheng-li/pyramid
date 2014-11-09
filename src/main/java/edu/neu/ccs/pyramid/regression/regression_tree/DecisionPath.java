@@ -59,7 +59,7 @@ public class DecisionPath {
                     sb.append(featureValue).append(">").append(threshold).append(", ");
                 }
             } else {
-                sb.append("score=").append(node.getValue());
+                sb.append("score = ").append(node.getValue());
             }
 
         }

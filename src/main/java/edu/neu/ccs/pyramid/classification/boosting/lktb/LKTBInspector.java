@@ -1,9 +1,17 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
+
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.regression_tree.DecisionPath;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.mahout.math.Vector;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -107,5 +115,46 @@ public class LKTBInspector {
             features.addAll(RegTreeInspector.features((RegressionTree)lastOne));
         }
         return features;
+    }
+
+    public static String decisionProcess(LKTreeBoost boosting, Vector vector, int classIndex, int limit){
+        StringBuilder sb = new StringBuilder();
+        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().limit(limit).collect(Collectors.toList());
+        for (int i=0;i<regressors.size();i++){
+            Regressor regressor = regressors.get(i);
+            if (regressor instanceof ConstantRegressor){
+                sb.append("prior score for the class = ");
+                sb.append(((ConstantRegressor) regressor).getScore()).append("\n");
+            }
+
+            if (regressor instanceof RegressionTree){
+                RegressionTree tree = (RegressionTree)regressor;
+                DecisionPath decisionPath = new DecisionPath(tree,vector);
+                sb.append("tree ").append(i).append(": ");
+                sb.append(decisionPath.toString()).append("\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
+    public static String analyzeMistake(LKTreeBoost boosting, Vector vector,
+                                        int trueLabel, int prediction,
+                                        LabelTranslator labelTranslator, int limit){
+        StringBuilder sb = new StringBuilder();
+        sb.append("score for the true label ").append(trueLabel).append("(").append(labelTranslator.toExtLabel(trueLabel))
+                .append(")").append(" = ").append(boosting.predictClassScore(vector,trueLabel)).append("\n");
+
+        sb.append("score for the prediction ").append(prediction).append("(").append(labelTranslator.toExtLabel(prediction))
+                .append(")").append(" = ").append(boosting.predictClassScore(vector,prediction)).append("\n");
+        sb.append("decision process for the true label ").append(trueLabel).append("(").append(labelTranslator.toExtLabel(trueLabel))
+                .append(")").append(":").append("\n");
+        sb.append(decisionProcess(boosting,vector,trueLabel,limit));
+
+        sb.append("decision process for the prediction ").append(prediction).append("(").append(labelTranslator.toExtLabel(prediction))
+                .append(")").append(":").append("\n");
+        sb.append(decisionProcess(boosting,vector,prediction,limit));
+
+        return sb.toString();
     }
 }
