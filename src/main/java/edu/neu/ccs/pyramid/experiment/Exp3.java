@@ -280,7 +280,7 @@ public class Exp3 {
         for (int i=0;i<numClasses;i++){
             //todo parameters
             Set<String> set = new HashSet<>();
-            set.addAll(dfStats.getSortedTerms(i,50,100));
+            set.addAll(dfStats.getSortedTerms(i,config.getInt("seeds.initial.minDf"),config.getInt("seeds.initial.size")));
             seedsForAllClasses.add(set);
         }
 

@@ -74,7 +74,7 @@ public class Exp19 {
         lkTreeBoost.setTrainConfig(trainConfig);
         for (int i=0;i<numIterations;i++){
 
-//                System.out.println("iteration "+i);
+            System.out.println("iteration "+i);
 
             lkTreeBoost.boostOneRound();
             //debug

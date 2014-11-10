@@ -21,6 +21,7 @@ import org.elasticsearch.search.SearchHit;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -159,6 +160,13 @@ public class Exp18 {
         for (int i=0;i<numClasses;i++){
             Set<String> set = new HashSet<>();
             seedsForAllClasses.add(set);
+        }
+
+        DFStats dfStats = loadDFStats(config,index,trainIdTranslator);
+        for (int i=0;i<numClasses;i++){
+            seedsForAllClasses.get(i).addAll(dfStats.getSortedTerms(i,
+                    config.getInt("seeds.initial.minDf"),
+                    config.getInt("seeds.initial.size")));
         }
 
         Set<String> blackList = new HashSet<>();
@@ -732,6 +740,14 @@ public class Exp18 {
             }
         }
 
+    }
+
+    static DFStats loadDFStats(Config config, SingleLabelIndex index, IdTranslator trainIdTranslator) throws IOException {
+        DFStats dfStats = new DFStats(config.getInt("numClasses"));
+        String[] trainIds = trainIdTranslator.getAllExtIds();
+        dfStats.update(index,trainIds);
+        dfStats.sort();
+        return dfStats;
     }
 
 
