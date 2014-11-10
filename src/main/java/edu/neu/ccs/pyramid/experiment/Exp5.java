@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.data_formatter.cnn.IndexBuilder;
+import edu.neu.ccs.pyramid.util.DirWalker;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -10,6 +11,7 @@ import org.elasticsearch.node.Node;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.List;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -26,24 +28,29 @@ public class Exp5 {
 
         Config config = new Config(args[0]);
         System.out.println(config);
-        String file = config.getString("input.file");
+        String folder = config.getString("input.folder");
+        List<File> files = DirWalker.getFiles(folder);
 
         Node node = nodeBuilder().client(true).clusterName(config.getString("index.clusterName")).node();
         Client client = node.client();
-        try(BufferedReader br = new BufferedReader(new FileReader(new File(file)))){
-            String line = null;
-            int id = 0;
-            while((line=br.readLine())!=null){
-                if (IndexBuilder. acceptLine(line)){
-                    XContentBuilder builder = IndexBuilder.getBuilder(line);
-                    IndexResponse response = client.prepareIndex("cnn", "document",""+id)
-                            .setSource(builder)
-                            .execute()
-                            .actionGet();
-                    id += 1;
+        int id = 0;
+        for (File file: files){
+            try(BufferedReader br = new BufferedReader(new FileReader(file))){
+                String line = null;
+                while((line=br.readLine())!=null){
+                    if (IndexBuilder. acceptLine(line)){
+                        XContentBuilder builder = IndexBuilder.getBuilder(file,line);
+                        IndexResponse response = client.prepareIndex("cnn", "document",""+id)
+                                .setSource(builder)
+                                .execute()
+                                .actionGet();
+                        System.out.println(""+id);
+                        id += 1;
+                    }
                 }
             }
         }
+
         node.close();
     }
 }

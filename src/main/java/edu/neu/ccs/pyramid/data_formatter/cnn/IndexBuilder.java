@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.data_formatter.cnn;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +16,7 @@ public class IndexBuilder {
     static Map<String,Integer> map = createMap();
 
 
-    public static XContentBuilder getBuilder(String line) throws Exception{
+    public static XContentBuilder getBuilder(File file, String line) throws Exception{
         String[] split = line.split("\t");
         XContentBuilder builder = XContentFactory.jsonBuilder();
         builder.startObject();
@@ -24,7 +25,7 @@ public class IndexBuilder {
         builder.field("title",split[2]);
         builder.field("body",split[5]);
         builder.field("label",""+map.get(split[1]));
-        builder.field("split",getTrainOrTest());
+        builder.field("split",getTrainOrTest(file));
         builder.endObject();
         return builder;
     }
@@ -44,11 +45,9 @@ public class IndexBuilder {
                 &&!split[5].trim().equals(""));
     }
 
-    static String getTrainOrTest() {
+    static String getTrainOrTest(File file) {
         String res = null;
-        double ran = Math.random();
-
-        if ( ran< 0.6){
+        if ( file.getName().equals("2012")){
             res = "train";
         } else {
             res = "test";
