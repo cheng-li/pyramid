@@ -40,8 +40,12 @@ public class IndexBuilder {
 
     public static boolean acceptLine(String line){
         String[] split = line.split("\t");
+        if (split.length!=6){
+            return false;
+        }
         String realLabel = split[1];
-        return (map.containsKey(realLabel)&&(split.length==6)
+
+        return (map.containsKey(realLabel)
                 &&!split[5].trim().equals(""));
     }
 
