@@ -15,7 +15,7 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        spam_test();
+//        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
@@ -25,6 +25,7 @@ public class LKTreeBoostTest {
 //        spam_fake_build();
 //        spam_missing_all();
 //        mnist_all();
+        classic3_all();
     }
 
     static void spam_resume_train() throws Exception{
@@ -502,6 +503,61 @@ public class LKTreeBoostTest {
 
         lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
 //        TRECDataSet.save(dataSet,new File("/Users/chengli/tmp/train.trec"));
+    }
+
+
+    static void classic3_all() throws Exception{
+        classic_train();
+        classic3_test();
+    }
+    static void classic3_test() throws Exception{
+        System.out.println("loading ensemble");
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"classic3/classic3_exp11/test.trec"),DataSetType.CLF_DENSE,true);
+        System.out.println(dataSet.getMetaInfo());
+
+        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        System.out.println("accuracy="+accuracy);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        System.out.println(confusionMatrix.printWithExtLabels());
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            System.out.println("for class "+k);
+            System.out.println(new PerClassMeasures(confusionMatrix,k));
+        }
+        System.out.println("macro-averaged:");
+        System.out.println(new MacroAveragedMeasures(confusionMatrix));
+
+    }
+
+    /**
+     * test lktb's performance on feature selection
+     * @throws Exception
+     */
+    static void classic_train() throws Exception{
+
+        ClfDataSet dataSet  = TRECFormat.loadClfDataSet(new File(DATASETS,"classic3/classic3_exp11/train.trec"),DataSetType.CLF_DENSE,true);
+        System.out.println(dataSet.getMetaInfo());
+        LKTreeBoost lkTreeBoost = new LKTreeBoost(3);
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
+                .numLeaves(5).learningRate(0.1).
+                        dataSamplingRate(1).featureSamplingRate(1).build();
+        lkTreeBoost.setTrainConfig(trainConfig);
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int round =0;round<100;round++){
+            System.out.println("round="+round);
+            lkTreeBoost.boostOneRound();
+        }
+        stopWatch.stop();
+        System.out.println(stopWatch);
+
+
+        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        System.out.println(accuracy);
+
+        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
     }
 
 }
