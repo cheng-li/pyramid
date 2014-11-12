@@ -104,7 +104,7 @@ public class Exp14 {
         Set<Integer> initialFeatures = new HashSet<>();
         for (CategoricalFeatureMapper mapper: featureMappers.getCategoricalFeatureMappers()){
             if (mapper.getSource().equalsIgnoreCase("field")){
-                for (int j = mapper.getStart();j<mapper.getEnd();j++){
+                for (int j = mapper.getStart();j<=mapper.getEnd();j++){
                     initialFeatures.add(j);
                 }
             }

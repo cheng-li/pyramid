@@ -28,6 +28,10 @@ public class CategoricalFeatureMapper implements Serializable {
         return start;
     }
 
+    /**
+     * inclusive
+     * @return
+     */
     public int getEnd() {
         return end;
     }
