@@ -1,11 +1,14 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,17 +28,16 @@ public class LibSvmFormat {
                 bw.write(label+" ");
                 Vector vector = dataSet.getRow(i);
                 // only write non-zeros
-                int preIndex = -1;
-                int currIndex;
-                for (Vector.Element element: vector.nonZeroes()){
-                    int featureIndex = element.index() + 1;
-                    currIndex = featureIndex;
-                    if (currIndex <=  preIndex) {
-                        System.out.println("Sequence Error!!!");
-                    }
-                    preIndex = currIndex;
-                    double featureValue = element.get();
-                    bw.write(featureIndex+":"+featureValue+" ");
+                List<Pair<Integer,Double>> pairs = new ArrayList<>();
+                for (Vector.Element element:vector.nonZeroes()){
+                    Pair<Integer,Double> pair = new Pair<>(element.index()+1,element.get());
+                    pairs.add(pair);
+                }
+                Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getFirst);
+                List<Pair<Integer,Double>> sorted = pairs.stream().sorted(comparator)
+                        .collect(Collectors.toList());
+                for (Pair<Integer,Double> pair: sorted){
+                    bw.write(pair.getFirst()+":"+pair.getSecond()+" ");
                 }
                 bw.write("\n");
             }
@@ -55,10 +57,16 @@ public class LibSvmFormat {
                 bw.write(label+" ");
                 Vector vector = dataSet.getRow(i);
                 // only write non-zeros
-                for (Vector.Element element: vector.nonZeroes()){
-                    int featureIndex = element.index()+1;
-                    double featureValue = element.get();
-                    bw.write(featureIndex+":"+featureValue+" ");
+                List<Pair<Integer,Double>> pairs = new ArrayList<>();
+                for (Vector.Element element:vector.nonZeroes()){
+                    Pair<Integer,Double> pair = new Pair<>(element.index()+1,element.get());
+                    pairs.add(pair);
+                }
+                Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getFirst);
+                List<Pair<Integer,Double>> sorted = pairs.stream().sorted(comparator)
+                        .collect(Collectors.toList());
+                for (Pair<Integer,Double> pair: sorted){
+                    bw.write(pair.getFirst()+":"+pair.getSecond()+" ");
                 }
                 bw.write("\n");
             }
@@ -86,10 +94,16 @@ public class LibSvmFormat {
                 }
                 Vector vector = dataSet.getRow(i);
                 // only write non-zeros
-                for (Vector.Element element: vector.nonZeroes()){
-                    int featureIndex = element.index()+1;
-                    double featureValue = element.get();
-                    bw.write(featureIndex+":"+featureValue+" ");
+                List<Pair<Integer,Double>> pairs = new ArrayList<>();
+                for (Vector.Element element:vector.nonZeroes()){
+                    Pair<Integer,Double> pair = new Pair<>(element.index()+1,element.get());
+                    pairs.add(pair);
+                }
+                Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getFirst);
+                List<Pair<Integer,Double>> sorted = pairs.stream().sorted(comparator)
+                        .collect(Collectors.toList());
+                for (Pair<Integer,Double> pair: sorted){
+                    bw.write(pair.getFirst()+":"+pair.getSecond()+" ");
                 }
                 bw.write("\n");
             }

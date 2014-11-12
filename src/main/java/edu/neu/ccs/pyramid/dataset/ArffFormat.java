@@ -1,12 +1,15 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,10 +83,17 @@ public class ArffFormat {
                 bw.write("{");
                 Vector vector = dataSet.getRow(i);
                 // only write non-zeros
-                for (Vector.Element element: vector.nonZeroes()){
-                    int featureIndex = element.index();
-                    double featureValue = element.get();
-                    bw.write(featureIndex+" "+featureValue+",");
+                // only write non-zeros
+                List<Pair<Integer,Double>> pairs = new ArrayList<>();
+                for (Vector.Element element:vector.nonZeroes()){
+                    Pair<Integer,Double> pair = new Pair<>(element.index(),element.get());
+                    pairs.add(pair);
+                }
+                Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getFirst);
+                List<Pair<Integer,Double>> sorted = pairs.stream().sorted(comparator)
+                        .collect(Collectors.toList());
+                for (Pair<Integer,Double> pair: sorted){
+                    bw.write(pair.getFirst()+":"+pair.getSecond()+" ");
                 }
                 bw.write(numFeatures+" "+label+"}"+"\n");
             }
@@ -110,10 +120,16 @@ public class ArffFormat {
                 bw.write("{");
                 Vector vector = dataSet.getRow(i);
                 // only write non-zeros
-                for (Vector.Element element: vector.nonZeroes()){
-                    int featureIndex = element.index();
-                    double featureValue = element.get();
-                    bw.write(featureIndex+" "+featureValue+",");
+                List<Pair<Integer,Double>> pairs = new ArrayList<>();
+                for (Vector.Element element:vector.nonZeroes()){
+                    Pair<Integer,Double> pair = new Pair<>(element.index(),element.get());
+                    pairs.add(pair);
+                }
+                Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getFirst);
+                List<Pair<Integer,Double>> sorted = pairs.stream().sorted(comparator)
+                        .collect(Collectors.toList());
+                for (Pair<Integer,Double> pair: sorted){
+                    bw.write(pair.getFirst()+":"+pair.getSecond()+" ");
                 }
                 bw.write(numFeatures+" "+label+"}"+"\n");
             }
@@ -143,10 +159,16 @@ public class ArffFormat {
                 bw.write("{");
                 Vector vector = dataSet.getRow(i);
                 // only write non-zeros
-                for (Vector.Element element: vector.nonZeroes()){
-                    int featureIndex = element.index();
-                    double featureValue = element.get();
-                    bw.write(featureIndex+" "+featureValue+",");
+                List<Pair<Integer,Double>> pairs = new ArrayList<>();
+                for (Vector.Element element:vector.nonZeroes()){
+                    Pair<Integer,Double> pair = new Pair<>(element.index(),element.get());
+                    pairs.add(pair);
+                }
+                Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getFirst);
+                List<Pair<Integer,Double>> sorted = pairs.stream().sorted(comparator)
+                        .collect(Collectors.toList());
+                for (Pair<Integer,Double> pair: sorted){
+                    bw.write(pair.getFirst()+":"+pair.getSecond()+" ");
                 }
                 for (int l=0;l<labels.size()-1;l++){
                     int label = labels.get(l) + numFeatures;
