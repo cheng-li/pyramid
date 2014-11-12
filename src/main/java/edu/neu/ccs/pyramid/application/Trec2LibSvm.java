@@ -19,6 +19,7 @@ public class Trec2LibSvm {
         String libSVMTrain = config.getString("libSVMTrain");
         String libSVMTest = config.getString("libSVMTest");
 
+
         ClfDataSet trainDataSet = TRECFormat.loadClfDataSet(new File(trecTrain),
                 DataSetType.CLF_DENSE, true);
 
