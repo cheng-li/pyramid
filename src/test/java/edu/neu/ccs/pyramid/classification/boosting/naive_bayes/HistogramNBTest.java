@@ -25,10 +25,31 @@ public class HistogramNBTest {
     public static void main(String[] args) throws Exception {
 
 //        histogramNBTest(10);
-        gassianNBTest();
+//        gassianNBTest();
 //        gammaNBTest();
 //        bernoulliNBTest();
 //        multinomialNBTest();
+        cnnTest();
+    }
+
+    private static void cnnTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File("/Users/Rainicy/Datasets/pyramid/cnn/1/train.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File("/Users/Rainicy/Datasets/pyramid/cnn/1/test.trec"),
+                DataSetType.CLF_DENSE, true);
+
+        NaiveBayes<Multinomial> naiveBayes = new NaiveBayes<>(Multinomial.class);
+        naiveBayes.build(dataSet);
+
+        double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
+        System.out.println("Accuracy on training set: " + accuracy);
+        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
+
+        accuracy = Accuracy.accuracy(naiveBayes, testDataset);
+        System.out.println("Accuracy on testing set: " + accuracy);
+        System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
+        System.out.println();
     }
 
     private static void multinomialNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
