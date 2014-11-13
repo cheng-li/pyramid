@@ -39,7 +39,7 @@ public class Exp5 {
                 String line = null;
                 while((line=br.readLine())!=null){
                     if (IndexBuilder. acceptLine(line)){
-                        XContentBuilder builder = IndexBuilder.getBuilder(file,line);
+                        XContentBuilder builder = IndexBuilder.getBuilder(line, id);
                         IndexResponse response = client.prepareIndex("cnn", "document",""+id)
                                 .setSource(builder)
                                 .execute()

@@ -16,7 +16,7 @@ public class IndexBuilder {
     static Map<String,Integer> map = createMap();
 
 
-    public static XContentBuilder getBuilder(File file, String line) throws Exception{
+    public static XContentBuilder getBuilder(String line, int id) throws Exception{
         String[] split = line.split("\t");
         XContentBuilder builder = XContentFactory.jsonBuilder();
         builder.startObject();
@@ -25,7 +25,7 @@ public class IndexBuilder {
         builder.field("title",split[2]);
         builder.field("body",split[5]);
         builder.field("label",""+map.get(split[1]));
-        builder.field("split",getTrainOrTest(file));
+        builder.field("split",getTrainOrTest(id));
         builder.endObject();
         return builder;
     }
@@ -49,12 +49,12 @@ public class IndexBuilder {
                 &&!split[5].trim().equals(""));
     }
 
-    static String getTrainOrTest(File file) {
+    static String getTrainOrTest(int id) {
         String res = null;
-        if ( file.getName().equals("2012")){
-            res = "train";
-        } else {
+        if ( id%10==0){
             res = "test";
+        } else {
+            res = "train";
         }
         return res;
     }
