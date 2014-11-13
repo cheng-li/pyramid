@@ -59,6 +59,32 @@ public class Config {
         return Integer.parseInt(this.properties.getProperty(key));
     }
 
+    public List<Integer> getIntegers(String key){
+        if (!containsKey(key)){
+            throw new IllegalArgumentException("config does not contain the key "+key);
+        }
+        List<Integer> list = new ArrayList<>();
+        String values = this.properties.getProperty(key);
+        String[] valuesSplit = values.split(",");
+        for (String valueString: valuesSplit){
+            list.add(Integer.parseInt(valueString.trim()));
+        }
+        return list;
+    }
+
+    public List<Double> getDoubles(String key){
+        if (!containsKey(key)){
+            throw new IllegalArgumentException("config does not contain the key "+key);
+        }
+        List<Double> list = new ArrayList<>();
+        String values = this.properties.getProperty(key);
+        String[] valuesSplit = values.split(",");
+        for (String valueString: valuesSplit){
+            list.add(Double.parseDouble(valueString.trim()));
+        }
+        return list;
+    }
+
     public double getDouble(String key){
         if (!containsKey(key)){
             throw new IllegalArgumentException("config does not contain the key "+key);
