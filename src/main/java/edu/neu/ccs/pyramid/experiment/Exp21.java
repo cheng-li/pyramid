@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import mltk.core.Instances;
 import mltk.core.io.InstancesReader;
@@ -13,10 +12,11 @@ import java.io.File;
 import java.util.stream.IntStream;
 
 /**
- * Lasso logistic regression for single label dataset
- * Created by chengli on 11/11/14.
+ * ridge
+ * todo
+ * Created by chengli on 11/12/14.
  */
-public class Exp20 {
+public class Exp21 {
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("please specify the config file");
@@ -33,18 +33,18 @@ public class Exp20 {
         File trecFile = new File(config.getString("input.folder"),
                 config.getString("input.trainData"));
         String matrixFile = new File(trecFile, "feature_matrix.txt").getAbsolutePath();
-        Instances trainSet = InstancesReader.read(null,matrixFile);
+        Instances trainSet = InstancesReader.read(null, matrixFile);
         LassoLearner learner = new LassoLearner();
         learner.setTask(Learner.Task.CLASSIFICATION);
         learner.setMaxNumIters(config.getInt("train.numIterations"));
         learner.setVerbose(false);
         learner.setLambda(config.getDouble("train.lambda"));
         GLM glm = learner.build(trainSet);
-        int[] predictions= IntStream.range(0,trainSet.size()).map(i-> glm.classify(trainSet.get(i)))
+        int[] predictions= IntStream.range(0, trainSet.size()).map(i-> glm.classify(trainSet.get(i)))
                 .toArray();
         int[] labels = IntStream.range(0,trainSet.size()).map(i-> (int)(trainSet.get(i).getTarget()))
                 .toArray();
-        System.out.println("accuracy on the training set = "+ Accuracy.accuracy(labels,predictions));
+        System.out.println("accuracy on the training set = "+ Accuracy.accuracy(labels, predictions));
         return glm;
     }
 

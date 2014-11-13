@@ -21,6 +21,9 @@ package edu.neu.ccs.pyramid.experiment;
  * 18:  single label dataset, start with initial features + all unigram features
  *      use picked unigram features as seeds
  * 19: single label gradient boosting without probabilistic voting
+ * 20: single label lasso
+ * 21: single label ridge
+ * 22: single label elastic net
  */
 public class ExpIndex {
 
