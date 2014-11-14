@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 /**
+ * elastic net
  * Created by chengli on 11/12/14.
  */
 public class Exp22 {
