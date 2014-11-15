@@ -25,6 +25,7 @@ package edu.neu.ccs.pyramid.experiment;
  * 21: single label ridge
  * 22: single label elastic net
  * 23: index 20newsgroup
+ * 24: index imdb
  */
 public class ExpIndex {
 
