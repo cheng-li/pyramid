@@ -84,4 +84,42 @@ public class Sampling {
                 .map(indices::get);
     }
 
+    /**
+     *
+     * @param min inclusive
+     * @param max exclusive
+     * @return random number in this range
+     */
+    public static double doubleUniform(double min, double max){
+        return Math.random()*(max-min) + min;
+
+    }
+
+    /**
+     * sample uniformly in the log scale
+     * @param min
+     * @param max
+     * @return
+     */
+    public static double doubleLogUniform(double min, double max){
+        if (min<=0){
+            throw new IllegalArgumentException("min<=0");
+        }
+
+        double minLog = Math.log(min);
+        double maxLog = Math.log(max);
+        double exp = doubleUniform(minLog, maxLog);
+        return Math.exp(exp);
+    }
+
+    /**
+     *
+     * @param min inclusive
+     * @param max inclusive
+     * @return random int in this range
+     */
+    public static int intUniform(int min, int max){
+        return new Random().nextInt(max - min +1) + min;
+    }
+
 }
