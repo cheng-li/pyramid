@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.util.Pair;
 
 import java.io.File;
 
@@ -12,7 +13,7 @@ public class DataSetUtilTest {
 
     public static void main(String[] args) throws Exception{
 
-        test6();
+        test7();
     }
 
     static void test1(){
@@ -108,6 +109,35 @@ public class DataSetUtilTest {
         ClfDataSet binary = DataSetUtil.toBinary(dataSet,2);
         System.out.println(binary);
 
+    }
+
+    static void test7(){
+        ClfDataSet clfDataSet = new SparseClfDataSet(5,3,false,6);
+        clfDataSet.setFeatureValue(0,0,3.5);
+        clfDataSet.setFeatureValue(1,2,5.5);
+        clfDataSet.setFeatureValue(2,1,-9);
+        clfDataSet.setFeatureValue(3,2,2);
+        clfDataSet.setFeatureValue(4,1,2.5);
+        clfDataSet.setFeatureValue(4,2,5.5);
+        clfDataSet.setLabel(0, 1);
+        clfDataSet.setLabel(1,0);
+        clfDataSet.setLabel(2,1);
+        clfDataSet.setLabel(3,0);
+        clfDataSet.setLabel(4,1);
+        clfDataSet.putDataPointSetting(0,new ClfDataPointSetting().setExtId("zero").setExtLabel("spam"));
+        clfDataSet.putDataPointSetting(1,new ClfDataPointSetting().setExtId("first").setExtLabel("non-spam"));
+        clfDataSet.putDataPointSetting(2,new ClfDataPointSetting().setExtId("second").setExtLabel("good"));
+        clfDataSet.putDataPointSetting(3,new ClfDataPointSetting().setExtId("third").setExtLabel("bad"));
+        clfDataSet.putDataPointSetting(4,new ClfDataPointSetting().setExtId("fourth").setExtLabel("iii"));
+        clfDataSet.putFeatureSetting(0,new FeatureSetting().setFeatureName("color").setFeatureType(FeatureType.BINARY));
+        clfDataSet.putFeatureSetting(1,new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
+        clfDataSet.putFeatureSetting(2,new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
+        System.out.println(clfDataSet);
+        Pair<ClfDataSet,ClfDataSet> trainValidation = DataSetUtil.splitToTrainValidation(clfDataSet,0.6);
+        System.out.println("training set");
+        System.out.println(trainValidation.getFirst());
+        System.out.println("validation set");
+        System.out.println(trainValidation.getSecond());
     }
 
 

@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.feature.FeatureMappers;
+import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.mahout.math.Vector;
 
@@ -217,6 +218,9 @@ public class DataSetUtil {
     }
 
     public static void setLabelTranslator(ClfDataSet dataSet, LabelTranslator labelTranslator){
+        if (labelTranslator==null){
+            return;
+        }
         int[] labels = dataSet.getLabels();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             dataSet.getDataPointSetting(i)
@@ -263,6 +267,9 @@ public class DataSetUtil {
 //    }
 
     public static void setLabelTranslator(MultiLabelClfDataSet dataSet, LabelTranslator labelTranslator){
+        if (labelTranslator==null){
+            return;
+        }
         MultiLabel[] multiLabels= dataSet.getMultiLabels();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             MultiLabel multiLabel = multiLabels[i];
@@ -321,6 +328,9 @@ public class DataSetUtil {
      * @param featureMappers
      */
     public static void setFeatureMappers(ClfDataSet dataSet, FeatureMappers featureMappers){
+        if (featureMappers==null){
+            return;
+        }
         if (dataSet.getNumFeatures()!=featureMappers.getTotalDim()){
             throw new IllegalArgumentException("dataSet.getNumFeatures()!=featureMappers.getTotalDim()");
         }
@@ -470,6 +480,27 @@ public class DataSetUtil {
 
         //ignore idTranslator as we may have duplicate extIds
         return sample;
+    }
+
+    /**
+     *
+     * @param clfDataSet
+     * @return training set and validation set
+     */
+    public static Pair<ClfDataSet,ClfDataSet> splitToTrainValidation(ClfDataSet clfDataSet, double trainPercentage){
+        int numDataPoints = clfDataSet.getNumDataPoints();
+        List<Integer> trainIndices = Sampling.stratified(clfDataSet.getLabels(),trainPercentage);
+
+        Set<Integer> testIndicesSet = new HashSet<>();
+        for (int i=0;i<numDataPoints;i++){
+            testIndicesSet.add(i);
+        }
+        testIndicesSet.removeAll(trainIndices);
+        List<Integer> testIndices = testIndicesSet.stream().collect(Collectors.toList());
+        Pair<ClfDataSet,ClfDataSet> pair = new Pair<>();
+        pair.setFirst(DataSetUtil.subSet(clfDataSet,trainIndices));
+        pair.setSecond(DataSetUtil.subSet(clfDataSet,testIndices));
+        return pair;
     }
 
     public static void dumpDataPointSettings(ClfDataSet dataSet, String file) throws IOException{
