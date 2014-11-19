@@ -1,19 +1,22 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import mltk.core.Instances;
 import mltk.core.io.InstancesReader;
 import mltk.predictor.Learner;
 import mltk.predictor.glm.ElasticNetLearner;
 import mltk.predictor.glm.GLM;
+import org.apache.commons.math3.distribution.LogNormalDistribution;
 
 import java.io.File;
 import java.util.stream.IntStream;
 
 /**
- * elastic net
+ * elastic net hyper parameter tuning
  * Created by chengli on 11/12/14.
  */
 public class Exp22 {
@@ -31,7 +34,7 @@ public class Exp22 {
 
     private static Config genHyperParams(){
         Config config = new Config();
-        double lambda = Sampling.doubleLogUniform(0.001, 1000);
+        double lambda = Sampling.doubleLogUniform(0.001,1);
         double l1Ratio = Sampling.doubleUniform(0, 1);
         int iterations = Sampling.intUniform(50,200);
         config.setDouble("lambda",lambda);
@@ -42,19 +45,13 @@ public class Exp22 {
     }
 
     private static void run(Config config) throws Exception{
-        File trecFile = new File(config.getString("input.folder"),
-                config.getString("input.trainData"));
-        String matrixFile = new File(trecFile, "feature_matrix.txt").getAbsolutePath();
-        Instances trainSet = InstancesReader.read(null, matrixFile);
-
-        File testFile = new File(config.getString("input.folder"),
-                config.getString("input.testData"));
-        String testMatrixFile = new File(testFile, "feature_matrix.txt").getAbsolutePath();
-        Instances testSet = InstancesReader.read(null,testMatrixFile);
-
-
-
         for (int run=0;run<config.getInt("numRuns");run++){
+            Pair<ClfDataSet,ClfDataSet> dataSets = loadDataSets(config);
+
+            Instances trainSet = MLTKFormat.toInstances(dataSets.getFirst());
+
+            Instances validationSet = MLTKFormat.toInstances(dataSets.getSecond());
+
             Config hyperParams = genHyperParams();
             System.out.println("==============================");
             System.out.println("hyper parameters for the run:");
@@ -76,12 +73,20 @@ public class Exp22 {
             System.out.println("accuracy on the training set = "+ Accuracy.accuracy(labels, predictions));
 
 
-            int[] testPredictions= IntStream.range(0,testSet.size()).map(i-> glm.classify(testSet.get(i)))
+            int[] validationPredictions= IntStream.range(0,validationSet.size()).map(i -> glm.classify(validationSet.get(i)))
                     .toArray();
-            int[] testLabels = IntStream.range(0,testSet.size()).map(i-> (int)(testSet.get(i).getTarget()))
+            int[] validationLabels = IntStream.range(0,validationSet.size()).map(i-> (int)(validationSet.get(i).getTarget()))
                     .toArray();
-            System.out.println("accuracy on the test set = "+ Accuracy.accuracy(testLabels,testPredictions));
+            System.out.println("accuracy on the validation set = "+ Accuracy.accuracy(validationLabels,validationPredictions));
         }
+    }
+    
+    private static Pair<ClfDataSet, ClfDataSet> loadDataSets(Config config) throws Exception{
+        File trecFile = new File(config.getString("input.folder"),
+                config.getString("input.trainData"));
+        ClfDataSet clfDataSet = TRECFormat.loadClfDataSet(trecFile, DataSetType.CLF_SPARSE,false);
+        return DataSetUtil.splitToTrainValidation(clfDataSet,config.getDouble("trainPercentage"));
+        
     }
 
 }
