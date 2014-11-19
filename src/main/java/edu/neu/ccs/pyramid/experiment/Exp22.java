@@ -62,7 +62,7 @@ public class Exp22 {
             ElasticNetLearner learner = new ElasticNetLearner();
             learner.setTask(Learner.Task.CLASSIFICATION);
             learner.setMaxNumIters(iterations);
-            learner.setVerbose(false);
+            learner.setVerbose(config.getBoolean("verbose"));
             learner.setLambda(lambda);
             learner.setL1Ratio(l1Ratio);
             GLM glm = learner.build(trainSet);
