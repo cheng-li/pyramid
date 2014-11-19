@@ -27,6 +27,7 @@ package edu.neu.ccs.pyramid.experiment;
  * 23: index 20newsgroup
  * 24: index imdb
  * 25: elastic net, single label
+ * 26: gradient boosting hyper parameter tuning, single label
  */
 public class ExpIndex {
 
