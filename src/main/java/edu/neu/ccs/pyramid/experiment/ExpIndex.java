@@ -23,9 +23,10 @@ package edu.neu.ccs.pyramid.experiment;
  * 19: single label gradient boosting without probabilistic voting
  * 20: single label lasso
  * 21: single label ridge
- * 22: single label elastic net
+ * 22: elastic net hyper parameter tuning, single label
  * 23: index 20newsgroup
  * 24: index imdb
+ * 25: elastic net, single label
  */
 public class ExpIndex {
 
