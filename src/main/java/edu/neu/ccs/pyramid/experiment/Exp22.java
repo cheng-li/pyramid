@@ -32,29 +32,33 @@ public class Exp22 {
 
     }
 
-    private static Config genHyperParams(){
-        Config config = new Config();
-        double lambda = Sampling.doubleLogUniform(0.001,1);
-        double l1Ratio = Sampling.doubleUniform(0, 1);
-        int iterations = Sampling.intUniform(50,200);
-        config.setDouble("lambda",lambda);
-        config.setDouble("l1Ratio",l1Ratio);
-        config.setInt("iterations",iterations);
-        return config;
+    private static Config genHyperParams(Config config){
+        Config hyperParams = new Config();
+        double lambda = Sampling.doubleLogUniform(config.getDoubles("lambda").get(0),config.getDoubles("lambda").get(1));
+        double l1Ratio = Sampling.doubleUniform(config.getDoubles("l1Ratio").get(0),config.getDoubles("l1Ratio").get(1));
+        int iterations = Sampling.intUniform(config.getIntegers("iterations").get(0),config.getIntegers("iterations").get(1));
+        hyperParams.setDouble("lambda", lambda);
+        hyperParams.setDouble("l1Ratio", l1Ratio);
+        hyperParams.setInt("iterations", iterations);
+        return hyperParams;
 
     }
 
     private static void run(Config config) throws Exception{
-        for (int run=0;run<config.getInt("numRuns");run++){
+        Config bestParams;
+        double bestPerformance = Double.NEGATIVE_INFINITY;
+            
+        for (int trial=0;trial<config.getInt("numTrials");trial++){
             Pair<ClfDataSet,ClfDataSet> dataSets = loadDataSets(config);
 
             Instances trainSet = MLTKFormat.toInstances(dataSets.getFirst());
 
             Instances validationSet = MLTKFormat.toInstances(dataSets.getSecond());
 
-            Config hyperParams = genHyperParams();
+
+            Config hyperParams = genHyperParams(config);
             System.out.println("==============================");
-            System.out.println("hyper parameters for the run:");
+            System.out.println("hyper parameters for the trial:");
             System.out.println(hyperParams);
             double lambda = hyperParams.getDouble("lambda");
             double l1Ratio = hyperParams.getDouble("l1Ratio");
@@ -77,7 +81,17 @@ public class Exp22 {
                     .toArray();
             int[] validationLabels = IntStream.range(0,validationSet.size()).map(i-> (int)(validationSet.get(i).getTarget()))
                     .toArray();
-            System.out.println("accuracy on the validation set = "+ Accuracy.accuracy(validationLabels,validationPredictions));
+            double validationAcc = Accuracy.accuracy(validationLabels, validationPredictions);
+            System.out.println("accuracy on the validation set = "+ validationAcc);
+            if (validationAcc>bestPerformance){
+                bestPerformance = validationAcc;
+                bestParams = hyperParams;
+                System.out.println("**************************************");
+                System.out.println("best performance got so far: "+bestPerformance);
+                System.out.println("best hyper parameters got so far: ");
+                System.out.println(bestParams);
+                System.out.println("**************************************");
+            }
         }
     }
     
