@@ -24,14 +24,14 @@ public class IndexBuilder {
         return fullPath;
     }
 
-    public static XContentBuilder getBuilder(File file) throws Exception{
+    public static XContentBuilder getBuilder(File file, int id) throws Exception{
         XContentBuilder builder = XContentFactory.jsonBuilder();
         builder.startObject();
         builder.field("body",getBody(file));
         builder.field("file_name",getFileName(file));
         builder.array("real_label", getRealLabel(file));
         builder.array("label",getLabel(file));
-        builder.field("split",getTrainOrTest());
+        builder.field("split",getTrainOrTest(id));
         builder.endObject();
         return builder;
     }
@@ -50,14 +50,12 @@ public class IndexBuilder {
         return parent;
     }
 
-    static String getTrainOrTest() {
+    static String getTrainOrTest(int id) {
         String res = null;
-        double ran = Math.random();
-
-        if ( ran< 0.6){
-            res = "train";
-        } else {
+        if ( id%10==0){
             res = "test";
+        } else {
+            res = "train";
         }
         return res;
     }

@@ -36,7 +36,7 @@ public class Exp16 {
         int id = 0;
         for (File file : list) {
             System.out.println("id = "+id);
-            XContentBuilder builder = IndexBuilder.getBuilder(file);
+            XContentBuilder builder = IndexBuilder.getBuilder(file, id);
             //               System.out.println(builder.string());
             IndexResponse response = client.prepareIndex("review_polarity", "document",""+id)
                     .setSource(builder)
