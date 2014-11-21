@@ -47,44 +47,54 @@ public class Exp22 {
     private static void run(Config config) throws Exception{
         Config bestParams;
         double bestPerformance = Double.NEGATIVE_INFINITY;
-            
+
         for (int trial=0;trial<config.getInt("numTrials");trial++){
-            Pair<ClfDataSet,ClfDataSet> dataSets = loadDataSets(config);
-
-            Instances trainSet = MLTKFormat.toInstances(dataSets.getFirst());
-
-            Instances validationSet = MLTKFormat.toInstances(dataSets.getSecond());
-
-
             Config hyperParams = genHyperParams(config);
             System.out.println("==============================");
             System.out.println("hyper parameters for the trial:");
             System.out.println(hyperParams);
-            double lambda = hyperParams.getDouble("lambda");
-            double l1Ratio = hyperParams.getDouble("l1Ratio");
-            int iterations = hyperParams.getInt("iterations");
-            ElasticNetLearner learner = new ElasticNetLearner();
-            learner.setTask(Learner.Task.CLASSIFICATION);
-            learner.setMaxNumIters(iterations);
-            learner.setVerbose(config.getBoolean("verbose"));
-            learner.setLambda(lambda);
-            learner.setL1Ratio(l1Ratio);
-            GLM glm = learner.build(trainSet);
-            int[] predictions= IntStream.range(0, trainSet.size()).map(i-> glm.classify(trainSet.get(i)))
-                    .toArray();
-            int[] labels = IntStream.range(0,trainSet.size()).map(i-> (int)(trainSet.get(i).getTarget()))
-                    .toArray();
-            System.out.println("accuracy on the training set = "+ Accuracy.accuracy(labels, predictions));
+            double aveValidAcc= 0;
+            for (int validation=0;validation<config.getInt("numValidations");validation++){
+                System.out.println("validation "+validation);
+                Pair<ClfDataSet,ClfDataSet> dataSets = loadDataSets(config);
+
+                Instances trainSet = MLTKFormat.toInstances(dataSets.getFirst());
+
+                Instances validationSet = MLTKFormat.toInstances(dataSets.getSecond());
 
 
-            int[] validationPredictions= IntStream.range(0,validationSet.size()).map(i -> glm.classify(validationSet.get(i)))
-                    .toArray();
-            int[] validationLabels = IntStream.range(0,validationSet.size()).map(i-> (int)(validationSet.get(i).getTarget()))
-                    .toArray();
-            double validationAcc = Accuracy.accuracy(validationLabels, validationPredictions);
-            System.out.println("accuracy on the validation set = "+ validationAcc);
-            if (validationAcc>bestPerformance){
-                bestPerformance = validationAcc;
+
+                double lambda = hyperParams.getDouble("lambda");
+                double l1Ratio = hyperParams.getDouble("l1Ratio");
+                int iterations = hyperParams.getInt("iterations");
+                ElasticNetLearner learner = new ElasticNetLearner();
+                learner.setTask(Learner.Task.CLASSIFICATION);
+                learner.setMaxNumIters(iterations);
+                learner.setVerbose(config.getBoolean("verbose"));
+                learner.setLambda(lambda);
+                learner.setL1Ratio(l1Ratio);
+                GLM glm = learner.build(trainSet);
+                int[] predictions= IntStream.range(0, trainSet.size()).map(i-> glm.classify(trainSet.get(i)))
+                        .toArray();
+                int[] labels = IntStream.range(0,trainSet.size()).map(i-> (int)(trainSet.get(i).getTarget()))
+                        .toArray();
+                System.out.println("accuracy on the training set = "+ Accuracy.accuracy(labels, predictions));
+
+
+                int[] validationPredictions= IntStream.range(0,validationSet.size()).map(i -> glm.classify(validationSet.get(i)))
+                        .toArray();
+                int[] validationLabels = IntStream.range(0,validationSet.size()).map(i-> (int)(validationSet.get(i).getTarget()))
+                        .toArray();
+                double validationAcc = Accuracy.accuracy(validationLabels, validationPredictions);
+                System.out.println("accuracy on the validation set = "+validationAcc);
+                aveValidAcc += validationAcc;
+            }
+
+            aveValidAcc /= config.getInt("numValidations");
+
+            System.out.println("average accuracy on the validation set = "+ aveValidAcc);
+            if (aveValidAcc>bestPerformance){
+                bestPerformance = aveValidAcc;
                 bestParams = hyperParams;
                 System.out.println("**************************************");
                 System.out.println("best performance got so far: "+bestPerformance);
