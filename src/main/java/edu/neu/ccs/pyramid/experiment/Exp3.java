@@ -235,7 +235,7 @@ public class Exp3 {
         String modelName = config.getString("archive.model");
         boolean overwriteModels = config.getBoolean("train.overwriteModels");
         int numDocsToSelect = config.getInt("extraction.numDocsToSelect");
-        int numNgramsToExtract = config.getInt("extraction.numNgramsToExtract");
+        int numUnigramsToExtract = config.getInt("extraction.numUnigramsToExtract");
         double extractionFrequency = config.getDouble("extraction.frequency");
         if (extractionFrequency>1 || extractionFrequency<0){
             throw new IllegalArgumentException("0<=extraction.frequency<=1");
@@ -257,15 +257,15 @@ public class Exp3 {
         lkTreeBoost.setTrainConfig(trainConfig);
 
         TermSplitExtractor splitExtractor = new TermSplitExtractor(index, trainIdTranslator,
-                numNgramsToExtract)
+                numUnigramsToExtract)
                 .setMinDataPerLeaf(config.getInt("extraction.splitExtractor.minDataPerLeaf"));
 
         TermTfidfExtractor tfidfExtractor = new TermTfidfExtractor(index,trainIdTranslator,
-                numNgramsToExtract).
+                numUnigramsToExtract).
                 setMinDf(config.getInt("extraction.tfidfExtractor.minDf"));
 
         TermTfidfSplitExtractor tfidfSplitExtractor = new TermTfidfSplitExtractor(index,
-                trainIdTranslator,numNgramsToExtract).
+                trainIdTranslator,numUnigramsToExtract).
                 setMinDf(config.getInt("extraction.tfidfSplitExtractor.minDf")).
                 setNumSurvivors(config.getInt("extraction.tfidfSplitExtractor.numSurvivors")).
                 setMinDataPerLeaf(config.getInt("extraction.tfidfSplitExtractor.minDataPerLeaf"));
@@ -321,7 +321,7 @@ public class Exp3 {
             lkTreeBoost.calGradients();
 
             boolean condition1 = (featureMappers.getTotalDim()
-                    +numNgramsToExtract*numClasses*3
+                    +numUnigramsToExtract*numClasses*3
                     +config.getInt("extraction.phraseSplitExtractor.topN")*numClasses*3
                     <dataSet.getNumFeatures());
             boolean condition2 = (Math.random()<extractionFrequency);
