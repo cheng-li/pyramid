@@ -7,6 +7,7 @@ import mltk.core.io.InstancesReader;
 import mltk.predictor.Learner;
 import mltk.predictor.glm.GLM;
 import mltk.predictor.glm.LassoLearner;
+import mltk.predictor.glm.RidgeLearner;
 
 import java.io.File;
 import java.util.stream.IntStream;
@@ -34,7 +35,7 @@ public class Exp21 {
                 config.getString("input.trainData"));
         String matrixFile = new File(trecFile, "feature_matrix.txt").getAbsolutePath();
         Instances trainSet = InstancesReader.read(null, matrixFile);
-        LassoLearner learner = new LassoLearner();
+        RidgeLearner learner = new RidgeLearner();
         learner.setTask(Learner.Task.CLASSIFICATION);
         learner.setMaxNumIters(config.getInt("train.numIterations"));
         learner.setVerbose(false);
