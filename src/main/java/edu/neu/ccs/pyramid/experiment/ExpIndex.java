@@ -29,6 +29,7 @@ package edu.neu.ccs.pyramid.experiment;
  * 25: elastic net, single label
  * 26: gradient boosting hyper parameter tuning, single label
  * 27: lasso hyper parameter tuning
+ * 28: ridge hyper parameter tuning
  */
 public class ExpIndex {
 
