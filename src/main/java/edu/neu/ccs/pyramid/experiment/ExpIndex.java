@@ -30,6 +30,7 @@ package edu.neu.ccs.pyramid.experiment;
  * 26: gradient boosting hyper parameter tuning, single label
  * 27: lasso hyper parameter tuning
  * 28: ridge hyper parameter tuning
+ * 29: index imdb_stopwords
  */
 public class ExpIndex {
 
