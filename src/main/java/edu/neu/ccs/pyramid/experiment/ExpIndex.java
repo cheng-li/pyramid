@@ -31,6 +31,7 @@ package edu.neu.ccs.pyramid.experiment;
  * 27: lasso hyper parameter tuning
  * 28: ridge hyper parameter tuning
  * 29: index imdb_stopwords
+ * 30: given logistic regression coefficients, print top features
  */
 public class ExpIndex {
 
