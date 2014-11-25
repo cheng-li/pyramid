@@ -25,7 +25,8 @@ public class LKTreeBoostTest {
 //        spam_fake_build();
 //        spam_missing_all();
 //        mnist_all();
-        classic3_all();
+//        classic3_all();
+        bingyu_all();
     }
 
     static void spam_resume_train() throws Exception{
@@ -542,6 +543,51 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(5).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
+        lkTreeBoost.setTrainConfig(trainConfig);
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int round =0;round<100;round++){
+            System.out.println("round="+round);
+            lkTreeBoost.boostOneRound();
+        }
+        stopWatch.stop();
+        System.out.println(stopWatch);
+
+
+        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        System.out.println(accuracy);
+
+        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+    }
+
+    static void bingyu_all() throws Exception{
+        bingyu_train();
+        bingyu_test();
+    }
+
+    static void bingyu_test() throws Exception{
+        System.out.println("loading ensemble");
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"bingyu/test.trec"),DataSetType.CLF_DENSE,false);
+        System.out.println(dataSet.getMetaInfo());
+
+        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        System.out.println("accuracy="+accuracy);
+
+
+    }
+
+
+    static void bingyu_train() throws Exception{
+
+        ClfDataSet dataSet  = TRECFormat.loadClfDataSet(new File(DATASETS,"bingyu/train.trec"),DataSetType.CLF_DENSE,false);
+        System.out.println(dataSet.getMetaInfo());
+        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
+                .numLeaves(4).learningRate(0.1).numSplitIntervals(1000)
+                        .dataSamplingRate(1).featureSamplingRate(1).build();
         lkTreeBoost.setTrainConfig(trainConfig);
 
         StopWatch stopWatch = new StopWatch();
