@@ -11,6 +11,7 @@ import java.util.List;
  */
 public class PerClassMeasures {
     private int classIndex;
+    private String className="unknown";
     private int positive;
     private int negative;
     private int truePositive;
@@ -67,6 +68,19 @@ public class PerClassMeasures {
     }
 
     /**
+     * for single label dataset
+     * @param confusionMatrix
+     * @param classIndex
+     * @param className
+     */
+    public PerClassMeasures(ConfusionMatrix confusionMatrix, int classIndex, String className){
+        this(confusionMatrix, classIndex);
+        this.className = className;
+    }
+
+
+
+    /**
      * for multi label dataset
      * @param multiLabels
      * @param predictions
@@ -75,6 +89,21 @@ public class PerClassMeasures {
                             List<MultiLabel> predictions,
                             int classIndex){
         this(getBinaryConfusionMatrix(multiLabels,predictions,classIndex),1);
+    }
+
+    /**
+     * for multi label dataset
+     * @param multiLabels
+     * @param predictions
+     * @param classIndex
+     * @param className
+     */
+    public PerClassMeasures(MultiLabel[] multiLabels,
+                            List<MultiLabel> predictions,
+                            int classIndex,
+                            String className){
+        this(multiLabels, predictions, classIndex);
+        this.className = className;
     }
 
     public int getPositive() {
@@ -135,8 +164,9 @@ public class PerClassMeasures {
 
     @Override
     public String toString() {
-        return "PerClassStats{" +
+        return "{" +
                 "classIndex=" + classIndex +
+                ", className=" + className +
                 ", positive=" + positive +
                 ", negative=" + negative +
                 ", truePositive=" + truePositive +
