@@ -588,6 +588,7 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(4).learningRate(0.1).numSplitIntervals(1000)
                         .dataSamplingRate(1).featureSamplingRate(1).build();
+        lkTreeBoost.setPriorProbs(dataSet);
         lkTreeBoost.setTrainConfig(trainConfig);
 
         StopWatch stopWatch = new StopWatch();
