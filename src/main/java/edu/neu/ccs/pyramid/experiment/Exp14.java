@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import edu.neu.ccs.pyramid.feature.CategoricalFeatureMapper;
 import edu.neu.ccs.pyramid.feature.FeatureMappers;
 import edu.neu.ccs.pyramid.feature.NumericalFeatureMapper;
@@ -286,6 +287,11 @@ public class Exp14 {
         }
         List<MultiLabel> predictions = boosting.predict(dataSet);
         MultiLabel[] trueLabels = dataSet.getMultiLabels();
+
+        for (int k=0;k<numClassesInTest;k++){
+            PerClassMeasures perClassMeasures = new PerClassMeasures(trueLabels,predictions,k,labelTranslator.toExtLabel(k));
+            System.out.println(perClassMeasures);
+        }
 
         int limit = config.getInt("test.analyzeMistakes.limit");
         for (int i=0;i<dataSet.getNumDataPoints();i++){
