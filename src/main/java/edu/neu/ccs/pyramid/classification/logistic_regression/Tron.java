@@ -92,7 +92,7 @@ public class Tron {
             else
                 delta = Math.max(delta, Math.min(alpha * snorm, sigma3 * delta));
 
-
+            System.out.println("f = "+f);
 
             if (actred > eta0 * prered) {
                 iter++;
@@ -110,11 +110,11 @@ public class Tron {
                 break;
             }
             if (Math.abs(actred) <= 0 && prered <= 0) {
-
+                System.out.println("WARNING: actred and prered <= 0%n");
                 break;
             }
             if (Math.abs(actred) <= 1.0e-12 * Math.abs(f) && Math.abs(prered) <= 1.0e-12 * Math.abs(f)) {
-
+                System.out.println("WARNING: actred and prered too small%n");
                 break;
             }
         }
