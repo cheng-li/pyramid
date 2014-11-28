@@ -9,8 +9,17 @@ import org.apache.mahout.math.Vector;
  */
 public class L2RFunction {
 
+    /**
+     * regularization constant
+     */
     private final Vector C;
+    /**
+     * Xw
+     */
     private final Vector z;
+    /**
+     * diagonal of matrix
+     */
     private final Vector D;
     /**
      * the first column should be all 1
@@ -18,6 +27,11 @@ public class L2RFunction {
      */
     private final ClfDataSet dataSet;
 
+    /**
+     *
+     * @param dataSet
+     * @param C constant vector
+     */
     public L2RFunction( ClfDataSet dataSet, Vector C ) {
         int l = dataSet.getNumDataPoints();
         this.dataSet = dataSet;
@@ -41,14 +55,13 @@ public class L2RFunction {
 
 
     public double fun(Vector w) {
-        int i;
         double f = 0;
         int[] y = dataSet.getLabels();
         int l = dataSet.getNumDataPoints();
         Xv(w, z);
         f += w.dot(w);
         f /= 2.0;
-        for (i = 0; i < l; i++) {
+        for (int i = 0; i < l; i++) {
             double yz = y[i] * z.get(i);
             if (yz >= 0)
                 f += C.get(i) * Math.log(1 + Math.exp(-yz));
@@ -67,6 +80,7 @@ public class L2RFunction {
             z.set(i, 1 / (1 + Math.exp(-y[i] * z.get(i))));
             D.set(i,z.get(i) * (1 - z.get(i)));
             z.set(i,C.get(i) * (z.get(i) - 1) * y[i]);
+            //it seems that z is messed up at this point of time
         }
         XTv(z, g);
 
