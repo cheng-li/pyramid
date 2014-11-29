@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -15,11 +16,9 @@ public class RidgeLRTrainer {
             C.set(i,regularization);
         }
         L2RFunction function = new L2RFunction(clfDataSet, C);
-        Vector weights = new DenseVector(clfDataSet.getNumFeatures() +1);
+        LogisticRegression logisticRegression = new LogisticRegression(clfDataSet.getNumFeatures());
         Tron tron = new Tron(function,0.000001);
-        tron.tron(weights);
-        LogisticRegression logisticRegression = new LogisticRegression();
-        logisticRegression.weights = weights;
+        tron.tron(logisticRegression.weights);
         return logisticRegression;
     }
 }

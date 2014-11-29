@@ -20,7 +20,14 @@ public class RidgeLRTrainerTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
+
+        spam_all();
+    }
+
+
+    static void spam_all() throws Exception{
         spam_build();
+        spam_test();
     }
 
     static void spam_build() throws Exception{
@@ -41,9 +48,17 @@ public class RidgeLRTrainerTest {
 //            System.out.println(logisticRegression.predict(dataSet.getRow(i)));
 //        }
 
-        System.out.println("accuracy="+Accuracy.accuracy(logisticRegression,dataSet));
+        System.out.println("accuracy on training set ="+Accuracy.accuracy(logisticRegression,dataSet));
+        logisticRegression.serialize(new File(TMP,"logistic_regression.ser"));
+    }
+
+    static void spam_test() throws Exception{
 
 
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_DENSE, true);
+        LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(TMP,"logistic_regression.ser"));
+        System.out.println("accuracy on test set = "+Accuracy.accuracy(logisticRegression,dataSet));
     }
 
 }
