@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.stream.IntStream;
+
 /**
  * Created by chengli on 11/27/14.
  */
@@ -50,15 +52,27 @@ public class L2RFunction {
 
 
     private void Xv(Vector v, Vector Xv) {
-        for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
-            Xv.set(i, dataSet.getRow(i).dot(v));
+        if (Xv.isDense()){
+            IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                    .forEach(i -> Xv.set(i, dataSet.getRow(i).dot(v)));
+        } else {
+            for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
+                Xv.set(i, dataSet.getRow(i).dot(v));
+            }
         }
+
     }
 
     private void XTv(Vector v, Vector XTv) {
-        for (int i=0;i<dataSet.getNumFeatures();i++){
-            XTv.set(i,dataSet.getColumn(i).dot(v));
+        if (XTv.isDense()){
+            IntStream.range(0,dataSet.getNumFeatures()).parallel()
+                    .forEach(i -> XTv.set(i,dataSet.getColumn(i).dot(v)));
+        } else {
+            for (int i=0;i<dataSet.getNumFeatures();i++){
+                XTv.set(i,dataSet.getColumn(i).dot(v));
+            }
         }
+
     }
 
 

@@ -5,7 +5,6 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
-import sun.rmi.runtime.Log;
 
 import java.io.*;
 
