@@ -34,7 +34,7 @@ public class TrustRegionNewtonOptimizer {
         // Parameters for updating the trust region size delta.
         double sigma1 = 0.25, sigma2 = 0.5, sigma3 = 4;
 
-        int n = fun_obj.get_nr_variable();
+        int n = fun_obj.getNumColumns();
         int  cg_iter;
         double delta, snorm, one = 1.0;
         double alpha, f, fnew, prered, actred, gs;
@@ -121,7 +121,7 @@ public class TrustRegionNewtonOptimizer {
     }
 
     private int trcg(double delta, Vector g, Vector s, Vector r) {
-        int n = fun_obj.get_nr_variable();
+        int n = fun_obj.getNumColumns();
         double one = 1;
         Vector d = new DenseVector(n);
         Vector Hd = new DenseVector(n);

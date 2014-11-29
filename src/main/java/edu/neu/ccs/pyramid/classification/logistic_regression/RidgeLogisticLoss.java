@@ -31,10 +31,15 @@ public class RidgeLogisticLoss {
      */
     private final DataSet dataSet;
     private int[] labels;
+    private int numRows;
+    /**
+     * including the bias
+     */
+    private int numColumns;
 
-
-
-
+    public int getNumColumns() {
+        return numColumns;
+    }
 
     /**
      *
@@ -42,34 +47,61 @@ public class RidgeLogisticLoss {
      * @param C constant vector
      */
     public RidgeLogisticLoss(ClfDataSet clfDataSet, Vector C) {
-        int l = clfDataSet.getNumDataPoints();
-        this.dataSet = addConstantColumn(clfDataSet);
-        z = new DenseVector(l);
-        D = new DenseVector(l);
+        this.dataSet = clfDataSet;
+        numRows = dataSet.getNumDataPoints();
+        numColumns = dataSet.getNumFeatures() + 1;
+        z = new DenseVector(numRows);
+        D = new DenseVector(numRows);
         this.C = C;
         this.labels = changeLabels(clfDataSet);
+    }
+
+    /**
+     * dot product of a row vector (adding the constant bias feature ) and another vector
+     */
+    private double rowDot(int rowIndex, Vector vector){
+        double product = 0;
+        // add bias
+        product += vector.get(0);
+        Vector part = vector.viewPart(1,vector.size()-1);
+        product += dataSet.getRow(rowIndex).dot(part);
+        return product;
     }
 
 
     private void Xv(Vector v, Vector Xv) {
         if (Xv.isDense()){
-            IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                    .forEach(i -> Xv.set(i, dataSet.getRow(i).dot(v)));
+            IntStream.range(0,numRows).parallel()
+                    .forEach(i -> Xv.set(i, rowDot(i,v)));
         } else {
-            for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
-                Xv.set(i, dataSet.getRow(i).dot(v));
+            for (int i = 0; i < numRows; i++) {
+                Xv.set(i, rowDot(i,v));
             }
         }
 
     }
 
+    /**
+     * dot product of a column vector and another vector
+     * @param columnIndex the bias feature has index 0
+     * @param vector
+     * @return
+     */
+    private double columnDot(int columnIndex, Vector vector){
+        if (columnIndex==0){
+            return vector.zSum();
+        } else {
+            return dataSet.getColumn(columnIndex-1).dot(vector);
+        }
+    }
+
     private void XTv(Vector v, Vector XTv) {
         if (XTv.isDense()){
-            IntStream.range(0,dataSet.getNumFeatures()).parallel()
-                    .forEach(i -> XTv.set(i,dataSet.getColumn(i).dot(v)));
+            IntStream.range(0,numColumns).parallel()
+                    .forEach(i -> XTv.set(i,columnDot(i,v)));
         } else {
-            for (int i=0;i<dataSet.getNumFeatures();i++){
-                XTv.set(i,dataSet.getColumn(i).dot(v));
+            for (int i=0;i<numColumns;i++){
+                XTv.set(i,columnDot(i,v));
             }
         }
 
@@ -79,11 +111,10 @@ public class RidgeLogisticLoss {
     public double fun(Vector w) {
         double f = 0;
         int[] y = labels;
-        int l = dataSet.getNumDataPoints();
         Xv(w, z);
         f += w.dot(w);
         f /= 2.0;
-        for (int i = 0; i < l; i++) {
+        for (int i = 0; i < numRows; i++) {
             double yz = y[i] * z.get(i);
             if (yz >= 0)
                 f += C.get(i) * Math.log(1 + Math.exp(-yz));
@@ -97,8 +128,7 @@ public class RidgeLogisticLoss {
     public void grad(Vector w, Vector g) {
 
         int[] y = labels;
-        int l = dataSet.getNumDataPoints();
-        for (int i = 0; i < l; i++) {
+        for (int i = 0; i < numRows; i++) {
             z.set(i, 1 / (1 + Math.exp(-y[i] * z.get(i))));
             D.set(i,z.get(i) * (1 - z.get(i)));
             z.set(i,C.get(i) * (z.get(i) - 1) * y[i]);
@@ -113,48 +143,44 @@ public class RidgeLogisticLoss {
 
     public void Hv(Vector s, Vector Hs) {
 
-        int l = dataSet.getNumDataPoints();
-        int w_size = get_nr_variable();
-        Vector wa = new DenseVector(l);
+        Vector wa = new DenseVector(numRows);
 
         Xv(s, wa);
-        for (int i = 0; i < l; i++)
+        for (int i = 0; i < numRows; i++)
             wa.set(i, C.get(i) * D.get(i) * wa.get(i));
 
         XTv(wa, Hs);
-        for (int i = 0; i < w_size; i++)
+        for (int i = 0; i < numColumns; i++)
             Hs.set(i,s.get(i) + Hs.get(i));
         // delete[] wa;
     }
 
-    public int get_nr_variable() {
-        return dataSet.getNumFeatures();
-    }
 
-    public static DataSet addConstantColumn(ClfDataSet clfDataSet){
-        if (clfDataSet.hasMissingValue()){
-            throw new RuntimeException("cannot handle missing values in logistic regression");
-        }
 
-        DataSet dataSet1 = DataSetBuilder.getBuilder()
-                .numDataPoints(clfDataSet.getNumDataPoints())
-                .numFeatures(clfDataSet.getNumFeatures() + 1)
-                .dense(clfDataSet.isDense())
-                .missingValue(false)
-                .build();
-        for (int i=0;i<dataSet1.getNumDataPoints();i++){
-            //add constant 1
-            dataSet1.setFeatureValue(i,0,1);
-            //only copy non-zero elements
-            Vector vector = clfDataSet.getRow(i);
-            for (Vector.Element element: vector.nonZeroes()){
-                int featureIndex = element.index();
-                double value = element.get();
-                dataSet1.setFeatureValue(i,featureIndex+1,value);
-            }
-        }
-        return dataSet1;
-    }
+//    public static DataSet addConstantColumn(ClfDataSet clfDataSet){
+//        if (clfDataSet.hasMissingValue()){
+//            throw new RuntimeException("cannot handle missing values in logistic regression");
+//        }
+//
+//        DataSet dataSet1 = DataSetBuilder.getBuilder()
+//                .numDataPoints(clfDataSet.getNumDataPoints())
+//                .numFeatures(clfDataSet.getNumFeatures() + 1)
+//                .dense(clfDataSet.isDense())
+//                .missingValue(false)
+//                .build();
+//        for (int i=0;i<dataSet1.getNumDataPoints();i++){
+//            //add constant 1
+//            dataSet1.setFeatureValue(i,0,1);
+//            //only copy non-zero elements
+//            Vector vector = clfDataSet.getRow(i);
+//            for (Vector.Element element: vector.nonZeroes()){
+//                int featureIndex = element.index();
+//                double value = element.get();
+//                dataSet1.setFeatureValue(i,featureIndex+1,value);
+//            }
+//        }
+//        return dataSet1;
+//    }
 
     /**
      * change labels to 1/-1
