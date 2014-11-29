@@ -6,22 +6,22 @@ import org.apache.mahout.math.Vector;
 /**
  * Created by chengli on 11/27/14.
  */
-public class Tron {
+public class TrustRegionNewtonOptimizer {
     private final RidgeLogisticLoss fun_obj;
 
     private final double   eps;
 
     private final int      max_iter;
 
-    public Tron( final RidgeLogisticLoss fun_obj ) {
+    public TrustRegionNewtonOptimizer(final RidgeLogisticLoss fun_obj) {
         this(fun_obj, 0.1);
     }
 
-    public Tron( final RidgeLogisticLoss fun_obj, double eps ) {
+    public TrustRegionNewtonOptimizer(final RidgeLogisticLoss fun_obj, double eps) {
         this(fun_obj, eps, 1000);
     }
 
-    public Tron( final RidgeLogisticLoss fun_obj, double eps, int max_iter ) {
+    public TrustRegionNewtonOptimizer(final RidgeLogisticLoss fun_obj, double eps, int max_iter) {
         this.fun_obj = fun_obj;
         this.eps = eps;
         this.max_iter = max_iter;

@@ -17,8 +17,8 @@ public class RidgeLogisticTrainer {
         }
         RidgeLogisticLoss function = new RidgeLogisticLoss(clfDataSet, C);
         LogisticRegression logisticRegression = new LogisticRegression(clfDataSet.getNumFeatures());
-        Tron tron = new Tron(function,0.000001);
-        tron.tron(logisticRegression.weights);
+        TrustRegionNewtonOptimizer trustRegionNewtonOptimizer = new TrustRegionNewtonOptimizer(function,0.000001);
+        trustRegionNewtonOptimizer.tron(logisticRegression.weights);
         return logisticRegression;
     }
 }
