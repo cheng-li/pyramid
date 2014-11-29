@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 11/27/14.
  */
-public class L2RFunction {
+public class RidgeLogisticLoss {
 
     /**
      * regularization constant
@@ -41,7 +41,7 @@ public class L2RFunction {
      * @param clfDataSet
      * @param C constant vector
      */
-    public L2RFunction( ClfDataSet clfDataSet, Vector C ) {
+    public RidgeLogisticLoss(ClfDataSet clfDataSet, Vector C) {
         int l = clfDataSet.getNumDataPoints();
         this.dataSet = addConstantColumn(clfDataSet);
         z = new DenseVector(l);

@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
@@ -10,9 +8,6 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class RidgeLRTrainerTest {
     private static final Config config = new Config("configs/local.config");
@@ -40,7 +35,7 @@ public class RidgeLRTrainerTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        LogisticRegression logisticRegression = RidgeLRTrainer.train(dataSet,10);
+        LogisticRegression logisticRegression = RidgeLogisticTrainer.train(dataSet, 10);
         System.out.println(logisticRegression.weights);
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -76,7 +71,7 @@ public class RidgeLRTrainerTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        LogisticRegression logisticRegression = RidgeLRTrainer.train(dataSet,0.25);
+        LogisticRegression logisticRegression = RidgeLogisticTrainer.train(dataSet, 0.25);
 //        System.out.println(logisticRegression.weights);
         stopWatch.stop();
         System.out.println(stopWatch);
