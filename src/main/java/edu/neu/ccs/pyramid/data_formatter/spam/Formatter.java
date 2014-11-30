@@ -17,9 +17,37 @@ public class Formatter {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        saveTrainData();
-        saveTestData();
+//        saveTrainData();
+//        saveTestData();
+        saveTrainZScore();
+        saveTestZScore();
+    }
 
+    private static void saveTestZScore() throws IOException {
+        List<String> featureNames = loadFeatures();
+        ClfDataSet data = StandardFormat.loadClfDataSet(2,new File(DATASETS, "spam/test_data_nomal.txt"),
+                new File(DATASETS, "spam/test_label.txt"), ",", DataSetType.CLF_DENSE,false);
+
+        DataSetUtil.setFeatureNames(data,featureNames);
+        String[] extLabels = {"non-spam","spam"};
+
+        LabelTranslator labelTranslator = new LabelTranslator(extLabels);
+
+        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        TRECFormat.save(data, new File(TMP, "test.trec"));
+    }
+
+    private static void saveTrainZScore() throws IOException {
+        List<String> featureNames = loadFeatures();
+        ClfDataSet data = StandardFormat.loadClfDataSet(2,new File(DATASETS, "spam/train_data_nomal.txt"),
+                new File(DATASETS, "spam/train_label.txt"), ",", DataSetType.CLF_DENSE,false);
+
+        DataSetUtil.setFeatureNames(data,featureNames);
+        String[] extLabels = {"non-spam","spam"};
+        LabelTranslator labelTranslator = new LabelTranslator(extLabels);
+
+        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        TRECFormat.save(data, new File(TMP, "train.trec"));
     }
 
     static List<String> loadFeatures() throws IOException {

@@ -1,9 +1,68 @@
 package edu.neu.ccs.pyramid.util;
 
+import java.util.Random;
+
 /**
  * Created by chengli on 8/14/14.
  */
 public class MathUtil {
+
+    public static int[] shffuleArray(int[] array) {
+        Random rgen = new Random();  // Random number generator
+
+        for (int i=0; i<array.length; i++) {
+            int randomPosition = rgen.nextInt(array.length);
+            int temp = array[i];
+            array[i] = array[randomPosition];
+            array[randomPosition] = temp;
+        }
+        return array;
+    }
+
+    /**
+     * zeros a array by given size.
+     *
+     */
+    public static double[] zeros(int m) {
+        double[] results = new double[m];
+        return results;
+    }
+
+    /**
+     * returns a array including given range.
+     * [start, end)
+     */
+    public static int[] range(int start, int end) {
+        int[] results = new int[end-start];
+        int index = 0;
+        for (int i=start; i<end; i++) {
+            results[index++] = i;
+        }
+        return results;
+    }
+
+    /**
+     * returns a array including given range.
+     * [start, end)
+     */
+    public static int[] randomRange(int start, int end) {
+        Random rgen = new Random();  // Random number generator
+        int size = end-start;
+        int[] array = new int[size];
+
+        for(int i=0; i< size; i++){
+            array[i] = start+i;
+        }
+
+        for (int i=0; i<array.length; i++) {
+            int randomPosition = rgen.nextInt(array.length);
+            int temp = array[i];
+            array[i] = array[randomPosition];
+            array[randomPosition] = temp;
+        }
+        return array;
+    }
+
     /**
      * calculate log(exp(x1)+exp(x2)+...)
      * @return

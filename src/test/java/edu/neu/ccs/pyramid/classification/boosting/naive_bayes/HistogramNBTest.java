@@ -24,12 +24,12 @@ public class HistogramNBTest {
 
     public static void main(String[] args) throws Exception {
 
-//        histogramNBTest(10);
+        histogramNBTest(10);
 //        gassianNBTest();
 //        gammaNBTest();
 //        bernoulliNBTest();
 //        multinomialNBTest();
-        cnnTest();
+//        cnnTest();
     }
 
     private static void cnnTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
