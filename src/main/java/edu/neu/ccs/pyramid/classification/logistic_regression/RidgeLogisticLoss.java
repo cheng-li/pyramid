@@ -2,13 +2,14 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.stream.IntStream;
 
 /**
+ * ridge logistic regression loss function
+ * to be minimized
  * Created by chengli on 11/27/14.
  */
 public class RidgeLogisticLoss {
@@ -16,17 +17,16 @@ public class RidgeLogisticLoss {
     /**
      * regularization constant
      */
-    private final Vector C;
+    private final Vector regularization;
     /**
      * Xw
      */
-    private final Vector z;
+    private final Vector scores;
     /**
      * diagonal of matrix
      */
-    private final Vector D;
+    private final Vector diagonals;
     /**
-     * the first column should be all 1
      * the labels should be 1/-1
      */
     private final DataSet dataSet;
@@ -44,15 +44,15 @@ public class RidgeLogisticLoss {
     /**
      *
      * @param clfDataSet
-     * @param C constant vector
+     * @param regularization constant vector
      */
-    public RidgeLogisticLoss(ClfDataSet clfDataSet, Vector C) {
+    public RidgeLogisticLoss(ClfDataSet clfDataSet, Vector regularization) {
         this.dataSet = clfDataSet;
         numRows = dataSet.getNumDataPoints();
         numColumns = dataSet.getNumFeatures() + 1;
-        z = new DenseVector(numRows);
-        D = new DenseVector(numRows);
-        this.C = C;
+        scores = new DenseVector(numRows);
+        diagonals = new DenseVector(numRows);
+        this.regularization = regularization;
         this.labels = changeLabels(clfDataSet);
     }
 
@@ -110,16 +110,15 @@ public class RidgeLogisticLoss {
 
     public double fun(Vector w) {
         double f = 0;
-        int[] y = labels;
-        Xv(w, z);
+        Xv(w, scores);
         f += w.dot(w);
         f /= 2.0;
         for (int i = 0; i < numRows; i++) {
-            double yz = y[i] * z.get(i);
+            double yz = labels[i] * scores.get(i);
             if (yz >= 0)
-                f += C.get(i) * Math.log(1 + Math.exp(-yz));
+                f += regularization.get(i) * Math.log(1 + Math.exp(-yz));
             else
-                f += C.get(i) * (-yz + Math.log(1 + Math.exp(yz)));
+                f += regularization.get(i) * (-yz + Math.log(1 + Math.exp(yz)));
         }
 
         return (f);
@@ -129,12 +128,12 @@ public class RidgeLogisticLoss {
 
         int[] y = labels;
         for (int i = 0; i < numRows; i++) {
-            z.set(i, 1 / (1 + Math.exp(-y[i] * z.get(i))));
-            D.set(i,z.get(i) * (1 - z.get(i)));
-            z.set(i,C.get(i) * (z.get(i) - 1) * y[i]);
-            //it seems that z is messed up at this point of time
+            scores.set(i, 1 / (1 + Math.exp(-y[i] * scores.get(i))));
+            diagonals.set(i, scores.get(i) * (1 - scores.get(i)));
+            scores.set(i, regularization.get(i) * (scores.get(i) - 1) * y[i]);
+            //it seems that scores are messed up at this point of time
         }
-        XTv(z, g);
+        XTv(scores, g);
 
         for (int i=0;i<g.size();i++){
             g.set(i,w.get(i)+g.get(i));
@@ -147,7 +146,7 @@ public class RidgeLogisticLoss {
 
         Xv(s, wa);
         for (int i = 0; i < numRows; i++)
-            wa.set(i, C.get(i) * D.get(i) * wa.get(i));
+            wa.set(i, regularization.get(i) * diagonals.get(i) * wa.get(i));
 
         XTv(wa, Hs);
         for (int i = 0; i < numColumns; i++)

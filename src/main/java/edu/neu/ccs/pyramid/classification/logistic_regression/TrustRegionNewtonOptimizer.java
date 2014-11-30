@@ -1,9 +1,14 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 /**
+ * the implementation is based on the liblinear package and the following paper
+ * Lin, Chih-Jen, Ruby C. Weng, and S. Sathiya Keerthi.
+ * "Trust region newton method for logistic regression."
+ * The Journal of Machine Learning Research 9 (2008): 627-650.
  * Created by chengli on 11/27/14.
  */
 public class TrustRegionNewtonOptimizer {
@@ -39,8 +44,7 @@ public class TrustRegionNewtonOptimizer {
         double delta, snorm, one = 1.0;
         double alpha, f, fnew, prered, actred, gs;
         int search = 1, iter = 1;
-        Vector s = new DenseVector(n);
-        Vector r = new DenseVector(n);
+
         Vector w_new = new DenseVector(n);
         Vector g = new DenseVector(n);
 
@@ -58,7 +62,11 @@ public class TrustRegionNewtonOptimizer {
         iter = 1;
 
         while (iter <= max_iter && search != 0) {
-            cg_iter = trcg(delta, g, s, r);
+
+            Pair<Vector,Vector> result = trcg(delta, g);
+            Vector s = result.getFirst();
+            Vector r = result.getSecond();
+
             for (int j=0;j<w.size();j++){
                 w_new.set(j,w.get(j));
             }
@@ -120,13 +128,21 @@ public class TrustRegionNewtonOptimizer {
         }
     }
 
-    private int trcg(double delta, Vector g, Vector s, Vector r) {
+    /**
+     *
+     * @param delta input
+     * @param g input
+     * @return s, r
+     */
+    private Pair<Vector,Vector> trcg(double delta, Vector g) {
         int n = fun_obj.getNumColumns();
         double one = 1;
         Vector d = new DenseVector(n);
         Vector Hd = new DenseVector(n);
         double rTr, rnewTrnew, cgtol;
-
+        Vector s = new DenseVector(n);
+        Vector r = new DenseVector(n);
+        Pair<Vector,Vector> result = new Pair<>();
         for (int i = 0; i < n; i++) {
             s.set(i,0);
             r.set(i,-g.get(i));
@@ -134,12 +150,12 @@ public class TrustRegionNewtonOptimizer {
         }
         cgtol = 0.1 * g.norm(2);
 
-        int cg_iter = 0;
         rTr = r.dot(r);
 
         while (true) {
-            if (r.norm(2) <= cgtol) break;
-            cg_iter++;
+            if (r.norm(2) <= cgtol) {
+                break;
+            }
             fun_obj.Hv(d, Hd);
 
             double alpha = rTr / d.dot(Hd);
@@ -171,7 +187,9 @@ public class TrustRegionNewtonOptimizer {
             rTr = rnewTrnew;
         }
 
-        return (cg_iter);
+        result.setFirst(s);
+        result.setSecond(r);
+        return result;
     }
 
     /**
