@@ -58,19 +58,17 @@ public class SMOAction implements Classifier {
         while ((iter++ < maxIter) && ((numChanged > 0) || (examineAll))) {
             numChanged = 0;
             if (examineAll) {
-                for (int i=0; i<numDataPoints; i++) {
-//                    System.out.println("Entire Set, iter: " + iter + " " +
-//                            "i: " + i + ", pairs changed: " + numChanged);
-                    numChanged += innerL(i);
+                int[] entireIndexes = MathUtil.randomRange(0,numDataPoints);
+                for (int i=0; i<entireIndexes.length; i++) {
+                    numChanged += innerL(entireIndexes[i]);
                 }
                 System.out.println("Iter: " + iter + " on Entire Set | " +
                         " Alphas Pairs Changed: " + numChanged);
             }
             else {
                 List<Integer> nonBoundIndexes = findNonBoundary();
+                Collections.shuffle(nonBoundIndexes);
                 for (int i=0; i<nonBoundIndexes.size(); i++) {
-//                    System.out.println("Non-Boundary, iter: " + iter + " " +
-//                            "i: " + i + ", pairs changed: " + numChanged);
                     numChanged += innerL(nonBoundIndexes.get(i));
                 }
                 System.out.println("Iter: " + iter + " on Non-Boundary Set | " +
@@ -171,7 +169,7 @@ public class SMOAction implements Classifier {
                     maxK = k;
                 }
             }
-            System.out.println(maxK);
+//            System.out.println(maxK);
             return maxK;
         }
         else {
@@ -181,7 +179,7 @@ public class SMOAction implements Classifier {
 //                System.out.println(maxK);
             }
         }
-        System.out.println(maxK);
+//        System.out.println(maxK);
         return maxK;
     }
 
@@ -221,13 +219,15 @@ public class SMOAction implements Classifier {
     }
 
     private double calKernel(int i, int j) {
-        Vector vectorI = dataSet.getRow(i);
-        Vector vectorJ = dataSet.getRow(j);
         if (!cacheKernel.containsKey(i)) {
+            Vector vectorI = dataSet.getRow(i);
+            Vector vectorJ = dataSet.getRow(j);
             cacheKernel.put(i, new HashMap<Integer, Double>());
             cacheKernel.get(i).put(j, getKernelValue(vectorI, vectorJ, kernel));
         }
         else if (!cacheKernel.get(i).containsKey(j)) {
+            Vector vectorI = dataSet.getRow(i);
+            Vector vectorJ = dataSet.getRow(j);
             cacheKernel.get(i).put(j, getKernelValue(vectorI, vectorJ, kernel));
         }
         return cacheKernel.get(i).get(j);

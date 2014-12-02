@@ -3,7 +3,6 @@ package edu.neu.ccs.pyramid.classification.svm;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.mahout.math.Vector;
 
@@ -20,7 +19,7 @@ public class SMO implements Classifier {
     private double[] alphas;    // lagrange multipliers
     private double b;   // bias
     private String kernel;  // kernel
-    private int[] svIndices;    // Support vector indices.
+    private Map<Integer, Double> nonBoundaries;  //
 
     // These are for training only
     private ClfDataSet dataSet;
@@ -31,7 +30,6 @@ public class SMO implements Classifier {
     private int numDataPoints;
     private Map<Integer, Map<Integer, Double>> cacheKernel;   // kenel_(i,j)
     private Map<Integer, Double> errorCache;
-    private Map<Integer, Double> nonBoudaries;
 
 
     public SMO(double C, double toler, double eps, int maxIter, String kernel) {
@@ -51,7 +49,7 @@ public class SMO implements Classifier {
         this.b = 0.0;
         this.cacheKernel = new HashMap<>();
         this.errorCache = new HashMap<>();
-        this.nonBoudaries = new HashMap<>();
+        this.nonBoundaries = new HashMap<>();
     }
 
 
@@ -64,14 +62,17 @@ public class SMO implements Classifier {
         while ((iter++ < maxIter) && (numChanged > 0 || examineAll)) {
             numChanged = 0;
             if (examineAll) {
-                for (int i=0; i<numDataPoints; i++) {
-                    numChanged += examineExample(i);
+                // shuffle the order, not necessary for other dataset.
+                int[] entireIndexes = MathUtil.randomRange(0,numDataPoints);
+                for (int i=0; i<entireIndexes.length; i++) {
+                    numChanged += examineExample(entireIndexes[i]);
                 }
                 System.out.println("Iter: " + iter + " on Entire Set | " +
                         " Alphas Pairs Changed: " + numChanged);
             }
             else {
                 List<Integer> nonBoundIndexes = findNonBoundary();
+                Collections.shuffle(nonBoundIndexes);
                 for (int i=0; i<nonBoundIndexes.size(); i++) {
                     numChanged += examineExample(nonBoundIndexes.get(i));
                 }
@@ -98,7 +99,7 @@ public class SMO implements Classifier {
             List<Integer> nonBoundIndexes = findNonBoundary();
             if (nonBoundIndexes.size() > 1) {
                 int i1 = selectJ(i2, E2, nonBoundIndexes);
-                if (takeStep(i1, i2)) {
+                if (takeStep(i1, i2, y2, alpha2, E2)) {
                     return 1;
                 }
             }
@@ -106,7 +107,7 @@ public class SMO implements Classifier {
             Collections.shuffle(nonBoundIndexes);
             for (int k=0; k<nonBoundIndexes.size(); k++) {
                 int i1 = nonBoundIndexes.get(k);
-                if (takeStep(i1, i2)) {
+                if (takeStep(i1, i2, y2, alpha2, E2)) {
                     return 1;
                 }
             }
@@ -114,7 +115,7 @@ public class SMO implements Classifier {
             for (int k=0; k<entireIndexes.length; k++) {
 //                System.out.println(k + ": " + entireIndexes[k]);
                 int i1 = entireIndexes[k];
-                if (takeStep(i1, i2)) {
+                if (takeStep(i1, i2, y2, alpha2, E2)) {
                     return 1;
                 }
             }
@@ -123,10 +124,10 @@ public class SMO implements Classifier {
     }
     /**
      * Innter loop to update alpha_i and alpha_j;
-     * @param i1, i2
+     * @param i1, i2, y2, alpha2, E2
      * @return
      */
-    private boolean takeStep(int i1, int i2) {
+    private boolean takeStep(int i1, int i2, double y2, double alpha2, double E2) {
 
         if (i1 == i2) {
             return false;
@@ -135,9 +136,6 @@ public class SMO implements Classifier {
         double y1 = dataSet.getLabels()[i1];
         double alpha1 = alphas[i1];
         double E1 = calEk(i1);
-        double y2 = dataSet.getLabels()[i2];
-        double alpha2 = alphas[i2];
-        double E2 = calEk(i2);
         double s = y1*y2;
 
         double H, L;
@@ -189,7 +187,6 @@ public class SMO implements Classifier {
             }
         }
 
-
         if (FastMath.abs(alpha2 - a2) < eps*(alpha2+a2+eps)) {
             return false;
         }
@@ -214,10 +211,10 @@ public class SMO implements Classifier {
         alphas[i1] = a1;
         alphas[i2] = a2;
 
-        if (a1 != 0) nonBoudaries.put(i1, a1);
-        if (a2 != 0) nonBoudaries.put(i2, a2);
-        if (a1 == 0) nonBoudaries.remove(i1);
-        if (a2 == 0) nonBoudaries.remove(i2);
+        if (a1 != 0) nonBoundaries.put(i1, a1);
+        if (a2 != 0) nonBoundaries.put(i2, a2);
+        if (a1 == 0) nonBoundaries.remove(i1);
+        if (a2 == 0) nonBoundaries.remove(i2);
 
         // update error cache
         updateErrorCache(i1, alpha1, a1, i2, alpha2, a2, bOld);
@@ -231,10 +228,11 @@ public class SMO implements Classifier {
         double delta1 = (a1 - alpha1) * y1;
         double delta2 = (a2 - alpha2) * y2;
 
-        for (int key : errorCache.keySet()) {
+        for (Map.Entry<Integer, Double> entry : errorCache.entrySet()) {
+            int key = entry.getKey();
+            double error = entry.getValue();
             double Ki1k = calKernel(i1, key);
             double Ki2k = calKernel(i2, key);
-            double error = errorCache.get(key);
             error += delta1*Ki1k + delta2*Ki2k + bOld - b;
             errorCache.put(key, error);
         }
@@ -280,9 +278,11 @@ public class SMO implements Classifier {
 
     private double functionX(int k) {
         double result = 0;
-        for (int i : nonBoudaries.keySet()) {
-            double y = (double) dataSet.getLabels()[i];
-            result += alphas[i] * y * calKernel(i,k);
+        for (Map.Entry<Integer, Double> entry : nonBoundaries.entrySet()) {
+            int key = entry.getKey();
+            double alpha = entry.getValue();
+            double y = (double) dataSet.getLabels()[key];
+            result += alpha * y * calKernel(key,k);
         }
 //        for (int i=0; i<numDataPoints; i++) {
 //            double y = (double) dataSet.getLabels()[i];
@@ -293,7 +293,7 @@ public class SMO implements Classifier {
     }
 
     private List<Integer> findNonBoundary() {
-        List<Integer> nonBoundary = new LinkedList<Integer>();
+        List<Integer> nonBoundary = new ArrayList<>();
         for (int i=0; i<alphas.length; i++) {
             double alpha = alphas[i];
             if ((alpha>0) && (alpha<C)) {
@@ -304,13 +304,15 @@ public class SMO implements Classifier {
     }
 
     private double calKernel(int i, int j) {
-        Vector vectorI = dataSet.getRow(i);
-        Vector vectorJ = dataSet.getRow(j);
         if (!cacheKernel.containsKey(i)) {
-            cacheKernel.put(i, new HashMap<Integer, Double>());
+            Vector vectorI = dataSet.getRow(i);
+            Vector vectorJ = dataSet.getRow(j);
+            cacheKernel.put(i, new HashMap<>());
             cacheKernel.get(i).put(j, getKernelValue(vectorI, vectorJ, kernel));
         }
         else if (!cacheKernel.get(i).containsKey(j)) {
+            Vector vectorI = dataSet.getRow(i);
+            Vector vectorJ = dataSet.getRow(j);
             cacheKernel.get(i).put(j, getKernelValue(vectorI, vectorJ, kernel));
         }
         return cacheKernel.get(i).get(j);
@@ -338,20 +340,13 @@ public class SMO implements Classifier {
     @Override
     public int predict(Vector vector) {
         double hypothese = 0.0;
-
-        for (int i : nonBoudaries.keySet()) {
-            double yi = (double) dataSet.getLabels()[i];
-            double alpha = alphas[i];
-            double k = getKernelValue(dataSet.getRow(i), vector, kernel);
+        for (Map.Entry<Integer, Double> entry : nonBoundaries.entrySet()) {
+            int index = entry.getKey();
+            double alpha = entry.getValue();
+            double yi = (double) dataSet.getLabels()[index];
+            double k = getKernelValue(dataSet.getRow(index), vector, kernel);
             hypothese += yi * alpha * k;
         }
-
-//        for (int i=0; i<numDataPoints; i++) {
-//            double yi = (double) dataSet.getLabels()[i];
-//            double alpha = alphas[i];
-//            double k = getKernelValue(dataSet.getRow(i), vector, kernel);
-//            hypothese += yi * alpha * k;
-//        }
         hypothese -= b;
 
         if (hypothese >= 0) {
@@ -385,7 +380,8 @@ public class SMO implements Classifier {
     }
     public String toString() {
         String str = new String();
-        str = "C= " + C + ",  toler= " + toler + ", eps= " + eps;
+        str = "C= " + C + ",  toler= " + toler + ", eps= " + eps
+                + ", kernel= " + kernel + ", #sv: " + nonBoundaries.size();
         return str;
     }
 }
