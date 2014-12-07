@@ -36,7 +36,6 @@ public class RidgeLRTrainerTest {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         LogisticRegression logisticRegression = RidgeLogisticTrainer.train(dataSet, 10);
-        System.out.println(logisticRegression.weights);
         stopWatch.stop();
         System.out.println(stopWatch);
 
