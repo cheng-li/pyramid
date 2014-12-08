@@ -29,12 +29,30 @@ class Weights implements Serializable {
         this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
+    int getClassIndex(int parameterIndex){
+        return parameterIndex/(numFeatures+1);
+    }
+
+    /**
+     *
+     * @param parameterIndex
+     * @return feature index
+     * -1 means bias
+     */
+    int getFeatureIndex(int parameterIndex){
+        return parameterIndex - getClassIndex(parameterIndex)*(numFeatures+1) -1;
+    }
+
     /**
      *
      * @return weights for all classes
      */
     Vector getAllWeights() {
         return weightVector;
+    }
+
+    int totalSize(){
+        return weightVector.size();
     }
 
     /**

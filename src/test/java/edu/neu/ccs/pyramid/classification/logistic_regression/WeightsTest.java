@@ -11,8 +11,9 @@ public class WeightsTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test1();
-        test2();
+//        test1();
+//        test2();
+        test3();
     }
 
     private static void test1() throws Exception{
@@ -37,6 +38,22 @@ public class WeightsTest {
         System.out.println(weights.getWeightsWithoutBiasForClass(1));
         System.out.println(weights.getBiasForClass(0));
         System.out.println(weights.getBiasForClass(1));
+    }
+
+    private static void test3() throws Exception{
+        Weights weights = new Weights(3,5);
+        System.out.println(weights.getClassIndex(0));
+        System.out.println(weights.getClassIndex(5));
+        System.out.println(weights.getClassIndex(6));
+        System.out.println(weights.getClassIndex(11));
+        System.out.println(weights.getClassIndex(12));
+        System.out.println(weights.getClassIndex(17));
+        System.out.println(weights.getFeatureIndex(0));
+        System.out.println(weights.getFeatureIndex(1));
+        System.out.println(weights.getFeatureIndex(5));
+        System.out.println(weights.getFeatureIndex(6));
+        System.out.println(weights.getFeatureIndex(7));
+        System.out.println(weights.getFeatureIndex(11));
     }
 
 }
