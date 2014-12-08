@@ -45,6 +45,7 @@ public class RidgeLRTrainerTest {
 
         System.out.println("accuracy on training set ="+Accuracy.accuracy(logisticRegression,dataSet));
         logisticRegression.serialize(new File(TMP,"logistic_regression.ser"));
+        System.out.println(LogisticRegressonInspector.topFeatures(logisticRegression,1));
     }
 
     static void spam_test() throws Exception{
@@ -81,6 +82,7 @@ public class RidgeLRTrainerTest {
 
         System.out.println("accuracy on training set ="+Accuracy.accuracy(logisticRegression,dataSet));
         logisticRegression.serialize(new File(TMP,"logistic_regression.ser"));
+        System.out.println(LogisticRegressonInspector.topFeatures(logisticRegression,1));
     }
 
     static void imdb_test() throws Exception{

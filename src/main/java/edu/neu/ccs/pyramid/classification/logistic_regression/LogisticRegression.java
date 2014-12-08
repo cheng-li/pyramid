@@ -5,6 +5,8 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by chengli on 11/28/14.
@@ -14,6 +16,8 @@ public class LogisticRegression implements ProbabilityEstimator {
     private int numClasses;
     private int numFeatures;
     private Weights weights;
+    private boolean featureExtraction = false;
+    private String[] featureNames;
 
 
 
@@ -22,6 +26,15 @@ public class LogisticRegression implements ProbabilityEstimator {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.weights = new Weights(numClasses, numFeatures);
+        this.featureNames = new String[numFeatures];
+    }
+
+    public boolean featureExtraction() {
+        return featureExtraction;
+    }
+
+    public void setFeatureExtraction(boolean featureExtraction) {
+        this.featureExtraction = featureExtraction;
     }
 
     public Weights getWeights() {
@@ -90,5 +103,11 @@ public class LogisticRegression implements ProbabilityEstimator {
         }
     }
 
+    void setFeatureName(int featureIndex, String featureName){
+        featureNames[featureIndex] = featureName;
+    }
 
+    public String[] getFeatureNames() {
+        return featureNames;
+    }
 }

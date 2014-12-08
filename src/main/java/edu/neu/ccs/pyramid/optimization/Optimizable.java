@@ -8,6 +8,7 @@ import org.apache.mahout.math.Vector;
  */
 public interface Optimizable {
     Vector getParameters();
+    void refresh();
 
     public interface ByGradient extends Optimizable {
         Vector getGradient();

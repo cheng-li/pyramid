@@ -25,6 +25,7 @@ public class GradientDescent {
         Vector gradient = function.getGradient();
         Vector updatedParams = parameters.minus(gradient.times(learningRate));
         parameters.assign(updatedParams);
+        function.refresh();
 
     }
 }

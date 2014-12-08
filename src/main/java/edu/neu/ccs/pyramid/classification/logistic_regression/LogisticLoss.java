@@ -19,7 +19,15 @@ public class LogisticLoss implements Optimizable.ByGradient{
     private Vector predictedCounts;
     private Vector gradient;
     private int numParameters;
-    private double[][] classProbs;
+    /**
+     * numDataPoints by numClasses;
+     */
+    private double[][] classProbMatrix;
+    /**
+     * p_k(x_i) - y_ik
+     * numClasses by numDataPoints
+     */
+    private double[][] dataGradientMatrix;
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         ClfDataSet dataSet, double gaussianPriorVariance) {
@@ -29,18 +37,29 @@ public class LogisticLoss implements Optimizable.ByGradient{
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
-        this.classProbs = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        this.classProbMatrix = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        this.dataGradientMatrix = new double[dataSet.getNumClasses()][dataSet.getNumDataPoints()];
         this.updateEmpricalCounts();
+        this.refresh();
     }
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();
     }
 
-    public Vector getGradient(){
-        updateClassProbs();
+    public void refresh(){
+        if (logisticRegression.featureExtraction()){
+            updateEmpricalCounts();
+        }
+        updateClassProbMatrix();
         updatePredictedCounts();
         updateGradient();
+        if (logisticRegression.featureExtraction()){
+            updateDataGradientMatrix();
+        }
+    }
+
+    public Vector getGradient(){
         return this.gradient;
     }
 
@@ -95,14 +114,14 @@ public class LogisticLoss implements Optimizable.ByGradient{
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += this.classProbs[i][classIndex];
+                count += this.classProbMatrix[i][classIndex];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                count += this.classProbs[dataPointIndex][classIndex] * featureValue;
+                count += this.classProbMatrix[dataPointIndex][classIndex] * featureValue;
             }
         }
         return count;
@@ -110,12 +129,37 @@ public class LogisticLoss implements Optimizable.ByGradient{
 
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
-        System.arraycopy(probs, 0, this.classProbs[dataPointIndex], 0, dataSet.getNumClasses());
+        System.arraycopy(probs, 0, this.classProbMatrix[dataPointIndex], 0, dataSet.getNumClasses());
     }
 
-    private void updateClassProbs(){
+    private void updateClassProbMatrix(){
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(this::updateClassProbs);
+    }
+
+    private void updataDataGradient(int dataPointIndex){
+        double[] classProbs = this.classProbMatrix[dataPointIndex];
+        int label = dataSet.getLabels()[dataPointIndex];
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            if (k==label){
+                this.dataGradientMatrix[k][dataPointIndex] = classProbs[k] - 1;
+            } else {
+                this.dataGradientMatrix[k][dataPointIndex] = classProbs[k];
+            }
+        }
+    }
+
+    private void updateDataGradientMatrix(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(this::updataDataGradient);
+    }
+
+    public double[] getDataGradient(int k){
+        return dataGradientMatrix[k];
+    }
+
+    public double[] getClassProbs(int dataPointIndex){
+        return classProbMatrix[dataPointIndex];
     }
 
 }

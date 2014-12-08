@@ -28,6 +28,7 @@ public class LogisticRegressionTest {
         System.out.println(dataSet.getMetaInfo());
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        logisticRegression.setFeatureExtraction(true);
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,1000);
         GradientDescent gradientDescent = new GradientDescent(function,0.00001);
         for (int i=0;i<500;i++){
