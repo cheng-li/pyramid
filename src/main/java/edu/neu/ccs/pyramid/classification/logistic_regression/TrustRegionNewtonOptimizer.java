@@ -12,7 +12,7 @@ import org.apache.mahout.math.Vector;
  * Created by chengli on 11/27/14.
  */
 public class TrustRegionNewtonOptimizer {
-    private final RidgeLogisticLoss loss;
+    private final RidgeBinaryLogisticLoss loss;
 
     private final double   eps;
 
@@ -28,15 +28,15 @@ public class TrustRegionNewtonOptimizer {
     private static final double SIGMA3 = 4;
 
 
-    public TrustRegionNewtonOptimizer(final RidgeLogisticLoss loss) {
+    public TrustRegionNewtonOptimizer(final RidgeBinaryLogisticLoss loss) {
         this(loss, 0.1);
     }
 
-    public TrustRegionNewtonOptimizer(final RidgeLogisticLoss loss, double eps) {
+    public TrustRegionNewtonOptimizer(final RidgeBinaryLogisticLoss loss, double eps) {
         this(loss, eps, 1000);
     }
 
-    public TrustRegionNewtonOptimizer(final RidgeLogisticLoss loss, double eps, int maxIter) {
+    public TrustRegionNewtonOptimizer(final RidgeBinaryLogisticLoss loss, double eps, int maxIter) {
         this.loss = loss;
         this.eps = eps;
         this.maxIter = maxIter;

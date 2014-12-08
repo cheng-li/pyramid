@@ -8,11 +8,11 @@ import org.apache.mahout.math.Vector;
 import java.util.stream.IntStream;
 
 /**
- * ridge logistic regression loss function
+ * ridge logistic regression loss function, binary case
  * to be minimized
  * Created by chengli on 11/27/14.
  */
-public class RidgeLogisticLoss {
+public class RidgeBinaryLogisticLoss {
 
     /**
      * regularization constant
@@ -46,7 +46,7 @@ public class RidgeLogisticLoss {
      * @param clfDataSet
      * @param regularization constant vector
      */
-    public RidgeLogisticLoss(ClfDataSet clfDataSet, Vector regularization) {
+    public RidgeBinaryLogisticLoss(ClfDataSet clfDataSet, Vector regularization) {
         this.dataSet = clfDataSet;
         numRows = dataSet.getNumDataPoints();
         numColumns = dataSet.getNumFeatures() + 1;

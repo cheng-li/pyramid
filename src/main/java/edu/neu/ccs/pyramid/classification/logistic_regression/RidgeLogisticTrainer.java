@@ -15,7 +15,7 @@ public class RidgeLogisticTrainer {
         for (int i=0;i<C.size();i++){
             C.set(i,regularization);
         }
-        RidgeLogisticLoss function = new RidgeLogisticLoss(clfDataSet, C);
+        RidgeBinaryLogisticLoss function = new RidgeBinaryLogisticLoss(clfDataSet, C);
         LogisticRegression logisticRegression =     new LogisticRegression(2,clfDataSet.getNumFeatures());
         TrustRegionNewtonOptimizer trustRegionNewtonOptimizer = new TrustRegionNewtonOptimizer(function,0.000001);
         trustRegionNewtonOptimizer.tron(logisticRegression.getWeights().getWeightsForClass(1));
