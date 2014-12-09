@@ -1,12 +1,14 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 11/28/14.
@@ -29,6 +31,13 @@ public class LogisticRegression implements ProbabilityEstimator {
         this.featureNames = new String[numFeatures];
     }
 
+    public LogisticRegression(int numClasses, int numFeatures, Vector weightVector) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        this.weights = new Weights(numClasses, numFeatures, weightVector);
+        this.featureNames = new String[numFeatures];
+    }
+
     public boolean featureExtraction() {
         return featureExtraction;
     }
@@ -44,6 +53,10 @@ public class LogisticRegression implements ProbabilityEstimator {
     @Override
     public int getNumClasses() {
         return this.numClasses;
+    }
+
+    public int getNumFeatures() {
+        return numFeatures;
     }
 
     @Override
@@ -89,6 +102,18 @@ public class LogisticRegression implements ProbabilityEstimator {
         return probVector;
     }
 
+    //todo can be optimized
+    double logLikelihood(Vector vector, int k){
+        double[] probs = predictClassProbs(vector);
+        return Math.log(probs[k]);
+    }
+
+    double dataSetLogLikelihood(ClfDataSet dataSet){
+        int[] labels = dataSet.getLabels();
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i->logLikelihood(dataSet.getRow(i),labels[i]))
+                .sum();
+    }
 
 
 
@@ -110,4 +135,6 @@ public class LogisticRegression implements ProbabilityEstimator {
     public String[] getFeatureNames() {
         return featureNames;
     }
+
+
 }

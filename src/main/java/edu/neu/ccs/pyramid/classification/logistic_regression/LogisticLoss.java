@@ -9,9 +9,14 @@ import java.util.stream.IntStream;
 
 
 /**
+ * logistic loss, l2 regularized
+ * to be minimized
+ * references:
+ * Maxent Models, Conditional Estimation, and Optimization, without the Magic,Dan Klein and Chris Manning
+ * Conditional Random Fields, Rahul Gupta
  * Created by chengli on 12/7/14.
  */
-public class LogisticLoss implements Optimizable.ByGradient{
+public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradientValue{
     private LogisticRegression logisticRegression;
     private ClfDataSet dataSet;
     private double gaussianPriorVariance;
@@ -59,13 +64,18 @@ public class LogisticLoss implements Optimizable.ByGradient{
         }
     }
 
+    @Override
+    public double getValue(Vector parameters) {
+        LogisticRegression tmpFunction = new LogisticRegression(this.logisticRegression.getNumClasses(),
+                this.logisticRegression.getNumFeatures(),parameters);
+        return -tmpFunction.dataSetLogLikelihood(dataSet) + parameters.norm(2)/(2*gaussianPriorVariance);
+    }
+
     public Vector getGradient(){
         return this.gradient;
     }
 
-    /**
-     * gradient descent
-     */
+
     private void updateGradient(){
         Vector weights = this.logisticRegression.getWeights().getAllWeights();
         this.gradient = this.predictedCounts.minus(empiricalCounts).plus(weights.divide(gaussianPriorVariance));

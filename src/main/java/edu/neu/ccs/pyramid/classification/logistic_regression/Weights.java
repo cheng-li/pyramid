@@ -29,6 +29,16 @@ class Weights implements Serializable {
         this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
+    Weights(int numClasses, int numFeatures, Vector weightVector) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        if (weightVector.size()!=(numFeatures + 1)*numClasses){
+            throw new IllegalArgumentException("weightVector.size()!=(numFeatures + 1)*numClasses");
+        }
+        this.weightVector = weightVector;
+        this.serializableWeights = new double[(numFeatures + 1)*numClasses];
+    }
+
     int getClassIndex(int parameterIndex){
         return parameterIndex/(numFeatures+1);
     }
