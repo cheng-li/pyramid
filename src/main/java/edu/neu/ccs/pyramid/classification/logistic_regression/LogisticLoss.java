@@ -68,7 +68,7 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
     public double getValue(Vector parameters) {
         LogisticRegression tmpFunction = new LogisticRegression(this.logisticRegression.getNumClasses(),
                 this.logisticRegression.getNumFeatures(),parameters);
-        return -tmpFunction.dataSetLogLikelihood(dataSet) + parameters.norm(2)/(2*gaussianPriorVariance);
+        return -tmpFunction.dataSetLogLikelihood(dataSet) + parameters.dot(parameters)/(2*gaussianPriorVariance);
     }
 
     public Vector getGradient(){
