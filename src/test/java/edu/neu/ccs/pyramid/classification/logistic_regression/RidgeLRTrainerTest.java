@@ -65,7 +65,7 @@ public class RidgeLRTrainerTest {
     static void imdb_build() throws Exception{
 
 
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/exp31/imdb_stopwords/1/train.trec"),
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
 
@@ -83,12 +83,13 @@ public class RidgeLRTrainerTest {
         System.out.println("accuracy on training set ="+Accuracy.accuracy(logisticRegression,dataSet));
         logisticRegression.serialize(new File(TMP,"logistic_regression.ser"));
         System.out.println(LogisticRegressonInspector.topFeatures(logisticRegression,1));
+        System.out.println(LogisticRegressonInspector.topFeatures(logisticRegression,0));
     }
 
     static void imdb_test() throws Exception{
 
 
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/test.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/exp31/imdb_stopwords/1/test.trec"),
                 DataSetType.CLF_SPARSE, true);
         LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(TMP,"logistic_regression.ser"));
         System.out.println("accuracy on test set = "+Accuracy.accuracy(logisticRegression,dataSet));
