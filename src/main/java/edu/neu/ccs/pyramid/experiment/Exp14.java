@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * imlgb
@@ -244,6 +243,11 @@ public class Exp14 {
             }
         }
 
+        if (config.getBoolean("verify.analyzeMistakes")){
+            System.out.println("analyzing mistakes");
+            analyzeTrainMistakes(config, boosting, dataSet);
+        }
+
     }
 
     static void test(Config config) throws Exception{
@@ -269,13 +273,40 @@ public class Exp14 {
 
         if (config.getBoolean("test.analyzeMistakes")){
             System.out.println("analyzing mistakes");
-            analyzeMistakes(config,boosting,dataSet);
+            analyzeTestMistakes(config, boosting, dataSet);
         }
 
     }
 
+    static void analyzeTrainMistakes(Config config, IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet) throws Exception{
+        int numClasses = dataSet.getNumClasses();
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
 
-    static void analyzeMistakes(Config config, IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet) throws Exception{
+        List<MultiLabel> predictions = boosting.predict(dataSet);
+        MultiLabel[] trueLabels = dataSet.getMultiLabels();
+
+        for (int k=0;k<numClasses;k++){
+            PerClassMeasures perClassMeasures = new PerClassMeasures(trueLabels,predictions,k,labelTranslator.toExtLabel(k));
+            System.out.println("train: " + perClassMeasures);
+        }
+
+        int limit = config.getInt("verify.analyzeMistakes.limit");
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            System.out.println("=======================================");
+            MultiLabel prediction = predictions.get(i);
+            MultiLabel trueLabel = trueLabels[i];
+            if (!prediction.equals(trueLabel)){
+                Vector vector = dataSet.getRow(i);
+                System.out.println("data point "+i+" index id = "+dataSet.getDataPointSetting(i).getExtId());
+
+                System.out.println(IMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
+
+
+            }
+        }
+    }
+
+    static void analyzeTestMistakes(Config config, IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet) throws Exception{
         int numClassesInTrain = getNumClassesInTrain(config);
         int numClassesInTest = dataSet.getNumClasses();
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
@@ -290,7 +321,7 @@ public class Exp14 {
 
         for (int k=0;k<numClassesInTest;k++){
             PerClassMeasures perClassMeasures = new PerClassMeasures(trueLabels,predictions,k,labelTranslator.toExtLabel(k));
-            System.out.println(perClassMeasures);
+            System.out.println("test: " + perClassMeasures);
         }
 
         int limit = config.getInt("test.analyzeMistakes.limit");
