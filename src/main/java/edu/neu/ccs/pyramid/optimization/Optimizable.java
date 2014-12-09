@@ -14,4 +14,9 @@ public interface Optimizable {
         Vector getGradient();
     }
 
+    public interface ByGradientValue extends Optimizable{
+        Vector getGradient();
+        double getValue(Vector parameters);
+    }
+
 }
