@@ -138,10 +138,11 @@ public class LKTreeBoost implements ProbabilityEstimator{
      * @return the class that gives the max class score F
      */
     public int predict(Vector vector){
-        double maxScore = this.predictClassScore(vector, 0);
+        double[] scores = predictClassScores(vector);
+        double maxScore = Double.NEGATIVE_INFINITY;
         int predictedClass = 0;
-        for (int k=1;k<this.numClasses;k++){
-            double scoreClassK = this.predictClassScore(vector, k);
+        for (int k=0;k<this.numClasses;k++){
+            double scoreClassK = scores[k];
             if (scoreClassK > maxScore){
                 maxScore = scoreClassK;
                 predictedClass = k;
@@ -203,6 +204,7 @@ public class LKTreeBoost implements ProbabilityEstimator{
         }
         return scoreVector;
     }
+
 
     public double[] predictClassProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
