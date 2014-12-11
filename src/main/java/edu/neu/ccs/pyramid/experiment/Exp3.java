@@ -45,9 +45,9 @@ public class Exp3 {
 
         SingleLabelIndex index = loadIndex(config);
 
-        if (config.getBoolean("train")){
-            train(config,index);
-        }
+
+        train(config,index);
+
 
         index.close();
 
@@ -83,15 +83,21 @@ public class Exp3 {
 
         ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelTranslator);
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
+        File serializedModel =  new File(config.getString("archive.folder"),config.getString("archive.model"));
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(serializedModel);
+        System.out.println("accuracy on test set = "+Accuracy.accuracy(lkTreeBoost,testDataSet));
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
         if (config.getBoolean("archive.dumpFields")){
             dumpTestFeatures(config,index,testIdTranslator);
         }
+
+
     }
 
 
 
     static SingleLabelIndex loadIndex(Config config) throws Exception{
+        System.out.println("connecting to index ...");
         SingleLabelIndex.Builder builder = new SingleLabelIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
@@ -105,7 +111,7 @@ public class Exp3 {
             builder.addHostsAndPorts(hosts,ports);
         }
         SingleLabelIndex index = builder.build();
-        System.out.println("index loaded");
+        System.out.println("connected to index "+index.getIndexName());
         System.out.println("there are "+index.getNumDocs()+" documents in the index.");
 //        for (int i=0;i<index.getNumDocs();i++){
 //            System.out.println(i);
@@ -233,7 +239,6 @@ public class Exp3 {
 
 
         String modelName = config.getString("archive.model");
-        boolean overwriteModels = config.getBoolean("train.overwriteModels");
         int numDocsToSelect = config.getInt("extraction.numDocsToSelect");
         int numUnigramsToExtract = config.getInt("extraction.numUnigramsToExtract");
         double extractionFrequency = config.getDouble("extraction.frequency");
@@ -256,24 +261,24 @@ public class Exp3 {
         lkTreeBoost.setPriorProbs(dataSet);
         lkTreeBoost.setTrainConfig(trainConfig);
 
-        TermSplitExtractor splitExtractor = new TermSplitExtractor(index, trainIdTranslator,
-                numUnigramsToExtract)
-                .setMinDataPerLeaf(config.getInt("extraction.splitExtractor.minDataPerLeaf"));
+//        TermSplitExtractor splitExtractor = new TermSplitExtractor(index, trainIdTranslator,
+//                numUnigramsToExtract)
+//                .setMinDataPerLeaf(config.getInt("extraction.splitExtractor.minDataPerLeaf"));
+//
+//        TermTfidfExtractor tfidfExtractor = new TermTfidfExtractor(index,trainIdTranslator,
+//                numUnigramsToExtract).
+//                setMinDf(config.getInt("extraction.tfidfExtractor.minDf"));
 
-        TermTfidfExtractor tfidfExtractor = new TermTfidfExtractor(index,trainIdTranslator,
-                numUnigramsToExtract).
-                setMinDf(config.getInt("extraction.tfidfExtractor.minDf"));
-
-        TermTfidfSplitExtractor tfidfSplitExtractor = new TermTfidfSplitExtractor(index,
+        TermTfidfSplitExtractor termExtractor = new TermTfidfSplitExtractor(index,
                 trainIdTranslator,numUnigramsToExtract).
-                setMinDf(config.getInt("extraction.tfidfSplitExtractor.minDf")).
-                setNumSurvivors(config.getInt("extraction.tfidfSplitExtractor.numSurvivors")).
-                setMinDataPerLeaf(config.getInt("extraction.tfidfSplitExtractor.minDataPerLeaf"));
+                setMinDf(config.getInt("extraction.termExtractor.minDf")).
+                setNumSurvivors(config.getInt("extraction.termExtractor.numSurvivors")).
+                setMinDataPerLeaf(config.getInt("extraction.termExtractor.minDataPerLeaf"));
 
-        PhraseSplitExtractor phraseSplitExtractor = new PhraseSplitExtractor(index,trainIdTranslator)
-                .setMinDataPerLeaf(config.getInt("extraction.phraseSplitExtractor.minDataPerLeaf"))
-                .setMinDf(config.getInt("extraction.phraseSplitExtractor.minDf"))
-                .setTopN(config.getInt("extraction.phraseSplitExtractor.topN"));
+        PhraseSplitExtractor phraseExtractor = new PhraseSplitExtractor(index,trainIdTranslator)
+                .setMinDataPerLeaf(config.getInt("extraction.phraseExtractor.minDataPerLeaf"))
+                .setMinDf(config.getInt("extraction.phraseExtractor.minDf"))
+                .setTopN(config.getInt("extraction.phraseExtractor.topN"));
 
         DFStats dfStats = loadDFStats(config,index,trainIdTranslator);
         List<Set<String>> seedsForAllClasses = new ArrayList<>();
@@ -322,7 +327,7 @@ public class Exp3 {
 
             boolean condition1 = (featureMappers.getTotalDim()
                     +numUnigramsToExtract*numClasses*3
-                    +config.getInt("extraction.phraseSplitExtractor.topN")*numClasses*3
+                    +config.getInt("extraction.phraseExtractor.topN")*numClasses*3
                     <dataSet.getNumFeatures());
             boolean condition2 = (Math.random()<extractionFrequency);
             //should start with some feature
@@ -373,19 +378,22 @@ public class Exp3 {
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
                     List<String> goodTerms = null;
-                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
-                        goodTerms = splitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
-                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfSplitExtractor")){
-                        goodTerms = tfidfSplitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else {
-                        throw new RuntimeException("ngram extractor is not specified correctly");
-                    }
+                    goodTerms = termExtractor.getGoodTerms(focusSet,
+                            validationSet,
+                            blackList, k, gradientsForValidation);
+//                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
+//                        goodTerms = splitExtractor.getGoodTerms(focusSet,
+//                                validationSet,
+//                                blackList, k, gradientsForValidation);
+//                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
+//                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
+//                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("termExtractor")){
+//                        goodTerms = termExtractor.getGoodTerms(focusSet,
+//                                validationSet,
+//                                blackList, k, gradientsForValidation);
+//                    } else {
+//                        throw new RuntimeException("ngram extractor is not specified correctly");
+//                    }
 
                     seedsForAllClasses.get(k).addAll(goodTerms);
 
@@ -403,7 +411,7 @@ public class Exp3 {
                     //phrases
                     System.out.println("seeds for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
                     System.out.println(seedsForAllClasses.get(k));
-                    List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
+                    List<String> goodPhrases = phraseExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
                             gradientsForValidation,seedsForAllClasses.get(k));
                     System.out.println("phrases extracted from easy set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(goodPhrases);
@@ -477,19 +485,22 @@ public class Exp3 {
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
                     List<String> goodTerms = null;
-                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
-                        goodTerms = splitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
-                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfSplitExtractor")){
-                        goodTerms = tfidfSplitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else {
-                        throw new RuntimeException("ngram extractor is not specified correctly");
-                    }
+                    goodTerms = termExtractor.getGoodTerms(focusSet,
+                            validationSet,
+                            blackList, k, gradientsForValidation);
+//                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
+//                        goodTerms = splitExtractor.getGoodTerms(focusSet,
+//                                validationSet,
+//                                blackList, k, gradientsForValidation);
+//                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
+//                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
+//                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("termExtractor")){
+//                        goodTerms = termExtractor.getGoodTerms(focusSet,
+//                                validationSet,
+//                                blackList, k, gradientsForValidation);
+//                    } else {
+//                        throw new RuntimeException("ngram extractor is not specified correctly");
+//                    }
                     seedsForAllClasses.get(k).addAll(goodTerms);
 
                     List<String> focusSetIndexIds = focusSet.getDataClassK(k)
@@ -503,7 +514,7 @@ public class Exp3 {
                     //phrases
                     System.out.println("seeds for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
                     System.out.println(seedsForAllClasses.get(k));
-                    List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
+                    List<String> goodPhrases = phraseExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
                             gradientsForValidation,seedsForAllClasses.get(k));
                     System.out.println("phrases extracted from hard set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(goodPhrases);
@@ -573,19 +584,22 @@ public class Exp3 {
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
                     List<String> goodTerms = null;
-                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
-                        goodTerms = splitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
-                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
-                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfSplitExtractor")){
-                        goodTerms = tfidfSplitExtractor.getGoodTerms(focusSet,
-                                validationSet,
-                                blackList, k, gradientsForValidation);
-                    } else {
-                        throw new RuntimeException("ngram extractor is not specified correctly");
-                    }
+                    goodTerms = termExtractor.getGoodTerms(focusSet,
+                            validationSet,
+                            blackList, k, gradientsForValidation);
+//                    if(config.getString("extraction.Extractor").equalsIgnoreCase("splitExtractor")){
+//                        goodTerms = splitExtractor.getGoodTerms(focusSet,
+//                                validationSet,
+//                                blackList, k, gradientsForValidation);
+//                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("tfidfExtractor")){
+//                        goodTerms = tfidfExtractor.getGoodTerms(focusSet,blackList,k);
+//                    } else if (config.getString("extraction.Extractor").equalsIgnoreCase("termExtractor")){
+//                        goodTerms = termExtractor.getGoodTerms(focusSet,
+//                                validationSet,
+//                                blackList, k, gradientsForValidation);
+//                    } else {
+//                        throw new RuntimeException("ngram extractor is not specified correctly");
+//                    }
                     seedsForAllClasses.get(k).addAll(goodTerms);
 
                     List<String> focusSetIndexIds = focusSet.getDataClassK(k)
@@ -599,7 +613,7 @@ public class Exp3 {
                     //phrases
                     System.out.println("seeds for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
                     System.out.println(seedsForAllClasses.get(k));
-                    List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
+                    List<String> goodPhrases = phraseExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
                             gradientsForValidation,seedsForAllClasses.get(k));
                     System.out.println("phrases extracted from uncertain set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(goodPhrases);
@@ -648,9 +662,6 @@ public class Exp3 {
         }
 
         File serializedModel =  new File(archive,modelName);
-        if (!overwriteModels && serializedModel.exists()){
-            throw new RuntimeException(serializedModel.getAbsolutePath()+"already exists");
-        }
 
         lkTreeBoost.serialize(serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());
@@ -661,12 +672,13 @@ public class Exp3 {
     }
 
     static String[] sampleTrain(Config config, SingleLabelIndex index){
+        System.out.println("deciding which documents should go into the training set ...");
         int numDocsInIndex = index.getNumDocs();
         String[] trainIds = null;
         if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
             String splitField = config.getString("index.splitField");
-            trainIds = IntStream.range(0, numDocsInIndex).
-                    filter(i -> index.getStringField("" + i, splitField).
+            trainIds = IntStream.range(0, numDocsInIndex).parallel()
+                    .filter(i -> index.getStringField("" + i, splitField).
                             equalsIgnoreCase("train")).
                     mapToObj(i -> "" + i).collect(Collectors.toList()).
                     toArray(new String[0]);
@@ -684,7 +696,7 @@ public class Exp3 {
         } else {
             throw new RuntimeException("illegal split fashion");
         }
-
+        System.out.println("done");
         return trainIds;
     }
 
@@ -710,15 +722,19 @@ public class Exp3 {
         return idTranslator;
     }
 
+    // todo: can be optimized
     static LabelTranslator loadLabelTranslator(Config config, SingleLabelIndex index) throws Exception{
+        System.out.println("loading label translator ...");
         int numClasses = config.getInt("numClasses");
         int numDocs = index.getNumDocs();
         Map<Integer, String> map = new HashMap<>(numClasses);
-        for (int i=0;i<numDocs;i++){
-            int intLabel = index.getLabel(""+i);
-            String extLabel = index.getExtLabel("" + i);
-            map.put(intLabel,extLabel);
+        List<Pair<Integer,String>> pairList = IntStream.range(0,numDocs).parallel()
+                .mapToObj(i -> new Pair<>(index.getLabel(""+i),index.getExtLabel("" + i)))
+                .collect(Collectors.toList());
+        for (Pair<Integer,String> pair: pairList){
+            map.put(pair.getFirst(),pair.getSecond());
         }
+        System.out.println("loaded");
         return new LabelTranslator(map);
     }
 
@@ -814,10 +830,12 @@ public class Exp3 {
     }
 
     static DFStats loadDFStats(Config config, SingleLabelIndex index, IdTranslator trainIdTranslator) throws IOException {
+        System.out.println("loading initial unigram seeds");
         DFStats dfStats = new DFStats(config.getInt("numClasses"));
         String[] trainIds = trainIdTranslator.getAllExtIds();
         dfStats.update(index,trainIds);
         dfStats.sort();
+        System.out.println("loaded");
         return dfStats;
     }
 
