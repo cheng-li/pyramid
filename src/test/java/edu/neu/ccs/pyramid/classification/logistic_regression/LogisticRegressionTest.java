@@ -74,7 +74,7 @@ public class LogisticRegressionTest {
         System.out.println(dataSet.getMetaInfo());
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        logisticRegression.setFeatureExtraction(true);
+        logisticRegression.setFeatureExtraction(false);
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
         LBFGS lbfgs = new LBFGS(function,5);
         for (int i=0;i<20;i++){
