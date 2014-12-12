@@ -9,7 +9,7 @@ import java.io.*;
 /**
  * Created by chengli on 12/7/14.
  */
-class Weights implements Serializable {
+public class Weights implements Serializable {
     private static final long serialVersionUID = 1L;
     private int numClasses;
     private int numFeatures;
@@ -57,7 +57,7 @@ class Weights implements Serializable {
      *
      * @return weights for all classes
      */
-    Vector getAllWeights() {
+    public Vector getAllWeights() {
         return weightVector;
     }
 
