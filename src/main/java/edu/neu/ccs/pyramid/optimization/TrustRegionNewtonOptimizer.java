@@ -1,5 +1,6 @@
-package edu.neu.ccs.pyramid.classification.logistic_regression;
+package edu.neu.ccs.pyramid.optimization;
 
+import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeBinaryLogisticLoss;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
