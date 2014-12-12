@@ -35,6 +35,7 @@ public class DFStats implements Serializable {
 
     }
 
+    //todo only match train ids
     public void update(SingleLabelIndex esIndex) throws IOException {
         IntStream.range(0, esIndex.getNumDocs()).parallel()
                 .forEach(id -> this.updateByOneDoc(esIndex, "" + id));

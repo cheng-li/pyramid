@@ -1,7 +1,10 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
+import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
+
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by chengli on 9/13/14.
@@ -17,6 +20,20 @@ public class DFStat implements Serializable {
         this.numClasses = numClasses;
         this.phrase = phrase;
         this.dfForClasses = new long[numClasses];
+    }
+
+    public DFStat(int numClasses, String term, SingleLabelIndex index, String[] ids) {
+        this(numClasses,term);
+        List<String> docs = null;
+        try {
+            docs = index.getDocs(term,ids);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        for (String doc: docs){
+            int label = index.getLabel(doc);
+            this.dfForClasses[label] += 1;
+        }
     }
 
     public long getDf() {
@@ -41,6 +58,18 @@ public class DFStat implements Serializable {
 
     public String getPhrase() {
         return phrase;
+    }
+
+    public int getBestMatchedClass(){
+        int match = 0;
+        long maxDf = 0;
+        for (int i=0;i<numClasses;i++){
+            if (dfForClasses[i]>maxDf){
+                match = i;
+                maxDf = dfForClasses[i];
+            }
+        }
+        return match;
     }
 
     @Override
