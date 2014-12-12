@@ -18,28 +18,45 @@ public class LBFGS {
     /**
      * history length;
      */
-    private double m;
+    private double m = 5;
     private LinkedList<Vector> sQueue;
     private LinkedList<Vector> yQueue;
     private LinkedList<Double> rhoQueue;
+    /**
+     * stop condition
+     */
+    private double epsilon = 1;
 
-    public LBFGS(Optimizable.ByGradientValue function,
-                                    int historyLength) {
+    public LBFGS(Optimizable.ByGradientValue function) {
         this.function = function;
         this.lineSearcher = new BackTrackingLineSearcher(function);
         lineSearcher.setInitialStepLength(1);
-        this.m = historyLength;
         this.sQueue = new LinkedList<>();
         this.yQueue = new LinkedList<>();
         this.rhoQueue = new LinkedList<>();
     }
 
-    public void update(){
+    public void optimize(){
+        LinkedList<Double> valueQueue = new LinkedList<>();
+        valueQueue.add(function.getValue(function.getParameters()));
+        iterate();
+        valueQueue.add(function.getValue(function.getParameters()));
+        while(true){
+            if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<epsilon){
+                break;
+            }
+            iterate();
+            valueQueue.remove();
+            valueQueue.add(function.getValue(function.getParameters()));
+        }
+
+    }
+
+    public void iterate(){
         Vector parameters = function.getParameters();
         Vector oldGradient = function.getGradient();
         Vector direction = findDirection();
         double stepLength = lineSearcher.findStepLength(direction);
-        System.out.println("stepLength="+stepLength);
         Vector s = direction.times(stepLength);
         Vector updatedParams = parameters.plus(s);
         parameters.assign(updatedParams);
@@ -109,8 +126,11 @@ public class LBFGS {
         return (s.dot(y)) / (y.dot(y));
     }
 
-    public void setHistoryLength(double m) {
+    public void setHistory(double m) {
         this.m = m;
     }
 
+    public void setEpsilon(double epsilon) {
+        this.epsilon = epsilon;
+    }
 }

@@ -11,15 +11,13 @@ import edu.neu.ccs.pyramid.optimization.LBFGS;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
-
 public class LogisticRegressionTest {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test3();
+        test4();
 
     }
 
@@ -76,15 +74,33 @@ public class LogisticRegressionTest {
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         logisticRegression.setFeatureExtraction(false);
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
-        LBFGS lbfgs = new LBFGS(function,5);
+        LBFGS lbfgs = new LBFGS(function);
         for (int i=0;i<20;i++){
             System.out.println("--------");
             System.out.println("iteration "+i);
-            lbfgs.update();
+            lbfgs.iterate();
             System.out.println("loss: " + function.getValue(logisticRegression.getWeights().getAllWeights()));
             System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
         }
+
+    }
+
+    private static void test4() throws Exception{
+
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println(dataSet.getMetaInfo());
+
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        logisticRegression.setFeatureExtraction(false);
+        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
+        LBFGS lbfgs = new LBFGS(function);
+        lbfgs.optimize();
+        System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
+        System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
 
     }
 

@@ -2,26 +2,67 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.Vector;
+import edu.neu.ccs.pyramid.optimization.LBFGS;
 
 
 /**
  * Created by chengli on 11/28/14.
  */
 public class RidgeLogisticTrainer {
-    public static LogisticRegression train(ClfDataSet clfDataSet, double regularization){
-        Vector C = new DenseVector(clfDataSet.getNumDataPoints());
-        for (int i=0;i<C.size();i++){
-            C.set(i,regularization);
-        }
-        RidgeBinaryLogisticLoss function = new RidgeBinaryLogisticLoss(clfDataSet, C);
-        LogisticRegression logisticRegression =     new LogisticRegression(2,clfDataSet.getNumFeatures());
+    private double gaussianPriorVariance = 1;
+    private double epsilon = 1;
+    private int history = 5;
+
+
+    public static Builder getBuilder(){
+        return new Builder();
+    }
+
+    public LogisticRegression train(ClfDataSet clfDataSet){
+
+        LogisticRegression logisticRegression = new LogisticRegression(clfDataSet.getNumClasses(),clfDataSet.getNumFeatures());
         for (int j=0;j<clfDataSet.getNumFeatures();j++){
             logisticRegression.setFeatureName(j,clfDataSet.getFeatureSetting(j).getFeatureName());
         }
-        TrustRegionNewtonOptimizer trustRegionNewtonOptimizer = new TrustRegionNewtonOptimizer(function,0.000001);
-        trustRegionNewtonOptimizer.tron(logisticRegression.getWeights().getWeightsForClass(1));
+
+        logisticRegression.setFeatureExtraction(false);
+        LogisticLoss function = new LogisticLoss(logisticRegression,clfDataSet,gaussianPriorVariance);
+        LBFGS lbfgs = new LBFGS(function);
+        lbfgs.setEpsilon(epsilon);
+        lbfgs.setHistory(history);
+        lbfgs.optimize();
         return logisticRegression;
     }
+
+    public static class Builder {
+        private double gaussianPriorVariance = 1;
+        private double epsilon = 1;
+        private int history = 5;
+
+        public Builder setGaussianPriorVariance(double gaussianPriorVariance) {
+            this.gaussianPriorVariance = gaussianPriorVariance;
+            return this;
+        }
+
+        public Builder setEpsilon(double epsilon) {
+            this.epsilon = epsilon;
+            return this;
+        }
+
+        public Builder setHistory(int history) {
+            this.history = history;
+            return this;
+        }
+
+        public RidgeLogisticTrainer build(){
+            RidgeLogisticTrainer trainer = new RidgeLogisticTrainer();
+            trainer.gaussianPriorVariance = this.gaussianPriorVariance;
+            trainer.epsilon = this.epsilon;
+            trainer.history = this.history;
+            return trainer;
+        }
+    }
+
+
+
 }
