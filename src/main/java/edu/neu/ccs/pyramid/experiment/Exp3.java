@@ -17,10 +17,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -287,6 +284,14 @@ public class Exp3 {
             Set<String> set = new HashSet<>();
             set.addAll(dfStats.getSortedTerms(i,config.getInt("seeds.initial.minDf"),config.getInt("seeds.initial.size")));
             seedsForAllClasses.add(set);
+        }
+
+        //todo fix options
+        List<DFStat> initialSeeds = loadInitialSeeds(config,index,trainIdTranslator);
+        for (DFStat dfStat: initialSeeds){
+            String term = dfStat.getPhrase();
+            int label = dfStat.getBestMatchedClass();
+            seedsForAllClasses.get(label).add(term);
         }
 
         Set<String> blackList = new HashSet<>();
@@ -837,6 +842,20 @@ public class Exp3 {
         dfStats.sort();
         System.out.println("loaded");
         return dfStats;
+    }
+
+    static List<DFStat> loadInitialSeeds(Config config, SingleLabelIndex index, IdTranslator trainIdTranslator) throws Exception{
+        File seedsFile = new File(config.getString("seeds.file"));
+        List<String> seeds = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(seedsFile))){
+            String line = null;
+            while ((line=br.readLine())!=null){
+                seeds.add(line);
+            }
+        }
+        return seeds.stream().parallel()
+                .map(seed -> new DFStat(config.getInt("numClasses"),seed,index, trainIdTranslator.getAllExtIds()))
+                .collect(Collectors.toList());
     }
 
     static void dumpTrainFeatures(Config config, SingleLabelIndex index, IdTranslator idTranslator) throws Exception{
