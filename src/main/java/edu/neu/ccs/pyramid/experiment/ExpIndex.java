@@ -33,6 +33,8 @@ package edu.neu.ccs.pyramid.experiment;
  * 29: index imdb_stopwords
  * 30: given logistic regression coefficients, print top features
  * 31: feature extraction by logistic regression
+ * 32: given feature indices, get feature names
+ * 33: logistic regression
  */
 public class ExpIndex {
 
