@@ -81,6 +81,7 @@ public class SingleLabelIndex extends ESIndex{
         return response;
     }
 
+    //todo only match train ids
     public long phraseDFForClass(String bodyField, String phrase,
                                  int slop,
                                  String labelField, int label) {
@@ -89,6 +90,7 @@ public class SingleLabelIndex extends ESIndex{
         return response.getHits().getTotalHits();
     }
 
+    //todo only match train ids
     public long DFForClass(String bodyField, String phrase,
                            MatchQueryBuilder.Operator operator,
                            String labelField, int label) {
