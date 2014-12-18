@@ -3,7 +3,7 @@ package edu.neu.ccs.pyramid.regression.regression_tree;
 /**
  * Created by chengli on 8/5/14.
  */
-class SplitResult {
+public class SplitResult {
     private int featureIndex;
     private double threshold;
     private double reduction;
@@ -49,7 +49,7 @@ class SplitResult {
     }
 
 
-    int getFeatureIndex() {
+    public int getFeatureIndex() {
         return featureIndex;
     }
 
@@ -57,7 +57,7 @@ class SplitResult {
         return threshold;
     }
 
-    double getReduction() {
+    public double getReduction() {
         return reduction;
     }
 

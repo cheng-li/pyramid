@@ -6,12 +6,14 @@ import edu.neu.ccs.pyramid.dataset.FeatureType;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 8/6/14.
  */
-class Splitter {
+public class Splitter {
     /**
      *
      * @param regTreeConfig
@@ -29,6 +31,31 @@ class Splitter {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
+    }
+
+
+    public static List<SplitResult> getAllSplits(RegTreeConfig regTreeConfig,
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       double[] probs){
+        int[] activeFeatures = regTreeConfig.getActiveFeatures();
+        return Arrays.stream(activeFeatures).parallel()
+                .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
+                        probs,featureIndex))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
+    public static List<SplitResult> getAllSplits(RegTreeConfig regTreeConfig,
+                                                 DataSet dataSet,
+                                                 double[] labels
+                                                 ){
+        double[] probs = new double[labels.length];
+        for (int i=0;i<labels.length;i++){
+            probs[i] = 1;
+        }
+        return getAllSplits(regTreeConfig,dataSet,labels,probs);
     }
 
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
