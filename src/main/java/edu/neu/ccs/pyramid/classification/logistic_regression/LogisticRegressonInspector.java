@@ -25,4 +25,19 @@ public class LogisticRegressonInspector {
                 .map(i -> new Pair<>(i, featureNames[i]))
                 .collect(Collectors.toList());
     }
+
+    public static List<Pair<Integer,String>> topFeatures(LogisticRegression logisticRegression,
+                                                         int k,
+                                                         int limit){
+        String[] featureNames = logisticRegression.getFeatureNames();
+        Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
+        return IntStream.range(0,weights.size()).mapToObj(i -> new Pair<>(i,weights.get(i)))
+                .filter(pair -> pair.getSecond()>0)
+                .sorted(comparator.reversed())
+                .map(Pair::getFirst)
+                .map(i -> new Pair<>(i, featureNames[i]))
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
 }

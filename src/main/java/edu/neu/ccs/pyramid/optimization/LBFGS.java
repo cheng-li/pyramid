@@ -25,7 +25,7 @@ public class LBFGS {
     /**
      * stop condition
      */
-    private double epsilon = 1;
+    private double epsilon = 0.1;
 
     public LBFGS(Optimizable.ByGradientValue function) {
         this.function = function;

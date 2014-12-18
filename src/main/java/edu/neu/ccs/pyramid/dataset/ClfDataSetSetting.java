@@ -48,7 +48,7 @@ public class ClfDataSetSetting implements Serializable {
      * users should use the utility method instead
      * @param featureMappers
      */
-    void setFeatureMappers(FeatureMappers featureMappers) {
+    public void setFeatureMappers(FeatureMappers featureMappers) {
         this.featureMappers = featureMappers;
     }
 

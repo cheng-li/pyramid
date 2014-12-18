@@ -64,6 +64,10 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
         }
     }
 
+    public double getValue(){
+        return getValue(logisticRegression.getWeights().getAllWeights());
+    }
+
     @Override
     public double getValue(Vector parameters) {
         LogisticRegression tmpFunction = new LogisticRegression(this.logisticRegression.getNumClasses(),

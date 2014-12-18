@@ -42,6 +42,25 @@ public class PriorProbClassifier implements ProbabilityEstimator{
                 .get().getFirst();
     }
 
+    /**
+     * gradient for class k
+     * @param k
+     * @return
+     */
+    public double[] getGradient(ClfDataSet clfDataSet, int k){
+        int numDataPoints = clfDataSet.getNumDataPoints();
+        double[] gradient = new double[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            int label = clfDataSet.getLabels()[i];
+            if (label==k){
+                gradient[i] = 1- probs[label];
+            } else {
+                gradient[i] = 0 - probs[label];
+            }
+        }
+        return gradient;
+    }
+
     @Override
     public int predict(Vector vector) {
         return this.topClass;
