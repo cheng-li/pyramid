@@ -277,21 +277,41 @@ public class Exp3 {
                 .setMinDf(config.getInt("extraction.phraseExtractor.minDf"))
                 .setTopN(config.getInt("extraction.phraseExtractor.topN"));
 
-        DFStats dfStats = loadDFStats(config,index,trainIdTranslator);
+
         List<Set<String>> seedsForAllClasses = new ArrayList<>();
         for (int i=0;i<numClasses;i++){
-            //todo parameters
-            Set<String> set = new HashSet<>();
-            set.addAll(dfStats.getSortedTerms(i,config.getInt("seeds.initial.minDf"),config.getInt("seeds.initial.size")));
-            seedsForAllClasses.add(set);
+            seedsForAllClasses.add(new HashSet<>());
         }
 
+        if (config.getBoolean("seeds.initial.heuristic")){
+            DFStats dfStats = loadDFStats(config,index,trainIdTranslator);
+            for (int i=0;i<numClasses;i++){
+                //todo parameters
+                Set<String> set = new HashSet<>();
+                set.addAll(dfStats.getSortedTerms(i,config.getInt("seeds.initial.minDf"),config.getInt("seeds.initial.size")));
+                seedsForAllClasses.set(i,set);
+            }
+        }
+
+
         //todo fix options
-        List<DFStat> initialSeeds = loadInitialSeeds(config,index,trainIdTranslator);
-        for (DFStat dfStat: initialSeeds){
-            String term = dfStat.getPhrase();
-            int label = dfStat.getBestMatchedClass();
-            seedsForAllClasses.get(label).add(term);
+        if (config.getBoolean("seeds.initial.fromFile")){
+            List<DFStat> initialSeeds = loadInitialSeedsFromFile(config, index, trainIdTranslator);
+            for (DFStat dfStat: initialSeeds){
+                String term = dfStat.getPhrase();
+                int label = dfStat.getBestMatchedClass();
+                seedsForAllClasses.get(label).add(term);
+            }
+        }
+
+        if (config.getBoolean("seeds.initial.fromDataSet")){
+            List<DFStat> initialSeeds = loadInitialSeeds(config, index, trainIdTranslator);
+            for (DFStat dfStat: initialSeeds){
+                String term = dfStat.getPhrase();
+                int label = dfStat.getBestMatchedClass();
+                seedsForAllClasses.get(label).add(term);
+            }
+
         }
 
         Set<String> blackList = new HashSet<>();
@@ -844,7 +864,7 @@ public class Exp3 {
         return dfStats;
     }
 
-    static List<DFStat> loadInitialSeeds(Config config, SingleLabelIndex index, IdTranslator trainIdTranslator) throws Exception{
+    static List<DFStat> loadInitialSeedsFromFile(Config config, SingleLabelIndex index, IdTranslator trainIdTranslator) throws Exception{
         File seedsFile = new File(config.getString("seeds.file"));
         List<String> seeds = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(seedsFile))){
@@ -853,6 +873,22 @@ public class Exp3 {
                 seeds.add(line);
             }
         }
+        return seeds.stream().parallel()
+                .map(seed -> new DFStat(config.getInt("numClasses"),seed,index, trainIdTranslator.getAllExtIds()))
+                .collect(Collectors.toList());
+    }
+
+    static List<DFStat> loadInitialSeeds(Config config, SingleLabelIndex index, IdTranslator trainIdTranslator) throws Exception{
+
+        Set<String> seeds = new HashSet<>();
+        File unigramDataSetFile = new File(config.getString("seeds.unigramDataSet"));
+        ClfDataSet unigramDataSet = TRECFormat.loadClfDataSet(unigramDataSetFile,DataSetType.CLF_SPARSE,true);
+        SeedExtractor seedExtractor = new SeedExtractor(unigramDataSet);
+        for (int k=0;k<config.getInt("numClasses");k++){
+            List<String> seedForClass = seedExtractor.getSeeds(k,config.getInt("seeds.initial.size"));
+            seeds.addAll(seedForClass);
+        }
+
         return seeds.stream().parallel()
                 .map(seed -> new DFStat(config.getInt("numClasses"),seed,index, trainIdTranslator.getAllExtIds()))
                 .collect(Collectors.toList());
