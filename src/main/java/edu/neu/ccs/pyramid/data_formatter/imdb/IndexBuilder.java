@@ -31,7 +31,7 @@ public class IndexBuilder {
         builder.field("file_name",getFileName(file));
         builder.field("real_label",getExtLabel(file));
         builder.field("label",""+getLabel(file));
-        builder.field("split",getTrainOrTestFixed(file));
+        builder.field("split", getSplit(file));
         builder.endObject();
         return builder;
     }
@@ -62,12 +62,16 @@ public class IndexBuilder {
      * @return
      * @throws Exception
      */
-    static String getTrainOrTestFixed(File file) throws Exception{
+    static String getSplit(File file) throws Exception{
         String name = file.getParentFile().getParentFile().getName();
         String res = null;
         switch (name) {
             case "train":
-                res = "train";
+                if (Math.random()<0.8){
+                    res = "train";
+                } else {
+                    res = "valid";
+                }
                 break;
             case "test":
                 res = "test";

@@ -36,6 +36,8 @@ package edu.neu.ccs.pyramid.experiment;
  * 32: given feature indices, get feature names
  * 33: logistic regression
  * 34: logistic regression hyper parameter tuning
+ * 35: logistic regression feature extraction
+ *     split to train/valid/test
  */
 public class ExpIndex {
 
