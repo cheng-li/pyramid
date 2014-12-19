@@ -160,8 +160,12 @@ public class Exp14 {
                 .build();
 
         IMLGradientBoosting boosting = new IMLGradientBoosting(numClasses);
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
-        boosting.setAssignments(assignments);
+        String predictionFashion = config.getString("prediction.fashion");
+        if (predictionFashion.equalsIgnoreCase("crf")){
+            List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+            boosting.setAssignments(assignments);
+        }
+
         boosting.setPriorProbs(dataSet);
         boosting.setTrainConfig(imlgbConfig);
         //todo make it better
