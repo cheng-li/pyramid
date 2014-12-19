@@ -11,6 +11,8 @@ import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.*;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.util.Pair;
+import edu.neu.ccs.pyramid.util.Sampling;
+import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 import org.elasticsearch.action.search.SearchResponse;
@@ -203,7 +205,9 @@ public class Exp31 {
         }
 
 
-
+        LinkedList<Set<Integer>> easySets = new LinkedList<>();
+        LinkedList<Set<Integer>> hardSets = new LinkedList<>();
+        LinkedList<Set<Integer>> uncertainSets = new LinkedList<>();
 
         for (int iteration=0;iteration<numIterations;iteration++){
             System.out.println("iteration "+iteration);
@@ -252,7 +256,25 @@ public class Exp31 {
                     }
                 }
 
-                List<Integer> validationSet = focusSet.getAll();
+                easySets.add(new HashSet<Integer>(focusSet.getAll()));
+                if (easySets.size()>2){
+                    easySets.remove();
+                }
+                if (iteration>=1){
+                    int common = SetUtil.intersect(easySets.getFirst(),easySets.getLast()).size();
+                    System.out.println("between iterations "+(iteration-1)+" and "+iteration+", there are "+common
+                    +"/"+numDocsToSelect*numClasses+" common documents in the easy set.");
+                }
+
+                List<Integer> validationSet;
+                if (config.getString("extraction.validation.fashion").equals("fixed")){
+                    validationSet = focusSet.getAll();
+                } else {
+                    List<Integer> allIndices = IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i->i)
+                    .collect(Collectors.toList());
+                    validationSet = Sampling.sampleByPercentage(allIndices,config.getDouble("extraction.validation.random.percentage"));
+                }
+
 
                 for (int k=0;k<numClasses;k++){
                     double[] allGradients = logisticLoss.getDataGradient(k);
@@ -317,7 +339,24 @@ public class Exp31 {
                     }
                 }
 
-                List<Integer> validationSet = focusSet.getAll();
+                hardSets.add(new HashSet<Integer>(focusSet.getAll()));
+                if (hardSets.size()>2){
+                    hardSets.remove();
+                }
+                if (iteration>=1){
+                    int common = SetUtil.intersect(hardSets.getFirst(),hardSets.getLast()).size();
+                    System.out.println("between iterations "+(iteration-1)+" and "+iteration+", there are "+common
+                            +"/"+numDocsToSelect*numClasses+" common documents in the hard set.");
+                }
+
+                List<Integer> validationSet;
+                if (config.getString("extraction.validation.fashion").equals("fixed")){
+                    validationSet = focusSet.getAll();
+                } else {
+                    List<Integer> allIndices = IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i->i)
+                            .collect(Collectors.toList());
+                    validationSet = Sampling.sampleByPercentage(allIndices,config.getDouble("extraction.validation.random.percentage"));
+                }
 
                 for (int k=0;k<numClasses;k++){
 
@@ -381,7 +420,24 @@ public class Exp31 {
                     focusSet.add(dataPoint,label);
                 }
 
-                List<Integer> validationSet = focusSet.getAll();
+                uncertainSets.add(new HashSet<Integer>(focusSet.getAll()));
+                if (uncertainSets.size()>2){
+                    uncertainSets.remove();
+                }
+                if (iteration>=1){
+                    int common = SetUtil.intersect(uncertainSets.getFirst(),uncertainSets.getLast()).size();
+                    System.out.println("between iterations "+(iteration-1)+" and "+iteration+", there are "+common
+                            +"/"+numDocsToSelect*numClasses+" common documents in the uncertain set.");
+                }
+
+                List<Integer> validationSet;
+                if (config.getString("extraction.validation.fashion").equals("fixed")){
+                    validationSet = focusSet.getAll();
+                } else {
+                    List<Integer> allIndices = IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i->i)
+                            .collect(Collectors.toList());
+                    validationSet = Sampling.sampleByPercentage(allIndices,config.getDouble("extraction.validation.random.percentage"));
+                }
 
                 for (int k=0;k<numClasses;k++){
 
