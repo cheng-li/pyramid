@@ -5,7 +5,6 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
-import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * logistic regression feature extraction
+ * dump unigram features
  * split to train/valid/test
  * Created by chengli on 12/19/14.
  *
@@ -62,44 +61,41 @@ public class Exp35 {
 
     static String[] sampleTrain(Config config, SingleLabelIndex index){
         int numDocsInIndex = index.getNumDocs();
-        String[] trainIds = null;
-        if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
-            String splitField = config.getString("index.splitField");
-            trainIds = IntStream.range(0, numDocsInIndex).
-                    filter(i -> index.getStringField("" + i, splitField).
-                            equalsIgnoreCase("train")).
-                    mapToObj(i -> "" + i).collect(Collectors.toList()).
-                    toArray(new String[0]);
-        } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
-            double trainPercentage = config.getDouble("split.random.trainPercentage");
-            int[] labels = new int[numDocsInIndex];
-            for (int i=0;i<labels.length;i++){
-                labels[i] = index.getLabel(""+i);
-            }
-            List<Integer> sample = Sampling.stratified(labels, trainPercentage);
-            trainIds = new String[sample.size()];
-            for (int i=0;i<trainIds.length;i++){
-                trainIds[i] = ""+sample.get(i);
-            }
-        } else {
-            throw new RuntimeException("illegal split fashion");
-        }
+        String[] ids = null;
 
-        return trainIds;
+        String splitField = config.getString("index.splitField");
+        ids = IntStream.range(0, numDocsInIndex).parallel()
+                .filter(i -> index.getStringField("" + i, splitField).
+                        equalsIgnoreCase("train")).
+                mapToObj(i -> "" + i).collect(Collectors.toList()).
+                toArray(new String[0]);
+        return ids;
     }
 
-    static String[] sampleTest(int numDocsInIndex, String[] trainIndexIds){
-        Set<String> test = new HashSet<>(numDocsInIndex);
-        for (int i=0;i<numDocsInIndex;i++){
-            test.add(""+i);
-        }
-        List<String> _trainIndexIds = new ArrayList<>(trainIndexIds.length);
-        for (String id: trainIndexIds){
-            _trainIndexIds.add(id);
-        }
+    static String[] sampleTest(Config config, SingleLabelIndex index){
+        int numDocsInIndex = index.getNumDocs();
+        String[] ids = null;
 
-        test.removeAll(_trainIndexIds);
-        return test.toArray(new String[0]);
+        String splitField = config.getString("index.splitField");
+        ids = IntStream.range(0, numDocsInIndex).parallel().
+                filter(i -> index.getStringField("" + i, splitField).
+                        equalsIgnoreCase("test")).
+                mapToObj(i -> "" + i).collect(Collectors.toList()).
+                toArray(new String[0]);
+        return ids;
+    }
+
+    static String[] sampleValid(Config config, SingleLabelIndex index){
+        int numDocsInIndex = index.getNumDocs();
+        String[] ids = null;
+
+        String splitField = config.getString("index.splitField");
+        ids = IntStream.range(0, numDocsInIndex).parallel().
+                filter(i -> index.getStringField("" + i, splitField).
+                        equalsIgnoreCase("valid")).
+                mapToObj(i -> "" + i).collect(Collectors.toList()).
+                toArray(new String[0]);
+        return ids;
     }
 
     static IdTranslator loadIdTranslator(String[] indexIds) throws Exception{
@@ -290,6 +286,18 @@ public class Exp35 {
         return dataSet;
     }
 
+    static ClfDataSet loadValidData(Config config, SingleLabelIndex index,
+                                   FeatureMappers featureMappers, IdTranslator idTranslator,
+                                   LabelTranslator labelTranslator) throws Exception{
+        System.out.println("creating validation set");
+
+        int totalDim = featureMappers.getTotalDim();
+
+        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelTranslator);
+        System.out.println("validation set created");
+        return dataSet;
+    }
+
     static LabelTranslator loadLabelTranslator(Config config, SingleLabelIndex index) throws Exception{
         int numClasses = config.getInt("numClasses");
         int numDocs = index.getNumDocs();
@@ -397,12 +405,20 @@ public class Exp35 {
             dumpTrainFeatures(config,index,trainIdTranslator);
         }
 
-        String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
+        String[] testIndexIds = sampleTest(config,index);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
 
         ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelTranslator);
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
+
+        String[] validIndexIds = sampleValid(config,index);
+        IdTranslator validIdTranslator = loadIdTranslator(validIndexIds);
+
+        ClfDataSet validDataSet = loadValidData(config,index,featureMappers,validIdTranslator,labelTranslator);
+        DataSetUtil.setFeatureMappers(validDataSet,featureMappers);
+        saveDataSet(config, validDataSet, config.getString("archive.validSet"));
+
         if (config.getBoolean("archive.dumpFields")){
             dumpTestFeatures(config,index,testIdTranslator);
         }
