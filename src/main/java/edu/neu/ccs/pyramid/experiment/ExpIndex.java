@@ -38,6 +38,7 @@ package edu.neu.ccs.pyramid.experiment;
  * 34: logistic regression hyper parameter tuning via cross validation
  * 35: dump unigram features
  *     split to train/valid/test
+ * 36: logistic regression hyper parameter tuning with validation set
  *
  */
 public class ExpIndex {
