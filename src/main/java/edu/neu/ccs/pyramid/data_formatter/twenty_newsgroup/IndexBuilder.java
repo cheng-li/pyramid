@@ -30,7 +30,7 @@ public class IndexBuilder {
         builder.field("file_name",getFileName(file));
         builder.field("real_label",getExtLabel(file));
         builder.field("label",""+getLabel(file));
-        builder.field("split",getTrainOrTestRandom(id));
+        builder.field("split", getSplit(id));
         builder.endObject();
         return builder;
     }
@@ -59,10 +59,12 @@ public class IndexBuilder {
      * @return
      * @throws Exception
      */
-    static String getTrainOrTestRandom(int id) throws Exception{
+    static String getSplit(int id) throws Exception{
         String res = null;
-        if (id%10==0){
+        if ( id%5==0){
             res = "test";
+        } else if (id%5==1){
+            res = "valid";
         } else {
             res = "train";
         }

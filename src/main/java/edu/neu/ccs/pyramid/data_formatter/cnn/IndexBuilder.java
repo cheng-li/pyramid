@@ -3,7 +3,6 @@ package edu.neu.ccs.pyramid.data_formatter.cnn;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ public class IndexBuilder {
         builder.field("title",split[2]);
         builder.field("body",split[5]);
         builder.field("label",""+map.get(split[1]));
-        builder.field("split",getTrainOrTest(id));
+        builder.field("split", getSplit(id));
         builder.endObject();
         return builder;
     }
@@ -49,10 +48,12 @@ public class IndexBuilder {
                 &&!split[5].trim().equals(""));
     }
 
-    static String getTrainOrTest(int id) {
+    static String getSplit(int id) {
         String res = null;
         if ( id%10==0){
             res = "test";
+        } else if (id%10==1){
+            res = "valid";
         } else {
             res = "train";
         }

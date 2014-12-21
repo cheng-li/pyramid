@@ -52,8 +52,10 @@ public class IndexBuilder {
 
     static String getTrainOrTest(int id) {
         String res = null;
-        if ( id%10==0){
+        if ( id%5==0){
             res = "test";
+        } else if (id%5==1){
+            res = "valid";
         } else {
             res = "train";
         }
