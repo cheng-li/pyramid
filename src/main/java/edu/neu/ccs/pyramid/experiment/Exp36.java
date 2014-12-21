@@ -13,7 +13,7 @@ import edu.neu.ccs.pyramid.util.Sampling;
 import java.io.File;
 
 /**
- * logistic regression hyper parameter tuning with validation set  
+ * logistic regression hyper parameter tuning with validation set
  * Created by chengli on 12/20/14.
  */
 public class Exp36 {
