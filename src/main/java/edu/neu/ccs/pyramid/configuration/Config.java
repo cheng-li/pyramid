@@ -59,6 +59,19 @@ public class Config {
         return Integer.parseInt(this.properties.getProperty(key));
     }
 
+    public List<String> getStrings(String key){
+        if (!containsKey(key)){
+            throw new IllegalArgumentException("config does not contain the key "+key);
+        }
+        List<String> list = new ArrayList<>();
+        String values = this.properties.getProperty(key);
+        String[] valuesSplit = values.split(",");
+        for (String valueString: valuesSplit){
+            list.add(valueString.trim());
+        }
+        return list;
+    }
+
     public List<Integer> getIntegers(String key){
         if (!containsKey(key)){
             throw new IllegalArgumentException("config does not contain the key "+key);
