@@ -353,10 +353,15 @@ public class Exp37 {
                     blackList.addAll(goodPhrases);
 
 
-                    for (String phrase:goodPhrases){
+                    List<Pair<String,SearchResponse>> searchResponseList = goodPhrases.stream().parallel()
+                            .map(phrase -> new Pair<>(phrase,index.matchPhrase(index.getBodyField(),
+                                    phrase,trainIdTranslator.getAllExtIds(), 0)))
+                            .collect(Collectors.toList());
+
+                    for (Pair<String,SearchResponse> pair: searchResponseList){
+                        String phrase = pair.getFirst();
+                        SearchResponse response = pair.getSecond();
                         int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.matchPhrase(index.getBodyField(),
-                                phrase,trainIdTranslator.getAllExtIds(), 0);
                         for (SearchHit hit: response.getHits().getHits()){
                             String indexId = hit.getId();
                             int algorithmId = trainIdTranslator.toIntId(indexId);
@@ -369,6 +374,8 @@ public class Exp37 {
                                 setSource("matching_score").build();
                         featureMappers.addMapper(mapper);
                     }
+
+
                 }
             }
 
@@ -437,10 +444,15 @@ public class Exp37 {
                     blackList.addAll(goodPhrases);
 
 
-                    for (String phrase:goodPhrases){
+                    List<Pair<String,SearchResponse>> searchResponseList = goodPhrases.stream().parallel()
+                            .map(phrase -> new Pair<>(phrase,index.matchPhrase(index.getBodyField(),
+                                    phrase,trainIdTranslator.getAllExtIds(), 0)))
+                            .collect(Collectors.toList());
+
+                    for (Pair<String,SearchResponse> pair: searchResponseList){
+                        String phrase = pair.getFirst();
+                        SearchResponse response = pair.getSecond();
                         int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.matchPhrase(index.getBodyField(),
-                                phrase,trainIdTranslator.getAllExtIds(), 0);
                         for (SearchHit hit: response.getHits().getHits()){
                             String indexId = hit.getId();
                             int algorithmId = trainIdTranslator.toIntId(indexId);
@@ -516,10 +528,15 @@ public class Exp37 {
                     blackList.addAll(goodPhrases);
 
 
-                    for (String phrase:goodPhrases){
+                    List<Pair<String,SearchResponse>> searchResponseList = goodPhrases.stream().parallel()
+                            .map(phrase -> new Pair<>(phrase,index.matchPhrase(index.getBodyField(),
+                                    phrase,trainIdTranslator.getAllExtIds(), 0)))
+                            .collect(Collectors.toList());
+
+                    for (Pair<String,SearchResponse> pair: searchResponseList){
+                        String phrase = pair.getFirst();
+                        SearchResponse response = pair.getSecond();
                         int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.matchPhrase(index.getBodyField(),
-                                phrase,trainIdTranslator.getAllExtIds(), 0);
                         for (SearchHit hit: response.getHits().getHits()){
                             String indexId = hit.getId();
                             int algorithmId = trainIdTranslator.toIntId(indexId);
