@@ -16,6 +16,7 @@ import java.util.List;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
+ * index subjectivity
  * Created by chengli on 12/21/14.
  */
 public class Exp39 {

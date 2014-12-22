@@ -38,3 +38,5 @@
   36: logistic regression hyper parameter tuning with validation set
   37: feature extraction by logistic regression, with train/valid/test split
   38: index sentence polarity
+  39: index subjectivity
+  40: index amazon review
