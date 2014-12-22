@@ -9,7 +9,6 @@ import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.FeatureMappers;
 import edu.neu.ccs.pyramid.feature.NumericalFeatureMapper;
-import edu.neu.ccs.pyramid.feature_extraction.DFStat;
 import edu.neu.ccs.pyramid.feature_extraction.FocusSet;
 import edu.neu.ccs.pyramid.feature_extraction.PhraseSplitExtractor;
 import edu.neu.ccs.pyramid.feature_extraction.SeedExtractor;
@@ -255,21 +254,9 @@ public class Exp37 {
                 .setMinDf(config.getInt("extraction.phraseExtractor.minDf"))
                 .setTopN(config.getInt("extraction.phraseExtractor.topN"));
 
-        List<Set<String>> seedsForAllClasses = new ArrayList<>();
-        for (int i=0;i<numClasses;i++){
-            seedsForAllClasses.add(new HashSet<>());
-        }
+        List<Set<String>> seedsForAllClasses = loadInitialSeeds(config,dataSet);
 
         Set<String> blackList = new HashSet<>();
-
-
-        List<DFStat> initialSeeds = loadInitialSeeds(config, index,dataSet);
-        for (DFStat dfStat: initialSeeds){
-            String term = dfStat.getPhrase();
-            int label = dfStat.getBestMatchedClass();
-            seedsForAllClasses.get(label).add(term);
-            blackList.add(term);
-        }
 
 
         LinkedList<Set<Integer>> easySets = new LinkedList<>();
@@ -602,20 +589,20 @@ public class Exp37 {
 
 
 
-    static List<DFStat> loadInitialSeeds(Config config, SingleLabelIndex index, ClfDataSet trainSet) throws Exception{
-
-        Set<String> seeds = new HashSet<>();
+    static List<Set<String>> loadInitialSeeds(Config config, ClfDataSet trainSet) throws Exception{
+        int numClasses = trainSet.getNumClasses();
+        List<Set<String>> seedsForAllClasses = new ArrayList<>();
+        for (int i=0;i<numClasses;i++){
+            seedsForAllClasses.add(new HashSet<>());
+        }
 
         SeedExtractor seedExtractor = new SeedExtractor(trainSet);
         for (int k=0;k<trainSet.getNumClasses();k++){
             List<String> seedForClass = seedExtractor.getSeeds(k,config.getInt("seeds.initial.size"));
-            seeds.addAll(seedForClass);
+            seedsForAllClasses.get(k).addAll(seedForClass);
         }
+        return seedsForAllClasses;
 
-        return seeds.stream().parallel()
-                .map(seed -> new DFStat(trainSet.getNumClasses(),seed,index,
-                        trainSet.getSetting().getIdTranslator().getAllExtIds()))
-                .collect(Collectors.toList());
     }
 
     static void dumpFeatures(Config config, SingleLabelIndex index, IdTranslator idTranslator, String fileName) throws Exception{
