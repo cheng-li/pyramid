@@ -33,12 +33,10 @@ public class PhraseSplitExtractor {
     private int topN =20;
     private IdTranslator idTranslator;
     private int minDataPerLeaf = 2;
-    private PhraseDetector phraseDetector;
 
     public PhraseSplitExtractor(ESIndex index, IdTranslator idTranslator) {
         this.index = index;
         this.idTranslator = idTranslator;
-        this.phraseDetector = new PhraseDetector(index).setMinDf(this.minDf);
 
     }
 
@@ -49,7 +47,6 @@ public class PhraseSplitExtractor {
 
     public PhraseSplitExtractor setMinDf(int minDf) {
         this.minDf = minDf;
-        this.phraseDetector.setMinDf(minDf);
         return this;
     }
 
@@ -73,10 +70,16 @@ public class PhraseSplitExtractor {
         if (this.topN==0){
             return goodPhrases;
         }
-
-        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds);
+        System.out.println("gathering...");
+        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds, validationSet);
+        System.out.println("done");
+        System.out.println("filtering...");
         List<PhraseInfo> candidates = filter(allPhrases,blacklist);
-        return rankBySplit(candidates,validationSet,residuals);
+        System.out.println("done");
+        System.out.println("ranking");
+        List<String> ranked = rankBySplit(candidates,validationSet,residuals);
+        System.out.println("done");
+        return ranked;
     }
 
     public List<PhraseInfo> filter(Collection<PhraseInfo> phraseInfos, Set<String> blacklist){
@@ -90,7 +93,13 @@ public class PhraseSplitExtractor {
     //todo
     private Collection<PhraseInfo> gather(FocusSet focusSet,
                                         int classIndex,
-                                        Set<String> seeds){
+                                        Set<String> seeds,
+                                        List<Integer> validationSet){
+        String[] validationIndexIds = validationSet.parallelStream()
+                .map(this.idTranslator::toExtId)
+                .toArray(String[]::new);
+        PhraseDetector phraseDetector = new PhraseDetector(index,validationIndexIds).setMinDf(this.minDf);
+
         List<Integer> dataPoints = focusSet.getDataClassK(classIndex);
 
         List<Set<PhraseInfo>> phrasesList = dataPoints.parallelStream()

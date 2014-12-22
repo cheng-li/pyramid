@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 
 public class PhraseDetectorTest {
@@ -31,6 +32,8 @@ public class PhraseDetectorTest {
         ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         Map<Integer,String> map = index.getTermVector("1");
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
 
 
 
@@ -40,7 +43,7 @@ public class PhraseDetectorTest {
         List<DFStat> list = dfStats.getSortedDFStats(0,20);
         list.stream().limit(100).forEach(dfStat -> references.add(dfStat.getPhrase()));
         System.out.println(references);
-        PhraseDetector phraseDetector = new PhraseDetector(index).setMinDf(20);
+        PhraseDetector phraseDetector = new PhraseDetector(index,validIds).setMinDf(20);
         System.out.println(phraseDetector.getPhraseInfos(map, references));
         index.close();
     }
@@ -50,7 +53,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(9);
         System.out.println(detector.exploreLeft(map, 28));
         index.close();
@@ -62,7 +67,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("648");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(20);
         System.out.println(detector.exploreLeft(map, 90));
         index.close();
@@ -74,7 +81,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(9);
         System.out.println(detector.exploreRight(map, 26));
         index.close();
@@ -86,7 +95,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("648");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(20);
         System.out.println(detector.exploreRight(map, 89));
         index.close();
@@ -98,7 +109,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(9);
         List<PhraseInfo> left = detector.exploreLeft(map, 27);
         System.out.println("left");
@@ -118,7 +131,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(9);
         Set<PhraseInfo> all = detector.getPhraseInfos(map,27);
         System.out.println(all);
@@ -131,7 +146,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(9);
         Set<PhraseInfo> all = detector.getPhraseInfos(map,26);
         System.out.println(all);
@@ -144,7 +161,9 @@ public class PhraseDetectorTest {
                 .build();
         Map<Integer,String> map = index.getTermVector("231");
         System.out.println(map);
-        PhraseDetector detector = new PhraseDetector(index);
+        int numData = index.getNumDocs();
+        String[] validIds = IntStream.range(0,numData).mapToObj(i-> ""+i).toArray(String[]::new);
+        PhraseDetector detector = new PhraseDetector(index,validIds);
         detector.setMinDf(9);
         Set<PhraseInfo> all = detector.getPhraseInfos(map,28);
         System.out.println(all);

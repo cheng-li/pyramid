@@ -21,7 +21,7 @@ public class PhraseDetector {
     private LoadingCache<String, PhraseInfo> phraseInfoCache;
 
     //todo only look into the training set?
-    public PhraseDetector(ESIndex index) {
+    public PhraseDetector(ESIndex index, String[] validationIds) {
         this.index = index;
         this.phraseInfoCache = CacheBuilder.newBuilder().maximumSize(10000)
                 .build(new CacheLoader<String, PhraseInfo>() {
@@ -29,7 +29,7 @@ public class PhraseDetector {
                     public PhraseInfo load(String phrase) throws Exception {
                         PhraseInfo phraseInfo = new PhraseInfo(phrase);
                         SearchResponse searchResponse = index.matchPhrase(index.getBodyField(),
-                                phrase,0);
+                                phrase,validationIds,0);
                         phraseInfo.setSearchResponse(searchResponse);
                         return phraseInfo;
                     }
