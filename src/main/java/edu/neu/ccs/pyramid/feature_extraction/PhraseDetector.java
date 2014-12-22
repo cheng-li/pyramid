@@ -23,7 +23,7 @@ public class PhraseDetector {
     //todo only look into the training set?
     public PhraseDetector(ESIndex index, String[] validationIds) {
         this.index = index;
-        this.phraseInfoCache = CacheBuilder.newBuilder().maximumSize(10000)
+        this.phraseInfoCache = CacheBuilder.newBuilder().maximumSize(1000000)
                 .build(new CacheLoader<String, PhraseInfo>() {
                     @Override
                     public PhraseInfo load(String phrase) throws Exception {
