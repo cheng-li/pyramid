@@ -222,10 +222,10 @@ public class DataSetUtil {
             return;
         }
         int[] labels = dataSet.getLabels();
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> {
             dataSet.getDataPointSetting(i)
                     .setExtLabel(labelTranslator.toExtLabel(labels[i]));
-        }
+        });
         dataSet.getSetting().setLabelTranslator(labelTranslator);
     }
 
@@ -371,9 +371,8 @@ public class DataSetUtil {
      * @param idTranslator
      */
     public static void setIdTranslator(ClfDataSet dataSet, IdTranslator idTranslator){
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            dataSet.getDataPointSetting(i).setExtId(idTranslator.toExtId(i));
-        }
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i -> dataSet.getDataPointSetting(i).setExtId(idTranslator.toExtId(i)));
         dataSet.getSetting().setIdTranslator(idTranslator);
     }
 

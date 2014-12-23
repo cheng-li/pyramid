@@ -5,13 +5,16 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -174,12 +177,19 @@ public class Exp35 {
 
     static List<String> gatherUnigrams(Config config, SingleLabelIndex index,
                                        String[] ids) throws Exception{
+        System.out.println("gathering unigrams...");
         int minDf = config.getInt("minDf");
-        Set<String> unigrams = new HashSet<>();
-        for (String id: ids) {
-            Set<TermStat> termStats = index.getTermStats(id);
+        Set<String> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        Arrays.stream(ids).parallel().forEach(id -> {
+            Set<TermStat> termStats = null;
+            try {
+                termStats = index.getTermStats(id);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(termStat -> unigrams.add(termStat.getTerm()));
-        }
+        });
+        System.out.println("done");
         return unigrams.stream().sorted().collect(Collectors.toList());
     }
 
@@ -204,11 +214,13 @@ public class Exp35 {
                 .numClasses(numClasses).dense(!config.getBoolean("featureMatrix.sparse"))
                 .missingValue(config.getBoolean("featureMatrix.missingValue"))
                 .build();
-        for(int i=0;i<numDataPoints;i++){
-            String dataIndexId = idTranslator.toExtId(i);
-            int label = index.getLabel(dataIndexId);
-            dataSet.setLabel(i,label);
-        }
+
+        IntStream.range(0,numDataPoints).parallel()
+                .forEach(i -> {
+                    String dataIndexId = idTranslator.toExtId(i);
+                    int label = index.getLabel(dataIndexId);
+                    dataSet.setLabel(i,label);
+                });
 
         String[] dataIndexIds = idTranslator.getAllExtIds();
 
@@ -298,15 +310,19 @@ public class Exp35 {
         return dataSet;
     }
 
+    //todo speed up and only look at train
     static LabelTranslator loadLabelTranslator(Config config, SingleLabelIndex index) throws Exception{
+        System.out.println("loading label translator...");
         int numClasses = config.getInt("numClasses");
         int numDocs = index.getNumDocs();
-        Map<Integer, String> map = new HashMap<>(numClasses);
-        for (int i=0;i<numDocs;i++){
+        Map<Integer, String> map = new ConcurrentHashMap<>();
+        while(map.size()<numClasses){
+            int i = Sampling.intUniform(0,numDocs-1);
             int intLabel = index.getLabel(""+i);
             String extLabel = index.getExtLabel("" + i);
             map.put(intLabel,extLabel);
         }
+        System.out.println("loaded");
         return new LabelTranslator(map);
     }
 
