@@ -22,14 +22,14 @@ public class Weights implements Serializable {
      */
     private double[] serializableWeights;
 
-    Weights(int numClasses, int numFeatures) {
+    public Weights(int numClasses, int numFeatures) {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
         this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
-    Weights(int numClasses, int numFeatures, Vector weightVector) {
+    public Weights(int numClasses, int numFeatures, Vector weightVector) {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         if (weightVector.size()!=(numFeatures + 1)*numClasses){
@@ -39,7 +39,7 @@ public class Weights implements Serializable {
         this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
-    int getClassIndex(int parameterIndex){
+    public int getClassIndex(int parameterIndex){
         return parameterIndex/(numFeatures+1);
     }
 
@@ -49,7 +49,7 @@ public class Weights implements Serializable {
      * @return feature index
      * -1 means bias
      */
-    int getFeatureIndex(int parameterIndex){
+    public int getFeatureIndex(int parameterIndex){
         return parameterIndex - getClassIndex(parameterIndex)*(numFeatures+1) -1;
     }
 
@@ -61,7 +61,7 @@ public class Weights implements Serializable {
         return weightVector;
     }
 
-    int totalSize(){
+    public int totalSize(){
         return weightVector.size();
     }
 
@@ -70,7 +70,7 @@ public class Weights implements Serializable {
      * @param k class index
      * @return weights for class k, including bias at the beginning
      */
-    Vector getWeightsForClass(int k){
+    public Vector getWeightsForClass(int k){
         int start = (this.numFeatures+1)*k;
         int length = this.numFeatures +1;
         return new VectorView(this.weightVector,start,length);
@@ -81,7 +81,7 @@ public class Weights implements Serializable {
      * @param k
      * @return weights for class k, no bias
      */
-    Vector getWeightsWithoutBiasForClass(int k){
+    public Vector getWeightsWithoutBiasForClass(int k){
         int start = (this.numFeatures+1)*k + 1;
         int length = this.numFeatures;
         return new VectorView(this.weightVector,start,length);
@@ -92,7 +92,7 @@ public class Weights implements Serializable {
      * @param k
      * @return bias
      */
-    double getBiasForClass(int k){
+    public double getBiasForClass(int k){
         int start = (this.numFeatures+1)*k;
         return this.weightVector.get(start);
     }
