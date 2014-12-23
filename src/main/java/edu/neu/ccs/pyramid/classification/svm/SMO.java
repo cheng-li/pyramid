@@ -31,6 +31,11 @@ public class SMO implements Classifier {
     private Map<Integer, Map<Integer, Double>> cacheKernel;   // kenel_(i,j)
     private Map<Integer, Double> errorCache;
 
+    // test
+    private int class1 = 0;
+    private int class2 = 0;
+    private int class3 = 0;
+
 
     public SMO(double C, double toler, double eps, int maxIter, String kernel) {
         this.C = C;
@@ -100,6 +105,7 @@ public class SMO implements Classifier {
             if (nonBoundIndexes.size() > 1) {
                 int i1 = selectJ(i2, E2, nonBoundIndexes);
                 if (takeStep(i1, i2, y2, alpha2, E2)) {
+                    class1++;
                     return 1;
                 }
             }
@@ -108,6 +114,7 @@ public class SMO implements Classifier {
             for (int k=0; k<nonBoundIndexes.size(); k++) {
                 int i1 = nonBoundIndexes.get(k);
                 if (takeStep(i1, i2, y2, alpha2, E2)) {
+                    class2++;
                     return 1;
                 }
             }
@@ -116,6 +123,7 @@ public class SMO implements Classifier {
 //                System.out.println(k + ": " + entireIndexes[k]);
                 int i1 = entireIndexes[k];
                 if (takeStep(i1, i2, y2, alpha2, E2)) {
+                    class3++;
                     return 1;
                 }
             }
@@ -196,7 +204,7 @@ public class SMO implements Classifier {
 
         // Step 8: update b
         double b1 = b + E1 + (a1-alpha1)*y1*K11 + (a2-alpha2)*y2*K12;
-        double b2 = b + E2 + (a2-alpha1)*y1*K12 + (a2-alpha2)*y2*K22;
+        double b2 = b + E2 + (a1-alpha1)*y1*K12 + (a2-alpha2)*y2*K22;
         double bOld = b;
         if (a1 > 0 && a1 < C) {
             b = b1;
@@ -382,6 +390,7 @@ public class SMO implements Classifier {
         String str = new String();
         str = "C= " + C + ",  toler= " + toler + ", eps= " + eps
                 + ", kernel= " + kernel + ", #sv: " + nonBoundaries.size();
+        str += "class1: " + class1 + ", class2: " + class2 + ", class3: " + class3;
         return str;
     }
 }

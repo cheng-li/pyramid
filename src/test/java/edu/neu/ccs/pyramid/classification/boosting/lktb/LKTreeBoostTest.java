@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.eval.*;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +27,8 @@ public class LKTreeBoostTest {
 //        spam_missing_all();
 //        mnist_all();
 //        classic3_all();
-        bingyu_all();
+//        bingyu_all();
+        faculty_all();
     }
 
     static void spam_resume_train() throws Exception{
@@ -564,6 +566,90 @@ public class LKTreeBoostTest {
     static void bingyu_all() throws Exception{
         bingyu_train();
         bingyu_test();
+    }
+
+    static void faculty_all() throws  Exception{
+        faculty_train();
+        faculty_test();
+    }
+
+    private static void faculty_test() throws Exception {
+        ArrayList<String> arrayList = new ArrayList<>();
+
+        System.out.println("loading ensemble");
+        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+
+        System.out.println("--------------------------------");
+        ClfDataSet dataSet1 = TRECFormat.loadClfDataSet(new File(DATASETS, "faculty/train.trec"), DataSetType.CLF_DENSE, false);
+        System.out.println(dataSet1.getMetaInfo());
+        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet1);
+        double auc = AUC.auc(lkTreeBoost, dataSet1);
+        double precision = Precision.precision(lkTreeBoost, dataSet1,1);
+        double recall = Recall.recall(lkTreeBoost, dataSet1, 0);
+        double f1 = FMeasure.f1(precision,recall);
+        System.out.println("auc="+auc);
+        System.out.println("accuracy="+accuracy);
+        System.out.println("precision="+precision);
+        System.out.println("recall="+recall);
+        System.out.println("f1="+f1);
+
+        System.out.println("--------------------------------");
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"faculty/test.trec"),DataSetType.CLF_DENSE,false);
+
+        System.out.println(dataSet.getMetaInfo());
+        accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        auc = AUC.auc(lkTreeBoost, dataSet);
+        precision = Precision.precision(lkTreeBoost, dataSet,1);
+        recall = Recall.recall(lkTreeBoost, dataSet, 1);
+        f1 = FMeasure.f1(precision,recall);
+        System.out.println("auc="+auc);
+        System.out.println("accuracy="+accuracy);
+        System.out.println("precision="+precision);
+        System.out.println("recall="+recall);
+        System.out.println("f1="+f1);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        System.out.println(confusionMatrix.printWithIntLabels());
+
+        List<Integer> topFeatureIndex = LKTBInspector.topFeatureIndices(lkTreeBoost,0);
+        System.out.println("Top non-influence features index:"+topFeatureIndex);
+
+//        int[] predicts = lkTreeBoost.predict(dataSet);
+//        int[] labels = dataSet.getLabels();
+//        for (int i=0; i<predicts.length; i++) {
+//            if (predicts[i] != labels[i]) {
+//                System.out.println("DataPoint: " + i);
+//                System.out.println(LKTBInspector.analyzeMistake(lkTreeBoost,dataSet.getRow(i),
+//                        labels[i], predicts[i], labelTranslator, 100));
+//            }
+//        }
+    }
+
+    private static void faculty_train() throws Exception {
+
+        ClfDataSet dataSet  = TRECFormat.loadClfDataSet(new File(DATASETS,"faculty/train.trec"),DataSetType.CLF_DENSE,false);
+        System.out.println(dataSet.getMetaInfo());
+        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
+                .numLeaves(3).learningRate(0.5).numSplitIntervals(1000)
+                .dataSamplingRate(1).featureSamplingRate(1).build();
+        lkTreeBoost.setPriorProbs(dataSet);
+        lkTreeBoost.setTrainConfig(trainConfig);
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int round =0;round<100;round++){
+            System.out.println("round="+round);
+            lkTreeBoost.boostOneRound();
+        }
+        stopWatch.stop();
+        System.out.println(stopWatch);
+
+
+        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        System.out.println(accuracy);
+
+        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+
     }
 
     static void bingyu_test() throws Exception{

@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.LibSvmFormat;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Created by chengli on 11/11/14.
@@ -14,22 +15,15 @@ import java.io.File;
 public class Trec2LibSvm {
     public static void main(String[] args) throws Exception {
         Config config = new Config(args[0]);
-        String trecTrain = config.getString("trecTrain");
-        String trecTest = config.getString("trecTest");
-        String libSVMTrain = config.getString("libSVMTrain");
-        String libSVMTest = config.getString("libSVMTest");
+        List<String> trecs = config.getStrings("trec");
+        List<String> libSVMs = config.getStrings("libSVM");
 
 
-        ClfDataSet trainDataSet = TRECFormat.loadClfDataSet(new File(trecTrain),
-                DataSetType.CLF_DENSE, true);
-
-        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(trecTest),
-                DataSetType.CLF_DENSE, true);
-
-        System.out.println("Translating Trec to libSVM for training...");
-        LibSvmFormat.save(trainDataSet, libSVMTrain);
-        System.out.println("Translating Trec to libSVM for testing...");
-        LibSvmFormat.save(testDataset, libSVMTest);
-
+        for (int i=0; i<trecs.size(); i++) {
+            ClfDataSet trecDataset = TRECFormat.loadClfDataSet(new File(trecs.get(i)),
+                    DataSetType.CLF_SPARSE, false);
+            System.out.println(i + " -- Trainslating on trecs: " + trecs.get(i));
+            LibSvmFormat.save(trecDataset, libSVMs.get(i));
+        }
     }
 }
