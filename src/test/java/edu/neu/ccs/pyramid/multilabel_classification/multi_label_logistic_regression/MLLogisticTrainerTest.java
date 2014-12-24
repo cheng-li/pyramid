@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -19,7 +20,8 @@ public class MLLogisticTrainerTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test3();
+        test5_train();
+        test5_test();
     }
 
 
@@ -193,6 +195,36 @@ public class MLLogisticTrainerTest {
 
         System.out.println(Accuracy.accuracy(mlLogisticRegression,dataSet));
         System.out.println(Overlap.overlap(mlLogisticRegression,dataSet));
+    }
+
+
+
+
+    /**
+     * ohsumed 20000
+     * @throws Exception
+     */
+    private static void test5_train() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"/ohsumed/unigrams/train.trec")
+        ,DataSetType.ML_CLF_SPARSE,true);
+        System.out.println(dataSet.getMetaInfo());
+        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet).stream()
+                .collect(Collectors.toList());
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(1).setGaussianPriorVariance(1)
+                .setHistory(5).build();
+        MLLogisticRegression mlLogisticRegression =trainer.train(dataSet,assignments);
+        System.out.println("training accuracy = " +Accuracy.accuracy(mlLogisticRegression,dataSet));
+        mlLogisticRegression.serialize(new File(TMP,"model"));
+
+    }
+
+    private static void test5_test() throws Exception{
+        MLLogisticRegression mlLogisticRegression = MLLogisticRegression.deserialize(new File(TMP,"model"));
+
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"/ohsumed/unigrams/test.trec")
+                ,DataSetType.ML_CLF_SPARSE,true);
+        System.out.println("test accuracy = " +Accuracy.accuracy(mlLogisticRegression,testSet));
+        System.out.println("test overlap = " + Overlap.overlap(mlLogisticRegression,testSet));
     }
 
 }

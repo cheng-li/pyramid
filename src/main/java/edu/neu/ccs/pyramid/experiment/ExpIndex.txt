@@ -40,3 +40,5 @@
   38: index sentence polarity
   39: index subjectivity
   40: index amazon review
+  41: multi-label logistic regression
+  42: multi-label logistic regression hyper parameter tuning via cross-validation
