@@ -156,8 +156,9 @@ public class HMLGBTrainer {
         int numAssignments = assignments.size();
         for (int a=0;a<numAssignments;a++){
             MultiLabel assignment = assignments.get(a);
+            double prob = assignmentProbs[a];
             for (Integer label:assignment.getMatchedLabels()){
-                classProbs[label] += assignmentProbs[label];
+                classProbs[label] += prob;
             }
         }
         return classProbs;

@@ -16,7 +16,7 @@ public class RidgeLogisticTrainerTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test1();
+        test2();
     }
 
     private static void test1() throws Exception{
@@ -28,6 +28,23 @@ public class RidgeLogisticTrainerTest {
         RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
                 .setEpsilon(1)
                 .setGaussianPriorVariance(0.5)
+                .setHistory(5)
+                .build();
+
+        LogisticRegression logisticRegression = trainer.train(dataSet);
+        System.out.println("train: "+ Accuracy.accuracy(logisticRegression, dataSet));
+        System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
+    }
+
+    private static void test2() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println(dataSet.getMetaInfo());
+        RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
+                .setEpsilon(0.01)
+                .setGaussianPriorVariance(10000)
                 .setHistory(5)
                 .build();
 

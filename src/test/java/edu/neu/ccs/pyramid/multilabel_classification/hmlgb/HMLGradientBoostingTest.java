@@ -21,8 +21,8 @@ public class HMLGradientBoostingTest {
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
 //       spam_all();
-        test2_all();
-//        test3_all();
+//        test2_all();
+        test3_all();
 //        test4();
     }
 
@@ -166,7 +166,7 @@ public class HMLGradientBoostingTest {
 
 
         HMLGBConfig trainConfig = new HMLGBConfig.Builder(dataSet)
-                .numLeaves(100).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
+                .numLeaves(10).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
@@ -176,7 +176,7 @@ public class HMLGradientBoostingTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (int round =0;round<20;round++){
+        for (int round =0;round<30;round++){
             System.out.println("round="+round);
             boosting.boostOneRound();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
@@ -294,7 +294,7 @@ public class HMLGradientBoostingTest {
 
 
         HMLGBConfig trainConfig = new HMLGBConfig.Builder(dataSet)
-                .numLeaves(100).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
+                .numLeaves(2).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
@@ -304,14 +304,14 @@ public class HMLGradientBoostingTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (int round =0;round<10;round++){
+        for (int round =0;round<100;round++){
             System.out.println("round="+round);
             boosting.boostOneRound();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
-            System.out.println(Arrays.toString(boosting.getGradients(0)));
-            System.out.println(Arrays.toString(boosting.getGradients(1)));
-            System.out.println(Arrays.toString(boosting.getGradients(2)));
-            System.out.println(Arrays.toString(boosting.getGradients(3)));
+//            System.out.println(Arrays.toString(boosting.getGradients(0)));
+//            System.out.println(Arrays.toString(boosting.getGradients(1)));
+//            System.out.println(Arrays.toString(boosting.getGradients(2)));
+//            System.out.println(Arrays.toString(boosting.getGradients(3)));
 
         }
         stopWatch.stop();
