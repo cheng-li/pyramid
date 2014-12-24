@@ -184,7 +184,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         return score;
     }
 
-    private double[] calClassScores(Vector vector){
+     double[] calClassScores(Vector vector){
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){
