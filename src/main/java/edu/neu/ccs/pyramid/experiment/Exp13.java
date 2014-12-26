@@ -163,8 +163,14 @@ public class Exp13 {
         List<MultiLabel> legalAssignments = DataSetUtil.gatherLabels(dataSet).stream()
                 .collect(Collectors.toList());
 
-        HMLGradientBoosting boosting = new HMLGradientBoosting(numClasses,legalAssignments);
-        boosting.setPriorProbs(dataSet);
+        HMLGradientBoosting boosting;
+        if (config.getBoolean("train.warmStart")){
+            boosting = HMLGradientBoosting.deserialize(new File(archive,modelName));
+        } else {
+            boosting = new HMLGradientBoosting(numClasses,legalAssignments);
+            boosting.setPriorProbs(dataSet);
+        }
+
         boosting.setTrainConfig(hmlgbConfig);
 
         //todo make it better
@@ -174,6 +180,7 @@ public class Exp13 {
             System.out.println("iteration "+i);
             boosting.boostOneRound();
             if (config.getBoolean("train.showPerformanceEachRound")){
+                System.out.println("model size = "+boosting.getRegressors(0).size());
                 System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
                         dataSet));
                 System.out.println("overlap on training set = "+ Overlap.overlap(boosting, dataSet));

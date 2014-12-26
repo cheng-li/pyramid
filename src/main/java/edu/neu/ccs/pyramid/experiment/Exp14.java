@@ -159,14 +159,22 @@ public class Exp14 {
                 .numSplitIntervals(config.getInt("train.numSplitIntervals"))
                 .build();
 
-        IMLGradientBoosting boosting = new IMLGradientBoosting(numClasses);
-        String predictionFashion = config.getString("prediction.fashion");
-        if (predictionFashion.equalsIgnoreCase("crf")){
-            List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
-            boosting.setAssignments(assignments);
+        IMLGradientBoosting boosting;
+        if (config.getBoolean("train.warmStart")){
+            boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
+        } else {
+            boosting  = new IMLGradientBoosting(numClasses);
+            String predictionFashion = config.getString("prediction.fashion");
+            if (predictionFashion.equalsIgnoreCase("crf")){
+                List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+                boosting.setAssignments(assignments);
+            }
+            boosting.setPriorProbs(dataSet);
         }
 
-        boosting.setPriorProbs(dataSet);
+
+
+
         boosting.setTrainConfig(imlgbConfig);
         //todo make it better
         boosting.setActiveFeatures(activeFeatures);
@@ -175,6 +183,7 @@ public class Exp14 {
             System.out.println("iteration "+i);
             boosting.boostOneRound();
             if (config.getBoolean("train.showPerformanceEachRound")){
+                System.out.println("model size = "+boosting.getRegressors(0).size());
                 System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
                         dataSet));
                 System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
