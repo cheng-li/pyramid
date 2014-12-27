@@ -61,9 +61,9 @@ public class IndexBuilder {
         if ( id%5==0){
             res = "valid";
         } else if ( id%5==1){
-            res = "train";
+            res = "test";
         } else {
-        res = "test";
+        res = "train";
         }
 
         return res;
