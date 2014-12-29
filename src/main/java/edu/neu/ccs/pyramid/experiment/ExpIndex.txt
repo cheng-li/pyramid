@@ -44,3 +44,5 @@
   42: multi-label logistic regression hyper parameter tuning via cross-validation
   43: index question classification
   44: index blog gender
+  45: index wipo
+  46: index trec spam
