@@ -8,7 +8,7 @@
   8: index Ohsumed_20000
   9: merge 20nesgroup into 8 classes
   10: ecoc
-  11: for single label dataset, dump unigram features
+  11: for single label dataset, dump unigram features (documented config)
   12: for multi label dataset, dump unigram features
   13: hmlgb
   14: imlgb
@@ -36,7 +36,9 @@
   35: dump unigram features
       split to train/valid/test
   36: logistic regression hyper parameter tuning with validation set
-  37: feature extraction by logistic regression, with train/valid/test split
+  37:  feature extraction by logistic regression, with train/valid/test split
+       start with all unigrams
+       only extract ngrams
   38: index sentence polarity
   39: index subjectivity
   40: index amazon review
@@ -46,3 +48,6 @@
   44: index blog gender
   45: index wipo
   46: index trec spam
+  47: feature extraction by logistic regression, with train/valid/test split
+      start with specified features
+      extract both unigrams and ngrams
