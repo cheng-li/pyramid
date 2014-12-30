@@ -179,7 +179,7 @@ public class Exp35 {
                                        String[] ids) throws Exception{
         System.out.println("gathering unigrams...");
         int minDf = config.getInt("minDf");
-        Set<String> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        Set<TermStat> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<TermStat, Boolean>());
         Arrays.stream(ids).parallel().forEach(id -> {
             Set<TermStat> termStats = null;
             try {
@@ -187,10 +187,13 @@ public class Exp35 {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(termStat -> unigrams.add(termStat.getTerm()));
+            termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(unigrams::add);
         });
         System.out.println("done");
-        return unigrams.stream().sorted().collect(Collectors.toList());
+        return unigrams.stream().sorted(Comparator.comparing(TermStat::getTerm))
+                .sorted(Comparator.comparing(TermStat::getDf).reversed())
+                .map(TermStat::getTerm)
+                .collect(Collectors.toList());
     }
 
     static void addUnigramFeatures(FeatureMappers featureMappers,List<String> unigrams){

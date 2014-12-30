@@ -31,6 +31,8 @@ import java.util.stream.IntStream;
 
 /**
  * feature extraction by logistic regression, with train/valid/test split
+ * start with all unigrams
+ * only extract ngrams
  * Created by chengli on 12/20/14.
  */
 public class Exp37 {

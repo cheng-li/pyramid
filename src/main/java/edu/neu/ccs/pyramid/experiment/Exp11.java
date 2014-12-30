@@ -12,7 +12,9 @@ import org.elasticsearch.search.SearchHit;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -177,13 +179,20 @@ public class Exp11 {
     }
 
     static List<String> gatherUnigrams(Config config, SingleLabelIndex index,
-                                   String[] ids) throws Exception{
+                                       String[] ids) throws Exception{
+        System.out.println("gathering unigrams...");
         int minDf = config.getInt("minDf");
-        Set<String> unigrams = new HashSet<>();
-        for (String id: ids) {
-            Set<TermStat> termStats = index.getTermStats(id);
+        Set<String> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        Arrays.stream(ids).parallel().forEach(id -> {
+            Set<TermStat> termStats = null;
+            try {
+                termStats = index.getTermStats(id);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(termStat -> unigrams.add(termStat.getTerm()));
-        }
+        });
+        System.out.println("done");
         return unigrams.stream().sorted().collect(Collectors.toList());
     }
 
