@@ -37,8 +37,8 @@ public class TermTfidfSplitExtractor {
      * max number of good ngrams to return for each class
      */
     //TODO: different for different class
-    private int topN;
-    private IdTranslator idTranslator;
+    private int topN = 20;
+    IdTranslator idTranslator;
     /**
      * in the whole collection
      */
@@ -61,6 +61,12 @@ public class TermTfidfSplitExtractor {
         this.topN = topN;
     }
 
+    public TermTfidfSplitExtractor(ESIndex index,
+                                   IdTranslator idTranslator) {
+        this.index = index;
+        this.idTranslator = idTranslator;
+    }
+
     public TermTfidfSplitExtractor setMinDf(int minDf) {
         this.minDf = minDf;
         return this;
@@ -74,6 +80,10 @@ public class TermTfidfSplitExtractor {
     public TermTfidfSplitExtractor setMinDataPerLeaf(int minDataPerLeaf) {
         this.minDataPerLeaf = minDataPerLeaf;
         return this;
+    }
+
+    public void setTopN(int topN) {
+        this.topN = topN;
     }
 
     /**
@@ -104,6 +114,12 @@ public class TermTfidfSplitExtractor {
         Collection<TermStat> termStats = gather(focusSet,classIndex);
         List<String> termCandidates = filter(termStats,blacklist);
         return rankBySplit(termCandidates,validationSet,residuals);
+    }
+
+    List<String> getCandidates(FocusSet focusSet, int classIndex, Set<String> blacklist){
+        Collection<TermStat> termStats = gather(focusSet,classIndex);
+        List<String> termCandidates = filter(termStats,blacklist);
+        return termCandidates;
     }
 
 
@@ -194,7 +210,7 @@ public class TermTfidfSplitExtractor {
      * @param residuals
      * @return
      */
-    private double splitScore(String term,
+    double splitScore(String term,
                               String[] validationSet,
                               double[] residuals){
         int numDataPoints = validationSet.length;

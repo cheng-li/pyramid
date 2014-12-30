@@ -82,6 +82,15 @@ public class PhraseSplitExtractor {
         return ranked;
     }
 
+    List<PhraseInfo> getCandidates(FocusSet focusSet,int classIndex,
+                               Set<String> seeds,List<Integer> validationSet,
+                               Set<String> blacklist){
+        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds, validationSet);
+        List<PhraseInfo> candidates = filter(allPhrases,blacklist);
+        return candidates;
+
+    }
+
     public List<PhraseInfo> filter(Collection<PhraseInfo> phraseInfos, Set<String> blacklist){
         return phraseInfos.parallelStream()
                 .filter(phraseInfo ->
@@ -137,7 +146,7 @@ public class PhraseSplitExtractor {
 
     }
 
-    private double splitScore(PhraseInfo phraseInfo,
+    double splitScore(PhraseInfo phraseInfo,
                               String[] validationSet,
                               double[] residuals){
         int numDataPoints = validationSet.length;
