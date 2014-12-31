@@ -703,7 +703,7 @@ public class Exp47 {
         File initialDataSetFile = new File(config.getString("input.initialDataSets"),"train.trec");
         ClfDataSet initialDataSet = TRECFormat.loadClfDataSet(initialDataSetFile, DataSetType.CLF_SPARSE, true);
         File initialFeatureFile = new File(config.getString("input.initialFeatureFile"));
-        String[] line = FileUtils.readFileToString(initialFeatureFile).split(" ");
+        String[] line = FileUtils.readLines(initialFeatureFile).get(0).split(" ");
         List<String> unigrams = Arrays.stream(line).map(Integer::parseInt)
                 .map(i-> initialDataSet.getFeatureSetting(i).getFeatureName()).collect(Collectors.toList());
         System.out.println("initial features:");

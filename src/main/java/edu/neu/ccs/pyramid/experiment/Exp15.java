@@ -424,27 +424,30 @@ public class Exp15 {
         System.out.println("seeds loaded");
         Set<String> blackList = new HashSet<>();
 
-        //start the matrix with the seeds
-        //may have duplicates, but should not be a big deal
+        Set<String> allSeeds = new HashSet<>();
         for(Set<String> seeds: seedsForAllClasses){
-            for (String term: seeds){
-                int featureIndex = featureMappers.nextAvailable();
-                SearchResponse response = index.match(index.getBodyField(),
-                        term,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
-                for (SearchHit hit: response.getHits().getHits()){
-                    String indexId = hit.getId();
-                    int algorithmId = trainIdTranslator.toIntId(indexId);
-                    float score = hit.getScore();
-                    dataSet.setFeatureValue(algorithmId, featureIndex,score);
-                }
-
-                NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                        setFeatureIndex(featureIndex).setFeatureName(term).
-                        setSource("matching_score").build();
-                featureMappers.addMapper(mapper);
-                blackList.add(term);
-            }
+            allSeeds.addAll(seeds);
         }
+
+
+        for (String term: allSeeds){
+            int featureIndex = featureMappers.nextAvailable();
+            SearchResponse response = index.match(index.getBodyField(),
+                    term,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
+            for (SearchHit hit: response.getHits().getHits()){
+                String indexId = hit.getId();
+                int algorithmId = trainIdTranslator.toIntId(indexId);
+                float score = hit.getScore();
+                dataSet.setFeatureValue(algorithmId, featureIndex,score);
+            }
+
+            NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
+                    setFeatureIndex(featureIndex).setFeatureName(term).
+                    setSource("matching_score").build();
+            featureMappers.addMapper(mapper);
+            blackList.add(term);
+        }
+
 
 
 
