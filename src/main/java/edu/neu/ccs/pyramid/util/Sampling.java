@@ -142,16 +142,18 @@ public class Sampling {
 
         boolean next = true;
         while(next){
-            for (int i=0;i<probs.size();i++){
+            for (Pair<Integer,Double> pair: probs){
+                int dataIndex = pair.getFirst();
+                double prob = pair.getSecond();
                 if (res.size()==size){
                     next = false;
                     break;
                 }
-                if (!res.contains(i)){
-                    BinomialDistribution distribution = new BinomialDistribution(1,probs.get(i).getSecond());
+                if (!res.contains(dataIndex)){
+                    BinomialDistribution distribution = new BinomialDistribution(1,prob);
                     int sample = distribution.sample();
                     if (sample==1){
-                        res.add(i);
+                        res.add(dataIndex);
                     }
                 }
             }

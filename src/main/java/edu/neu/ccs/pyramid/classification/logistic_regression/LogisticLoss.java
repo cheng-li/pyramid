@@ -28,8 +28,12 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
      * numDataPoints by numClasses;
      */
     private double[][] classProbMatrix;
+
+    //todo the concept is not unified in logistic regression and gradient boosting
+
     /**
-     * p_k(x_i) - y_ik
+     * actually negative gradient
+     *  y_ik - p_k(x_i)
      * numClasses by numDataPoints
      */
     private double[][] dataGradientMatrix;
@@ -156,9 +160,9 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
         int label = dataSet.getLabels()[dataPointIndex];
         for (int k=0;k<dataSet.getNumClasses();k++){
             if (k==label){
-                this.dataGradientMatrix[k][dataPointIndex] = classProbs[k] - 1;
+                this.dataGradientMatrix[k][dataPointIndex] = 1 - classProbs[k];
             } else {
-                this.dataGradientMatrix[k][dataPointIndex] = classProbs[k];
+                this.dataGradientMatrix[k][dataPointIndex] = 0 - classProbs[k];
             }
         }
     }
@@ -166,6 +170,15 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
     private void updateDataGradientMatrix(){
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(this::updataDataGradient);
+    }
+
+
+    public double[][] getClassProbMatrix() {
+        return classProbMatrix;
+    }
+
+    public double[][] getGradientMatrix() {
+        return dataGradientMatrix;
     }
 
     public double[] getDataGradient(int k){
