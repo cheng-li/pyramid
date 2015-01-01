@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.util;
 
+import org.apache.commons.math3.distribution.BinomialDistribution;
+
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -120,6 +122,42 @@ public class Sampling {
      */
     public static int intUniform(int min, int max){
         return new Random().nextInt(max - min +1) + min;
+    }
+
+    /**
+     * sample desired size from first to last with given probabilities
+     * if one pass is not enough, rotate
+     * assume non-zero probabilities
+     */
+    public static Set<Integer> rotate(List<Pair<Integer,Double>> probs, int size){
+        Set<Integer> res = new HashSet<>();
+        if (size==0){
+            return res;
+        }
+        // if not enough candidates, return all
+        if (probs.size()<size){
+            probs.stream().forEach(pair-> res.add(pair.getFirst()));
+            return res;
+        }
+
+        boolean next = true;
+        while(next){
+            for (int i=0;i<probs.size();i++){
+                if (res.size()==size){
+                    next = false;
+                    break;
+                }
+                if (!res.contains(i)){
+                    BinomialDistribution distribution = new BinomialDistribution(1,probs.get(i).getSecond());
+                    int sample = distribution.sample();
+                    if (sample==1){
+                        res.add(i);
+                    }
+                }
+            }
+
+        }
+        return res;
     }
 
 }
