@@ -212,7 +212,7 @@ public class Exp49 {
         int numClasses = dataSet.getNumClasses();
 
         String modelName = config.getString("archive.model");
-        int numDocsToSelect = config.getInt("extraction.numDocsToSelect");
+        int numDocsToSelect = config.getInt("extraction.focusSet.numDocs");
 
 
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
@@ -268,6 +268,20 @@ public class Exp49 {
 
 
         FocusSetProducer focusSetProducer = new FocusSetProducer(numClasses,dataSet.getNumDataPoints());
+        focusSetProducer.setPromotion(config.getBoolean("extraction.focusSet.promotion"));
+        focusSetProducer.setLabels(numClasses,dataSet.getLabels());
+
+        FocusSetProducer validationSetProducer = new FocusSetProducer(numClasses,dataSet.getNumDataPoints());
+        validationSetProducer.setPromotion(config.getBoolean("extraction.validationSet.promotion"));
+        validationSetProducer.setLabels(numClasses,dataSet.getLabels());
+
+        Set<String> focusSets = config.getStrings("extraction.focusSet.type").stream().collect(Collectors.toSet());
+        int numFocusSets = focusSets.size();
+        int numDocsPerFocusSet = numDocsToSelect/numFocusSets;
+
+        Set<String> validationSets = config.getStrings("extraction.validationSet.type").stream().collect(Collectors.toSet());
+        int numValidationSets = validationSets.size();
+        int numDocsPerValidationSet = config.getInt("extraction.validationSet.numDocs")/numValidationSets;
 
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
@@ -293,78 +307,121 @@ public class Exp49 {
                 }
             }
 
+
+
             if (shouldExtractFeatures) {
                 FocusSet focusSet = new FocusSet(numClasses);
                 focusSetProducer.setGradientMatrix(logisticLoss.getGradientMatrix());
                 focusSetProducer.setClassProbMatrix(logisticLoss.getClassProbMatrix());
+
+
+                validationSetProducer.setGradientMatrix(logisticLoss.getGradientMatrix());
+                validationSetProducer.setClassProbMatrix(logisticLoss.getClassProbMatrix());
+
                 for (int k = 0; k < numClasses; k++) {
-                    Set<Integer> easySet = focusSetProducer.produceEasyOnes(k, numDocsToSelect);
-                    List<String> easySetIndexIds = easySet
-                            .parallelStream().map(trainIdTranslator::toExtId).sorted()
-                            .collect(Collectors.toList());
-                    System.out.println("easy set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-                    System.out.println(easySetIndexIds.toString());
-                    Set<Integer> hardSet = focusSetProducer.produceHardOnes(k, numDocsToSelect);
-                    List<String> hardSetIndexIds = hardSet
-                            .parallelStream().map(trainIdTranslator::toExtId).sorted()
-                            .collect(Collectors.toList());
-                    System.out.println("hard set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-                    System.out.println(hardSetIndexIds.toString());
-                    Set<Integer> uncertainSet = focusSetProducer.produceUncertainOnes(k, numDocsToSelect);
-                    List<String> uncertainSetIndexIds = uncertainSet
-                            .parallelStream().map(trainIdTranslator::toExtId).sorted()
-                            .collect(Collectors.toList());
-                    System.out.println("uncertain set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-                    System.out.println(uncertainSetIndexIds.toString());
-                    for (Integer dataPoint : easySet) {
-                        focusSet.add(dataPoint, k);
-                    }
-                    for (Integer dataPoint : hardSet) {
-                        focusSet.add(dataPoint, k);
-                    }
-                    for (Integer dataPoint : uncertainSet) {
-                        focusSet.add(dataPoint, k);
+
+                    if (focusSets.contains("easy")){
+                        Set<Integer> easySet = focusSetProducer.produceEasyOnes(k, numDocsPerFocusSet);
+                        List<String> easySetIndexIds = easySet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("easy set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(easySetIndexIds.toString());
+                        for (Integer dataPoint : easySet) {
+                            focusSet.add(dataPoint, k);
+                        }
+                        easySets.get(k).add(easySet);
+                        if (easySets.get(k).size() > 2) {
+                            easySets.get(k).remove();
+                        }
+                        if (iteration >= 1) {
+                            int commonEasy = SetUtil.intersect(easySets.get(k).getFirst(), easySets.get(k).getLast()).size();
+                            System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonEasy
+                                    + "/" + numDocsPerFocusSet + " common documents in the easy set.");
+                        }
                     }
 
-                    easySets.get(k).add(easySet);
-                    if (easySets.get(k).size() > 2) {
-                        easySets.get(k).remove();
+
+                    if (focusSets.contains("hard")){
+                        Set<Integer> hardSet = focusSetProducer.produceHardOnes(k, numDocsPerFocusSet);
+                        List<String> hardSetIndexIds = hardSet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("hard set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(hardSetIndexIds.toString());
+                        for (Integer dataPoint : hardSet) {
+                            focusSet.add(dataPoint, k);
+                        }
+                        hardSets.get(k).add(hardSet);
+                        if (hardSets.get(k).size() > 2) {
+                            hardSets.get(k).remove();
+                        }
+                        if (iteration >= 1) {
+                            int commonHard = SetUtil.intersect(hardSets.get(k).getFirst(), hardSets.get(k).getLast()).size();
+                            System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonHard
+                                    + "/" + numDocsPerFocusSet + " common documents in the hard set.");
+                        }
                     }
 
-                    hardSets.get(k).add(hardSet);
-                    if (hardSets.get(k).size() > 2) {
-                        hardSets.get(k).remove();
+                    if (focusSets.contains("uncertain")){
+                        Set<Integer> uncertainSet = focusSetProducer.produceUncertainOnes(k, numDocsPerFocusSet);
+                        List<String> uncertainSetIndexIds = uncertainSet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("uncertain set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(uncertainSetIndexIds.toString());
+                        for (Integer dataPoint : uncertainSet) {
+                            focusSet.add(dataPoint, k);
+                        }
+                        uncertainSets.get(k).add(uncertainSet);
+                        if (uncertainSets.get(k).size() > 2) {
+                            uncertainSets.get(k).remove();
+                        }
+                        if (iteration >= 1) {
+                            int commonUncertain = SetUtil.intersect(uncertainSets.get(k).getFirst(), uncertainSets.get(k).getLast()).size();
+                            System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonUncertain
+                                    + "/" + numDocsPerFocusSet + " common documents in the uncertain set.");
+                        }
                     }
 
-                    uncertainSets.get(k).add(uncertainSet);
-                    if (uncertainSets.get(k).size() > 2) {
-                        uncertainSets.get(k).remove();
+                    if (focusSets.contains("random")){
+                        Set<Integer> randomSet = focusSetProducer.produceRandomOnes(k, numDocsPerFocusSet);
+                        List<String> randomSetIndexIds = randomSet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("random set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(randomSetIndexIds.toString());
+                        for (Integer dataPoint : randomSet) {
+                            focusSet.add(dataPoint, k);
+                        }
+
                     }
 
-                    if (iteration >= 1) {
-                        int commonEasy = SetUtil.intersect(easySets.get(k).getFirst(), easySets.get(k).getLast()).size();
-                        System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonEasy
-                                + "/" + numDocsToSelect  + " common documents in the easy set.");
-                        int commonHard = SetUtil.intersect(hardSets.get(k).getFirst(), hardSets.get(k).getLast()).size();
-                        System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonHard
-                                + "/" + numDocsToSelect  + " common documents in the hard set.");
-                        int commonUncertain = SetUtil.intersect(uncertainSets.get(k).getFirst(), uncertainSets.get(k).getLast()).size();
-                        System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonUncertain
-                                + "/" + numDocsToSelect  + " common documents in the uncertain set.");
+
+                }
+
+
+                List<Integer> validationSet = new ArrayList<>();
+                for (int k = 0; k < numClasses; k++){
+                    if (validationSets.contains("easy")){
+                        validationSet.addAll(validationSetProducer.produceEasyOnes(k,numDocsPerValidationSet));
+                    }
+
+                    if (validationSets.contains("hard")){
+                        validationSet.addAll(validationSetProducer.produceHardOnes(k,numDocsPerValidationSet));
+                    }
+
+                    if (validationSets.contains("uncertain")){
+                        validationSet.addAll(validationSetProducer.produceUncertainOnes(k,numDocsPerValidationSet));
+                    }
+
+                    if (validationSets.contains("random")){
+                        validationSet.addAll(validationSetProducer.produceRandomOnes(k,numDocsPerValidationSet));
                     }
 
                 }
 
 
-
-                List<Integer> validationSet;
-                if (config.getString("extraction.validation.fashion").equals("fixed")) {
-                    validationSet = focusSet.getAll();
-                } else {
-                    List<Integer> allIndices = IntStream.range(0, dataSet.getNumDataPoints()).mapToObj(i -> i)
-                            .collect(Collectors.toList());
-                    validationSet = Sampling.sampleByPercentage(allIndices, config.getDouble("extraction.validation.random.percentage"));
-                }
 
 
                 for (int k = 0; k < numClasses; k++) {
@@ -474,7 +531,7 @@ public class Exp49 {
 
         SeedExtractor seedExtractor = new SeedExtractor(trainSet);
         for (int k=0;k<trainSet.getNumClasses();k++){
-            List<String> seedForClass = seedExtractor.getSeeds(k,config.getInt("seeds.initial.size"));
+            List<String> seedForClass = seedExtractor.getSeeds(k,config.getInt("extraction.seeds.initialSize"));
             seedsForAllClasses.get(k).addAll(seedForClass);
         }
         return seedsForAllClasses;
