@@ -53,6 +53,18 @@ public class Exp49 {
 
     }
 
+    public static void mainFromConfig(Config config) throws Exception{
+
+        SingleLabelIndex index = loadIndex(config);
+
+
+        train(config,index);
+
+
+        index.close();
+
+    }
+
     static void train(Config config, SingleLabelIndex index) throws Exception{
         FeatureMappers featureMappers = new FeatureMappers();
         loadInitialFeaturesFromFile(config,featureMappers);

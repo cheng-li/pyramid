@@ -25,8 +25,10 @@ public class Exp36 {
         Config config = new Config(args[0]);
         System.out.println(config);
         run(config);
+    }
 
-
+    public static Config mainFromConfig(Config config) throws Exception{
+        return run(config);
     }
 
     private static Config genHyperParams(Config config){
@@ -41,8 +43,8 @@ public class Exp36 {
 
     }
 
-    private static void run(Config config) throws Exception{
-        Config bestParams;
+    private static Config run(Config config) throws Exception{
+        Config bestParams = null;
         double bestPerformance = Double.NEGATIVE_INFINITY;
 
         Pair<ClfDataSet,ClfDataSet> dataSets = loadDataSets(config);
@@ -79,6 +81,7 @@ public class Exp36 {
                 System.out.println("**************************************");
             }
         }
+        return bestParams;
     }
 
     private static Pair<ClfDataSet, ClfDataSet> loadDataSets(Config config) throws Exception{

@@ -37,6 +37,17 @@ public class Exp33 {
 
     }
 
+    public static void mainFromConfig(Config config) throws Exception{
+        if (config.getBoolean("train")){
+            train(config);
+        }
+
+        if (config.getBoolean("verify")){
+            verify(config);
+        }
+
+    }
+
     private static void train(Config config) throws Exception{
         String input = config.getString("input.folder");
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input,"train.trec"),
