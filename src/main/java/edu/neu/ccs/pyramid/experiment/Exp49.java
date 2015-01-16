@@ -234,6 +234,11 @@ public class Exp49 {
 
         System.out.println("training model ");
 
+        int[] classCounts = new int[numClasses];
+        IntStream.range(0,dataSet.getNumDataPoints()).map(i-> dataSet.getLabels()[i])
+                .forEach(label -> classCounts[label]+=1);
+
+
         LogisticRegression logisticRegression = new LogisticRegression(numClasses,dataSet.getNumFeatures());
         logisticRegression.setFeatureExtraction(true);
         LogisticLoss logisticLoss = new LogisticLoss(logisticRegression,
@@ -293,7 +298,13 @@ public class Exp49 {
 
         Set<String> validationSets = config.getStrings("extraction.validationSet.type").stream().collect(Collectors.toSet());
         int numValidationSets = validationSets.size();
-        int numDocsPerValidationSet = config.getInt("extraction.validationSet.numDocs")/numValidationSets;
+
+        double validationPercentage = config.getDouble("extraction.validationSet.percentage");
+        int[] numDocsPerValidationSet = new int[numClasses];
+        for (int k=0;k<numClasses;k++){
+            numDocsPerValidationSet[k] = (int)(classCounts[k]*validationPercentage/numValidationSets);
+        }
+
 
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
@@ -416,19 +427,19 @@ public class Exp49 {
                 List<Integer> validationSet = new ArrayList<>();
                 for (int k = 0; k < numClasses; k++){
                     if (validationSets.contains("easy")){
-                        validationSet.addAll(validationSetProducer.produceEasyOnes(k,numDocsPerValidationSet));
+                        validationSet.addAll(validationSetProducer.produceEasyOnes(k,numDocsPerValidationSet[k]));
                     }
 
                     if (validationSets.contains("hard")){
-                        validationSet.addAll(validationSetProducer.produceHardOnes(k,numDocsPerValidationSet));
+                        validationSet.addAll(validationSetProducer.produceHardOnes(k,numDocsPerValidationSet[k]));
                     }
 
                     if (validationSets.contains("uncertain")){
-                        validationSet.addAll(validationSetProducer.produceUncertainOnes(k,numDocsPerValidationSet));
+                        validationSet.addAll(validationSetProducer.produceUncertainOnes(k,numDocsPerValidationSet[k]));
                     }
 
                     if (validationSets.contains("random")){
-                        validationSet.addAll(validationSetProducer.produceRandomOnes(k,numDocsPerValidationSet));
+                        validationSet.addAll(validationSetProducer.produceRandomOnes(k,numDocsPerValidationSet[k]));
                     }
 
                 }
