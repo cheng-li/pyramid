@@ -3,10 +3,10 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.configuration.Config;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
+ * exp49 + exp 36 + exp33
  * Created by chengli on 1/4/15.
  */
 public class Exp50 {
@@ -27,14 +27,14 @@ public class Exp50 {
 
 
 
-        Set<String> setTypes = new HashSet<>();
-        setTypes.add("easy");
-        setTypes.add("hard");
-        setTypes.add("uncertain");
-        setTypes.add("random");
-        for (String focusSetType: setTypes){
+        List<String> extractionSetTypes = new ArrayList<>();
+        List<String> validationSetTypes = new ArrayList<>();
+        Arrays.stream(config.getString("extractionSetTypes").split(";")).forEach(extractionSetTypes::add);
+        Arrays.stream(config.getString("validationSetTypes").split(";")).forEach(validationSetTypes::add);
+
+        for (String focusSetType: extractionSetTypes){
             exp49Config.setString("extraction.focusSet.type",focusSetType);
-            for (String validationSetType: setTypes){
+            for (String validationSetType: validationSetTypes){
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 System.out.println("focusSet="+focusSetType);
                 System.out.println("validationSet="+validationSetType);

@@ -160,6 +160,13 @@ public class LKTreeBoost implements ProbabilityEstimator{
         return this.lktbTrainer.getGradient(k);
     }
 
+    public double[][] getGradientMatrix(){
+        return this.lktbTrainer.getClassGradients();
+    }
+
+    public double[][] getClassProbMatrix(){
+        return this.lktbTrainer.getClassProbabilities();
+    }
 
     public double[] getClassProbs(int dataPointIndex){
         return this.lktbTrainer.getClassProbs(dataPointIndex);

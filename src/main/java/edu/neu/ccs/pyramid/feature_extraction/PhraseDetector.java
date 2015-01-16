@@ -20,7 +20,6 @@ public class PhraseDetector {
     //todo this only use slop 0
     private LoadingCache<String, PhraseInfo> phraseInfoCache;
 
-    //todo only look into the training set?
     public PhraseDetector(ESIndex index, String[] validationIds) {
         this.index = index;
         this.phraseInfoCache = CacheBuilder.newBuilder().maximumSize(1000000)

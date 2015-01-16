@@ -13,6 +13,8 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 
 import java.io.File;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * logistic regression
@@ -83,6 +85,11 @@ public class Exp33 {
         for (int k=0;k<logisticRegression.getNumClasses();k++){
             System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
             System.out.println(LogisticRegressonInspector.topFeatures(logisticRegression,k,limit));
+            List<String> longNgrams = LogisticRegressonInspector.topFeatures(logisticRegression,k,10000).stream()
+                    .map(pair -> pair.getSecond())
+                    .filter(str -> str.split(" ").length >= 3).collect(Collectors.toList());
+            System.out.println("long ngrams: ");
+            System.out.println(longNgrams);
         }
 
 

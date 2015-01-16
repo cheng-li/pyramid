@@ -65,6 +65,14 @@ class LKTBTrainer {
         this.classGradients = new double[numClasses][numDataPoints];
     }
 
+    public double[][] getClassGradients() {
+        return classGradients;
+    }
+
+    public double[][] getClassProbabilities() {
+        return classProbabilities;
+    }
+
     /**
      * parallel by classes
      * calculate gradient vectors for all classes, store them

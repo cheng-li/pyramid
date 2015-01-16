@@ -31,7 +31,7 @@ import java.util.stream.IntStream;
  * feature extraction by logistic regression, with train/valid/test split
  * start with specified features
  * extract both unigrams and ngrams
- * use probabilistic focus set
+ * use focus set with promotion
  * Created by chengli on 12/31/14.
  */
 public class Exp49 {
