@@ -33,7 +33,7 @@
   32: given feature indices, get feature names
   33: logistic regression
   34: logistic regression hyper parameter tuning via cross validation
-  35: dump unigram features
+  35: dump ngram features
       split to train/valid/test
   36: logistic regression hyper parameter tuning with validation set
   37:  feature extraction by logistic regression, with train/valid/test split

@@ -1,6 +1,11 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
+import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
+import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
+
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -8,6 +13,41 @@ import java.util.stream.Collectors;
  * Created by chengli on 1/15/15.
  */
 public class NgramEnumerator {
+
+    /**
+     * gather ngrams with document frequency >= threshold
+     * @param index
+     * @param ids
+     * @param n
+     * @param minDf
+     * @return
+     * @throws Exception
+     */
+    public static List<String> gatherNgrams(ESIndex index,
+                                     String[] ids, int n, int minDf) throws Exception{
+        Map<String,Integer> counts = new ConcurrentHashMap<>();
+        Arrays.stream(ids).parallel().forEach(id -> {
+            Map<Integer,String> termVector = index.getTermVector(id);
+            Map<String, Integer> localCount = NgramEnumerator.getNgramCounts(termVector,n);
+            for (Map.Entry<String, Integer> entry: localCount.entrySet()){
+                String ngram = entry.getKey();
+                int oldCount = counts.getOrDefault(ngram,0);
+                //document count += 1
+                int newCount = oldCount + 1;
+                counts.put(ngram,newCount);
+            }
+        });
+        return counts.entrySet().parallelStream().filter(entry -> entry.getValue()>=minDf)
+                .map(Map.Entry::getKey).collect(Collectors.toList());
+
+    }
+
+    /**
+     * ngram counts in one doc
+     * @param termVector
+     * @param n
+     * @return
+     */
     public static Map<String, Integer> getNgramCounts(Map<Integer, String> termVector, int n){
         Map<String,Integer> counts = new HashMap<>();
         Comparator<Map.Entry<Integer,String>> comparator = Comparator.comparing(Map.Entry::getKey);

@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
+import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * dump unigram features
+ * dump ngram features
  * split to train/valid/test
  * Created by chengli on 12/19/14.
  *
@@ -175,10 +176,28 @@ public class Exp35 {
         }
     }
 
-    static List<String> gatherUnigrams(Config config, SingleLabelIndex index,
-                                       String[] ids) throws Exception{
-        System.out.println("gathering unigrams...");
-        int minDf = config.getInt("minDf");
+
+
+    static List<String> gather(Config config, SingleLabelIndex index,
+                               String[] ids) throws Exception{
+        List<Integer> ns = config.getIntegers("ngram.n");
+        List<Integer> minDfs = config.getIntegers("ngram.minDf");
+        List<String> list = new ArrayList<>();
+        for (int i=0;i<ns.size();i++){
+            int n = ns.get(i);
+            int minDf = minDfs.get(i);
+            if (n==1){
+                list.addAll(gatherUnigrams(index,ids,minDf));
+            } else {
+                list.addAll(gatherNgrams(index, ids, n, minDf));
+            }
+        }
+        return list;
+    }
+
+    static List<String> gatherUnigrams(SingleLabelIndex index,
+                                       String[] ids, int minDf) throws Exception{
+        System.out.println("gathering unigrams with minDf "+minDf);
         Set<TermStat> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<TermStat, Boolean>());
         Arrays.stream(ids).parallel().forEach(id -> {
             Set<TermStat> termStats = null;
@@ -189,15 +208,28 @@ public class Exp35 {
             }
             termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(unigrams::add);
         });
-        System.out.println("done");
-        return unigrams.stream().sorted(Comparator.comparing(TermStat::getTerm))
+
+        List<String> list = unigrams.stream().sorted(Comparator.comparing(TermStat::getTerm))
                 .sorted(Comparator.comparing(TermStat::getDf).reversed())
                 .map(TermStat::getTerm)
                 .collect(Collectors.toList());
+        System.out.println("done");
+        System.out.println("there are "+list.size()+" unigrams");
+        return list;
     }
 
-    static void addUnigramFeatures(FeatureMappers featureMappers,List<String> unigrams){
-        for (String unigram: unigrams){
+    static List<String> gatherNgrams(SingleLabelIndex index,
+                                       String[] ids, int n, int minDf) throws Exception{
+
+        System.out.println("gathering "+n+"-grams with minDf "+minDf);
+        List<String> ngrams = NgramEnumerator.gatherNgrams(index,ids,n,minDf);
+        System.out.println("done");
+        System.out.println("there are "+ngrams.size()+" "+n+"-grams");
+        return ngrams;
+    }
+
+    static void addNgramFeatures(FeatureMappers featureMappers, List<String> ngrams){
+        for (String unigram: ngrams){
             int featureIndex = featureMappers.nextAvailable();
             NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
                     setFeatureIndex(featureIndex).setFeatureName(unigram).
@@ -409,8 +441,8 @@ public class Exp35 {
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
 
-        List<String> unigrams = gatherUnigrams(config,index,trainIndexIds);
-        addUnigramFeatures(featureMappers,unigrams);
+        List<String> ngrams = gather(config,index,trainIndexIds);
+        addNgramFeatures(featureMappers, ngrams);
 
 
         ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelTranslator);
