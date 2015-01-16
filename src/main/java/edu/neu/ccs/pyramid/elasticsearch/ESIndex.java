@@ -368,7 +368,7 @@ public class ESIndex {
         //todo  this admin method seems buggy!
 //        return (int)client.admin().indices().prepareStats(this.indexName)
 //                .get().getIndex(this.indexName).getTotal().getDocs().getCount();
-        SearchResponse response = client.prepareSearch(indexName).setSize(10000000).
+        SearchResponse response = client.prepareSearch(indexName).setSize(Integer.MAX_VALUE).
                 addField("").
                 setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
         //todo safe?
