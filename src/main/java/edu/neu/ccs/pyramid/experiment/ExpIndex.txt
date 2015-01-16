@@ -65,3 +65,4 @@
        use focus set with promotion
   52: index imdb_movie_genre
   53: index amazon_book_genre
+  54: check number of ngrams
