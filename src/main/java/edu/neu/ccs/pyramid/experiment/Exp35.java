@@ -69,11 +69,11 @@ public class Exp35 {
         String[] ids = null;
 
         String splitField = config.getString("index.splitField");
-        ids = IntStream.range(0, numDocsInIndex).parallel()
+        List<String> train = IntStream.range(0, numDocsInIndex).parallel()
                 .filter(i -> index.getStringField("" + i, splitField).
                         equalsIgnoreCase("train")).
-                mapToObj(i -> "" + i).collect(Collectors.toList()).
-                toArray(new String[0]);
+                        mapToObj(i -> "" + i).collect(Collectors.toList());
+        ids = train.toArray(new String[train.size()]);
         return ids;
     }
 
@@ -90,18 +90,18 @@ public class Exp35 {
         return ids;
     }
 
-    static String[] sampleValid(Config config, SingleLabelIndex index){
-        int numDocsInIndex = index.getNumDocs();
-        String[] ids = null;
-
-        String splitField = config.getString("index.splitField");
-        ids = IntStream.range(0, numDocsInIndex).parallel().
-                filter(i -> index.getStringField("" + i, splitField).
-                        equalsIgnoreCase("valid")).
-                mapToObj(i -> "" + i).collect(Collectors.toList()).
-                toArray(new String[0]);
-        return ids;
-    }
+//    static String[] sampleValid(Config config, SingleLabelIndex index){
+//        int numDocsInIndex = index.getNumDocs();
+//        String[] ids = null;
+//
+//        String splitField = config.getString("index.splitField");
+//        ids = IntStream.range(0, numDocsInIndex).parallel().
+//                filter(i -> index.getStringField("" + i, splitField).
+//                        equalsIgnoreCase("valid")).
+//                mapToObj(i -> "" + i).collect(Collectors.toList()).
+//                toArray(new String[0]);
+//        return ids;
+//    }
 
     static IdTranslator loadIdTranslator(String[] indexIds) throws Exception{
         IdTranslator idTranslator = new IdTranslator();
@@ -464,12 +464,12 @@ public class Exp35 {
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
 
-        String[] validIndexIds = sampleValid(config,index);
-        IdTranslator validIdTranslator = loadIdTranslator(validIndexIds);
-
-        ClfDataSet validDataSet = loadValidData(config,index,featureMappers,validIdTranslator,labelTranslator);
-        DataSetUtil.setFeatureMappers(validDataSet,featureMappers);
-        saveDataSet(config, validDataSet, config.getString("archive.validSet"));
+//        String[] validIndexIds = sampleValid(config,index);
+//        IdTranslator validIdTranslator = loadIdTranslator(validIndexIds);
+//
+//        ClfDataSet validDataSet = loadValidData(config,index,featureMappers,validIdTranslator,labelTranslator);
+//        DataSetUtil.setFeatureMappers(validDataSet,featureMappers);
+//        saveDataSet(config, validDataSet, config.getString("archive.validSet"));
 
         if (config.getBoolean("archive.dumpFields")){
             dumpTestFeatures(config,index,testIdTranslator);

@@ -67,11 +67,7 @@ public class IndexBuilder {
         String res = null;
         switch (name) {
             case "train":
-                if (Math.random()<0.8){
-                    res = "train";
-                } else {
-                    res = "valid";
-                }
+                res = "train";
                 break;
             case "test":
                 res = "test";

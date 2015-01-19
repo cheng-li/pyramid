@@ -58,8 +58,6 @@ public class IndexBuilder {
         String res = null;
         if ( id%5==0){
             res = "test";
-        } else if (id%5==1){
-            res = "valid";
         } else {
             res = "train";
         }

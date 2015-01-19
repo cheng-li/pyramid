@@ -36,7 +36,7 @@ public class Exp29 {
                 System.out.println("id = "+id);
                 XContentBuilder builder = IndexBuilder.getBuilder(file);
                 //               System.out.println(builder.string());
-                IndexResponse response = client.prepareIndex("imdb_stopwords", "document",""+id)
+                IndexResponse response = client.prepareIndex("imdb", "document",""+id)
                         .setSource(builder)
                         .execute()
                         .actionGet();
