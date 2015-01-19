@@ -4,8 +4,10 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
+import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
+import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -13,14 +15,16 @@ import org.elasticsearch.search.SearchHit;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * for multi label dataset,
- * dump feature matrix with initial features and unigram features
+ * dump feature matrix with initial features and ngram features
  * follow exp11
  * Created by chengli on 10/11/14.
  */
@@ -177,15 +181,54 @@ public class Exp12 {
         }
     }
 
-    static List<String> gatherUnigrams(Config config, MultiLabelIndex index,
-                                       String[] ids) throws Exception{
-        int minDf = config.getInt("minDf");
-        Set<String> unigrams = new HashSet<>();
-        for (String id: ids) {
-            Set<TermStat> termStats = index.getTermStats(id);
-            termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(termStat -> unigrams.add(termStat.getTerm()));
+    static List<String> gather(Config config, ESIndex index,
+                               String[] ids) throws Exception{
+        List<Integer> ns = config.getIntegers("ngram.n");
+        List<Integer> minDfs = config.getIntegers("ngram.minDf");
+        List<String> list = new ArrayList<>();
+        for (int i=0;i<ns.size();i++){
+            int n = ns.get(i);
+            int minDf = minDfs.get(i);
+            if (n==1){
+                list.addAll(gatherUnigrams(index,ids,minDf));
+            } else {
+                list.addAll(gatherNgrams(index, ids, n, minDf));
+            }
         }
-        return unigrams.stream().sorted().collect(Collectors.toList());
+        return list;
+    }
+
+    static List<String> gatherUnigrams(ESIndex index,
+                                       String[] ids, int minDf) throws Exception{
+        System.out.println("gathering unigrams with minDf "+minDf);
+        Set<TermStat> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<TermStat, Boolean>());
+        Arrays.stream(ids).parallel().forEach(id -> {
+            Set<TermStat> termStats = null;
+            try {
+                termStats = index.getTermStats(id);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(unigrams::add);
+        });
+
+        List<String> list = unigrams.stream().sorted(Comparator.comparing(TermStat::getTerm))
+                .sorted(Comparator.comparing(TermStat::getDf).reversed())
+                .map(TermStat::getTerm)
+                .collect(Collectors.toList());
+        System.out.println("done");
+        System.out.println("there are "+list.size()+" unigrams");
+        return list;
+    }
+
+    static List<String> gatherNgrams(ESIndex index,
+                                     String[] ids, int n, int minDf) throws Exception{
+
+        System.out.println("gathering "+n+"-grams with minDf "+minDf);
+        List<String> ngrams = NgramEnumerator.gatherNgrams(index, ids, n, minDf);
+        System.out.println("done");
+        System.out.println("there are "+ngrams.size()+" "+n+"-grams");
+        return ngrams;
     }
 
     static void addUnigramFeatures(FeatureMappers featureMappers,List<String> unigrams){
@@ -421,8 +464,8 @@ public class Exp12 {
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
 
-        List<String> unigrams = gatherUnigrams(config,index,trainIndexIds);
-        addUnigramFeatures(featureMappers,unigrams);
+        List<String> ngrams = gather(config,index,trainIndexIds);
+        addUnigramFeatures(featureMappers,ngrams);
 
 
         MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, trainLabelTranslator);

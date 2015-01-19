@@ -9,7 +9,7 @@
   9: merge 20nesgroup into 8 classes
   10: ecoc
   11: for single label dataset, dump unigram features (documented config)
-  12: for multi label dataset, dump unigram features
+  12: for multi label dataset, dump ngram features
   13: hmlgb
   14: imlgb
   15: feature extraction for multi label dataset

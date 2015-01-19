@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
@@ -195,7 +196,7 @@ public class Exp35 {
         return list;
     }
 
-    static List<String> gatherUnigrams(SingleLabelIndex index,
+    static List<String> gatherUnigrams(ESIndex index,
                                        String[] ids, int minDf) throws Exception{
         System.out.println("gathering unigrams with minDf "+minDf);
         Set<TermStat> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<TermStat, Boolean>());
@@ -218,7 +219,7 @@ public class Exp35 {
         return list;
     }
 
-    static List<String> gatherNgrams(SingleLabelIndex index,
+    static List<String> gatherNgrams(ESIndex index,
                                        String[] ids, int n, int minDf) throws Exception{
 
         System.out.println("gathering "+n+"-grams with minDf "+minDf);
