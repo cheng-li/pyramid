@@ -143,6 +143,8 @@ public class Exp55 {
     static void trainModel(Config config, ClfDataSet dataSet, FeatureMappers featureMappers,
                            SingleLabelIndex index, IdTranslator trainIdTranslator) throws Exception{
         String archive = config.getString("archive.folder");
+        File archiveFolder = new File(archive);
+        archiveFolder.mkdirs();
         int numIterations = config.getInt("train.numIterations");
         int numClasses = dataSet.getNumClasses();
 
@@ -179,8 +181,13 @@ public class Exp55 {
                 .setMinDf(config.getInt("extraction.phraseExtractor.minDf"));
 
         MixedSplitExtractor mixedSplitExtractor = new MixedSplitExtractor(termExtractor,phraseSplitExtractor);
-        mixedSplitExtractor.setTopN(config.getInt("extraction.topN"));
 
+        int[] topNs = new int[numClasses];
+        for (int k=0;k<numClasses;k++){
+            topNs[k] = (classCounts[k]*config.getInt("extraction.topN")/dataSet.getNumDataPoints());
+        }
+
+        System.out.println("ngrams extraction from each class = "+Arrays.toString(topNs));
 
 
         Set<String> blackList = new HashSet<>();
@@ -241,6 +248,14 @@ public class Exp55 {
         //todo
         int numSeeds = config.getInt("extraction.numSeeds");
 
+        File statsFile = new File(config.getString("archive.folder"),"stats");
+        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile));
+
+        statsWriter.write("initially");
+        statsWriter.write(",");
+        statsWriter.write("number of features = " + featureMappers.getTotalDim());
+        statsWriter.newLine();
+
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
 
@@ -252,7 +267,7 @@ public class Exp55 {
 
 
             boolean condition1 = (featureMappers.getTotalDim()
-                    + config.getInt("extraction.topN") * numClasses
+                    + config.getInt("extraction.topN")
                     < dataSet.getNumFeatures());
 
 
@@ -262,6 +277,7 @@ public class Exp55 {
                 if (!condition1) {
                     System.out.println("we have reached the max number of columns " +
                             "and will not extract new features");
+                    break;
                 }
             }
 
@@ -391,7 +407,7 @@ public class Exp55 {
 
                     //phrases
                     List<String> goodPhrases = mixedSplitExtractor.getGoodNgrams(focusSet, validationSet, blackList, k,
-                            gradientsForValidation, numSeeds);
+                            gradientsForValidation, numSeeds,topNs[k]);
                     System.out.println("phrases extracted for class " + k + " (" + labelTranslator.toExtLabel(k) + "):");
                     System.out.println(goodPhrases);
                     blackList.addAll(goodPhrases);
@@ -419,12 +435,22 @@ public class Exp55 {
                         featureMappers.addMapper(mapper);
                     }
 
-
                 }
+
+
+                statsWriter.write("iteration = " + iteration);
+                statsWriter.write(",");
+                statsWriter.write("focus set = " + focusSet.getAll());
+                statsWriter.write(",");
+                statsWriter.write("number of features = " + featureMappers.getTotalDim());
+                statsWriter.newLine();
+
+
             }
 
         }
 
+        statsWriter.close();
         File serializedModel =  new File(archive,modelName);
         logisticRegression.serialize(serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());

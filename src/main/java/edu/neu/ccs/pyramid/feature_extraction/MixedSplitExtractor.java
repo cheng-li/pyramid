@@ -62,7 +62,8 @@ public class MixedSplitExtractor {
                                       Set<String> blacklist,
                                       int classIndex,
                                       List<Double> residuals,
-                                      int numSeeds) throws Exception{
+                                      int numSeeds,
+                                      int topN) throws Exception{
 
         // don't want the blacklist to impact seeds
         List<String> termCandidates = termTfidfSplitExtractor.getCandidates(focusSet,classIndex);
