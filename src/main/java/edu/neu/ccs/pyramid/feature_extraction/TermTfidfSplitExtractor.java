@@ -123,6 +123,13 @@ public class TermTfidfSplitExtractor {
     }
 
 
+    List<String> getCandidates(FocusSet focusSet, int classIndex){
+        Collection<TermStat> termStats = gather(focusSet,classIndex);
+        List<String> termCandidates = filter(termStats);
+        return termCandidates;
+    }
+
+
     /**
      * gather term stats from focus set
      * @param focusSet
@@ -165,7 +172,7 @@ public class TermTfidfSplitExtractor {
         return termStats;
     }
     /**
-     * filter by minDf, sort by tfidf
+     * filter by minDf and blacklist, sort by tfidf
      * @return
      */
     private List<String> filter(Collection<TermStat> termStats,
@@ -175,6 +182,21 @@ public class TermTfidfSplitExtractor {
         List<String> terms = termStats.stream().parallel().
                 filter(termStat -> (termStat.getDf()>=this.minDf)
                         &&(!blacklist.contains(termStat.getTerm())))
+                .sorted(comparator.reversed()).limit(this.numSurvivors)
+                .map(TermStat::getTerm).collect(Collectors.toList());
+        return terms;
+    }
+
+
+    /**
+     * filter by minDf, sort by tfidf
+     * @return
+     */
+    private List<String> filter(Collection<TermStat> termStats){
+        Comparator<TermStat> comparator = Comparator.comparing(TermStat::getTfidf);
+
+        List<String> terms = termStats.stream().parallel().
+                filter(termStat -> (termStat.getDf()>=this.minDf))
                 .sorted(comparator.reversed()).limit(this.numSurvivors)
                 .map(TermStat::getTerm).collect(Collectors.toList());
         return terms;

@@ -63,7 +63,9 @@ public class MixedSplitExtractor {
                                       int classIndex,
                                       List<Double> residuals,
                                       int numSeeds) throws Exception{
-        List<String> termCandidates = termTfidfSplitExtractor.getCandidates(focusSet,classIndex,blacklist);
+
+        // don't want the blacklist to impact seeds
+        List<String> termCandidates = termTfidfSplitExtractor.getCandidates(focusSet,classIndex);
 
         Map<String, Double> scores = new ConcurrentHashMap<>();
 
@@ -88,8 +90,9 @@ public class MixedSplitExtractor {
 
 
 
-        return scores.entrySet().stream().sorted(comparator.reversed()).limit(topN)
-                .map(Map.Entry::getKey).collect(Collectors.toList());
+        return scores.entrySet().stream().sorted(comparator.reversed())
+                .map(Map.Entry::getKey).filter(key->!blacklist.contains(key))
+                .limit(topN).collect(Collectors.toList());
 
 
     }

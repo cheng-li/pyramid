@@ -147,7 +147,7 @@ public class Exp55 {
         int numClasses = dataSet.getNumClasses();
 
         String modelName = config.getString("archive.model");
-        int numDocsToSelect = config.getInt("extraction.focusSet.numDocs");
+
 
 
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
@@ -216,7 +216,14 @@ public class Exp55 {
 
         Set<String> focusSets = config.getStrings("extraction.focusSet.type").stream().collect(Collectors.toSet());
         int numFocusSets = focusSets.size();
-        int numDocsPerFocusSet = numDocsToSelect/numFocusSets;
+        int focuseSetSize = config.getInt("extraction.focusSet.size");
+        int[] numDocsPerFocusSet = new int[numClasses];
+        double focusPercentage = ((double)focuseSetSize)/dataSet.getNumDataPoints();
+        for (int k=0;k<numClasses;k++){
+            numDocsPerFocusSet[k] = (int)(classCounts[k]*focusPercentage/numFocusSets);
+        }
+
+        System.out.println("focus set sizes = "+Arrays.toString(numDocsPerFocusSet));
 
         Set<String> validationSets = config.getStrings("extraction.validationSet.type").stream().collect(Collectors.toSet());
         int numValidationSets = validationSets.size();
@@ -272,7 +279,7 @@ public class Exp55 {
                 for (int k = 0; k < numClasses; k++) {
 
                     if (focusSets.contains("easy")){
-                        Set<Integer> easySet = focusSetProducer.produceEasyOnes(k, numDocsPerFocusSet);
+                        Set<Integer> easySet = focusSetProducer.produceEasyOnes(k, numDocsPerFocusSet[k]);
                         List<String> easySetIndexIds = easySet
                                 .parallelStream().map(trainIdTranslator::toExtId).sorted()
                                 .collect(Collectors.toList());
@@ -288,13 +295,13 @@ public class Exp55 {
                         if (iteration >= 1) {
                             int commonEasy = SetUtil.intersect(easySets.get(k).getFirst(), easySets.get(k).getLast()).size();
                             System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonEasy
-                                    + "/" + numDocsPerFocusSet + " common documents in the easy set.");
+                                    + "/" + numDocsPerFocusSet[k] + " common documents in the easy set.");
                         }
                     }
 
 
                     if (focusSets.contains("hard")){
-                        Set<Integer> hardSet = focusSetProducer.produceHardOnes(k, numDocsPerFocusSet);
+                        Set<Integer> hardSet = focusSetProducer.produceHardOnes(k, numDocsPerFocusSet[k]);
                         List<String> hardSetIndexIds = hardSet
                                 .parallelStream().map(trainIdTranslator::toExtId).sorted()
                                 .collect(Collectors.toList());
@@ -310,12 +317,12 @@ public class Exp55 {
                         if (iteration >= 1) {
                             int commonHard = SetUtil.intersect(hardSets.get(k).getFirst(), hardSets.get(k).getLast()).size();
                             System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonHard
-                                    + "/" + numDocsPerFocusSet + " common documents in the hard set.");
+                                    + "/" + numDocsPerFocusSet[k] + " common documents in the hard set.");
                         }
                     }
 
                     if (focusSets.contains("uncertain")){
-                        Set<Integer> uncertainSet = focusSetProducer.produceUncertainOnes(k, numDocsPerFocusSet);
+                        Set<Integer> uncertainSet = focusSetProducer.produceUncertainOnes(k, numDocsPerFocusSet[k]);
                         List<String> uncertainSetIndexIds = uncertainSet
                                 .parallelStream().map(trainIdTranslator::toExtId).sorted()
                                 .collect(Collectors.toList());
@@ -331,12 +338,12 @@ public class Exp55 {
                         if (iteration >= 1) {
                             int commonUncertain = SetUtil.intersect(uncertainSets.get(k).getFirst(), uncertainSets.get(k).getLast()).size();
                             System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonUncertain
-                                    + "/" + numDocsPerFocusSet + " common documents in the uncertain set.");
+                                    + "/" + numDocsPerFocusSet[k] + " common documents in the uncertain set.");
                         }
                     }
 
                     if (focusSets.contains("random")){
-                        Set<Integer> randomSet = focusSetProducer.produceRandomOnes(k, numDocsPerFocusSet);
+                        Set<Integer> randomSet = focusSetProducer.produceRandomOnes(k, numDocsPerFocusSet[k]);
                         List<String> randomSetIndexIds = randomSet
                                 .parallelStream().map(trainIdTranslator::toExtId).sorted()
                                 .collect(Collectors.toList());
@@ -351,6 +358,8 @@ public class Exp55 {
 
                 }
 
+
+                System.out.println("focus set = "+focusSet.getAll());
 
                 List<Integer> validationSet = new ArrayList<>();
                 for (int k = 0; k < numClasses; k++){
