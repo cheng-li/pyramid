@@ -13,28 +13,34 @@ public class DuplicateDetector implements Serializable{
     private transient ESIndex esIndex;
     Set<String> allDuplicates;
 
+    public Set<String> getAllDuplicates() {
+        return allDuplicates;
+    }
+
     public DuplicateDetector(ESIndex esIndex) {
         this.esIndex = esIndex;
         this.allDuplicates = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     }
 
+    //todo keep unique ones
     public void addDuplicates(String id1, String id2){
         allDuplicates.add(id1);
         allDuplicates.add(id2);
     }
 
     public void detect(){
-        Map<Integer, Set<String>> lengthToIds = new ConcurrentHashMap<>();
+        Map<Integer, Set<String>> hashToIds = new ConcurrentHashMap<>();
         int numDocs = esIndex.getNumDocs();
         IntStream.range(0,numDocs).parallel()
                 .forEach(i -> {
                     Map<Integer,String> termVector = esIndex.getTermVectorFromIndex(""+i);
-                    if (!lengthToIds.containsKey(termVector.size())){
-                        lengthToIds.put(termVector.size(),Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>()));
+                    int hash = termVector.hashCode();
+                    if (!hashToIds.containsKey(hash)){
+                        hashToIds.put(hash, Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>()));
                     }
-                    lengthToIds.get(termVector.size()).add(""+i);
+                    hashToIds.get(hash).add(""+i);
                 });
-        lengthToIds.entrySet().stream().parallel().map(Map.Entry::getValue)
+        hashToIds.entrySet().stream().parallel().map(Map.Entry::getValue)
                 .forEach(this::check);
 
     }
@@ -63,10 +69,10 @@ public class DuplicateDetector implements Serializable{
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (String str: allDuplicates){
+        allDuplicates.stream().sorted().forEach(str -> {
             sb.append(str);
             sb.append(",");
-        }
+        });
         return sb.toString();
     }
 }
