@@ -55,7 +55,7 @@ public class Exp56 {
     }
 
     static void deduplicate(Config config, ESIndex esIndex) throws Exception{
-        DuplicateDetector duplicateDetector = new DuplicateDetector(esIndex);
+        DuplicateDetector duplicateDetector = new DuplicateDetector(esIndex,config.getString("index.splitField"));
         duplicateDetector.detect();
         System.out.println("number of duplicates");
         System.out.println(duplicateDetector.getAllDuplicates().size());
