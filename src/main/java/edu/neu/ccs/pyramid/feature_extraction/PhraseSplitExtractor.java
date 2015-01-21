@@ -18,6 +18,7 @@ import org.elasticsearch.search.SearchHit;
 
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -85,8 +86,13 @@ public class PhraseSplitExtractor {
     List<PhraseInfo> getCandidates(FocusSet focusSet,int classIndex,
                                Set<String> seeds,List<Integer> validationSet,
                                Set<String> blacklist){
+        System.out.println("gathering...");
         Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds, validationSet);
+        System.out.println("done");
+        System.out.println("gathered "+allPhrases.size() + " candidates");
+        System.out.println("filtering...");
         List<PhraseInfo> candidates = filter(allPhrases,blacklist);
+        System.out.println("done");
         return candidates;
 
     }
@@ -115,11 +121,16 @@ public class PhraseSplitExtractor {
                 .map(dataPoint ->
                 {String indexId = idTranslator.toExtId(dataPoint);
                   Map<Integer,String> termVector = index.getTermVector(indexId);
-                    return phraseDetector.getPhraseInfos(termVector, seeds);})
+                  Set<PhraseInfo> phraseInfos =  phraseDetector.getPhraseInfos(termVector, seeds);
+                    System.out.println("indexId = "+indexId+", num ngrams = "+phraseInfos.size());
+                    System.out.println(phraseInfos);
+                    return phraseInfos;})
                 .collect(Collectors.toList());
 
-        Set<PhraseInfo> all = new HashSet<>();
-        phrasesList.forEach(all::addAll);
+//        Set<PhraseInfo> all = new HashSet<>();
+        Set<PhraseInfo> all = Collections.newSetFromMap(new ConcurrentHashMap<PhraseInfo, Boolean>());
+        phrasesList.stream().parallel().forEach(all::addAll);
+//        phrasesList.forEach(all::addAll);
         return all;
     }
 

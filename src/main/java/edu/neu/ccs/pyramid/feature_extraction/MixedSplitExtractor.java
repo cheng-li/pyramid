@@ -51,7 +51,7 @@ public class MixedSplitExtractor {
 
 
         Comparator<Map.Entry<String,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
-        return scores.entrySet().stream().sorted(comparator.reversed()).limit(topN)
+        return scores.entrySet().stream().parallel().sorted(comparator.reversed()).limit(topN)
                 .map(Map.Entry::getKey).collect(Collectors.toList());
 
 
@@ -84,15 +84,18 @@ public class MixedSplitExtractor {
                 .map(Map.Entry::getKey).collect(Collectors.toSet());
         System.out.println("seeds = "+seeds);
 
+        System.out.println("get ngram candidates...");
         List<PhraseInfo> phraseCandidates = phraseSplitExtractor.getCandidates(focusSet,classIndex,seeds,validationSet,blacklist);
+        System.out.println("done");
+        System.out.println("calculating ngram validation scores...");
         phraseCandidates.stream().parallel()
                 .forEach(phraseInfo ->
                         scores.put(phraseInfo.getPhrase(), phraseSplitExtractor.splitScore(phraseInfo, validationIndexIds, residualsArray)));
 
+        System.out.println("done");
 
-
-        return scores.entrySet().stream().sorted(comparator.reversed())
-                .map(Map.Entry::getKey).filter(key->!blacklist.contains(key))
+        return scores.entrySet().stream().parallel().sorted(comparator.reversed())
+                .map(Map.Entry::getKey).filter(key -> !blacklist.contains(key))
                 .limit(topN).collect(Collectors.toList());
 
 

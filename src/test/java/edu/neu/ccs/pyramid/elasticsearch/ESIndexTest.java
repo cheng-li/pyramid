@@ -80,6 +80,8 @@ public class ESIndexTest {
                 .execute().actionGet().getField("real_labels").getValues());
 //        builder.endObject();
 //        System.out.println(builder.prettyPrint().string());
+        System.out.println(index.getClient().prepareGet().setIndex("ohsumed_20000").setType("document").setFields("codes").setId("0")
+                .execute().actionGet().getField("codes").getValues());
         index.close();
     }
 
