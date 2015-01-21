@@ -70,7 +70,8 @@ public class Exp55 {
         LabelTranslator labelTranslator = loadLabelTranslator(config, index);
         FeatureMappers featureMappers = new FeatureMappers();
         loadInitialFeaturesFromFile(config,featureMappers);
-        String[] trainIndexIds = sampleTrain(config,index);
+        Set<String> duplidate = loadDuplicate(config);
+        String[] trainIndexIds = sampleTrain(config,index,duplidate);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
 
         ClfDataSet trainDataSet = loadTrainSet(config, index, featureMappers,trainIdTranslator,labelTranslator);
@@ -178,7 +179,8 @@ public class Exp55 {
 
         PhraseSplitExtractor phraseSplitExtractor = new PhraseSplitExtractor(index,trainIdTranslator)
                 .setMinDataPerLeaf(config.getInt("extraction.phraseExtractor.minDataPerLeaf"))
-                .setMinDf(config.getInt("extraction.phraseExtractor.minDf"));
+                .setMinDf(config.getInt("extraction.phraseExtractor.minDf"))
+                .setLengthLimit(config.getInt("extraction.phraseExtractor.maxN"));
 
         MixedSplitExtractor mixedSplitExtractor = new MixedSplitExtractor(termExtractor,phraseSplitExtractor);
 
@@ -255,6 +257,8 @@ public class Exp55 {
         statsWriter.write(",");
         statsWriter.write("number of features = " + featureMappers.getTotalDim());
         statsWriter.newLine();
+
+
 
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
@@ -565,7 +569,7 @@ public class Exp55 {
         }
     }
 
-    static String[] sampleTrain(Config config, SingleLabelIndex index){
+    static String[] sampleTrain(Config config, SingleLabelIndex index, Set<String> duplicate){
         int numDocsInIndex = index.getNumDocs();
         String[] ids = null;
 
@@ -573,7 +577,7 @@ public class Exp55 {
         List<String> train = IntStream.range(0, numDocsInIndex).parallel()
                 .filter(i -> index.getStringField("" + i, splitField).
                         equalsIgnoreCase("train")).
-                        mapToObj(i -> "" + i).collect(Collectors.toList());
+                        mapToObj(i -> "" + i).filter(id -> !duplicate.contains(id)).collect(Collectors.toList());
         ids = train.toArray(new String[train.size()]);
         return ids;
     }
@@ -685,5 +689,13 @@ public class Exp55 {
         }
         System.out.println("loaded");
         return new LabelTranslator(map);
+    }
+
+    static Set<String> loadDuplicate(Config config) throws Exception{
+        File file = new File(config.getString("input.duplicate"));
+        String[] strArr = FileUtils.readFileToString(file).split(",");
+        Set<String> set = new HashSet<>();
+        Arrays.stream(strArr).forEach(set::add);
+        return set;
     }
 }

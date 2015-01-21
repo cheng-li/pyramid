@@ -34,11 +34,17 @@ public class PhraseSplitExtractor {
     private int topN =20;
     private IdTranslator idTranslator;
     private int minDataPerLeaf = 2;
+    private int lengthLimit = Integer.MAX_VALUE;
 
     public PhraseSplitExtractor(ESIndex index, IdTranslator idTranslator) {
         this.index = index;
         this.idTranslator = idTranslator;
 
+    }
+
+    public PhraseSplitExtractor setLengthLimit(int lengthLimit) {
+        this.lengthLimit = lengthLimit;
+        return this;
     }
 
     public PhraseSplitExtractor setTopN(int topN) {
@@ -114,17 +120,23 @@ public class PhraseSplitExtractor {
                 .map(this.idTranslator::toExtId)
                 .toArray(String[]::new);
         PhraseDetector phraseDetector = new PhraseDetector(index,validationIndexIds).setMinDf(this.minDf);
+        phraseDetector.setLengthLimit(this.lengthLimit);
 
         List<Integer> dataPoints = focusSet.getDataClassK(classIndex);
 
         List<Set<PhraseInfo>> phrasesList = dataPoints.parallelStream()
                 .map(dataPoint ->
-                {String indexId = idTranslator.toExtId(dataPoint);
-                  Map<Integer,String> termVector = index.getTermVector(indexId);
-                  Set<PhraseInfo> phraseInfos =  phraseDetector.getPhraseInfos(termVector, seeds);
-                    System.out.println("indexId = "+indexId+", num ngrams = "+phraseInfos.size());
-                    System.out.println(phraseInfos);
-                    return phraseInfos;})
+                {
+                    String indexId = idTranslator.toExtId(dataPoint);
+                    Map<Integer, String> termVector = index.getTermVector(indexId);
+                    Set<PhraseInfo> phraseInfos = phraseDetector.getPhraseInfos(termVector, seeds);
+                    System.out.println("indexId = " + indexId + ", num ngrams = " + phraseInfos.size());
+                    if (phraseInfos.size() > 1000) {
+                        System.out.println(phraseInfos);
+                    }
+
+                    return phraseInfos;
+                })
                 .collect(Collectors.toList());
 
 //        Set<PhraseInfo> all = new HashSet<>();

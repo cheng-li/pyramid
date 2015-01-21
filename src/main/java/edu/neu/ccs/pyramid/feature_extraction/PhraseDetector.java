@@ -19,6 +19,7 @@ public class PhraseDetector {
     //todo can be optimized, for bad phrases, don't need to keep the actual search response
     //todo this only use slop 0
     private LoadingCache<String, PhraseInfo> phraseInfoCache;
+    private int lengthLimit=Integer.MAX_VALUE;
 
     public PhraseDetector(ESIndex index, String[] validationIds) {
         this.index = index;
@@ -33,6 +34,11 @@ public class PhraseDetector {
                         return phraseInfo;
                     }
                 });
+    }
+
+
+    public void setLengthLimit(int lengthLimit) {
+        this.lengthLimit = lengthLimit;
     }
 
     public PhraseDetector setMinDf(int minDf) {
@@ -86,6 +92,9 @@ public class PhraseDetector {
             }
             String leftTerm = termVector.get(currentLeft);
             String currentPhrase = leftTerm.concat(" ").concat(phrase);
+            if (currentPhrase.split(" ").length>this.lengthLimit){
+                break;
+            }
             PhraseInfo phraseInfo = null;
             try {
                 phraseInfo = this.phraseInfoCache.get(currentPhrase);
@@ -121,6 +130,9 @@ public class PhraseDetector {
             }
             String rightTerm = termVector.get(currentRight);
             String currentPhrase = phrase.concat(" ").concat(rightTerm);
+            if (currentPhrase.split(" ").length>this.lengthLimit){
+                break;
+            }
             PhraseInfo phraseInfo = null;
             try {
                 phraseInfo = this.phraseInfoCache.get(currentPhrase);
@@ -152,6 +164,9 @@ public class PhraseDetector {
                     PhraseInfo right = rightList.get(j);
 
                     String connectedString = connect(left.getPhrase(),right.getPhrase());
+                    if (connectedString.split(" ").length>this.lengthLimit){
+                        break;
+                    }
                     PhraseInfo connected = null;
                     try {
                         connected = this.phraseInfoCache.get(connectedString);
@@ -173,6 +188,9 @@ public class PhraseDetector {
                     PhraseInfo right = rightList.get(j);
 
                     String connectedString = connect(left.getPhrase(),right.getPhrase());
+                    if (connectedString.split(" ").length>this.lengthLimit){
+                        break;
+                    }
                     PhraseInfo connected = null;
                     try {
                         connected = this.phraseInfoCache.get(connectedString);

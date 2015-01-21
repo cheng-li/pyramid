@@ -66,3 +66,8 @@
   52: index imdb_movie_genre
   53: index amazon_book_genre
   54: check number of ngrams
+  55: feature extraction by logistic regression,
+      start with specified features
+      extract both unigrams and ngrams
+      dynamic seeds
+  56: detect duplicated docs in an index
