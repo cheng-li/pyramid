@@ -454,7 +454,7 @@ public class ESIndex {
         IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
         idsFilterBuilder.addIds(ids);
 
-        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(field, phrase)
@@ -513,7 +513,7 @@ public class ESIndex {
                                 MatchQueryBuilder.Operator operator){
         IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
         idsFilterBuilder.addIds(ids);
-        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(field, phrase)
