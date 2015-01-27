@@ -30,7 +30,7 @@ public class IndexBuilder {
         builder.field("file_name",getFileName(file));
         builder.field("real_label",getExtLabel(file));
         builder.field("label",""+getLabel(file));
-        builder.field("split", getSplit(id));
+        builder.field("split", getTrainOrTestFixed(file));
         builder.endObject();
         return builder;
     }
