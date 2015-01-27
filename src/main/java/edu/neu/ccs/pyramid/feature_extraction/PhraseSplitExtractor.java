@@ -97,7 +97,7 @@ public class PhraseSplitExtractor {
         System.out.println("done");
 
         //todo change pos
-        System.out.println("gathered "+allPhrases.size() + " candidates");
+//        System.out.println("gathered "+allPhrases.size() + " candidates");
         System.out.println("filtering...");
         List<PhraseInfo> candidates = filter(allPhrases,blacklist);
         System.out.println("done");

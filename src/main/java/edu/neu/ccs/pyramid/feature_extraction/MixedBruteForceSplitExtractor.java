@@ -141,6 +141,7 @@ public class MixedBruteForceSplitExtractor {
         System.out.println("ranking");
         List<String> ranked = rankBySplit(candidates,validationSet,residuals,topN);
         System.out.println("done");
+        System.out.println("number of ngram candidates for validation = "+candidates.size());
         return ranked;
     }
 

@@ -63,6 +63,8 @@ public class Exp58 {
     }
 
     static void train(Config config, SingleLabelIndex index) throws Exception{
+
+        //todo there are too many datasets in the methods, may get out of memory
         LabelTranslator labelTranslator = loadLabelTranslator(config, index);
         FeatureMappers featureMappers = new FeatureMappers();
         loadInitialFeaturesFromFile(config,featureMappers);

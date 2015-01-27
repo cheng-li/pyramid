@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.util.Sampling;
+import org.apache.commons.io.FileUtils;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
@@ -64,7 +65,7 @@ public class Exp35 {
         return index;
     }
 
-    static String[] sampleTrain(Config config, SingleLabelIndex index){
+    static String[] sampleTrain(Config config, SingleLabelIndex index, Set<String> duplicate){
         int numDocsInIndex = index.getNumDocs();
         String[] ids = null;
 
@@ -72,7 +73,7 @@ public class Exp35 {
         List<String> train = IntStream.range(0, numDocsInIndex).parallel()
                 .filter(i -> index.getStringField("" + i, splitField).
                         equalsIgnoreCase("train")).
-                        mapToObj(i -> "" + i).collect(Collectors.toList());
+                        mapToObj(i -> "" + i).filter(id -> !duplicate.contains(id)).collect(Collectors.toList());
         ids = train.toArray(new String[train.size()]);
         return ids;
     }
@@ -432,7 +433,8 @@ public class Exp35 {
 
     static void build(Config config, SingleLabelIndex index) throws Exception{
         int numDocsInIndex = index.getNumDocs();
-        String[] trainIndexIds = sampleTrain(config,index);
+        Set<String> duplidate = loadDuplicate(config);
+        String[] trainIndexIds = sampleTrain(config,index,duplidate);
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureMappers featureMappers = new FeatureMappers();
@@ -474,5 +476,13 @@ public class Exp35 {
         if (config.getBoolean("archive.dumpFields")){
             dumpTestFeatures(config,index,testIdTranslator);
         }
+    }
+
+    static Set<String> loadDuplicate(Config config) throws Exception{
+        File file = new File(config.getString("input.duplicate"));
+        String[] strArr = FileUtils.readFileToString(file).split(",");
+        Set<String> set = new HashSet<>();
+        Arrays.stream(strArr).forEach(set::add);
+        return set;
     }
 }

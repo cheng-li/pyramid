@@ -94,6 +94,9 @@ public class MixedSplitExtractor {
 
         System.out.println("done");
 
+        int totalCandidates = termCandidates.size()+ phraseCandidates.size();
+        System.out.println("number of ngram candidates for validation = "+totalCandidates);
+
         return scores.entrySet().stream().parallel().sorted(comparator.reversed())
                 .map(Map.Entry::getKey).filter(key -> !blacklist.contains(key))
                 .limit(topN).collect(Collectors.toList());

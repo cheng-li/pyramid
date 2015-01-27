@@ -10,6 +10,9 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
+import edu.neu.ccs.pyramid.eval.PerClassMeasures;
+import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 
 import java.io.File;
@@ -69,6 +72,18 @@ public class Exp33 {
         LogisticRegression logisticRegression = trainer.train(dataSet);
         System.out.println("train: "+ Accuracy.accuracy(logisticRegression, dataSet));
         System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
+        ConfusionMatrix trainMatrix = new ConfusionMatrix(logisticRegression,dataSet);
+        ConfusionMatrix testMatrix = new ConfusionMatrix(logisticRegression,testSet);
+        System.out.println("on training set:");
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            System.out.println(new PerClassMeasures(trainMatrix,k));
+        }
+
+        System.out.println("on test set:");
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            System.out.println(new PerClassMeasures(testMatrix,k));
+        }
+
         File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
         logisticRegression.serialize(modelFile);
 
@@ -86,7 +101,7 @@ public class Exp33 {
             System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
             System.out.println(LogisticRegressonInspector.topFeatures(logisticRegression,k,limit));
             List<String> longNgrams = LogisticRegressonInspector.topFeatures(logisticRegression,k,10000).stream()
-                    .map(pair -> pair.getSecond())
+                    .map(FeatureUtility::getName)
                     .filter(str -> str.split(" ").length >= 3).collect(Collectors.toList());
             System.out.println("long ngrams: ");
             System.out.println(longNgrams);
