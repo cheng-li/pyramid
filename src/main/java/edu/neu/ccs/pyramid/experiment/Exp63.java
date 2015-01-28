@@ -34,7 +34,11 @@ public class Exp63 {
         Config config = new Config(args[0]);
         System.out.println(config);
 
+
+
         List<List<FeatureUtility>> goodNgrams  = getGoodNgrams(config);
+
+        checkNgrams(goodNgrams);
         List<List<Integer>> rankedDocs = rankDocs(config);
         Map<Integer, Integer> docToRank = docToRank(rankedDocs);
         Map<String, Integer> featureToIndex = featureToIndex(config);
@@ -211,8 +215,46 @@ public class Exp63 {
         int limit = config.getInt("topFeature.limit");
         List<List<FeatureUtility>> goodFeatures = new ArrayList<>();
         for (int k=0;k<logisticRegression.getNumClasses();k++){
-            goodFeatures.add(LogisticRegressonInspector.topFeatures(logisticRegression, k,limit));
+            goodFeatures.add(LogisticRegressonInspector.topFeatures(logisticRegression, k, limit));
         }
         return goodFeatures;
+    }
+
+    public static void checkNgrams(List<List<FeatureUtility>> features){
+        for (int k=0;k<features.size();k++){
+            System.out.println("class "+k);
+            List<FeatureUtility> list = features.get(k);
+            List<FeatureUtility> unigramUtilities = list.stream().filter(util-> util.getName().split(" ").length == 1)
+                    .collect(Collectors.toList());
+            Set<String> unigrams = unigramUtilities.stream().map(FeatureUtility::getName)
+                    .collect(Collectors.toSet());
+            System.out.println("number of unigrams = "+unigrams.size());
+            System.out.println("sum of unigram weights = "+unigramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
+
+            List<FeatureUtility> ngramUtilities = list.stream().filter(util-> util.getName().split(" ").length > 1)
+                    .collect(Collectors.toList());
+            System.out.println("sum of ngram weights = "+ngramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
+            Set<String> ngrams = ngramUtilities.stream().map(FeatureUtility::getName)
+                    .collect(Collectors.toSet());
+            System.out.println("number of ngrams = "+ngrams.size());
+            List<FeatureUtility> easyNgramUtilities = ngramUtilities.stream().filter(ngram -> isComposedOf(ngram.getName(),unigrams)).collect(Collectors.toList());
+            System.out.println("number of easy ngrams = "+easyNgramUtilities.size());
+            System.out.println("sum of easy ngram weights = "+easyNgramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
+
+            List<FeatureUtility> hardNgramUtilities = ngramUtilities.stream().filter(ngram -> !isComposedOf(ngram.getName(),unigrams)).collect(Collectors.toList());
+            System.out.println("number of hard ngrams = "+hardNgramUtilities.size());
+            System.out.println("sum of hard ngram weights = "+hardNgramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
+
+        }
+    }
+
+    public static boolean isComposedOf(String ngram, Set<String> unigrams){
+        String[] split = ngram.split(" ");
+        for (String term: split){
+            if (unigrams.contains(term)){
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -147,13 +147,13 @@ public class Exp35 {
                 CategoricalFeatureMapperBuilder builder = new CategoricalFeatureMapperBuilder();
                 builder.setFeatureName(field);
                 builder.setStart(featureMappers.nextAvailable());
-                builder.setSource("field");
                 for (String id: ids){
                     String category = index.getStringField(id, field);
                     builder.addCategory(category);
                 }
                 boolean toAdd = true;
                 CategoricalFeatureMapper mapper = builder.build();
+                mapper.getSettings().put("source","field");
                 if (config.getBoolean("categFeature.filter")){
                     double threshold = config.getDouble("categFeature.percentThreshold");
                     int numCategories = mapper.getNumCategories();
@@ -171,8 +171,9 @@ public class Exp35 {
                 NumericalFeatureMapperBuilder builder = new NumericalFeatureMapperBuilder();
                 builder.setFeatureName(field);
                 builder.setFeatureIndex(featureMappers.nextAvailable());
-                builder.setSource("field");
+
                 NumericalFeatureMapper mapper = builder.build();
+                mapper.getSettings().put("source","field");
                 featureMappers.addMapper(mapper);
             }
         }
@@ -230,12 +231,16 @@ public class Exp35 {
         return ngrams;
     }
 
-    static void addNgramFeatures(FeatureMappers featureMappers, List<String> ngrams){
-        for (String unigram: ngrams){
+    static void addNgramFeatures(FeatureMappers featureMappers, List<String> ngrams, int slop){
+        for (String ngram: ngrams){
+            String featureName = ngram+"(slop="+slop+")";
             int featureIndex = featureMappers.nextAvailable();
             NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                    setFeatureIndex(featureIndex).setFeatureName(unigram).
-                    setSource("matching_score").build();
+                    setFeatureIndex(featureIndex).setFeatureName(featureName)
+                    .build();
+            mapper.getSettings().put("ngram",ngram);
+            mapper.getSettings().put("source","matching_score");
+            mapper.getSettings().put("slop",""+slop);
             featureMappers.addMapper(mapper);
         }
     }
@@ -264,7 +269,7 @@ public class Exp35 {
         featureMappers.getCategoricalFeatureMappers().stream().parallel().
                 forEach(categoricalFeatureMapper -> {
                     String featureName = categoricalFeatureMapper.getFeatureName();
-                    String source = categoricalFeatureMapper.getSource();
+                    String source = categoricalFeatureMapper.getSettings().get("source");
                     if (source.equalsIgnoreCase("field")){
                         for (String id: dataIndexIds){
                             int algorithmId = idTranslator.toIntId(id);
@@ -282,7 +287,7 @@ public class Exp35 {
         featureMappers.getNumericalFeatureMappers().stream().parallel().
                 forEach(numericalFeatureMapper -> {
                     String featureName = numericalFeatureMapper.getFeatureName();
-                    String source = numericalFeatureMapper.getSource();
+                    String source = numericalFeatureMapper.getSettings().get("source");
                     int featureIndex = numericalFeatureMapper.getFeatureIndex();
 
                     if (source.equalsIgnoreCase("field")){
@@ -295,9 +300,9 @@ public class Exp35 {
 
                     if (source.equalsIgnoreCase("matching_score")){
                         SearchResponse response = null;
-
-                        //todo assume unigram, so slop doesn't matter
-                        response = index.matchPhrase(index.getBodyField(), featureName, dataIndexIds, 0);
+                        int slop = Integer.parseInt(numericalFeatureMapper.getSettings().get("slop"));
+                        String ngram = numericalFeatureMapper.getSettings().get("ngram");
+                        response = index.matchPhrase(index.getBodyField(), ngram, dataIndexIds, slop);
 
                         SearchHit[] hits = response.getHits().getHits();
                         for (SearchHit hit: hits){
@@ -445,7 +450,11 @@ public class Exp35 {
         }
 
         List<String> ngrams = gather(config,index,trainIndexIds);
-        addNgramFeatures(featureMappers, ngrams);
+        List<Integer> slops = config.getIntegers("ngram.slop");
+        for (int slop: slops){
+            addNgramFeatures(featureMappers, ngrams,slop);
+        }
+
 
 
         ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelTranslator);

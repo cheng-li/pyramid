@@ -9,7 +9,7 @@ import java.util.Map;
  * Created by chengli on 7/28/14.
  */
 public class CategoricalFeatureMapper implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private String featureName;
     private String source;
     /**
@@ -23,6 +23,11 @@ public class CategoricalFeatureMapper implements Serializable {
     private int end;
     private Map<String, Integer> categoryIndexMap;
     private Map<Integer, String> indexCategoryMap;
+    private Map<String,String> settings;
+
+    public Map<String, String> getSettings() {
+        return settings;
+    }
 
     public int getStart() {
         return start;

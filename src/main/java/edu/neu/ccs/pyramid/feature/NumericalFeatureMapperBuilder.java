@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.feature;
 
+import java.util.Map;
+
 /**
  * Created by chengli on 9/7/14.
  */

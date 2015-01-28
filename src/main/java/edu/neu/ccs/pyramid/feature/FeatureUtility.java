@@ -68,4 +68,14 @@ public class FeatureUtility {
         result = 31 * result + name.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "FeatureUtility{" +
+                "index=" + index +
+                ", name='" + name + '\'' +
+                ", utility=" + utility +
+                ", rank=" + rank +
+                '}';
+    }
 }
