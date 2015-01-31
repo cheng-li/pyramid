@@ -24,10 +24,11 @@ public class Splitter {
                                        DataSet dataSet,
                                        double[] labels,
                                        double[] probs){
+        GlobalStats globalStats = new GlobalStats(labels,probs);
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
         return Arrays.stream(activeFeatures).parallel()
                 .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
-                        probs,featureIndex))
+                        probs,featureIndex,globalStats))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
@@ -38,10 +39,11 @@ public class Splitter {
                                        DataSet dataSet,
                                        double[] labels,
                                        double[] probs){
+        GlobalStats globalStats = new GlobalStats(labels,probs);
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
         return Arrays.stream(activeFeatures).parallel()
                 .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
-                        probs,featureIndex))
+                        probs,featureIndex, globalStats))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
@@ -49,8 +51,7 @@ public class Splitter {
 
     public static List<SplitResult> getAllSplits(RegTreeConfig regTreeConfig,
                                                  DataSet dataSet,
-                                                 double[] labels
-                                                 ){
+                                                 double[] labels){
         double[] probs = new double[labels.length];
         for (int i=0;i<labels.length;i++){
             probs[i] = 1;
@@ -62,20 +63,45 @@ public class Splitter {
                                        DataSet dataSet,
                                        double[] labels,
                                        double[] probs,
-                                       int featureIndex){
-        Optional<SplitResult> splitResult;
-        FeatureType featureType = dataSet
-                .getFeatureSetting(featureIndex)
-                .getFeatureType();
-        if (featureType==FeatureType.NUMERICAL){
-            splitResult = IntervalSplitter.split(regTreeConfig,dataSet,labels,
-                    probs,featureIndex);
-        } else if(featureType==FeatureType.BINARY){
-            splitResult = BinarySplitter.split(regTreeConfig,dataSet,labels,
-                    probs,featureIndex);
-        } else{
-            throw new IllegalArgumentException("unsupported feature type");
-        }
+                                       int featureIndex,
+                                       GlobalStats globalStats){
+        Optional<SplitResult> splitResult = IntervalSplitter.split(regTreeConfig,dataSet,labels,
+                    probs,featureIndex, globalStats);
+
         return splitResult;
+    }
+
+    static class GlobalStats {
+        //\sum _i p_i * y_i
+        private double WeightedLabelSum;
+        // \sum _i p_i
+        private double probabilisticCount;
+        // number of elements with non-zero probabilities
+        private int binaryCount;
+
+        GlobalStats(double[] labels,
+                    double[] probs) {
+            for (int i=0;i<labels.length;i++){
+                double label = labels[i];
+                double prob = probs[i];
+                WeightedLabelSum += label*prob;
+                probabilisticCount += prob;
+                if (prob>0){
+                    binaryCount += 1;
+                }
+            }
+        }
+
+        public double getWeightedLabelSum() {
+            return WeightedLabelSum;
+        }
+
+        public double getProbabilisticCount() {
+            return probabilisticCount;
+        }
+
+        public int getBinaryCount() {
+            return binaryCount;
+        }
     }
 }
