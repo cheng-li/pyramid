@@ -1,21 +1,18 @@
 package edu.neu.ccs.pyramid.experiment;
 
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressonInspector;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrainer;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
-import edu.neu.ccs.pyramid.eval.PerClassMeasures;
+import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
-import edu.neu.ccs.pyramid.optimization.LBFGS;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -84,6 +81,9 @@ public class Exp33 {
             System.out.println(new PerClassMeasures(testMatrix,k));
         }
 
+        System.out.println(new MacroAveragedMeasures(testMatrix));
+        System.out.println(new MicroAveragedMeasures(testMatrix));
+
         File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
         logisticRegression.serialize(modelFile);
 
@@ -96,16 +96,22 @@ public class Exp33 {
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
         File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
         LogisticRegression logisticRegression = LogisticRegression.deserialize(modelFile);
+        System.out.println("number of used features in each class = "
+                + Arrays.toString(LogisticRegressionInspector.numOfUsedFeatures(logisticRegression)));
+
+
+
         int limit = config.getInt("verify.topFeature.limit");
         for (int k=0;k<logisticRegression.getNumClasses();k++){
             System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
-            System.out.println(LogisticRegressonInspector.topFeatures(logisticRegression,k,limit));
-            List<String> longNgrams = LogisticRegressonInspector.topFeatures(logisticRegression,k,10000).stream()
+            System.out.println(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit));
+            List<String> longNgrams = LogisticRegressionInspector.topFeatures(logisticRegression, k, 10000).stream()
                     .map(FeatureUtility::getName)
                     .filter(str -> str.split(" ").length >= 3).collect(Collectors.toList());
             System.out.println("long ngrams: ");
             System.out.println(longNgrams);
         }
+
 
 
     }

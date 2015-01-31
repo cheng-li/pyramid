@@ -1,13 +1,12 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressonInspector;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
-import edu.neu.ccs.pyramid.util.Pair;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -52,7 +51,7 @@ public class Exp59 {
         int limit = config.getInt("topFeature.limit");
         for (int k=0;k<logisticRegression.getNumClasses();k++) {
             features.add(new ArrayList<>());
-            features.get(k).addAll(LogisticRegressonInspector.topFeatures(logisticRegression, k, limit)
+            features.get(k).addAll(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit)
                     .stream().map(FeatureUtility::getName).collect(Collectors.toList()));
         }
         return features;

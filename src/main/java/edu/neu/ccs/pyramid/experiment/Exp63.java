@@ -1,23 +1,19 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressonInspector;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrainer;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
-import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.apache.mahout.math.*;
-import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.util.*;
-import java.util.function.DoubleSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -215,7 +211,7 @@ public class Exp63 {
         int limit = config.getInt("topFeature.limit");
         List<List<FeatureUtility>> goodFeatures = new ArrayList<>();
         for (int k=0;k<logisticRegression.getNumClasses();k++){
-            goodFeatures.add(LogisticRegressonInspector.topFeatures(logisticRegression, k, limit));
+            goodFeatures.add(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit));
         }
         return goodFeatures;
     }

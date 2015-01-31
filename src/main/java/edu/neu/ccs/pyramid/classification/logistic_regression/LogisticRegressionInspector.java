@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 12/7/14.
  */
-public class LogisticRegressonInspector {
+public class LogisticRegressionInspector {
     public static List<FeatureUtility> topFeatures(LogisticRegression logisticRegression,
                                                          int k){
         String[] featureNames = logisticRegression.getFeatureNames();
@@ -32,6 +32,15 @@ public class LogisticRegressonInspector {
                                                          int k,
                                                          int limit){
         return topFeatures(logisticRegression,k).stream().limit(limit).collect(Collectors.toList());
+    }
+
+    public static int[] numOfUsedFeatures(LogisticRegression logisticRegression){
+        int[] res = new int[logisticRegression.getNumClasses()];
+        for (int k=0;k<logisticRegression.getNumClasses();k++){
+            Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+            res[k] = weights.getNumNonZeroElements();
+        }
+        return res;
     }
 
 
