@@ -488,9 +488,13 @@ public class Exp35 {
     }
 
     static Set<String> loadDuplicate(Config config) throws Exception{
+        Set<String> set = new HashSet<>();
+        if (config.getString("input.duplicate").equals("")){
+            return set;
+        }
         File file = new File(config.getString("input.duplicate"));
         String[] strArr = FileUtils.readFileToString(file).split(",");
-        Set<String> set = new HashSet<>();
+
         Arrays.stream(strArr).forEach(set::add);
         return set;
     }
