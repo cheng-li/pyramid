@@ -32,11 +32,8 @@ class IntervalSplitter {
                                             double[] labels,
                                             Splitter.GlobalStats globalStats){
         FeatureStats featureStats = new FeatureStats(featureValues,probs,labels, globalStats);
-
         int numIntervals = regTreeConfig.getNumSplitIntervals();
-
         List<Interval> intervals = new ArrayList<>(numIntervals);
-
         double maxFeature = featureStats.getMax();
         double minFeature = featureStats.getMin();
 
@@ -94,7 +91,6 @@ class IntervalSplitter {
             }
         }
 
-
         // for zero values, do all of them together, as they all go to the same interval
         if (featureStats.getZeroBinaryCount()>0){
             int intervalIndex = getIntervalIndex(0,minFeature,intervalLength,numIntervals);
@@ -104,8 +100,6 @@ class IntervalSplitter {
             double oldWeightedLabelSum = interval.getWeightedSum();
             interval.setWeightedSum(oldWeightedLabelSum + featureStats.getZeroWeightedLabelSum());
         }
-
-
 
         // estimate percentage for each interval
         for (Interval interval: intervals){
