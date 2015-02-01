@@ -60,6 +60,7 @@ public class Exp19 {
 
         //re-sample
         ClfDataSet dataSet = loadTrainData(config);
+        System.out.println(dataSet.getMetaInfo());
         int numClasses = dataSet.getNumClasses();
 
         System.out.println("training model ");
@@ -95,13 +96,15 @@ public class Exp19 {
 //                        .mapToDouble(IntDoublePair::getValue).toArray();
 //                System.out.println(Arrays.toString(gradientArray));
         }
+        System.out.println(stopWatch);
+
         File serializedModel =  new File(archive,modelName);
         if (!overwriteModels && serializedModel.exists()){
             throw new RuntimeException(serializedModel.getAbsolutePath()+"already exists");
         }
 
         lkTreeBoost.serialize(serializedModel);
-        System.out.println(stopWatch);
+
         System.out.println("accuracy on training set = "+ Accuracy.accuracy(lkTreeBoost,
                 dataSet));
 
