@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -78,9 +79,9 @@ class LKTBTrainer {
      * calculate gradient vectors for all classes, store them
      */
     void calGradients(){
-        int numClasses = this.lktbConfig.getNumClasses();
-        IntStream.range(0, numClasses).parallel()
-                .forEach(this::calGradient);
+        int numDataPoints = this.lktbConfig.getDataSet().getNumDataPoints();
+        IntStream.range(0, numDataPoints).parallel()
+                .forEach(this::updateClassGradients);
     }
 
     double[] getGradient(int k){
@@ -107,18 +108,18 @@ class LKTBTrainer {
         }
     }
 
-    /**
-     * calculate gradient vector for class k, store it
-     * @param k class index
-     * @return pseudo response vector for class k
-     */
-    private void calGradient(int k){
-        ClfDataSet dataSet= this.lktbConfig.getDataSet();
-        int numDataPoints = dataSet.getNumDataPoints();
-        int[] labelsClassK = this.classLabels[k];
-        double[] gradient = this.classGradients[k];
-        for (int i=0;i<numDataPoints;i++){
-            gradient[i] = labelsClassK[i] - this.classProbabilities[i][k];
+
+    private void updateClassGradients(int dataPoint){
+        int numClasses = this.lktbConfig.getNumClasses();
+        int label = this.lktbConfig.getDataSet().getLabels()[dataPoint];
+        for (int k=0;k<numClasses;k++){
+            double gradient;
+            if (label==k){
+                gradient = 1-this.classProbabilities[dataPoint][k];
+            } else {
+                gradient = 0-this.classProbabilities[dataPoint][k];
+            }
+            this.classGradients[k][dataPoint] = gradient;
         }
     }
 
