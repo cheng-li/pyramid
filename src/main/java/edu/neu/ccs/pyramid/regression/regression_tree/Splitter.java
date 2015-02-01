@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureType;
+import org.apache.commons.lang3.time.StopWatch;
 
 
 import java.util.Arrays;
@@ -9,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 8/6/14.
@@ -26,12 +28,13 @@ public class Splitter {
                                        double[] probs){
         GlobalStats globalStats = new GlobalStats(labels,probs);
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
-        return Arrays.stream(activeFeatures).parallel()
+        Optional<SplitResult> result =  Arrays.stream(activeFeatures).parallel()
                 .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
                         probs,featureIndex,globalStats))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
+        return result;
     }
 
 

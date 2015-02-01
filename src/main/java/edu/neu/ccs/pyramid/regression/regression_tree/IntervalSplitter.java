@@ -112,29 +112,12 @@ class IntervalSplitter {
         // conditional probability = percentage
         // can be processed together
         if (featureStats.getNanBinaryCount()>0){
-            //todo verify
             for (Interval interval: intervals){
                 double oldCount = interval.getProbabilisticCount();
                 interval.setProbabilisticCount(oldCount + interval.getPercentage() * featureStats.getNanProbCount());
                 double oldSum = interval.getWeightedSum();
                 interval.setWeightedSum(oldSum + interval.getPercentage() * featureStats.getNanWeightedLabelSum());
             }
-
-
-//            for (Vector.Element element: featureValues.nonZeroes()){
-//                int i = element.index();
-//                double featureValue = featureValues.get(i);
-//                double label = labels[i];
-//                if (Double.isNaN(featureValue)){
-//                    for (Interval interval: intervals){
-//                        double probability = probs[i] * interval.getPercentage();
-//                        double oldCount = interval.getProbabilisticCount();
-//                        interval.setProbabilisticCount(oldCount + probability);
-//                        double oldSum = interval.getWeightedSum();
-//                        interval.setWeightedSum(oldSum + label*probability);
-//                    }
-//                }
-//            }
         }
 
         return intervals;
