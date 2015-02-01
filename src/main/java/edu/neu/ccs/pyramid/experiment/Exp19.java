@@ -56,14 +56,15 @@ public class Exp19 {
         double dataSamplingRate = config.getDouble("train.dataSamplingRate");
         boolean overwriteModels = config.getBoolean("train.overwriteModels");
 
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+
 
         //re-sample
         ClfDataSet dataSet = loadTrainData(config);
         int numClasses = dataSet.getNumClasses();
 
         System.out.println("training model ");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .learningRate(learningRate).minDataPerLeaf(minDataPerLeaf)

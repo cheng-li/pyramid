@@ -6,6 +6,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 8/11/14.
@@ -116,7 +117,7 @@ public class RegTreeTrainer {
         double[] parentProbs = leafToSplit.getProbs();
         double[] leftProbs = new double[numDataPoints];
         double[] rightProbs = new double[numDataPoints];
-        for (int i=0;i<numDataPoints;i++){
+        IntStream.range(0,numDataPoints).parallel().forEach(i->{
             double featureValue = columnVector.get(i);
             if (Double.isNaN(featureValue)){
                 // go to both branches probabilistically
@@ -132,7 +133,7 @@ public class RegTreeTrainer {
                     rightProbs[i] = parentProbs[i];
                 }
             }
-        }
+        });
 
         leftChild.setProbs(leftProbs);
         rightChild.setProbs(rightProbs);

@@ -11,6 +11,7 @@ public class AverageOutputCalculator implements LeafOutputCalculator{
         this.labels = labels;
     }
 
+    //todo: parallelize?
     @Override
     public double getLeafOutput(double[] probabilities) {
         double sum = 0;
