@@ -81,7 +81,7 @@ public class Exp19 {
             stopWatch1.start();
 
             lkTreeBoost.boostOneRound();
-            System.out.println("time spent on one iterations = "+stopWatch1);
+            System.out.println("time spent on one iteration = "+stopWatch1);
             //debug
 //                double[] gradient = lkTreeBoost.getGradient(0);
 //                List<String> extIds = IntStream.range(0, gradient.length)

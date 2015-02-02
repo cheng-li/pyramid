@@ -82,9 +82,11 @@ public class RegressionTree implements Regressor, Serializable {
         int featureIndex = parent.getFeatureIndex();
         double threshold = parent.getThreshold();
         boolean isLeftChild = (node==parent.getLeftChild());
+        double featureValue = vector.get(featureIndex);
+
 
         // for missing value
-        if (Double.isNaN(vector.get(featureIndex))){
+        if (Double.isNaN(featureValue)){
             if (isLeftChild){
                 double prob = parent.getLeftProb()*probability(vector,parent, calculated, probs);
                 calculated[id] = true;
@@ -99,29 +101,29 @@ public class RegressionTree implements Regressor, Serializable {
         }
 
         // for existing value
-        double value = vector.get(featureIndex);
-        if (isLeftChild && value <= threshold){
+
+        if (isLeftChild && featureValue <= threshold){
             double prob = probability(vector,parent,calculated, probs);
             calculated[id] = true;
             probs[id] = prob;
             return prob;
         }
 
-        if (isLeftChild && value > threshold){
+        if (isLeftChild && featureValue > threshold){
             double prob = 0;
             calculated[id] = true;
             probs[id] = prob;
             return prob;
         }
 
-        if (!isLeftChild && value <= threshold){
+        if (!isLeftChild && featureValue <= threshold){
             double prob = 0;
             calculated[id] = true;
             probs[id] = prob;
             return prob;
         }
 
-        if (!isLeftChild && value > threshold){
+        if (!isLeftChild && featureValue > threshold){
             double prob = probability(vector,parent, calculated, probs);
             calculated[id] = true;
             probs[id] = prob;
@@ -151,9 +153,10 @@ public class RegressionTree implements Regressor, Serializable {
         int featureIndex = parent.getFeatureIndex();
         double threshold = parent.getThreshold();
         boolean isLeftChild = (node==parent.getLeftChild());
+        double featureValue = vector.get(featureIndex);
 
         // for missing value
-        if (Double.isNaN(vector.get(featureIndex))){
+        if (Double.isNaN(featureValue)){
             if (isLeftChild){
                 double prob = parent.getLeftProb()*probability(vector,parent);
                 return prob;
@@ -164,23 +167,22 @@ public class RegressionTree implements Regressor, Serializable {
         }
 
         // for existing value
-        double value = vector.get(featureIndex);
-        if (isLeftChild && value <= threshold){
+        if (isLeftChild && featureValue <= threshold){
             double prob = probability(vector,parent);
             return prob;
         }
 
-        if (isLeftChild && value > threshold){
+        if (isLeftChild && featureValue > threshold){
             double prob = 0;
             return prob;
         }
 
-        if (!isLeftChild && value <= threshold){
+        if (!isLeftChild && featureValue <= threshold){
             double prob = 0;
             return prob;
         }
 
-        if (!isLeftChild && value > threshold){
+        if (!isLeftChild && featureValue > threshold){
             double prob = probability(vector,parent);
             return prob;
         }

@@ -166,7 +166,7 @@ public class LKTreeBoostTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (int round =0;round<2000;round++){
+        for (int round =0;round<200;round++){
             System.out.println("round="+round);
             lkTreeBoost.boostOneRound();
         }
