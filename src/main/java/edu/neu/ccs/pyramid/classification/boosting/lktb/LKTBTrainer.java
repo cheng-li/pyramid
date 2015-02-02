@@ -26,10 +26,7 @@ class LKTBTrainer {
      * F_k(x), used to speed up training. stagedScore.[k][i] = F_k(x_i)
      */
     private double[][] stagedScore;
-    /**
-     * y_ik, classLabels[k][i]=y_ik
-     */
-    private int[][] classLabels;
+
     /**
      * p_k(x) classProbabilities[i][k] = p_k(x_i)
      */
@@ -54,11 +51,9 @@ class LKTBTrainer {
         ClfDataSet dataSet= lktbConfig.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
         this.stagedScore = new double[numClasses][numDataPoints];
-        this.classLabels = new int[numClasses][numDataPoints];
         int[] trueLabels = dataSet.getLabels();
         for (int i=0;i<numDataPoints;i++){
             int label = trueLabels[i];
-            this.classLabels[label][i] = 1;
         }
         this.initStagedScores(regressors);
         this.classProbabilities = new double[numDataPoints][numClasses];
