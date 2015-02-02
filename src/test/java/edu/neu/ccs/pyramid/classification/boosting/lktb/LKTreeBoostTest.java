@@ -152,7 +152,7 @@ public class LKTreeBoostTest {
 
 
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
-                DataSetType.CLF_DENSE,true);
+                DataSetType.CLF_SPARSE,true);
         System.out.println(dataSet.getMetaInfo());
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
@@ -166,7 +166,7 @@ public class LKTreeBoostTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        for (int round =0;round<200;round++){
+        for (int round =0;round<2000;round++){
             System.out.println("round="+round);
             lkTreeBoost.boostOneRound();
         }

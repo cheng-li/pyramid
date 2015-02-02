@@ -73,7 +73,7 @@ class IntervalSplitter {
         if (featureStats.getNonZeroBinaryCount()>0){
             for (Vector.Element element: featureValues.nonZeroes()){
                 int i = element.index();
-                double featureValue = featureValues.get(i);
+                double featureValue = element.get();
                 double label = labels[i];
                 // if probs[i]==0, its feature value may be bigger than max or smaller than min,
                 // so we should skip it
@@ -258,10 +258,10 @@ class IntervalSplitter {
             // the iterator considers non zero and NaN
             for (Vector.Element element: featureValues.nonZeroes()){
                 int index = element.index();
-                double value = element.get();
                 double prob = probs[index];
-                double label = labels[index];
                 if (prob>0){
+                    double value = element.get();
+                    double label = labels[index];
                     if (Double.isNaN(value)){
                         nanBinaryCount += 1;
                         nanProbCount += prob;
