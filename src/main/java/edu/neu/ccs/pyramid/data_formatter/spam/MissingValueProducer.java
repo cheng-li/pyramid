@@ -34,6 +34,8 @@ public class MissingValueProducer {
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int j=0;j<dataSet.getNumFeatures();j++){
                 if (Math.random()<p){
+                    //todo change back
+//                    dataSet.setFeatureValue(i,j,0);
                     dataSet.setFeatureValue(i,j,Double.NaN);
                 }
             }
@@ -51,6 +53,7 @@ public class MissingValueProducer {
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int j=0;j<dataSet.getNumFeatures();j++){
                 if (Math.random()<p){
+//                    dataSet.setFeatureValue(i,j,0);
                     dataSet.setFeatureValue(i,j,Double.NaN);
                 }
             }
