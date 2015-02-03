@@ -132,6 +132,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
          * parallel by data
          */
         this.trainer.updateAssignmentProbMatrix();
+        this.trainer.updateProbabilityMatrix();
     }
 
     void addRegressor(Regressor regressor, int k){

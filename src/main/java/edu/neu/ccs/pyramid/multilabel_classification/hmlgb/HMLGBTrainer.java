@@ -1,8 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
 
-import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -29,19 +27,20 @@ public class HMLGBTrainer {
      */
     private List<MultiLabel> assignments;
     /**
-     * F_k(x), used to speed up training. stagedClassScoreMatrix.[i][k] = F_k(x_i)
+     * F_k(x), used to speed up training.
      */
-    private double[][] stagedClassScoreMatrix;
+    private ScoreMatrix scoreMatrix;
     /**
      * [i][a]=prob of assignment a for x_i
      */
     private double[][] assignmentProbabilityMatrix;
     /**
      * gradients for maximum likelihood estimation, to be fit by the tree
-     * classGradientMatrix[k]= gradients for class k
+     * gradientMatrix[k]= gradients for class k
      * store class first to ensure fast access of gradient
      */
-    private double[][] classGradientMatrix;
+    private GradientMatrix gradientMatrix;
+    private ProbabilityMatrix probabilityMatrix;
 
 
     public HMLGBTrainer(HMLGBConfig config,
@@ -53,15 +52,17 @@ public class HMLGBTrainer {
         int numClasses = dataSet.getNumClasses();
         int numDataPoints = dataSet.getNumDataPoints();
         int numAssignments = this.assignments.size();
-        this.stagedClassScoreMatrix = new double[numDataPoints][numClasses];
+        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
         this.initStagedClassScoreMatrix(regressors);
         this.assignmentProbabilityMatrix = new double[numDataPoints][numAssignments];
         this.updateAssignmentProbMatrix();
-        this.classGradientMatrix = new double[numClasses][numDataPoints];
+        this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
+        this.probabilityMatrix = new ProbabilityMatrix(numDataPoints,numClasses);
+        this.updateProbabilityMatrix();
     }
 
     double[] getGradients(int k){
-        return this.classGradientMatrix[k];
+        return this.gradientMatrix.getGradientsForClass(k);
     }
 
     /**
@@ -79,7 +80,7 @@ public class HMLGBTrainer {
 
     /**
      * parallel by data points
-     * update stagedClassScoreMatrix of class k
+     * update scoreMatrix of class k
      * @param regressor
      * @param k
      */
@@ -101,11 +102,11 @@ public class HMLGBTrainer {
         DataSet dataSet= this.config.getDataSet();
         Vector vector = dataSet.getRow(dataIndex);
         double prediction = regressor.predict(vector);
-        this.stagedClassScoreMatrix[dataIndex][k] += prediction;
+        this.scoreMatrix.increment(dataIndex,k,prediction);
     }
 
     /**
-     * use stagedClassScoreMatrix to update probabilities
+     * use scoreMatrix to update probabilities
      * parallel by data
      */
     void updateAssignmentProbMatrix(){
@@ -115,7 +116,7 @@ public class HMLGBTrainer {
     }
 
     /**
-     * use stagedClassScoreMatrix to update probabilities
+     * use scoreMatrix to update probabilities
      * numerically unstable if calculated directly
      * probability = exp(log(nominator)-log(denominator))
      */
@@ -138,8 +139,9 @@ public class HMLGBTrainer {
 
     private double calAssignmentScores(int dataPoint, MultiLabel assignment){
         double score = 0;
+        double[] scores = this.scoreMatrix.getScoresForData(dataPoint);
         for (Integer label : assignment.getMatchedLabels()){
-            score += this.stagedClassScoreMatrix[dataPoint][label];
+            score += scores[label];
         }
         return score;
     }
@@ -150,18 +152,28 @@ public class HMLGBTrainer {
      * @param dataPoint
      * @return
      */
-    private double[] calClassProbs(int dataPoint){
+    private void updateClassProbs(int dataPoint){
         double[] assignmentProbs = this.assignmentProbabilityMatrix[dataPoint];
-        double[] classProbs = new double[this.config.getDataSet().getNumClasses()];
         int numAssignments = assignments.size();
+        int numClasses = this.config.getDataSet().getNumClasses();
+        //reset
+        for (int k=0;k<numClasses;k++){
+            this.probabilityMatrix.setProbability(dataPoint,k,0);
+        }
         for (int a=0;a<numAssignments;a++){
             MultiLabel assignment = assignments.get(a);
             double prob = assignmentProbs[a];
             for (Integer label:assignment.getMatchedLabels()){
-                classProbs[label] += prob;
+                this.probabilityMatrix.increment(dataPoint,label,prob);
             }
         }
-        return classProbs;
+    }
+
+
+    void updateProbabilityMatrix(){
+        int numDataPoints = this.config.getDataSet().getNumDataPoints();
+        IntStream.range(0,numDataPoints).parallel()
+                .forEach(this::updateClassProbs);
     }
 
     void updateClassGradientMatrix(){
@@ -175,7 +187,7 @@ public class HMLGBTrainer {
         MultiLabel multiLabel = this.config.getDataSet().getMultiLabels()[dataPoint];
         //just use as a local variable
         //no need to store all in a matrix
-        double[] classProbs = this.calClassProbs(dataPoint);
+        double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
         for (int k=0;k<numClasses;k++){
             double gradient = 0;
             if (multiLabel.matchClass(k)){
@@ -183,7 +195,7 @@ public class HMLGBTrainer {
             } else {
                 gradient = 0-classProbs[k];
             }
-            this.classGradientMatrix[k][dataPoint] = gradient;
+            this.gradientMatrix.setGradient(dataPoint,k,gradient);
         }
     }
 
@@ -196,7 +208,7 @@ public class HMLGBTrainer {
      * @throws Exception
      */
     RegressionTree fitClassK(int k){
-        double[] gradients = this.classGradientMatrix[k];
+        double[] gradients = gradientMatrix.getGradientsForClass(k);
         int numClasses = this.config.getDataSet().getNumClasses();
         double learningRate = this.config.getLearningRate();
 

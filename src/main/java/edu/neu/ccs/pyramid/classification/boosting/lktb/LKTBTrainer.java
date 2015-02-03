@@ -1,8 +1,6 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -23,22 +21,21 @@ import java.util.stream.IntStream;
 class LKTBTrainer {
     private static final Logger logger = LogManager.getLogger();
     /**
-     * F_k(x), used to speed up training. stagedScore.[k][i] = F_k(x_i)
+     * F_k(x), used to speed up training.
      */
-    private double[][] stagedScore;
+    private ScoreMatrix scoreMatrix;
 
     /**
-     * p_k(x) classProbabilities[i][k] = p_k(x_i)
+     * p_k(x)
      */
-    private double[][] classProbabilities;
+    private ProbabilityMatrix probabilityMatrix;
 
     private LKTBConfig lktbConfig;
 
     /**
      * actually negative gradients, to be fit by the tree
-     * classGradients[k]= gradients for class k
      */
-    private double[][] classGradients;
+    private GradientMatrix gradientMatrix;
 
 
     /**
@@ -50,23 +47,19 @@ class LKTBTrainer {
         int numClasses = lktbConfig.getNumClasses();
         ClfDataSet dataSet= lktbConfig.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
-        this.stagedScore = new double[numClasses][numDataPoints];
-        int[] trueLabels = dataSet.getLabels();
-        for (int i=0;i<numDataPoints;i++){
-            int label = trueLabels[i];
-        }
+        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
         this.initStagedScores(regressors);
-        this.classProbabilities = new double[numDataPoints][numClasses];
+        this.probabilityMatrix = new ProbabilityMatrix(numDataPoints,numClasses);
         this.updateClassProbs();
-        this.classGradients = new double[numClasses][numDataPoints];
+        this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
     }
 
-    public double[][] getClassGradients() {
-        return classGradients;
+    public GradientMatrix getGradientMatrix() {
+        return gradientMatrix;
     }
 
-    public double[][] getClassProbabilities() {
-        return classProbabilities;
+    public ProbabilityMatrix getProbabilityMatrix() {
+        return probabilityMatrix;
     }
 
     /**
@@ -80,11 +73,11 @@ class LKTBTrainer {
     }
 
     double[] getGradient(int k){
-        return this.classGradients[k];
+        return this.gradientMatrix.getGradientsForClass(k);
     }
 
     double[] getClassProbs(int dataPointIndex){
-        return this.classProbabilities[dataPointIndex];
+        return this.probabilityMatrix.getProbabilitiesForData(dataPointIndex);
     }
 
     /**
@@ -95,7 +88,7 @@ class LKTBTrainer {
         int numClasses = this.lktbConfig.getNumClasses();
         ClfDataSet dataSet= this.lktbConfig.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
-        this.stagedScore = new double[numClasses][numDataPoints];
+        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
         for (int k=0;k<numClasses;k++){
             for (Regressor regressor: regressors.get(k)){
                 this.updateStagedScores(regressor,k);
@@ -107,39 +100,37 @@ class LKTBTrainer {
     private void updateClassGradients(int dataPoint){
         int numClasses = this.lktbConfig.getNumClasses();
         int label = this.lktbConfig.getDataSet().getLabels()[dataPoint];
+        double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
         for (int k=0;k<numClasses;k++){
             double gradient;
             if (label==k){
-                gradient = 1-this.classProbabilities[dataPoint][k];
+                gradient = 1-probs[k];
             } else {
-                gradient = 0-this.classProbabilities[dataPoint][k];
+                gradient = 0-probs[k];
             }
-            this.classGradients[k][dataPoint] = gradient;
+            this.gradientMatrix.setGradient(dataPoint,k,gradient);
         }
     }
 
 
     /**
-     * use stagedScore to update probabilities
+     * use scoreMatrix to update probabilities
      * numerically unstable if calculated directly
      * probability = exp(log(nominator)-log(denominator))
      */
     private void updateClassProb(int i){
         int numClasses = this.lktbConfig.getNumClasses();
-        double[] scores = new double[numClasses];
+        double[] scores = scoreMatrix.getScoresForData(i);
 
-        for (int k=0;k<numClasses;k++){
-            scores[k] = this.stagedScore[k][i];
-        }
         double logDenominator = MathUtil.logSumExp(scores);
 //        if (logger.isDebugEnabled()){
 //            logger.debug("logDenominator for data point "+i+" with scores  = "+ Arrays.toString(scores)
 //                    +" ="+logDenominator+", label = "+lktbConfig.getDataSet().getLabels()[i]);
 //        }
         for (int k=0;k<numClasses;k++){
-            double logNominator = this.stagedScore[k][i];
+            double logNominator = scores[k];
             double pro = Math.exp(logNominator-logDenominator);
-            this.classProbabilities[i][k] = pro;
+            this.probabilityMatrix.setProbability(i,k,pro);
             if (Double.isNaN(pro)){
                 throw new RuntimeException("pro=NaN, logNominator = "
                         +logNominator+", logDenominator="+logDenominator+
@@ -151,7 +142,7 @@ class LKTBTrainer {
 
     /**
      * parallel by data points
-     * update stagedScore of class k
+     * update scoreMatrix of class k
      * @param regressor
      * @param k
      */
@@ -173,11 +164,11 @@ class LKTBTrainer {
         DataSet dataSet= this.lktbConfig.getDataSet();
         Vector vector = dataSet.getRow(dataIndex);
         double prediction = regressor.predict(vector);
-        this.stagedScore[k][dataIndex] += prediction;
+        this.scoreMatrix.increment(dataIndex,k,prediction);
     }
 
     /**
-     * use stagedScore to update probabilities
+     * use scoreMatrix to update probabilities
      * parallel by data
      */
     void updateClassProbs(){
@@ -196,7 +187,7 @@ class LKTBTrainer {
      * @throws Exception
      */
     RegressionTree fitClassK(int k){
-        double[] pseudoResponse = this.classGradients[k];
+        double[] pseudoResponse = this.gradientMatrix.getGradientsForClass(k);
         int numClasses = this.lktbConfig.getNumClasses();
         double learningRate = this.lktbConfig.getLearningRate();
 

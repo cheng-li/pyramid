@@ -1,8 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
-import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -24,16 +22,17 @@ public class IMLGBTrainer {
     private IMLGBConfig config;
 
     /**
-     * F_k(x), used to speed up training. stagedClassScoreMatrix.[i][k] = F_k(x_i)
+     * F_k(x), used to speed up training. scoreMatrix.[i][k] = F_k(x_i)
      */
-    private double[][] stagedClassScoreMatrix;
+    private ScoreMatrix scoreMatrix;
 
     /**
      * gradients for maximum likelihood estimation, to be fit by the tree
-     * classGradientMatrix[k]= gradients for class k
+     * gradientMatrix[k]= gradients for class k
      * store class first to ensure fast access of gradient
      */
-    private double[][] classGradientMatrix;
+    private GradientMatrix gradientMatrix;
+    private ProbabilityMatrix probabilityMatrix;
 
 
     public IMLGBTrainer(IMLGBConfig config,
@@ -42,13 +41,15 @@ public class IMLGBTrainer {
         MultiLabelClfDataSet dataSet = config.getDataSet();
         int numClasses = dataSet.getNumClasses();
         int numDataPoints = dataSet.getNumDataPoints();
-        this.stagedClassScoreMatrix = new double[numDataPoints][numClasses];
+        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
         this.initStagedClassScoreMatrix(regressors);
-        this.classGradientMatrix = new double[numClasses][numDataPoints];
+        this.probabilityMatrix = new ProbabilityMatrix(numDataPoints,numClasses);
+        this.updateProbabilityMatrix();
+        this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
     }
 
     double[] getGradients(int k){
-        return this.classGradientMatrix[k];
+        return this.gradientMatrix.getGradientsForClass(k);
     }
 
     /**
@@ -66,7 +67,7 @@ public class IMLGBTrainer {
 
     /**
      * parallel by data points
-     * update stagedClassScoreMatrix of class k
+     * update scoreMatrix of class k
      * @param regressor
      * @param k
      */
@@ -88,7 +89,14 @@ public class IMLGBTrainer {
         DataSet dataSet= this.config.getDataSet();
         Vector vector = dataSet.getRow(dataIndex);
         double prediction = regressor.predict(vector);
-        this.stagedClassScoreMatrix[dataIndex][k] += prediction;
+        this.scoreMatrix.increment(dataIndex,k,prediction);
+    }
+
+    void updateProbabilityMatrix(){
+        DataSet dataSet= this.config.getDataSet();
+        int numDataPoints = dataSet.getNumDataPoints();
+        IntStream.range(0, numDataPoints).parallel()
+                .forEach(this::updateClassProbs);
     }
 
     /**
@@ -96,17 +104,16 @@ public class IMLGBTrainer {
      * @param dataPoint
      * @return
      */
-    private double[] calClassProbs(int dataPoint){
+    private void updateClassProbs(int dataPoint){
         int numClasses = this.config.getDataSet().getNumClasses();
-        double[] classProbs = new double[numClasses];
         for (int k=0;k<numClasses;k++){
-            classProbs[k] = this.calClassProb(dataPoint,k);
+            double prob = this.calClassProb(dataPoint, k);
+            this.probabilityMatrix.setProbability(dataPoint,k,prob);
         }
-        return classProbs;
     }
 
     private double calClassProb(int dataPoint, int k){
-        double score = this.stagedClassScoreMatrix[dataPoint][k];
+        double score = this.scoreMatrix.getScoresForData(dataPoint)[k];
         double logNominator = score;
         double[] scores = new double[2];
         scores[0] = 0;
@@ -127,7 +134,7 @@ public class IMLGBTrainer {
         MultiLabel multiLabel = this.config.getDataSet().getMultiLabels()[dataPoint];
         //just use as a local variable
         //no need to store all in a matrix
-        double[] classProbs = this.calClassProbs(dataPoint);
+        double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
         for (int k=0;k<numClasses;k++){
             double gradient = 0;
             if (multiLabel.matchClass(k)){
@@ -135,7 +142,7 @@ public class IMLGBTrainer {
             } else {
                 gradient = 0-classProbs[k];
             }
-            this.classGradientMatrix[k][dataPoint] = gradient;
+            this.gradientMatrix.setGradient(dataPoint,k,gradient);
         }
     }
 
@@ -148,7 +155,7 @@ public class IMLGBTrainer {
      * @throws Exception
      */
     RegressionTree fitClassK(int k){
-        double[] gradients = this.classGradientMatrix[k];
+        double[] gradients = this.gradientMatrix.getGradientsForClass(k);
         int numClasses = this.config.getDataSet().getNumClasses();
         double learningRate = this.config.getLearningRate();
 

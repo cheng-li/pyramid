@@ -134,6 +134,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
              */
             this.trainer.updateStagedClassScores(regressor,k);
         }
+        this.trainer.updateProbabilityMatrix();
     }
 
     void addRegressor(Regressor regressor, int k){

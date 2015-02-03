@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.GradientMatrix;
+import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
@@ -151,25 +153,13 @@ public class LKTreeBoost implements ProbabilityEstimator{
         return predictedClass;
     }
 
-    /**
-     * for external usage
-     * @param k
-     * @return
-     */
-    public double[] getGradient(int k){
-        return this.lktbTrainer.getGradient(k);
+
+    public GradientMatrix getGradientMatrix(){
+        return this.lktbTrainer.getGradientMatrix();
     }
 
-    public double[][] getGradientMatrix(){
-        return this.lktbTrainer.getClassGradients();
-    }
-
-    public double[][] getClassProbMatrix(){
-        return this.lktbTrainer.getClassProbabilities();
-    }
-
-    public double[] getClassProbs(int dataPointIndex){
-        return this.lktbTrainer.getClassProbs(dataPointIndex);
+    public ProbabilityMatrix getProbabilityMatrix(){
+        return this.lktbTrainer.getProbabilityMatrix();
     }
 
 
