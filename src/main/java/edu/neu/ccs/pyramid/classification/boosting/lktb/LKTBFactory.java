@@ -29,14 +29,12 @@ public class LKTBFactory implements ClassifierFactory{
                 .dataSamplingRate(config.getDataSamplingRate())
                 .featureSamplingRate(config.getFeatureSamplingRate())
                 .numSplitIntervals(config.getNumSplitIntervals())
+                .usePrior(config.usePrior())
                 .build();
         LKTreeBoost lkTreeBoost = new LKTreeBoost(dataSet.getNumClasses());
-        if (config.usePrior()){
-            lkTreeBoost.setPriorProbs(dataSet);
-        }
-        lkTreeBoost.setTrainConfig(lktbConfig);
+        LKTBTrainer trainer  = new LKTBTrainer(lktbConfig,lkTreeBoost);
         for (int iteration=0;iteration<config.getNumIterations();iteration++){
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         return lkTreeBoost;
     }

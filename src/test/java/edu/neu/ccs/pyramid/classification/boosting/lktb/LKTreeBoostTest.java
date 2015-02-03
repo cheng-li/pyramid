@@ -16,11 +16,11 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        spam_test();
+//        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
-//        spam_resume_train();
+        spam_resume_train();
 //        spam_polluted_build();
 //        spam_polluted_load();
 //        spam_fake_build();
@@ -157,18 +157,19 @@ public class LKTreeBoostTest {
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
 
-        lkTreeBoost.setPriorProbs(dataSet);
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                        .dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+                        .dataSamplingRate(1).featureSamplingRate(1).usePrior(true).
+                        build();
+
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<200;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -212,13 +213,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<50;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -244,13 +245,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =50;round<100;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -291,13 +292,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<100;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -328,13 +329,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<10000;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -411,18 +412,17 @@ public class LKTreeBoostTest {
 
         LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
 
-        lkTreeBoost.setPriorProbs(dataSet);
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
                 .dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<200;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -489,13 +489,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<100;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -545,13 +545,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(5).learningRate(0.1).
                         dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<100;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -632,14 +632,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(3).learningRate(0.5).numSplitIntervals(1000)
                 .dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setPriorProbs(dataSet);
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<100;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);
@@ -724,14 +723,13 @@ public class LKTreeBoostTest {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(4).learningRate(0.1).numSplitIntervals(1000)
                         .dataSamplingRate(1).featureSamplingRate(1).build();
-        lkTreeBoost.setPriorProbs(dataSet);
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<100;round++){
             System.out.println("round="+round);
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
         stopWatch.stop();
         System.out.println(stopWatch);

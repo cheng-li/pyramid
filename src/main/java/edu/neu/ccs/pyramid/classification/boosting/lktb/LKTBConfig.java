@@ -13,11 +13,14 @@ public class LKTBConfig {
     private double learningRate;
     private int numLeaves;
     private int minDataPerLeaf;
-    private int numClasses;
     private int[] activeFeatures;
     private int[] activeDataPoints;
     private int numSplitIntervals;
+    private boolean usePrior;
 
+    boolean usePrior() {
+        return usePrior;
+    }
 
     ClfDataSet getDataSet() {
         return dataSet;
@@ -33,10 +36,6 @@ public class LKTBConfig {
 
     int getMinDataPerLeaf() {
         return minDataPerLeaf;
-    }
-
-    int getNumClasses() {
-        return numClasses;
     }
 
     int[] getActiveFeatures() {
@@ -65,7 +64,6 @@ public class LKTBConfig {
          * required
          */
         private ClfDataSet dataSet;
-        private int numClasses;
 
         /**
          * optional
@@ -76,10 +74,10 @@ public class LKTBConfig {
         double dataSamplingRate=1;
         double featureSamplingRate=1;
         private int numSplitIntervals =100;
+        boolean usePrior = true;
 
         public Builder(ClfDataSet dataSet) {
             this.dataSet = dataSet;
-            this.numClasses = dataSet.getNumClasses();
         }
 
         public Builder numLeaves(int numLeaves){
@@ -113,6 +111,11 @@ public class LKTBConfig {
             return this;
         }
 
+        public Builder usePrior(boolean usePrior) {
+            this.usePrior = usePrior;
+            return this;
+        }
+
         public LKTBConfig build() {
             return new LKTBConfig(this);
         }
@@ -128,8 +131,8 @@ public class LKTBConfig {
         this.minDataPerLeaf = builder.minDataPerLeaf;
         double dataSamplingRate = builder.dataSamplingRate;
         double featureSamplingRate = builder.featureSamplingRate;
-        this.numClasses = builder.numClasses;
         this.numSplitIntervals = builder.numSplitIntervals;
+        this.usePrior = builder.usePrior;
         int numDataPoints = dataSet.getNumDataPoints();
         if (dataSamplingRate == 1) {
             /**
