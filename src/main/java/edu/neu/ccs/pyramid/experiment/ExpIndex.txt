@@ -71,3 +71,12 @@
       extract both unigrams and ngrams
       dynamic seeds
   56: detect duplicated docs in an index
+  57: check the difference between two datasets
+  58: feature extraction by boosting, dynamic seeds
+  59: check whether important features in one dataset appear in another dataset
+  60: obsolete
+  61: dump most common unigrams
+  62: extract all frequent ngrams from a document, check how probability estimation changes
+  63: check distribution of good ngrams
+  64: write data to the seql format
+
