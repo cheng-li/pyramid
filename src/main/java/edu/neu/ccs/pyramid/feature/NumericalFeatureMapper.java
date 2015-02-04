@@ -11,6 +11,7 @@ public class NumericalFeatureMapper implements Serializable {
     private static final long serialVersionUID = 2L;
     private String featureName;
     private int featureIndex;
+    @Deprecated
     private String source;
     private Map<String,String> settings;
 
@@ -33,6 +34,7 @@ public class NumericalFeatureMapper implements Serializable {
         return featureIndex;
     }
 
+    @Deprecated
     public String getSource() {
         return source;
     }

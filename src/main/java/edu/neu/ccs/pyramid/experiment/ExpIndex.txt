@@ -1,6 +1,6 @@
   1: regression data set memory usage test
   2: check manually extracted ngrams
-  3: single label feature extraction using elasticsearch,
+  3: (obsolete) single label feature extraction using elasticsearch,
   4: single label feature sampling gradient boosting
   5: build cnn index
   6: check purity of features
@@ -15,7 +15,7 @@
   15: feature extraction for multi label dataset
   16: index review polarity
   17: index classic3
-  18:  single label dataset, start with initial features + all unigram features
+  18: (obsolete) single label dataset, start with initial features + all unigram features
        use picked unigram features as seeds
   19: single label gradient boosting without probabilistic voting
   20: single label lasso
@@ -36,7 +36,7 @@
   35: dump ngram features
       split to train/valid/test
   36: logistic regression hyper parameter tuning with validation set
-  37:  feature extraction by logistic regression, with train/valid/test split
+  37: (obsolete) feature extraction by logistic regression, with train/valid/test split
        start with all unigrams
        only extract ngrams
   38: index sentence polarity
@@ -48,18 +48,18 @@
   44: index blog gender
   45: index wipo
   46: index trec spam
-  47: feature extraction by logistic regression, with train/valid/test split
+  47: (obsolete) feature extraction by logistic regression, with train/valid/test split
       start with specified features
       extract both unigrams and ngrams
-  48: feature extraction by boosting, with train/valid/test split
+  48: (obsolete) feature extraction by boosting, with train/valid/test split
       start with specified features
       extract both unigrams and ngrams
-  49: feature extraction by logistic regression, with train/valid/test split
+  49: (obsolete) feature extraction by logistic regression, with train/valid/test split
       start with specified features
       extract both unigrams and ngrams
       use focus set with promotion
-  50: exp49 + exp 36 + exp33
-  51: feature extraction by boosting, with train/valid/test split
+  50: (obsolete) exp49 + exp 36 + exp33
+  51: (obsolete) feature extraction by boosting, with train/valid/test split
        start with specified features
        extract both unigrams and ngrams
        use focus set with promotion
@@ -71,3 +71,12 @@
       extract both unigrams and ngrams
       dynamic seeds
   56: detect duplicated docs in an index
+  57: check the difference between two datasets
+  58: feature extraction by boosting, dynamic seeds
+  59: check whether important features in one dataset appear in another dataset
+  60: obsolete
+  61: dump most common unigrams
+  62: extract all frequent ngrams from a document, check how probability estimation changes
+  63: check distribution of good ngrams
+  64: write data to the seql format
+

@@ -10,9 +10,9 @@ import java.util.Map;
 import java.util.Scanner;
 
 /**
- * Created by chengli on 11/15/14.
+ * Created by chengli on 2/4/15.
  */
-public class IndexBuilder {
+public class MultiLabelIndexBuilder {
     static String[] extLabels={"neg","pos"};
     static Map<String,Integer> map = createMap();
 
@@ -30,8 +30,7 @@ public class IndexBuilder {
         builder.startObject();
         builder.field("body",getBody(file));
         builder.field("file_name",getFileName(file));
-        builder.field("real_label",getExtLabel(file));
-        builder.field("label",""+getLabel(file));
+        builder.array("real_label", getExtLabel(file));
         builder.field("split", getSplit(file));
         builder.endObject();
         return builder;
@@ -49,10 +48,7 @@ public class IndexBuilder {
         return fullPath;
     }
 
-    static int getLabel(File file) throws Exception{
-        String name = file.getParentFile().getName();
-        return map.get(name);
-    }
+
 
 
     /**
@@ -77,8 +73,10 @@ public class IndexBuilder {
         return res;
     }
 
-    static String getExtLabel(File file) throws Exception{
-        return file.getParentFile().getName();
+    static String[] getExtLabel(File file) throws Exception{
+        String[] labels = new String[1];
+        labels[0] = file.getParentFile().getName();
+        return labels;
     }
 
 

@@ -96,14 +96,13 @@ public class HMLGradientBoostingTest {
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+        HMLGBTrainer trainer = new HMLGBTrainer(trainConfig,boosting);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<200;round++){
             System.out.println("round="+round);
-            boosting.boostOneRound();
+            trainer.iterate();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
 //            System.out.println(Arrays.toString(boosting.getGradients(0)));
 //            System.out.println(Arrays.toString(boosting.getGradients(1)));
@@ -171,14 +170,13 @@ public class HMLGradientBoostingTest {
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
 
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+        HMLGBTrainer trainer = new HMLGBTrainer(trainConfig,boosting);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<30;round++){
             System.out.println("round="+round);
-            boosting.boostOneRound();
+            trainer.iterate();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
 //            System.out.println(Arrays.toString(boosting.getGradients(0)));
 //            System.out.println(Arrays.toString(boosting.getGradients(1)));
@@ -299,14 +297,13 @@ public class HMLGradientBoostingTest {
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
 
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+        HMLGBTrainer trainer = new HMLGBTrainer(trainConfig,boosting);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<100;round++){
             System.out.println("round="+round);
-            boosting.boostOneRound();
+            trainer.iterate();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
 //            System.out.println(Arrays.toString(boosting.getGradients(0)));
 //            System.out.println(Arrays.toString(boosting.getGradients(1)));
@@ -410,20 +407,14 @@ public class HMLGradientBoostingTest {
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
-
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+        HMLGBTrainer trainer = new HMLGBTrainer(trainConfig,boosting);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<10;round++){
             System.out.println("round="+round);
-            boosting.boostOneRound();
+            trainer.iterate();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
-            System.out.println(Arrays.toString(boosting.getGradients(0)));
-            System.out.println(Arrays.toString(boosting.getGradients(1)));
-            System.out.println(Arrays.toString(boosting.getGradients(2)));
-            System.out.println(Arrays.toString(boosting.getGradients(3)));
 
         }
         stopWatch.stop();

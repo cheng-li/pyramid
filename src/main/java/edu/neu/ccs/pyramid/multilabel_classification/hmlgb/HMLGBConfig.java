@@ -18,7 +18,11 @@ public class HMLGBConfig {
     private int[] activeFeatures;
     private int[] activeDataPoints;
     private int numSplitIntervals;
+    private boolean usePrior;
 
+    boolean usePrior() {
+        return usePrior;
+    }
 
     MultiLabelClfDataSet getDataSet() {
         return dataSet;
@@ -72,6 +76,7 @@ public class HMLGBConfig {
         double dataSamplingRate=1;
         double featureSamplingRate=1;
         private int numSplitIntervals =100;
+        boolean usePrior=true;
 
         public Builder(MultiLabelClfDataSet dataSet) {
             this.dataSet = dataSet;
@@ -108,6 +113,11 @@ public class HMLGBConfig {
             return this;
         }
 
+        public Builder usePrior(boolean usePrior) {
+            this.usePrior = usePrior;
+            return this;
+        }
+
         public HMLGBConfig build() {
             return new HMLGBConfig(this);
         }
@@ -124,6 +134,7 @@ public class HMLGBConfig {
         double dataSamplingRate = builder.dataSamplingRate;
         double featureSamplingRate = builder.featureSamplingRate;
         this.numSplitIntervals = builder.numSplitIntervals;
+        this.usePrior = builder.usePrior;
         int numDataPoints = dataSet.getNumDataPoints();
         if (dataSamplingRate == 1) {
             /**

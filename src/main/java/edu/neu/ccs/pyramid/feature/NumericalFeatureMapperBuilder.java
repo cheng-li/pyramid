@@ -8,6 +8,7 @@ import java.util.Map;
 public class NumericalFeatureMapperBuilder {
     private String featureName = "no name";
     private int featureIndex;
+    @Deprecated
     private String source = "unknown";
     private boolean featureIndexSet = false;
 
@@ -25,6 +26,7 @@ public class NumericalFeatureMapperBuilder {
         return this;
     }
 
+    @Deprecated
     public NumericalFeatureMapperBuilder setSource(String source) {
         this.source = source;
         return this;

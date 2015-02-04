@@ -24,10 +24,6 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     private List<List<Regressor>> regressors;
     private int numClasses;
     /**
-     * legal assignments of labels
-     */
-    private transient IMLGBTrainer trainer;
-    /**
      * legal assignments of labels, optional
      */
     private List<MultiLabel> assignments;
@@ -41,6 +37,10 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         }
     }
 
+    public int getNumClasses() {
+        return numClasses;
+    }
+
     public List<MultiLabel> getAssignments() {
         return assignments;
     }
@@ -49,112 +49,11 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         this.assignments = assignments;
     }
 
-    /**
-     * not sure whether this is good for performance
-     * start with prior probabilities
-     * should be called before setTrainConfig
-     * @param probs
-     */
-    public void setPriorProbs(double[] probs){
-        if (probs.length!=this.numClasses){
-            throw new IllegalArgumentException("probs.length!=this.numClasses");
-        }
-        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
-        for (int k=0;k<this.numClasses;k++){
-            double score = Math.log(probs[k] - average);
-            Regressor constant = new ConstantRegressor(score);
-            this.addRegressor(constant, k);
-        }
-    }
-
-    /**
-     * not sure whether this is good for performance
-     * start with prior probabilities
-     * should be called before setTrainConfig
-     */
-    public void setPriorProbs(MultiLabelClfDataSet dataSet){
-        MLPriorProbClassifier priorProbClassifier = new MLPriorProbClassifier(this.numClasses);
-        priorProbClassifier.fit(dataSet);
-        double[] probs = priorProbClassifier.getClassProbs();
-        this.setPriorProbs(probs);
-    }
-
-
-    /**
-     * to start/resume training, set train config
-     * @param config
-     */
-    public void setTrainConfig(IMLGBConfig config) {
-        if (config.getDataSet().getNumClasses()!=this.numClasses){
-            throw new RuntimeException("number of classes given in the config does not match number of classes in boosting");
-        }
-        this.trainer = new IMLGBTrainer(config,this.regressors);
-    }
-
-    /**
-     * default boosting method should follow this order
-     * @throws Exception
-     */
-    public void boostOneRound()  {
-        if (this.trainer==null){
-            throw new RuntimeException("set train config first");
-        }
-        this.calGradients();
-        //for non-standard experiments
-        //we can do something here
-        //for example, we can add more columns and call setActiveFeatures() here
-        this.fitRegressors();
-    }
-
-    /**
-     * for external usage
-     * @param k
-     * @return
-     */
-    public double[] getGradients(int k){
-        return this.trainer.getGradients(k);
-    }
-
-    /**
-     * parallel by class
-     */
-    public void calGradients(){
-        this.trainer.updateClassGradientMatrix();
-    }
-
-    public void fitRegressors(){
-        for (int k=0;k<this.numClasses;k++){
-            /**
-             * parallel by feature
-             */
-            Regressor regressor = this.trainer.fitClassK(k);
-            this.addRegressor(regressor, k);
-            /**
-             * parallel by data
-             */
-            this.trainer.updateStagedClassScores(regressor,k);
-        }
-    }
-
     void addRegressor(Regressor regressor, int k){
         this.regressors.get(k).add(regressor);
     }
 
-    /**
-     * reset activeDataPoints for later rounds
-     * @param activeDataPoints
-     */
-    public void setActiveDataPoints(int[] activeDataPoints){
-        this.trainer.setActiveDataPoints(activeDataPoints);
-    }
 
-    /**
-     * reset activeFeatures for later rounds
-     * @param activeFeatures
-     */
-    public void setActiveFeatures(int[] activeFeatures){
-        this.trainer.setActiveFeatures(activeFeatures);
-    }
 
     /**
      * if legal assignments are not present, do prediction without any constraint;

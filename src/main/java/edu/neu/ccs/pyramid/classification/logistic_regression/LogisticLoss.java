@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.GradientMatrix;
+import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -27,7 +29,7 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
     /**
      * numDataPoints by numClasses;
      */
-    private double[][] classProbMatrix;
+    private ProbabilityMatrix probabilityMatrix;
 
     //todo the concept is not unified in logistic regression and gradient boosting
 
@@ -36,7 +38,7 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
      *  y_ik - p_k(x_i)
      * numClasses by numDataPoints
      */
-    private double[][] dataGradientMatrix;
+    private GradientMatrix gradientMatrix;
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         ClfDataSet dataSet, double gaussianPriorVariance) {
@@ -46,8 +48,8 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
-        this.classProbMatrix = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
-        this.dataGradientMatrix = new double[dataSet.getNumClasses()][dataSet.getNumDataPoints()];
+        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
+        this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses(), GradientMatrix.Objective.MAXIMIZE);
         this.updateEmpricalCounts();
         this.refresh();
     }
@@ -129,17 +131,18 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
+        double[] probs = this.probabilityMatrix.getProbabilitiesForClass(classIndex);
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += this.classProbMatrix[i][classIndex];
+                count += probs[i];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                count += this.classProbMatrix[dataPointIndex][classIndex] * featureValue;
+                count += probs[dataPointIndex] * featureValue;
             }
         }
         return count;
@@ -147,7 +150,9 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
 
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
-        System.arraycopy(probs, 0, this.classProbMatrix[dataPointIndex], 0, dataSet.getNumClasses());
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
+        }
     }
 
     private void updateClassProbMatrix(){
@@ -156,13 +161,13 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
     }
 
     private void updataDataGradient(int dataPointIndex){
-        double[] classProbs = this.classProbMatrix[dataPointIndex];
+        double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPointIndex);
         int label = dataSet.getLabels()[dataPointIndex];
         for (int k=0;k<dataSet.getNumClasses();k++){
             if (k==label){
-                this.dataGradientMatrix[k][dataPointIndex] = 1 - classProbs[k];
+                this.gradientMatrix.setGradient(dataPointIndex,k,1 - classProbs[k]);
             } else {
-                this.dataGradientMatrix[k][dataPointIndex] = 0 - classProbs[k];
+                this.gradientMatrix.setGradient(dataPointIndex,k,0 - classProbs[k]);
             }
         }
     }
@@ -173,20 +178,13 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
     }
 
 
-    public double[][] getClassProbMatrix() {
-        return classProbMatrix;
+    public ProbabilityMatrix getProbabilityMatrix() {
+        return probabilityMatrix;
     }
 
-    public double[][] getGradientMatrix() {
-        return dataGradientMatrix;
+    public GradientMatrix getGradientMatrix() {
+        return gradientMatrix;
     }
 
-    public double[] getDataGradient(int k){
-        return dataGradientMatrix[k];
-    }
-
-    public double[] getClassProbs(int dataPointIndex){
-        return classProbMatrix[dataPointIndex];
-    }
 
 }

@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
@@ -169,8 +170,8 @@ public class Exp58 {
                 .numLeaves(config.getInt("train.numLeaves"))
                 .build();
         LKTreeBoost boosting = new LKTreeBoost(numClasses);
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,boosting);
 
         TermTfidfSplitExtractor termExtractor = new TermTfidfSplitExtractor(index,
                 trainIdTranslator).
@@ -264,10 +265,10 @@ public class Exp58 {
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
             int[] activeFeatures = IntStream.range(0, featureMappers.getTotalDim()).toArray();
-            boosting.setActiveFeatures(activeFeatures);
+            trainer.setActiveFeatures(activeFeatures);
             System.out.println("running boosting");
             for (int i=0;i<config.getInt("train.boostingRounds");i++){
-                boosting.boostOneRound();
+                trainer.iterate();
             }
             System.out.println("done");
 
@@ -291,12 +292,12 @@ public class Exp58 {
 
             if (shouldExtractFeatures) {
                 FocusSet focusSet = new FocusSet(numClasses);
-                focusSetProducer.setGradientMatrix(boosting.getGradientMatrix());
-                focusSetProducer.setClassProbMatrix(boosting.getClassProbMatrix());
+                focusSetProducer.setGradientMatrix(trainer.getGradientMatrix());
+                focusSetProducer.setProbabilityMatrix(trainer.getProbabilityMatrix());
 
 
-                validationSetProducer.setGradientMatrix(boosting.getGradientMatrix());
-                validationSetProducer.setClassProbMatrix(boosting.getClassProbMatrix());
+                validationSetProducer.setGradientMatrix(trainer.getGradientMatrix());
+                validationSetProducer.setProbabilityMatrix(trainer.getProbabilityMatrix());
 
                 for (int k = 0; k < numClasses; k++) {
 
@@ -407,7 +408,7 @@ public class Exp58 {
 
 
                 for (int k = 0; k < numClasses; k++) {
-                    double[] allGradients = boosting.getGradient(k);
+                    double[] allGradients = trainer.getGradientMatrix().getGradientsForClass(k);
                     List<Double> gradientsForValidation = validationSet.stream()
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 

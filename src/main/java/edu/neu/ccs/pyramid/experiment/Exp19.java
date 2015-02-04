@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
@@ -72,16 +73,16 @@ public class Exp19 {
                 .numLeaves(numLeaves).dataSamplingRate(dataSamplingRate)
                 .featureSamplingRate(featureSamplingRate).build();
         LKTreeBoost lkTreeBoost = new LKTreeBoost(numClasses);
-        lkTreeBoost.setPriorProbs(dataSet);
-        lkTreeBoost.setTrainConfig(trainConfig);
+
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
         for (int i=0;i<numIterations;i++){
 
             System.out.println("iteration "+i);
             StopWatch stopWatch1 = new StopWatch();
             stopWatch1.start();
 
-            lkTreeBoost.boostOneRound();
-            System.out.println("time spent on one iterations = "+stopWatch1);
+            trainer.iterate();
+            System.out.println("time spent on one iteration = "+stopWatch1);
             //debug
 //                double[] gradient = lkTreeBoost.getGradient(0);
 //                List<String> extIds = IntStream.range(0, gradient.length)

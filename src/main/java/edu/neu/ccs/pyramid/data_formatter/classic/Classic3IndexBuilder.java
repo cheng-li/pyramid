@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.data_formatter.classic;
 
+import org.apache.commons.io.FileUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
@@ -18,8 +19,7 @@ public class Classic3IndexBuilder {
     static Map<String,Integer> map = createMap();
 
     static String getBody(File file) throws Exception{
-        String entireFileText = new Scanner(file)
-                .useDelimiter("\\A").next();
+        String entireFileText = FileUtils.readFileToString(file);
         return entireFileText;
     }
 

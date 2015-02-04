@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
+ * extract all frequent ngrams from a document, check how probability estimation changes
  * Created by chengli on 1/26/15.
  */
 public class Exp62 {

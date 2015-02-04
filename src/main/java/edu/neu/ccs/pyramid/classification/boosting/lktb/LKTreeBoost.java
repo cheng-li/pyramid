@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.GradientMatrix;
+import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
@@ -18,13 +20,12 @@ import java.util.List;
  * Created by chengli on 8/14/14.
  */
 public class LKTreeBoost implements ProbabilityEstimator{
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     /**
      * regressors.get(k).get(i) is the ith regressor for class k
      */
     private List<List<Regressor>> regressors;
     private int numClasses;
-    private transient LKTBTrainer lktbTrainer;
 
     public LKTreeBoost(int numClasses) {
         this.numClasses = numClasses;
@@ -33,103 +34,6 @@ public class LKTreeBoost implements ProbabilityEstimator{
             List<Regressor> regressorsClassK  = new ArrayList<>();
             this.regressors.add(regressorsClassK);
         }
-    }
-
-
-    /**
-     * start with prior probabilities
-     * should be called before setTrainConfig
-     * @param probs
-     */
-    public void setPriorProbs(double[] probs){
-        if (probs.length!=this.numClasses){
-            throw new IllegalArgumentException("probs.length!=this.numClasses");
-        }
-        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
-        for (int k=0;k<this.numClasses;k++){
-            double score = Math.log(probs[k] - average);
-            Regressor constant = new ConstantRegressor(score);
-            this.addRegressor(constant, k);
-        }
-    }
-
-    /**
-     * start with prior probabilities
-     * should be called before setTrainConfig
-     */
-    public void setPriorProbs(ClfDataSet dataSet){
-        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.numClasses);
-        priorProbClassifier.fit(dataSet);
-        double[] probs = priorProbClassifier.getClassProbs();
-        this.setPriorProbs(probs);
-    }
-
-    /**
-     * to start/resume training, set train config
-     * @param lktbConfig
-     */
-    public void setTrainConfig(LKTBConfig lktbConfig) {
-        if (lktbConfig.getNumClasses()!=this.numClasses){
-            throw new RuntimeException("number of classes given in the config does not match number of classes in LKTB");
-        }
-        this.lktbTrainer = new LKTBTrainer(lktbConfig,this.regressors);
-    }
-
-    /**
-     * default boosting method should follow this order
-     * @throws Exception
-     */
-    public void boostOneRound()  {
-        if (this.lktbTrainer==null){
-            throw new RuntimeException("set train config first");
-        }
-        this.calGradients();
-        //for non-standard experiments
-        //we can do something here
-        //for example, we can add more columns and call setActiveFeatures() here
-        this.fitRegressors();
-    }
-
-    /**
-     * parallel by class
-     */
-    public void calGradients(){
-        this.lktbTrainer.calGradients();
-    }
-
-    public void fitRegressors(){
-        for (int k=0;k<this.numClasses;k++){
-            /**
-             * parallel by feature
-             */
-            Regressor regressor = this.lktbTrainer.fitClassK(k);
-            this.addRegressor(regressor, k);
-            /**
-             * parallel by data
-             */
-            this.lktbTrainer.updateStagedScores(regressor,k);
-        }
-
-        /**
-         * parallel by data
-         */
-        this.lktbTrainer.updateClassProbs();
-    }
-
-    /**
-     * reset activeDataPoints for later rounds
-     * @param activeDataPoints
-     */
-    public void setActiveDataPoints(int[] activeDataPoints){
-        this.lktbTrainer.setActiveDataPoints(activeDataPoints);
-    }
-
-    /**
-     * reset activeFeatures for later rounds
-     * @param activeFeatures
-     */
-    public void setActiveFeatures(int[] activeFeatures){
-        this.lktbTrainer.setActiveFeatures(activeFeatures);
     }
 
     /**
@@ -151,28 +55,6 @@ public class LKTreeBoost implements ProbabilityEstimator{
         return predictedClass;
     }
 
-    /**
-     * for external usage
-     * @param k
-     * @return
-     */
-    public double[] getGradient(int k){
-        return this.lktbTrainer.getGradient(k);
-    }
-
-    public double[][] getGradientMatrix(){
-        return this.lktbTrainer.getClassGradients();
-    }
-
-    public double[][] getClassProbMatrix(){
-        return this.lktbTrainer.getClassProbabilities();
-    }
-
-    public double[] getClassProbs(int dataPointIndex){
-        return this.lktbTrainer.getClassProbs(dataPointIndex);
-    }
-
-
     public int getNumClasses() {
         return this.numClasses;
     }
@@ -185,7 +67,7 @@ public class LKTreeBoost implements ProbabilityEstimator{
 //        for (int i=0;i<n;i++){
 //            this.removeFirstTree();
 //        }
-//        this.updateClassProbs();
+//        this.updateProbabilityMatrix();
 //    }
 
 

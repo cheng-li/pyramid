@@ -15,8 +15,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 8/6/14.
  */
 public class Splitter {
-//    static  ExecutorService executor = MoreExecutors.getExitingExecutorService((ThreadPoolExecutor) Executors
-//            .newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+    private static ForkJoinPool pool = new ForkJoinPool();
 
 
     /**
@@ -31,12 +30,22 @@ public class Splitter {
                                        double[] probs){
         GlobalStats globalStats = new GlobalStats(labels,probs);
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
-        Optional<SplitResult> result = Arrays.stream(activeFeatures).parallel()
-                .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
-                        probs,featureIndex,globalStats))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .max(Comparator.comparing(SplitResult::getReduction));
+
+        ForkJoinTask<Optional<SplitResult>> task = pool.submit(() ->
+                Arrays.stream(activeFeatures).parallel()
+                        .mapToObj(featureIndex -> split(regTreeConfig, dataSet, labels,
+                                probs, featureIndex, globalStats))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .max(Comparator.comparing(SplitResult::getReduction)));
+        Optional<SplitResult> result = task.join();
+//
+//        Optional<SplitResult> result = Arrays.stream(activeFeatures).parallel()
+//                .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
+//                        probs,featureIndex,globalStats))
+//                .filter(Optional::isPresent)
+//                .map(Optional::get)
+//                .max(Comparator.comparing(SplitResult::getReduction));
         return result;
     }
 

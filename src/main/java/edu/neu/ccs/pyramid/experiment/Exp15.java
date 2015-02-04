@@ -9,9 +9,11 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.*;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
+import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.MatchQueryBuilder;
@@ -20,7 +22,6 @@ import org.elasticsearch.search.SearchHit;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -153,7 +154,7 @@ public class Exp15 {
                 CategoricalFeatureMapperBuilder builder = new CategoricalFeatureMapperBuilder();
                 builder.setFeatureName(field);
                 builder.setStart(featureMappers.nextAvailable());
-                builder.setSource("field");
+
                 for (String id: ids){
                     String category = index.getStringField(id, field);
                     // missing value is not a category
@@ -163,6 +164,7 @@ public class Exp15 {
                 }
                 boolean toAdd = true;
                 CategoricalFeatureMapper mapper = builder.build();
+                mapper.getSettings().put("source","field");
                 if (config.getBoolean("categFeature.filter")){
                     double threshold = config.getDouble("categFeature.percentThreshold");
                     int numCategories = mapper.getNumCategories();
@@ -180,8 +182,8 @@ public class Exp15 {
                 NumericalFeatureMapperBuilder builder = new NumericalFeatureMapperBuilder();
                 builder.setFeatureName(field);
                 builder.setFeatureIndex(featureMappers.nextAvailable());
-                builder.setSource("field");
                 NumericalFeatureMapper mapper = builder.build();
+                mapper.getSettings().put("source","field");
                 featureMappers.addMapper(mapper);
             }
         }
@@ -214,7 +216,7 @@ public class Exp15 {
         featureMappers.getCategoricalFeatureMappers().stream().parallel().
                 forEach(categoricalFeatureMapper -> {
                     String featureName = categoricalFeatureMapper.getFeatureName();
-                    String source = categoricalFeatureMapper.getSource();
+                    String source = categoricalFeatureMapper.getSettings().get("source");
                     if (source.equalsIgnoreCase("field")){
                         for (String id: dataIndexIds){
                             int algorithmId = idTranslator.toIntId(id);
@@ -238,7 +240,7 @@ public class Exp15 {
         featureMappers.getNumericalFeatureMappers().stream().parallel().
                 forEach(numericalFeatureMapper -> {
                     String featureName = numericalFeatureMapper.getFeatureName();
-                    String source = numericalFeatureMapper.getSource();
+                    String source = numericalFeatureMapper.getSettings().get("source");
                     int featureIndex = numericalFeatureMapper.getFeatureIndex();
 
                     if (source.equalsIgnoreCase("field")){
@@ -251,10 +253,11 @@ public class Exp15 {
                     }
 
                     if (source.equalsIgnoreCase("matching_score")){
+                        String ngram  = numericalFeatureMapper.getSettings().get("ngram");
                         SearchResponse response = null;
 
                         //todo assume unigram, so slop doesn't matter
-                        response = index.matchPhrase(index.getBodyField(), featureName, dataIndexIds, 0);
+                        response = index.matchPhrase(index.getBodyField(), ngram, dataIndexIds, 0);
 
                         SearchHit[] hits = response.getHits().getHits();
                         for (SearchHit hit: hits){
@@ -363,324 +366,329 @@ public class Exp15 {
 
     }
 
-
     static void trainModel(Config config, MultiLabelClfDataSet dataSet, FeatureMappers featureMappers,
                            MultiLabelIndex index, IdTranslator trainIdTranslator) throws Exception{
         String archive = config.getString("archive.folder");
+        File archiveFolder = new File(archive);
+        archiveFolder.mkdirs();
         int numIterations = config.getInt("train.numIterations");
         int numClasses = dataSet.getNumClasses();
-        int numLeaves = config.getInt("train.numLeaves");
-        double learningRate = config.getDouble("train.learningRate");
-        int trainMinDataPerLeaf = config.getInt("train.minDataPerLeaf");
-
 
         String modelName = config.getString("archive.model");
-        boolean overwriteModels = config.getBoolean("train.overwriteModels");
-        int numDocsToSelect = config.getInt("extraction.numDocsToSelect");
-        int numNgramsToExtract = config.getInt("extraction.numNgramsToExtract");
-        double extractionFrequency = config.getDouble("extraction.frequency");
-        if (extractionFrequency>1 || extractionFrequency<0){
-            throw new IllegalArgumentException("0<=extraction.frequency<=1");
-        }
+
+
 
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        System.out.println("extracting features");
+        System.out.println("training model ");
+
+        int[] classCounts = DataSetUtil.getCountPerClass(dataSet);
+        int totalCount = Arrays.stream(classCounts).sum();
 
         IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(dataSet)
-                .learningRate(learningRate).minDataPerLeaf(trainMinDataPerLeaf)
-                .numLeaves(numLeaves)
+                .learningRate(config.getDouble("train.learningRate")).minDataPerLeaf(config.getInt("train.minDataPerLeaf"))
+                .numLeaves(config.getInt("train.numLeaves"))
                 .build();
 
         IMLGradientBoosting boosting = new IMLGradientBoosting(numClasses);
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(imlgbConfig);
+        IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
 
-        TermTfidfSplitExtractor tfidfSplitExtractor = new TermTfidfSplitExtractor(index,
-                trainIdTranslator,numNgramsToExtract).
-                setMinDf(config.getInt("extraction.tfidfSplitExtractor.minDf")).
-                setNumSurvivors(config.getInt("extraction.tfidfSplitExtractor.numSurvivors")).
-                setMinDataPerLeaf(config.getInt("extraction.tfidfSplitExtractor.minDataPerLeaf"));
+        TermTfidfSplitExtractor termExtractor = new TermTfidfSplitExtractor(index,
+                trainIdTranslator).
+                setMinDf(config.getInt("extraction.termExtractor.minDf")).
+                setNumSurvivors(config.getInt("extraction.termExtractor.numSurvivors")).
+                setMinDataPerLeaf(config.getInt("extraction.termExtractor.minDataPerLeaf"));
 
         PhraseSplitExtractor phraseSplitExtractor = new PhraseSplitExtractor(index,trainIdTranslator)
-                .setMinDataPerLeaf(config.getInt("extraction.phraseSplitExtractor.minDataPerLeaf"))
-                .setMinDf(config.getInt("extraction.phraseSplitExtractor.minDf"))
-                .setTopN(config.getInt("extraction.phraseSplitExtractor.topN"));
+                .setMinDataPerLeaf(config.getInt("extraction.phraseExtractor.minDataPerLeaf"))
+                .setMinDf(config.getInt("extraction.phraseExtractor.minDf"))
+                .setLengthLimit(config.getInt("extraction.phraseExtractor.maxN"));
 
-        System.out.println("loading initial seeds...");
-        DFStats dfStats = loadDFStats(index,trainIdTranslator,labelTranslator);
-        List<Set<String>> seedsForAllClasses = new ArrayList<>();
-        for (int i=0;i<numClasses;i++){
-            Set<String> set = new HashSet<>();
-            set.addAll(dfStats.getSortedTerms(i,config.getInt("extraction.seeds.minDf"),
-                    config.getInt("extraction.seeds.numPerClass")));
-            seedsForAllClasses.add(set);
+        MixedSplitExtractor mixedSplitExtractor = new MixedSplitExtractor(termExtractor,phraseSplitExtractor);
+
+        int[] topNs = new int[numClasses];
+        for (int k=0;k<numClasses;k++){
+            topNs[k] = (classCounts[k]*config.getInt("extraction.topN")/totalCount);
         }
 
-        System.out.println("seeds loaded");
+        System.out.println("number of ngrams to be extracted from each class = "+ Arrays.toString(topNs));
+
+
         Set<String> blackList = new HashSet<>();
 
-        Set<String> allSeeds = new HashSet<>();
-        for(Set<String> seeds: seedsForAllClasses){
-            allSeeds.addAll(seeds);
-        }
-
-
-        for (String term: allSeeds){
-            int featureIndex = featureMappers.nextAvailable();
-            SearchResponse response = index.match(index.getBodyField(),
-                    term,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
-            for (SearchHit hit: response.getHits().getHits()){
-                String indexId = hit.getId();
-                int algorithmId = trainIdTranslator.toIntId(indexId);
-                float score = hit.getScore();
-                dataSet.setFeatureValue(algorithmId, featureIndex,score);
+        //add initial unigrams to blacklist
+        for (NumericalFeatureMapper numericalFeatureMapper: featureMappers.getNumericalFeatureMappers()){
+            if (numericalFeatureMapper.getSettings().get("source").equals("matching_score") &&
+                    numericalFeatureMapper.getSettings().get("ngram").split(" ").length==1){
+                blackList.add(numericalFeatureMapper.getSettings().get("ngram"));
             }
-
-            NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                    setFeatureIndex(featureIndex).setFeatureName(term).
-                    setSource("matching_score").build();
-            featureMappers.addMapper(mapper);
-            blackList.add(term);
         }
 
+        List<LinkedList<Set<Integer>>> easySets = new ArrayList<>();
+        for (int k=0;k<numClasses;k++){
+            easySets.add(new LinkedList<>());
+        }
+
+        List<LinkedList<Set<Integer>>> hardSets = new ArrayList<>();
+        for (int k=0;k<numClasses;k++){
+            hardSets.add(new LinkedList<>());
+        }
+
+        List<LinkedList<Set<Integer>>> uncertainSets = new ArrayList<>();
+        for (int k=0;k<numClasses;k++){
+            uncertainSets.add(new LinkedList<>());
+        }
+
+        List<List<Integer>> dataPerClass = DataSetUtil.labelToDataPoints(dataSet);
+
+        FocusSetProducer focusSetProducer = new FocusSetProducer(numClasses,dataSet.getNumDataPoints());
+        focusSetProducer.setPromotion(config.getBoolean("extraction.focusSet.promotion"));
+        focusSetProducer.setDataPerClass(dataPerClass);
+
+        FocusSetProducer validationSetProducer = new FocusSetProducer(numClasses,dataSet.getNumDataPoints());
+        validationSetProducer.setPromotion(config.getBoolean("extraction.validationSet.promotion"));
+        validationSetProducer.setDataPerClass(dataPerClass);
+
+        Set<String> focusSets = config.getStrings("extraction.focusSet.type").stream().collect(Collectors.toSet());
+        int numFocusSets = focusSets.size();
+        int focusSetSize = config.getInt("extraction.focusSet.size");
+        int[] numDocsPerFocusSet = new int[numClasses];
+        double focusPercentage = ((double)focusSetSize)/totalCount;
+        for (int k=0;k<numClasses;k++){
+            numDocsPerFocusSet[k] = (int)(classCounts[k]*focusPercentage/numFocusSets);
+        }
+
+        System.out.println("focus set sizes = "+Arrays.toString(numDocsPerFocusSet));
+
+        Set<String> validationSets = config.getStrings("extraction.validationSet.type").stream().collect(Collectors.toSet());
+        int numValidationSets = validationSets.size();
+
+        //todo
+        int validationSize = config.getInt("extraction.validationSet.size");
+        double validationPercentage = ((double)validationSize)/totalCount;
+        int[] numDocsPerValidationSet = new int[numClasses];
+
+        for (int k=0;k<numClasses;k++){
+            numDocsPerValidationSet[k] = (int)(classCounts[k]*validationPercentage/numValidationSets);
+        }
+        System.out.println("validation set sizes = "+Arrays.toString(numDocsPerValidationSet));
+
+        //todo
+        int numSeeds = config.getInt("extraction.numSeeds");
+
+        File statsFile = new File(config.getString("archive.folder"),"stats");
+        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile));
+
+        statsWriter.write("initially");
+        statsWriter.write(",");
+        statsWriter.write("number of features = " + featureMappers.getTotalDim());
+        statsWriter.newLine();
 
 
 
-//        //todo
-//        List<Integer> validationSet = new ArrayList<>();
-//        for (int i=0;i<trainIndex.getNumDocs();i++){
-//            validationSet.add(i);
-//        }
+        for (int iteration=0;iteration<numIterations;iteration++) {
+            System.out.println("iteration " + iteration);
+            int[] activeFeatures = IntStream.range(0, featureMappers.getTotalDim()).toArray();
+            trainer.setActiveFeatures(activeFeatures);
+            System.out.println("running boosting");
+            for (int i=0;i<config.getInt("train.boostingRounds");i++){
+                trainer.iterate();
+            }
+            System.out.println("done");
 
-        for (int iteration=0;iteration<numIterations;iteration++){
-            System.out.println("iteration "+iteration);
-            boosting.calGradients();
 
             boolean condition1 = (featureMappers.getTotalDim()
-                    +numNgramsToExtract*numClasses*2
-                    +config.getInt("extraction.phraseSplitExtractor.topN")*numClasses*2
-                    <dataSet.getNumFeatures());
-            boolean condition2 = (Math.random()<extractionFrequency);
-            //should start with some feature
-            boolean condition3 = (iteration==0);
+                    + config.getInt("extraction.topN")
+                    < dataSet.getNumFeatures());
 
 
-            boolean shouldExtractFeatures = condition1&&condition2||condition3;
+            boolean shouldExtractFeatures = condition1;
 
-            if (!shouldExtractFeatures){
-                if (!condition1){
+            if (!shouldExtractFeatures) {
+                if (!condition1) {
                     System.out.println("we have reached the max number of columns " +
                             "and will not extract new features");
-                }
-
-                if (!condition2){
-                    System.out.println("no feature extraction is scheduled for this round");
+                    break;
                 }
             }
 
 
 
-            /**
-             * from easy set
-             */
-            if (shouldExtractFeatures&&config.getBoolean("extraction.fromEasySet")){
-                //generate easy set
+            if (shouldExtractFeatures) {
                 FocusSet focusSet = new FocusSet(numClasses);
-                for (int k=0;k<numClasses;k++){
-                    double[] gradient = boosting.getGradients(k);
-                    Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
-                    List<Integer> easyExamples = IntStream.range(0,gradient.length)
-                            .mapToObj(i -> new Pair<>(i,gradient[i]))
-                            .filter(pair -> pair.getSecond()>0)
-                            .sorted(comparator)
-                            .limit(numDocsToSelect)
-                            .map(Pair::getFirst)
-                            .collect(Collectors.toList());
-                    for(Integer doc: easyExamples){
-                        focusSet.add(doc,k);
+                focusSetProducer.setGradientMatrix(trainer.getGradientMatrix());
+                focusSetProducer.setProbabilityMatrix(trainer.getProbabilityMatrix());
+
+
+                validationSetProducer.setGradientMatrix(trainer.getGradientMatrix());
+                validationSetProducer.setProbabilityMatrix(trainer.getProbabilityMatrix());
+
+                for (int k = 0; k < numClasses; k++) {
+
+                    if (focusSets.contains("easy")){
+                        Set<Integer> easySet = focusSetProducer.produceEasyOnes(k, numDocsPerFocusSet[k]);
+                        List<String> easySetIndexIds = easySet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("easy set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(easySetIndexIds.toString());
+                        for (Integer dataPoint : easySet) {
+                            focusSet.add(dataPoint, k);
+                        }
+                        easySets.get(k).add(easySet);
+                        if (easySets.get(k).size() > 2) {
+                            easySets.get(k).remove();
+                        }
+                        if (iteration >= 1) {
+                            int commonEasy = SetUtil.intersect(easySets.get(k).getFirst(), easySets.get(k).getLast()).size();
+                            System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonEasy
+                                    + "/" + numDocsPerFocusSet[k] + " common documents in the easy set.");
+                        }
                     }
+
+
+                    if (focusSets.contains("hard")){
+                        Set<Integer> hardSet = focusSetProducer.produceHardOnes(k, numDocsPerFocusSet[k]);
+                        List<String> hardSetIndexIds = hardSet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("hard set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(hardSetIndexIds.toString());
+                        for (Integer dataPoint : hardSet) {
+                            focusSet.add(dataPoint, k);
+                        }
+                        hardSets.get(k).add(hardSet);
+                        if (hardSets.get(k).size() > 2) {
+                            hardSets.get(k).remove();
+                        }
+                        if (iteration >= 1) {
+                            int commonHard = SetUtil.intersect(hardSets.get(k).getFirst(), hardSets.get(k).getLast()).size();
+                            System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonHard
+                                    + "/" + numDocsPerFocusSet[k] + " common documents in the hard set.");
+                        }
+                    }
+
+                    if (focusSets.contains("uncertain")){
+                        Set<Integer> uncertainSet = focusSetProducer.produceUncertainOnes(k, numDocsPerFocusSet[k]);
+                        List<String> uncertainSetIndexIds = uncertainSet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("uncertain set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(uncertainSetIndexIds.toString());
+                        for (Integer dataPoint : uncertainSet) {
+                            focusSet.add(dataPoint, k);
+                        }
+                        uncertainSets.get(k).add(uncertainSet);
+                        if (uncertainSets.get(k).size() > 2) {
+                            uncertainSets.get(k).remove();
+                        }
+                        if (iteration >= 1) {
+                            int commonUncertain = SetUtil.intersect(uncertainSets.get(k).getFirst(), uncertainSets.get(k).getLast()).size();
+                            System.out.println("between iterations " + (iteration - 1) + " and " + iteration + ", there are " + commonUncertain
+                                    + "/" + numDocsPerFocusSet[k] + " common documents in the uncertain set.");
+                        }
+                    }
+
+                    if (focusSets.contains("random")){
+                        Set<Integer> randomSet = focusSetProducer.produceRandomOnes(k, numDocsPerFocusSet[k]);
+                        List<String> randomSetIndexIds = randomSet
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("random set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(randomSetIndexIds.toString());
+                        for (Integer dataPoint : randomSet) {
+                            focusSet.add(dataPoint, k);
+                        }
+
+                    }
+
+
                 }
 
-                List<Integer> validationSet = focusSet.getAll();
 
-                for (int k=0;k<numClasses;k++){
-                    double[] allGradients = boosting.getGradients(k);
+                System.out.println("focus set = "+focusSet.getAll());
+
+                List<Integer> validationSet = new ArrayList<>();
+                for (int k = 0; k < numClasses; k++){
+                    if (validationSets.contains("easy")){
+                        validationSet.addAll(validationSetProducer.produceEasyOnes(k,numDocsPerValidationSet[k]));
+                    }
+
+                    if (validationSets.contains("hard")){
+                        validationSet.addAll(validationSetProducer.produceHardOnes(k,numDocsPerValidationSet[k]));
+                    }
+
+                    if (validationSets.contains("uncertain")){
+                        validationSet.addAll(validationSetProducer.produceUncertainOnes(k,numDocsPerValidationSet[k]));
+                    }
+
+                    if (validationSets.contains("random")){
+                        validationSet.addAll(validationSetProducer.produceRandomOnes(k,numDocsPerValidationSet[k]));
+                    }
+
+                }
+
+
+
+
+                for (int k = 0; k < numClasses; k++) {
+                    double[] allGradients = trainer.getGradientMatrix().getGradientsForClass(k);
                     List<Double> gradientsForValidation = validationSet.stream()
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
-                    List<String> goodTerms = null;
-
-                    goodTerms = tfidfSplitExtractor.getGoodTerms(focusSet,
-                            validationSet,
-                            blackList, k, gradientsForValidation);
-
-
-                    seedsForAllClasses.get(k).addAll(goodTerms);
-
-                    List<String> focusSetIndexIds = focusSet.getDataClassK(k)
-                            .parallelStream().map(trainIdTranslator::toExtId)
-                            .collect(Collectors.toList());
-                    System.out.println("easy set for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
-                    System.out.println(focusSetIndexIds.toString());
-                    System.out.println("terms extracted from easy set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
-                    System.out.println(goodTerms);
-
-
-
-
                     //phrases
-                    System.out.println("seeds for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
-                    System.out.println(seedsForAllClasses.get(k));
-                    List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
-                            gradientsForValidation,seedsForAllClasses.get(k));
-                    System.out.println("phrases extracted from easy set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
+                    List<String> goodPhrases = mixedSplitExtractor.getGoodNgrams(focusSet, validationSet, blackList, k,
+                            gradientsForValidation, numSeeds,topNs[k]);
+                    System.out.println("phrases extracted for class " + k + " (" + labelTranslator.toExtLabel(k) + "):");
                     System.out.println(goodPhrases);
                     blackList.addAll(goodPhrases);
 
 
-                    for (String ngram:goodTerms){
+                    List<Pair<String, SearchResponse>> searchResponseList = goodPhrases.stream().parallel()
+                            .map(phrase -> new Pair<>(phrase, index.matchPhrase(index.getBodyField(),
+                                    phrase, trainIdTranslator.getAllExtIds(), 0)))
+                            .collect(Collectors.toList());
+
+                    for (Pair<String, SearchResponse> pair : searchResponseList) {
+                        String phrase = pair.getFirst();
+                        SearchResponse response = pair.getSecond();
                         int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.match(index.getBodyField(),
-                                ngram,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
-                        for (SearchHit hit: response.getHits().getHits()){
+                        for (SearchHit hit : response.getHits().getHits()) {
                             String indexId = hit.getId();
                             int algorithmId = trainIdTranslator.toIntId(indexId);
                             float score = hit.getScore();
-                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
-                        }
-
-                        NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                                setFeatureIndex(featureIndex).setFeatureName(ngram).
-                                setSource("matching_score").build();
-                        featureMappers.addMapper(mapper);
-                        blackList.add(ngram);
-                    }
-
-                    for (String phrase:goodPhrases){
-                        int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.matchPhrase(index.getBodyField(),
-                                phrase,trainIdTranslator.getAllExtIds(), 0);
-                        for (SearchHit hit: response.getHits().getHits()){
-                            String indexId = hit.getId();
-                            int algorithmId = trainIdTranslator.toIntId(indexId);
-                            float score = hit.getScore();
-                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
+                            dataSet.setFeatureValue(algorithmId, featureIndex, score);
                         }
 
                         NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
                                 setFeatureIndex(featureIndex).setFeatureName(phrase).
-                                setSource("matching_score").build();
+                                build();
+                        mapper.getSettings().put("source","matching_score");
+                        mapper.getSettings().put("ngram",phrase);
                         featureMappers.addMapper(mapper);
                     }
+
                 }
+
+
+                statsWriter.write("iteration = " + iteration);
+                statsWriter.write(",");
+                statsWriter.write("focus set = " + focusSet.getAll());
+                statsWriter.write(",");
+                statsWriter.write("number of features = " + featureMappers.getTotalDim());
+                statsWriter.newLine();
+
+
             }
 
-            /**
-             * focus set
-             */
-            if (shouldExtractFeatures&&config.getBoolean("extraction.fromHardSet")){
-                //generate focus set
-                FocusSet focusSet = new FocusSet(numClasses);
-                for (int k=0;k<numClasses;k++){
-                    double[] gradient = boosting.getGradients(k);
-                    Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
-                    List<Integer> hardExamples = IntStream.range(0,gradient.length)
-                            .mapToObj(i -> new Pair<>(i,gradient[i]))
-                            .filter(pair -> pair.getSecond()>0)
-                            .sorted(comparator.reversed())
-                            .limit(numDocsToSelect)
-                            .map(Pair::getFirst)
-                            .collect(Collectors.toList());
-                    for(Integer doc: hardExamples){
-                        focusSet.add(doc,k);
-                    }
-                }
-
-                List<Integer> validationSet = focusSet.getAll();
-
-                for (int k=0;k<numClasses;k++){
-
-                    double[] allGradients = boosting.getGradients(k);
-                    List<Double> gradientsForValidation = validationSet.stream()
-                            .map(i -> allGradients[i]).collect(Collectors.toList());
-
-                    List<String> goodTerms = null;
-
-                    goodTerms = tfidfSplitExtractor.getGoodTerms(focusSet,
-                            validationSet,
-                            blackList, k, gradientsForValidation);
-
-                    seedsForAllClasses.get(k).addAll(goodTerms);
-
-                    List<String> focusSetIndexIds = focusSet.getDataClassK(k)
-                            .parallelStream().map(trainIdTranslator::toExtId)
-                            .collect(Collectors.toList());
-                    System.out.println("hard set for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
-                    System.out.println(focusSetIndexIds.toString());
-                    System.out.println("terms extracted from hard set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
-                    System.out.println(goodTerms);
-
-                    //phrases
-                    System.out.println("seeds for class " +k+ "("+labelTranslator.toExtLabel(k)+ "):");
-                    System.out.println(seedsForAllClasses.get(k));
-                    List<String> goodPhrases = phraseSplitExtractor.getGoodPhrases(focusSet,validationSet,blackList,k,
-                            gradientsForValidation,seedsForAllClasses.get(k));
-                    System.out.println("phrases extracted from hard set for class " + k+" ("+labelTranslator.toExtLabel(k)+"):");
-                    System.out.println(goodPhrases);
-                    blackList.addAll(goodPhrases);
-
-                    for (String ngram:goodTerms){
-                        int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.match(index.getBodyField(),
-                                ngram,trainIdTranslator.getAllExtIds(), MatchQueryBuilder.Operator.AND);
-                        for (SearchHit hit: response.getHits().getHits()){
-                            String indexId = hit.getId();
-                            int algorithmId = trainIdTranslator.toIntId(indexId);
-                            float score = hit.getScore();
-                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
-                        }
-
-                        NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                                setFeatureIndex(featureIndex).setFeatureName(ngram).
-                                setSource("matching_score").build();
-                        featureMappers.addMapper(mapper);
-                        blackList.add(ngram);
-                    }
-
-                    for (String phrase:goodPhrases){
-                        int featureIndex = featureMappers.nextAvailable();
-                        SearchResponse response = index.matchPhrase(index.getBodyField(),
-                                phrase,trainIdTranslator.getAllExtIds(), 0);
-                        for (SearchHit hit: response.getHits().getHits()){
-                            String indexId = hit.getId();
-                            int algorithmId = trainIdTranslator.toIntId(indexId);
-                            float score = hit.getScore();
-                            dataSet.setFeatureValue(algorithmId, featureIndex,score);
-                        }
-
-                        NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                                setFeatureIndex(featureIndex).setFeatureName(phrase).
-                                setSource("matching_score").build();
-                        featureMappers.addMapper(mapper);
-                    }
-                }
-            }
-
-            int[] activeFeatures = IntStream.range(0, featureMappers.getTotalDim()).toArray();
-            boosting.setActiveFeatures(activeFeatures);
-            boosting.fitRegressors();
         }
 
+        statsWriter.close();
         File serializedModel =  new File(archive,modelName);
-        if (!overwriteModels && serializedModel.exists()){
-            throw new RuntimeException(serializedModel.getAbsolutePath()+"already exists");
-        }
-
         boosting.serialize(serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());
         System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
@@ -689,13 +697,8 @@ public class Exp15 {
 
     }
 
-    static DFStats loadDFStats(MultiLabelIndex index, IdTranslator trainIdTranslator, LabelTranslator labelTranslator) throws IOException {
-        DFStats dfStats = new DFStats(labelTranslator.getNumClasses());
-        String[] trainIds = trainIdTranslator.getAllExtIds();
-        dfStats.update(index,labelTranslator,trainIds);
-        dfStats.sort();
-        return dfStats;
-    }
+
+
 
     static void build(Config config, MultiLabelIndex index) throws Exception{
         int numDocsInIndex = index.getNumDocs();

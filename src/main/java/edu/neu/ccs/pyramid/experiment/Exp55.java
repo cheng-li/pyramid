@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.experiment;
 
-import edu.neu.ccs.pyramid.active_learning.BestVsSecond;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -290,11 +289,11 @@ public class Exp55 {
             if (shouldExtractFeatures) {
                 FocusSet focusSet = new FocusSet(numClasses);
                 focusSetProducer.setGradientMatrix(logisticLoss.getGradientMatrix());
-                focusSetProducer.setClassProbMatrix(logisticLoss.getClassProbMatrix());
+                focusSetProducer.setProbabilityMatrix(logisticLoss.getProbabilityMatrix());
 
 
                 validationSetProducer.setGradientMatrix(logisticLoss.getGradientMatrix());
-                validationSetProducer.setClassProbMatrix(logisticLoss.getClassProbMatrix());
+                validationSetProducer.setProbabilityMatrix(logisticLoss.getProbabilityMatrix());
 
                 for (int k = 0; k < numClasses; k++) {
 
@@ -405,7 +404,7 @@ public class Exp55 {
 
 
                 for (int k = 0; k < numClasses; k++) {
-                    double[] allGradients = logisticLoss.getDataGradient(k);
+                    double[] allGradients = logisticLoss.getGradientMatrix().getGradientsForClass(k);
                     List<Double> gradientsForValidation = validationSet.stream()
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
