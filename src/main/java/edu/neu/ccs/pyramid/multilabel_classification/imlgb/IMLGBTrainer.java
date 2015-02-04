@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.multilabel_classification.MLPriorProbClassifier;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -11,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -33,33 +36,89 @@ public class IMLGBTrainer {
      */
     private GradientMatrix gradientMatrix;
     private ProbabilityMatrix probabilityMatrix;
+    private IMLGradientBoosting boosting;
 
 
     public IMLGBTrainer(IMLGBConfig config,
-                        List<List<Regressor>> regressors) {
+                        IMLGradientBoosting boosting) {
+        if (config.getDataSet().getNumClasses()!=boosting.getNumClasses()){
+            throw new IllegalArgumentException("config.getDataSet().getNumClasses()!=boosting.getNumClasses()");
+        }
         this.config = config;
+        this.boosting = boosting;
         MultiLabelClfDataSet dataSet = config.getDataSet();
         int numClasses = dataSet.getNumClasses();
         int numDataPoints = dataSet.getNumDataPoints();
         this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
-        this.initStagedClassScoreMatrix(regressors);
+        if (config.usePrior() && boosting.getRegressors(0).size()==0){
+            this.setPriorProbs(dataSet);
+        }
+        this.initStagedClassScoreMatrix(boosting);
         this.probabilityMatrix = new ProbabilityMatrix(numDataPoints,numClasses);
         this.updateProbabilityMatrix();
         this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
+        this.updateClassGradientMatrix();
     }
 
-    double[] getGradients(int k){
-        return this.gradientMatrix.getGradientsForClass(k);
+    public void iterate(){
+        for (int k=0;k<this.boosting.getNumClasses();k++){
+            /**
+             * parallel by feature
+             */
+            Regressor regressor = this.fitClassK(k);
+            this.boosting.addRegressor(regressor, k);
+            /**
+             * parallel by data
+             */
+            this.updateStagedClassScores(regressor,k);
+        }
+        this.updateProbabilityMatrix();
+        this.updateClassGradientMatrix();
+    }
+
+    public void setActiveFeatures(int[] activeFeatures) {
+        this.config.setActiveFeatures(activeFeatures);
+    }
+
+    public void setActiveDataPoints(int[] activeDataPoints) {
+        this.config.setActiveDataPoints(activeDataPoints);
+    }
+
+    //========================== PRIVATE ============================
+    /**
+     * not sure whether this is good for performance
+     * start with prior probabilities
+     * should be called before setTrainConfig
+     * @param probs
+     */
+    private void setPriorProbs(double[] probs){
+        if (probs.length!=this.boosting.getNumClasses()){
+            throw new IllegalArgumentException("probs.length!=this.numClasses");
+        }
+        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+        for (int k=0;k<this.boosting.getNumClasses();k++){
+            double score = Math.log(probs[k] - average);
+            Regressor constant = new ConstantRegressor(score);
+            this.boosting.addRegressor(constant, k);
+        }
     }
 
     /**
-     * sum scores up
-     * @param regressors
+     * not sure whether this is good for performance
+     * start with prior probabilities
+     * should be called before setTrainConfig
      */
-    private void initStagedClassScoreMatrix(List<List<Regressor>> regressors){
+    private void setPriorProbs(MultiLabelClfDataSet dataSet){
+        MLPriorProbClassifier priorProbClassifier = new MLPriorProbClassifier(dataSet.getNumClasses());
+        priorProbClassifier.fit(dataSet);
+        double[] probs = priorProbClassifier.getClassProbs();
+        this.setPriorProbs(probs);
+    }
+
+    private void initStagedClassScoreMatrix(IMLGradientBoosting boosting){
         int numClasses = this.config.getDataSet().getNumClasses();
         for (int k=0;k<numClasses;k++){
-            for (Regressor regressor: regressors.get(k)){
+            for (Regressor regressor: boosting.getRegressors(k)){
                 this.updateStagedClassScores(regressor, k);
             }
         }
@@ -71,7 +130,7 @@ public class IMLGBTrainer {
      * @param regressor
      * @param k
      */
-    void updateStagedClassScores(Regressor regressor, int k){
+    private void updateStagedClassScores(Regressor regressor, int k){
         DataSet dataSet= this.config.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
         IntStream.range(0, numDataPoints).parallel()
@@ -92,7 +151,7 @@ public class IMLGBTrainer {
         this.scoreMatrix.increment(dataIndex,k,prediction);
     }
 
-    void updateProbabilityMatrix(){
+    private void updateProbabilityMatrix(){
         DataSet dataSet= this.config.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
         IntStream.range(0, numDataPoints).parallel()
@@ -123,7 +182,7 @@ public class IMLGBTrainer {
         return pro;
     }
 
-    void updateClassGradientMatrix(){
+    private void updateClassGradientMatrix(){
         int numDataPoints = this.config.getDataSet().getNumDataPoints();
         IntStream.range(0,numDataPoints).parallel()
                 .forEach(this::updateClassGradients);
@@ -154,7 +213,7 @@ public class IMLGBTrainer {
      * @return regressionTreeLk, shrunk
      * @throws Exception
      */
-    RegressionTree fitClassK(int k){
+    private RegressionTree fitClassK(int k){
         double[] gradients = this.gradientMatrix.getGradientsForClass(k);
         int numClasses = this.config.getDataSet().getNumClasses();
         double learningRate = this.config.getLearningRate();
@@ -204,12 +263,6 @@ public class IMLGBTrainer {
         return regressionTree;
     }
 
-    void setActiveFeatures(int[] activeFeatures) {
-        this.config.setActiveFeatures(activeFeatures);
-    }
 
-    void setActiveDataPoints(int[] activeDataPoints) {
-        this.config.setActiveDataPoints(activeDataPoints);
-    }
 
 }

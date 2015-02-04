@@ -61,7 +61,7 @@ public class HMLGBTrainer {
         int numDataPoints = dataSet.getNumDataPoints();
         int numAssignments = this.assignments.size();
         this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
-        if (config.usePrior()){
+        if (config.usePrior()&& boosting.getRegressors(0).size()==0){
             setPriorProbs(config.getDataSet());
         }
         this.initScoreMatrix(boosting);

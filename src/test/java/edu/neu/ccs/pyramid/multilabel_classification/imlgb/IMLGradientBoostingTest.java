@@ -93,14 +93,13 @@ public class IMLGradientBoostingTest {
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+        IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<200;round++){
             System.out.println("round="+round);
-            boosting.boostOneRound();
+            trainer.iterate();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
 //            System.out.println(Arrays.toString(boosting.getGradients(0)));
 //            System.out.println(Arrays.toString(boosting.getGradients(1)));
@@ -160,14 +159,13 @@ public class IMLGradientBoostingTest {
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
 
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+        IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<20;round++){
             System.out.println("round="+round);
-            boosting.boostOneRound();
+            trainer.iterate();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
 //            System.out.println(Arrays.toString(boosting.getGradients(0)));
 //            System.out.println(Arrays.toString(boosting.getGradients(1)));
@@ -279,15 +277,13 @@ public class IMLGradientBoostingTest {
                 .dataSamplingRate(1).featureSamplingRate(1).build();
         System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
 
-
-        boosting.setPriorProbs(dataSet);
-        boosting.setTrainConfig(trainConfig);
+        IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         for (int round =0;round<100;round++){
             System.out.println("round="+round);
-            boosting.boostOneRound();
+            trainer.iterate();
             System.out.println("accuracy="+Accuracy.accuracy(boosting,dataSet));
 //            System.out.println(Arrays.toString(boosting.getGradients(0)));
 //            System.out.println(Arrays.toString(boosting.getGradients(1)));
