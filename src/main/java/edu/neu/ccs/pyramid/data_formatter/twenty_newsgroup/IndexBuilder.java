@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.data_formatter.twenty_newsgroup;
 
+import org.apache.commons.io.FileUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
@@ -38,8 +39,7 @@ public class IndexBuilder {
 
 
     static String getBody(File file) throws Exception{
-        String entireFileText = new Scanner(file)
-                .useDelimiter("\\A").next();
+        String entireFileText = FileUtils.readFileToString(file);
         return entireFileText;
     }
 

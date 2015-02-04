@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.data_formatter.review_polarity;
 
+import org.apache.commons.io.FileUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
@@ -14,8 +15,7 @@ import java.util.Set;
 public class IndexBuilder {
 
     static String getBody(File file) throws Exception{
-        String entireFileText = new Scanner(file)
-                .useDelimiter("\\A").next();
+        String entireFileText = FileUtils.readFileToString(file);
         return entireFileText;
     }
 

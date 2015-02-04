@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.data_formatter.ohsumed;
 
 import edu.neu.ccs.pyramid.util.DirWalker;
+import org.apache.commons.io.FileUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
@@ -54,8 +55,7 @@ public class IndexBuilder {
 
 
     static String getBody(File file) throws Exception{
-        String entireFileText = new Scanner(file)
-                .useDelimiter("\\A").next();
+        String entireFileText = FileUtils.readFileToString(file);
         return entireFileText;
     }
 
