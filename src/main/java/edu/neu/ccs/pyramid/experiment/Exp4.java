@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.classification.ProbabilityVoting;
 import edu.neu.ccs.pyramid.classification.Voting;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
@@ -72,13 +73,12 @@ public class Exp4 {
                     .numLeaves(numLeaves).dataSamplingRate(dataSamplingRate)
                     .featureSamplingRate(featureSamplingRate).build();
             LKTreeBoost lkTreeBoost = new LKTreeBoost(numClasses);
-            lkTreeBoost.setPriorProbs(dataSet);
-            lkTreeBoost.setTrainConfig(trainConfig);
+            LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
             for (int i=0;i<numIterations;i++){
 
 //                System.out.println("iteration "+i);
 
-                lkTreeBoost.boostOneRound();
+                trainer.iterate();
                 //debug
 //                double[] gradient = lkTreeBoost.getGradient(0);
 //                List<String> extIds = IntStream.range(0, gradient.length)

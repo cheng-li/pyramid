@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.feature.FeatureMappers;
 import edu.neu.ccs.pyramid.feature.NumericalFeatureMapper;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBInspector;
+import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGradientBoosting;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
@@ -104,30 +105,30 @@ public class Exp13 {
 
         Set<Integer> initialFeatures = new HashSet<>();
         for (CategoricalFeatureMapper mapper: featureMappers.getCategoricalFeatureMappers()){
-            if (mapper.getSource().equalsIgnoreCase("field")){
+            if (mapper.getSettings().get("source").equalsIgnoreCase("field")){
                 for (int j = mapper.getStart();j<=mapper.getEnd();j++){
                     initialFeatures.add(j);
                 }
             }
         }
         for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
-            if (mapper.getSource().equalsIgnoreCase("field")){
+            if (mapper.getSettings().get("source").equalsIgnoreCase("field")){
                 initialFeatures.add(mapper.getFeatureIndex());
             }
         }
 
         Set<Integer> unigramFeatures = new HashSet<>();
         for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
-            if (mapper.getSource().equalsIgnoreCase("matching_score")
-                    && mapper.getFeatureName().split(" ").length==1){
+            if (mapper.getSettings().get("source").equalsIgnoreCase("matching_score")
+                    && mapper.getSettings().get("ngram").split(" ").length==1){
                 unigramFeatures.add(mapper.getFeatureIndex());
             }
         }
 
         Set<Integer> ngramFeatures = new HashSet<>();
         for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
-            if (mapper.getSource().equalsIgnoreCase("matching_score")
-                    && mapper.getFeatureName().split(" ").length>1){
+            if (mapper.getSettings().get("source").equalsIgnoreCase("matching_score")
+                    && mapper.getSettings().get("ngram").split(" ").length>1){
                 ngramFeatures.add(mapper.getFeatureIndex());
             }
         }
@@ -168,17 +169,16 @@ public class Exp13 {
             boosting = HMLGradientBoosting.deserialize(new File(archive,modelName));
         } else {
             boosting = new HMLGradientBoosting(numClasses,legalAssignments);
-            boosting.setPriorProbs(dataSet);
         }
 
-        boosting.setTrainConfig(hmlgbConfig);
+        HMLGBTrainer trainer = new HMLGBTrainer(hmlgbConfig,boosting);
 
         //todo make it better
-        boosting.setActiveFeatures(activeFeatures);
+        trainer.setActiveFeatures(activeFeatures);
 
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
-            boosting.boostOneRound();
+            trainer.iterate();
             if (config.getBoolean("train.showPerformanceEachRound")){
                 System.out.println("model size = "+boosting.getRegressors(0).size());
                 System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,

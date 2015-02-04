@@ -242,7 +242,7 @@ public class Exp31 {
                 //generate easy set
                 FocusSet focusSet = new FocusSet(numClasses);
                 for (int k=0;k<numClasses;k++){
-                    double[] gradient = logisticLoss.getDataGradient(k);
+                    double[] gradient = logisticLoss.getGradientMatrix().getGradientsForClass(k);
                     Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
                     List<Integer> easyExamples = IntStream.range(0, gradient.length)
                             .mapToObj(i -> new Pair<>(i,gradient[i]))
@@ -277,7 +277,7 @@ public class Exp31 {
 
 
                 for (int k=0;k<numClasses;k++){
-                    double[] allGradients = logisticLoss.getDataGradient(k);
+                    double[] allGradients = logisticLoss.getGradientMatrix().getGradientsForClass(k);
                     List<Double> gradientsForValidation = validationSet.stream()
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
@@ -325,7 +325,7 @@ public class Exp31 {
                 //generate focus set
                 FocusSet focusSet = new FocusSet(numClasses);
                 for (int k=0;k<numClasses;k++){
-                    double[] gradient = logisticLoss.getDataGradient(k);
+                    double[] gradient = logisticLoss.getGradientMatrix().getGradientsForClass(k);
                     Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
                     List<Integer> hardExamples = IntStream.range(0,gradient.length)
                             .mapToObj(i -> new Pair<>(i,gradient[i]))
@@ -360,7 +360,7 @@ public class Exp31 {
 
                 for (int k=0;k<numClasses;k++){
 
-                    double[] allGradients = logisticLoss.getDataGradient(k);
+                    double[] allGradients = logisticLoss.getGradientMatrix().getGradientsForClass(k);
                     List<Double> gradientsForValidation = validationSet.stream()
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
@@ -410,7 +410,7 @@ public class Exp31 {
                 FocusSet focusSet = new FocusSet(numClasses);
                 Comparator<Pair<Integer,BestVsSecond>> comparator = Comparator.comparing(pair -> pair.getSecond().getDifference());
                 List<Integer> examples = IntStream.range(0,dataSet.getNumDataPoints())
-                        .mapToObj(i -> new Pair<>(i,new BestVsSecond(logisticLoss.getClassProbs(i))))
+                        .mapToObj(i -> new Pair<>(i,new BestVsSecond(logisticLoss.getGradientMatrix().getGradientsForData(i))))
                         .filter(pair -> (dataSet.getLabels()[pair.getFirst()]==pair.getSecond().getBestClass())
                                 ||(dataSet.getLabels()[pair.getFirst()]==pair.getSecond().getSecondClass()))
                         .sorted(comparator).map(Pair::getFirst)
@@ -441,7 +441,7 @@ public class Exp31 {
 
                 for (int k=0;k<numClasses;k++){
 
-                    double[] allGradients = logisticLoss.getDataGradient(k);
+                    double[] allGradients = logisticLoss.getGradientMatrix().getGradientsForClass(k);
                     List<Double> gradientsForValidation = validationSet.stream()
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 

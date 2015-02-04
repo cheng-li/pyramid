@@ -76,6 +76,18 @@ public class IMLGBTrainer {
         this.updateClassGradientMatrix();
     }
 
+    public ScoreMatrix getScoreMatrix() {
+        return scoreMatrix;
+    }
+
+    public GradientMatrix getGradientMatrix() {
+        return gradientMatrix;
+    }
+
+    public ProbabilityMatrix getProbabilityMatrix() {
+        return probabilityMatrix;
+    }
+
     public void setActiveFeatures(int[] activeFeatures) {
         this.config.setActiveFeatures(activeFeatures);
     }

@@ -10,6 +10,7 @@ public class CategoricalFeatureMapperBuilder {
     private int start;
     private boolean startSet = false;
     private String featureName = "no name";
+    @Deprecated
     private String source = "unknown";
 
     public CategoricalFeatureMapperBuilder() {
@@ -37,6 +38,7 @@ public class CategoricalFeatureMapperBuilder {
         return this;
     }
 
+    @Deprecated
     public CategoricalFeatureMapperBuilder setSource(String source) {
         this.source = source;
         return this;

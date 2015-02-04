@@ -218,7 +218,7 @@ public class Exp60 {
             }
 
             sampler.setGradientMatrix(logisticLoss.getGradientMatrix());
-            sampler.setClassProbMatrix(logisticLoss.getClassProbMatrix());
+            sampler.setProbabilityMatrix(logisticLoss.getProbabilityMatrix());
 
 
             if (shouldExtractFeatures) {

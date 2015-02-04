@@ -671,4 +671,60 @@ public class DataSetUtil {
         }
     }
 
+    public static int[] getCountPerClass(ClfDataSet dataSet){
+        int numClasses = dataSet.getNumClasses();
+        int[] counts = new int[numClasses];
+        int[] labels = dataSet.getLabels();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            int label = labels[i];
+            counts[label] += 1;
+        }
+        return counts;
+    }
+
+    public static int[] getCountPerClass(MultiLabelClfDataSet dataSet){
+        int numClasses = dataSet.getNumClasses();
+        int[] counts = new int[numClasses];
+        MultiLabel[] labels = dataSet.getMultiLabels();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = labels[i];
+            for (int label: multiLabel.getMatchedLabels()){
+                counts[label] += 1;
+            }
+        }
+        return counts;
+    }
+
+    public static List<List<Integer>> labelToDataPoints(ClfDataSet dataSet){
+        int numClasses = dataSet.getNumClasses();
+        int[] labels = dataSet.getLabels();
+        List<List<Integer>> list = new ArrayList<>();
+        for (int k=0;k<numClasses;k++){
+            list.add(new ArrayList<>());
+        }
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            int label = labels[i];
+            list.get(label).add(i);
+        }
+        return list;
+    }
+
+
+    public static List<List<Integer>> labelToDataPoints(MultiLabelClfDataSet dataSet){
+        int numClasses = dataSet.getNumClasses();
+        MultiLabel[] labels = dataSet.getMultiLabels();
+
+        List<List<Integer>> list = new ArrayList<>();
+        for (int k=0;k<numClasses;k++){
+            list.add(new ArrayList<>());
+        }
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = labels[i];
+            for (int label: multiLabel.getMatchedLabels()){
+                list.get(label).add(i);
+            }
+        }
+        return list;
+    }
+
 }

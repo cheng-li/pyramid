@@ -1,7 +1,9 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by chengli on 9/6/14.
@@ -12,7 +14,8 @@ public class FocusSet {
      */
     private List<List<Integer>> dataPointIndices;
     private int numClasses;
-    private List<Integer> all;
+    //for multi-label datasets, need to remove duplicates
+    private Set<Integer> all;
 
     public FocusSet(int numClasses) {
         this.numClasses = numClasses;
@@ -20,7 +23,7 @@ public class FocusSet {
         for (int k = 0;k<numClasses;k++){
             this.dataPointIndices.add(new ArrayList<Integer>());
         }
-        this.all = new ArrayList<>();
+        this.all = new HashSet<>();
     }
 
     public void add(int dataPointIndex, int trueLabel){
@@ -32,8 +35,9 @@ public class FocusSet {
         return this.dataPointIndices.get(k);
     }
 
+    //todo fix format
     public List<Integer> getAll() {
-        return all;
+        return new ArrayList<>(all);
     }
 
     @Override

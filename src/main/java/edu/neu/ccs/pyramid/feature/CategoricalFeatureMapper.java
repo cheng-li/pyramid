@@ -11,6 +11,7 @@ import java.util.Map;
 public class CategoricalFeatureMapper implements Serializable {
     private static final long serialVersionUID = 2L;
     private String featureName;
+    @Deprecated
     private String source;
     /**
      * first feature index
@@ -61,6 +62,7 @@ public class CategoricalFeatureMapper implements Serializable {
         return this.indexCategoryMap.get(featureIndex);
     }
 
+    @Deprecated
     public String getSource() {
         return source;
     }

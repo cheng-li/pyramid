@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
 import edu.neu.ccs.pyramid.active_learning.TrueVsCompetitor;
+import edu.neu.ccs.pyramid.dataset.GradientMatrix;
+import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 
@@ -15,9 +17,9 @@ public class FocusSetProducer {
     private int numClasses;
     private int numDataPoints;
     private int[][] counts;
-    private double[][] gradientMatrix;
-    private double[][] classProbMatrix;
-    private List<Set<Integer>> dataPerClass;
+    private GradientMatrix gradientMatrix;
+    private ProbabilityMatrix probabilityMatrix;
+    private List<List<Integer>> dataPerClass;
     private boolean promotion = true;
 
     public FocusSetProducer(int numClasses, int numDataPoints) {
@@ -26,14 +28,19 @@ public class FocusSetProducer {
         this.counts = new int[numClasses][numDataPoints];
     }
 
+    @Deprecated
     public void setLabels(int numClasses, int[] labels){
         this.dataPerClass = new ArrayList<>();
-        IntStream.range(0,numClasses).forEach(i -> dataPerClass.add(new HashSet<>()));
+        IntStream.range(0,numClasses).forEach(i -> dataPerClass.add(new ArrayList<>()));
         IntStream.range(0,labels.length).forEach(i -> {
             int label = labels[i];
             dataPerClass.get(label).add(i);
         });
 
+    }
+
+    public void setDataPerClass(List<List<Integer>> dataPerClass) {
+        this.dataPerClass = dataPerClass;
     }
 
     public boolean isPromotionEnabled() {
@@ -44,12 +51,12 @@ public class FocusSetProducer {
         this.promotion = promotion;
     }
 
-    public void setGradientMatrix(double[][] gradientMatrix) {
+    public void setGradientMatrix(GradientMatrix gradientMatrix) {
         this.gradientMatrix = gradientMatrix;
     }
 
-    public void setClassProbMatrix(double[][] classProbMatrix) {
-        this.classProbMatrix = classProbMatrix;
+    public void setProbabilityMatrix(ProbabilityMatrix probabilityMatrix) {
+        this.probabilityMatrix = probabilityMatrix;
     }
 
     public Set<Integer> produceEasyOnes(int classIndex, int size){
@@ -94,7 +101,7 @@ public class FocusSetProducer {
     }
 
     public Set<Integer> getEasyOnes(int classIndex, int size){
-        double[] gradientForClass = gradientMatrix[classIndex];
+        double[] gradientForClass = gradientMatrix.getGradientsForClass(classIndex);
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<Integer> sorted = IntStream.range(0, gradientForClass.length)
                 .mapToObj(i -> new Pair<>(i, gradientForClass[i]))
@@ -109,7 +116,7 @@ public class FocusSetProducer {
     }
 
     public Set<Integer> getHardOnes(int classIndex, int size){
-        double[] gradientForClass = gradientMatrix[classIndex];
+        double[] gradientForClass = gradientMatrix.getGradientsForClass(classIndex);
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<Integer> sorted = IntStream.range(0, gradientForClass.length)
                 .mapToObj(i -> new Pair<>(i, gradientForClass[i]))
@@ -125,14 +132,14 @@ public class FocusSetProducer {
 
 
     public Set<Integer> getUncertainOnes(int classIndex, int size){
-        double[] gradientForClass = gradientMatrix[classIndex];
+        double[] gradientForClass = gradientMatrix.getGradientsForClass(classIndex);
         List<Integer> matchClass = IntStream.range(0,gradientForClass.length)
                 .filter(i-> gradientForClass[i]>0)
                 .mapToObj(i->i)
                 .collect(Collectors.toList());
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<Integer> sorted = matchClass.stream().map(i -> {
-            double difference = new TrueVsCompetitor(classProbMatrix[i],classIndex).getDifference();
+            double difference = new TrueVsCompetitor(probabilityMatrix.getProbabilitiesForData(i),classIndex).getDifference();
             return new Pair<>(i,difference);
             }).sorted(comparator).map(Pair::getFirst)
             .collect(Collectors.toList());

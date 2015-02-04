@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
@@ -54,10 +55,9 @@ public class Exp26 {
                 .numLeaves(numLeaves).dataSamplingRate(1)
                 .featureSamplingRate(1).build();
         LKTreeBoost lkTreeBoost = new LKTreeBoost(numClasses);
-        lkTreeBoost.setPriorProbs(trainingSet);
-        lkTreeBoost.setTrainConfig(trainConfig);
+        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
         for (int i=0;i<numIterations;i++){
-            lkTreeBoost.boostOneRound();
+            trainer.iterate();
         }
 
 
