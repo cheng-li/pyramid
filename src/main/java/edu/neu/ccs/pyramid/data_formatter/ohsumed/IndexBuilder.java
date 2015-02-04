@@ -46,7 +46,7 @@ public class IndexBuilder {
         builder.field("file_name",getFileName(file));
         builder.array("codes",getCodes(file,nameToCodesMap));
         builder.array("real_labels", getExtLabels(file, nameToCodesMap));
-        builder.array("multi_label",getLabels(file,nameToCodesMap));
+//        builder.array("multi_label",getLabels(file,nameToCodesMap));
         builder.field("split",getTrainOrTest(file));
         builder.endObject();
         return builder;

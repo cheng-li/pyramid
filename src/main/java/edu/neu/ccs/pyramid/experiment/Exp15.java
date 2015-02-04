@@ -412,7 +412,7 @@ public class Exp15 {
 
         int[] topNs = new int[numClasses];
         for (int k=0;k<numClasses;k++){
-            topNs[k] = (classCounts[k]*config.getInt("extraction.topN")/totalCount);
+            topNs[k] = Math.max(1,classCounts[k]*config.getInt("extraction.topN")/totalCount);
         }
 
         System.out.println("number of ngrams to be extracted from each class = "+ Arrays.toString(topNs));
@@ -459,7 +459,7 @@ public class Exp15 {
         int[] numDocsPerFocusSet = new int[numClasses];
         double focusPercentage = ((double)focusSetSize)/totalCount;
         for (int k=0;k<numClasses;k++){
-            numDocsPerFocusSet[k] = (int)(classCounts[k]*focusPercentage/numFocusSets);
+            numDocsPerFocusSet[k] = Math.max(1,(int)(classCounts[k]*focusPercentage/numFocusSets));
         }
 
         System.out.println("focus set sizes = "+Arrays.toString(numDocsPerFocusSet));
@@ -473,7 +473,7 @@ public class Exp15 {
         int[] numDocsPerValidationSet = new int[numClasses];
 
         for (int k=0;k<numClasses;k++){
-            numDocsPerValidationSet[k] = (int)(classCounts[k]*validationPercentage/numValidationSets);
+            numDocsPerValidationSet[k] = Math.max(1,(int)(classCounts[k]*validationPercentage/numValidationSets));
         }
         System.out.println("validation set sizes = "+Arrays.toString(numDocsPerValidationSet));
 
