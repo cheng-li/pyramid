@@ -1,11 +1,15 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
+import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegression;
+import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegressionInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticTrainer;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
@@ -36,6 +40,10 @@ public class Exp41 {
 
         if (config.getBoolean("test")){
             test(config);
+        }
+
+        if (config.getBoolean("verify")){
+            verify(config);
         }
 
 
@@ -95,6 +103,23 @@ public class Exp41 {
         System.out.println("accuracy on test set = "+Accuracy.accuracy(mlLogisticRegression,dataSet));
         System.out.println("overlap on test set = "+ Overlap.overlap(mlLogisticRegression,dataSet));
 
+    }
+
+    private static void verify(Config config) throws Exception{
+        String input = config.getString("input.folder");
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(input,"train.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
+        MLLogisticRegression mlLogisticRegression = MLLogisticRegression.deserialize(modelFile);
+
+
+        int limit = config.getInt("verify.topFeature.limit");
+        for (int k=0;k<mlLogisticRegression.getNumClasses();k++){
+            System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
+            System.out.println(MLLogisticRegressionInspector.topFeatures(mlLogisticRegression, k)
+                    .stream().limit(limit).map(FeatureUtility::getName).collect(Collectors.toList()));
+        }
     }
 
 
