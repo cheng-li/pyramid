@@ -17,14 +17,12 @@ import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -212,6 +210,20 @@ public class Exp62 {
         EvictingQueue<Double> validAccHis = EvictingQueue.create(1);
         EvictingQueue<Double> testAccHis = EvictingQueue.create(1);
 
+        List<List<Integer>> setCoverDocs = new ArrayList<>();
+        if (!config.getString("input.setCoverDocs").equals("")){
+            FileReader fileReader = new FileReader(config.getString("input.setCoverDocs"));
+            List<String> lines = IOUtils.readLines(fileReader);
+            for (String line: lines){
+                List<Integer> list = new ArrayList<>();
+                for (String doc: line.split(",")){
+                    list.add(Integer.parseInt(doc.trim()));
+                }
+                setCoverDocs.add(list);
+            }
+        }
+
+        System.out.println("set cover docs "+setCoverDocs);
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
             System.out.println("total number of features = "+featureMappers.getTotalDim());
@@ -294,6 +306,8 @@ public class Exp62 {
                         sampleAlgorithmId = sampler.getRandomOne(k).get();
                     } else if (config.getString("sample.fashion").equals("hard")){
                         sampleAlgorithmId = sampler.getHardOne(k).get();
+                    } else if (config.getString("sample.fashion").equals("setCover")){
+                        sampleAlgorithmId = setCoverDocs.get(k).get(iteration);
                     } else {
                         throw new RuntimeException("illegal fashion");
                     }
@@ -456,7 +470,8 @@ public class Exp62 {
                         collect(Collectors.toList());
 
         //todo parameter?
-        ids = IntStream.range(0,train.size()).filter(i-> i%5!=0)
+        ids = IntStream.range(0, train.size())
+//               .filter(i-> i%5!=0)
                 .mapToObj(train::get).toArray(String[]::new);
         return ids;
     }
@@ -472,8 +487,9 @@ public class Exp62 {
                         mapToObj(i -> "" + i).filter(id -> !duplicate.contains(id)).sorted().
                         collect(Collectors.toList());
 
-        //todo parameter?
-        ids = IntStream.range(0,train.size()).filter(i-> i%5==0)
+        //todo: not using validation
+        ids = IntStream.range(0, train.size())
+//                .filter(i-> i%5==0)
                 .mapToObj(train::get).toArray(String[]::new);
         return ids;
     }
