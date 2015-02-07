@@ -309,6 +309,16 @@ public class ESIndex {
         return set;
     }
 
+    /**
+     * naive implementation
+     * @param id
+     * @return
+     */
+    public int getDocLength(String id){
+        return getTermVector(id).keySet().size();
+    }
+
+
     public Map<Integer,String> getTermVector(String id){
         Map<Integer,String> termVector = null;
         try {
@@ -351,6 +361,8 @@ public class ESIndex {
         }
         return map;
     }
+
+
 
 
     public void close() {
