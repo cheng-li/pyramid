@@ -302,10 +302,11 @@ public class Exp13 {
 
         int limit = config.getInt("verify.analyzeMistakes.limit");
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            System.out.println("=======================================");
+
             MultiLabel prediction = predictions.get(i);
             MultiLabel trueLabel = trueLabels[i];
             if (!prediction.equals(trueLabel)){
+                System.out.println("=======================================");
                 Vector vector = dataSet.getRow(i);
                 System.out.println("data point "+i+" index id = "+dataSet.getDataPointSetting(i).getExtId());
 
@@ -336,10 +337,11 @@ public class Exp13 {
 
         int limit = config.getInt("test.analyzeMistakes.limit");
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            System.out.println("=======================================");
+
             MultiLabel prediction = predictions.get(i);
             MultiLabel trueLabel = trueLabels[i];
             if (!prediction.equals(trueLabel)){
+                System.out.println("=======================================");
                 Vector vector = dataSet.getRow(i);
                 System.out.println("data point "+i+" index id = "+dataSet.getDataPointSetting(i).getExtId());
                 if (trueLabel.outOfBound(numClassesInTrain)){
