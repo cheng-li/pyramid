@@ -304,8 +304,10 @@ public class Exp62 {
                         sampleAlgorithmId = sampler.getUncertainOne(k).get();
                     } else if (config.getString("sample.fashion").equals("random")){
                         sampleAlgorithmId = sampler.getRandomOne(k).get();
-                    } else if (config.getString("sample.fashion").equals("hard")){
+                    } else if (config.getString("sample.fashion").equals("hard")) {
                         sampleAlgorithmId = sampler.getHardOne(k).get();
+                    } else if (config.getString("sample.fashion").equals("easy")){
+                            sampleAlgorithmId = sampler.getEasyOne(k).get();
                     } else if (config.getString("sample.fashion").equals("setCover")){
                         sampleAlgorithmId = setCoverDocs.get(k).get(iteration);
                     } else {

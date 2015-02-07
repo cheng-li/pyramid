@@ -72,4 +72,12 @@ public class UncertainSampler {
         return sorted.stream().filter(i-> !blackList.contains(i)).findFirst();
     }
 
+
+    public Optional<Integer> getEasyOne(int classIndex){
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
+        List<Integer> sorted = dataPerClass.get(classIndex).stream().map(i -> new Pair<>(i,classProbMatrix.get(i)[classIndex])
+        ).sorted(comparator.reversed()).map(Pair::getFirst)
+                .collect(Collectors.toList());
+        return sorted.stream().filter(i-> !blackList.contains(i)).findFirst();
+    }
 }

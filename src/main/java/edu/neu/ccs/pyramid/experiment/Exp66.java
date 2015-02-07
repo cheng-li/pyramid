@@ -134,7 +134,7 @@ public class Exp66 {
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<Integer> docs = new ArrayList<>();
 
-        for (int iteration =0;iteration<10;iteration++){
+        for (int iteration =0;iteration<100;iteration++){
             System.out.println("iteration "+iteration);
             Pair<Integer,Double> bestPair = remainingData.stream().parallel().map(dataPoint ->
                     new Pair<>(dataPoint, docUtility(remainingFeatures,dataSet,dataPoint)))
