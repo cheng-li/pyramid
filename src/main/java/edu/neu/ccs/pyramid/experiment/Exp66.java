@@ -50,7 +50,7 @@ public class Exp66 {
 
         for (int k=0;k<dataSet.getNumClasses();k++){
             System.out.println("for class "+k);
-            List<Integer> docForClass = setCover(goodNgrams.get(k),dataPerClass.get(k),dataSet);
+            List<String> docForClass = setCover(goodNgrams.get(k),dataPerClass.get(k),dataSet);
             String str = docForClass.toString().replace("[","").replace("]","");
             bw.write(str);
             bw.newLine();
@@ -128,11 +128,11 @@ public class Exp66 {
                 .collect(Collectors.toSet());
     }
 
-    private static List<Integer> setCover(List<FeatureUtility> featureUtilities, List<Integer> dataPoints, ClfDataSet dataSet){
+    private static List<String> setCover(List<FeatureUtility> featureUtilities, List<Integer> dataPoints, ClfDataSet dataSet){
         Set<FeatureUtility> remainingFeatures = new HashSet<>(featureUtilities);
         Set<Integer> remainingData = new HashSet<>(dataPoints);
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
-        List<Integer> docs = new ArrayList<>();
+        List<String> docs = new ArrayList<>();
 
         for (int iteration =0;iteration<100;iteration++){
             System.out.println("iteration "+iteration);
@@ -141,7 +141,7 @@ public class Exp66 {
                     .max(comparator).get();
             int bestData = bestPair.getFirst();
             double bestUtility = bestPair.getSecond();
-            docs.add(bestData);
+            docs.add(dataSet.getDataPointSetting(bestData).getExtId());
             Set<FeatureUtility> matchedFeatures = matchedFeatures(remainingFeatures,dataSet,bestData);
             System.out.println("best document = "+bestData+", extId = "+dataSet.getDataPointSetting(bestData).getExtId());
             System.out.println("utility = "+bestUtility);

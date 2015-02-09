@@ -210,14 +210,14 @@ public class Exp62 {
         EvictingQueue<Double> validAccHis = EvictingQueue.create(1);
         EvictingQueue<Double> testAccHis = EvictingQueue.create(1);
 
-        List<List<Integer>> setCoverDocs = new ArrayList<>();
+        List<List<String>> setCoverDocs = new ArrayList<>();
         if (!config.getString("input.setCoverDocs").equals("")){
             FileReader fileReader = new FileReader(config.getString("input.setCoverDocs"));
             List<String> lines = IOUtils.readLines(fileReader);
             for (String line: lines){
-                List<Integer> list = new ArrayList<>();
+                List<String> list = new ArrayList<>();
                 for (String doc: line.split(",")){
-                    list.add(Integer.parseInt(doc.trim()));
+                    list.add(doc.trim());
                 }
                 setCoverDocs.add(list);
             }
@@ -309,7 +309,7 @@ public class Exp62 {
                     } else if (config.getString("sample.fashion").equals("easy")){
                             sampleAlgorithmId = sampler.getEasyOne(k).get();
                     } else if (config.getString("sample.fashion").equals("setCover")){
-                        sampleAlgorithmId = setCoverDocs.get(k).get(iteration);
+                        sampleAlgorithmId = validSet.getSetting().getIdTranslator().toIntId(setCoverDocs.get(k).get(iteration));
                     } else {
                         throw new RuntimeException("illegal fashion");
                     }
@@ -351,6 +351,8 @@ public class Exp62 {
                 statsWriter.write("iteration = " + iteration);
                 statsWriter.write(",");
                 statsWriter.write("number of features = " + featureMappers.getTotalDim());
+                statsWriter.write(",");
+                statsWriter.write("test acc = "+ Accuracy.accuracy(logisticRegression, testSet));
                 statsWriter.newLine();
             }
         }
