@@ -155,6 +155,8 @@ public class Exp62 {
 
         LabelTranslator labelTranslator = trainSet.getSetting().getLabelTranslator();
 
+        List<List<String>> longDocs = longDocs(index,validSet.getSetting().getIdTranslator().getAllExtIds(),validSet.getNumClasses());
+
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
@@ -310,6 +312,8 @@ public class Exp62 {
                             sampleAlgorithmId = sampler.getEasyOne(k).get();
                     } else if (config.getString("sample.fashion").equals("setCover")){
                         sampleAlgorithmId = validSet.getSetting().getIdTranslator().toIntId(setCoverDocs.get(k).get(iteration));
+                    } else if (config.getString("sample.fashion").equals("long")) {
+                        sampleAlgorithmId = validSet.getSetting().getIdTranslator().toIntId(longDocs.get(k).get(iteration));
                     } else {
                         throw new RuntimeException("illegal fashion");
                     }
@@ -695,5 +699,18 @@ public class Exp62 {
                     setSource("matching_score").build();
             featureMappers.addMapper(mapper);
         });
+    }
+
+    static List<List<String>> longDocs(SingleLabelIndex index, String[] ids, int numClasses){
+        List<List<String>> all = new ArrayList<>();
+        Comparator<Pair<String,Integer>> comparator = Comparator.comparing(Pair::getSecond);
+        IntStream.range(0,numClasses).forEach(k-> {
+            List<String> list = Arrays.stream(ids).parallel().
+                    filter(id -> index.getLabel(id)==k)
+                    .map(id -> new Pair<>(id, index.getDocLength(id)))
+                    .sorted(comparator.reversed()).map(Pair::getFirst).collect(Collectors.toList());
+            all.add(list);
+        });
+        return all;
     }
 }

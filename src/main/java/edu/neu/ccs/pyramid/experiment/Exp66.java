@@ -134,7 +134,7 @@ public class Exp66 {
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<String> docs = new ArrayList<>();
 
-        for (int iteration =0;iteration<100;iteration++){
+        for (int iteration =0;iteration<1000000;iteration++){
             System.out.println("iteration "+iteration);
             Pair<Integer,Double> bestPair = remainingData.stream().parallel().map(dataPoint ->
                     new Pair<>(dataPoint, docUtility(remainingFeatures,dataSet,dataPoint)))
@@ -149,6 +149,9 @@ public class Exp66 {
 
             remainingFeatures.removeAll(matchedFeatures);
             remainingData.remove(bestData);
+            if (remainingFeatures.isEmpty()){
+                break;
+            }
 
         }
         return docs;
