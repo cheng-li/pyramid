@@ -14,12 +14,14 @@ import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -257,6 +259,22 @@ public class Exp55 {
         statsWriter.write("number of features = " + featureMappers.getTotalDim());
         statsWriter.newLine();
 
+        List<List<String>> setCoverDocs = new ArrayList<>();
+        if (!config.getString("input.setCoverDocs").equals("")){
+            FileReader fileReader = new FileReader(config.getString("input.setCoverDocs"));
+            List<String> lines = IOUtils.readLines(fileReader);
+            for (String line: lines){
+                List<String> list = new ArrayList<>();
+                for (String doc: line.split(",")){
+                    list.add(doc.trim());
+                }
+                setCoverDocs.add(list);
+            }
+        }
+
+        List<List<Integer>> setCoverDocAlgorithmIds = setCoverDocs.parallelStream()
+                .map(list -> list.stream().map(trainIdTranslator::toIntId).collect(Collectors.toList()))
+                .collect(Collectors.toList());
 
 
         for (int iteration=0;iteration<numIterations;iteration++) {
@@ -369,6 +387,20 @@ public class Exp55 {
                         System.out.println("random set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
                         System.out.println(randomSetIndexIds.toString());
                         for (Integer dataPoint : randomSet) {
+                            focusSet.add(dataPoint, k);
+                        }
+
+                    }
+
+                    if (focusSets.contains("setCover")){
+                        focusSetProducer.setDesiredOrders(setCoverDocAlgorithmIds);
+                        Set<Integer> set = focusSetProducer.produceDesiredOnes(k, numDocsPerFocusSet[k]);
+                        List<String> indexIds = set
+                                .parallelStream().map(trainIdTranslator::toExtId).sorted()
+                                .collect(Collectors.toList());
+                        System.out.println("set cover set for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                        System.out.println(indexIds.toString());
+                        for (Integer dataPoint : set) {
                             focusSet.add(dataPoint, k);
                         }
 

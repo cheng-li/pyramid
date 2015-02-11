@@ -46,11 +46,21 @@ public class Exp66 {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
+        BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.features"))));
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            List<String> features = goodNgrams.get(k).stream().map(FeatureUtility::getName)
+                    .map(str -> str.replaceAll("\\(slop=.\\)", "")).collect(Collectors.toList());
+            String str = features.toString().replace("[","").replace("]","");
+            bw1.write(str);
+            bw1.newLine();
+        }
+        bw1.close();
+
         BufferedWriter bw = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.docs"))));
 
         for (int k=0;k<dataSet.getNumClasses();k++){
             System.out.println("for class "+k);
-            List<String> docForClass = setCover(goodNgrams.get(k),dataPerClass.get(k),dataSet);
+            List<String> docForClass = setCover(goodNgrams.get(k),dataPerClass.get(k),dataSet, docLengths);
             String str = docForClass.toString().replace("[","").replace("]","");
             bw.write(str);
             bw.newLine();
@@ -118,9 +128,12 @@ public class Exp66 {
         return goodFeatures;
     }
 
-    private static double docUtility(Set<FeatureUtility> remainingFeatures, ClfDataSet dataSet, int dataPoint){
-        return remainingFeatures.stream().filter(featureUtility -> dataSet.getRow(dataPoint).get(featureUtility.getIndex())>0)
+    private static double docUtility(Set<FeatureUtility> remainingFeatures, ClfDataSet dataSet, Map<String, Integer> docLengths,
+                                     int dataPoint){
+        double total =  remainingFeatures.stream().filter(featureUtility -> dataSet.getRow(dataPoint).get(featureUtility.getIndex())>0)
                 .mapToDouble(FeatureUtility::getUtility).sum();
+        int docLength = docLengths.get(dataSet.getSetting().getIdTranslator().toExtId(dataPoint));
+        return total/docLength;
     }
 
     private static Set<FeatureUtility> matchedFeatures(Set<FeatureUtility> remainingFeatures, ClfDataSet dataSet, int dataPoint){
@@ -128,7 +141,8 @@ public class Exp66 {
                 .collect(Collectors.toSet());
     }
 
-    private static List<String> setCover(List<FeatureUtility> featureUtilities, List<Integer> dataPoints, ClfDataSet dataSet){
+    private static List<String> setCover(List<FeatureUtility> featureUtilities, List<Integer> dataPoints, ClfDataSet dataSet,
+                                         Map<String, Integer> docLengths){
         Set<FeatureUtility> remainingFeatures = new HashSet<>(featureUtilities);
         Set<Integer> remainingData = new HashSet<>(dataPoints);
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
@@ -137,13 +151,14 @@ public class Exp66 {
         for (int iteration =0;iteration<1000000;iteration++){
             System.out.println("iteration "+iteration);
             Pair<Integer,Double> bestPair = remainingData.stream().parallel().map(dataPoint ->
-                    new Pair<>(dataPoint, docUtility(remainingFeatures,dataSet,dataPoint)))
+                    new Pair<>(dataPoint, docUtility(remainingFeatures,dataSet,docLengths, dataPoint)))
                     .max(comparator).get();
             int bestData = bestPair.getFirst();
             double bestUtility = bestPair.getSecond();
             docs.add(dataSet.getDataPointSetting(bestData).getExtId());
             Set<FeatureUtility> matchedFeatures = matchedFeatures(remainingFeatures,dataSet,bestData);
             System.out.println("best document = "+bestData+", extId = "+dataSet.getDataPointSetting(bestData).getExtId());
+            System.out.println("document length = "+docLengths.get(dataSet.getDataPointSetting(bestData).getExtId()));
             System.out.println("utility = "+bestUtility);
             System.out.println("matched features = "+ matchedFeatures);
 

@@ -172,6 +172,8 @@ public class Exp62 {
         Set<String> frequentNgrams = new HashSet<>(gather(config,index,trainIdTranslator.getAllExtIds()));
         System.out.println("number of frequent ngrams = "+frequentNgrams.size());
 
+        Set<String> topNgrams = loadTopNgrams(config);
+
         Set<String> blackList = new HashSet<>();
 
         UncertainSampler sampler = new UncertainSampler(validSet);
@@ -336,6 +338,10 @@ public class Exp62 {
                     }
 
                     allCandidates.retainAll(frequentNgrams);
+
+                    if (config.getBoolean("extraction.topFeaturesOnly")){
+                        allCandidates.retainAll(topNgrams);
+                    }
 
                     allCandidates.removeAll(blackList);
 
@@ -712,5 +718,19 @@ public class Exp62 {
             all.add(list);
         });
         return all;
+    }
+
+    static Set<String> loadTopNgrams(Config config) throws Exception{
+        Set<String> set = new HashSet<>();
+        File file = new File(config.getString("input.topFeatures"));
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        List<String> lines = IOUtils.readLines(bufferedReader);
+        bufferedReader.close();
+        for (String line: lines){
+            for (String str: line.split(",")){
+                set.add(str.trim());
+            }
+        }
+        return set;
     }
 }

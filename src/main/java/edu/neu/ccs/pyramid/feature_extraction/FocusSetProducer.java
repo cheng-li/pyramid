@@ -20,6 +20,7 @@ public class FocusSetProducer {
     private GradientMatrix gradientMatrix;
     private ProbabilityMatrix probabilityMatrix;
     private List<List<Integer>> dataPerClass;
+    private List<List<Integer>> desiredOrders;
     private boolean promotion = true;
 
     public FocusSetProducer(int numClasses, int numDataPoints) {
@@ -37,6 +38,10 @@ public class FocusSetProducer {
             dataPerClass.get(label).add(i);
         });
 
+    }
+
+    public void setDesiredOrders(List<List<Integer>> desiredOrders) {
+        this.desiredOrders = desiredOrders;
     }
 
     public void setDataPerClass(List<List<Integer>> dataPerClass) {
@@ -100,7 +105,17 @@ public class FocusSetProducer {
         return set;
     }
 
-    public Set<Integer> getEasyOnes(int classIndex, int size){
+    public Set<Integer> produceDesiredOnes(int classIndex, int size){
+        Set<Integer> set = getDesiredOnes(classIndex, size);
+        if (promotion){
+            for (Integer dataIndex: set){
+                counts[classIndex][dataIndex] += 1;
+            }
+        }
+        return set;
+    }
+
+    private Set<Integer> getEasyOnes(int classIndex, int size){
         double[] gradientForClass = gradientMatrix.getGradientsForClass(classIndex);
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<Integer> sorted = IntStream.range(0, gradientForClass.length)
@@ -115,7 +130,7 @@ public class FocusSetProducer {
         return Sampling.rotate(probs,size);
     }
 
-    public Set<Integer> getHardOnes(int classIndex, int size){
+    private Set<Integer> getHardOnes(int classIndex, int size){
         double[] gradientForClass = gradientMatrix.getGradientsForClass(classIndex);
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<Integer> sorted = IntStream.range(0, gradientForClass.length)
@@ -131,7 +146,7 @@ public class FocusSetProducer {
     }
 
 
-    public Set<Integer> getUncertainOnes(int classIndex, int size){
+    private Set<Integer> getUncertainOnes(int classIndex, int size){
         double[] gradientForClass = gradientMatrix.getGradientsForClass(classIndex);
         List<Integer> matchClass = IntStream.range(0,gradientForClass.length)
                 .filter(i-> gradientForClass[i]>0)
@@ -149,10 +164,17 @@ public class FocusSetProducer {
         return Sampling.rotate(probs,size);
     }
 
-    public Set<Integer> getRandomOnes(int classIndex, int size){
+    private Set<Integer> getRandomOnes(int classIndex, int size){
         List<Integer> matched = dataPerClass.get(classIndex).stream().collect(Collectors.toList());
         Collections.shuffle(matched);
         List<Pair<Integer,Double>> probs = matched.stream()
+                .map(i -> new Pair<>(i, countToProb(counts[classIndex][i])))
+                .collect(Collectors.toList());
+        return Sampling.rotate(probs,size);
+    }
+
+    private Set<Integer> getDesiredOnes(int classIndex, int size){
+        List<Pair<Integer,Double>> probs = desiredOrders.get(classIndex).stream()
                 .map(i -> new Pair<>(i, countToProb(counts[classIndex][i])))
                 .collect(Collectors.toList());
         return Sampling.rotate(probs,size);

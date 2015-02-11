@@ -79,4 +79,6 @@
   62: extract all frequent ngrams from a document, check how probability estimation changes
   63: check distribution of good ngrams
   64: write data to the seql format
+  65: index imdb as multi-label
+  66: set cover good ngrams
 

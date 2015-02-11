@@ -727,4 +727,11 @@ public class DataSetUtil {
         return list;
     }
 
+    public static double density(DataSet dataSet){
+        int nonZeros = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .map(i -> dataSet.getRow(i).getNumNonZeroElements())
+                .sum();
+        return ((double)nonZeros)/(dataSet.getNumDataPoints()*dataSet.getNumFeatures());
+    }
+
 }
