@@ -31,29 +31,37 @@ public class PhraseSplitExtractor {
     private static final Logger logger = LogManager.getLogger();
     private int minDf = 10;
     private ESIndex index;
-    private int topN =20;
     private IdTranslator idTranslator;
     private int minDataPerLeaf = 2;
     private int lengthLimit = Integer.MAX_VALUE;
+    private List<Integer> validationSet;
+    private PhraseDetector phraseDetector;
+    private String[] validationIndexIds;
 
-    public PhraseSplitExtractor(ESIndex index, IdTranslator idTranslator) {
+    public PhraseSplitExtractor(ESIndex index, IdTranslator idTranslator, List<Integer> validationSet) {
         this.index = index;
         this.idTranslator = idTranslator;
-
+        this.validationSet = validationSet;
+        String[] validationIndexIds = validationSet.parallelStream()
+                .map(this.idTranslator::toExtId)
+                .toArray(String[]::new);
+        this.phraseDetector = new PhraseDetector(index,validationIndexIds).setMinDf(this.minDf);
+        this.phraseDetector.setLengthLimit(this.lengthLimit);
+        this.validationIndexIds = validationSet.parallelStream()
+                .map(this.idTranslator::toExtId)
+                .toArray(String[]::new);
     }
 
     public PhraseSplitExtractor setLengthLimit(int lengthLimit) {
         this.lengthLimit = lengthLimit;
+        this.phraseDetector.setLengthLimit(lengthLimit);
         return this;
     }
 
-    public PhraseSplitExtractor setTopN(int topN) {
-        this.topN = topN;
-        return this;
-    }
 
     public PhraseSplitExtractor setMinDf(int minDf) {
         this.minDf = minDf;
+        this.phraseDetector.setMinDf(minDf);
         return this;
     }
 
@@ -62,38 +70,37 @@ public class PhraseSplitExtractor {
         return this;
     }
 
-    public List<String> getGoodPhrases(FocusSet focusSet,
-                                     List<Integer> validationSet,
-                                     Set<String> blacklist,
-                                     int classIndex,
-                                     List<Double> residuals,
-                                     Set<String> seeds) throws Exception{
-        StopWatch stopWatch = null;
-        if (logger.isDebugEnabled()){
-            stopWatch = new StopWatch();
-            stopWatch.start();
-        }
-        List<String> goodPhrases = new ArrayList<String>();
-        if (this.topN==0){
-            return goodPhrases;
-        }
-        System.out.println("gathering...");
-        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds, validationSet);
-        System.out.println("done");
-        System.out.println("filtering...");
-        List<PhraseInfo> candidates = filter(allPhrases,blacklist);
-        System.out.println("done");
-        System.out.println("ranking");
-        List<String> ranked = rankBySplit(candidates,validationSet,residuals);
-        System.out.println("done");
-        return ranked;
-    }
+//    public List<String> getGoodPhrases(FocusSet focusSet,
+//                                     Set<String> blacklist,
+//                                     int classIndex,
+//                                     List<Double> residuals,
+//                                     Set<String> seeds) throws Exception{
+//        StopWatch stopWatch = null;
+//        if (logger.isDebugEnabled()){
+//            stopWatch = new StopWatch();
+//            stopWatch.start();
+//        }
+//        List<String> goodPhrases = new ArrayList<String>();
+//        if (this.topN==0){
+//            return goodPhrases;
+//        }
+//        System.out.println("gathering...");
+//        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds);
+//        System.out.println("done");
+//        System.out.println("filtering...");
+//        List<PhraseInfo> candidates = filter(allPhrases,blacklist);
+//        System.out.println("done");
+//        System.out.println("ranking");
+//        List<String> ranked = rankBySplit(candidates,residuals);
+//        System.out.println("done");
+//        return ranked;
+//    }
 
     List<PhraseInfo> getCandidates(FocusSet focusSet,int classIndex,
-                               Set<String> seeds,List<Integer> validationSet,
+                               Set<String> seeds,
                                Set<String> blacklist){
         System.out.println("gathering...");
-        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds, validationSet);
+        Collection<PhraseInfo> allPhrases = gather(focusSet,classIndex,seeds);
         System.out.println("done");
 
         //todo change pos
@@ -116,14 +123,7 @@ public class PhraseSplitExtractor {
     //todo
     private Collection<PhraseInfo> gather(FocusSet focusSet,
                                         int classIndex,
-                                        Set<String> seeds,
-                                        List<Integer> validationSet){
-        String[] validationIndexIds = validationSet.parallelStream()
-                .map(this.idTranslator::toExtId)
-                .toArray(String[]::new);
-        PhraseDetector phraseDetector = new PhraseDetector(index,validationIndexIds).setMinDf(this.minDf);
-        phraseDetector.setLengthLimit(this.lengthLimit);
-
+                                        Set<String> seeds){
         List<Integer> dataPoints = focusSet.getDataClassK(classIndex);
 
         List<Set<PhraseInfo>> phrasesList = dataPoints.parallelStream()
@@ -148,33 +148,27 @@ public class PhraseSplitExtractor {
         return all;
     }
 
-    private List<String> rankBySplit(Collection<PhraseInfo> phraseInfos,
-                                     List<Integer> validationSet,
-                                     List<Double> residuals){
-        //translate once
-        String[] validationIndexIds = validationSet.parallelStream()
-                .map(this.idTranslator::toExtId)
-                .toArray(String[]::new);
-
-        // this is stupid
-        double[] residualsArray = residuals.stream().mapToDouble(a -> a).toArray();
-
-        Comparator<Pair<PhraseInfo,Double>> pairComparator = Comparator.comparing(Pair::getSecond);
-        List<String> goodPhrases = phraseInfos.stream().parallel()
-                .map(phraseInfo ->
-                        new Pair<>(phraseInfo, splitScore(phraseInfo, validationIndexIds, residualsArray)))
-                .sorted(pairComparator.reversed())
-                .map(pair -> pair.getFirst().getPhrase())
-                .limit(this.topN)
-                .collect(Collectors.toList());
-        return goodPhrases;
-
-    }
+//    private List<String> rankBySplit(Collection<PhraseInfo> phraseInfos,
+//                                     List<Double> residuals){
+//
+//        // this is stupid
+//        double[] residualsArray = residuals.stream().mapToDouble(a -> a).toArray();
+//
+//        Comparator<Pair<PhraseInfo,Double>> pairComparator = Comparator.comparing(Pair::getSecond);
+//        List<String> goodPhrases = phraseInfos.stream().parallel()
+//                .map(phraseInfo ->
+//                        new Pair<>(phraseInfo, splitScore(phraseInfo, residualsArray)))
+//                .sorted(pairComparator.reversed())
+//                .map(pair -> pair.getFirst().getPhrase())
+//                .limit(this.topN)
+//                .collect(Collectors.toList());
+//        return goodPhrases;
+//
+//    }
 
     double splitScore(PhraseInfo phraseInfo,
-                              String[] validationSet,
                               double[] residuals){
-        int numDataPoints = validationSet.length;
+        int numDataPoints = validationIndexIds.length;
         DataSet dataSet = RegDataSetBuilder.getBuilder().numDataPoints(numDataPoints).numFeatures(1).dense(true).build();
         SearchResponse response = phraseInfo.getSearchResponse();
         Map<String,Float> matchingScores = new HashMap<>();
@@ -184,13 +178,13 @@ public class PhraseSplitExtractor {
             matchingScores.put(indexId,matchingScore);
         }
         for (int i=0;i<numDataPoints;i++){
-            double value = matchingScores.getOrDefault(validationSet[i], 0f);
+            double value = matchingScores.getOrDefault(validationIndexIds[i], 0f);
             dataSet.setFeatureValue(i,0,value);
         }
 
         int[] activeFeatures = {0};
         RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setActiveDataPoints(IntStream.range(0, validationSet.length).toArray())
+                .setActiveDataPoints(IntStream.range(0, validationIndexIds.length).toArray())
                 .setActiveFeatures(activeFeatures)
                 .setMaxNumLeaves(2)
                 .setMinDataPerLeaf(this.minDataPerLeaf);
