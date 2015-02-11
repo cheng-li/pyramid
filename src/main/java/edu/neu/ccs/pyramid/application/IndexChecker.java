@@ -22,14 +22,17 @@ public class IndexChecker {
 
 
         ESIndex index = loadIndex(config);
-        check(config,index);
+        List<String> fields = config.getStrings("fieldsToCheck");
+        for (String field: fields){
+            check(index,field);
+        }
+
         index.close();
 
 
     }
 
-    private static void check(Config config, ESIndex index){
-        String field = config.getString("fieldToCheck");
+    private static void check(ESIndex index, String field){
         List<String> ids = IntStream.range(0,index.getNumDocs()).parallel()
                 .mapToObj(i-> ""+i)
                 .filter(id -> index.getField(id,field)==null)
