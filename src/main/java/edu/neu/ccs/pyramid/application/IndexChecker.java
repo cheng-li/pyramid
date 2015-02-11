@@ -1,0 +1,63 @@
+package edu.neu.ccs.pyramid.application;
+
+import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
+
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+/**
+ * Created by chengli on 2/10/15.
+ */
+public class IndexChecker {
+    public static void main(String[] args) throws Exception{
+        if (args.length !=1){
+            throw new IllegalArgumentException("please specify the config file");
+        }
+
+        Config config = new Config(args[0]);
+        System.out.println(config);
+
+
+        ESIndex index = loadIndex(config);
+        check(config,index);
+        index.close();
+
+
+    }
+
+    private static void check(Config config, ESIndex index){
+        String field = config.getString("fieldToCheck");
+        List<String> ids = IntStream.range(0,index.getNumDocs()).parallel()
+                .mapToObj(i-> ""+i)
+                .filter(id -> index.getField(id,field)==null)
+                .collect(Collectors.toList());
+        if (ids.size()==0){
+            System.out.println("all documents have the field "+field);
+        } else {
+            System.out.println("the following documents miss the field "+field);
+            System.out.println(ids);
+        }
+
+
+    }
+
+    static ESIndex loadIndex(Config config) throws Exception{
+        ESIndex.Builder builder = new ESIndex.Builder()
+                .setIndexName(config.getString("index.indexName"))
+                .setClusterName(config.getString("index.clusterName"))
+                .setClientType(config.getString("index.clientType"))
+                .setDocumentType(config.getString("index.documentType"));
+        if (config.getString("index.clientType").equals("transport")){
+            String[] hosts = config.getString("index.hosts").split(Pattern.quote(","));
+            String[] ports = config.getString("index.ports").split(Pattern.quote(","));
+            builder.addHostsAndPorts(hosts,ports);
+        }
+        ESIndex index = builder.build();
+        System.out.println("index loaded");
+        System.out.println("there are "+index.getNumDocs()+" documents in the index.");
+        return index;
+    }
+}
