@@ -37,7 +37,6 @@ public class TermTfidfSplitExtractor {
      * max number of good ngrams to return for each class
      */
     //TODO: different for different class
-    private int topN = 20;
     IdTranslator idTranslator;
     /**
      * in the whole collection
@@ -52,19 +51,20 @@ public class TermTfidfSplitExtractor {
      * regression tree on the validation set
      */
     int minDataPerLeaf=1;
+    private List<Integer> validationSet;
+    private String[] validationIndexIds;
+
+
 
     public TermTfidfSplitExtractor(ESIndex index,
                                    IdTranslator idTranslator,
-                                   int topN) {
+                                   List<Integer> validationSet) {
         this.index = index;
         this.idTranslator = idTranslator;
-        this.topN = topN;
-    }
-
-    public TermTfidfSplitExtractor(ESIndex index,
-                                   IdTranslator idTranslator) {
-        this.index = index;
-        this.idTranslator = idTranslator;
+        this.validationSet = validationSet;
+        this.validationIndexIds = validationSet.parallelStream()
+                .map(this.idTranslator::toExtId)
+                .toArray(String[]::new);
     }
 
     public TermTfidfSplitExtractor setMinDf(int minDf) {
@@ -82,39 +82,35 @@ public class TermTfidfSplitExtractor {
         return this;
     }
 
-    public void setTopN(int topN) {
-        this.topN = topN;
-    }
 
-    /**
-     *
-     * @param focusSet
-     * @param validationSet algorithm ids
-     * @param blacklist
-     * @param classIndex
-     * @param residuals  residuals of calidationSet, column vector
-     * @return
-     * @throws Exception
-     */
-    public List<String> getGoodTerms(FocusSet focusSet,
-                                     List<Integer> validationSet,
-                                     Set<String> blacklist,
-                                     int classIndex,
-                                     List<Double> residuals) throws Exception{
-        StopWatch stopWatch = null;
-        if (logger.isDebugEnabled()){
-            stopWatch = new StopWatch();
-            stopWatch.start();
-        }
-        List<String> goodTerms = new ArrayList<String>();
-        if (this.topN==0){
-            return goodTerms;
-        }
 
-        Collection<TermStat> termStats = gather(focusSet,classIndex);
-        List<String> termCandidates = filter(termStats,blacklist);
-        return rankBySplit(termCandidates,validationSet,residuals);
-    }
+//    /**
+//     *
+//     * @param focusSet
+//     * @param blacklist
+//     * @param classIndex
+//     * @param residuals  residuals of calidationSet, column vector
+//     * @return
+//     * @throws Exception
+//     */
+//    public List<String> getGoodTerms(FocusSet focusSet,
+//                                     Set<String> blacklist,
+//                                     int classIndex,
+//                                     List<Double> residuals) throws Exception{
+//        StopWatch stopWatch = null;
+//        if (logger.isDebugEnabled()){
+//            stopWatch = new StopWatch();
+//            stopWatch.start();
+//        }
+//        List<String> goodTerms = new ArrayList<String>();
+//        if (this.topN==0){
+//            return goodTerms;
+//        }
+//
+//        Collection<TermStat> termStats = gather(focusSet,classIndex);
+//        List<String> termCandidates = filter(termStats,blacklist);
+//        return rankBySplit(termCandidates,residuals);
+//    }
 
     List<String> getCandidates(FocusSet focusSet, int classIndex, Set<String> blacklist){
         Collection<TermStat> termStats = gather(focusSet,classIndex);
@@ -202,43 +198,35 @@ public class TermTfidfSplitExtractor {
         return terms;
     }
 
-    private List<String> rankBySplit(Collection<String> terms,
-                                     List<Integer> validationSet,
-                                     List<Double> residuals){
-        //translate once
-        String[] validationIndexIds = validationSet.parallelStream()
-                .map(this.idTranslator::toExtId)
-                .toArray(String[]::new);
-
-        // this is stupid
-        double[] residualsArray = residuals.stream().mapToDouble(a -> a).toArray();
-
-        Comparator<Pair<String,Double>> pairComparator = Comparator.comparing(Pair::getSecond);
-        List<String> goodTerms = terms.stream().parallel()
-                .map(term ->
-                        new Pair<>(term, splitScore(term, validationIndexIds, residualsArray)))
-                .sorted(pairComparator.reversed())
-                .map(Pair::getFirst)
-                .limit(this.topN)
-                .collect(Collectors.toList());
-        return goodTerms;
-
-    }
+//    private List<String> rankBySplit(Collection<String> terms,
+//                                     List<Double> residuals){
+//        // this is stupid
+//        double[] residualsArray = residuals.stream().mapToDouble(a -> a).toArray();
+//
+//        Comparator<Pair<String,Double>> pairComparator = Comparator.comparing(Pair::getSecond);
+//        List<String> goodTerms = terms.stream().parallel()
+//                .map(term ->
+//                        new Pair<>(term, splitScore(term, residualsArray)))
+//                .sorted(pairComparator.reversed())
+//                .map(Pair::getFirst)
+//                .limit(this.topN)
+//                .collect(Collectors.toList());
+//        return goodTerms;
+//
+//    }
 
     /**
      * use matching scores as feature values
      * @param term
-     * @param validationSet
      * @param residuals
      * @return
      */
     double splitScore(String term,
-                              String[] validationSet,
                               double[] residuals){
-        int numDataPoints = validationSet.length;
+        int numDataPoints = validationIndexIds.length;
         DataSet dataSet = RegDataSetBuilder.getBuilder().numDataPoints(numDataPoints).numFeatures(1).dense(true).build();
         SearchResponse response = this.index.match(this.index.getBodyField(),
-                term,validationSet, MatchQueryBuilder.Operator.AND);
+                term, validationIndexIds, MatchQueryBuilder.Operator.AND);
         Map<String,Float> matchingScores = new HashMap<>();
         for (SearchHit hit: response.getHits().getHits()){
             String indexId = hit.getId();
@@ -246,13 +234,13 @@ public class TermTfidfSplitExtractor {
             matchingScores.put(indexId,matchingScore);
         }
         for (int i=0;i<numDataPoints;i++){
-            double value = matchingScores.getOrDefault(validationSet[i], 0f);
+            double value = matchingScores.getOrDefault(validationIndexIds[i], 0f);
             dataSet.setFeatureValue(i,0,value);
         }
 
         int[] activeFeatures = {0};
         RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setActiveDataPoints(IntStream.range(0,validationSet.length).toArray())
+                .setActiveDataPoints(IntStream.range(0,validationIndexIds.length).toArray())
                 .setActiveFeatures(activeFeatures)
                 .setMaxNumLeaves(2)
                 .setMinDataPerLeaf(this.minDataPerLeaf);

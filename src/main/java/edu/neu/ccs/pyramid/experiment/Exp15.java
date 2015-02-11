@@ -397,19 +397,6 @@ public class Exp15 {
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
 
-        TermTfidfSplitExtractor termExtractor = new TermTfidfSplitExtractor(index,
-                trainIdTranslator).
-                setMinDf(config.getInt("extraction.termExtractor.minDf")).
-                setNumSurvivors(config.getInt("extraction.termExtractor.numSurvivors")).
-                setMinDataPerLeaf(config.getInt("extraction.termExtractor.minDataPerLeaf"));
-
-        PhraseSplitExtractor phraseSplitExtractor = new PhraseSplitExtractor(index,trainIdTranslator)
-                .setMinDataPerLeaf(config.getInt("extraction.phraseExtractor.minDataPerLeaf"))
-                .setMinDf(config.getInt("extraction.phraseExtractor.minDf"))
-                .setLengthLimit(config.getInt("extraction.phraseExtractor.maxN"));
-
-        MixedSplitExtractor mixedSplitExtractor = new MixedSplitExtractor(termExtractor,phraseSplitExtractor);
-
         int[] topNs = new int[numClasses];
         for (int k=0;k<numClasses;k++){
             topNs[k] = Math.max(1,classCounts[k]*config.getInt("extraction.topN")/totalCount);
@@ -632,7 +619,18 @@ public class Exp15 {
 
                 }
 
+                TermTfidfSplitExtractor termExtractor = new TermTfidfSplitExtractor(index,
+                        trainIdTranslator,validationSet).
+                        setMinDf(config.getInt("extraction.termExtractor.minDf")).
+                        setNumSurvivors(config.getInt("extraction.termExtractor.numSurvivors")).
+                        setMinDataPerLeaf(config.getInt("extraction.termExtractor.minDataPerLeaf"));
 
+                PhraseSplitExtractor phraseSplitExtractor = new PhraseSplitExtractor(index,trainIdTranslator,validationSet)
+                        .setMinDataPerLeaf(config.getInt("extraction.phraseExtractor.minDataPerLeaf"))
+                        .setMinDf(config.getInt("extraction.phraseExtractor.minDf"))
+                        .setLengthLimit(config.getInt("extraction.phraseExtractor.maxN"));
+
+                MixedSplitExtractor mixedSplitExtractor = new MixedSplitExtractor(termExtractor,phraseSplitExtractor);
 
 
                 for (int k = 0; k < numClasses; k++) {
@@ -641,7 +639,7 @@ public class Exp15 {
                             .map(i -> allGradients[i]).collect(Collectors.toList());
 
                     //phrases
-                    List<String> goodPhrases = mixedSplitExtractor.getGoodNgrams(focusSet, validationSet, blackList, k,
+                    List<String> goodPhrases = mixedSplitExtractor.getGoodNgrams(focusSet, blackList, k,
                             gradientsForValidation, numSeeds,topNs[k]);
                     System.out.println("phrases extracted for class " + k + " (" + labelTranslator.toExtLabel(k) + "):");
                     System.out.println(goodPhrases);
