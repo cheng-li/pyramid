@@ -16,11 +16,11 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-//        spam_test();
+        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
-        spam_resume_train();
+//        spam_resume_train();
 //        spam_polluted_build();
 //        spam_polluted_load();
 //        spam_fake_build();
@@ -160,8 +160,9 @@ public class LKTreeBoostTest {
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                        .dataSamplingRate(1).featureSamplingRate(1).usePrior(true).
-                        build();
+                        .dataSamplingRate(1).featureSamplingRate(1).usePrior(true)
+                        .randomLevel(10)
+                        .build();
 
         LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 

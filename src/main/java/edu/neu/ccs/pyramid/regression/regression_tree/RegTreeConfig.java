@@ -7,6 +7,7 @@ public class RegTreeConfig {
     private int numSplitIntervals=100;
     private int maxNumLeaves=2;
     private int minDataPerLeaf=1;
+    private int randomLevel=1;
 
     /**
      * features to consider in the tree
@@ -45,6 +46,14 @@ public class RegTreeConfig {
         return this;
     }
 
+    public RegTreeConfig setRandomLevel(int randomLevel) {
+        if (randomLevel<1){
+            throw new IllegalArgumentException("random level should be at least 1");
+        }
+        this.randomLevel = randomLevel;
+        return this;
+    }
+
     int getMaxNumLeaves() {
         return maxNumLeaves;
     }
@@ -65,4 +74,7 @@ public class RegTreeConfig {
         return numSplitIntervals;
     }
 
+    int getRandomLevel() {
+        return randomLevel;
+    }
 }

@@ -39,6 +39,10 @@ public class UncertainSampler {
 
     }
 
+    public List<List<Integer>> getDataPerClass() {
+        return dataPerClass;
+    }
+
     public void setClassProbMatrix(List<double[]> classProbMatrix) {
         this.classProbMatrix = classProbMatrix;
     }

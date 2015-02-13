@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.FeatureType;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 
 
 import java.util.*;
@@ -30,15 +31,20 @@ public class Splitter {
                                        double[] probs){
         GlobalStats globalStats = new GlobalStats(labels,probs);
         int[] activeFeatures = regTreeConfig.getActiveFeatures();
+        int randomLevel = regTreeConfig.getRandomLevel();
 
-        ForkJoinTask<Optional<SplitResult>> task = pool.submit(() ->
+        ForkJoinTask<List<SplitResult>> task = pool.submit(() ->
                 Arrays.stream(activeFeatures).parallel()
                         .mapToObj(featureIndex -> split(regTreeConfig, dataSet, labels,
                                 probs, featureIndex, globalStats))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .max(Comparator.comparing(SplitResult::getReduction)));
-        Optional<SplitResult> result = task.join();
+                        .sorted(Comparator.comparing(SplitResult::getReduction).reversed())
+                        .limit(randomLevel)
+                        .collect(Collectors.toList()));
+        // the list might be empty
+        List<SplitResult> splitResults = task.join();
+        return sample(splitResults);
 //
 //        Optional<SplitResult> result = Arrays.stream(activeFeatures).parallel()
 //                .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
@@ -46,7 +52,7 @@ public class Splitter {
 //                .filter(Optional::isPresent)
 //                .map(Optional::get)
 //                .max(Comparator.comparing(SplitResult::getReduction));
-        return result;
+
     }
 
 
@@ -134,6 +140,24 @@ public class Splitter {
                     probs,featureIndex, globalStats);
 
         return splitResult;
+    }
+
+    static Optional<SplitResult> sample(List<SplitResult> splitResults){
+        if (splitResults.size()==0){
+            return Optional.empty();
+        }
+
+        if (splitResults.get(0).getReduction()==0){
+            return Optional.empty();
+        }
+
+        double total = splitResults.stream().mapToDouble(SplitResult::getReduction).sum();
+        double[] probs = splitResults.stream().mapToDouble(splitResult -> splitResult.getReduction()/total)
+                .toArray();
+        int[] singletons = IntStream.range(0,splitResults.size()).toArray();
+        EnumeratedIntegerDistribution distribution = new EnumeratedIntegerDistribution(singletons,probs);
+        int sample = distribution.sample();
+        return Optional.of(splitResults.get(sample));
     }
 
     static class GlobalStats {

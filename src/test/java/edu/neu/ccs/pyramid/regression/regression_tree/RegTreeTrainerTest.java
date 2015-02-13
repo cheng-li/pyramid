@@ -13,7 +13,7 @@ public class RegTreeTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test8();
+        test2();
     }
 
 
@@ -40,6 +40,7 @@ public class RegTreeTrainerTest {
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
+        regTreeConfig.setRandomLevel(3);
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();
@@ -51,10 +52,10 @@ public class RegTreeTrainerTest {
 
         double mseValue = MSE.mse(regressionTree, dataSet);
         System.out.println(mseValue);
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            System.out.println(RegTreeInspector.getMatchedLeaf(regressionTree,dataSet.getRow(i)));
-        }
-        System.out.println(RegTreeInspector.features(regressionTree));
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            System.out.println(RegTreeInspector.getMatchedLeaf(regressionTree,dataSet.getRow(i)));
+//        }
+//        System.out.println(RegTreeInspector.features(regressionTree));
 //        System.out.println(regressionTree);
 //        System.out.println(regressionTree.getRootReduction()    );
 

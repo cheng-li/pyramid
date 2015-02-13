@@ -279,6 +279,7 @@ public class LKTBTrainer {
         regTreeConfig.setActiveDataPoints(this.lktbConfig.getActiveDataPoints());
         regTreeConfig.setActiveFeatures(this.lktbConfig.getActiveFeatures());
         regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
+        regTreeConfig.setRandomLevel(this.lktbConfig.getRandomLevel());
 
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
                 this.lktbConfig.getDataSet(),

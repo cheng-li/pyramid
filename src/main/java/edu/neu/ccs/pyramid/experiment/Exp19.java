@@ -71,7 +71,9 @@ public class Exp19 {
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .learningRate(learningRate).minDataPerLeaf(minDataPerLeaf)
                 .numLeaves(numLeaves).dataSamplingRate(dataSamplingRate)
-                .featureSamplingRate(featureSamplingRate).build();
+                .featureSamplingRate(featureSamplingRate)
+                .randomLevel(config.getInt("train.randomLevel"))
+                .build();
         LKTreeBoost lkTreeBoost = new LKTreeBoost(numClasses);
 
         LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
