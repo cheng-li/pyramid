@@ -181,7 +181,7 @@ public class Exp35 {
 
 
 
-    static List<String> gather(Config config, SingleLabelIndex index,
+    static List<String> gather(Config config, SingleLabelIndex index, String field,
                                String[] ids) throws Exception{
         List<Integer> ns = config.getIntegers("ngram.n");
         List<Integer> minDfs = config.getIntegers("ngram.minDf");
@@ -190,23 +190,24 @@ public class Exp35 {
             int n = ns.get(i);
             int minDf = minDfs.get(i);
             if (n==1){
-                list.addAll(gatherUnigrams(index,ids,minDf));
+                list.addAll(gatherUnigrams(index,field, ids,minDf));
             } else {
-                list.addAll(gatherNgrams(index, ids, n, minDf));
+                list.addAll(gatherNgrams(index, field,ids, n, minDf));
             }
         }
         return list;
     }
 
-    static List<String> gatherUnigrams(ESIndex index,
+    static List<String> gatherUnigrams(ESIndex index, String field,
                                        String[] ids, int minDf) throws Exception{
-        System.out.println("gathering unigrams with minDf "+minDf);
+        System.out.println("gathering unigrams with minDf "+minDf+" from field "+field);
         Set<TermStat> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<TermStat, Boolean>());
         Arrays.stream(ids).parallel().forEach(id -> {
             Set<TermStat> termStats = null;
             try {
-                termStats = index.getTermStats(id);
+                termStats = index.getTermStats(field, id);
             } catch (IOException e) {
+                System.out.println("id= "+id);
                 e.printStackTrace();
             }
             termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(unigrams::add);
@@ -221,17 +222,17 @@ public class Exp35 {
         return list;
     }
 
-    static List<String> gatherNgrams(ESIndex index,
+    static List<String> gatherNgrams(ESIndex index, String field,
                                        String[] ids, int n, int minDf) throws Exception{
 
-        System.out.println("gathering "+n+"-grams with minDf "+minDf);
-        List<String> ngrams = NgramEnumerator.gatherNgrams(index,ids,n,minDf);
+        System.out.println("gathering "+n+"-grams with minDf "+minDf+" from field "+field);
+        List<String> ngrams = NgramEnumerator.gatherNgrams(index,field,ids,n,minDf);
         System.out.println("done");
         System.out.println("there are "+ngrams.size()+" "+n+"-grams");
         return ngrams;
     }
 
-    static void addNgramFeatures(FeatureMappers featureMappers, List<String> ngrams, int slop){
+    static void addNgramFeatures(FeatureMappers featureMappers, List<String> ngrams, String field, int slop){
         for (String ngram: ngrams){
             String featureName = ngram+"(slop="+slop+")";
             int featureIndex = featureMappers.nextAvailable();
@@ -241,6 +242,7 @@ public class Exp35 {
             mapper.getSettings().put("ngram",ngram);
             mapper.getSettings().put("source","matching_score");
             mapper.getSettings().put("slop",""+slop);
+            mapper.getSettings().put("field",field);
             featureMappers.addMapper(mapper);
         }
     }
@@ -302,7 +304,8 @@ public class Exp35 {
                         SearchResponse response = null;
                         int slop = Integer.parseInt(numericalFeatureMapper.getSettings().get("slop"));
                         String ngram = numericalFeatureMapper.getSettings().get("ngram");
-                        response = index.matchPhrase(index.getBodyField(), ngram, dataIndexIds, slop);
+                        String field = numericalFeatureMapper.getSettings().get("field");
+                        response = index.matchPhrase(field, ngram, dataIndexIds, slop);
 
                         SearchHit[] hits = response.getHits().getHits();
                         for (SearchHit hit: hits){
@@ -449,11 +452,16 @@ public class Exp35 {
             addInitialFeatures(config,index,featureMappers,trainIndexIds);
         }
 
-        List<String> ngrams = gather(config,index,trainIndexIds);
+        List<String> fields = config.getStrings("fields");
         List<Integer> slops = config.getIntegers("ngram.slop");
-        for (int slop: slops){
-            addNgramFeatures(featureMappers, ngrams,slop);
+        for (String field: fields){
+            List<String> ngrams = gather(config,index,field, trainIndexIds);
+            for (int slop: slops){
+                addNgramFeatures(featureMappers, ngrams,field, slop);
+            }
         }
+
+
 
 
 

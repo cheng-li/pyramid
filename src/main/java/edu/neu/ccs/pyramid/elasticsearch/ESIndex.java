@@ -49,6 +49,7 @@ public class ESIndex {
     String clusterName;
     String bodyField;
 
+    //todo should have different caches for different fields
     /**
      * concurrent LRU cache for termvectors
      */
@@ -269,6 +270,17 @@ public class ESIndex {
      * @throws IOException
      */
     public Set<TermStat> getTermStats(String id) throws IOException {
+        return getTermStats(this.bodyField,id);
+    }
+
+
+    /**
+     * df is from one shard!!!
+     * @param id
+     * @return term statistics from one doc
+     * @throws IOException
+     */
+    public Set<TermStat> getTermStats(String field, String id) throws IOException {
         StopWatch stopWatch=null;
         if(logger.isDebugEnabled()){
             stopWatch = new StopWatch();
@@ -277,13 +289,18 @@ public class ESIndex {
         TermVectorResponse response = client.prepareTermVector(indexName, documentType, id)
                 .setOffsets(false).setPositions(false).setFieldStatistics(false)
                 .setTermStatistics(true)
-                .setSelectedFields(this.bodyField).
+                .setSelectedFields(field).
                         execute().actionGet();
 
-        Terms terms = response.getFields().terms(this.bodyField);
+        Terms terms = response.getFields().terms(field);
+        Set<TermStat> set = new HashSet<>();
+        // if the field is empty, terms==null
+        if (terms==null){
+            return set;
+        }
         TermsEnum iterator = terms.iterator(null);
 
-        Set<TermStat> set = new HashSet<>();
+
         for (int i=0;i<terms.size();i++){
             String term = iterator.next().utf8ToString();
             int tf = iterator.docsAndPositions(null,null).freq();
@@ -329,25 +346,29 @@ public class ESIndex {
         return termVector;
     }
 
-    Map<Integer,String> getTermVectorFromIndex(String id){
+    public Map<Integer,String> getTermVectorFromIndex(String field, String id){
         Map<Integer,String> map = null;
         try {
-            map = getTermVectorWithException(id);
+            map = getTermVectorWithException(field, id);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return map;
     }
 
-    private Map<Integer,String> getTermVectorWithException(String id) throws IOException {
+    public Map<Integer,String> getTermVectorFromIndex(String id){
+        return getTermVectorFromIndex(this.bodyField,id);
+    }
+
+    private Map<Integer,String> getTermVectorWithException(String field, String id) throws IOException {
         TermVectorResponse response = client.prepareTermVector(indexName, documentType, id)
                 .setOffsets(false).setPositions(true).setFieldStatistics(false)
                 .setTermStatistics(false)
-                .setSelectedFields(this.bodyField).
+                .setSelectedFields(field).
                         execute().actionGet();
 
         Map<Integer,String> map = new HashMap<>();
-        Terms terms = response.getFields().terms(this.bodyField);
+        Terms terms = response.getFields().terms(field);
         TermsEnum iterator = terms.iterator(null);
         for (int i=0;i<terms.size();i++){
             String term = iterator.next().utf8ToString();

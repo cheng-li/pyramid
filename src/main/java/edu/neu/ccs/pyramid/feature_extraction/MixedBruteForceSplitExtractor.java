@@ -53,7 +53,7 @@ public class MixedBruteForceSplitExtractor {
 
         Set<String> allNgrams = new HashSet<>();
         for (int n: ns){
-            List<String> ngrams = NgramEnumerator.gatherNgrams(this.index,indexIds,n,1);
+            List<String> ngrams = NgramEnumerator.gatherNgrams(this.index,index.getBodyField(),indexIds,n,1);
             allNgrams.addAll(ngrams);
         }
         return new ArrayList<>(allNgrams);

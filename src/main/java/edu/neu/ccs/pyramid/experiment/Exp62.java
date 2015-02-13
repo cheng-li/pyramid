@@ -227,6 +227,9 @@ public class Exp62 {
             }
         }
 
+
+        Map<String,Integer> docLengths = getDocLengths(index);
+
         System.out.println("set cover docs "+setCoverDocs);
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
@@ -321,11 +324,43 @@ public class Exp62 {
                     }
 
 
-                    sampler.getBlackList().add(sampleAlgorithmId);
                     String sampleIndexId = validSet.getSetting().getIdTranslator().toExtId(sampleAlgorithmId);
                     System.out.println("focus doc's index id = "+sampleIndexId);
+                    System.out.println("focus doc's length = "+docLengths.get(sampleIndexId));
+                    System.out.println("focus doc's scores = "+Arrays.toString(logisticRegression.predictClassScores(validSet.getRow(sampleAlgorithmId))));
                     System.out.println("focus doc's probability estimation = "+Arrays.toString(logisticRegression.predictClassProbs(validSet.getRow(sampleAlgorithmId))));
                     System.out.println("focus doc's true label = "+validSet.getLabels()[sampleAlgorithmId]);
+
+                    Set<Integer> remainingDataForClass = new HashSet<>(sampler.getDataPerClass().get(k));
+                    remainingDataForClass.removeAll(sampler.getBlackList());
+                    List<DocInfo> docInfos = new ArrayList<>();
+                    for (Integer i: remainingDataForClass){
+                        DocInfo docInfo = new DocInfo(i, validSet.getSetting().getIdTranslator().toExtId(i),
+                                docLengths.get(validSet.getSetting().getIdTranslator().toExtId(i)),
+                                logisticRegression.predictClassScores(validSet.getRow(i))[k]);
+                        docInfos.add(docInfo);
+                    }
+
+
+                    final int finalAlgorithmId = sampleAlgorithmId;
+                    List<DocInfo> sortedByLength = docInfos.stream().sorted(Comparator.comparing(DocInfo::getLength)).collect(Collectors.toList());
+                    int lengthRank = IntStream.range(0,sortedByLength.size()).filter(i-> sortedByLength.get(i).algorithmId==finalAlgorithmId)
+                            .findFirst().getAsInt();
+                    List<DocInfo> sortedByScore = docInfos.stream().sorted(Comparator.comparing(DocInfo::getScore).reversed()).collect(Collectors.toList());
+                    int scoreRank = IntStream.range(0,sortedByScore.size()).filter(i-> sortedByScore.get(i).algorithmId==finalAlgorithmId)
+                            .findFirst().getAsInt();
+
+                    List<DocInfo> sortedByScoreLengthRatio = docInfos.stream().sorted(Comparator.comparing(DocInfo::getScoreLengthRatio).reversed()).collect(Collectors.toList());
+                    int scoreLengthRatioRank = IntStream.range(0,sortedByScoreLengthRatio.size()).filter(i-> sortedByScoreLengthRatio.get(i).algorithmId==finalAlgorithmId)
+                            .findFirst().getAsInt();
+
+                    System.out.println("focus doc's length rank = "+lengthRank);
+                    System.out.println("focus doc's score rank = "+scoreRank);
+                    System.out.println("focus doc's score length ratio rank = "+scoreLengthRatioRank);
+
+
+
+                    sampler.getBlackList().add(sampleAlgorithmId);
 
                     lastSampleAlgorithmIds.get(k).add(sampleAlgorithmId);
                     lastSampleIndexIds.get(k).add(sampleIndexId);
@@ -669,7 +704,7 @@ public class Exp62 {
                                      String[] ids, int n, int minDf) throws Exception{
 
         System.out.println("gathering "+n+"-grams with minDf "+minDf);
-        List<String> ngrams = NgramEnumerator.gatherNgrams(index,ids,n,minDf);
+        List<String> ngrams = NgramEnumerator.gatherNgrams(index,index.getBodyField(),ids,n,minDf);
         System.out.println("done");
         System.out.println("there are "+ngrams.size()+" "+n+"-grams");
         return ngrams;
@@ -732,5 +767,50 @@ public class Exp62 {
             }
         }
         return set;
+    }
+
+    static Map<String, Integer> getDocLengths(ESIndex index){
+        int numDocsInIndex = index.getNumDocs();
+        Map<String, Integer> lengths = new ConcurrentHashMap<>();
+        IntStream.range(0,numDocsInIndex).parallel()
+                .mapToObj(i -> "" + i)
+                .forEach(id -> lengths.put(id, index.getDocLength(id)));
+        return lengths;
+    }
+
+    static class DocInfo{
+        private int algorithmId;
+        private String indexId;
+        private int length;
+        private double score;
+        private double scoreLengthRatio;
+
+        public DocInfo(int algorithmId, String indexId, int length, double score) {
+            this.algorithmId = algorithmId;
+            this.indexId = indexId;
+            this.length = length;
+            this.score = score;
+            this.scoreLengthRatio = score/length;
+        }
+
+        public int getAlgorithmId() {
+            return algorithmId;
+        }
+
+        public String getIndexId() {
+            return indexId;
+        }
+
+        public int getLength() {
+            return length;
+        }
+
+        public double getScore() {
+            return score;
+        }
+
+        public double getScoreLengthRatio() {
+            return scoreLengthRatio;
+        }
     }
 }

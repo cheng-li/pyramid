@@ -23,11 +23,11 @@ public class NgramEnumerator {
      * @return
      * @throws Exception
      */
-    public static List<String> gatherNgrams(ESIndex index,
+    public static List<String> gatherNgrams(ESIndex index,String field,
                                      String[] ids, int n, int minDf) throws Exception{
         Map<String,Integer> counts = new ConcurrentHashMap<>();
         Arrays.stream(ids).parallel().forEach(id -> {
-            Map<Integer,String> termVector = index.getTermVector(id);
+            Map<Integer,String> termVector = index.getTermVectorFromIndex(field, id);
             Map<String, Integer> localCount = NgramEnumerator.getNgramCounts(termVector,n);
             for (Map.Entry<String, Integer> entry: localCount.entrySet()){
                 String ngram = entry.getKey();

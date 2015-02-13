@@ -225,7 +225,7 @@ public class Exp12 {
                                      String[] ids, int n, int minDf) throws Exception{
 
         System.out.println("gathering "+n+"-grams with minDf "+minDf);
-        List<String> ngrams = NgramEnumerator.gatherNgrams(index, ids, n, minDf);
+        List<String> ngrams = NgramEnumerator.gatherNgrams(index, index.getBodyField(), ids, n, minDf);
         System.out.println("done");
         System.out.println("there are "+ngrams.size()+" "+n+"-grams");
         return ngrams;
