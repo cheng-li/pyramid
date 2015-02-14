@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 /**
@@ -99,56 +100,56 @@ public class Exp13 {
         MultiLabelClfDataSet testDataSet = loadTestData(config);
 
 
-        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.features").split(",")).map(string -> string.trim())
-                .collect(Collectors.toSet());
-        FeatureMappers featureMappers = dataSet.getSetting().getFeatureMappers();
+//        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.features").split(",")).map(string -> string.trim())
+//                .collect(Collectors.toSet());
+//        FeatureMappers featureMappers = dataSet.getSetting().getFeatureMappers();
+//
+//        Set<Integer> initialFeatures = new HashSet<>();
+//        for (CategoricalFeatureMapper mapper: featureMappers.getCategoricalFeatureMappers()){
+//            if (mapper.getSettings().get("source").equalsIgnoreCase("field")){
+//                for (int j = mapper.getStart();j<=mapper.getEnd();j++){
+//                    initialFeatures.add(j);
+//                }
+//            }
+//        }
+//        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
+//            if (mapper.getSettings().get("source").equalsIgnoreCase("field")){
+//                initialFeatures.add(mapper.getFeatureIndex());
+//            }
+//        }
+//
+//        Set<Integer> unigramFeatures = new HashSet<>();
+//        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
+//            if (mapper.getSettings().get("source").equalsIgnoreCase("matching_score")
+//                    && mapper.getSettings().get("ngram").split(" ").length==1){
+//                unigramFeatures.add(mapper.getFeatureIndex());
+//            }
+//        }
+//
+//        Set<Integer> ngramFeatures = new HashSet<>();
+//        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
+//            if (mapper.getSettings().get("source").equalsIgnoreCase("matching_score")
+//                    && mapper.getSettings().get("ngram").split(" ").length>1){
+//                ngramFeatures.add(mapper.getFeatureIndex());
+//            }
+//        }
+//
+//        if (initialFeatures.size()+unigramFeatures.size()+ngramFeatures.size()!=dataSet.getNumFeatures()){
+//            throw new RuntimeException("initialFeatures.size()+unigramFeatures.size()+ngramFeatures.size()!=dataSet.getNumFeatures()");
+//        }
+//
+//        Set<Integer> featuresToUse = new HashSet<>();
+//        if (featuresToUseOption.contains("initial")){
+//            featuresToUse.addAll(initialFeatures);
+//        }
+//        if (featuresToUseOption.contains("unigram")){
+//            featuresToUse.addAll(unigramFeatures);
+//        }
+//        if (featuresToUseOption.contains("ngram")){
+//            featuresToUse.addAll(ngramFeatures);
+//        }
 
-        Set<Integer> initialFeatures = new HashSet<>();
-        for (CategoricalFeatureMapper mapper: featureMappers.getCategoricalFeatureMappers()){
-            if (mapper.getSettings().get("source").equalsIgnoreCase("field")){
-                for (int j = mapper.getStart();j<=mapper.getEnd();j++){
-                    initialFeatures.add(j);
-                }
-            }
-        }
-        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
-            if (mapper.getSettings().get("source").equalsIgnoreCase("field")){
-                initialFeatures.add(mapper.getFeatureIndex());
-            }
-        }
-
-        Set<Integer> unigramFeatures = new HashSet<>();
-        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
-            if (mapper.getSettings().get("source").equalsIgnoreCase("matching_score")
-                    && mapper.getSettings().get("ngram").split(" ").length==1){
-                unigramFeatures.add(mapper.getFeatureIndex());
-            }
-        }
-
-        Set<Integer> ngramFeatures = new HashSet<>();
-        for (NumericalFeatureMapper mapper: featureMappers.getNumericalFeatureMappers()){
-            if (mapper.getSettings().get("source").equalsIgnoreCase("matching_score")
-                    && mapper.getSettings().get("ngram").split(" ").length>1){
-                ngramFeatures.add(mapper.getFeatureIndex());
-            }
-        }
-
-        if (initialFeatures.size()+unigramFeatures.size()+ngramFeatures.size()!=dataSet.getNumFeatures()){
-            throw new RuntimeException("initialFeatures.size()+unigramFeatures.size()+ngramFeatures.size()!=dataSet.getNumFeatures()");
-        }
-
-        Set<Integer> featuresToUse = new HashSet<>();
-        if (featuresToUseOption.contains("initial")){
-            featuresToUse.addAll(initialFeatures);
-        }
-        if (featuresToUseOption.contains("unigram")){
-            featuresToUse.addAll(unigramFeatures);
-        }
-        if (featuresToUseOption.contains("ngram")){
-            featuresToUse.addAll(ngramFeatures);
-        }
-
-        int[] activeFeatures = featuresToUse.stream().mapToInt(i-> i).toArray();
+        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
 
         int numClasses = dataSet.getNumClasses();
         System.out.println("number of class = "+numClasses);
