@@ -147,7 +147,6 @@ public class Exp12 {
                 CategoricalFeatureMapperBuilder builder = new CategoricalFeatureMapperBuilder();
                 builder.setFeatureName(field);
                 builder.setStart(featureMappers.nextAvailable());
-                builder.setSource("field");
                 for (String id: ids){
                     String category = index.getStringField(id, field);
                     // missing value is not a category
@@ -157,6 +156,7 @@ public class Exp12 {
                 }
                 boolean toAdd = true;
                 CategoricalFeatureMapper mapper = builder.build();
+                mapper.getSettings().put("source","field");
                 if (config.getBoolean("categFeature.filter")){
                     double threshold = config.getDouble("categFeature.percentThreshold");
                     int numCategories = mapper.getNumCategories();
@@ -174,8 +174,8 @@ public class Exp12 {
                 NumericalFeatureMapperBuilder builder = new NumericalFeatureMapperBuilder();
                 builder.setFeatureName(field);
                 builder.setFeatureIndex(featureMappers.nextAvailable());
-                builder.setSource("field");
                 NumericalFeatureMapper mapper = builder.build();
+                mapper.getSettings().put("source","field");
                 featureMappers.addMapper(mapper);
             }
         }
@@ -236,7 +236,9 @@ public class Exp12 {
             int featureIndex = featureMappers.nextAvailable();
             NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
                     setFeatureIndex(featureIndex).setFeatureName(unigram).
-                    setSource("matching_score").build();
+                    build();
+            mapper.getSettings().put("source","matching_score");
+            mapper.getSettings().put("ngram",unigram);
             featureMappers.addMapper(mapper);
         }
     }

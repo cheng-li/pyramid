@@ -57,6 +57,30 @@ public class Exp68 {
         return noisyData;
     }
 
+
+    private static ClfDataSet doubleIt(ClfDataSet dataSet){
+        int numFeatures = dataSet.getNumFeatures()*2;
+        ClfDataSet noisyData = ClfDataSetBuilder.getBuilder().numFeatures(numFeatures)
+                .numDataPoints(dataSet.getNumDataPoints()).dense(dataSet.isDense())
+                .missingValue(dataSet.hasMissingValue())
+                .numClasses(dataSet.getNumClasses())
+                .build();
+        for (int j=0;j<dataSet.getNumFeatures();j++){
+            Vector column = dataSet.getColumn(j);
+            for (Vector.Element element: column.nonZeroes()){
+                int i = element.index();
+                double value = element.get();
+                noisyData.setFeatureValue(i,j,value);
+                noisyData.setFeatureValue(i,j+dataSet.getNumFeatures(),value);
+            }
+        }
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            noisyData.setLabel(i,dataSet.getLabels()[i]);
+        }
+        return noisyData;
+    }
+
     private static void train(Config config) throws Exception{
         String input = config.getString("input.folder");
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, "train.trec"),
@@ -82,6 +106,21 @@ public class Exp68 {
         LogisticRegression noisyLogisticRegression = trainer.train(noisyTrain);
         System.out.println("noisy train: "+ Accuracy.accuracy(noisyLogisticRegression, noisyTrain));
         System.out.println("noisy test: "+Accuracy.accuracy(noisyLogisticRegression,noisyTest));
+
+
+        RidgeLogisticTrainer doubleTrainer = RidgeLogisticTrainer.getBuilder()
+                .setHistory(5)
+                .setGaussianPriorVariance(0.5*config.getDouble("gaussianPriorVariance"))
+                .setEpsilon(0.1)
+                .build();
+
+        ClfDataSet doubleTrain = doubleIt(dataSet);
+        ClfDataSet doubleTest = doubleIt(testSet);
+        LogisticRegression doubleLogisticRegression = doubleTrainer.train(doubleTrain);
+        System.out.println("double train: "+ Accuracy.accuracy(doubleLogisticRegression, doubleTrain));
+        System.out.println("double test: "+Accuracy.accuracy(doubleLogisticRegression,doubleTest));
+
+
 
 
     }
