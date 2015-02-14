@@ -8,17 +8,16 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
+import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticLoss;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegression;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegressionInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticTrainer;
+import edu.neu.ccs.pyramid.optimization.LBFGS;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -77,14 +76,44 @@ public class Exp41 {
         stopWatch.start();
 
         MultiLabelClfDataSet dataSet = loadTrainData(config);
+        MultiLabelClfDataSet testSet = loadTestData(config);
         System.out.println("training data set loaded");
         System.out.println(dataSet.getMetaInfo());
         List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet).stream()
                 .collect(Collectors.toList());
-        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(config.getDouble("train.epsilon"))
-                .setGaussianPriorVariance(config.getDouble("train.gaussianPriorVariance"))
-                .setHistory(5).build();
-        MLLogisticRegression mlLogisticRegression =trainer.train(dataSet,assignments);
+
+
+        MLLogisticRegression mlLogisticRegression = new MLLogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures(),
+                assignments);
+        for (int j=0;j<dataSet.getNumFeatures();j++){
+            mlLogisticRegression.setFeatureName(j,dataSet.getFeatureSetting(j).getFeatureName());
+        }
+
+        mlLogisticRegression.setFeatureExtraction(false);
+        MLLogisticLoss function = new MLLogisticLoss(mlLogisticRegression,dataSet,config.getDouble("train.gaussianPriorVariance"));
+        LBFGS lbfgs = new LBFGS(function);
+        lbfgs.setEpsilon(config.getDouble("train.epsilon"));
+        lbfgs.setHistory(5);
+        LinkedList<Double> valueQueue = new LinkedList<>();
+        valueQueue.add(function.getValue(function.getParameters()));
+        lbfgs.iterate();
+        valueQueue.add(function.getValue(function.getParameters()));
+        int iteration=0;
+        while(true){
+            System.out.println("iteration ="+iteration);
+            System.out.println("objective = "+valueQueue.getLast());
+            System.out.println("training accuracy = "+Accuracy.accuracy(mlLogisticRegression,dataSet));
+            System.out.println("test accuracy = "+Accuracy.accuracy(mlLogisticRegression,testSet));
+            if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<config.getDouble("train.epsilon")){
+                break;
+            }
+            lbfgs.iterate();
+            valueQueue.remove();
+            valueQueue.add(function.getValue(function.getParameters()));
+            iteration += 1;
+        }
+        
+//        MLLogisticRegression mlLogisticRegression = trainer.train(dataSet,assignments);
         File serializedModel =  new File(archive,modelName);
         mlLogisticRegression.serialize(serializedModel);
         System.out.println("time spent = " + stopWatch);

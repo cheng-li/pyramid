@@ -20,8 +20,9 @@ public class MLLogisticTrainerTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test5_train();
-        test5_test();
+        test2();
+//        test5_train();
+//        test5_test();
     }
 
 

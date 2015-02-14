@@ -42,6 +42,7 @@ public class LBFGS {
         iterate();
         valueQueue.add(function.getValue(function.getParameters()));
         while(true){
+//            System.out.println("objective = "+valueQueue.getLast());
             if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<epsilon){
                 break;
             }

@@ -167,7 +167,7 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         }
     }
 
-    void setFeatureName(int featureIndex, String featureName){
+    public void setFeatureName(int featureIndex, String featureName){
         featureNames[featureIndex] = featureName;
     }
 
