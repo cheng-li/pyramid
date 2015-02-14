@@ -76,8 +76,10 @@ public class Exp41 {
         stopWatch.start();
 
         MultiLabelClfDataSet dataSet = loadTrainData(config);
-        MultiLabelClfDataSet testSet = loadTestData(config);
         System.out.println("training data set loaded");
+        MultiLabelClfDataSet testSet = loadTestData(config);
+        System.out.println("test data set loaded");
+
         System.out.println(dataSet.getMetaInfo());
         List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet).stream()
                 .collect(Collectors.toList());
@@ -96,9 +98,10 @@ public class Exp41 {
         lbfgs.setHistory(5);
         LinkedList<Double> valueQueue = new LinkedList<>();
         valueQueue.add(function.getValue(function.getParameters()));
+        int iteration=0;
         lbfgs.iterate();
         valueQueue.add(function.getValue(function.getParameters()));
-        int iteration=0;
+        iteration+=1;
         while(true){
             System.out.println("iteration ="+iteration);
             System.out.println("objective = "+valueQueue.getLast());
