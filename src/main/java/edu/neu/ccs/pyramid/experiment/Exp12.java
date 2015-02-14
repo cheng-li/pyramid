@@ -4,7 +4,6 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
-import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
@@ -231,7 +230,7 @@ public class Exp12 {
         return ngrams;
     }
 
-    static void addUnigramFeatures(FeatureMappers featureMappers,List<String> unigrams){
+    static void addNgramFeatures(FeatureMappers featureMappers, List<String> unigrams){
         for (String unigram: unigrams){
             int featureIndex = featureMappers.nextAvailable();
             NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
@@ -268,7 +267,7 @@ public class Exp12 {
         featureMappers.getCategoricalFeatureMappers().stream().parallel().
                 forEach(categoricalFeatureMapper -> {
                     String featureName = categoricalFeatureMapper.getFeatureName();
-                    String source = categoricalFeatureMapper.getSource();
+                    String source = categoricalFeatureMapper.getSettings().get("source");
                     if (source.equalsIgnoreCase("field")){
                         for (String id: dataIndexIds){
                             int algorithmId = idTranslator.toIntId(id);
@@ -292,7 +291,7 @@ public class Exp12 {
         featureMappers.getNumericalFeatureMappers().stream().parallel().
                 forEach(numericalFeatureMapper -> {
                     String featureName = numericalFeatureMapper.getFeatureName();
-                    String source = numericalFeatureMapper.getSource();
+                    String source = numericalFeatureMapper.getSettings().get("source");
                     int featureIndex = numericalFeatureMapper.getFeatureIndex();
 
                     if (source.equalsIgnoreCase("field")){
@@ -308,7 +307,7 @@ public class Exp12 {
                         SearchResponse response = null;
 
                         //todo assume unigram, so slop doesn't matter
-                        response = index.matchPhrase(index.getBodyField(), featureName, dataIndexIds, 0);
+                        response = index.matchPhrase(index.getBodyField(), numericalFeatureMapper.getSettings().get("ngram"), dataIndexIds, 0);
 
                         SearchHit[] hits = response.getHits().getHits();
                         for (SearchHit hit: hits){
@@ -467,7 +466,7 @@ public class Exp12 {
         }
 
         List<String> ngrams = gather(config,index,trainIndexIds);
-        addUnigramFeatures(featureMappers,ngrams);
+        addNgramFeatures(featureMappers, ngrams);
 
 
         MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, trainLabelTranslator);

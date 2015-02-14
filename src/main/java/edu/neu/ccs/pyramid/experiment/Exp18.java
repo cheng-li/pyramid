@@ -66,7 +66,7 @@
 //        List<String> unigrams = gatherUnigrams(config,index,trainIndexIds);
 //        int unigramStart = featureMappers.nextAvailable();
 //        int unigramEnd = unigramStart + unigrams.size()-1;
-//        addUnigramFeatures(featureMappers,unigrams);
+//        addNgramFeatures(featureMappers,unigrams);
 //
 //        ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelTranslator);
 //        System.out.println("in training set :");
@@ -497,7 +497,7 @@
 //        return unigrams.stream().sorted().collect(Collectors.toList());
 //    }
 //
-//    static void addUnigramFeatures(FeatureMappers featureMappers,List<String> unigrams){
+//    static void addNgramFeatures(FeatureMappers featureMappers,List<String> unigrams){
 //        for (String unigram: unigrams){
 //            int featureIndex = featureMappers.nextAvailable();
 //            NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
