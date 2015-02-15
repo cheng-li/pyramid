@@ -117,7 +117,9 @@ public class Exp41 {
             System.out.println("iteration ="+iteration);
             System.out.println("objective = "+valueQueue.getLast());
             System.out.println("training accuracy = "+Accuracy.accuracy(mlLogisticRegression,dataSet));
+            System.out.println("training overlap +"+Overlap.overlap(mlLogisticRegression,dataSet));
             System.out.println("test accuracy = "+Accuracy.accuracy(mlLogisticRegression,testSet));
+            System.out.println("test overlap +"+Overlap.overlap(mlLogisticRegression,testSet));
             if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<config.getDouble("train.epsilon")){
                 break;
             }

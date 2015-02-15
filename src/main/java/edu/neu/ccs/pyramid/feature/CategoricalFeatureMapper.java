@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.feature;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -97,5 +98,6 @@ public class CategoricalFeatureMapper implements Serializable {
         this.end = end;
         this.categoryIndexMap = categoryIndexMap;
         this.indexCategoryMap = indexCategoryMap;
+        this.settings = new HashMap<>();
     }
 }
