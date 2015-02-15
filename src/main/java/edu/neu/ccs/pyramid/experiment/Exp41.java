@@ -81,10 +81,12 @@ public class Exp41 {
         System.out.println("test data set loaded");
 
         System.out.println(dataSet.getMetaInfo());
+        System.out.println("gathering assignments ");
         List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet).stream()
                 .collect(Collectors.toList());
+        System.out.println("there are "+assignments.size()+ " assignments");
 
-
+        System.out.println("initializing logistic regression");
         MLLogisticRegression mlLogisticRegression = new MLLogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures(),
                 assignments);
         for (int j=0;j<dataSet.getNumFeatures();j++){
@@ -92,12 +94,20 @@ public class Exp41 {
         }
 
         mlLogisticRegression.setFeatureExtraction(false);
+
+        System.out.println("done");
+
+        System.out.println("initializing objective function");
         MLLogisticLoss function = new MLLogisticLoss(mlLogisticRegression,dataSet,config.getDouble("train.gaussianPriorVariance"));
+        System.out.println("done");
+        System.out.println("initializing lbfgs");
         LBFGS lbfgs = new LBFGS(function);
         lbfgs.setEpsilon(config.getDouble("train.epsilon"));
         lbfgs.setHistory(5);
         LinkedList<Double> valueQueue = new LinkedList<>();
         valueQueue.add(function.getValue(function.getParameters()));
+        System.out.println("done");
+
         int iteration=0;
         lbfgs.iterate();
         valueQueue.add(function.getValue(function.getParameters()));
