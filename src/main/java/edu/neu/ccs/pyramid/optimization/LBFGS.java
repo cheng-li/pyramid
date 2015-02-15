@@ -57,7 +57,9 @@ public class LBFGS {
         Vector parameters = function.getParameters();
         Vector oldGradient = function.getGradient();
         Vector direction = findDirection();
+        System.out.println("doing line search");
         double stepLength = lineSearcher.findStepLength(direction);
+        System.out.println("line search done");
         Vector s = direction.times(stepLength);
         Vector updatedParams = parameters.plus(s);
         parameters.assign(updatedParams);

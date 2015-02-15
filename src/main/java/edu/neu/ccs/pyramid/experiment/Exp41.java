@@ -109,6 +109,7 @@ public class Exp41 {
         System.out.println("done");
 
         int iteration=0;
+        System.out.println("iteration = "+iteration);
         lbfgs.iterate();
         valueQueue.add(function.getValue(function.getParameters()));
         iteration+=1;
