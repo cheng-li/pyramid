@@ -50,10 +50,8 @@ public class IndexBuilder {
 
     static String getSplit(int id) {
         String res = null;
-        if ( id%10==0){
+        if ( id%5==0){
             res = "test";
-        } else if (id%10==1){
-            res = "valid";
         } else {
             res = "train";
         }
