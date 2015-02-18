@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.regression_tree.Decision;
 import edu.neu.ccs.pyramid.regression.regression_tree.DecisionPath;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -119,7 +120,8 @@ public class LKTBInspector {
 
     public static String decisionProcess(LKTreeBoost boosting, Vector vector, int classIndex, int limit){
         StringBuilder sb = new StringBuilder();
-        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().limit(limit).collect(Collectors.toList());
+        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().collect(Collectors.toList());
+        List<Decision> decisions = new ArrayList<>();
         for (int i=0;i<regressors.size();i++){
             Regressor regressor = regressors.get(i);
             if (regressor instanceof ConstantRegressor){
@@ -129,10 +131,16 @@ public class LKTBInspector {
 
             if (regressor instanceof RegressionTree){
                 RegressionTree tree = (RegressionTree)regressor;
-                DecisionPath decisionPath = new DecisionPath(tree,vector);
-                sb.append("tree ").append(i).append(": ");
-                sb.append(decisionPath.toString()).append("\n");
+                Decision decision = new Decision(tree,vector);
+                decisions.add(decision);
             }
+        }
+        Comparator<Decision> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
+        List<Decision> merged = Decision.merge(decisions).stream().sorted(comparator.reversed())
+                .limit(limit).collect(Collectors.toList());
+        for (Decision decision: merged){
+            sb.append(decision.toString());
+            sb.append("\n");
         }
 
         return sb.toString();

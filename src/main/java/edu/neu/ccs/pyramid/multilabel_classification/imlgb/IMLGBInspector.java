@@ -1,10 +1,12 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.regression_tree.Decision;
 import edu.neu.ccs.pyramid.regression.regression_tree.DecisionPath;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -150,8 +152,10 @@ public class IMLGBInspector {
 
     public static String decisionProcess(IMLGradientBoosting boosting, Vector vector, int classIndex, int limit){
         StringBuilder sb = new StringBuilder();
-        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().limit(limit).collect(Collectors.toList());
-        for (Regressor regressor: regressors){
+        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().collect(Collectors.toList());
+        List<Decision> decisions = new ArrayList<>();
+        for (int i=0;i<regressors.size();i++){
+            Regressor regressor = regressors.get(i);
             if (regressor instanceof ConstantRegressor){
                 sb.append("prior score for the class = ");
                 sb.append(((ConstantRegressor) regressor).getScore()).append("\n");
@@ -159,9 +163,16 @@ public class IMLGBInspector {
 
             if (regressor instanceof RegressionTree){
                 RegressionTree tree = (RegressionTree)regressor;
-                DecisionPath decisionPath = new DecisionPath(tree,vector);
-                sb.append(decisionPath.toString()).append("\n");
+                Decision decision = new Decision(tree,vector);
+                decisions.add(decision);
             }
+        }
+        Comparator<Decision> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
+        List<Decision> merged = Decision.merge(decisions).stream().sorted(comparator.reversed())
+                .limit(limit).collect(Collectors.toList());
+        for (Decision decision: merged){
+            sb.append(decision.toString());
+            sb.append("\n");
         }
 
         return sb.toString();
