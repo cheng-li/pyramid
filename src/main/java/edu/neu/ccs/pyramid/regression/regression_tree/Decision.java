@@ -28,6 +28,10 @@ public class Decision {
         return decisionPath;
     }
 
+    public double getScore() {
+        return score;
+    }
+
     //todo deal with probabilities
     public void add (Node node, Vector vector){
         if (node.isLeaf()){
