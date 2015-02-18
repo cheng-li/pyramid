@@ -95,7 +95,7 @@ public class RegTreeTrainerTest {
         System.out.println(mseValue);
         System.out.println(regressionTree.getNumLeaves());
         System.out.println(regressionTree);
-        System.out.println(new DecisionPath(regressionTree,dataSet.getRow(100)));
+        System.out.println(new Decision(regressionTree,dataSet.getRow(100)));
 //        System.out.println(regressionTree.getRootReduction()    );
 
     }

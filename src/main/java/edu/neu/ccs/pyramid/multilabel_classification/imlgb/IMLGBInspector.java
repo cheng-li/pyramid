@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.regression_tree.Decision;
 import edu.neu.ccs.pyramid.regression.regression_tree.DecisionPath;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -159,8 +160,8 @@ public class IMLGBInspector {
 
             if (regressor instanceof RegressionTree){
                 RegressionTree tree = (RegressionTree)regressor;
-                DecisionPath decisionPath = new DecisionPath(tree,vector);
-                sb.append(decisionPath.toString()).append("\n");
+                Decision decision = new Decision(tree,vector);
+                sb.append(decision.toString()).append("\n");
             }
         }
 
