@@ -166,7 +166,7 @@ public class LKTBTrainer {
     /**
      * use scoreMatrix to update probabilities
      * numerically unstable if calculated directly
-     * probability = exp(log(nominator)-log(denominator))
+     * probability = exp(log(numerator)-log(denominator))
      */
     private void updateClassProb(int i){
         int numClasses = this.lkTreeBoost.getNumClasses();
@@ -178,12 +178,12 @@ public class LKTBTrainer {
 //                    +" ="+logDenominator+", label = "+lktbConfig.getDataSet().getLabels()[i]);
 //        }
         for (int k=0;k<numClasses;k++){
-            double logNominator = scores[k];
-            double pro = Math.exp(logNominator-logDenominator);
+            double logNumerator = scores[k];
+            double pro = Math.exp(logNumerator-logDenominator);
             this.probabilityMatrix.setProbability(i,k,pro);
             if (Double.isNaN(pro)){
-                throw new RuntimeException("pro=NaN, logNominator = "
-                        +logNominator+", logDenominator="+logDenominator+
+                throw new RuntimeException("pro=NaN, logNumerator = "
+                        +logNumerator+", logDenominator="+logDenominator+
                         ", scores = "+Arrays.toString(scores));
 
             }
@@ -242,18 +242,18 @@ public class LKTBTrainer {
         double learningRate = this.lktbConfig.getLearningRate();
 
         LeafOutputCalculator leafOutputCalculator = probabilities -> {
-            double nominator = 0;
+            double numerator = 0;
             double denominator = 0;
             for (int i=0;i<probabilities.length;i++) {
                 double label = pseudoResponse[i];
-                nominator += label*probabilities[i];
+                numerator += label*probabilities[i];
                 denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
             }
             double out;
             if (denominator == 0) {
                 out = 0;
             } else {
-                out = ((numClasses - 1) * nominator) / (numClasses * denominator);
+                out = ((numClasses - 1) * numerator) / (numClasses * denominator);
             }
             //protection from numerically unstable issue
             //todo does the threshold matter?

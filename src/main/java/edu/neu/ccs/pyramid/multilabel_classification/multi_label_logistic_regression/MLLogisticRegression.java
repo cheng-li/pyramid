@@ -124,8 +124,8 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         double[] assignmentProbs = new double[numAssignments];
         double logDenominator = MathUtil.logSumExp(assignmentScores);
         for (int a=0;a<numAssignments;a++){
-            double logNominator = assignmentScores[a];
-            double pro = Math.exp(logNominator-logDenominator);
+            double logNumerator = assignmentScores[a];
+            double pro = Math.exp(logNumerator-logDenominator);
             assignmentProbs[a]=pro;
         }
         return assignmentProbs;
@@ -142,8 +142,8 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         }
         double logDenominator = MathUtil.logSumExp(assignmentScores);
 
-        double logNominator = this.calAssignmentScore(multiLabel, classScores);
-        return logNominator-logDenominator;
+        double logNumerator = this.calAssignmentScore(multiLabel, classScores);
+        return logNumerator-logDenominator;
     }
 
 
