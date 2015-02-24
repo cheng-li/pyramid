@@ -26,10 +26,13 @@ public class ElasticNetLinearRegTrainer {
      * @param instanceWeights
      */
     public void train(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights){
-        double lastLoss = loss(linearRegression,dataSet,labels,instanceWeights);
+        double[] scores = new double[dataSet.getNumDataPoints()];
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
+            scores[i] = linearRegression.predict(dataSet.getRow(i)));
+        double lastLoss = loss(linearRegression,scores,labels,instanceWeights);
         while(true){
-            iterate(linearRegression,dataSet,labels,instanceWeights);
-            double loss = loss(linearRegression,dataSet,labels,instanceWeights);
+            iterate(linearRegression,dataSet,labels,instanceWeights,scores);
+            double loss = loss(linearRegression,scores,labels,instanceWeights);
             if (Math.abs(lastLoss-loss)<epsilon){
                 break;
             }
@@ -44,34 +47,54 @@ public class ElasticNetLinearRegTrainer {
      * @param labels
      * @param instanceWeights
      */
-    public void iterate(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights){
+    private void iterate(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights, double[] scores){
         double totalWeight = Arrays.stream(instanceWeights).parallel().sum();
-        double bias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
-        instanceWeights[i]*(labels[i]-linearRegression.predictWithoutBias(dataSet.getRow(i)))).sum()/totalWeight;
-        linearRegression.getWeights().setBias(bias);
+        double oldBias = linearRegression.getWeights().getBias();
+        double newBias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
+        instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/totalWeight;
+        linearRegression.getWeights().setBias(newBias);
+        //update scores
+        double difference = newBias - oldBias;
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
         for (int j=0;j<dataSet.getNumFeatures();j++){
-            System.out.println("optimizing feature "+j);
-            optimizeOneFeature(linearRegression,dataSet,labels,instanceWeights,j);
+            optimizeOneFeature(linearRegression,dataSet,labels,instanceWeights,scores,j);
         }
     }
 
     private void optimizeOneFeature(LinearRegression linearRegression, DataSet dataSet,
                                     double[] labels, double[] instanceWeights,
-                                    int featureIndex){
-        double betaj = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
+                                    double[] scores, int featureIndex){
+        double oldCoeff = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
         double fit = 0;
         double denominator = 0;
         Vector featureColumn = dataSet.getColumn(featureIndex);
         for (Vector.Element element: featureColumn.nonZeroes()){
             int i = element.index();
             double x = element.get();
-            double partialResidual = labels[i] - linearRegression.predict(dataSet.getRow(i)) + x*betaj;
+            double partialResidual = labels[i] - scores[i] + x*oldCoeff;
             fit += instanceWeights[i]*x*partialResidual;
             denominator += x*x*instanceWeights[i];
         }
         double numerator = softThreshold(fit);
         denominator += regularization*(1-l1Ratio);
-        linearRegression.getWeights().setWeight(featureIndex,numerator/denominator);
+        double newCoeff = numerator/denominator;
+        linearRegression.getWeights().setWeight(featureIndex,newCoeff);
+        //update scores
+        double difference = newCoeff - oldCoeff;
+        for (Vector.Element element: featureColumn.nonZeroes()){
+            int i = element.index();
+            double x = element.get();
+            scores[i] = scores[i] +  difference*x;
+        }
+    }
+
+
+    public double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
+        double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
+                0.5 * instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
+                .sum();
+        double penalty = penalty(linearRegression);
+        return mse + penalty;
     }
 
     public double loss(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights){
