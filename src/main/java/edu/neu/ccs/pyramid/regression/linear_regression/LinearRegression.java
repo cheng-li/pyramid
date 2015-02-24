@@ -20,6 +20,11 @@ public class LinearRegression implements Regressor{
         this.weights = new Weights(numFeatures);
     }
 
+    public LinearRegression(int numFeatures, Vector weightVector){
+        this.weights = new Weights(numFeatures,weightVector);
+    }
+
+
     public Weights getWeights() {
         return weights;
     }

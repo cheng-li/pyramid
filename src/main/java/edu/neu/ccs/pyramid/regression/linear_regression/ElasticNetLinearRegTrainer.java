@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.regression.linear_regression;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -44,10 +45,12 @@ public class ElasticNetLinearRegTrainer {
      * @param instanceWeights
      */
     public void iterate(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights){
+        double totalWeight = Arrays.stream(instanceWeights).parallel().sum();
         double bias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
-        instanceWeights[i]*(labels[i]-linearRegression.predictWithoutBias(dataSet.getRow(i)))).sum();
+        instanceWeights[i]*(labels[i]-linearRegression.predictWithoutBias(dataSet.getRow(i)))).sum()/totalWeight;
         linearRegression.getWeights().setBias(bias);
         for (int j=0;j<dataSet.getNumFeatures();j++){
+            System.out.println("optimizing feature "+j);
             optimizeOneFeature(linearRegression,dataSet,labels,instanceWeights,j);
         }
     }
