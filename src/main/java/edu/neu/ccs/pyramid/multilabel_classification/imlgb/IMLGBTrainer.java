@@ -185,12 +185,12 @@ public class IMLGBTrainer {
 
     private double calClassProb(int dataPoint, int k){
         double score = this.scoreMatrix.getScoresForData(dataPoint)[k];
-        double logNominator = score;
+        double logNumerator = score;
         double[] scores = new double[2];
         scores[0] = 0;
         scores[1] = score;
         double logDenominator = MathUtil.logSumExp(scores);
-        double pro = Math.exp(logNominator-logDenominator);
+        double pro = Math.exp(logNumerator-logDenominator);
         return pro;
     }
 
@@ -231,18 +231,18 @@ public class IMLGBTrainer {
         double learningRate = this.config.getLearningRate();
 
         LeafOutputCalculator leafOutputCalculator = probabilities -> {
-            double nominator = 0;
+            double numerator = 0;
             double denominator = 0;
             for (int i=0;i<probabilities.length;i++) {
                 double label = gradients[i];
-                nominator += label*probabilities[i];
+                numerator += label*probabilities[i];
                 denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
             }
             double out;
             if (denominator == 0) {
                 out = 0;
             } else {
-                out = ((numClasses - 1) * nominator) / (numClasses * denominator);
+                out = ((numClasses - 1) * numerator) / (numClasses * denominator);
             }
             //protection from numerically unstable issue
             if (out>2){

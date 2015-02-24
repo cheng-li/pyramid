@@ -185,7 +185,7 @@ public class HMLGBTrainer {
     /**
      * use scoreMatrix to update probabilities
      * numerically unstable if calculated directly
-     * probability = exp(log(nominator)-log(denominator))
+     * probability = exp(log(numerator)-log(denominator))
      */
     private void updateAssignmentProbs(int dataPoint){
         int numAssignments = assignments.size();
@@ -197,8 +197,8 @@ public class HMLGBTrainer {
         double logDenominator = MathUtil.logSumExp(assignmentScores);
 
         for (int a=0;a<numAssignments;a++){
-            double logNominator = assignmentScores[a];
-            double pro = Math.exp(logNominator-logDenominator);
+            double logNumerator = assignmentScores[a];
+            double pro = Math.exp(logNumerator-logDenominator);
             this.assignmentProbabilityMatrix[dataPoint][a]=pro;
         }
     }
@@ -280,18 +280,18 @@ public class HMLGBTrainer {
         double learningRate = this.config.getLearningRate();
 
         LeafOutputCalculator leafOutputCalculator = probabilities -> {
-            double nominator = 0;
+            double numerator = 0;
             double denominator = 0;
             for (int i=0;i<probabilities.length;i++) {
                 double label = gradients[i];
-                nominator += label*probabilities[i];
+                numerator += label*probabilities[i];
                 denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
             }
             double out;
             if (denominator == 0) {
                 out = 0;
             } else {
-                out = ((numClasses - 1) * nominator) / (numClasses * denominator);
+                out = ((numClasses - 1) * numerator) / (numClasses * denominator);
             }
             //protection from numerically unstable issue
             if (out>2){

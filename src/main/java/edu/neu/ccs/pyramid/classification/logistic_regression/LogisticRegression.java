@@ -95,8 +95,8 @@ public class LogisticRegression implements ProbabilityEstimator {
         double[] probVector = new double[this.numClasses];
         double logDenominator = MathUtil.logSumExp(scoreVector);
         for (int k=0;k<this.numClasses;k++){
-            double logNominator = scoreVector[k];
-            double pro = Math.exp(logNominator-logDenominator);
+            double logNumerator = scoreVector[k];
+            double pro = Math.exp(logNumerator-logDenominator);
             probVector[k]=pro;
         }
         return probVector;
