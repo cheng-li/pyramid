@@ -81,11 +81,14 @@ public class ElasticNetLinearRegTrainer {
         linearRegression.getWeights().setWeight(featureIndex,newCoeff);
         //update scores
         double difference = newCoeff - oldCoeff;
-        for (Vector.Element element: featureColumn.nonZeroes()){
-            int i = element.index();
-            double x = element.get();
-            scores[i] = scores[i] +  difference*x;
+        if (difference!=0){
+            for (Vector.Element element: featureColumn.nonZeroes()){
+                int i = element.index();
+                double x = element.get();
+                scores[i] = scores[i] +  difference*x;
+            }
         }
+
     }
 
 

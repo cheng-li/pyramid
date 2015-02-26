@@ -5,9 +5,13 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -16,7 +20,7 @@ public class ElasticNetLogisticTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test4();
+        test6();
     }
 
     private static void test1() throws Exception{
@@ -82,7 +86,55 @@ public class ElasticNetLogisticTrainerTest {
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
-                .setEpsilon(0.01).setL1Ratio(0.1).setRegularization(0.0001).build();
+                .setEpsilon(0.01).setL1Ratio(1).setRegularization(4.6415888336127784E-5).build();
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        trainer.train(logisticRegression, dataSet);
+        System.out.println(stopWatch);
+        System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
+        System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
+        System.out.println("number of non-zeros= "+logisticRegression.getWeights().getAllWeights().getNumNonZeroElements());
+
+
+    }
+
+    private static void test5() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println(dataSet.getMetaInfo());
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+
+        Comparator<Double> comparator = Comparator.comparing(Double::doubleValue);
+        List<Double> lambdas = Grid.logUniform(0.00001, 0.0001, 100).stream().sorted(comparator.reversed()).collect(Collectors.toList());
+
+        for (double lambda: lambdas){
+            ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+                    .setEpsilon(0.01).setL1Ratio(1).setRegularization(lambda).build();
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+            trainer.train(logisticRegression, dataSet);
+            System.out.println(stopWatch);
+            System.out.println("=================================");
+            System.out.println("lambda = "+lambda);
+            System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
+            System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
+            System.out.println("number of non-zeros= "+logisticRegression.getWeights().getAllWeights().getNumNonZeroElements());
+        }
+
+    }
+
+    private static void test6() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/amazon_book_genre/3/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/amazon_book_genre/3/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println(dataSet.getMetaInfo());
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+                .setEpsilon(0.01).setL1Ratio(0.8888888888888888).setRegularization(0.10000000000000006).build();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

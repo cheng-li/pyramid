@@ -96,8 +96,8 @@ public class Exp33 {
         LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
         File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
         LogisticRegression logisticRegression = LogisticRegression.deserialize(modelFile);
-        System.out.println("number of used features in each class = "
-                + Arrays.toString(LogisticRegressionInspector.numOfUsedFeatures(logisticRegression)));
+        System.out.println("number of used features  = "
+                +LogisticRegressionInspector.numOfUsedFeatures(logisticRegression));
 
 
 

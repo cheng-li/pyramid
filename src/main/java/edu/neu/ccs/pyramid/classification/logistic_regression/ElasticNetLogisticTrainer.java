@@ -83,7 +83,7 @@ public class ElasticNetLogisticTrainer {
     private double loss(LogisticRegression logisticRegression, ClfDataSet dataSet){
         double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet) * -1;
         double penalty = penalty(logisticRegression);
-        return negativeLogLikelihood + penalty;
+        return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
     private double penalty(LogisticRegression logisticRegression){

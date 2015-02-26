@@ -35,11 +35,11 @@ public class LogisticRegressionInspector {
         return topFeatures(logisticRegression,k).stream().limit(limit).collect(Collectors.toList());
     }
 
-    public static int[] numOfUsedFeatures(LogisticRegression logisticRegression){
-        int[] res = new int[logisticRegression.getNumClasses()];
+    public static int numOfUsedFeatures(LogisticRegression logisticRegression){
+        int res = 0;
         for (int k=0;k<logisticRegression.getNumClasses();k++){
             Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
-            res[k] = weights.getNumNonZeroElements();
+            res += weights.getNumNonZeroElements();
         }
         return res;
     }
