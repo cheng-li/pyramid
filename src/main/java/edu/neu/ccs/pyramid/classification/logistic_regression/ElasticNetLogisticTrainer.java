@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.regression.linear_regression.ElasticNetLinearRegTrain
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -13,7 +14,7 @@ import java.util.stream.IntStream;
 public class ElasticNetLogisticTrainer {
     private double regularization;
     private double l1Ratio;
-    //todo separate spsilon?
+    // relative threshold
     private double epsilon;
 
     public static Builder getBuilder(){
@@ -22,10 +23,11 @@ public class ElasticNetLogisticTrainer {
 
     public void train(LogisticRegression logisticRegression, ClfDataSet dataSet){
         double lastLoss = loss(logisticRegression,dataSet);
+        double threshold = lastLoss*epsilon;
         while(true){
             iterate(logisticRegression,dataSet);
             double loss = loss(logisticRegression,dataSet);
-            if (Math.abs(lastLoss-loss)<epsilon){
+            if (Math.abs(lastLoss-loss)<threshold){
                 break;
             }
             lastLoss = loss;
@@ -53,20 +55,18 @@ public class ElasticNetLogisticTrainer {
                 y = 1;
             }
             double frac = 0;
-            if (prob==1 && y==0){
-                throw new RuntimeException("prob==1 && y==0");
-            }
-            if (prob==0 && y==1){
-                throw new RuntimeException("prob==0 && y==1");
-            }
-            if (prob==1 && y==1){
-                frac = 1;
-            } else if (prob==0 && y==0){
-                frac = -1;
-            } else {
+            // if prob = 0 or prob = 1, weight = 0; doesn't matter how we decide frac; leave it 0
+            if (prob!=0&&prob!=1){
                 frac = (y-prob)/(prob*(1-prob));
             }
+            // frac is numerically unstable; if it is too big, the weighted least square solver will crash
+            if (frac>1){
+                frac=1;
+            }
 
+            if (frac<-1){
+                frac=-1;
+            }
 
             labels[i] = classScore + frac;
             instanceWeights[i] = (prob*(1-prob))/numDataPoints;
@@ -74,8 +74,9 @@ public class ElasticNetLogisticTrainer {
 
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
+        // use default epsilon
         ElasticNetLinearRegTrainer linearRegTrainer = ElasticNetLinearRegTrainer.getBuilder()
-                .setEpsilon(this.epsilon).setRegularization(this.regularization)
+                .setRegularization(this.regularization)
                 .setL1Ratio(this.l1Ratio).build();
         linearRegTrainer.train(linearRegression,dataSet,labels,instanceWeights);
     }

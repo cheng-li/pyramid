@@ -20,7 +20,7 @@ public class ElasticNetLogisticTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test6();
+        test4();
     }
 
     private static void test1() throws Exception{
@@ -66,7 +66,7 @@ public class ElasticNetLogisticTrainerTest {
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
-                .setEpsilon(0.01).setL1Ratio(0.5).setRegularization(0.01).build();
+                .setEpsilon(0.01).setL1Ratio(1).setRegularization(0.01).build();
 
         for (int i=0;i<10;i++){
             System.out.println("iteration "+i);
@@ -79,14 +79,14 @@ public class ElasticNetLogisticTrainerTest {
     }
 
     private static void test4() throws Exception{
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/cnn/4/train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/cnn/4/test.trec"),
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
-                .setEpsilon(0.01).setL1Ratio(1).setRegularization(4.6415888336127784E-5).build();
+                .setEpsilon(0.01).setL1Ratio(1).setRegularization(2.4201282647943795E-4).build();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -100,25 +100,26 @@ public class ElasticNetLogisticTrainerTest {
     }
 
     private static void test5() throws Exception{
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/cnn/4/train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/cnn/4/test.trec"),
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
 
         Comparator<Double> comparator = Comparator.comparing(Double::doubleValue);
-        List<Double> lambdas = Grid.logUniform(0.00001, 0.0001, 100).stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        List<Double> lambdas = Grid.logUniform(0.00000001, 0.1, 100).stream().sorted(comparator.reversed()).collect(Collectors.toList());
 
         for (double lambda: lambdas){
             ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
                     .setEpsilon(0.01).setL1Ratio(1).setRegularization(lambda).build();
+
+            System.out.println("=================================");
+            System.out.println("lambda = "+lambda);
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             trainer.train(logisticRegression, dataSet);
             System.out.println(stopWatch);
-            System.out.println("=================================");
-            System.out.println("lambda = "+lambda);
             System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
             System.out.println("number of non-zeros= "+logisticRegression.getWeights().getAllWeights().getNumNonZeroElements());

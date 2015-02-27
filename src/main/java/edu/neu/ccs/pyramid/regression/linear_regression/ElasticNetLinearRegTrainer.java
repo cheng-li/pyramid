@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 public class ElasticNetLinearRegTrainer {
     private double regularization;
     private double l1Ratio;
+    // relative threshold
     private double epsilon;
 
     public static Builder getBuilder(){
@@ -26,14 +27,17 @@ public class ElasticNetLinearRegTrainer {
      * @param instanceWeights
      */
     public void train(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights){
+
         double[] scores = new double[dataSet.getNumDataPoints()];
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
             scores[i] = linearRegression.predict(dataSet.getRow(i)));
+
         double lastLoss = loss(linearRegression,scores,labels,instanceWeights);
+        double threshold = lastLoss*epsilon;
         while(true){
             iterate(linearRegression,dataSet,labels,instanceWeights,scores);
             double loss = loss(linearRegression,scores,labels,instanceWeights);
-            if (Math.abs(lastLoss-loss)<epsilon){
+            if (Math.abs(lastLoss-loss)<threshold){
                 break;
             }
             lastLoss = loss;
@@ -49,6 +53,16 @@ public class ElasticNetLinearRegTrainer {
      */
     private void iterate(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights, double[] scores){
         double totalWeight = Arrays.stream(instanceWeights).parallel().sum();
+        // if no weight at all, only minimize the penalty
+        if (totalWeight==0){
+            // if there is a penalty
+            if (regularization>0){
+                for (int j=0;j<dataSet.getNumFeatures();j++){
+                    linearRegression.getWeights().setWeight(j,0);
+                }
+            }
+            return;
+        }
         double oldBias = linearRegression.getWeights().getBias();
         double newBias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
         instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/totalWeight;
@@ -77,7 +91,13 @@ public class ElasticNetLinearRegTrainer {
         }
         double numerator = softThreshold(fit);
         denominator += regularization*(1-l1Ratio);
-        double newCoeff = numerator/denominator;
+        // if denominator = 0, this feature is useless, assign 0 to the coefficient
+        double newCoeff = 0;
+        if (denominator!=0){
+            newCoeff = numerator/denominator;
+        }
+
+
         linearRegression.getWeights().setWeight(featureIndex,newCoeff);
         //update scores
         double difference = newCoeff - oldCoeff;
@@ -88,11 +108,10 @@ public class ElasticNetLinearRegTrainer {
                 scores[i] = scores[i] +  difference*x;
             }
         }
-
     }
 
 
-    public double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
+    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
         double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
                 0.5 * instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
                 .sum();
@@ -100,15 +119,8 @@ public class ElasticNetLinearRegTrainer {
         return mse + penalty;
     }
 
-    public double loss(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights){
-        double mse = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
-                0.5*instanceWeights[i]*Math.pow(labels[i]-linearRegression.predict(dataSet.getRow(i)),2))
-                .sum();
-        double penalty = penalty(linearRegression);
-        return mse + penalty;
-    }
 
-    public double penalty(LinearRegression linearRegression){
+    private double penalty(LinearRegression linearRegression){
         Vector vector = linearRegression.getWeights().getWeightsWithoutBias();
         double normCombination = (1-l1Ratio)*0.5*Math.pow(vector.norm(2),2) +
                 l1Ratio*vector.norm(1);

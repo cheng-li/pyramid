@@ -101,11 +101,12 @@ public class LogisticRegression implements ProbabilityEstimator {
         }
         return probVector;
     }
-
-    //todo can be optimized
+    
     double logLikelihood(Vector vector, int k){
-        double[] probs = predictClassProbs(vector);
-        return Math.log(probs[k]);
+        double[] scoreVector = this.predictClassScores(vector);
+        double logDenominator = MathUtil.logSumExp(scoreVector);
+        double logNumerator = scoreVector[k];
+        return logNumerator-logDenominator;
     }
 
     double dataSetLogLikelihood(ClfDataSet dataSet){

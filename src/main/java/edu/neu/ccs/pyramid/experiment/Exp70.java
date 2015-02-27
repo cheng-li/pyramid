@@ -49,7 +49,7 @@ public class Exp70 {
 
         List<Double> l1Ratios = Grid.uniform(config.getDouble("train.l1Ratio.min"),
                 config.getDouble("train.l1Ratio.max"), config.getInt("train.l1Ratio.size"))
-                .stream().sorted(comparator.reversed()).collect(Collectors.toList());
+                .stream().sorted().collect(Collectors.toList());
 
         List<Double> lambdas = Grid.logUniform(config.getDouble("train.lambda.min"),
                 config.getDouble("train.lambda.max") , config.getInt("train.lambda.size"))
