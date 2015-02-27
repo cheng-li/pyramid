@@ -13,6 +13,7 @@ import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,7 +74,7 @@ public class Exp70 {
                 System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
                 double acc = Accuracy.accuracy(logisticRegression, testSet);
                 System.out.println("test accuracy = "+ acc);
-                System.out.println("number of used features = "+ LogisticRegressionInspector.numOfUsedFeatures(logisticRegression));
+                System.out.println("number of used features in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeatures(logisticRegression)));
 
                 if (acc> bestAcc){
                     bestAcc = acc;
@@ -81,7 +82,7 @@ public class Exp70 {
                     System.out.println("best test accuracy got so far = "+bestAcc);
                     System.out.println("l1Ratio= "+l1ratio );
                     System.out.println("lambda = "+lambda);
-                    System.out.println("number of used features = "+ LogisticRegressionInspector.numOfUsedFeatures(logisticRegression));
+                    System.out.println("number of used features in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeatures(logisticRegression)));
                     System.out.println("*********************************************");
                 }
 
