@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
+ * Friedman, Jerome, Trevor Hastie, and Rob Tibshirani.
+ * "Regularization paths for generalized linear models via coordinate descent."
+ * Journal of statistical software 33.1 (2010): 1.
  * Created by chengli on 2/18/15.
  */
 public class ElasticNetLinearRegTrainer {

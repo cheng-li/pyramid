@@ -9,6 +9,9 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
+ * Friedman, Jerome, Trevor Hastie, and Rob Tibshirani.
+ * "Regularization paths for generalized linear models via coordinate descent."
+ * Journal of statistical software 33.1 (2010): 1.
  * Created by chengli on 2/24/15.
  */
 public class ElasticNetLogisticTrainer {
@@ -99,22 +102,36 @@ public class ElasticNetLogisticTrainer {
     }
 
     public static class Builder{
-        private double regularization=0;
+        // when p>>N, logistic regression with 0 regularization is ill-defined
+        // use a small regularization
+        private double regularization=0.00001;
         private double l1Ratio=0;
         private double epsilon=0.001;
 
         public Builder setRegularization(double regularization) {
+            boolean legal = regularization>=0;
+            if (!legal){
+                throw new IllegalArgumentException("regularization>=0");
+            }
             this.regularization = regularization;
             return this;
         }
 
 
         public Builder setL1Ratio(double l1Ratio) {
+            boolean legal = (l1Ratio>=0)&&(l1Ratio<=1);
+            if (!legal){
+                throw new IllegalArgumentException("(l1Ratio>=0)&&(l1Ratio<=1)");
+            }
             this.l1Ratio = l1Ratio;
             return this;
         }
 
         public Builder setEpsilon(double epsilon) {
+            boolean legal = (epsilon>0)&&(epsilon<1);
+            if (!legal){
+                throw new IllegalArgumentException("(epsilon>0)&&(epsilon<1)");
+            }
             this.epsilon = epsilon;
             return this;
         }

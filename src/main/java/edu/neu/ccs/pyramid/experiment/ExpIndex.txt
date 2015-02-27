@@ -18,15 +18,15 @@
   18: (obsolete) single label dataset, start with initial features + all unigram features
        use picked unigram features as seeds
   19: single label gradient boosting without probabilistic voting
-  20: single label lasso
-  21: single label ridge
-  22: elastic net hyper parameter tuning, single label
+  20: (obsolete) single label lasso (obsolete)
+  21: (obsolete) single label ridge
+  22: (obsolete) elastic net hyper parameter tuning, single label
   23: index 20newsgroup
   24: index imdb(deprecated)
-  25: elastic net, single label
+  25: (obsolete) elastic net, single label
   26: gradient boosting hyper parameter tuning, single label
-  27: lasso hyper parameter tuning
-  28: ridge hyper parameter tuning
+  27: (obsolete) lasso hyper parameter tuning
+  28: (obsolete) ridge hyper parameter tuning
   29: index imdb_stopwords
   30: given logistic regression coefficients, print top features
   31: feature extraction by logistic regression, see 37
