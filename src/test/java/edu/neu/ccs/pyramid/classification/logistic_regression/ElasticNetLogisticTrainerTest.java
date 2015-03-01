@@ -7,6 +7,12 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+
 
 import java.io.File;
 import java.util.Comparator;
@@ -20,7 +26,7 @@ public class ElasticNetLogisticTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test4();
+        test6();
     }
 
     private static void test1() throws Exception{
@@ -128,6 +134,12 @@ public class ElasticNetLogisticTrainerTest {
     }
 
     private static void test6() throws Exception{
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(Level.DEBUG);
+        ctx.updateLoggers();
+
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/amazon_book_genre/3/train.trec"),
                 DataSetType.CLF_SPARSE, true);
         ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/amazon_book_genre/3/test.trec"),
@@ -135,7 +147,7 @@ public class ElasticNetLogisticTrainerTest {
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
-                .setEpsilon(0.01).setL1Ratio(0.8888888888888888).setRegularization(0.10000000000000006).build();
+                .setEpsilon(0.01).setL1Ratio(0).setRegularization(0.10000000000000006).build();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

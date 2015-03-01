@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.regression.linear_regression.ElasticNetLinearRegTrainer;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
@@ -15,6 +17,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 2/24/15.
  */
 public class ElasticNetLogisticTrainer {
+    private static final Logger logger = LogManager.getLogger();
     private double regularization;
     private double l1Ratio;
     // relative threshold
@@ -26,11 +29,18 @@ public class ElasticNetLogisticTrainer {
 
     public void train(LogisticRegression logisticRegression, ClfDataSet dataSet){
         double lastLoss = loss(logisticRegression,dataSet);
+        if (logger.isDebugEnabled()){
+            logger.debug("initial loss = "+lastLoss);
+        }
         double threshold = lastLoss*epsilon;
         while(true){
             iterate(logisticRegression,dataSet);
             double loss = loss(logisticRegression,dataSet);
-            if (Math.abs(lastLoss-loss)<threshold){
+            if (logger.isDebugEnabled()){
+                logger.debug("loss = "+loss);
+            }
+            // it may diverge without check
+            if (Math.abs(lastLoss-loss)<threshold || (loss> lastLoss)){
                 break;
             }
             lastLoss = loss;

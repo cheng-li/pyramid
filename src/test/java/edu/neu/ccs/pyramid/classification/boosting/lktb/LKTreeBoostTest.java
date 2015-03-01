@@ -1,12 +1,14 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,10 +18,10 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        spam_test();
+//        spam_test();
 //        newsgroup_test();
 //        spam_build();
-//        spam_load();
+        spam_load();
 //        spam_resume_train();
 //        spam_polluted_build();
 //        spam_polluted_load();
@@ -146,6 +148,14 @@ public class LKTreeBoostTest {
             System.out.println("number of matches ="+numMatches);
             System.out.println("sum of probs = "+sumProbs);
         }
+
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        ClassScoreCalculation classScoreCalculation = LKTBInspector.decisionProcess(lkTreeBoost,labelTranslator,dataSet.getRow(0),0,10);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(new File(TMP,"score_calculation.json"), classScoreCalculation);
+        PredictionAnalysis predictionAnalysis = LKTBInspector.analyzePrediction(lkTreeBoost,dataSet,0,10);
+        ObjectMapper mapper1 = new ObjectMapper();
+        mapper1.writeValue(new File(TMP,"prediction_analysis.json"), predictionAnalysis);
     }
 
     static void spam_build() throws Exception{
@@ -709,8 +719,8 @@ public class LKTreeBoostTest {
         for (int i=0; i<predicts.length; i++) {
             if (predicts[i] != labels[i]) {
                 System.out.println("DataPoint: " + i);
-                System.out.println(LKTBInspector.analyzeMistake(lkTreeBoost,dataSet.getRow(i),
-                        labels[i], predicts[i], labelTranslator, 100));
+//                System.out.println(LKTBInspector.analyzeMistake(lkTreeBoost,dataSet.getRow(i),
+//                        labels[i], predicts[i], labelTranslator, 100));
             }
         }
 

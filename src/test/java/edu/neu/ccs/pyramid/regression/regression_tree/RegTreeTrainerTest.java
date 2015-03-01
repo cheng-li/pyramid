@@ -1,11 +1,14 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class RegTreeTrainerTest {
@@ -13,7 +16,7 @@ public class RegTreeTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test7();
+        test3();
     }
 
 
@@ -95,7 +98,15 @@ public class RegTreeTrainerTest {
         System.out.println(mseValue);
         System.out.println(regressionTree.getNumLeaves());
         System.out.println(regressionTree);
-        System.out.println(new Decision(regressionTree,dataSet.getRow(100)));
+        TreeRule treeRule1 = new TreeRule(regressionTree,dataSet.getRow(100));
+        TreeRule treeRule2 = new TreeRule(regressionTree,dataSet.getRow(1));
+        List<TreeRule> treeRules = new ArrayList<>();
+        treeRules.add(treeRule1);
+        treeRules.add(treeRule2);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(new File(TMP,"decision.json"), treeRules);
+        System.out.println(treeRules);
+
 //        System.out.println(regressionTree.getRootReduction()    );
 
     }

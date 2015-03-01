@@ -1,13 +1,12 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 
+import edu.neu.ccs.pyramid.classification.ClassProbability;
+import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
-import edu.neu.ccs.pyramid.regression.ConstantRegressor;
-import edu.neu.ccs.pyramid.regression.Regressor;
-import edu.neu.ccs.pyramid.regression.regression_tree.Decision;
-import edu.neu.ccs.pyramid.regression.regression_tree.DecisionPath;
+import edu.neu.ccs.pyramid.regression.*;
+import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -118,51 +117,78 @@ public class LKTBInspector {
         return features;
     }
 
-    public static String decisionProcess(LKTreeBoost boosting, Vector vector, int classIndex, int limit){
-        StringBuilder sb = new StringBuilder();
-        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().collect(Collectors.toList());
-        List<Decision> decisions = new ArrayList<>();
-        for (int i=0;i<regressors.size();i++){
-            Regressor regressor = regressors.get(i);
-            if (regressor instanceof ConstantRegressor){
-                sb.append("prior score for the class = ");
-                sb.append(((ConstantRegressor) regressor).getScore()).append("\n");
+    //todo  speed up
+    public static PredictionAnalysis analyzePrediction(LKTreeBoost boosting, ClfDataSet dataSet, int dataPointIndex, int limit){
+        PredictionAnalysis predictionAnalysis = new PredictionAnalysis();
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        predictionAnalysis.setInternalId(dataPointIndex)
+                .setId(dataSet.getDataPointSetting(dataPointIndex).getExtId())
+                .setInternalLabel(dataSet.getLabels()[dataPointIndex])
+                .setLabel(dataSet.getDataPointSetting(dataPointIndex).getExtLabel());
+        int prediction = boosting.predict(dataSet.getRow(dataPointIndex));
+        predictionAnalysis.setInternalPrediction(prediction);
+        predictionAnalysis.setPrediction(labelTranslator.toExtLabel(prediction));
+        double[] probs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        List<ClassProbability> classProbabilities = new ArrayList<>();
+        for (int k=0;k<probs.length;k++){
+            ClassProbability classProbability = new ClassProbability(k,labelTranslator.toExtLabel(k),probs[k]);
+            classProbabilities.add(classProbability);
+        }
+        predictionAnalysis.setClassProbabilities(classProbabilities);
+        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
+        for (int k=0;k<probs.length;k++){
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
+                    dataSet.getRow(dataPointIndex),k,limit);
+            classScoreCalculations.add(classScoreCalculation);
+        }
+        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
+        return predictionAnalysis;
+    }
+
+    public static ClassScoreCalculation decisionProcess(LKTreeBoost boosting, LabelTranslator labelTranslator, Vector vector, int classIndex, int limit){
+        ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
+                boosting.predictClassScore(vector,classIndex));
+        List<Regressor> regressors = boosting.getRegressors(classIndex);
+        List<TreeRule> treeRules = new ArrayList<>();
+        for (Regressor regressor : regressors) {
+            if (regressor instanceof ConstantRegressor) {
+                Rule rule = new ConstantRule(((ConstantRegressor) regressor).getScore());
+                classScoreCalculation.addRule(rule);
             }
 
-            if (regressor instanceof RegressionTree){
-                RegressionTree tree = (RegressionTree)regressor;
-                Decision decision = new Decision(tree,vector);
-                decisions.add(decision);
+            if (regressor instanceof RegressionTree) {
+                RegressionTree tree = (RegressionTree) regressor;
+                TreeRule treeRule = new TreeRule(tree, vector);
+                treeRules.add(treeRule);
             }
         }
-        Comparator<Decision> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
-        List<Decision> merged = Decision.merge(decisions).stream().sorted(comparator.reversed())
+        Comparator<TreeRule> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
+        List<TreeRule> merged = TreeRule.merge(treeRules).stream().sorted(comparator.reversed())
                 .limit(limit).collect(Collectors.toList());
-        for (Decision decision: merged){
-            sb.append(decision.toString());
-            sb.append("\n");
+        for (TreeRule treeRule : merged){
+            classScoreCalculation.addRule(treeRule);
         }
 
-        return sb.toString();
+        return classScoreCalculation;
     }
 
-    public static String analyzeMistake(LKTreeBoost boosting, Vector vector,
-                                        int trueLabel, int prediction,
-                                        LabelTranslator labelTranslator, int limit){
-        StringBuilder sb = new StringBuilder();
-        sb.append("score for the true label ").append(trueLabel).append("(").append(labelTranslator.toExtLabel(trueLabel))
-                .append(")").append(" = ").append(boosting.predictClassScore(vector,trueLabel)).append("\n");
-
-        sb.append("score for the prediction ").append(prediction).append("(").append(labelTranslator.toExtLabel(prediction))
-                .append(")").append(" = ").append(boosting.predictClassScore(vector,prediction)).append("\n");
-        sb.append("decision process for the true label ").append(trueLabel).append("(").append(labelTranslator.toExtLabel(trueLabel))
-                .append(")").append(":").append("\n");
-        sb.append(decisionProcess(boosting,vector,trueLabel,limit));
-
-        sb.append("decision process for the prediction ").append(prediction).append("(").append(labelTranslator.toExtLabel(prediction))
-                .append(")").append(":").append("\n");
-        sb.append(decisionProcess(boosting,vector,prediction,limit));
-
-        return sb.toString();
-    }
+//    public static String analyzeMistake(LKTreeBoost boosting, Vector vector,
+//                                        int trueLabel, int prediction,
+//                                        LabelTranslator labelTranslator, int limit){
+//        StringBuilder sb = new StringBuilder();
+//        sb.append("score for the true label ").append(trueLabel).append("(").append(labelTranslator.toExtLabel(trueLabel))
+//                .append(")").append(" = ").append(boosting.predictClassScore(vector,trueLabel)).append("\n");
+//
+//        sb.append("score for the prediction ").append(prediction).append("(").append(labelTranslator.toExtLabel(prediction))
+//                .append(")").append(" = ").append(boosting.predictClassScore(vector,prediction)).append("\n");
+//        sb.append("decision process for the true label ").append(trueLabel).append("(").append(labelTranslator.toExtLabel(trueLabel))
+//                .append(")").append(":").append("\n");
+//        sb.append(decisionProcess(boosting,vector,trueLabel,limit));
+//
+//        sb.append("decision process for the prediction ").append(prediction).append("(").append(labelTranslator.toExtLabel(prediction))
+//                .append(")").append(":").append("\n");
+//        sb.append(decisionProcess(boosting,vector,prediction,limit));
+//
+//        return sb.toString();
+//    }
 }

@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.regression.linear_regression;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
@@ -13,6 +15,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 2/18/15.
  */
 public class ElasticNetLinearRegTrainer {
+    private static final Logger logger = LogManager.getLogger();
     private double regularization;
     private double l1Ratio;
     // relative threshold
@@ -36,10 +39,16 @@ public class ElasticNetLinearRegTrainer {
             scores[i] = linearRegression.predict(dataSet.getRow(i)));
 
         double lastLoss = loss(linearRegression,scores,labels,instanceWeights);
+        if (logger.isDebugEnabled()){
+            logger.debug("initial loss = "+lastLoss);
+        }
         double threshold = lastLoss*epsilon;
         while(true){
             iterate(linearRegression,dataSet,labels,instanceWeights,scores);
             double loss = loss(linearRegression,scores,labels,instanceWeights);
+            if (logger.isDebugEnabled()){
+                logger.debug("loss = "+loss);
+            }
             if (Math.abs(lastLoss-loss)<threshold){
                 break;
             }

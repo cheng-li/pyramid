@@ -5,3 +5,4 @@ out/
 lib/
 configs/
 src/main/java/edu/neu/ccs/pyramid/tmp/
+logs/

@@ -1,13 +1,11 @@
 package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
-import edu.neu.ccs.pyramid.regression.regression_tree.Decision;
-import edu.neu.ccs.pyramid.regression.regression_tree.DecisionPath;
+import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -153,7 +151,7 @@ public class HMLGBInspector {
     public static String decisionProcess(HMLGradientBoosting boosting, Vector vector, int classIndex, int limit){
         StringBuilder sb = new StringBuilder();
         List<Regressor> regressors = boosting.getRegressors(classIndex).stream().collect(Collectors.toList());
-        List<Decision> decisions = new ArrayList<>();
+        List<TreeRule> treeRules = new ArrayList<>();
         for (int i=0;i<regressors.size();i++){
             Regressor regressor = regressors.get(i);
             if (regressor instanceof ConstantRegressor){
@@ -163,15 +161,15 @@ public class HMLGBInspector {
 
             if (regressor instanceof RegressionTree){
                 RegressionTree tree = (RegressionTree)regressor;
-                Decision decision = new Decision(tree,vector);
-                decisions.add(decision);
+                TreeRule treeRule = new TreeRule(tree,vector);
+                treeRules.add(treeRule);
             }
         }
-        Comparator<Decision> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
-        List<Decision> merged = Decision.merge(decisions).stream().sorted(comparator.reversed())
+        Comparator<TreeRule> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
+        List<TreeRule> merged = TreeRule.merge(treeRules).stream().sorted(comparator.reversed())
                 .limit(limit).collect(Collectors.toList());
-        for (Decision decision: merged){
-            sb.append(decision.toString());
+        for (TreeRule treeRule : merged){
+            sb.append(treeRule.toString());
             sb.append("\n");
         }
 

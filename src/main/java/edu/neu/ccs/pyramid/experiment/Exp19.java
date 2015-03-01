@@ -212,7 +212,7 @@ public class Exp19 {
                 int prediction = lkTreeBoost.predict(row);
                 if (label!=prediction){
                     System.out.println("data point "+i+", extid = "+dataSet.getDataPointSetting(i).getExtId());
-                    System.out.println(LKTBInspector.analyzeMistake(lkTreeBoost,row,label,prediction,labelTranslator,limit));
+//                    System.out.println(LKTBInspector.analyzeMistake(lkTreeBoost,row,label,prediction,labelTranslator,limit));
                 }
             }
         }
