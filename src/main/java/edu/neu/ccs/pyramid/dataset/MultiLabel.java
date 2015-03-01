@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.dataset;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,10 @@ public class MultiLabel implements Serializable{
 
     public Set<Integer> getMatchedLabels(){
         return labels;
+    }
+
+    public List<Integer> getMatchedLabelsOrdered(){
+        return labels.stream().sorted().collect(Collectors.toList());
     }
 
     public static Set<Integer> union(MultiLabel multiLabel1, MultiLabel multiLabel2){

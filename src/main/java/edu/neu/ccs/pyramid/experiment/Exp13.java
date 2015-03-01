@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -8,6 +9,7 @@ import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import edu.neu.ccs.pyramid.feature.CategoricalFeatureMapper;
 import edu.neu.ccs.pyramid.feature.FeatureMappers;
 import edu.neu.ccs.pyramid.feature.NumericalFeatureMapper;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBTrainer;
@@ -16,10 +18,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -36,6 +35,10 @@ public class Exp13 {
 
         Config config = new Config(args[0]);
         System.out.println(config);
+
+        File archive = new File(config.getString("archive.folder"));
+        archive.mkdirs();
+
 
         if (config.getBoolean("train")){
             train(config);
@@ -254,6 +257,21 @@ public class Exp13 {
             }
         }
 
+        if (config.getBoolean("verify.analyzePredictions")){
+            int limit = config.getInt("verify.analyzePredictions.limit");
+            int firstId = config.getInt("verify.analyzePredictions.firstId");
+            int lastId = config.getInt("verify.analyzePredictions.lastId");
+            List<MultiLabelPredictionAnalysis> analysisList = IntStream.range(firstId,lastId).parallel()
+                    .mapToObj(i -> HMLGBInspector.analyzePrediction(boosting,dataSet,i,limit))
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("verify.analyzePredictions.file");
+            System.out.println("writing...");
+            mapper.writeValue(new File(config.getString("archive.folder"),file), analysisList);
+            System.out.println("done");
+
+        }
+
         if (config.getBoolean("verify.analyzeMistakes")){
             System.out.println("analyzing mistakes");
             analyzeTrainMistakes(config, boosting, dataSet);
@@ -311,7 +329,7 @@ public class Exp13 {
                 Vector vector = dataSet.getRow(i);
                 System.out.println("data point "+i+" index id = "+dataSet.getDataPointSetting(i).getExtId());
 
-                System.out.println(HMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
+//                System.out.println(HMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
 
 
             }
@@ -350,7 +368,7 @@ public class Exp13 {
                     System.out.println("predicted labels = "+prediction.toStringWithExtLabels(labelTranslator));
                     System.out.println("it contains unseen labels");
                 } else{
-                    System.out.println(HMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
+//                    System.out.println(HMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
                 }
 
             }

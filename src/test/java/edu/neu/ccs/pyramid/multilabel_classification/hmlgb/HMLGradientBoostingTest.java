@@ -1,11 +1,13 @@
 package edu.neu.ccs.pyramid.multilabel_classification.hmlgb;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -22,8 +24,9 @@ public class HMLGradientBoostingTest {
     public static void main(String[] args) throws Exception{
 //       spam_all();
 //        test2_all();
-        test3_all();
+//        test3_all();
 //        test4();
+        test3_load();
     }
 
     static void spam_all() throws Exception{
@@ -281,6 +284,13 @@ public class HMLGradientBoostingTest {
         }
 
 
+        List<String> extLabels = new ArrayList<>();
+        extLabels.add("non_spam");
+        extLabels.add("spam");
+        extLabels.add("fake2");
+        extLabels.add("fake3");
+        LabelTranslator labelTranslator = new LabelTranslator(extLabels);
+        DataSetUtil.setLabelTranslator(dataSet,labelTranslator);
 
         List<MultiLabel> assignments = new ArrayList<>();
         assignments.add(new MultiLabel().addLabel(0));
@@ -361,6 +371,13 @@ public class HMLGradientBoostingTest {
             }
         }
 
+        List<String> extLabels = new ArrayList<>();
+        extLabels.add("non_spam");
+        extLabels.add("spam");
+        extLabels.add("fake2");
+        extLabels.add("fake3");
+        LabelTranslator labelTranslator = new LabelTranslator(extLabels);
+        DataSetUtil.setLabelTranslator(dataSet,labelTranslator);
 
         HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
@@ -378,6 +395,11 @@ public class HMLGradientBoostingTest {
 //                System.out.println("prediction="+prediction);
 //            }
         }
+
+        MultiLabelPredictionAnalysis analysis = HMLGBInspector.analyzePrediction(boosting, dataSet, 0, 10);
+        ObjectMapper mapper1 = new ObjectMapper();
+        mapper1.writeValue(new File(TMP,"prediction_analysis.json"), analysis);
+
     }
 
     private static void test4() throws Exception{
