@@ -46,10 +46,11 @@ public class ElasticNetLinearRegTrainer {
         while(true){
             iterate(linearRegression,dataSet,labels,instanceWeights,scores);
             double loss = loss(linearRegression,scores,labels,instanceWeights);
-            if (logger.isDebugEnabled()){
-                logger.debug("loss = "+loss);
-            }
-            if (Math.abs(lastLoss-loss)<threshold){
+
+            if (Math.abs(lastLoss-loss)<=threshold){
+                if (logger.isDebugEnabled()){
+                    logger.debug("final loss = "+loss);
+                }
                 break;
             }
             lastLoss = loss;

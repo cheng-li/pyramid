@@ -61,7 +61,7 @@ public class Exp70 {
         for (double l1ratio: l1Ratios){
             LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
             for (double lambda: lambdas){
-                ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+                ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
                         .setEpsilon(0.01).setL1Ratio(l1ratio).setRegularization(lambda).build();
 
                 System.out.println("=================================");
@@ -69,7 +69,7 @@ public class Exp70 {
                 System.out.println("lambda = "+lambda);
                 StopWatch stopWatch = new StopWatch();
                 stopWatch.start();
-                trainer.train(logisticRegression, dataSet);
+                trainer.train();
                 System.out.println("time spent = " + stopWatch);
                 System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
                 double acc = Accuracy.accuracy(logisticRegression, testSet);

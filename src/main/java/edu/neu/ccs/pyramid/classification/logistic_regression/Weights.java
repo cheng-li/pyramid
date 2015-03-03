@@ -39,6 +39,19 @@ public class Weights implements Serializable {
         this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
+    void setWeightVector(Vector weightVector) {
+        if (weightVector.size()!=(numFeatures + 1)*numClasses){
+            throw new IllegalArgumentException("weightVector.size()!=(numFeatures + 1)*numClasses");
+        }
+        this.weightVector = weightVector;
+    }
+
+    public Weights deepCopy(){
+        Weights copy = new Weights(this.numClasses,numFeatures);
+        copy.weightVector = new DenseVector(this.weightVector);
+        return copy;
+    }
+
     public int getClassIndex(int parameterIndex){
         return parameterIndex/(numFeatures+1);
     }

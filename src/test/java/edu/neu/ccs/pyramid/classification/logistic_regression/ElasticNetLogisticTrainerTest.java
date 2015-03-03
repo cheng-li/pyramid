@@ -26,6 +26,11 @@ public class ElasticNetLogisticTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(Level.DEBUG);
+        ctx.updateLoggers();
         test6();
     }
 
@@ -36,11 +41,11 @@ public class ElasticNetLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
                 .setEpsilon(0.01).setL1Ratio(0.5).setRegularization(0.0001).build();
         for (int i=0;i<10;i++){
             System.out.println("iteration "+i);
-            trainer.iterate(logisticRegression,dataSet);
+            trainer.iterate();
             System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
         }
@@ -54,10 +59,10 @@ public class ElasticNetLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
-                .setEpsilon(0.01).setL1Ratio(0.5).setRegularization(0.01).build();
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
+                .setEpsilon(0.01).setL1Ratio(0.5).setRegularization(0.0001).build();
 
-        trainer.train(logisticRegression,dataSet);
+        trainer.train();
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
 
@@ -71,12 +76,12 @@ public class ElasticNetLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
                 .setEpsilon(0.01).setL1Ratio(1).setRegularization(0.01).build();
 
         for (int i=0;i<10;i++){
             System.out.println("iteration "+i);
-            trainer.iterate(logisticRegression,dataSet);
+            trainer.iterate();
             System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
         }
@@ -91,12 +96,12 @@ public class ElasticNetLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
                 .setEpsilon(0.01).setL1Ratio(1).setRegularization(2.4201282647943795E-4).build();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        trainer.train(logisticRegression, dataSet);
+        trainer.train();
         System.out.println(stopWatch);
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
@@ -117,14 +122,14 @@ public class ElasticNetLogisticTrainerTest {
         List<Double> lambdas = Grid.logUniform(0.00000001, 0.1, 100).stream().sorted(comparator.reversed()).collect(Collectors.toList());
 
         for (double lambda: lambdas){
-            ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+            ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
                     .setEpsilon(0.01).setL1Ratio(1).setRegularization(lambda).build();
 
             System.out.println("=================================");
             System.out.println("lambda = "+lambda);
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
-            trainer.train(logisticRegression, dataSet);
+            trainer.train();
             System.out.println(stopWatch);
             System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
@@ -134,11 +139,7 @@ public class ElasticNetLogisticTrainerTest {
     }
 
     private static void test6() throws Exception{
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
-        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
-        loggerConfig.setLevel(Level.DEBUG);
-        ctx.updateLoggers();
+
 
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/amazon_book_genre/3/train.trec"),
                 DataSetType.CLF_SPARSE, true);
@@ -146,12 +147,12 @@ public class ElasticNetLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.getBuilder()
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
                 .setEpsilon(0.01).setL1Ratio(0).setRegularization(0.10000000000000006).build();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        trainer.train(logisticRegression, dataSet);
+        trainer.train();
         System.out.println(stopWatch);
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));

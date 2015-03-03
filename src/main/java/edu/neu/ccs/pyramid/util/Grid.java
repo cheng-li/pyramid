@@ -18,12 +18,20 @@ public class Grid {
      * @return
      */
     public static List<Double> uniform(double min, double max, int num){
-        if (min> max ||num<2){
-            throw new IllegalArgumentException("min> max ||num<2");
+        if (min> max ||num<1){
+            throw new IllegalArgumentException("min> max ||num<1");
+        }
+        List<Double> values = new ArrayList<>();
+        if (num==1){
+            if (min!=max){
+                throw new IllegalArgumentException("num = 1 but min!=max");
+            }
+            values.add(min);
+            return values;
         }
 
         double interval = (max-min)/(num-1);
-        List<Double> values = new ArrayList<>();
+
         for (int i=0;i<num;i++){
             values.add(min+i*interval);
         }
@@ -39,8 +47,8 @@ public class Grid {
      * @return
      */
     public static List<Double> logUniform(double min, double max, int num){
-        if (min> max ||num<2 ||min<0){
-            throw new IllegalArgumentException("min> max ||num<2");
+        if (min> max ||num<1 ||min<0){
+            throw new IllegalArgumentException("min> max ||num<1");
         }
 
         return uniform(Math.log(min),Math.log(max),num).stream().map(Math::exp)
