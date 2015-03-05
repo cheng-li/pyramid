@@ -98,7 +98,7 @@ public class Exp14 {
 
 //        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.features").split(",")).map(string -> string.trim())
 //                .collect(Collectors.toSet());
-//        FeatureMappers featureMappers = dataSet.getSetting().getFeatureMappers();
+//        FeatureMappers featureMappers = dataSet.getSettings().getFeatureMappers();
 //
 //        Set<Integer> initialFeatures = new HashSet<>();
 //        for (CategoricalFeatureMapper mapper: featureMappers.getCategoricalFeatureMappers()){

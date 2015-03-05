@@ -237,10 +237,10 @@ public class DataSetUtil {
 //    public static void setLabelTranslator(ClfDataSet dataSet, List<String> extLabels){
 //        int[] labels = dataSet.getLabels();
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            dataSet.getRow(i).getSetting()
+//            dataSet.getRow(i).getSettings()
 //                    .setExtLabel(extLabels.get(labels[i]));
 //        }
-//        dataSet.getSetting().setLabelTranslator(new LabelTranslator(extLabels));
+//        dataSet.getSettings().setLabelTranslator(new LabelTranslator(extLabels));
 //    }
 //
 //    /**
@@ -251,19 +251,19 @@ public class DataSetUtil {
 //    public static void setLabelTranslator(ClfDataSet dataSet, String[] extLabels){
 //        int[] labels = dataSet.getLabels();
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            dataSet.getRow(i).getSetting()
+//            dataSet.getRow(i).getSettings()
 //                    .setExtLabel(extLabels[labels[i]]);
 //        }
-//        dataSet.getSetting().setLabelTranslator(new LabelTranslator(extLabels));
+//        dataSet.getSettings().setLabelTranslator(new LabelTranslator(extLabels));
 //    }
 //
 //    public static void setLabelTranslator(ClfDataSet dataSet, Map<Integer, String> intToExtLabel){
 //        int[] labels = dataSet.getLabels();
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            dataSet.getRow(i).getSetting()
+//            dataSet.getRow(i).getSettings()
 //                    .setExtLabel(intToExtLabel.get(labels[i]));
 //        }
-//        dataSet.getSetting().setLabelTranslator(new LabelTranslator(intToExtLabel));
+//        dataSet.getSettings().setLabelTranslator(new LabelTranslator(intToExtLabel));
 //    }
 
     public static void setLabelTranslator(MultiLabelClfDataSet dataSet, LabelTranslator labelTranslator){
@@ -289,10 +289,10 @@ public class DataSetUtil {
 //            List<String> extLabels = multiLabel.getMatchedLabels().stream()
 //                    .map(intToExtLabel::get)
 //                    .collect(Collectors.toList());
-//            dataSet.getRow(i).getSetting()
+//            dataSet.getRow(i).getSettings()
 //                    .setExtLabels(extLabels);
 //        }
-//        dataSet.getSetting().setLabelTranslator(new LabelTranslator(intToExtLabel));
+//        dataSet.getSettings().setLabelTranslator(new LabelTranslator(intToExtLabel));
 //    }
 //
 //    public static void setLabelTranslator(MultiLabelClfDataSet dataSet, String[] extLabels){
@@ -302,10 +302,10 @@ public class DataSetUtil {
 //            List<String> matchedExtLabels = multiLabel.getMatchedLabels().stream()
 //                    .map(label -> extLabels[label])
 //                    .collect(Collectors.toList());
-//            dataSet.getRow(i).getSetting()
+//            dataSet.getRow(i).getSettings()
 //                    .setExtLabels(matchedExtLabels);
 //        }
-//        dataSet.getSetting().setLabelTranslator(new LabelTranslator(extLabels));
+//        dataSet.getSettings().setLabelTranslator(new LabelTranslator(extLabels));
 //    }
 
     public static void setFeatureNames(DataSet dataSet, List<String> featureNames){

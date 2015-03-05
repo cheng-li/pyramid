@@ -81,17 +81,17 @@ public class Exp60 {
 
         ClfDataSet trainDataSet = loadTrainSet(config, index, featureMappers,trainIdTranslator,labelTranslator);
         System.out.println("in training set :");
-        showDistribution(config,trainDataSet,trainDataSet.getSetting().getLabelTranslator());
+        showDistribution(config,trainDataSet,trainDataSet.getSettings().getLabelTranslator());
 
         trainModel(config,trainDataSet,featureMappers,
-                index, trainDataSet.getSetting().getIdTranslator());
+                index, trainDataSet.getSettings().getIdTranslator());
 
         //only keep used columns
         ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet, featureMappers.getTotalDim());
         DataSetUtil.setFeatureMappers(trimmedTrainDataSet,featureMappers);
         saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
         if (config.getBoolean("archive.dumpFields")){
-            dumpTrainFeatures(config,index,trimmedTrainDataSet.getSetting().getIdTranslator());
+            dumpTrainFeatures(config,index,trimmedTrainDataSet.getSettings().getIdTranslator());
         }
 
         String[] testIndexIds = sampleTest(config,index);
@@ -101,7 +101,7 @@ public class Exp60 {
         DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
         if (config.getBoolean("archive.dumpFields")){
-            dumpTestFeatures(config,index,testDataSet.getSetting().getIdTranslator());
+            dumpTestFeatures(config,index,testDataSet.getSettings().getIdTranslator());
         }
 
 //        ClfDataSet validDataSet = loadValidSet(config, index, featureMappers);
@@ -156,7 +156,7 @@ public class Exp60 {
 
         String modelName = config.getString("archive.model");
 
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getSettings().getLabelTranslator();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

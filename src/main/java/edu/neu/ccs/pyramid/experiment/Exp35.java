@@ -125,12 +125,10 @@ public class Exp35 {
      *
      * @param config
      * @param index
-     * @param featureMappers to be updated
      * @param ids pull features from train ids
      * @throws Exception
      */
     static void addInitialFeatures(Config config, SingleLabelIndex index,
-                                   FeatureMappers featureMappers,
                                    String[] ids) throws Exception{
         String featureFieldPrefix = config.getString("index.featureFieldPrefix");
         Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
@@ -141,42 +139,46 @@ public class Exp35 {
                 collect(Collectors.toList());
         System.out.println("all possible initial features:"+featureFields);
 
+        List<Feature> features = new ArrayList<>();
+
+
         for (String field: featureFields){
             String featureType = index.getFieldType(field);
             if (featureType.equalsIgnoreCase("string")){
-                CategoricalFeatureMapperBuilder builder = new CategoricalFeatureMapperBuilder();
-                builder.setFeatureName(field);
-                builder.setStart(featureMappers.nextAvailable());
+                CategoricalFeatureExpander expander = new CategoricalFeatureExpander();
+                expander.setStart(features.size());
+                expander.setVariableName(field);
+                expander.putSetting("source","field");
                 for (String id: ids){
                     String category = index.getStringField(id, field);
-                    builder.addCategory(category);
+                    expander.addCategory(category);
                 }
+                List<CategoricalFeature> group = expander.expand();
                 boolean toAdd = true;
-                CategoricalFeatureMapper mapper = builder.build();
-                mapper.getSettings().put("source","field");
                 if (config.getBoolean("categFeature.filter")){
                     double threshold = config.getDouble("categFeature.percentThreshold");
-                    int numCategories = mapper.getNumCategories();
+                    int numCategories = group.size();
                     if (numCategories> ids.length*threshold){
                         toAdd=false;
                         System.out.println("field "+field+" has too many categories "
                                 +"("+numCategories+"), omitted.");
                     }
                 }
+
+
                 if(toAdd){
-                    featureMappers.addMapper(mapper);
+                    features.addAll(group);
                 }
 
             } else {
-                NumericalFeatureMapperBuilder builder = new NumericalFeatureMapperBuilder();
-                builder.setFeatureName(field);
-                builder.setFeatureIndex(featureMappers.nextAvailable());
-
-                NumericalFeatureMapper mapper = builder.build();
-                mapper.getSettings().put("source","field");
-                featureMappers.addMapper(mapper);
+                Feature feature = new Feature();
+                feature.setName(field);
+                feature.setIndex(features.size());
+                feature.getSettings().put("source","field");
+                features.add(feature);
             }
         }
+
     }
 
 
@@ -449,7 +451,7 @@ public class Exp35 {
 
         LabelTranslator labelTranslator = loadLabelTranslator(config, index);
         if (config.getBoolean("useInitialFeatures")){
-            addInitialFeatures(config,index,featureMappers,trainIndexIds);
+            addInitialFeatures(config,index,trainIndexIds);
         }
 
         List<String> fields = config.getStrings("fields");

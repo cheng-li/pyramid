@@ -243,7 +243,7 @@
 //            throw new IllegalArgumentException("0<=extraction.frequency<=1");
 //        }
 //
-//        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+//        LabelTranslator labelTranslator = dataSet.getSettings().getLabelTranslator();
 //
 //        StopWatch stopWatch = new StopWatch();
 //        stopWatch.start();
