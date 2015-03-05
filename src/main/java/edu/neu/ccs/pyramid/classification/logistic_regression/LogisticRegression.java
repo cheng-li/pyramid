@@ -14,12 +14,13 @@ import java.util.stream.IntStream;
  * Created by chengli on 11/28/14.
  */
 public class LogisticRegression implements ProbabilityEstimator {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private int numClasses;
     private int numFeatures;
     private Weights weights;
     private boolean featureExtraction = false;
     private String[] featureNames;
+    boolean featureNamesSet;
 
 
 
@@ -36,6 +37,10 @@ public class LogisticRegression implements ProbabilityEstimator {
         this.numFeatures = numFeatures;
         this.weights = new Weights(numClasses, numFeatures, weightVector);
         this.featureNames = new String[numFeatures];
+    }
+
+    public boolean isFeatureNamesSet() {
+        return featureNamesSet;
     }
 
     public boolean featureExtraction() {

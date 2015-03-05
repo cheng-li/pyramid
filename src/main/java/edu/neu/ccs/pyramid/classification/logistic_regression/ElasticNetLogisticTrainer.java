@@ -44,6 +44,13 @@ public class ElasticNetLogisticTrainer {
     }
 
     public void train(){
+        if (!logisticRegression.featureNamesSet){
+            for (int j=0;j<dataSet.getNumFeatures();j++){
+                logisticRegression.setFeatureName(j,dataSet.getFeatureSetting(j).getFeatureName());
+            }
+        }
+        logisticRegression.featureNamesSet = true;
+
         double lastLoss = loss();
         if (logger.isDebugEnabled()){
             logger.debug("initial loss = "+lastLoss);
@@ -55,7 +62,6 @@ public class ElasticNetLogisticTrainer {
             if (logger.isDebugEnabled()){
                 logger.debug("loss = "+loss);
             }
-            // it may diverge without check
 
             if (loss > lastLoss){
                 throw new RuntimeException("loss > lastLoss");
@@ -111,7 +117,8 @@ public class ElasticNetLogisticTrainer {
         // this gradient doesn't include the penalty term, so it is only approximate
         Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(numDataPoints);
 
-        // this correspond to move towards the search direction with step size 1
+        // in glmnet algorithm:
+        // this correspond to moving towards the search direction with step size 1
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon
@@ -128,6 +135,8 @@ public class ElasticNetLogisticTrainer {
         // move back to starting point
         logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
 
+        // line search
+        // the original glmnet algorithm may diverge without line search
         lineSearch(searchDirection, gradient);
         if (logger.isDebugEnabled()){
             logger.debug("loss after optimization of one class = " + loss());
@@ -195,7 +204,7 @@ public class ElasticNetLogisticTrainer {
                 logger.warn("bad search direction for the negative log likelihood term !");
             }
         }
-        
+
         while(true){
             Vector step = searchDirection.times(stepLength);
             Vector target = start.plus(step);

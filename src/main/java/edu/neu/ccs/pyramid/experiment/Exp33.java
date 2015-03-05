@@ -97,7 +97,7 @@ public class Exp33 {
         File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
         LogisticRegression logisticRegression = LogisticRegression.deserialize(modelFile);
         System.out.println("number of used features in each class = "
-                +Arrays.toString(LogisticRegressionInspector.numOfUsedFeatures(logisticRegression)));
+                +Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
 
 
