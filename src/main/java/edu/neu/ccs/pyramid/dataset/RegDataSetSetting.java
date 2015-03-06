@@ -7,6 +7,7 @@ import java.io.Serializable;
 /**
  * Created by chengli on 11/1/14.
  */
+@Deprecated
 public class RegDataSetSetting implements Serializable {
     private static final long serialVersionUID = 1L;
 

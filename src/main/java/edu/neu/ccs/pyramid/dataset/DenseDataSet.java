@@ -4,6 +4,8 @@ package edu.neu.ccs.pyramid.dataset;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.List;
+
 /**
  * Created by chengli on 8/7/14.
  */
@@ -11,6 +13,7 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
 
     protected DenseVector[] vectors;
     protected DenseVector[] featureColumns;
+
 
     DenseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures, missingValue);

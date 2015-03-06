@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.dataset;
 
 import org.apache.mahout.math.Vector;
 
+import java.util.List;
+
 /**
  * Created by chengli on 8/4/14.
  */
@@ -16,7 +18,10 @@ public interface DataSet {
     boolean isDense();
     boolean hasMissingValue();
     String getMetaInfo();
-    FeatureSetting getFeatureSetting(int featureIndex);
-    void putFeatureSetting(int featureIndex, FeatureSetting featureSetting);
+
+    IdTranslator getIdTranslator();
+    List<Feature> getFeatureList();
+    void setFeatureList(List<Feature> featureList);
+    void setIdTranslator(IdTranslator idTranslator);
 
 }

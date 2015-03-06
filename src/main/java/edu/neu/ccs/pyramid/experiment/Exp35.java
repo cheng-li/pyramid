@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
+import edu.neu.ccs.pyramid.elasticsearch.FeatureLoader;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
@@ -128,7 +129,7 @@ public class Exp35 {
      * @param ids pull features from train ids
      * @throws Exception
      */
-    static void addInitialFeatures(Config config, SingleLabelIndex index,
+    static void addInitialFeatures(Config config, SingleLabelIndex index, List<Feature> features,
                                    String[] ids) throws Exception{
         String featureFieldPrefix = config.getString("index.featureFieldPrefix");
         Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
@@ -138,9 +139,6 @@ public class Exp35 {
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
         System.out.println("all possible initial features:"+featureFields);
-
-        List<Feature> features = new ArrayList<>();
-
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);
@@ -234,23 +232,22 @@ public class Exp35 {
         return ngrams;
     }
 
-    static void addNgramFeatures(FeatureMappers featureMappers, List<String> ngrams, String field, int slop){
+    static void addNgramFeatures(List<Feature> features, List<String> ngrams, String field, int slop){
         for (String ngram: ngrams){
             String featureName = ngram+"(slop="+slop+")";
-            int featureIndex = featureMappers.nextAvailable();
-            NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                    setFeatureIndex(featureIndex).setFeatureName(featureName)
-                    .build();
-            mapper.getSettings().put("ngram",ngram);
-            mapper.getSettings().put("source","matching_score");
-            mapper.getSettings().put("slop",""+slop);
-            mapper.getSettings().put("field",field);
-            featureMappers.addMapper(mapper);
+            Feature feature = new Feature();
+            feature.setIndex(features.size());
+            feature.setName(featureName);
+            feature.getSettings().put("ngram",ngram);
+            feature.getSettings().put("source","matching_score");
+            feature.getSettings().put("slop",""+slop);
+            feature.getSettings().put("field",field);
+            features.add(feature);
         }
     }
 
     static ClfDataSet loadData(Config config, SingleLabelIndex index,
-                               FeatureMappers featureMappers,
+                               List<Feature> features,
                                IdTranslator idTranslator, int totalDim,
                                LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
@@ -268,79 +265,31 @@ public class Exp35 {
                     dataSet.setLabel(i,label);
                 });
 
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+        FeatureLoader.loadFeatures(index,dataSet,features,idTranslator);
 
-        featureMappers.getCategoricalFeatureMappers().stream().parallel().
-                forEach(categoricalFeatureMapper -> {
-                    String featureName = categoricalFeatureMapper.getFeatureName();
-                    String source = categoricalFeatureMapper.getSettings().get("source");
-                    if (source.equalsIgnoreCase("field")){
-                        for (String id: dataIndexIds){
-                            int algorithmId = idTranslator.toIntId(id);
-                            String category = index.getStringField(id,featureName);
-                            // might be a new category unseen in training
-                            if (categoricalFeatureMapper.hasCategory(category)){
-                                int featureIndex = categoricalFeatureMapper.getFeatureIndex(category);
-                                dataSet.setFeatureValue(algorithmId,featureIndex,1);
-                            }
-                        }
-                    }
-                });
-
-
-        featureMappers.getNumericalFeatureMappers().stream().parallel().
-                forEach(numericalFeatureMapper -> {
-                    String featureName = numericalFeatureMapper.getFeatureName();
-                    String source = numericalFeatureMapper.getSettings().get("source");
-                    int featureIndex = numericalFeatureMapper.getFeatureIndex();
-
-                    if (source.equalsIgnoreCase("field")){
-                        for (String id: dataIndexIds){
-                            int algorithmId = idTranslator.toIntId(id);
-                            float value = index.getFloatField(id,featureName);
-                            dataSet.setFeatureValue(algorithmId,featureIndex,value);
-                        }
-                    }
-
-                    if (source.equalsIgnoreCase("matching_score")){
-                        SearchResponse response = null;
-                        int slop = Integer.parseInt(numericalFeatureMapper.getSettings().get("slop"));
-                        String ngram = numericalFeatureMapper.getSettings().get("ngram");
-                        String field = numericalFeatureMapper.getSettings().get("field");
-                        response = index.matchPhrase(field, ngram, dataIndexIds, slop);
-
-                        SearchHit[] hits = response.getHits().getHits();
-                        for (SearchHit hit: hits){
-                            String indexId = hit.getId();
-                            float score = hit.getScore();
-                            int algorithmId = idTranslator.toIntId(indexId);
-                            dataSet.setFeatureValue(algorithmId,featureIndex,score);
-                        }
-                    }
-                });
         DataSetUtil.setIdTranslator(dataSet, idTranslator);
         DataSetUtil.setLabelTranslator(dataSet, labelTranslator);
         return dataSet;
     }
 
-    static ClfDataSet loadTrainData(Config config, SingleLabelIndex index, FeatureMappers featureMappers,
+    static ClfDataSet loadTrainData(Config config, SingleLabelIndex index, List<Feature> features,
                                     IdTranslator idTranslator, LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating training set");
-        int totalDim = featureMappers.getTotalDim();
+        int totalDim = features.size();
         System.out.println("allocating "+totalDim+" columns for training set");
-        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelTranslator);
+        ClfDataSet dataSet = loadData(config,index,features,idTranslator,totalDim,labelTranslator);
         System.out.println("training set created");
         return dataSet;
     }
 
     static ClfDataSet loadTestData(Config config, SingleLabelIndex index,
-                                   FeatureMappers featureMappers, IdTranslator idTranslator,
+                                   List<Feature> features, IdTranslator idTranslator,
                                    LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating test set");
 
-        int totalDim = featureMappers.getTotalDim();
+        int totalDim = features.size();
 
-        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelTranslator);
+        ClfDataSet dataSet = loadData(config,index,features,idTranslator,totalDim,labelTranslator);
         System.out.println("test set created");
         return dataSet;
     }
@@ -447,11 +396,11 @@ public class Exp35 {
         String[] trainIndexIds = sampleTrain(config,index,duplidate);
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
-        FeatureMappers featureMappers = new FeatureMappers();
+        List<Feature> features = new ArrayList<>();
 
         LabelTranslator labelTranslator = loadLabelTranslator(config, index);
         if (config.getBoolean("useInitialFeatures")){
-            addInitialFeatures(config,index,trainIndexIds);
+            addInitialFeatures(config,index,,features,trainIndexIds);
         }
 
         List<String> fields = config.getStrings("fields");
@@ -459,7 +408,7 @@ public class Exp35 {
         for (String field: fields){
             List<String> ngrams = gather(config,index,field, trainIndexIds);
             for (int slop: slops){
-                addNgramFeatures(featureMappers, ngrams,field, slop);
+                addNgramFeatures(features, ngrams,field, slop);
             }
         }
 
@@ -467,7 +416,7 @@ public class Exp35 {
 
 
 
-        ClfDataSet trainDataSet = loadTrainData(config,index,featureMappers, trainIdTranslator, labelTranslator);
+        ClfDataSet trainDataSet = loadTrainData(config,index,features, trainIdTranslator, labelTranslator);
         System.out.println("in training set :");
         showDistribution(config,trainDataSet,labelTranslator);
 

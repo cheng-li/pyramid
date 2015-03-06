@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * Created by chengli on 11/1/14.
  */
+@Deprecated
 public class MLClfDataPointSetting implements Serializable{
     private static final long serialVersionUID = 1L;
     private String extId = "unKnown";

@@ -167,7 +167,7 @@ public class LKTreeBoost implements ProbabilityEstimator{
 
     //TODO FIX THIS
 //    public String showTreesClassK(int k){
-//        List<Feature> features = this.dataSet.getFeatures();
+//        List<Feature> features = this.dataSet.getFeatureList();
 //        StringBuilder sb = new StringBuilder();
 //        List<RegressionTree> regressors = this.regressors.get(k);
 //        int i=0;

@@ -8,19 +8,14 @@ import java.util.Arrays;
 public class DenseClfDataSet extends DenseDataSet implements ClfDataSet{
     int numClasses;
     private int[] labels;
-    private ClfDataSetSetting dataSetSetting;
-    private ClfDataPointSetting[] dataPointSettings;
+    private LabelTranslator labelTranslator;
+
 
     DenseClfDataSet(int numDataPoints, int numFeatures,
                            boolean missingValue, int numClasses) {
         super(numDataPoints, numFeatures, missingValue);
         this.labels = new int[numDataPoints];
         this.numClasses = numClasses;
-        this.dataSetSetting = new ClfDataSetSetting();
-        this.dataPointSettings = new ClfDataPointSetting[numDataPoints];
-        for (int i=0;i<numDataPoints;i++){
-            this.dataPointSettings[i] = new ClfDataPointSetting();
-        }
     }
 
     @Override
@@ -41,25 +36,6 @@ public class DenseClfDataSet extends DenseDataSet implements ClfDataSet{
         this.labels[dataPointIndex]=label;
     }
 
-    @Override
-    public ClfDataSetSetting getSetting() {
-        return this.dataSetSetting;
-    }
-
-    @Override
-    public ClfDataPointSetting getDataPointSetting(int dataPointIndex) {
-        return this.dataPointSettings[dataPointIndex];
-    }
-
-    @Override
-    public void putDataSetSetting(ClfDataSetSetting dataSetSetting) {
-        this.dataSetSetting = dataSetSetting;
-    }
-
-    @Override
-    public void putDataPointSetting(int dataPointIndex, ClfDataPointSetting dataPointSetting) {
-        this.dataPointSettings[dataPointIndex] = dataPointSetting;
-    }
 
     @Override
     public String toString() {
@@ -77,5 +53,15 @@ public class DenseClfDataSet extends DenseDataSet implements ClfDataSet{
         sb.append("type = ").append("dense classification").append("\n");
         sb.append("number of classes = ").append(this.numClasses);
         return sb.toString();
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    @Override
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 }

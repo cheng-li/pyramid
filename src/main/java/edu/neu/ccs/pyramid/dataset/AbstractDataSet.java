@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.dataset;
 
 import org.apache.mahout.math.Vector;
 
+import java.util.List;
+
 /**
  * Created by chengli on 8/7/14.
  */
@@ -10,17 +12,14 @@ abstract class AbstractDataSet implements DataSet{
     protected int numDataPoints;
     protected int numFeatures;
     protected boolean missingValue;
-    protected FeatureSetting[] featureSettings;
+    protected IdTranslator idTranslator;
+    protected List<Feature> features;
 
 
     AbstractDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         this.numDataPoints = numDataPoints;
         this.numFeatures = numFeatures;
         this.missingValue = missingValue;
-        this.featureSettings = new FeatureSetting[numFeatures];
-        for (int i=0;i<numFeatures;i++){
-            this.featureSettings[i] = new FeatureSetting();
-        }
     }
 
 
@@ -54,13 +53,13 @@ abstract class AbstractDataSet implements DataSet{
     }
 
     @Override
-    public FeatureSetting getFeatureSetting(int featureIndex) {
-        return this.featureSettings[featureIndex];
+    public IdTranslator getIdTranslator() {
+        return idTranslator;
     }
 
     @Override
-    public void putFeatureSetting(int featureIndex, FeatureSetting featureSetting) {
-        this.featureSettings[featureIndex] = featureSetting;
+    public List<Feature> getFeatureList() {
+        return features;
     }
 
     @Override
@@ -90,5 +89,15 @@ abstract class AbstractDataSet implements DataSet{
         sb.append("number of features = ").append(getNumFeatures()).append("\n");
         sb.append("has missing value = ").append(missingValue).append("\n");
         return sb.toString();
+    }
+
+    @Override
+    public void setIdTranslator(IdTranslator idTranslator) {
+        this.idTranslator = idTranslator;
+    }
+
+    @Override
+    public void setFeatureList(List<Feature> featureList) {
+        this.features = featureList;
     }
 }

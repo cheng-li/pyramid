@@ -4,6 +4,8 @@ package edu.neu.ccs.pyramid.dataset;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.List;
+
 /**
  * Created by chengli on 8/4/14.
  */
@@ -54,6 +56,7 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
     public boolean isDense() {
         return false;
     }
+
 
 
 

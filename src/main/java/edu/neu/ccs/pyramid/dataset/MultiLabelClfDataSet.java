@@ -16,9 +16,7 @@ public interface MultiLabelClfDataSet extends DataSet{
     }
 
     int getNumClasses();
-    MLClfDataSetSetting getSetting();
-    MLClfDataPointSetting getDataPointSetting(int dataPointIndex);
 
-    void putDataSetSetting(MLClfDataSetSetting dataSetSetting);
-    void putDataPointSetting(int dataPointIndex, MLClfDataPointSetting dataPointSetting);
+    LabelTranslator getLabelTranslator();
+    void setLabelTranslator(LabelTranslator labelTranslator);
 }

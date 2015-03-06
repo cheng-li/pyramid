@@ -5,6 +5,7 @@ import java.io.Serializable;
 /**
  * Created by chengli on 8/6/14.
  */
+@Deprecated
 public class FeatureSetting implements Serializable{
     private static final long serialVersionUID = 1L;
 
