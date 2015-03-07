@@ -1,10 +1,13 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
+import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
@@ -13,10 +16,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -52,7 +52,7 @@ public class Exp14 {
                 config.getString("input.trainData")).getAbsolutePath();
         MultiLabelClfDataSet dataSet;
 
-        if (config.getBoolean("featureMatrix.sparse")){
+        if (config.getBoolean("input.featureMatrix.sparse")){
             dataSet= TRECFormat.loadMultiLabelClfDataSet(new File(trainFile), DataSetType.ML_CLF_SPARSE,
                     true);
         } else {
@@ -68,7 +68,7 @@ public class Exp14 {
                 config.getString("input.testData")).getAbsolutePath();
         MultiLabelClfDataSet dataSet;
 
-        if (config.getBoolean("featureMatrix.sparse")){
+        if (config.getBoolean("input.featureMatrix.sparse")){
             dataSet= TRECFormat.loadMultiLabelClfDataSet(new File(trainFile), DataSetType.ML_CLF_SPARSE,
                     true);
         } else {
@@ -80,12 +80,12 @@ public class Exp14 {
     }
 
     static void train(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
+        String output = config.getString("output.folder");
         int numIterations = config.getInt("train.numIterations");
         int numLeaves = config.getInt("train.numLeaves");
         double learningRate = config.getDouble("train.learningRate");
         int minDataPerLeaf = config.getInt("train.minDataPerLeaf");
-        String modelName = config.getString("archive.model");
+        String modelName = config.getString("output.model");
         double featureSamplingRate = config.getDouble("train.featureSamplingRate");
         double dataSamplingRate = config.getDouble("train.dataSamplingRate");
 
@@ -160,10 +160,10 @@ public class Exp14 {
 
         IMLGradientBoosting boosting;
         if (config.getBoolean("train.warmStart")){
-            boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
+            boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         } else {
             boosting  = new IMLGradientBoosting(numClasses);
-            String predictionFashion = config.getString("prediction.fashion");
+            String predictionFashion = config.getString("train.prediction.fashion");
             if (predictionFashion.equalsIgnoreCase("crf")){
                 List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
                 boosting.setAssignments(assignments);
@@ -190,7 +190,7 @@ public class Exp14 {
             }
 
         }
-        File serializedModel =  new File(archive,modelName);
+        File serializedModel =  new File(output,modelName);
 
 
         boosting.serialize(serializedModel);
@@ -199,10 +199,10 @@ public class Exp14 {
     }
 
     static void verify(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
+        String output = config.getString("output.folder");
+        String modelName = config.getString("output.model");
 
-        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         MultiLabelClfDataSet dataSet = loadTrainData(config);
 
 
@@ -211,28 +211,6 @@ public class Exp14 {
 //        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
 //        System.out.println("macro-averaged measure on training set:");
 //        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
-        if (config.getBoolean("verify.showPredictions")){
-            List<MultiLabel> prediction = boosting.predict(dataSet);
-            for (int i=0;i<dataSet.getNumDataPoints();i++){
-                System.out.println(""+i);
-                System.out.println("true labels:");
-                System.out.println(dataSet.getMultiLabels()[i]);
-                StringBuilder trueExtLabels = new StringBuilder();
-                for (int matched: dataSet.getMultiLabels()[i].getMatchedLabels()){
-                    trueExtLabels.append(labelTranslator.toExtLabel(matched));
-                    trueExtLabels.append(", ");
-                }
-                System.out.println(trueExtLabels);
-                System.out.println("predictions:");
-                System.out.println(prediction.get(i));
-                StringBuilder predictedExtLabels = new StringBuilder();
-                for (int matched: prediction.get(i).getMatchedLabels()){
-                    predictedExtLabels.append(labelTranslator.toExtLabel(matched));
-                    predictedExtLabels.append(", ");
-                }
-                System.out.println(predictedExtLabels);
-            }
-        }
         if (config.getBoolean("verify.topFeatures")){
 
             for (int k=0;k<dataSet.getNumClasses();k++) {
@@ -252,108 +230,108 @@ public class Exp14 {
             }
         }
 
-        if (config.getBoolean("verify.analyzeMistakes")){
-            System.out.println("analyzing mistakes");
-            analyzeTrainMistakes(config, boosting, dataSet);
+        if (config.getBoolean("verify.analyze")){
+            int limit = config.getInt("verify.analyze.rule.limit");
+
+
+            List<MultiLabelPredictionAnalysis> analysisList = IntStream.range(0,dataSet.getNumDataPoints()).parallel().filter(
+                    i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = boosting.predict(dataSet.getRow(i));
+                        boolean accept = false;
+                        if (config.getBoolean("verify.analyze.doc.withRightPrediction")) {
+                            accept = accept || multiLabel.equals(prediction);
+                        }
+
+                        if (config.getBoolean("verify.analyze.doc.withWrongPrediction")) {
+                            accept = accept || !multiLabel.equals(prediction);
+                        }
+                        return accept;
+                    }
+            ).mapToObj(i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = boosting.predict(dataSet.getRow(i));
+                        List<Integer> classes = new ArrayList<Integer>();
+                        for (int k = 0; k < dataSet.getNumClasses(); k++) {
+                            boolean condition1 = multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("verify.analyze.class.truePositive");
+                            boolean condition2 = !multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("verify.analyze.class.trueNegative");
+                            boolean condition3 = !multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("verify.analyze.class.falsePositive");
+                            boolean condition4 = multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("verify.analyze.class.falseNegative");
+                            boolean accept = condition1 || condition2 || condition3 || condition4;
+                            if (accept) {
+                                classes.add(k);
+                            }
+                        }
+                        return IMLGBInspector.analyzePrediction(boosting, dataSet, i, classes, limit);
+                    }
+            )
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("verify.analyze.file");
+            mapper.writeValue(new File(config.getString("output.folder"),file), analysisList);
+
         }
 
     }
 
     static void test(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
+        String output = config.getString("output.folder");
+        String modelName = config.getString("output.model");
 
-        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(archive,modelName));
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         MultiLabelClfDataSet dataSet = loadTestData(config);
         System.out.println("accuracy on test set = "+Accuracy.accuracy(boosting,dataSet));
         System.out.println("overlap on test set = "+ Overlap.overlap(boosting,dataSet));
 //        System.out.println("macro-averaged measure on test set:");
 //        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
-        if (config.getBoolean("test.showPredictions")){
-            List<MultiLabel> prediction = boosting.predict(dataSet);
-            for (int i=0;i<dataSet.getNumDataPoints();i++){
-                System.out.println(""+i);
-                System.out.println("true labels:");
-                System.out.println(dataSet.getMultiLabels()[i]);
-                System.out.println("predictions:");
-                System.out.println(prediction.get(i));
-            }
-        }
+        if (config.getBoolean("test.analyze")){
+            int limit = config.getInt("test.analyze.rule.limit");
 
-        if (config.getBoolean("test.analyzeMistakes")){
-            System.out.println("analyzing mistakes");
-            analyzeTestMistakes(config, boosting, dataSet);
+
+            List<MultiLabelPredictionAnalysis> analysisList = IntStream.range(0,dataSet.getNumDataPoints()).parallel().filter(
+                    i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = boosting.predict(dataSet.getRow(i));
+                        boolean accept = false;
+                        if (config.getBoolean("test.analyze.doc.withRightPrediction")) {
+                            accept = accept || multiLabel.equals(prediction);
+                        }
+
+                        if (config.getBoolean("test.analyze.doc.withWrongPrediction")) {
+                            accept = accept || !multiLabel.equals(prediction);
+                        }
+                        return accept;
+                    }
+            ).mapToObj(i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = boosting.predict(dataSet.getRow(i));
+                        List<Integer> classes = new ArrayList<Integer>();
+                        for (int k = 0; k < dataSet.getNumClasses(); k++) {
+                            boolean condition1 = multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("test.analyze.class.truePositive");
+                            boolean condition2 = !multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("test.analyze.class.trueNegative");
+                            boolean condition3 = !multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("test.analyze.class.falsePositive");
+                            boolean condition4 = multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("test.analyze.class.falseNegative");
+                            boolean condition5 = k<boosting.getNumClasses();
+                            boolean accept = (condition1 || condition2 || condition3 || condition4) && condition5;
+                            if (accept) {
+                                classes.add(k);
+                            }
+                        }
+                        return IMLGBInspector.analyzePrediction(boosting, dataSet, i, classes, limit);
+                    }
+            )
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("test.analyze.file");
+            mapper.writeValue(new File(config.getString("output.folder"),file), analysisList);
+
         }
 
     }
 
-    static void analyzeTrainMistakes(Config config, IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet) throws Exception{
-        int numClasses = dataSet.getNumClasses();
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
-
-        List<MultiLabel> predictions = boosting.predict(dataSet);
-        MultiLabel[] trueLabels = dataSet.getMultiLabels();
-
-        for (int k=0;k<numClasses;k++){
-            PerClassMeasures perClassMeasures = new PerClassMeasures(trueLabels,predictions,k,labelTranslator.toExtLabel(k));
-            System.out.println("train: " + perClassMeasures);
-        }
-
-        int limit = config.getInt("verify.analyzeMistakes.limit");
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-
-            MultiLabel prediction = predictions.get(i);
-            MultiLabel trueLabel = trueLabels[i];
-            if (!prediction.equals(trueLabel)){
-                System.out.println("=======================================");
-                Vector vector = dataSet.getRow(i);
-                System.out.println("data point "+i+" index id = "+dataSet.getDataPointSetting(i).getExtId());
-
-                System.out.println(IMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
 
 
-            }
-        }
-    }
 
-    static void analyzeTestMistakes(Config config, IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet) throws Exception{
-        int numClassesInTrain = getNumClassesInTrain(config);
-        int numClassesInTest = dataSet.getNumClasses();
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
-        if (numClassesInTest>numClassesInTrain){
-            System.out.println("new labels not seen in the training set:");
-            for (int k=numClassesInTrain;k<numClassesInTest;k++){
-                System.out.println(""+k+"("+labelTranslator.toExtLabel(k)+")");
-            }
-        }
-        List<MultiLabel> predictions = boosting.predict(dataSet);
-        MultiLabel[] trueLabels = dataSet.getMultiLabels();
-
-        for (int k=0;k<numClassesInTest;k++){
-            PerClassMeasures perClassMeasures = new PerClassMeasures(trueLabels,predictions,k,labelTranslator.toExtLabel(k));
-            System.out.println("test: " + perClassMeasures);
-        }
-
-        int limit = config.getInt("test.analyzeMistakes.limit");
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-
-            MultiLabel prediction = predictions.get(i);
-            MultiLabel trueLabel = trueLabels[i];
-            if (!prediction.equals(trueLabel)){
-                System.out.println("=======================================");
-                Vector vector = dataSet.getRow(i);
-                System.out.println("data point "+i+" index id = "+dataSet.getDataPointSetting(i).getExtId());
-                if (trueLabel.outOfBound(numClassesInTrain)){
-                    System.out.println("true labels = "+trueLabel.toStringWithExtLabels(labelTranslator));
-                    System.out.println("predicted labels = "+prediction.toStringWithExtLabels(labelTranslator));
-                    System.out.println("it contains unseen labels");
-                } else{
-                    System.out.println(IMLGBInspector.analyzeMistake(boosting,vector,trueLabel,prediction,labelTranslator,limit));
-                }
-
-            }
-        }
-    }
 
     static int getNumClassesInTrain(Config config) throws Exception{
         MultiLabelClfDataSet dataSet = loadTrainData(config);

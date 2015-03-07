@@ -3,8 +3,10 @@ package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.regression.ConstantRegressor;
-import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
+import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGradientBoosting;
+import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -119,49 +121,26 @@ public class IMLGBInspector {
         return map;
     }
 
-    public static String analyzeMistake(IMLGradientBoosting boosting, Vector vector,
-                                        MultiLabel trueLabel, MultiLabel prediction,
-                                        LabelTranslator labelTranslator, int limit){
-        StringBuilder sb = new StringBuilder();
-        List<Integer> difference = MultiLabel.symmetricDifference(trueLabel,prediction).stream().sorted().collect(Collectors.toList());
 
-        double[] classScores = boosting.calClassScores(vector);
-        sb.append("score for the true labels ").append(trueLabel)
-                .append("(").append(trueLabel.toStringWithExtLabels(labelTranslator)).append(") = ");
-        sb.append(boosting.calAssignmentScore(trueLabel,classScores)).append("\n");
 
-        sb.append("score for the predicted labels ").append(prediction)
-                .append("(").append(prediction.toStringWithExtLabels(labelTranslator)).append(") = ");;
-        sb.append(boosting.calAssignmentScore(prediction,classScores)).append("\n");
 
-        for (int k: difference){
-            sb.append("score for class ").append(k).append("(").append(labelTranslator.toExtLabel(k)).append(")")
-                    .append(" =").append(classScores[k]).append("\n");
-        }
 
-        for (int k: difference){
-            sb.append("decision process for class ").append(k).append("(").append(labelTranslator.toExtLabel(k)).append("):\n");
-            sb.append(decisionProcess(boosting,vector,k,limit));
-            sb.append("--------------------------------------------------").append("\n");
-        }
 
-        return sb.toString();
-    }
-
-    public static String decisionProcess(IMLGradientBoosting boosting, Vector vector, int classIndex, int limit){
-        StringBuilder sb = new StringBuilder();
-        List<Regressor> regressors = boosting.getRegressors(classIndex).stream().collect(Collectors.toList());
+    public static ClassScoreCalculation decisionProcess(IMLGradientBoosting boosting, LabelTranslator labelTranslator,
+                                                        Vector vector, int classIndex, int limit){
+        ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
+                boosting.predictClassScore(vector,classIndex));
+        List<Regressor> regressors = boosting.getRegressors(classIndex);
         List<TreeRule> treeRules = new ArrayList<>();
-        for (int i=0;i<regressors.size();i++){
-            Regressor regressor = regressors.get(i);
-            if (regressor instanceof ConstantRegressor){
-                sb.append("prior score for the class = ");
-                sb.append(((ConstantRegressor) regressor).getScore()).append("\n");
+        for (Regressor regressor : regressors) {
+            if (regressor instanceof ConstantRegressor) {
+                Rule rule = new ConstantRule(((ConstantRegressor) regressor).getScore());
+                classScoreCalculation.addRule(rule);
             }
 
-            if (regressor instanceof RegressionTree){
-                RegressionTree tree = (RegressionTree)regressor;
-                TreeRule treeRule = new TreeRule(tree,vector);
+            if (regressor instanceof RegressionTree) {
+                RegressionTree tree = (RegressionTree) regressor;
+                TreeRule treeRule = new TreeRule(tree, vector);
                 treeRules.add(treeRule);
             }
         }
@@ -169,10 +148,63 @@ public class IMLGBInspector {
         List<TreeRule> merged = TreeRule.merge(treeRules).stream().sorted(comparator.reversed())
                 .limit(limit).collect(Collectors.toList());
         for (TreeRule treeRule : merged){
-            sb.append(treeRule.toString());
-            sb.append("\n");
+            classScoreCalculation.addRule(treeRule);
         }
 
-        return sb.toString();
+        return classScoreCalculation;
+    }
+
+
+    //todo  speed up
+    public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
+                                                                 int dataPointIndex, int limit){
+        MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        predictionAnalysis.setInternalId(dataPointIndex);
+        predictionAnalysis.setId(dataSet.getDataPointSetting(dataPointIndex).getExtId());
+        predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
+        List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
+                .map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setLabels(labels);
+
+        List<Integer> internalPrediction = boosting.predict(dataSet.getRow(dataPointIndex)).getMatchedLabelsOrdered();
+        predictionAnalysis.setInternalPrediction(internalPrediction);
+        List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setPrediction(prediction);
+
+        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
+                    dataSet.getRow(dataPointIndex),k,limit);
+            classScoreCalculations.add(classScoreCalculation);
+        }
+        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
+        return predictionAnalysis;
+    }
+
+    public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
+                                                                 int dataPointIndex, List<Integer> classes, int limit){
+        MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        predictionAnalysis.setInternalId(dataPointIndex);
+        predictionAnalysis.setId(dataSet.getDataPointSetting(dataPointIndex).getExtId());
+        predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
+        List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
+                .map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setLabels(labels);
+
+        List<Integer> internalPrediction = boosting.predict(dataSet.getRow(dataPointIndex)).getMatchedLabelsOrdered();
+        predictionAnalysis.setInternalPrediction(internalPrediction);
+        List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setPrediction(prediction);
+
+        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
+        for (int k: classes){
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
+                    dataSet.getRow(dataPointIndex),k,limit);
+            classScoreCalculations.add(classScoreCalculation);
+        }
+        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
+        return predictionAnalysis;
     }
 }

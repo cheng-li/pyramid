@@ -202,4 +202,30 @@ public class HMLGBInspector {
         predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
         return predictionAnalysis;
     }
+
+    public static MultiLabelPredictionAnalysis analyzePrediction(HMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
+                                                                 int dataPointIndex, List<Integer> classes, int limit){
+        MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
+        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        predictionAnalysis.setInternalId(dataPointIndex);
+        predictionAnalysis.setId(dataSet.getDataPointSetting(dataPointIndex).getExtId());
+        predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
+        List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
+                .map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setLabels(labels);
+
+        List<Integer> internalPrediction = boosting.predict(dataSet.getRow(dataPointIndex)).getMatchedLabelsOrdered();
+        predictionAnalysis.setInternalPrediction(internalPrediction);
+        List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setPrediction(prediction);
+
+        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
+        for (int k: classes){
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
+                    dataSet.getRow(dataPointIndex),k,limit);
+            classScoreCalculations.add(classScoreCalculation);
+        }
+        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
+        return predictionAnalysis;
+    }
 }

@@ -1,16 +1,12 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.multilabel_classification.MLPriorProbClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
-import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -80,7 +76,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     private MultiLabel predictWithoutConstraints(Vector vector){
         MultiLabel prediction = new MultiLabel();
         for (int k=0;k<numClasses;k++){
-            double score = this.calClassScore(vector,k);
+            double score = this.predictClassScore(vector, k);
             if (score > 0){
                 prediction.addLabel(k);
             }
@@ -121,7 +117,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
      * @param k class index
      * @return
      */
-    public double calClassScore(Vector vector, int k){
+    public double predictClassScore(Vector vector, int k){
         List<Regressor> regressorsClassK = this.regressors.get(k);
         double score = 0;
         for (Regressor regressor: regressorsClassK){
@@ -134,7 +130,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){
-            scores[k] = this.calClassScore(vector,k);
+            scores[k] = this.predictClassScore(vector, k);
         }
         return scores;
     }

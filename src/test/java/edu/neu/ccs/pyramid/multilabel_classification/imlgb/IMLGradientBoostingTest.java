@@ -60,7 +60,7 @@ public class IMLGradientBoostingTest {
             MultiLabel trueLabel = dataSet.getMultiLabels()[i];
             MultiLabel prediction = boosting.predict(dataSet.getRow(i));
             if (!prediction.equals(trueLabel)){
-                System.out.println(IMLGBInspector.analyzeMistake(boosting,dataSet.getRow(i),trueLabel,prediction,singleLabeldataSet.getSetting().getLabelTranslator(),10));
+//                System.out.println(IMLGBInspector.analyzeMistake(boosting,dataSet.getRow(i),trueLabel,prediction,singleLabeldataSet.getSetting().getLabelTranslator(),10));
             }
         }
     }
