@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import edu.neu.ccs.pyramid.dataset.Feature;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import org.apache.mahout.math.Vector;
 
@@ -13,7 +14,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public class RegressionTree implements Regressor, Serializable {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
 
     /**
      * including intermediate nodes
@@ -26,6 +27,8 @@ public class RegressionTree implements Regressor, Serializable {
      */
 
     protected List<Node> leaves;
+
+    private List<Feature> featureList;
 
     protected RegressionTree() {
         this.numNodes = 0;
@@ -193,7 +196,7 @@ public class RegressionTree implements Regressor, Serializable {
 
 
 
-//    public DecisionProcess getDecisionProcess(float [] vector,List<Feature> features){
+//    public DecisionProcess getDecisionProcess(float [] vector,List<Feature> featureList){
 //        StringBuilder sb = new StringBuilder();
 //        Node nodeToCheck = this.root;
 //        while (! this.leaves.contains(nodeToCheck)){
@@ -201,11 +204,11 @@ public class RegressionTree implements Regressor, Serializable {
 //            float threshold = nodeToCheck.getThreshold();
 //            if (vector[featureIndex] <= threshold){
 //                nodeToCheck = nodeToCheck.getLeftChild();
-//                sb.append(features.get(featureIndex).getFeatureName());
+//                sb.append(featureList.get(featureIndex).getFeatureName());
 //                sb.append("(").append(vector[featureIndex]).append("<=").append(threshold).append(")  ");
 //            }else{
 //                nodeToCheck = nodeToCheck.getRightChild();
-//                sb.append(features.get(featureIndex).getFeatureName());
+//                sb.append(featureList.get(featureIndex).getFeatureName());
 //                sb.append("(").append(vector[featureIndex]).append(">").append(threshold).append(")  ");
 //            }
 //        }
@@ -246,12 +249,10 @@ public class RegressionTree implements Regressor, Serializable {
                 if (!node1.isLeaf()){
                     Node node2 = stack.peek();
                     if (node2 == node1.getLeftChild()){
-                        sb.append(node1.getFeatureIndex()).append("(")
-                                .append(node1.getFeatureName()).append(")")
+                        sb.append(node1.getFeatureIndex())
                                 .append("<=").append(node1.getThreshold()).append("   ");
                     } else {
-                        sb.append(node1.getFeatureIndex()).append("(")
-                                .append(node1.getFeatureName()).append(")").
+                        sb.append(node1.getFeatureIndex()).
                                 append(">").append(node1.getThreshold()).append("   ");
                     }
                 } else{
@@ -262,7 +263,7 @@ public class RegressionTree implements Regressor, Serializable {
         return sb.toString();
     }
 
-//    public String display(List<Feature> features){
+//    public String display(List<Feature> featureList){
 //        StringBuilder sb = new StringBuilder();
 //        for (Node node: this.leaves){
 //            Stack<Node> stack = new Stack<Node>();
@@ -278,9 +279,9 @@ public class RegressionTree implements Regressor, Serializable {
 //                if (!node1.isLeaf()){
 //                    Node node2 = stack.peek();
 //                    if (node2 == node1.getLeftChild()){
-//                        sb.append("feature "+node1.getFeatureIndex()+"("+features.get(node1.getFeatureIndex()).getFeatureName()+")"+"<="+node1.getThreshold()+"   ");
+//                        sb.append("feature "+node1.getFeatureIndex()+"("+featureList.get(node1.getFeatureIndex()).getFeatureName()+")"+"<="+node1.getThreshold()+"   ");
 //                    } else {
-//                        sb.append("feature "+node1.getFeatureIndex()+"("+features.get(node1.getFeatureIndex()).getFeatureName()+")"+">"+node1.getThreshold()+"   ");
+//                        sb.append("feature "+node1.getFeatureIndex()+"("+featureList.get(node1.getFeatureIndex()).getFeatureName()+")"+">"+node1.getThreshold()+"   ");
 //                    }
 //                } else{
 //                    sb.append(": "+node1.getValue()+"\n");
@@ -316,4 +317,11 @@ public class RegressionTree implements Regressor, Serializable {
         return list;
     }
 
+    public List<Feature> getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(List<Feature> featureList) {
+        this.featureList = featureList;
+    }
 }

@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.dataset;
 
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,13 +14,19 @@ abstract class AbstractDataSet implements DataSet{
     protected int numFeatures;
     protected boolean missingValue;
     protected IdTranslator idTranslator;
-    protected List<Feature> features;
+    protected FeatureList featureList;
 
 
     AbstractDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         this.numDataPoints = numDataPoints;
         this.numFeatures = numFeatures;
         this.missingValue = missingValue;
+        this.idTranslator = IdTranslator.newDefaultIdTranslator(numDataPoints);
+        this.featureList = new FeatureList();
+        for (int j=0;j<numFeatures;j++){
+            Feature feature = new Feature();
+            featureList.add(feature);
+        }
     }
 
 
@@ -58,15 +65,15 @@ abstract class AbstractDataSet implements DataSet{
     }
 
     @Override
-    public List<Feature> getFeatureList() {
-        return features;
+    public FeatureList getFeatureList() {
+        return featureList;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("number of data points = ").append(numDataPoints).append("\n");
-        sb.append("number of features = ").append(numFeatures).append("\n");
+        sb.append("number of featureList = ").append(numFeatures).append("\n");
         sb.append("has missing value = ").append(missingValue).append("\n");
         sb.append("row matrix:").append("\n");
         for (int i=0;i<numDataPoints;i++){
@@ -86,7 +93,7 @@ abstract class AbstractDataSet implements DataSet{
         StringBuilder sb = new StringBuilder();
         sb.append("data set meta information:").append("\n");
         sb.append("number of data points = ").append(getNumDataPoints()).append("\n");
-        sb.append("number of features = ").append(getNumFeatures()).append("\n");
+        sb.append("number of featureList = ").append(getNumFeatures()).append("\n");
         sb.append("has missing value = ").append(missingValue).append("\n");
         return sb.toString();
     }
@@ -97,7 +104,10 @@ abstract class AbstractDataSet implements DataSet{
     }
 
     @Override
-    public void setFeatureList(List<Feature> featureList) {
-        this.features = featureList;
+    public void setFeatureList(FeatureList featureList) {
+        if (featureList.size()!=this.numFeatures){
+            throw new IllegalArgumentException("featureList.size()!=this.numFeatures");
+        }
+        this.featureList = featureList;
     }
 }

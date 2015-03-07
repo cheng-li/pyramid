@@ -31,7 +31,7 @@
 ///**
 // * obsolete
 // * feature extraction by logistic regression, with train/valid/test split
-// * start with specified features
+// * start with specified featureList
 // * extract both unigrams and ngrams
 // * Created by chengli on 12/29/14.
 // */
@@ -276,7 +276,7 @@
 //            if (!shouldExtractFeatures){
 //                if (!condition1){
 //                    System.out.println("we have reached the max number of columns " +
-//                            "and will not extract new features");
+//                            "and will not extract new featureList");
 //                }
 //            }
 //
@@ -707,7 +707,7 @@
 //        String[] line = FileUtils.readLines(initialFeatureFile).get(0).split(" ");
 //        List<String> unigrams = Arrays.stream(line).map(Integer::parseInt)
 //                .map(i-> initialDataSet.getFeatureSetting(i).getFeatureName()).collect(Collectors.toList());
-//        System.out.println("initial features:");
+//        System.out.println("initial featureList:");
 //        System.out.println(unigrams);
 //        for (String unigram: unigrams){
 //            int featureIndex = featureMappers.nextAvailable();

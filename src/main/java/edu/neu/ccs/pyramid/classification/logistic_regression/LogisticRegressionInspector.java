@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 12/7/14.
  */
 public class LogisticRegressionInspector {
-    //todo if features are on different scales, weights are not comparable
+    //todo if featureList are on different scales, weights are not comparable
     public static List<FeatureUtility> topFeatures(LogisticRegression logisticRegression,
                                                          int k){
         String[] featureNames = logisticRegression.getFeatureNames();

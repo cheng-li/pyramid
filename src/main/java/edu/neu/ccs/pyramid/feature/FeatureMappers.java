@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * features are arranged contiguously, no skip is allowed
+ * featureList are arranged contiguously, no skip is allowed
  * not thread safe
  * Created by chengli on 9/7/14.
  */

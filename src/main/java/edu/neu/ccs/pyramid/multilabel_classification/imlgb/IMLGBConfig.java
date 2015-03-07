@@ -116,7 +116,7 @@ public class IMLGBConfig {
             return this;
         }
 
-        //todo add setter for active features
+        //todo add setter for active featureList
 
         public IMLGBConfig build() {
             return new IMLGBConfig(this);

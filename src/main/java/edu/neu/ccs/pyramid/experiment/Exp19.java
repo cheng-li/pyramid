@@ -230,10 +230,10 @@ public class Exp19 {
         File serializedModel =  new File(archive,modelName);
         LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(serializedModel);
 
-        System.out.println("==========top features==========");
+        System.out.println("==========top featureList==========");
         for (int k=0;k<numClasses;k++){
             List<String> features = LKTBInspector.topFeatureNames(lkTreeBoost, k);
-            System.out.println("top features for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
+            System.out.println("top featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
             System.out.println(features);
         }
 

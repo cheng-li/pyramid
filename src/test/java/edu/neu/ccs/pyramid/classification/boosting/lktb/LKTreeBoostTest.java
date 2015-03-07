@@ -121,7 +121,7 @@ public class LKTreeBoostTest {
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
         System.out.println("confusion matrix:");
         System.out.println(confusionMatrix.printWithExtLabels());
-        System.out.println("top features for class 0");
+        System.out.println("top featureList for class 0");
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
@@ -383,7 +383,7 @@ public class LKTreeBoostTest {
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
         System.out.println("confusion matrix:");
         System.out.println(confusionMatrix.printWithExtLabels());
-        System.out.println("top features for class 0");
+        System.out.println("top featureList for class 0");
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
         System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
@@ -622,7 +622,7 @@ public class LKTreeBoostTest {
         System.out.println(confusionMatrix.printWithIntLabels());
 
         List<Integer> topFeatureIndex = LKTBInspector.topFeatureIndices(lkTreeBoost,0);
-        System.out.println("Top non-influence features index:"+topFeatureIndex);
+        System.out.println("Top non-influence featureList index:"+topFeatureIndex);
 
 //        int[] predicts = lkTreeBoost.predict(dataSet);
 //        int[] labels = dataSet.getLabels();
@@ -710,9 +710,9 @@ public class LKTreeBoostTest {
         System.out.println(confusionMatrix.printWithIntLabels());
 
         List<Integer> topFeatureIndex = LKTBInspector.topFeatureIndices(lkTreeBoost,0);
-        System.out.println("Top non-influence features index:"+topFeatureIndex);
+        System.out.println("Top non-influence featureList index:"+topFeatureIndex);
 //        List<String> topFeatureNames = LKTBInspector.topFeatureNames(lkTreeBoost,0);
-//        System.out.println("Top influence features name:"+topFeatureNames);
+//        System.out.println("Top influence featureList name:"+topFeatureNames);
 
         int[] predicts = lkTreeBoost.predict(dataSet);
         int[] labels = dataSet.getLabels();

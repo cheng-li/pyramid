@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * dump ngram features
+ * dump ngram featureList
  * split to train/valid/test
  * Created by chengli on 12/19/14.
  *
@@ -126,7 +126,7 @@ public class Exp35 {
      *
      * @param config
      * @param index
-     * @param ids pull features from train ids
+     * @param ids pull featureList from train ids
      * @throws Exception
      */
     static void addInitialFeatures(Config config, SingleLabelIndex index, List<Feature> features,
@@ -138,7 +138,7 @@ public class Exp35 {
         List<String> featureFields = allFields.stream().
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
-        System.out.println("all possible initial features:"+featureFields);
+        System.out.println("all possible initial featureList:"+featureFields);
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);

@@ -83,10 +83,10 @@ public class Exp70 {
             LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
                     System.out.println("regularization = "+best.regularization);
             System.out.println("accuracy = "+best.accuracy);
-            System.out.println("number of used features in each class = "+
+            System.out.println("number of used featureList in each class = "+
                     Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
-            System.out.println("number of used features in all classes = "+
+            System.out.println("number of used featureList in all classes = "+
                     LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
         }
 
@@ -101,10 +101,10 @@ public class Exp70 {
         LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
         System.out.println("regularization = "+best.regularization);
         System.out.println("accuracy = "+best.accuracy);
-        System.out.println("number of used features in each class = "+
+        System.out.println("number of used featureList in each class = "+
                 Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
-        System.out.println("number of used features in all classes = "+
+        System.out.println("number of used featureList in all classes = "+
                 LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
 
     }
@@ -147,7 +147,7 @@ public class Exp70 {
                 stopWatch.start();
                 trainer.train();
                 System.out.println("time spent = " + stopWatch);
-                System.out.println("number of used features in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
+                System.out.println("number of used featureList in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
                 File outputFolder = new File(new File(config.getString("output.folder"),""+l1ratio),""+regularization);
                 outputFolder.mkdirs();

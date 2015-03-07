@@ -26,7 +26,7 @@ public class RegTreeTrainerTest {
     static void test2() throws Exception {
         int numLeaves = 70;
 
-        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/featureList.txt",
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE,false);
 
         System.out.println(dataSet.getNumDataPoints());
@@ -58,7 +58,7 @@ public class RegTreeTrainerTest {
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
 //            System.out.println(RegTreeInspector.getMatchedLeaf(regressionTree,dataSet.getRow(i)));
 //        }
-//        System.out.println(RegTreeInspector.features(regressionTree));
+//        System.out.println(RegTreeInspector.featureList(regressionTree));
 //        System.out.println(regressionTree);
 //        System.out.println(regressionTree.getRootReduction()    );
 
@@ -70,7 +70,7 @@ public class RegTreeTrainerTest {
     static void test3() throws Exception {
         int numLeaves = 4;
 
-        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/featureList.txt",
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE,false);
         System.out.println(dataSet.isDense());
 
@@ -117,7 +117,7 @@ public class RegTreeTrainerTest {
     static void test4() throws Exception {
         int numLeaves = 4;
 
-        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/featureList.txt",
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_SPARSE,false);
         System.out.println(dataSet.isDense());
 

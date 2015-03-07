@@ -286,7 +286,7 @@
 //            if (!shouldExtractFeatures){
 //                if (!condition1){
 //                    System.out.println("we have reached the max number of columns " +
-//                            "and will not extract new features");
+//                            "and will not extract new featureList");
 //                }
 //            }
 //

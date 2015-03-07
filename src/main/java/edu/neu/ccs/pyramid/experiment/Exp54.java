@@ -39,7 +39,7 @@ public class Exp54 {
         if (((int)sum)!=dataSet.getNumFeatures()){
             throw new RuntimeException("sum)!=dataSet.getNumFeatures()");
         }
-        System.out.println("total number of features = "+dataSet.getNumFeatures());
+        System.out.println("total number of featureList = "+dataSet.getNumFeatures());
         System.out.println("unigram, bigram, trigram, ngram(n>3) counts:");
         System.out.println(counts[0]+", "+counts[1]+", "+counts[2]+", "+counts[3]);
         System.out.println("unigram, bigram, trigram, ngram(n>3) ratios:");

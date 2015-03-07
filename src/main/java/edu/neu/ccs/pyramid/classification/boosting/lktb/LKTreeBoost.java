@@ -167,13 +167,13 @@ public class LKTreeBoost implements ProbabilityEstimator{
 
     //TODO FIX THIS
 //    public String showTreesClassK(int k){
-//        List<Feature> features = this.dataSet.getFeatureList();
+//        List<Feature> featureList = this.dataSet.getFeatureList();
 //        StringBuilder sb = new StringBuilder();
 //        List<RegressionTree> regressors = this.regressors.get(k);
 //        int i=0;
 //        for (RegressionTree regressionTree: regressors){
 //            sb.append("tree "+i+":\n");
-//            sb.append(regressionTree.display(features));
+//            sb.append(regressionTree.display(featureList));
 //            i += 1;
 //        }
 //
@@ -183,13 +183,13 @@ public class LKTreeBoost implements ProbabilityEstimator{
 //    /**
 //     *
 //     * @param k class index
-//     * @param features
+//     * @param featureList
 //     * @return
 //     */
-//    public Set<String> getSkipNgramNames(int k,List<Feature> features){
+//    public Set<String> getSkipNgramNames(int k,List<Feature> featureList){
 //        Set<String> set = new HashSet<String>();
 //        for (RegressionTree regressionTree:this.regressors.get(k)){
-//            Set<String> names = regressionTree.getSkipNgramNames(features);
+//            Set<String> names = regressionTree.getSkipNgramNames(featureList);
 //            set.addAll(names);
 //        }
 //        return set;
@@ -199,11 +199,11 @@ public class LKTreeBoost implements ProbabilityEstimator{
      * only for desicion stump
      * threshold for N
      */
-//    public List<String> getTopNgrams(int k,int threshold, List<Feature> features){
+//    public List<String> getTopNgrams(int k,int threshold, List<Feature> featureList){
 //        Map<String,Double> map = new HashMap<String, Double>();
 //        for (RegressionTree regressionTree:this.regressors.get(k)){
 //            if (regressionTree.getNumLeaves()>=2){
-//                String featureName = regressionTree.getRootFeatureName(features);
+//                String featureName = regressionTree.getRootFeatureName(featureList);
 //                Ngram ngram = new Ngram(featureName);
 //                if (ngram.getNumTerms()>=threshold){
 //                    double score = regressionTree.getRootRightOutput();
@@ -242,12 +242,12 @@ public class LKTreeBoost implements ProbabilityEstimator{
         }
     }
 
-//    public String getDecisionProcess(float [] vector,List<Feature> features,
+//    public String getDecisionProcess(float [] vector,List<Feature> featureList,
 //                                     int k, int top){
 //        List<DecisionProcess> decisions = new ArrayList<DecisionProcess>();
 //        for (int i=0;i<this.getRegressors(k).size();i++){
 //            RegressionTree regressionTree = this.getRegressors(k).get(i);
-//            DecisionProcess decisionProcess = regressionTree.getDecisionProcess(vector,features);
+//            DecisionProcess decisionProcess = regressionTree.getDecisionProcess(vector,featureList);
 //            decisionProcess.setTreeIndex(i);
 //            decisions.add(decisionProcess);
 //        }
@@ -273,8 +273,8 @@ public class LKTreeBoost implements ProbabilityEstimator{
 //     */
 //    public String getDecisionProcess2(float [] vector,List<String> featureNames,
 //                                     int k, int top){
-//        List<Feature> features = featureNames.stream().map(Feature::new).collect(Collectors.toList());
-//        return getDecisionProcess(vector,features,k,top);
+//        List<Feature> featureList = featureNames.stream().map(Feature::new).collect(Collectors.toList());
+//        return getDecisionProcess(vector,featureList,k,top);
 //    }
 
 

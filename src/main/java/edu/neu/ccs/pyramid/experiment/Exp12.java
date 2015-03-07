@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 
 /**
  * for multi label dataset,
- * dump feature matrix with initial features and ngram features
+ * dump feature matrix with initial featureList and ngram featureList
  * follow exp11
  * Created by chengli on 10/11/14.
  */
@@ -138,7 +138,7 @@ public class Exp12 {
         List<String> featureFields = allFields.stream().
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
-        System.out.println("all possible initial features:"+featureFields);
+        System.out.println("all possible initial featureList:"+featureFields);
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);

@@ -25,7 +25,7 @@
 //
 ///** obsolete
 // *  single label feature extraction using elasticsearch,
-// *  can start with initial features in ESindex
+// *  can start with initial featureList in ESindex
 // * can use default train/test split or random split
 // * follow golden_features, exp57
 // * Created by chengli on 9/7/14.
@@ -364,7 +364,7 @@
 //            if (!shouldExtractFeatures){
 //                if (!condition1){
 //                    System.out.println("we have reached the max number of columns " +
-//                            "and will not extract new features");
+//                            "and will not extract new featureList");
 //                }
 //
 //                if (!condition2){
@@ -777,7 +777,7 @@
 //     * @param config
 //     * @param index
 //     * @param featureMappers to be updated
-//     * @param ids pull features from train ids
+//     * @param ids pull featureList from train ids
 //     * @throws Exception
 //     */
 //    static void addInitialFeatures(Config config, SingleLabelIndex index,
@@ -790,7 +790,7 @@
 //        List<String> featureFields = allFields.stream().
 //                filter(field -> matchPrefixes(field,prefixes)).
 //                collect(Collectors.toList());
-//        System.out.println("all possible initial features:"+featureFields);
+//        System.out.println("all possible initial featureList:"+featureFields);
 //
 //        for (String field: featureFields){
 //            String featureType = index.getFieldType(field);

@@ -246,7 +246,7 @@ public class Exp58 {
 
         statsWriter.write("initially");
         statsWriter.write(",");
-        statsWriter.write("number of features = " + featureMappers.getTotalDim());
+        statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
         statsWriter.newLine();
 
 
@@ -272,7 +272,7 @@ public class Exp58 {
             if (!shouldExtractFeatures) {
                 if (!condition1) {
                     System.out.println("we have reached the max number of columns " +
-                            "and will not extract new features");
+                            "and will not extract new featureList");
                     break;
                 }
             }
@@ -449,7 +449,7 @@ public class Exp58 {
                 statsWriter.write(",");
                 statsWriter.write("focus set = " + focusSet.getAll());
                 statsWriter.write(",");
-                statsWriter.write("number of features = " + featureMappers.getTotalDim());
+                statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
                 statsWriter.newLine();
 
 
@@ -561,7 +561,7 @@ public class Exp58 {
         File initialFeatureFile = new File(config.getString("input.initialFeatureFile"));
         String[] line = FileUtils.readLines(initialFeatureFile).get(0).split(",");
         List<String> unigrams = Arrays.stream(line).collect(Collectors.toList());
-        System.out.println("initial features:");
+        System.out.println("initial featureList:");
         System.out.println(unigrams);
         for (String unigram: unigrams){
             int featureIndex = featureMappers.nextAvailable();

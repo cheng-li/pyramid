@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * todo pull start from a featureMappers
- * span one categorical feature into several binary features
+ * span one categorical feature into several binary featureList
  * Created by chengli on 7/28/14.
  */
 public class CategoricalFeatureMapper implements Serializable {

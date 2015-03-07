@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
  */
 public class FeatureLoader {
 
-    // assume categorical features are stored contiguously
+    // assume categorical featureList are stored contiguously
     public static void loadFeatures(ESIndex index, DataSet dataSet, List<Feature> features,
                                     IdTranslator idTranslator){
         boolean[] toHandle = new boolean[features.size()];

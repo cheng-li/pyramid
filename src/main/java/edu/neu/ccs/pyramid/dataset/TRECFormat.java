@@ -535,7 +535,7 @@ public class TRECFormat {
 
     private static void writeFeatureList(DataSet dataSet, File trecFile) {
         File file = new File(trecFile, TREC_FEATURE_LIST_FILE_NAME);
-        List<Feature> featureList = dataSet.getFeatureList();
+        FeatureList featureList = dataSet.getFeatureList();
         try (
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
@@ -551,13 +551,13 @@ public class TRECFormat {
 
     private static void loadFeatureList(DataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
         File file = new File(trecFile, TREC_FEATURE_LIST_FILE_NAME);
-        List<Feature> featureList;
+        FeatureList featureList;
         try(
                 FileInputStream fileInputStream = new FileInputStream(file);
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
                 ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
         ){
-            featureList = (ArrayList)objectInputStream.readObject();
+            featureList = (FeatureList)objectInputStream.readObject();
 
         }
         dataSet.setFeatureList(featureList);

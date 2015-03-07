@@ -34,14 +34,14 @@ public class Formatter {
 
     static void partition() throws Exception{
         DataSetUtil.extractColumns("/Users/chengli/Datasets/housing/housing.data",
-                "/Users/chengli/Datasets/housing/features.txt",0,12,Pattern.compile("\\s+"));
+                "/Users/chengli/Datasets/housing/featureList.txt",0,12,Pattern.compile("\\s+"));
         DataSetUtil.extractColumns("/Users/chengli/Datasets/housing/housing.data",
                 "/Users/chengli/Datasets/housing/labels.txt",13,13,Pattern.compile("\\s+"));
 
     }
 
     static void saveData() throws Exception{
-        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/housing/standard_format/features.txt",
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/housing/standard_format/featureList.txt",
                 "/Users/chengli/Datasets/housing/standard_format/labels.txt", ",", DataSetType.REG_DENSE,false);
         List<String> names = loadFeatures();
         DataSetUtil.setFeatureNames(dataSet,names);

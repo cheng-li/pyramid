@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * check purity of features
+ * check purity of featureList
  * Created by chengli on 9/17/14.
  */
 public class Exp6 {

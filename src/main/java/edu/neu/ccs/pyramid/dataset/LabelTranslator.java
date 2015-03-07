@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.dataset;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 10/11/14.
@@ -132,5 +133,11 @@ public class LabelTranslator implements Serializable{
             }
             return translator;
         }
+    }
+
+    public static LabelTranslator newDefaultLabelTranslator(int numClasses){
+        List<String> extLabels = IntStream.range(0,numClasses)
+                .mapToObj(i -> ""+i).collect(Collectors.toList());
+        return new LabelTranslator(extLabels);
     }
 }

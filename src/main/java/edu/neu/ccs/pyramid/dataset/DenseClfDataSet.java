@@ -16,6 +16,7 @@ public class DenseClfDataSet extends DenseDataSet implements ClfDataSet{
         super(numDataPoints, numFeatures, missingValue);
         this.labels = new int[numDataPoints];
         this.numClasses = numClasses;
+        this.labelTranslator = LabelTranslator.newDefaultLabelTranslator(numClasses);
     }
 
     @Override

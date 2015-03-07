@@ -10,7 +10,7 @@ public class RegTreeConfig {
     private int randomLevel=1;
 
     /**
-     * features to consider in the tree
+     * featureList to consider in the tree
      */
     private int[] activeFeatures;
     /**

@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * check whether important features in one dataset appear in another dataset
+ * check whether important featureList in one dataset appear in another dataset
  * Created by chengli on 1/24/15.
  */
 public class Exp59 {
@@ -35,7 +35,7 @@ public class Exp59 {
         int numClasses = goldenFeatures.size();
         for (int k=0;k<numClasses;k++){
             List<String> featuresK = goldenFeatures.get(k);
-            System.out.println("for class "+k+", missing important features:");
+            System.out.println("for class "+k+", missing important featureList:");
             System.out.println();
             System.out.println(featuresK.stream().filter(feature -> !realFeatures.contains(feature)).collect(Collectors.toList()));
         }

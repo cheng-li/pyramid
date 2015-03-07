@@ -10,7 +10,7 @@ import java.util.Map;
 public class Feature implements Serializable{
     private static final long serialVersionUID = 1L;
     private int index;
-    private String name;
+    private String name = "unknown";
     private Map<String,String> settings;
 
     public Feature() {
@@ -29,7 +29,7 @@ public class Feature implements Serializable{
         return index;
     }
 
-    public void setIndex(int index) {
+    void setIndex(int index) {
         this.index = index;
     }
 

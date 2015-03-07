@@ -48,7 +48,7 @@ public class DataSetUtil {
     }
 
     /**
-     * only keep the selected features
+     * only keep the selected featureList
      * @param dataSet
      * @return
      */
@@ -81,18 +81,18 @@ public class DataSetUtil {
 
         trimmed.setLabelTranslator(dataSet.getLabelTranslator());
         trimmed.setIdTranslator(dataSet.getIdTranslator());
-        List<Feature> oldFeatures = dataSet.getFeatureList();
+        List<Feature> oldFeatures = dataSet.getFeatureList().getAll();
         List<Feature> newFeatures = columnsToKeep.stream().map(oldFeatures::get).collect(Collectors.toList());
         for (int i=0;i<newFeatures.size();i++){
             newFeatures.get(i).setIndex(i);
         }
-        trimmed.setFeatureList(newFeatures);
+        trimmed.setFeatureList(new FeatureList(newFeatures));
         return trimmed;
     }
 
 
     /**
-     * only keep the selected features
+     * only keep the selected featureList
      * @param dataSet
      * @return
      */
@@ -128,18 +128,18 @@ public class DataSetUtil {
 
         trimmed.setLabelTranslator(dataSet.getLabelTranslator());
         trimmed.setIdTranslator(dataSet.getIdTranslator());
-        List<Feature> oldFeatures = dataSet.getFeatureList();
+        List<Feature> oldFeatures = dataSet.getFeatureList().getAll();
         List<Feature> newFeatures = columnsToKeep.stream().map(oldFeatures::get).collect(Collectors.toList());
         for (int i=0;i<newFeatures.size();i++){
             newFeatures.get(i).setIndex(i);
         }
-        trimmed.setFeatureList(newFeatures);
+        trimmed.setFeatureList(new FeatureList(newFeatures));
 
         return trimmed;
     }
 
     /**
-     * only keep the first numFeatures features
+     * only keep the first numFeatures featureList
      * @param clfDataSet
      * @param numFeatures
      * @return
@@ -428,7 +428,7 @@ public class DataSetUtil {
     }
     public static void dumpFeatureSettings(DataSet dataSet, File file) throws IOException {
         int numFeatures = dataSet.getNumFeatures();
-        List<Feature> features = dataSet.getFeatureList();
+        List<Feature> features = dataSet.getFeatureList().getAll();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))
         ) {
             for (int j=0;j<numFeatures;j++){

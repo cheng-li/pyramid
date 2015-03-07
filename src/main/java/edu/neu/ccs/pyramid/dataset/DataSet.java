@@ -20,8 +20,8 @@ public interface DataSet {
     String getMetaInfo();
 
     IdTranslator getIdTranslator();
-    List<Feature> getFeatureList();
-    void setFeatureList(List<Feature> featureList);
+    FeatureList getFeatureList();
+    void setFeatureList(FeatureList featureList);
     void setIdTranslator(IdTranslator idTranslator);
 
 }
