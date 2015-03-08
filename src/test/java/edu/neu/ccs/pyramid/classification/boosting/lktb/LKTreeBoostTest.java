@@ -18,10 +18,10 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-//        spam_test();
+        spam_test();
 //        newsgroup_test();
 //        spam_build();
-        spam_load();
+//        spam_load();
 //        spam_resume_train();
 //        spam_polluted_build();
 //        spam_polluted_load();
@@ -113,6 +113,7 @@ public class LKTreeBoostTest {
                 DataSetType.CLF_DENSE,true);
         System.out.println("test data:");
         System.out.println(dataSet.getMetaInfo());
+        System.out.println(dataSet.getLabelTranslator());
 
 
         double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
@@ -149,7 +150,7 @@ public class LKTreeBoostTest {
             System.out.println("sum of probs = "+sumProbs);
         }
 
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         ClassScoreCalculation classScoreCalculation = LKTBInspector.decisionProcess(lkTreeBoost,labelTranslator,dataSet.getRow(0),0,10);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(new File(TMP,"score_calculation.json"), classScoreCalculation);
@@ -687,13 +688,13 @@ public class LKTreeBoostTest {
 
         System.out.println("--------------------------------");
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"bingyu/test.trec"),DataSetType.CLF_DENSE,false);
-        dataSet.getFeatureSetting(0).setFeatureName("dump");
-        dataSet.getFeatureSetting(1).setFeatureName("CoAuthor");
-        dataSet.getFeatureSetting(2).setFeatureName("CiteAuthorOut");
-        dataSet.getFeatureSetting(3).setFeatureName("CiteAuthorIn");
-        dataSet.getFeatureSetting(4).setFeatureName("CoAppearVenue");
-        dataSet.getFeatureSetting(5).setFeatureName("PPR for CoAuthor");
-        dataSet.getFeatureSetting(6).setFeatureName("PPR for CiteAuthor");
+        dataSet.getFeatureList().get(0).setName("dump");
+        dataSet.getFeatureList().get(1).setName("CoAuthor");
+        dataSet.getFeatureList().get(2).setName("CiteAuthorOut");
+        dataSet.getFeatureList().get(3).setName("CiteAuthorIn");
+        dataSet.getFeatureList().get(4).setName("CoAppearVenue");
+        dataSet.getFeatureList().get(5).setName("PPR for CoAuthor");
+        dataSet.getFeatureList().get(6).setName("PPR for CiteAuthor");
 
         System.out.println(dataSet.getMetaInfo());
         accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);

@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.dataset;
+package edu.neu.ccs.pyramid.feature;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ public class Feature implements Serializable{
         return index;
     }
 
-    void setIndex(int index) {
+    public void setIndex(int index) {
         this.index = index;
     }
 

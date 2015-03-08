@@ -1,6 +1,10 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.feature.CategoricalFeature;
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
+import edu.neu.ccs.pyramid.feature.Ngram;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
@@ -15,7 +19,7 @@ import java.util.stream.IntStream;
 public class FeatureLoader {
 
     // assume categorical featureList are stored contiguously
-    public static void loadFeatures(ESIndex index, DataSet dataSet, List<Feature> features,
+    public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator){
         boolean[] toHandle = new boolean[features.size()];
         Arrays.fill(toHandle,true);
@@ -39,8 +43,8 @@ public class FeatureLoader {
                     Feature feature = features.get(i);
                     if (feature instanceof CategoricalFeature){
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);
-                    } else {
-                        loadNumericalFeature(index,dataSet,feature,idTranslator);
+                    } else if (feature instanceof Ngram){
+                        loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator);
                     }
                 });
     }
@@ -64,8 +68,8 @@ public class FeatureLoader {
         }
     }
 
-    public static void loadNumericalFeature(ESIndex index, DataSet dataSet, Feature feature,
-                                            IdTranslator idTranslator){
+    public static void loadNgramFeature(ESIndex index, DataSet dataSet, Ngram feature,
+                                        IdTranslator idTranslator){
         String[] dataIndexIds = idTranslator.getAllExtIds();
         String source = feature.getSettings().get("source");
         String featureName = feature.getName();
@@ -78,9 +82,9 @@ public class FeatureLoader {
             });
         } else if (source.equals("matching_score")){
             SearchResponse response = null;
-            int slop = Integer.parseInt(feature.getSettings().get("slop"));
-            String ngram = feature.getSettings().get("ngram");
-            String field = feature.getSettings().get("field");
+            int slop = feature.getSlop();
+            String ngram = feature.getNgram();
+            String field = feature.getField();
             response = index.matchPhrase(field, ngram, dataIndexIds, slop);
 
             SearchHit[] hits = response.getHits().getHits();

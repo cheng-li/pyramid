@@ -1,10 +1,6 @@
 package edu.neu.ccs.pyramid.feature;
 
-import edu.neu.ccs.pyramid.dataset.CategoricalFeature;
-
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class CategoricalFeatureExpanderTest {
     public static void main(String[] args) {

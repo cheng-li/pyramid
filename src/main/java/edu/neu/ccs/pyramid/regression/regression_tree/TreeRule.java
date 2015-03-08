@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
-import edu.neu.ccs.pyramid.dataset.Feature;
+import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.regression.Rule;
 import org.apache.mahout.math.Vector;
 
@@ -36,7 +36,7 @@ public class TreeRule implements Rule {
 
     //todo deal with probabilities
     public void add (RegressionTree tree, Node node, Vector vector){
-        List<Feature> featureList = tree.getFeatureList();
+        List<Feature> featureList = tree.getFeatureList().getAll();
         if (node.isLeaf()){
             this.score = node.getValue();
         } else {

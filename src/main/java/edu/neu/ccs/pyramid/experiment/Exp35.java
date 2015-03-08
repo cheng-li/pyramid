@@ -10,8 +10,6 @@ import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.io.FileUtils;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -129,7 +127,7 @@ public class Exp35 {
      * @param ids pull featureList from train ids
      * @throws Exception
      */
-    static void addInitialFeatures(Config config, SingleLabelIndex index, List<Feature> features,
+    static void addInitialFeatures(Config config, ESIndex index, FeatureList featureList,
                                    String[] ids) throws Exception{
         String featureFieldPrefix = config.getString("index.featureFieldPrefix");
         Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
@@ -144,7 +142,7 @@ public class Exp35 {
             String featureType = index.getFieldType(field);
             if (featureType.equalsIgnoreCase("string")){
                 CategoricalFeatureExpander expander = new CategoricalFeatureExpander();
-                expander.setStart(features.size());
+                expander.setStart(featureList.size());
                 expander.setVariableName(field);
                 expander.putSetting("source","field");
                 for (String id: ids){
@@ -165,15 +163,17 @@ public class Exp35 {
 
 
                 if(toAdd){
-                    features.addAll(group);
+                    for (Feature feature: group){
+                        featureList.add(feature);
+                    }
                 }
 
             } else {
                 Feature feature = new Feature();
                 feature.setName(field);
-                feature.setIndex(features.size());
+                feature.setIndex(featureList.size());
                 feature.getSettings().put("source","field");
-                features.add(feature);
+                featureList.add(feature);
             }
         }
 
@@ -232,22 +232,22 @@ public class Exp35 {
         return ngrams;
     }
 
-    static void addNgramFeatures(List<Feature> features, List<String> ngrams, String field, int slop){
+    static void addNgramFeatures(FeatureList featureList, List<String> ngrams, String field, int slop){
         for (String ngram: ngrams){
             String featureName = ngram+"(slop="+slop+")";
-            Feature feature = new Feature();
-            feature.setIndex(features.size());
+            Ngram feature = new Ngram();
+            feature.setIndex(featureList.size());
             feature.setName(featureName);
-            feature.getSettings().put("ngram",ngram);
-            feature.getSettings().put("source","matching_score");
-            feature.getSettings().put("slop",""+slop);
-            feature.getSettings().put("field",field);
-            features.add(feature);
+            feature.getSettings().put("source", "matching_score");
+            feature.setNgram(ngram);
+            feature.setSlop(slop);
+            feature.setField(field);
+            featureList.add(feature);
         }
     }
 
     static ClfDataSet loadData(Config config, SingleLabelIndex index,
-                               List<Feature> features,
+                               FeatureList featureList,
                                IdTranslator idTranslator, int totalDim,
                                LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
@@ -265,14 +265,14 @@ public class Exp35 {
                     dataSet.setLabel(i,label);
                 });
 
-        FeatureLoader.loadFeatures(index,dataSet,features,idTranslator);
+        FeatureLoader.loadFeatures(index,dataSet,featureList,idTranslator);
 
-        DataSetUtil.setIdTranslator(dataSet, idTranslator);
-        DataSetUtil.setLabelTranslator(dataSet, labelTranslator);
+        dataSet.setIdTranslator(idTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
         return dataSet;
     }
 
-    static ClfDataSet loadTrainData(Config config, SingleLabelIndex index, List<Feature> features,
+    static ClfDataSet loadTrainData(Config config, SingleLabelIndex index, FeatureList features,
                                     IdTranslator idTranslator, LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating training set");
         int totalDim = features.size();
@@ -283,7 +283,7 @@ public class Exp35 {
     }
 
     static ClfDataSet loadTestData(Config config, SingleLabelIndex index,
-                                   List<Feature> features, IdTranslator idTranslator,
+                                   FeatureList features, IdTranslator idTranslator,
                                    LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating test set");
 
@@ -294,17 +294,17 @@ public class Exp35 {
         return dataSet;
     }
 
-    static ClfDataSet loadValidData(Config config, SingleLabelIndex index,
-                                   FeatureMappers featureMappers, IdTranslator idTranslator,
-                                   LabelTranslator labelTranslator) throws Exception{
-        System.out.println("creating validation set");
-
-        int totalDim = featureMappers.getTotalDim();
-
-        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelTranslator);
-        System.out.println("validation set created");
-        return dataSet;
-    }
+//    static ClfDataSet loadValidData(Config config, SingleLabelIndex index,
+//                                   FeatureMappers featureMappers, IdTranslator idTranslator,
+//                                   LabelTranslator labelTranslator) throws Exception{
+//        System.out.println("creating validation set");
+//
+//        int totalDim = featureMappers.getTotalDim();
+//
+//        ClfDataSet dataSet = loadData(config,index,featureMappers,idTranslator,totalDim,labelTranslator);
+//        System.out.println("validation set created");
+//        return dataSet;
+//    }
 
     //todo speed up and only look at train
     static LabelTranslator loadLabelTranslator(Config config, SingleLabelIndex index) throws Exception{
@@ -396,11 +396,11 @@ public class Exp35 {
         String[] trainIndexIds = sampleTrain(config,index,duplidate);
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
-        List<Feature> features = new ArrayList<>();
+        FeatureList featureList = new FeatureList();
 
         LabelTranslator labelTranslator = loadLabelTranslator(config, index);
         if (config.getBoolean("useInitialFeatures")){
-            addInitialFeatures(config,index,,features,trainIndexIds);
+            addInitialFeatures(config,index,featureList,trainIndexIds);
         }
 
         List<String> fields = config.getStrings("fields");
@@ -408,20 +408,17 @@ public class Exp35 {
         for (String field: fields){
             List<String> ngrams = gather(config,index,field, trainIndexIds);
             for (int slop: slops){
-                addNgramFeatures(features, ngrams,field, slop);
+                addNgramFeatures(featureList, ngrams,field, slop);
             }
         }
 
 
-
-
-
-        ClfDataSet trainDataSet = loadTrainData(config,index,features, trainIdTranslator, labelTranslator);
+        ClfDataSet trainDataSet = loadTrainData(config,index,featureList, trainIdTranslator, labelTranslator);
         System.out.println("in training set :");
         showDistribution(config,trainDataSet,labelTranslator);
 
+        trainDataSet.setFeatureList(featureList);
 
-        DataSetUtil.setFeatureMappers(trainDataSet,featureMappers);
         saveDataSet(config, trainDataSet, config.getString("archive.trainingSet"));
         if (config.getBoolean("archive.dumpFields")){
             dumpTrainFeatures(config,index,trainIdTranslator);
@@ -430,8 +427,8 @@ public class Exp35 {
         String[] testIndexIds = sampleTest(config,index);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
 
-        ClfDataSet testDataSet = loadTestData(config,index,featureMappers,testIdTranslator,labelTranslator);
-        DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
+        ClfDataSet testDataSet = loadTestData(config,index,featureList,testIdTranslator,labelTranslator);
+        testDataSet.setFeatureList(featureList);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
 
 //        String[] validIndexIds = sampleValid(config,index);

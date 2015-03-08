@@ -1,10 +1,9 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by chengli on 8/7/14.

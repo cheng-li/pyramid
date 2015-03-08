@@ -4,6 +4,7 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 import edu.neu.ccs.pyramid.classification.ClassProbability;
 import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
@@ -120,11 +121,12 @@ public class LKTBInspector {
     //todo  speed up
     public static PredictionAnalysis analyzePrediction(LKTreeBoost boosting, ClfDataSet dataSet, int dataPointIndex, int limit){
         PredictionAnalysis predictionAnalysis = new PredictionAnalysis();
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         predictionAnalysis.setInternalId(dataPointIndex)
-                .setId(dataSet.getDataPointSetting(dataPointIndex).getExtId())
+                .setId(idTranslator.toExtId(dataPointIndex))
                 .setInternalLabel(dataSet.getLabels()[dataPointIndex])
-                .setLabel(dataSet.getDataPointSetting(dataPointIndex).getExtLabel());
+                .setLabel(labelTranslator.toExtLabel(dataSet.getLabels()[dataPointIndex]));
         int prediction = boosting.predict(dataSet.getRow(dataPointIndex));
         predictionAnalysis.setInternalPrediction(prediction);
         predictionAnalysis.setPrediction(labelTranslator.toExtLabel(prediction));

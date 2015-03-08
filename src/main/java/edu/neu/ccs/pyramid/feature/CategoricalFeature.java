@@ -1,4 +1,6 @@
-package edu.neu.ccs.pyramid.dataset;
+package edu.neu.ccs.pyramid.feature;
+
+import edu.neu.ccs.pyramid.feature.Feature;
 
 import java.util.Map;
 

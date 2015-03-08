@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
-import edu.neu.ccs.pyramid.dataset.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import org.apache.mahout.math.Vector;
 
@@ -28,7 +28,7 @@ public class RegressionTree implements Regressor, Serializable {
 
     protected List<Node> leaves;
 
-    private List<Feature> featureList;
+    private FeatureList featureList;
 
     protected RegressionTree() {
         this.numNodes = 0;
@@ -317,11 +317,11 @@ public class RegressionTree implements Regressor, Serializable {
         return list;
     }
 
-    public List<Feature> getFeatureList() {
+    public FeatureList getFeatureList() {
         return featureList;
     }
 
-    public void setFeatureList(List<Feature> featureList) {
+    public void setFeatureList(FeatureList featureList) {
         this.featureList = featureList;
     }
 }

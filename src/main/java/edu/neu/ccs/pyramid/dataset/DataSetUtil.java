@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.mahout.math.Vector;
@@ -561,6 +563,16 @@ public class DataSetUtil {
                 .map(i -> dataSet.getRow(i).getNumNonZeroElements())
                 .sum();
         return ((double)nonZeros)/(dataSet.getNumDataPoints()*dataSet.getNumFeatures());
+    }
+
+    public static void setFeatureNames(DataSet dataSet, List<String> names){
+        if (dataSet.getNumFeatures()!=names.size()){
+            throw new IllegalArgumentException("dataSet.getNumFeatures()!=names.size()");
+        }
+
+        for (int i=0;i<names.size();i++){
+            dataSet.getFeatureList().get(i).setName(names.get(i));
+        }
     }
 
 

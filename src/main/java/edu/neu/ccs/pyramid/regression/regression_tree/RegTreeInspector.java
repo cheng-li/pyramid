@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
-import edu.neu.ccs.pyramid.dataset.Feature;
+import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -29,7 +29,7 @@ public class RegTreeInspector {
      * @return
      */
     public static Map<Integer, Pair<String,Double>> featureImportance(RegressionTree tree){
-        List<Feature> featureList = tree.getFeatureList();
+        List<Feature> featureList = tree.getFeatureList().getAll();
         Map<Integer, Pair<String,Double>> map = new HashMap<>();
         List<Node> nodes = tree.traverse();
         nodes.stream().filter(node -> !node.isLeaf())

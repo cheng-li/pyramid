@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.dataset;
+package edu.neu.ccs.pyramid.feature;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -18,6 +18,10 @@ public class FeatureList implements Serializable {
     public FeatureList(List<Feature> features){
         this();
         addAll(features);
+    }
+
+    public Feature get(int featureIndex){
+        return features.get(featureIndex);
     }
 
     public int size(){

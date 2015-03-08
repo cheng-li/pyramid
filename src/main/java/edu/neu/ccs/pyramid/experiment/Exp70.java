@@ -83,11 +83,13 @@ public class Exp70 {
             LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
                     System.out.println("regularization = "+best.regularization);
             System.out.println("accuracy = "+best.accuracy);
-            System.out.println("number of used featureList in each class = "+
+            System.out.println("number of used features in each class = "+
                     Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
-            System.out.println("number of used featureList in all classes = "+
+            System.out.println("number of used features in all classes = "+
                     LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+            System.out.println("number of used ngrams in all classes = "+
+                    LogisticRegressionInspector.checkNgramUsage(logisticRegression));
         }
 
         System.out.println("**********************");
@@ -100,12 +102,15 @@ public class Exp70 {
         File serFile = new File(outputFolder,"model");
         LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
         System.out.println("regularization = "+best.regularization);
+        System.out.println("l1Ratio = "+best.l1Ratio);
         System.out.println("accuracy = "+best.accuracy);
-        System.out.println("number of used featureList in each class = "+
+        System.out.println("number of used features in each class = "+
                 Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
-        System.out.println("number of used featureList in all classes = "+
+        System.out.println("number of used features in all classes = "+
                 LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+        System.out.println("number of used ngrams in all classes = "+
+        LogisticRegressionInspector.checkNgramUsage(logisticRegression));
 
     }
 
@@ -147,7 +152,7 @@ public class Exp70 {
                 stopWatch.start();
                 trainer.train();
                 System.out.println("time spent = " + stopWatch);
-                System.out.println("number of used featureList in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
+                System.out.println("number of used features in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
                 File outputFolder = new File(new File(config.getString("output.folder"),""+l1ratio),""+regularization);
                 outputFolder.mkdirs();

@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -580,7 +581,7 @@ public class TRECFormat {
 
 
     private static void loadIdTranslator(DataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
-        File file = new File(trecFile, TREC_FEATURE_LIST_FILE_NAME);
+        File file = new File(trecFile, TREC_ID_TRANSLATOR_FILE_NAME);
         IdTranslator idTranslator;
         try(
                 FileInputStream fileInputStream = new FileInputStream(file);

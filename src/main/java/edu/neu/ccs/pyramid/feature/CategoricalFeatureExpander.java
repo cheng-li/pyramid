@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.feature;
 
-import edu.neu.ccs.pyramid.dataset.CategoricalFeature;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
