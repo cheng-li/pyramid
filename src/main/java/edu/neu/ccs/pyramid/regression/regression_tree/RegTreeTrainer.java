@@ -31,6 +31,7 @@ public class RegTreeTrainer {
                                      double[] labels,
                                      LeafOutputCalculator leafOutputCalculator){
         RegressionTree tree = new RegressionTree();
+        tree.setFeatureList(dataSet.getFeatureList());
 
         tree.leaves = new ArrayList<>();
         tree.root = new Node();
@@ -180,8 +181,6 @@ public class RegTreeTrainer {
         if (splitResultOptional.isPresent()){
             SplitResult splitResult = splitResultOptional.get();
             node.setFeatureIndex(splitResult.getFeatureIndex());
-            node.setFeatureName(dataSet.getFeatureSetting(splitResult.getFeatureIndex())
-                    .getFeatureName());
             node.setThreshold(splitResult.getThreshold());
             node.setReduction(splitResult.getReduction());
             double leftCount = splitResult.getLeftCount();

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * given logistic regression coefficients, print top features
+ * given logistic regression coefficients, print top featureList
  * Created by chengli on 11/23/14.
  */
 public class Exp30 {
@@ -50,7 +50,7 @@ public class Exp30 {
         Comparator<Pair<String,Double>> comparator = Comparator.comparing(pair -> Math.abs(pair.getSecond()));
         List<String> topFeatures = nameWeightPairs.stream().sorted(comparator.reversed())
                 .map(Pair::getFirst).limit(top).collect(Collectors.toList());
-        System.out.println("top features ");
+        System.out.println("top featureList ");
         System.out.println(topFeatures);
     }
 
@@ -63,7 +63,7 @@ public class Exp30 {
                 .map(Pair::getFirst)
                 .limit(top).collect(Collectors.toList());
 
-        System.out.println("top unigram features ");
+        System.out.println("top unigram featureList ");
         System.out.println(topFeatures);
     }
 
@@ -76,7 +76,7 @@ public class Exp30 {
                 .map(Pair::getFirst)
                 .limit(top).collect(Collectors.toList());
 
-        System.out.println("top ngram features ");
+        System.out.println("top ngram featureList ");
         System.out.println(topFeatures);
     }
 
@@ -88,7 +88,7 @@ public class Exp30 {
         List<String> topFeatures = nameWeightPairs.stream().filter(pair -> pair.getSecond()>0)
                 .sorted(comparator.reversed())
                 .map(Pair::getFirst).limit(top).collect(Collectors.toList());
-        System.out.println("top positive features ");
+        System.out.println("top positive featureList ");
         System.out.println(topFeatures);
     }
 
@@ -98,7 +98,7 @@ public class Exp30 {
         List<String> topFeatures = nameWeightPairs.stream().filter(pair -> pair.getSecond()<0)
                 .sorted(comparator.reversed())
                 .map(Pair::getFirst).limit(top).collect(Collectors.toList());
-        System.out.println("top negative features ");
+        System.out.println("top negative featureList ");
         System.out.println(topFeatures);
     }
 
@@ -109,7 +109,7 @@ public class Exp30 {
                 .filter(pair -> pair.getFirst().split(" ").length==1)
                 .sorted(comparator.reversed())
                 .map(Pair::getFirst).limit(top).collect(Collectors.toList());
-        System.out.println("top positive unigram features ");
+        System.out.println("top positive unigram featureList ");
         System.out.println(topFeatures);
     }
 
@@ -120,7 +120,7 @@ public class Exp30 {
                 .filter(pair -> pair.getFirst().split(" ").length==1)
                 .sorted(comparator.reversed())
                 .map(Pair::getFirst).limit(top).collect(Collectors.toList());
-        System.out.println("top negative unigram features ");
+        System.out.println("top negative unigram featureList ");
         System.out.println(topFeatures);
     }
 
@@ -131,7 +131,7 @@ public class Exp30 {
                 .filter(pair -> pair.getFirst().split(" ").length>1)
                 .sorted(comparator.reversed())
                 .map(Pair::getFirst).limit(top).collect(Collectors.toList());
-        System.out.println("top positive ngram features ");
+        System.out.println("top positive ngram featureList ");
         System.out.println(topFeatures);
     }
 
@@ -142,7 +142,7 @@ public class Exp30 {
                 .filter(pair -> pair.getFirst().split(" ").length>1)
                 .sorted(comparator.reversed())
                 .map(Pair::getFirst).limit(top).collect(Collectors.toList());
-        System.out.println("top negative ngram features ");
+        System.out.println("top negative ngram featureList ");
         System.out.println(topFeatures);
     }
 

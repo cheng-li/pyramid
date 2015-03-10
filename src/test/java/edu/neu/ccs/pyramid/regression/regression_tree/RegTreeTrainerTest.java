@@ -16,7 +16,7 @@ public class RegTreeTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test3();
+        test2();
     }
 
 

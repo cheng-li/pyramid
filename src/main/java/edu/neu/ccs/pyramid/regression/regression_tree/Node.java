@@ -42,7 +42,7 @@ public class Node implements Serializable {
      * the probability of falling into the right child
      */
     private double rightProb;
-    private String featureName = "unknown";
+
 
     //todo this should be transient? maybe doesn't matter as it is cleaned
     private double[] probs;
@@ -141,13 +141,6 @@ public class Node implements Serializable {
     }
 
 
-    String getFeatureName() {
-        return featureName;
-    }
-
-    void setFeatureName(String featureName) {
-        this.featureName = featureName;
-    }
 
     /**
      * after split, free memory
@@ -188,7 +181,6 @@ public class Node implements Serializable {
                 ", splitable=" + splitable +
                 ", leftProb=" + leftProb +
                 ", rightProb=" + rightProb +
-                ", featureName='" + featureName + '\'' +
                 ", value=" + value +
                 ", featureIndex=" + featureIndex +
                 ", threshold=" + threshold +

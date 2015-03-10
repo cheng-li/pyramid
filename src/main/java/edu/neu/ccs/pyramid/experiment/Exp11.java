@@ -21,7 +21,7 @@ import java.util.stream.IntStream;
 
 /**
  * for single label dataset,
- * dump feature matrix with initial features and unigram features
+ * dump feature matrix with initial featureList and unigram featureList
  * follow exp3
  * Created by chengli on 10/10/14.
  */
@@ -126,7 +126,7 @@ public class Exp11 {
      * @param config
      * @param index
      * @param featureMappers to be updated
-     * @param ids pull features from train ids
+     * @param ids pull featureList from train ids
      * @throws Exception
      */
     static void addInitialFeatures(Config config, SingleLabelIndex index,
@@ -139,7 +139,7 @@ public class Exp11 {
         List<String> featureFields = allFields.stream().
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
-        System.out.println("all possible initial features:"+featureFields);
+        System.out.println("all possible initial featureList:"+featureFields);
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);

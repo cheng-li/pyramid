@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 /**
@@ -16,7 +17,10 @@ public interface DataSet {
     boolean isDense();
     boolean hasMissingValue();
     String getMetaInfo();
-    FeatureSetting getFeatureSetting(int featureIndex);
-    void putFeatureSetting(int featureIndex, FeatureSetting featureSetting);
+
+    IdTranslator getIdTranslator();
+    FeatureList getFeatureList();
+    void setFeatureList(FeatureList featureList);
+    void setIdTranslator(IdTranslator idTranslator);
 
 }

@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.dataset;
+package edu.neu.ccs.pyramid.feature;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -10,11 +10,11 @@ import java.util.Map;
 public class Feature implements Serializable{
     private static final long serialVersionUID = 1L;
     private int index;
-    private String name;
-    private Map<String,String> setting;
+    private String name = "unknown";
+    private Map<String,String> settings;
 
     public Feature() {
-        this.setting = new HashMap<>();
+        this.settings = new HashMap<>();
     }
 
     public String getName() {
@@ -33,9 +33,16 @@ public class Feature implements Serializable{
         this.index = index;
     }
 
-    public Map<String, String> getSetting() {
-        return setting;
+    public Map<String, String> getSettings() {
+        return settings;
     }
 
-
+    @Override
+    public String toString() {
+        return "Feature{" +
+                "index=" + index +
+                ", name='" + name + '\'' +
+                ", settings=" + settings +
+                '}';
+    }
 }

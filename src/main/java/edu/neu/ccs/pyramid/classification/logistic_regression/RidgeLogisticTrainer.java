@@ -21,10 +21,7 @@ public class RidgeLogisticTrainer {
     public LogisticRegression train(ClfDataSet clfDataSet){
 
         LogisticRegression logisticRegression = new LogisticRegression(clfDataSet.getNumClasses(),clfDataSet.getNumFeatures());
-        for (int j=0;j<clfDataSet.getNumFeatures();j++){
-            logisticRegression.setFeatureName(j,clfDataSet.getFeatureSetting(j).getFeatureName());
-        }
-
+        logisticRegression.setFeatureList(clfDataSet.getFeatureList());
         logisticRegression.setFeatureExtraction(false);
         LogisticLoss function = new LogisticLoss(logisticRegression,clfDataSet,gaussianPriorVariance);
         LBFGS lbfgs = new LBFGS(function);

@@ -1,4 +1,6 @@
-package edu.neu.ccs.pyramid.dataset;
+package edu.neu.ccs.pyramid.feature;
+
+import edu.neu.ccs.pyramid.feature.Feature;
 
 import java.util.Map;
 
@@ -45,5 +47,17 @@ public class CategoricalFeature extends Feature {
 
     public void setCategoryIndexMap(Map<String, Integer> categoryIndexMap) {
         this.categoryIndexMap = categoryIndexMap;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("CategoricalFeature{");
+        sb.append(super.toString()).append(", ");
+        sb.append("category='").append(category).append('\'');
+        sb.append(", numCategories=").append(numCategories);
+        sb.append(", variableName='").append(variableName).append('\'');
+        sb.append(", categoryIndexMap=").append(categoryIndexMap);
+        sb.append('}');
+        return sb.toString();
     }
 }

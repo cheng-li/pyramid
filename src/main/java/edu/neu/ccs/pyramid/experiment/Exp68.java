@@ -13,7 +13,7 @@ import org.apache.mahout.math.Vector;
 import java.io.File;
 
 /**
- * test ridge logistic regression with noisy features
+ * test ridge logistic regression with noisy featureList
  * Created by chengli on 2/13/15.
  */
 public class Exp68 {

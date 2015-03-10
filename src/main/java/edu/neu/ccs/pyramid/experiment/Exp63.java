@@ -73,10 +73,10 @@ public class Exp63 {
           List<FeatureUtility> matched = goodNgrams.get(k).stream().filter(featureUtility -> dataSet.getRow(docId).get(featureUtility.getIndex())>0)
                   .collect(Collectors.toList());
 
-           sb.append("number of matched features for class ").append(k).append(" = ").append(matched.size()).append(", ");
-           sb.append("sum of weights for matched features = ").append(matched.stream()
+           sb.append("number of matched featureList for class ").append(k).append(" = ").append(matched.size()).append(", ");
+           sb.append("sum of weights for matched featureList = ").append(matched.stream()
                    .mapToDouble(FeatureUtility::getUtility).sum()).append(", ");
-           sb.append("average ranks of matched features = ").append(matched.stream()
+           sb.append("average ranks of matched featureList = ").append(matched.stream()
                    .mapToDouble(FeatureUtility::getRank).average().orElseGet(() -> Double.NaN))
                    .append(", ");
 
@@ -88,7 +88,7 @@ public class Exp63 {
 
 
 //        if (config.getBoolean("showDetail")){
-//            sb.append("matched features and feature ranks = ");
+//            sb.append("matched featureList and feature ranks = ");
 //            for (Pair<String,Integer> pair: pairs){
 //                sb.append("(").append(pair.getFirst()).append(",").append(pair.getSecond()).append(")").append(", ");
 //            }

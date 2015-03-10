@@ -87,4 +87,13 @@ public class IdTranslator implements Serializable {
         File file1 = new File(file);
         return deserialize(file1);
     }
+
+
+    public static IdTranslator newDefaultIdTranslator(int numDataPoints){
+        IdTranslator idTranslator = new IdTranslator();
+        for (int i=0;i<numDataPoints;i++){
+            idTranslator.addData(i,""+i);
+        }
+        return idTranslator;
+    }
 }

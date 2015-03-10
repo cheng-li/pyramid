@@ -29,8 +29,8 @@
 //
 ///**
 // * obsolete
-// * single label dataset, start with initial features + all unigram features
-// * use picked unigram features as seeds
+// * single label dataset, start with initial featureList + all unigram featureList
+// * use picked unigram featureList as seeds
 // * Created by chengli on 11/6/14.
 // */
 //public class Exp18 {
@@ -136,7 +136,7 @@
 //            throw new IllegalArgumentException("0<=extraction.frequency<=1");
 //        }
 //
-//        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+//        LabelTranslator labelTranslator = dataSet.getSettings().getLabelTranslator();
 //
 //        StopWatch stopWatch = new StopWatch();
 //        stopWatch.start();
@@ -203,7 +203,7 @@
 //            if (!shouldExtractFeatures){
 //                if (!condition1){
 //                    System.out.println("we have reached the max number of columns " +
-//                            "and will not extract new features");
+//                            "and will not extract new featureList");
 //                }
 //
 //                if (!condition2){
@@ -434,7 +434,7 @@
 //     * @param config
 //     * @param index
 //     * @param featureMappers to be updated
-//     * @param ids pull features from train ids
+//     * @param ids pull featureList from train ids
 //     * @throws Exception
 //     */
 //    static void addInitialFeatures(Config config, SingleLabelIndex index,
@@ -447,7 +447,7 @@
 //        List<String> featureFields = allFields.stream().
 //                filter(field -> matchPrefixes(field,prefixes)).
 //                collect(Collectors.toList());
-//        System.out.println("all possible initial features:"+featureFields);
+//        System.out.println("all possible initial featureList:"+featureFields);
 //
 //        for (String field: featureFields){
 //            String featureType = index.getFieldType(field);

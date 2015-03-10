@@ -44,12 +44,7 @@ public class ElasticNetLogisticTrainer {
     }
 
     public void train(){
-        if (!logisticRegression.featureNamesSet){
-            for (int j=0;j<dataSet.getNumFeatures();j++){
-                logisticRegression.setFeatureName(j,dataSet.getFeatureSetting(j).getFeatureName());
-            }
-        }
-        logisticRegression.featureNamesSet = true;
+        logisticRegression.setFeatureList(dataSet.getFeatureList());
 
         double lastLoss = loss();
         if (logger.isDebugEnabled()){

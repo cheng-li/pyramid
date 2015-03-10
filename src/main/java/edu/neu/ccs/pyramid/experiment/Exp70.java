@@ -8,14 +8,12 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -88,6 +86,8 @@ public class Exp70 {
 
             System.out.println("number of used features in all classes = "+
                     LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+
+            System.out.println(LogisticRegressionInspector.checkNgramUsage(logisticRegression));
         }
 
         System.out.println("**********************");
@@ -100,12 +100,14 @@ public class Exp70 {
         File serFile = new File(outputFolder,"model");
         LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
         System.out.println("regularization = "+best.regularization);
+        System.out.println("l1Ratio = "+best.l1Ratio);
         System.out.println("accuracy = "+best.accuracy);
         System.out.println("number of used features in each class = "+
                 Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
         System.out.println("number of used features in all classes = "+
                 LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+        System.out.println(LogisticRegressionInspector.checkNgramUsage(logisticRegression));
 
     }
 
@@ -159,12 +161,8 @@ public class Exp70 {
 
             }
         }
-
-
-
-
-
     }
+
 
     private static class Performance{
         private double regularization;

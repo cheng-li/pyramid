@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 /**
@@ -10,16 +12,19 @@ abstract class AbstractDataSet implements DataSet{
     protected int numDataPoints;
     protected int numFeatures;
     protected boolean missingValue;
-    protected FeatureSetting[] featureSettings;
+    protected IdTranslator idTranslator;
+    protected FeatureList featureList;
 
 
     AbstractDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         this.numDataPoints = numDataPoints;
         this.numFeatures = numFeatures;
         this.missingValue = missingValue;
-        this.featureSettings = new FeatureSetting[numFeatures];
-        for (int i=0;i<numFeatures;i++){
-            this.featureSettings[i] = new FeatureSetting();
+        this.idTranslator = IdTranslator.newDefaultIdTranslator(numDataPoints);
+        this.featureList = new FeatureList();
+        for (int j=0;j<numFeatures;j++){
+            Feature feature = new Feature();
+            featureList.add(feature);
         }
     }
 
@@ -54,20 +59,20 @@ abstract class AbstractDataSet implements DataSet{
     }
 
     @Override
-    public FeatureSetting getFeatureSetting(int featureIndex) {
-        return this.featureSettings[featureIndex];
+    public IdTranslator getIdTranslator() {
+        return idTranslator;
     }
 
     @Override
-    public void putFeatureSetting(int featureIndex, FeatureSetting featureSetting) {
-        this.featureSettings[featureIndex] = featureSetting;
+    public FeatureList getFeatureList() {
+        return featureList;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("number of data points = ").append(numDataPoints).append("\n");
-        sb.append("number of features = ").append(numFeatures).append("\n");
+        sb.append("number of featureList = ").append(numFeatures).append("\n");
         sb.append("has missing value = ").append(missingValue).append("\n");
         sb.append("row matrix:").append("\n");
         for (int i=0;i<numDataPoints;i++){
@@ -87,8 +92,21 @@ abstract class AbstractDataSet implements DataSet{
         StringBuilder sb = new StringBuilder();
         sb.append("data set meta information:").append("\n");
         sb.append("number of data points = ").append(getNumDataPoints()).append("\n");
-        sb.append("number of features = ").append(getNumFeatures()).append("\n");
+        sb.append("number of featureList = ").append(getNumFeatures()).append("\n");
         sb.append("has missing value = ").append(missingValue).append("\n");
         return sb.toString();
+    }
+
+    @Override
+    public void setIdTranslator(IdTranslator idTranslator) {
+        this.idTranslator = idTranslator;
+    }
+
+    @Override
+    public void setFeatureList(FeatureList featureList) {
+        if (featureList.size()!=this.numFeatures){
+            throw new IllegalArgumentException("featureList.size()!=this.numFeatures");
+        }
+        this.featureList = featureList;
     }
 }

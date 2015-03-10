@@ -146,7 +146,7 @@ public class Exp15 {
         List<String> featureFields = allFields.stream().
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
-        System.out.println("all possible initial features:"+featureFields);
+        System.out.println("all possible initial featureList:"+featureFields);
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);
@@ -472,7 +472,7 @@ public class Exp15 {
 
         statsWriter.write("initially");
         statsWriter.write(",");
-        statsWriter.write("number of features = " + featureMappers.getTotalDim());
+        statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
         statsWriter.newLine();
 
 
@@ -498,7 +498,7 @@ public class Exp15 {
             if (!shouldExtractFeatures) {
                 if (!condition1) {
                     System.out.println("we have reached the max number of columns " +
-                            "and will not extract new features");
+                            "and will not extract new featureList");
                     break;
                 }
             }
@@ -677,7 +677,7 @@ public class Exp15 {
                 statsWriter.write(",");
                 statsWriter.write("focus set = " + focusSet.getAll());
                 statsWriter.write(",");
-                statsWriter.write("number of features = " + featureMappers.getTotalDim());
+                statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
                 statsWriter.newLine();
 
 

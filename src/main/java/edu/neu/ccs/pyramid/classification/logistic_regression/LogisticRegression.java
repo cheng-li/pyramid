@@ -2,12 +2,11 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -19,7 +18,7 @@ public class LogisticRegression implements ProbabilityEstimator {
     private int numFeatures;
     private Weights weights;
     private boolean featureExtraction = false;
-    private String[] featureNames;
+    private FeatureList featureList;
     boolean featureNamesSet;
 
 
@@ -29,19 +28,14 @@ public class LogisticRegression implements ProbabilityEstimator {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.weights = new Weights(numClasses, numFeatures);
-        this.featureNames = new String[numFeatures];
     }
 
     public LogisticRegression(int numClasses, int numFeatures, Vector weightVector) {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.weights = new Weights(numClasses, numFeatures, weightVector);
-        this.featureNames = new String[numFeatures];
     }
 
-    public boolean isFeatureNamesSet() {
-        return featureNamesSet;
-    }
 
     public boolean featureExtraction() {
         return featureExtraction;
@@ -134,13 +128,11 @@ public class LogisticRegression implements ProbabilityEstimator {
         }
     }
 
-    void setFeatureName(int featureIndex, String featureName){
-        featureNames[featureIndex] = featureName;
+    public FeatureList getFeatureList() {
+        return featureList;
     }
 
-    public String[] getFeatureNames() {
-        return featureNames;
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
     }
-
-
 }

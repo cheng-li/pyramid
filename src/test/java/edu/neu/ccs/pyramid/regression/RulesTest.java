@@ -29,7 +29,7 @@ public class RulesTest {
     static void test1() throws Exception{
         int numLeaves = 4;
 
-        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
+        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/featureList.txt",
                 "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE, false);
         System.out.println(dataSet.isDense());
 

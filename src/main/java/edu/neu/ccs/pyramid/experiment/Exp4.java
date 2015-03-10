@@ -388,20 +388,20 @@ public class Exp4 {
             lkTreeBoosts.add(lkTreeBoost);
             if (config.getBoolean("verify.topFeatures.model")){
                 System.out.println("model "+modelIndex);
-                System.out.println("==========top features==========");
+                System.out.println("==========top featureList==========");
                 for (int k=0;k<config.getInt("numClasses");k++){
                     List<String> features = LKTBInspector.topFeatureNames(lkTreeBoost, k);
-                    System.out.println("top features for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
+                    System.out.println("top featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(features);
                 }
             }
         }
         if (config.getBoolean("verify.topFeatures.overall")){
-            System.out.println("overall top features among all models:");
+            System.out.println("overall top featureList among all models:");
             for (int k=0;k<config.getInt("numClasses");k++){
                 List<String> featureNames = LKTBInspector.topFeatureNames(lkTreeBoosts, k);
                 List<Integer> featureIndices = LKTBInspector.topFeatureIndices(lkTreeBoosts,k);
-                System.out.println("top features for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
+                System.out.println("top featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
                 System.out.println(featureNames);
                 if (config.getBoolean("verify.topFeatures.writeToFiles")){
                     File featureFolder = new File(archive,"top_features");
@@ -434,12 +434,12 @@ public class Exp4 {
         }
 
         if (config.getBoolean("verify.topNgramFeatures.overall")){
-            System.out.println("overall top features among all models:");
+            System.out.println("overall top featureList among all models:");
             for (int k=0;k<config.getInt("numClasses");k++){
                 List<String> featureNames = LKTBInspector.topFeatureNames(lkTreeBoosts, k)
                         .stream().filter(name -> name.split(" ").length>1)
                         .collect(Collectors.toList());
-                System.out.println("top ngram features for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
+                System.out.println("top ngram featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
                 System.out.println(featureNames);
 
             }

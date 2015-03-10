@@ -28,7 +28,7 @@
 ///**
 // * obsolete
 // * feature extraction by logistic regression, with train/valid/test split
-// * start with specified features
+// * start with specified featureList
 // * extract both unigrams and ngrams
 // * use focus set with promotion
 // * Created by chengli on 12/31/14.
@@ -70,23 +70,23 @@
 //
 //        ClfDataSet trainDataSet = loadTrainSet(config, index, featureMappers);
 //        System.out.println("in training set :");
-//        showDistribution(config,trainDataSet,trainDataSet.getSetting().getLabelTranslator());
+//        showDistribution(config,trainDataSet,trainDataSet.getSettings().getLabelTranslator());
 //
 //        trainModel(config,trainDataSet,featureMappers,
-//                index, trainDataSet.getSetting().getIdTranslator());
+//                index, trainDataSet.getSettings().getIdTranslator());
 //
 //        //only keep used columns
 //        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet, featureMappers.getTotalDim());
 //        DataSetUtil.setFeatureMappers(trimmedTrainDataSet,featureMappers);
 //        saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
 //        if (config.getBoolean("archive.dumpFields")){
-//            dumpTrainFeatures(config,index,trimmedTrainDataSet.getSetting().getIdTranslator());
+//            dumpTrainFeatures(config,index,trimmedTrainDataSet.getSettings().getIdTranslator());
 //        }
 //
 //        ClfDataSet testDataSet = loadTestSet(config, index, featureMappers);
 //        saveDataSet(config, testDataSet, config.getString("archive.testSet"));
 //        if (config.getBoolean("archive.dumpFields")){
-//            dumpTestFeatures(config,index,testDataSet.getSetting().getIdTranslator());
+//            dumpTestFeatures(config,index,testDataSet.getSettings().getIdTranslator());
 //        }
 //
 //        ClfDataSet validDataSet = loadValidSet(config, index, featureMappers);
@@ -135,11 +135,11 @@
 //            dataSet.setLabel(i,initialDataSet.getLabels()[i]);
 //        }
 //
-//        DataSetUtil.setLabelTranslator(dataSet,initialDataSet.getSetting().getLabelTranslator());
-//        DataSetUtil.setIdTranslator(dataSet,initialDataSet.getSetting().getIdTranslator());
-//        dataSet.getSetting().setFeatureMappers(trainFeatureMappers);
+//        DataSetUtil.setLabelTranslator(dataSet,initialDataSet.getSettings().getLabelTranslator());
+//        DataSetUtil.setIdTranslator(dataSet,initialDataSet.getSettings().getIdTranslator());
+//        dataSet.getSettings().setFeatureMappers(trainFeatureMappers);
 //
-//        IdTranslator idTranslator = initialDataSet.getSetting().getIdTranslator();
+//        IdTranslator idTranslator = initialDataSet.getSettings().getIdTranslator();
 //        String[] dataIndexIds = new String[dataSet.getNumDataPoints()];
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
 //            dataIndexIds[i] = dataSet.getDataPointSetting(i).getExtId();
@@ -183,11 +183,11 @@
 //            dataSet.setLabel(i,initialDataSet.getLabels()[i]);
 //        }
 //
-//        DataSetUtil.setLabelTranslator(dataSet,initialDataSet.getSetting().getLabelTranslator());
-//        DataSetUtil.setIdTranslator(dataSet,initialDataSet.getSetting().getIdTranslator());
-//        dataSet.getSetting().setFeatureMappers(trainFeatureMappers);
+//        DataSetUtil.setLabelTranslator(dataSet,initialDataSet.getSettings().getLabelTranslator());
+//        DataSetUtil.setIdTranslator(dataSet,initialDataSet.getSettings().getIdTranslator());
+//        dataSet.getSettings().setFeatureMappers(trainFeatureMappers);
 //
-//        IdTranslator idTranslator = initialDataSet.getSetting().getIdTranslator();
+//        IdTranslator idTranslator = initialDataSet.getSettings().getIdTranslator();
 //        String[] dataIndexIds = new String[dataSet.getNumDataPoints()];
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
 //            dataIndexIds[i] = dataSet.getDataPointSetting(i).getExtId();
@@ -226,7 +226,7 @@
 //        int numDocsToSelect = config.getInt("extraction.focusSet.numDocs");
 //
 //
-//        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+//        LabelTranslator labelTranslator = dataSet.getSettings().getLabelTranslator();
 //
 //        StopWatch stopWatch = new StopWatch();
 //        stopWatch.start();
@@ -325,7 +325,7 @@
 //            if (!shouldExtractFeatures) {
 //                if (!condition1) {
 //                    System.out.println("we have reached the max number of columns " +
-//                            "and will not extract new features");
+//                            "and will not extract new featureList");
 //                }
 //            }
 //
@@ -606,15 +606,15 @@
 //            dataSet.setLabel(i,initialDataSet.getLabels()[i]);
 //        }
 //
-//        DataSetUtil.setLabelTranslator(dataSet, initialDataSet.getSetting().getLabelTranslator());
-//        DataSetUtil.setIdTranslator(dataSet, initialDataSet.getSetting().getIdTranslator());
+//        DataSetUtil.setLabelTranslator(dataSet, initialDataSet.getSettings().getLabelTranslator());
+//        DataSetUtil.setIdTranslator(dataSet, initialDataSet.getSettings().getIdTranslator());
 //
 //        String[] dataIndexIds = new String[dataSet.getNumDataPoints()];
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
 //            dataIndexIds[i] = dataSet.getDataPointSetting(i).getExtId();
 //        }
 //
-//        IdTranslator idTranslator = initialDataSet.getSetting().getIdTranslator();
+//        IdTranslator idTranslator = initialDataSet.getSettings().getIdTranslator();
 //
 //        featureMappers.getNumericalFeatureMappers().stream().parallel().
 //                forEach(numericalFeatureMapper -> {
@@ -650,7 +650,7 @@
 //        String[] line = FileUtils.readLines(initialFeatureFile).get(0).split(" ");
 //        List<String> unigrams = Arrays.stream(line).map(Integer::parseInt)
 //                .map(i-> initialDataSet.getFeatureSetting(i).getFeatureName()).collect(Collectors.toList());
-//        System.out.println("initial features:");
+//        System.out.println("initial featureList:");
 //        System.out.println(unigrams);
 //        for (String unigram: unigrams){
 //            int featureIndex = featureMappers.nextAvailable();

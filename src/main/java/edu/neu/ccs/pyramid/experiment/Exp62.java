@@ -190,7 +190,7 @@ public class Exp62 {
 
         statsWriter.write("initially");
         statsWriter.write(",");
-        statsWriter.write("number of features = " + featureMappers.getTotalDim());
+        statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
         statsWriter.newLine();
 
 
@@ -233,7 +233,7 @@ public class Exp62 {
         System.out.println("set cover docs "+setCoverDocs);
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
-            System.out.println("total number of features = "+featureMappers.getTotalDim());
+            System.out.println("total number of featureList = "+featureMappers.getTotalDim());
 
             logisticLoss.refresh();
             System.out.println("loss at the start of iteration " + iteration + " = " + logisticLoss.getValue());
@@ -288,7 +288,7 @@ public class Exp62 {
             if (!shouldExtractFeatures) {
                 if (!condition1) {
                     System.out.println("we have reached the max number of columns " +
-                            "and will not extract new features");
+                            "and will not extract new featureList");
                     break;
                 }
             }
@@ -395,7 +395,7 @@ public class Exp62 {
                 }
                 statsWriter.write("iteration = " + iteration);
                 statsWriter.write(",");
-                statsWriter.write("number of features = " + featureMappers.getTotalDim());
+                statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
                 statsWriter.write(",");
                 statsWriter.write("test acc = "+ Accuracy.accuracy(logisticRegression, testSet));
                 statsWriter.newLine();
@@ -496,7 +496,7 @@ public class Exp62 {
         File initialFeatureFile = new File(config.getString("input.initialFeatureFile"));
         String[] line = FileUtils.readLines(initialFeatureFile).get(0).split(",");
         List<String> unigrams = Arrays.stream(line).collect(Collectors.toList());
-        System.out.println("initial features:");
+        System.out.println("initial featureList:");
         System.out.println(unigrams);
         for (String unigram: unigrams){
             int featureIndex = featureMappers.nextAvailable();

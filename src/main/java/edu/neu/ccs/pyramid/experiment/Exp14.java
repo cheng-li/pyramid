@@ -96,9 +96,9 @@ public class Exp14 {
         MultiLabelClfDataSet testDataSet = loadTestData(config);
 
 
-//        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.features").split(",")).map(string -> string.trim())
+//        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.featureList").split(",")).map(string -> string.trim())
 //                .collect(Collectors.toSet());
-//        FeatureMappers featureMappers = dataSet.getSetting().getFeatureMappers();
+//        FeatureMappers featureMappers = dataSet.getSettings().getFeatureMappers();
 //
 //        Set<Integer> initialFeatures = new HashSet<>();
 //        for (CategoricalFeatureMapper mapper: featureMappers.getCategoricalFeatureMappers()){
@@ -215,7 +215,7 @@ public class Exp14 {
 
             for (int k=0;k<dataSet.getNumClasses();k++) {
                 List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k);
-                System.out.println("top features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                System.out.println("top featureList for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
                 System.out.println(featureNames);
             }
         }
@@ -225,7 +225,7 @@ public class Exp14 {
                 List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k)
                         .stream().filter(name -> name.split(" ").length>1)
                         .collect(Collectors.toList());
-                System.out.println("top ngram features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+                System.out.println("top ngram featureList for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
                 System.out.println(featureNames);
             }
         }

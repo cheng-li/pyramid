@@ -17,10 +17,10 @@ public class Formatter {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-//        saveTrainData();
-//        saveTestData();
-        saveTrainZScore();
-        saveTestZScore();
+        saveTrainData();
+        saveTestData();
+//        saveTrainZScore();
+//        saveTestZScore();
     }
 
     private static void saveTestZScore() throws IOException {
@@ -33,7 +33,7 @@ public class Formatter {
 
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
-        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        data.setLabelTranslator(labelTranslator);
         TRECFormat.save(data, new File(TMP, "test.trec"));
     }
 
@@ -46,7 +46,7 @@ public class Formatter {
         String[] extLabels = {"non-spam","spam"};
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
-        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        data.setLabelTranslator(labelTranslator);
         TRECFormat.save(data, new File(TMP, "train.trec"));
     }
 
@@ -72,7 +72,7 @@ public class Formatter {
         String[] extLabels = {"non-spam","spam"};
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
-        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        data.setLabelTranslator(labelTranslator);
         TRECFormat.save(data, new File(TMP, "train.trec"));
     }
 
@@ -86,7 +86,7 @@ public class Formatter {
 
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
-        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        data.setLabelTranslator(labelTranslator);
         TRECFormat.save(data, new File(TMP, "test.trec"));
     }
 }

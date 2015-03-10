@@ -54,23 +54,23 @@
 //
 //        ClfDataSet trainDataSet = loadTrainSet(config);
 //        System.out.println("in training set :");
-//        showDistribution(config,trainDataSet,trainDataSet.getSetting().getLabelTranslator());
+//        showDistribution(config,trainDataSet,trainDataSet.getSettings().getLabelTranslator());
 //
-//        trainModel(config,trainDataSet,trainDataSet.getSetting().getFeatureMappers(),
-//                index, trainDataSet.getSetting().getIdTranslator());
+//        trainModel(config,trainDataSet,trainDataSet.getSettings().getFeatureMappers(),
+//                index, trainDataSet.getSettings().getIdTranslator());
 //
 //        //only keep used columns
-//        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet, trainDataSet.getSetting().getFeatureMappers().getTotalDim());
-//        DataSetUtil.setFeatureMappers(trimmedTrainDataSet,trainDataSet.getSetting().getFeatureMappers());
+//        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet, trainDataSet.getSettings().getFeatureMappers().getTotalDim());
+//        DataSetUtil.setFeatureMappers(trimmedTrainDataSet,trainDataSet.getSettings().getFeatureMappers());
 //        saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
 //        if (config.getBoolean("archive.dumpFields")){
-//            dumpTrainFeatures(config,index,trimmedTrainDataSet.getSetting().getIdTranslator());
+//            dumpTrainFeatures(config,index,trimmedTrainDataSet.getSettings().getIdTranslator());
 //        }
 //
-//        ClfDataSet testDataSet = loadTestSet(config, index, trimmedTrainDataSet.getSetting().getFeatureMappers());
+//        ClfDataSet testDataSet = loadTestSet(config, index, trimmedTrainDataSet.getSettings().getFeatureMappers());
 //        saveDataSet(config, testDataSet, config.getString("archive.testSet"));
 //        if (config.getBoolean("archive.dumpFields")){
-//            dumpTestFeatures(config,index,testDataSet.getSetting().getIdTranslator());
+//            dumpTestFeatures(config,index,testDataSet.getSettings().getIdTranslator());
 //        }
 //    }
 //
@@ -125,11 +125,11 @@
 //            dataSet.setLabel(i,initialDataSet.getLabels()[i]);
 //        }
 //
-//        DataSetUtil.setLabelTranslator(dataSet,initialDataSet.getSetting().getLabelTranslator());
-//        DataSetUtil.setIdTranslator(dataSet,initialDataSet.getSetting().getIdTranslator());
-//        dataSet.getSetting().setFeatureMappers(trainFeatureMappers);
+//        DataSetUtil.setLabelTranslator(dataSet,initialDataSet.getSettings().getLabelTranslator());
+//        DataSetUtil.setIdTranslator(dataSet,initialDataSet.getSettings().getIdTranslator());
+//        dataSet.getSettings().setFeatureMappers(trainFeatureMappers);
 //
-//        IdTranslator idTranslator = initialDataSet.getSetting().getIdTranslator();
+//        IdTranslator idTranslator = initialDataSet.getSettings().getIdTranslator();
 //        String[] dataIndexIds = new String[dataSet.getNumDataPoints()];
 //        for (int i=0;i<dataSet.getNumDataPoints();i++){
 //            dataIndexIds[i] = dataSet.getDataPointSetting(i).getExtId();
@@ -170,7 +170,7 @@
 //        int numDocsToSelect = config.getInt("extraction.numDocsToSelect");
 //
 //
-//        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+//        LabelTranslator labelTranslator = dataSet.getSettings().getLabelTranslator();
 //
 //        StopWatch stopWatch = new StopWatch();
 //        stopWatch.start();
@@ -230,7 +230,7 @@
 //            if (!shouldExtractFeatures){
 //                if (!condition1){
 //                    System.out.println("we have reached the max number of columns " +
-//                            "and will not extract new features");
+//                            "and will not extract new featureList");
 //                }
 //            }
 //
@@ -548,7 +548,7 @@
 //
 //        return seeds.stream().parallel()
 //                .map(seed -> new DFStat(trainSet.getNumClasses(),seed,index,
-//                        trainSet.getSetting().getIdTranslator().getAllExtIds()))
+//                        trainSet.getSettings().getIdTranslator().getAllExtIds()))
 //                .collect(Collectors.toList());
 //    }
 //
@@ -606,9 +606,9 @@
 //            dataSet.setLabel(i,initialDataSet.getLabels()[i]);
 //        }
 //
-//        DataSetUtil.setLabelTranslator(dataSet, initialDataSet.getSetting().getLabelTranslator());
-//        DataSetUtil.setIdTranslator(dataSet, initialDataSet.getSetting().getIdTranslator());
-//        dataSet.getSetting().setFeatureMappers(initialDataSet.getSetting().getFeatureMappers());
+//        DataSetUtil.setLabelTranslator(dataSet, initialDataSet.getSettings().getLabelTranslator());
+//        DataSetUtil.setIdTranslator(dataSet, initialDataSet.getSettings().getIdTranslator());
+//        dataSet.getSettings().setFeatureMappers(initialDataSet.getSettings().getFeatureMappers());
 //        return dataSet;
 //    }
 //

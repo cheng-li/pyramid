@@ -46,7 +46,7 @@ public class Exp66 {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.features"))));
+        BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.featureList"))));
         for (int k=0;k<dataSet.getNumClasses();k++){
             List<String> features = goodNgrams.get(k).stream().map(FeatureUtility::getName)
                     .map(str -> str.replaceAll("\\(slop=.\\)", "")).collect(Collectors.toList());
@@ -160,7 +160,7 @@ public class Exp66 {
             System.out.println("best document = "+bestData+", extId = "+dataSet.getDataPointSetting(bestData).getExtId());
             System.out.println("document length = "+docLengths.get(dataSet.getDataPointSetting(bestData).getExtId()));
             System.out.println("utility = "+bestUtility);
-            System.out.println("matched features = "+ matchedFeatures);
+            System.out.println("matched featureList = "+ matchedFeatures);
 
             remainingFeatures.removeAll(matchedFeatures);
             remainingData.remove(bestData);
