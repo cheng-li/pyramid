@@ -61,6 +61,7 @@ public class LogisticRegressionInspector {
     }
 
     public static String checkNgramUsage(LogisticRegression logisticRegression){
+        StringBuilder sb = new StringBuilder();
         FeatureList featureList = logisticRegression.getFeatureList();
         Set<Integer> usedFeatures = new HashSet<>();
         for (int k=0;k<logisticRegression.getNumClasses();k++){
@@ -69,18 +70,87 @@ public class LogisticRegressionInspector {
                 usedFeatures.add(element.index());
             }
         }
-        List<Ngram> ngrams = usedFeatures.stream().map(featureList::get).filter(feature -> feature instanceof Ngram)
+
+        List<Ngram> selected = usedFeatures.stream().map(featureList::get).filter(feature -> feature instanceof Ngram)
                 .map(feature -> (Ngram)feature).collect(Collectors.toList());
-        int maxLength = ngrams.stream().mapToInt(Ngram::getN).max().getAsInt();
-        int[] numbers = new int[maxLength];
-        ngrams.stream().forEach(ngram -> numbers[ngram.getN()-1] +=1);
-        StringBuilder sb = new StringBuilder();
+
+        List<Ngram> candidates = featureList.getAll().stream()
+                .filter(feature -> feature instanceof Ngram)
+                .map(feature -> (Ngram)feature).collect(Collectors.toList());
+        int maxLength = candidates.stream().mapToInt(Ngram::getN).max().getAsInt();
+        int[] numberCandidates = new int[maxLength];
+        candidates.stream().forEach(ngram -> numberCandidates[ngram.getN() - 1] += 1);
+        sb.append("number of ngram candidates: ");
         for (int n=1;n<=maxLength;n++){
-            sb.append("# "+n+"-grams = "+numbers[n-1]);
+            sb.append(n+"-grams = "+numberCandidates[n-1]);
             sb.append("; ");
         }
+        sb.append("\n");
+
+        int[] numberSelected = new int[maxLength];
+        selected.stream().forEach(ngram -> numberSelected[ngram.getN() - 1] += 1);
+        sb.append("number of selected ngram: ");
+        for (int n=1;n<=maxLength;n++){
+            sb.append(+n+"-grams = "+numberSelected[n-1]);
+            sb.append("; ");
+        }
+        sb.append("\n");
+
+        int[] easyCandidates = new int[maxLength];
+        int[] easySelected = new int[maxLength];
+        Set<String> unigrams = selected.stream().filter(ngram -> ngram.getN() == 1)
+                .map(Ngram::getNgram).collect(Collectors.toSet());
+
+        candidates.stream().filter(ngram -> isComposedOf(ngram.getNgram(), unigrams))
+                .forEach(ngram -> easyCandidates[ngram.getN() - 1] += 1);
+        sb.append("number of ngram candidates that can be constructed from seeds: ");
+        for (int n=1;n<=maxLength;n++){
+            sb.append(n+"-grams = "+easyCandidates[n-1]);
+            sb.append("; ");
+        }
+        sb.append("\n");
+
+        selected.stream().filter(ngram -> isComposedOf(ngram.getNgram(), unigrams))
+                .forEach(ngram -> easySelected[ngram.getN() - 1] += 1);
+        sb.append("number of selected ngrams that can be constructed from seeds: ");
+        for (int n=1;n<=maxLength;n++){
+            sb.append(n+"-grams = "+easySelected[n-1]);
+            sb.append("; ");
+        }
+        sb.append("\n");
+
+        sb.append("percentage of selected ngrams that can be constructed from seeds: ");
+        for (int n=1;n<=maxLength;n++){
+            sb.append(n+"-grams = "+(double)easySelected[n-1]/numberSelected[n-1]);
+            sb.append("; ");
+        }
+        sb.append("\n");
+
+        sb.append("feature selection ratio: ");
+        for (int n=1;n<=maxLength;n++){
+            sb.append(n+"-grams = "+(double)numberSelected[n-1]/numberCandidates[n-1]);
+            sb.append("; ");
+        }
+        sb.append("\n");
+
+        sb.append("feature selection ratio based on seeds: ");
+        for (int n=1;n<=maxLength;n++){
+            sb.append(n+"-grams = "+(double)easySelected[n-1]/easyCandidates[n-1]);
+            sb.append("; ");
+        }
+
         return sb.toString();
 
+    }
+
+    private static boolean isComposedOf(String ngram, Set<String> unigrams){
+        String[] split = ngram.split(" ");
+        for (String term: split){
+            if (unigrams.contains(term)){
+                return true;
+            }
+        }
+        return false;
     }
 
 
