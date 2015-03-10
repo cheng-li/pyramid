@@ -23,9 +23,7 @@ public class MLLogisticTrainer {
 
         MLLogisticRegression mlLogisticRegression = new MLLogisticRegression(dataset.getNumClasses(),dataset.getNumFeatures(),
                 assignments);
-        for (int j=0;j<dataset.getNumFeatures();j++){
-            mlLogisticRegression.setFeatureName(j,dataset.getFeatureSetting(j).getFeatureName());
-        }
+        mlLogisticRegression.setFeatureList(dataset.getFeatureList());
 
         mlLogisticRegression.setFeatureExtraction(false);
         MLLogisticLoss function = new MLLogisticLoss(mlLogisticRegression,dataset,gaussianPriorVariance);

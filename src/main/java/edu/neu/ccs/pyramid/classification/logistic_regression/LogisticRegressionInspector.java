@@ -21,12 +21,11 @@ public class LogisticRegressionInspector {
     //todo if featureList are on different scales, weights are not comparable
     public static List<FeatureUtility> topFeatures(LogisticRegression logisticRegression,
                                                          int k){
-        List<String> featureNames = logisticRegression.getFeatureList().getAll()
-                .stream().map(Feature::getName).collect(Collectors.toList());
+        FeatureList featureList = logisticRegression.getFeatureList();
         Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
         Comparator<FeatureUtility> comparator = Comparator.comparing(FeatureUtility::getUtility);
         List<FeatureUtility> list = IntStream.range(0,weights.size())
-                .mapToObj(i -> new FeatureUtility(i,featureNames.get(i)).setUtility(weights.get(i)))
+                .mapToObj(i -> new FeatureUtility(featureList.get(i)).setUtility(weights.get(i)))
                 .filter(featureUtility -> featureUtility.getUtility()>0)
                 .sorted(comparator.reversed())
                 .collect(Collectors.toList());

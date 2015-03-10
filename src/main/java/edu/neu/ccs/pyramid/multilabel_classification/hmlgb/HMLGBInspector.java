@@ -180,9 +180,10 @@ public class HMLGBInspector {
     public static MultiLabelPredictionAnalysis analyzePrediction(HMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, int limit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
         predictionAnalysis.setInternalId(dataPointIndex);
-        predictionAnalysis.setId(dataSet.getDataPointSetting(dataPointIndex).getExtId());
+        predictionAnalysis.setId(idTranslator.toExtId(dataPointIndex));
         predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
@@ -206,9 +207,10 @@ public class HMLGBInspector {
     public static MultiLabelPredictionAnalysis analyzePrediction(HMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, List<Integer> classes, int limit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
         predictionAnalysis.setInternalId(dataPointIndex);
-        predictionAnalysis.setId(dataSet.getDataPointSetting(dataPointIndex).getExtId());
+        predictionAnalysis.setId(idTranslator.toExtId(dataPointIndex));
         predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());

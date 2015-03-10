@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import org.apache.mahout.math.Vector;
 
@@ -16,11 +17,11 @@ public class MLLogisticRegressionInspector {
 
     public static List<FeatureUtility> topFeatures(MLLogisticRegression logisticRegression,
                                                    int k){
-        String[] featureNames = logisticRegression.getFeatureNames();
+        FeatureList featureList = logisticRegression.getFeatureList();
         Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
         Comparator<FeatureUtility> comparator = Comparator.comparing(FeatureUtility::getUtility);
         List<FeatureUtility> list = IntStream.range(0, weights.size())
-                .mapToObj(i -> new FeatureUtility(i,featureNames[i]).setUtility(weights.get(i)))
+                .mapToObj(i -> new FeatureUtility(featureList.get(i)).setUtility(weights.get(i)))
                 .filter(featureUtility -> featureUtility.getUtility()>0)
                 .sorted(comparator.reversed())
                 .collect(Collectors.toList());

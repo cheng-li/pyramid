@@ -46,7 +46,7 @@ public class Formatter {
         String[] extLabels = {"non-influence","influence"};
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
-        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        data.setLabelTranslator(labelTranslator);
         TRECFormat.save(data, new File(TMP, "train.trec"));
     }
 
@@ -60,7 +60,7 @@ public class Formatter {
 
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
-        DataSetUtil.setLabelTranslator(data, labelTranslator);
+        data.setLabelTranslator(labelTranslator);
         TRECFormat.save(data, new File(TMP, "test.trec"));
     }
 }

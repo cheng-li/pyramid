@@ -486,6 +486,6 @@ public class Exp4 {
                     config.getBoolean("input.loadSettings"));
         }
 
-        return dataSet.getSetting().getLabelTranslator();
+        return dataSet.getLabelTranslator();
     }
 }

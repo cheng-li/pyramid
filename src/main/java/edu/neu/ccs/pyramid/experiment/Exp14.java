@@ -206,7 +206,7 @@ public class Exp14 {
         MultiLabelClfDataSet dataSet = loadTrainData(config);
 
 
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
 //        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
 //        System.out.println("macro-averaged measure on training set:");

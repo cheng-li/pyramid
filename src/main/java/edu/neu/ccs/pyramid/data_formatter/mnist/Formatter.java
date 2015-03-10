@@ -30,7 +30,7 @@ public class Formatter {
         }
 
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
-        DataSetUtil.setLabelTranslator(dataSet,labelTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
         TRECFormat.save(dataSet, new File(TMP, "train.trec"));
     }
 
@@ -44,7 +44,7 @@ public class Formatter {
         }
 
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
-        DataSetUtil.setLabelTranslator(dataSet,labelTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
         TRECFormat.save(dataSet, new File(TMP, "test.trec"));
     }
 }

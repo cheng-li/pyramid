@@ -77,8 +77,8 @@ public class Exp9 {
      */
     private static List<Integer> filter(List<Integer> indices, ClfDataSet dataSet){
         return indices.stream()
-                .filter(i -> !(dataSet.getFeatureSetting(i).getFeatureName().split(Pattern.quote(".")).length >= 3))
-                .filter(i -> !(dataSet.getFeatureSetting(i).getFeatureName().endsWith(".com")))
+                .filter(i -> !(dataSet.getFeatureList().get(i).getName().split(Pattern.quote(".")).length >= 3))
+                .filter(i -> !(dataSet.getFeatureList().get(i).getName().endsWith(".com")))
                 .collect(Collectors.toList());
     }
 
@@ -100,7 +100,7 @@ public class Exp9 {
             int newLabel = Merger.merged(oldLabels[i]);
             merged.setLabel(i,newLabel);
         }
-        DataSetUtil.setLabelTranslator(merged, new LabelTranslator(Merger.extLabels));
+        merged.setLabelTranslator(new LabelTranslator(Merger.extLabels));
         return merged;
     }
 

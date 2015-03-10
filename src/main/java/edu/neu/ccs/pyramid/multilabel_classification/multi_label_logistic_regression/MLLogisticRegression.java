@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regre
 import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
@@ -23,7 +24,8 @@ public class MLLogisticRegression implements MultiLabelClassifier{
     private int numFeatures;
     private Weights weights;
     private boolean featureExtraction = false;
-    private String[] featureNames;
+    private FeatureList featureList;
+
     /**
      * legal assignments of labels
      */
@@ -34,7 +36,6 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.weights = new Weights(numClasses, numFeatures);
-        this.featureNames = new String[numFeatures];
         this.assignments = assignments;
     }
 
@@ -43,7 +44,6 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.weights = new Weights(numClasses, numFeatures, weightVector);
-        this.featureNames = new String[numFeatures];
         this.assignments = assignments;
     }
 
@@ -167,13 +167,7 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         }
     }
 
-    public void setFeatureName(int featureIndex, String featureName){
-        featureNames[featureIndex] = featureName;
-    }
 
-    public String[] getFeatureNames() {
-        return featureNames;
-    }
 
     double[] calClassProbs(double[] assignmentProbs){
         double[] classProbs = new double[numClasses];
@@ -187,5 +181,12 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         }
         return classProbs;
     }
-    
+
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
 }

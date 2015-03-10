@@ -32,7 +32,7 @@ public class SeedExtractor {
             double[] gradient = priorProbClassifier.getGradient(dataSet,k);
             List<String> seeds = Splitter.getAllSplits(regTreeConfig, dataSet, gradient)
                     .stream().sorted(comparator.reversed()).map(SplitResult::getFeatureIndex).
-                            map(i -> dataSet.getFeatureSetting(i).getFeatureName())
+                            map(i -> dataSet.getFeatureList().get(i).getName())
                     .collect(Collectors.toList());
             seedsForAllClasses.add(seeds);
         }

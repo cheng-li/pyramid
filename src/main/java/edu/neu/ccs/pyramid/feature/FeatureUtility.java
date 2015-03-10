@@ -4,32 +4,15 @@ package edu.neu.ccs.pyramid.feature;
  * Created by chengli on 1/27/15.
  */
 public class FeatureUtility {
-    private int index;
-    private String name;
+    private Feature feature;
     private double utility;
     private int rank;
 
 
-    public FeatureUtility(int index, String name) {
-        this.index = index;
-        this.name = name;
+    public FeatureUtility(Feature feature) {
+        this.feature = feature;
     }
 
-    public int getIndex() {
-        return index;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public double getUtility() {
         return utility;
@@ -56,26 +39,13 @@ public class FeatureUtility {
 
         FeatureUtility that = (FeatureUtility) o;
 
-        if (index != that.index) return false;
-        if (!name.equals(that.name)) return false;
+        if (!feature.equals(that.feature)) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = index;
-        result = 31 * result + name.hashCode();
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "FeatureUtility{" +
-                "index=" + index +
-                ", name='" + name + '\'' +
-                ", utility=" + utility +
-                ", rank=" + rank +
-                '}';
+        return feature.hashCode();
     }
 }

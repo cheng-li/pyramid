@@ -1,9 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
-import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.LabelTranslator;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGradientBoosting;
 import edu.neu.ccs.pyramid.regression.*;
@@ -159,9 +156,10 @@ public class IMLGBInspector {
     public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, int limit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
         predictionAnalysis.setInternalId(dataPointIndex);
-        predictionAnalysis.setId(dataSet.getDataPointSetting(dataPointIndex).getExtId());
+        predictionAnalysis.setId(idTranslator.toExtId(dataPointIndex));
         predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
@@ -185,9 +183,10 @@ public class IMLGBInspector {
     public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, List<Integer> classes, int limit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
         predictionAnalysis.setInternalId(dataPointIndex);
-        predictionAnalysis.setId(dataSet.getDataPointSetting(dataPointIndex).getExtId());
+        predictionAnalysis.setId(idTranslator.toExtId(dataPointIndex));
         predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
