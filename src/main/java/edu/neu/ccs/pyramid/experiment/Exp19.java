@@ -201,7 +201,8 @@ public class Exp19 {
             showConfusionMatrix(lkTreeBoost,dataSet);
         }
 
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
 
         if (config.getBoolean("test.mistakes")){
             System.out.println("============analyzing mistakes===========");
@@ -211,7 +212,7 @@ public class Exp19 {
                 int label = dataSet.getLabels()[i];
                 int prediction = lkTreeBoost.predict(row);
                 if (label!=prediction){
-                    System.out.println("data point "+i+", extid = "+dataSet.getDataPointSetting(i).getExtId());
+                    System.out.println("data point "+i+", extid = "+idTranslator.toExtId(i));
 //                    System.out.println(LKTBInspector.analyzeMistake(lkTreeBoost,row,label,prediction,labelTranslator,limit));
                 }
             }
@@ -276,6 +277,6 @@ public class Exp19 {
                     true);
         }
 
-        return dataSet.getSetting().getLabelTranslator();
+        return dataSet.getLabelTranslator();
     }
 }

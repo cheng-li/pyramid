@@ -28,6 +28,10 @@ public class FeatureList implements Serializable {
         return features.size();
     }
 
+    public int nextAvailable(){
+        return features.size();
+    }
+
     // keep indices in order
     public synchronized void add(Feature feature){
         int index = features.size();

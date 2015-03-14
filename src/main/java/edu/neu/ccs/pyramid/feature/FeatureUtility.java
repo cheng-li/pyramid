@@ -13,6 +13,9 @@ public class FeatureUtility {
         this.feature = feature;
     }
 
+    public Feature getFeature() {
+        return feature;
+    }
 
     public double getUtility() {
         return utility;

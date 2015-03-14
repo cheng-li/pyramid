@@ -35,4 +35,15 @@ public class Ngram extends Feature {
     public int getN(){
         return ngram.split(" ").length;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Ngram{");
+        sb.append(super.toString()).append(", ");
+        sb.append("ngram='").append(ngram).append('\'');
+        sb.append(", field='").append(field).append('\'');
+        sb.append(", slop=").append(slop);
+        sb.append('}');
+        return sb.toString();
+    }
 }

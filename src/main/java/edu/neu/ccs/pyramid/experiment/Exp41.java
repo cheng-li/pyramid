@@ -89,9 +89,7 @@ public class Exp41 {
         System.out.println("initializing logistic regression");
         MLLogisticRegression mlLogisticRegression = new MLLogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures(),
                 assignments);
-        for (int j=0;j<dataSet.getNumFeatures();j++){
-            mlLogisticRegression.setFeatureName(j,dataSet.getFeatureSetting(j).getFeatureName());
-        }
+        mlLogisticRegression.setFeatureList(dataSet.getFeatureList());
 
         mlLogisticRegression.setFeatureExtraction(false);
 
@@ -154,7 +152,7 @@ public class Exp41 {
         String input = config.getString("input.folder");
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(input,"train.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
         MLLogisticRegression mlLogisticRegression = MLLogisticRegression.deserialize(modelFile);
 
@@ -163,7 +161,7 @@ public class Exp41 {
         for (int k=0;k<mlLogisticRegression.getNumClasses();k++){
             System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
             System.out.println(MLLogisticRegressionInspector.topFeatures(mlLogisticRegression, k)
-                    .stream().limit(limit).map(FeatureUtility::getName).collect(Collectors.toList()));
+                    .stream().limit(limit).map(FeatureUtility::getFeature).collect(Collectors.toList()));
         }
     }
 

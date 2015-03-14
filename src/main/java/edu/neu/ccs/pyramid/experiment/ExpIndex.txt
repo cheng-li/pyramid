@@ -30,7 +30,7 @@
   29: index imdb_stopwords
   30: given logistic regression coefficients, print top features
   31: feature extraction by logistic regression, see 37
-  32: given feature indices, get feature names
+  32: (obsolete) given feature indices, get feature names
   33: logistic regression
   34: logistic regression hyper parameter tuning via cross validation
   35: dump ngram features
@@ -71,9 +71,9 @@
       extract both unigrams and ngrams
       dynamic seeds
   56: detect duplicated docs in an index
-  57: check the difference between two datasets
+  57: (obsolete)check the difference between two datasets
   58: feature extraction by boosting, dynamic seeds
-  59: check whether important features in one dataset appear in another dataset
+  59: (obsolete) check whether important features in one dataset appear in another dataset
   60: obsolete
   61: dump most common unigrams
   62: extract all frequent ngrams from a document, check how probability estimation changes

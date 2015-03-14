@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
+import edu.neu.ccs.pyramid.feature.Ngram;
 
 import java.io.File;
 import java.util.Arrays;
@@ -93,7 +94,7 @@ public class Exp33 {
         String input = config.getString("input.folder");
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input,"train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        LabelTranslator labelTranslator = dataSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
         LogisticRegression logisticRegression = LogisticRegression.deserialize(modelFile);
         System.out.println("number of used featureList in each class = "
@@ -105,9 +106,11 @@ public class Exp33 {
         for (int k=0;k<logisticRegression.getNumClasses();k++){
             System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
             System.out.println(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit));
-            List<String> longNgrams = LogisticRegressionInspector.topFeatures(logisticRegression, k, 10000).stream()
-                    .map(FeatureUtility::getName)
-                    .filter(str -> str.split(" ").length >= 3).collect(Collectors.toList());
+            List<Ngram> longNgrams = LogisticRegressionInspector.topFeatures(logisticRegression, k, 10000).stream()
+                    .map(FeatureUtility::getFeature)
+                    .filter(feature -> feature instanceof Ngram)
+                    .map(feature -> (Ngram)feature)
+                    .filter(ngram -> ngram.getN() >= 3).collect(Collectors.toList());
             System.out.println("long ngrams: ");
             System.out.println(longNgrams);
         }

@@ -174,7 +174,7 @@ public class Exp30 {
         List<Pair<String, Double>> nameWeightPairs = new ArrayList<>();
         for (int i=0;i<indexWeightPairs.size();i++){
             int index = indexWeightPairs.get(i).getFirst();
-            String name = dataSet.getFeatureSetting(index).getFeatureName();
+            String name = dataSet.getFeatureList().get(index).getName();
             double weight = indexWeightPairs.get(i).getSecond();
             Pair<String, Double> pair = new Pair<>(name,weight);
             nameWeightPairs.add(pair);
@@ -186,7 +186,7 @@ public class Exp30 {
         if (featureIndices.size()!=dataSet.getNumFeatures()){
             throw new RuntimeException("featureIndices.size()!=dataSet.getNumFeatures()");
         }
-        return featureIndices.parallelStream().map(i -> dataSet.getFeatureSetting(i).getFeatureName())
+        return featureIndices.parallelStream().map(i -> dataSet.getFeatureList().get(i).getName())
                 .collect(Collectors.toList());
     }
 }
