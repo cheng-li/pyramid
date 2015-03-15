@@ -5,6 +5,8 @@ import edu.neu.ccs.pyramid.classification.ClassifierFactory;
 import edu.neu.ccs.pyramid.classification.TrainConfig;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -26,6 +28,8 @@ public class ECOC implements Classifier{
     private transient int numDataPoints;
     private ClassifierFactory classifierFactory;
     private transient TrainConfig trainConfig;
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
     public ECOC(ECOCConfig ecocConfig,
                 ClfDataSet dataSet,
@@ -114,7 +118,21 @@ public class ECOC implements Classifier{
         return this.classifierFactory.train(binaryDataSet,this.trainConfig);
     }
 
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
 
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
 
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
 
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
+    }
 }

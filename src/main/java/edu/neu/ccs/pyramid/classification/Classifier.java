@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.classification;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 
@@ -37,6 +39,10 @@ public interface Classifier extends Serializable{
     default void serialize(String file) throws Exception{
         serialize(new File(file));
     }
+
+    FeatureList getFeatureList();
+
+    LabelTranslator getLabelTranslator();
 
 
 }

@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.regression.linear_regression;
 
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import org.apache.mahout.math.Vector;
 
@@ -15,6 +16,8 @@ public class LinearRegression implements Regressor{
     private static final long serialVersionUID = 1L;
 
     private Weights weights;
+
+    private FeatureList featureList;
 
     public LinearRegression(int numFeatures) {
         this.weights = new Weights(numFeatures);
@@ -54,4 +57,12 @@ public class LinearRegression implements Regressor{
         return linearRegression;
     }
 
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
 }

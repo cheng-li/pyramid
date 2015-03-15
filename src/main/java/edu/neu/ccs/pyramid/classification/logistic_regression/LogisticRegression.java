@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
@@ -19,7 +20,7 @@ public class LogisticRegression implements ProbabilityEstimator {
     private Weights weights;
     private boolean featureExtraction = false;
     private FeatureList featureList;
-    boolean featureNamesSet;
+    private LabelTranslator labelTranslator;
 
 
 
@@ -132,7 +133,16 @@ public class LogisticRegression implements ProbabilityEstimator {
         return featureList;
     }
 
-    public void setFeatureList(FeatureList featureList) {
+    void setFeatureList(FeatureList featureList) {
         this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 }

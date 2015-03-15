@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.regression;
 
 
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
@@ -10,4 +11,5 @@ import java.io.Serializable;
  */
 public interface Regressor extends Serializable {
     double predict(Vector vector);
+    FeatureList getFeatureList();
 }

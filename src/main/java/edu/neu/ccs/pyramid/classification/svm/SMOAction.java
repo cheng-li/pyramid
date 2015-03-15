@@ -2,6 +2,8 @@ package edu.neu.ccs.pyramid.classification.svm;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.mahout.math.Vector;
@@ -28,6 +30,8 @@ public class SMOAction implements Classifier {
     private int numDataPoints;
     private Map<Integer, Map<Integer, Double>> cacheKernel;   // kenel_(i,j)
     private Map<Integer, Double> errorCache;
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
 
     public SMOAction(double C, double toler, int maxIter, String kernel) {
@@ -297,6 +301,24 @@ public class SMOAction implements Classifier {
         String str = new String();
         str = "C= " + C + ",  toler= " + toler;
         return str;
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 }
 

@@ -45,6 +45,7 @@ public class ElasticNetLogisticTrainer {
 
     public void train(){
         logisticRegression.setFeatureList(dataSet.getFeatureList());
+        logisticRegression.setLabelTranslator(dataSet.getLabelTranslator());
 
         double lastLoss = loss();
         if (logger.isDebugEnabled()){

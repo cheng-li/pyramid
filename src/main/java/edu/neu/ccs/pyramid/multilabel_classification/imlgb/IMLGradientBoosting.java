@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import org.apache.mahout.math.Vector;
@@ -23,6 +25,8 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
      * legal assignments of labels, optional
      */
     private List<MultiLabel> assignments;
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
     public IMLGradientBoosting(int numClasses) {
         this.numClasses = numClasses;
@@ -177,4 +181,21 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         }
     }
 
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
+    }
 }

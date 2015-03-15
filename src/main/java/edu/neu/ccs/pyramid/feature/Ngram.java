@@ -1,8 +1,17 @@
 package edu.neu.ccs.pyramid.feature;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.io.IOException;
+
 /**
  * Created by chengli on 3/7/15.
  */
+@JsonSerialize(using = Ngram.Serializer.class)
 public class Ngram extends Feature {
     private String ngram;
     private String field;
@@ -39,11 +48,28 @@ public class Ngram extends Feature {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Ngram{");
-        sb.append(super.toString()).append(", ");
-        sb.append("ngram='").append(ngram).append('\'');
-        sb.append(", field='").append(field).append('\'');
+        sb.append("index=").append(index);
+        sb.append(", name=").append(name);
+        sb.append(", ngram=").append(ngram);
+        sb.append(", field=").append(field);
         sb.append(", slop=").append(slop);
+        sb.append(", settings=").append(settings);
         sb.append('}');
         return sb.toString();
     }
+
+    public static class Serializer extends JsonSerializer<Ngram> {
+        @Override
+        public void serialize(Ngram feature, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeNumberField("index", feature.index);
+            jsonGenerator.writeStringField("name", feature.name);
+            jsonGenerator.writeStringField("ngram",feature.ngram);
+            jsonGenerator.writeStringField("field",feature.field);
+            jsonGenerator.writeNumberField("slop", feature.slop);
+            jsonGenerator.writeEndObject();
+        }
+    }
+
+
 }

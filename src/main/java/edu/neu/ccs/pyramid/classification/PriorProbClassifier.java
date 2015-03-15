@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.classification;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -18,6 +20,8 @@ public class PriorProbClassifier implements ProbabilityEstimator{
     private int numClasses;
     private double[] probs;
     private int topClass;
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
 
     public PriorProbClassifier(int numClasses) {
@@ -87,5 +91,23 @@ public class PriorProbClassifier implements ProbabilityEstimator{
                 ", probs=" + Arrays.toString(probs) +
                 ", topClass=" + topClass +
                 '}';
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 }

@@ -24,7 +24,7 @@ public class MLLogisticTrainer {
         MLLogisticRegression mlLogisticRegression = new MLLogisticRegression(dataset.getNumClasses(),dataset.getNumFeatures(),
                 assignments);
         mlLogisticRegression.setFeatureList(dataset.getFeatureList());
-
+        mlLogisticRegression.setLabelTranslator(dataset.getLabelTranslator());
         mlLogisticRegression.setFeatureExtraction(false);
         MLLogisticLoss function = new MLLogisticLoss(mlLogisticRegression,dataset,gaussianPriorVariance);
         LBFGS lbfgs = new LBFGS(function);

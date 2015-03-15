@@ -2,6 +2,8 @@ package edu.neu.ccs.pyramid.classification.naive_bayes;
 
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.mahout.math.DenseVector;
@@ -32,6 +34,8 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
 
     protected int numClasses;
     protected int numFeatures;
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
 
     public NaiveBayes(Class<T> type) {
@@ -199,4 +203,21 @@ public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator 
         return this.distribution[label][feature];
     }
 
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
+    }
 }

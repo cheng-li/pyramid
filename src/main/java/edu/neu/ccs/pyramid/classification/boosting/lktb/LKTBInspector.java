@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
@@ -26,43 +27,33 @@ public class LKTBInspector {
 
     /**
      * only trees are considered
-     * @param lkTreeBoost
+     * @param boosting
      * @param classIndex
      * @return list of feature index and feature name pairs
      */
-    public static List<Pair<Integer,String>> topFeatures(LKTreeBoost lkTreeBoost, int classIndex){
-        Map<Integer,Pair<String,Double>> totalContributions = new HashMap<>();
-        List<Regressor> regressors = lkTreeBoost.getRegressors(classIndex);
+    public static List<Feature> topFeatures(LKTreeBoost boosting, int classIndex){
+        Map<Feature,Double> totalContributions = new HashMap<>();
+        List<Regressor> regressors = boosting.getRegressors(classIndex);
         List<RegressionTree> trees = regressors.stream().filter(regressor ->
                 regressor instanceof RegressionTree)
                 .map(regressor -> (RegressionTree) regressor)
                 .collect(Collectors.toList());
         for (RegressionTree tree: trees){
-            Map<Integer,Pair<String,Double>> contributions = RegTreeInspector.featureImportance(tree);
-            for (Map.Entry<Integer, Pair<String,Double>> entry: contributions.entrySet()){
-                int featureIndex = entry.getKey();
-                Pair<String,Double> pair = entry.getValue();
-                String featureName = pair.getFirst();
-                Pair<String,Double> oldPair = totalContributions.getOrDefault(featureIndex,new Pair<>(featureName,0.0));
-                Pair<String,Double> newPair = new Pair<>(featureName,oldPair.getSecond()+pair.getSecond());
-                totalContributions.put(featureIndex,newPair);
+            Map<Feature,Double> contributions = RegTreeInspector.featureImportance(tree);
+            for (Map.Entry<Feature,Double> entry: contributions.entrySet()){
+                Feature feature = entry.getKey();
+                Double contribution = entry.getValue();
+                double oldValue = totalContributions.getOrDefault(feature,0.0);
+                double newValue = oldValue+contribution;
+                totalContributions.put(feature,newValue);
             }
         }
-        Comparator<Map.Entry<Integer, Pair<String,Double>>> comparator = Comparator.comparing(entry -> entry.getValue().getSecond());
-        List<Pair<Integer,String>> list = totalContributions.entrySet().stream().sorted(comparator.reversed())
-                .map(entry -> new Pair<>(entry.getKey(),entry.getValue().getFirst())).collect(Collectors.toList());
+        Comparator<Map.Entry<Feature,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
+        List<Feature> list = totalContributions.entrySet().stream().sorted(comparator.reversed())
+                .map(Map.Entry::getKey).collect(Collectors.toList());
         return list;
     }
 
-    public static List<Integer> topFeatureIndices(LKTreeBoost lkTreeBoost, int classIndex){
-        return topFeatures(lkTreeBoost,classIndex).stream().map(Pair::getFirst)
-                .collect(Collectors.toList());
-    }
-
-    public static List<String> topFeatureNames(LKTreeBoost lkTreeBoost, int classIndex){
-        return topFeatures(lkTreeBoost,classIndex).stream().map(Pair::getSecond)
-                .collect(Collectors.toList());
-    }
 
     /**
      *
@@ -70,8 +61,8 @@ public class LKTBInspector {
      * @param classIndex
      * @return
      */
-    public static List<Pair<Integer,String>> topFeatures(List<LKTreeBoost> lkTreeBoosts, int classIndex){
-        Map<Integer,Pair<String,Double>> totalContributions = new HashMap<>();
+    public static List<Feature> topFeatures(List<LKTreeBoost> lkTreeBoosts, int classIndex){
+        Map<Feature,Double> totalContributions = new HashMap<>();
         for (LKTreeBoost lkTreeBoost: lkTreeBoosts){
             List<Regressor> regressors = lkTreeBoost.getRegressors(classIndex);
             List<RegressionTree> trees = regressors.stream().filter(regressor ->
@@ -79,31 +70,30 @@ public class LKTBInspector {
                     .map(regressor -> (RegressionTree) regressor)
                     .collect(Collectors.toList());
             for (RegressionTree tree: trees){
-                Map<Integer,Pair<String,Double>> contributions = RegTreeInspector.featureImportance(tree);
-                for (Map.Entry<Integer, Pair<String,Double>> entry: contributions.entrySet()){
-                    int featureIndex = entry.getKey();
-                    Pair<String,Double> pair = entry.getValue();
-                    String featureName = pair.getFirst();
-                    Pair<String,Double> oldPair = totalContributions.getOrDefault(featureIndex,new Pair<>(featureName,0.0));
-                    Pair<String,Double> newPair = new Pair<>(featureName,oldPair.getSecond()+pair.getSecond());
-                    totalContributions.put(featureIndex,newPair);
+                Map<Feature,Double> contributions = RegTreeInspector.featureImportance(tree);
+                for (Map.Entry<Feature,Double> entry: contributions.entrySet()){
+                    Feature feature = entry.getKey();
+                    Double contribution = entry.getValue();
+                    double oldValue = totalContributions.getOrDefault(feature, 0.0);
+                    double newValue = oldValue+contribution;
+                    totalContributions.put(feature,newValue);
                 }
             }
         }
 
-        Comparator<Map.Entry<Integer, Pair<String,Double>>> comparator = Comparator.comparing(entry -> entry.getValue().getSecond());
-        List<Pair<Integer,String>> list = totalContributions.entrySet().stream().sorted(comparator.reversed())
-                .map(entry -> new Pair<>(entry.getKey(),entry.getValue().getFirst())).collect(Collectors.toList());
+        Comparator<Map.Entry<Feature,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
+        List<Feature> list = totalContributions.entrySet().stream().sorted(comparator.reversed())
+                .map(Map.Entry::getKey).collect(Collectors.toList());
         return list;
     }
 
     public static List<Integer> topFeatureIndices(List<LKTreeBoost> lkTreeBoosts, int classIndex){
-        return topFeatures(lkTreeBoosts,classIndex).stream().map(Pair::getFirst)
+        return topFeatures(lkTreeBoosts,classIndex).stream().map(Feature::getIndex)
                 .collect(Collectors.toList());
     }
 
     public static List<String> topFeatureNames(List<LKTreeBoost> lkTreeBoosts, int classIndex){
-        return topFeatures(lkTreeBoosts,classIndex).stream().map(Pair::getSecond)
+        return topFeatures(lkTreeBoosts,classIndex).stream().map(Feature::getName)
                 .collect(Collectors.toList());
     }
 

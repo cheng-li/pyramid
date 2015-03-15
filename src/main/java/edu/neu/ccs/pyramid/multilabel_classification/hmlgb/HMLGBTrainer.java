@@ -57,6 +57,8 @@ public class HMLGBTrainer {
         this.boosting = boosting;
         this.assignments = boosting.getAssignments();
         MultiLabelClfDataSet dataSet = config.getDataSet();
+        boosting.setFeatureList(dataSet.getFeatureList());
+        boosting.setLabelTranslator(dataSet.getLabelTranslator());
         int numClasses = dataSet.getNumClasses();
         int numDataPoints = dataSet.getNumDataPoints();
         int numAssignments = this.assignments.size();

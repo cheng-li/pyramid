@@ -1,7 +1,9 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -37,5 +39,10 @@ public interface MultiLabelClassifier extends Serializable{
     default void serialize(String file) throws Exception{
         serialize(new File(file));
     }
+
+
+    FeatureList getFeatureList();
+
+    LabelTranslator getLabelTranslator();
 
 }

@@ -48,6 +48,8 @@ public class LKTBTrainer {
         this.lkTreeBoost = lkTreeBoost;
         int numClasses = lkTreeBoost.getNumClasses();
         ClfDataSet dataSet= lktbConfig.getDataSet();
+        lkTreeBoost.setFeatureList(dataSet.getFeatureList());
+        lkTreeBoost.setLabelTranslator(dataSet.getLabelTranslator());
         int numDataPoints = dataSet.getNumDataPoints();
         this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
         //only add priors to empty models

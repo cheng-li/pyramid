@@ -6,6 +6,9 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
@@ -206,29 +209,32 @@ public class Exp14 {
         MultiLabelClfDataSet dataSet = loadTrainData(config);
 
 
-        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
 //        System.out.println("overlap on training set = "+ Overlap.overlap(boosting,dataSet));
 //        System.out.println("macro-averaged measure on training set:");
 //        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
         if (config.getBoolean("verify.topFeatures")){
+            int limit = config.getInt("verify.topFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0,dataSet.getNumClasses())
+                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit))
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("verify.topFeatures.file");
+            mapper.writeValue(new File(config.getString("output.folder"),file), topFeaturesList);
 
-            for (int k=0;k<dataSet.getNumClasses();k++) {
-                List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k);
-                System.out.println("top featureList for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-                System.out.println(featureNames);
-            }
         }
 
-        if (config.getBoolean("verify.topNgramsFeatures")){
-            for (int k=0;k<dataSet.getNumClasses();k++) {
-                List<String> featureNames = IMLGBInspector.topFeatureNames(boosting, k)
-                        .stream().filter(name -> name.split(" ").length>1)
-                        .collect(Collectors.toList());
-                System.out.println("top ngram featureList for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-                System.out.println(featureNames);
-            }
-        }
+//        if (config.getBoolean("verify.topNgramsFeatures")){
+//            for (int k=0;k<dataSet.getNumClasses();k++) {
+//                List<Feature> featureNames = IMLGBInspector.topFeatures(boosting, k)
+//                        .stream().filter(feature -> feature instanceof Ngram)
+//                        .map(feature -> (Ngram)feature)
+//                        .filter(ngram -> ngram.getN()>1)
+//                        .collect(Collectors.toList());
+//                System.out.println("top ngram features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
+//                System.out.println(featureNames);
+//            }
+//        }
 
         if (config.getBoolean("verify.analyze")){
             int limit = config.getInt("verify.analyze.rule.limit");

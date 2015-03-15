@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.regression;
 
 
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
@@ -12,6 +14,7 @@ public class ConstantRegressor implements Regressor, Serializable{
     private static final long serialVersionUID = 1L;
 
     private double score;
+    private FeatureList featureList;
 
     public ConstantRegressor(double score) {
         this.score = score;
@@ -31,5 +34,14 @@ public class ConstantRegressor implements Regressor, Serializable{
         return "ConstantRegressor{" +
                 "score=" + score +
                 '}' +"\n";
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
     }
 }

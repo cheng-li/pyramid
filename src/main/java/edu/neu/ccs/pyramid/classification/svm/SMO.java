@@ -2,6 +2,8 @@ package edu.neu.ccs.pyramid.classification.svm;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.mahout.math.Vector;
@@ -35,7 +37,8 @@ public class SMO implements Classifier {
     private int class1 = 0;
     private int class2 = 0;
     private int class3 = 0;
-
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
     public SMO(double C, double toler, double eps, int maxIter, String kernel) {
         this.C = C;
@@ -392,6 +395,24 @@ public class SMO implements Classifier {
                 + ", kernel= " + kernel + ", #sv: " + nonBoundaries.size();
         str += "class1: " + class1 + ", class2: " + class2 + ", class3: " + class3;
         return str;
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 }
 

@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.classification;
 
 
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
@@ -12,6 +14,8 @@ import java.util.List;
 public class ProbabilityVoting implements ProbabilityEstimator{
     private int numClasses;
     private List<ProbabilityEstimator> estimatorList;
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
     public ProbabilityVoting(int numClasses) {
         this.numClasses = numClasses;
@@ -77,5 +81,23 @@ public class ProbabilityVoting implements ProbabilityEstimator{
             averageProbs[k] /= numEstimators;
         }
         return averageProbs;
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    public void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 }

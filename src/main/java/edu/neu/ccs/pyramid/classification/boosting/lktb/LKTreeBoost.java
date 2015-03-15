@@ -4,7 +4,9 @@ import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
@@ -20,12 +22,15 @@ import java.util.List;
  * Created by chengli on 8/14/14.
  */
 public class LKTreeBoost implements ProbabilityEstimator{
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
     /**
      * regressors.get(k).get(i) is the ith regressor for class k
      */
     private List<List<Regressor>> regressors;
     private int numClasses;
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
+
 
     public LKTreeBoost(int numClasses) {
         this.numClasses = numClasses;
@@ -348,5 +353,21 @@ public class LKTreeBoost implements ProbabilityEstimator{
         return sb.toString();
     }
 
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
 
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
+    }
 }

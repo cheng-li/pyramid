@@ -47,6 +47,8 @@ public class IMLGBTrainer {
         this.config = config;
         this.boosting = boosting;
         MultiLabelClfDataSet dataSet = config.getDataSet();
+        boosting.setFeatureList(dataSet.getFeatureList());
+        boosting.setLabelTranslator(dataSet.getLabelTranslator());
         int numClasses = dataSet.getNumClasses();
         int numDataPoints = dataSet.getNumDataPoints();
         this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);

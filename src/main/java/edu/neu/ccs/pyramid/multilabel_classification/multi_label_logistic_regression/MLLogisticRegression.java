@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
@@ -25,6 +26,7 @@ public class MLLogisticRegression implements MultiLabelClassifier{
     private Weights weights;
     private boolean featureExtraction = false;
     private FeatureList featureList;
+    private LabelTranslator labelTranslator;
 
     /**
      * legal assignments of labels
@@ -186,7 +188,16 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         return featureList;
     }
 
-    public void setFeatureList(FeatureList featureList) {
+    void setFeatureList(FeatureList featureList) {
         this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 }
