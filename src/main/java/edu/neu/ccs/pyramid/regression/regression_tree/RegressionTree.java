@@ -35,6 +35,34 @@ public class RegressionTree implements Regressor, Serializable {
         this.leaves = new ArrayList<>();
     }
 
+    //todo deal with reduction and probabilities
+    public static RegressionTree newStump(int featureIndex, double threshold,
+                                          double leftOutput, double rightOutput){
+        RegressionTree tree = new RegressionTree();
+        tree.leaves = new ArrayList<>();
+        tree.root = new Node();
+        tree.root.setId(tree.numNodes);
+        tree.root.setFeatureIndex(featureIndex);
+        tree.root.setThreshold(threshold);
+        tree.root.setLeaf(false);
+        tree.numNodes += 1;
+        Node leftChild = new Node();
+        leftChild.setId(tree.numNodes);
+        leftChild.setLeaf(true);
+        leftChild.setValue(leftOutput);
+        tree.leaves.add(leftChild);
+        tree.numNodes += 1;
+        Node rightChild = new Node();
+        rightChild.setId(tree.numNodes);
+        rightChild.setLeaf(true);
+        rightChild.setValue(rightOutput);
+        tree.leaves.add(rightChild);
+        tree.numNodes += 1;
+        tree.root.setLeftChild(leftChild);
+        tree.root.setRightChild(rightChild);
+        return tree;
+    }
+
     /**
      *
      * @return number of leaves

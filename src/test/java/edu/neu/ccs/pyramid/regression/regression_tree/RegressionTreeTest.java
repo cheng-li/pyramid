@@ -9,7 +9,8 @@ public class RegressionTreeTest {
 //        test1();
 //        test2();
 //        test3();
-        test4();
+//        test4();
+        test5();
     }
 
     private static void test1(){
@@ -270,5 +271,13 @@ public class RegressionTreeTest {
         System.out.println(tree.predict(vector1));
 
 
+    }
+
+    private static void test5(){
+        RegressionTree tree = RegressionTree.newStump(10,0.5,-1.2,3);
+        System.out.println(tree);
+        Vector vector = new DenseVector(100);
+        vector.set(10,0.6);
+        System.out.println(tree.predict(vector));
     }
 }
