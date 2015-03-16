@@ -86,7 +86,7 @@ public class TRECFormat {
         return loadRegDataSet(new File(trecFile),dataSetType, loadSettings);
     }
 
-    public static MultiLabelClfDataSet loaMultiLabelClfDataSet(String trecFile, DataSetType dataSetType,
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSet(String trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
         return loadMultiLabelClfDataSet(new File(trecFile),dataSetType, loadSettings);
     }

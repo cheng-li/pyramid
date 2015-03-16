@@ -173,6 +173,7 @@ public class AdaBoostMHTrainer {
 
         RegressionTree tree = RegressionTree.newStump(optimal.featureIndex,0,
                 leftOutput,rightOutput);
+        tree.setFeatureList(dataSet.getFeatureList());
         return tree;
     }
 

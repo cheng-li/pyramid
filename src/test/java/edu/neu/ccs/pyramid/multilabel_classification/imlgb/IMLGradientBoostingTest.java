@@ -18,7 +18,8 @@ public class IMLGradientBoostingTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test1();
+//        test1();
+        test4();
     }
 
     private static void test1() throws Exception{
@@ -363,6 +364,33 @@ public class IMLGradientBoostingTest {
 
 
 
+    }
+
+    static void test4() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
+        IMLGradientBoosting boosting = new IMLGradientBoosting(dataSet.getNumClasses());
+        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        boosting.setAssignments(assignments);
+
+        IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
+                .numLeaves(2).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
+                .dataSamplingRate(1).featureSamplingRate(1).build();
+
+        IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+
+        for (int round =0;round<100;round++){
+            System.out.println("round="+round);
+            trainer.iterate();
+            System.out.println(stopWatch);
+        }
+
+        System.out.println("training accuracy="+ Accuracy.accuracy(boosting, dataSet));
+        System.out.println("training overlap = "+ Overlap.overlap(boosting,dataSet));
+        System.out.println("test accuracy="+ Accuracy.accuracy(boosting, testSet));
+        System.out.println("test overlap = "+ Overlap.overlap(boosting,testSet));
     }
 
 }

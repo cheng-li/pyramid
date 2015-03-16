@@ -4,7 +4,9 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
+
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -20,9 +22,10 @@ public class MLLogisticTrainerTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test2();
-//        test5_train();
-//        test5_test();
+//        test2();
+////        test5_train();
+////        test5_test();
+        test6();
     }
 
 
@@ -226,6 +229,24 @@ public class MLLogisticTrainerTest {
                 ,DataSetType.ML_CLF_SPARSE,true);
         System.out.println("test accuracy = " +Accuracy.accuracy(mlLogisticRegression,testSet));
         System.out.println("test overlap = " + Overlap.overlap(mlLogisticRegression,testSet));
+    }
+
+    static void test6() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
+        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(1).setGaussianPriorVariance(1)
+                .setHistory(5).build();
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        MLLogisticRegression mlLogisticRegression =trainer.train(dataSet,assignments);
+        System.out.println(stopWatch);
+
+
+        System.out.println("training accuracy="+ Accuracy.accuracy(mlLogisticRegression, dataSet));
+        System.out.println("training overlap = "+ Overlap.overlap(mlLogisticRegression, dataSet));
+        System.out.println("test accuracy="+ Accuracy.accuracy(mlLogisticRegression, testSet));
+        System.out.println("test overlap = "+ Overlap.overlap(mlLogisticRegression,testSet));
     }
 
 }

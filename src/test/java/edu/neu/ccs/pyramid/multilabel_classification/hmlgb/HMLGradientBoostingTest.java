@@ -7,7 +7,11 @@ import edu.neu.ccs.pyramid.dataset.*;
 
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
+import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -26,7 +30,8 @@ public class HMLGradientBoostingTest {
 //        test2_all();
 //        test3_all();
 //        test4();
-        test3_load();
+//        test3_load();
+        test5();
     }
 
     static void spam_all() throws Exception{
@@ -290,7 +295,7 @@ public class HMLGradientBoostingTest {
         extLabels.add("fake2");
         extLabels.add("fake3");
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
-        DataSetUtil.setLabelTranslator(dataSet,labelTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
 
         List<MultiLabel> assignments = new ArrayList<>();
         assignments.add(new MultiLabel().addLabel(0));
@@ -377,7 +382,7 @@ public class HMLGradientBoostingTest {
         extLabels.add("fake2");
         extLabels.add("fake3");
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
-        DataSetUtil.setLabelTranslator(dataSet,labelTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
 
         HMLGradientBoosting boosting = HMLGradientBoosting.deserialize(new File(TMP,"/hmlgb/boosting.ser"));
         System.out.println(Accuracy.accuracy(boosting,dataSet));
@@ -461,6 +466,34 @@ public class HMLGradientBoostingTest {
         System.out.println("macro-averaged:");
         System.out.println(new MacroAveragedMeasures(boosting,dataSet));
 
+    }
+
+
+    static void test5() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
+        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        HMLGradientBoosting boosting = new HMLGradientBoosting(dataSet.getNumClasses(),assignments);
+
+
+        HMLGBConfig trainConfig = new HMLGBConfig.Builder(dataSet)
+                .numLeaves(2).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
+                .dataSamplingRate(1).featureSamplingRate(1).build();
+
+        HMLGBTrainer trainer = new HMLGBTrainer(trainConfig,boosting);
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+
+        for (int round =0;round<100;round++){
+            System.out.println("round="+round);
+            trainer.iterate();
+            System.out.println(stopWatch);
+        }
+
+        System.out.println("training accuracy="+ Accuracy.accuracy(boosting, dataSet));
+        System.out.println("training overlap = "+ Overlap.overlap(boosting, dataSet));
+        System.out.println("test accuracy="+ Accuracy.accuracy(boosting, testSet));
+        System.out.println("test overlap = "+ Overlap.overlap(boosting,testSet));
     }
 
 }
