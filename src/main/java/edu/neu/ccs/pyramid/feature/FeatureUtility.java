@@ -1,9 +1,12 @@
 package edu.neu.ccs.pyramid.feature;
 
+import java.io.Serializable;
+
 /**
  * Created by chengli on 1/27/15.
  */
-public class FeatureUtility {
+public class FeatureUtility implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Feature feature;
     private double utility;
     private int rank;
@@ -50,5 +53,15 @@ public class FeatureUtility {
     @Override
     public int hashCode() {
         return feature.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("FeatureUtility{");
+        sb.append("feature=").append(feature);
+        sb.append(", utility=").append(utility);
+        sb.append(", rank=").append(rank);
+        sb.append('}');
+        return sb.toString();
     }
 }

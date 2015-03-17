@@ -6,11 +6,13 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGradientBoosting;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -216,22 +218,15 @@ public class Exp13 {
 
         if (config.getBoolean("verify.topFeatures")){
 
-            for (int k=0;k<dataSet.getNumClasses();k++) {
-                List<String> featureNames = HMLGBInspector.topFeatureNames(boosting, k);
-                System.out.println("top features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-                System.out.println(featureNames);
-            }
+            int limit = config.getInt("verify.topFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0,dataSet.getNumClasses())
+                    .mapToObj(k -> HMLGBInspector.topFeatures(boosting, k, limit))
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("verify.topFeatures.file");
+            mapper.writeValue(new File(config.getString("output.folder"),file), topFeaturesList);
         }
 
-        if (config.getBoolean("verify.topNgramsFeatures")){
-            for (int k=0;k<dataSet.getNumClasses();k++) {
-                List<String> featureNames = HMLGBInspector.topFeatureNames(boosting, k)
-                        .stream().filter(name -> name.split(" ").length>1)
-                        .collect(Collectors.toList());
-                System.out.println("top ngram features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-                System.out.println(featureNames);
-            }
-        }
 
         if (config.getBoolean("verify.analyze")){
             int limit = config.getInt("verify.analyze.rule.limit");

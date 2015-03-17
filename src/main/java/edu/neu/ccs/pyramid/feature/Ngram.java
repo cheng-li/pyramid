@@ -71,5 +71,27 @@ public class Ngram extends Feature {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
 
+        Ngram ngram1 = (Ngram) o;
+
+        if (slop != ngram1.slop) return false;
+        if (!field.equals(ngram1.field)) return false;
+        if (!ngram.equals(ngram1.ngram)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + ngram.hashCode();
+        result = 31 * result + field.hashCode();
+        result = 31 * result + slop;
+        return result;
+    }
 }

@@ -63,13 +63,16 @@ public class Feature implements Serializable{
         Feature feature = (Feature) o;
 
         if (index != feature.index) return false;
+        if (!name.equals(feature.name)) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return index;
+        int result = index;
+        result = 31 * result + name.hashCode();
+        return result;
     }
 
     public static class Serializer extends JsonSerializer<Feature>{

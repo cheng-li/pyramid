@@ -188,7 +188,7 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         return featureList;
     }
 
-    void setFeatureList(FeatureList featureList) {
+    public void setFeatureList(FeatureList featureList) {
         this.featureList = featureList;
     }
 

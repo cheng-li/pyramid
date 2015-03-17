@@ -1,13 +1,11 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrainer;
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.DataSetUtil;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -46,9 +44,10 @@ public class Exp66 {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.featureList"))));
+        //todo serialize featureUtilities 
+        BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.features"))));
         for (int k=0;k<dataSet.getNumClasses();k++){
-            List<String> features = goodNgrams.get(k).stream().map(FeatureUtility::getName)
+            List<String> features = goodNgrams.get(k).stream().map(featureUtility -> featureUtility.getFeature().getName())
                     .map(str -> str.replaceAll("\\(slop=.\\)", "")).collect(Collectors.toList());
             String str = features.toString().replace("[","").replace("]","");
             bw1.write(str);
@@ -111,33 +110,35 @@ public class Exp66 {
     public static List<List<FeatureUtility>> getGoodNgrams(Config config) throws Exception{
         File dataFile = new File(config.getString("input.goodDataSet"),"train.trec");
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(dataFile, DataSetType.CLF_SPARSE, true);
-        RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
-                .setHistory(5)
-                .setGaussianPriorVariance(config.getDouble("gaussianPriorVariance"))
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
+                .setRegularization(config.getDouble("regularization"))
+                .setL1Ratio(config.getDouble("l1Ratio"))
                 .setEpsilon(0.1)
                 .build();
 
+        trainer.train();
 
-        LogisticRegression logisticRegression = trainer.train(dataSet);
+
         System.out.println("accuracy on good dataset = "+ Accuracy.accuracy(logisticRegression, dataSet));
-        int limit = config.getInt("topFeature.limit");
         List<List<FeatureUtility>> goodFeatures = new ArrayList<>();
         for (int k=0;k<logisticRegression.getNumClasses();k++){
-            goodFeatures.add(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit));
+            goodFeatures.add(LogisticRegressionInspector.topFeatures(logisticRegression, k));
         }
         return goodFeatures;
     }
 
     private static double docUtility(Set<FeatureUtility> remainingFeatures, ClfDataSet dataSet, Map<String, Integer> docLengths,
                                      int dataPoint){
-        double total =  remainingFeatures.stream().filter(featureUtility -> dataSet.getRow(dataPoint).get(featureUtility.getIndex())>0)
+        double total =  remainingFeatures.stream().filter(featureUtility -> dataSet.getRow(dataPoint).get(featureUtility.getFeature().getIndex())>0)
                 .mapToDouble(FeatureUtility::getUtility).sum();
-        int docLength = docLengths.get(dataSet.getSetting().getIdTranslator().toExtId(dataPoint));
+        int docLength = docLengths.get(dataSet.getIdTranslator().toExtId(dataPoint));
         return total/docLength;
     }
 
     private static Set<FeatureUtility> matchedFeatures(Set<FeatureUtility> remainingFeatures, ClfDataSet dataSet, int dataPoint){
-        return remainingFeatures.stream().filter(featureUtility -> dataSet.getRow(dataPoint).get(featureUtility.getIndex()) > 0)
+        return remainingFeatures.stream().filter(featureUtility -> dataSet.getRow(dataPoint).get(featureUtility.getFeature().getIndex()) > 0)
                 .collect(Collectors.toSet());
     }
 
@@ -147,6 +148,7 @@ public class Exp66 {
         Set<Integer> remainingData = new HashSet<>(dataPoints);
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<String> docs = new ArrayList<>();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
 
         for (int iteration =0;iteration<1000000;iteration++){
             System.out.println("iteration "+iteration);
@@ -155,12 +157,12 @@ public class Exp66 {
                     .max(comparator).get();
             int bestData = bestPair.getFirst();
             double bestUtility = bestPair.getSecond();
-            docs.add(dataSet.getDataPointSetting(bestData).getExtId());
+            docs.add(idTranslator.toExtId(bestData));
             Set<FeatureUtility> matchedFeatures = matchedFeatures(remainingFeatures,dataSet,bestData);
-            System.out.println("best document = "+bestData+", extId = "+dataSet.getDataPointSetting(bestData).getExtId());
-            System.out.println("document length = "+docLengths.get(dataSet.getDataPointSetting(bestData).getExtId()));
+            System.out.println("best document = "+bestData+", extId = "+idTranslator.toExtId(bestData));
+            System.out.println("document length = "+docLengths.get(idTranslator.toExtId(bestData)));
             System.out.println("utility = "+bestUtility);
-            System.out.println("matched featureList = "+ matchedFeatures);
+            System.out.println("matched features = "+ matchedFeatures);
 
             remainingFeatures.removeAll(matchedFeatures);
             remainingData.remove(bestData);

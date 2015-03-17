@@ -6,11 +6,12 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
+import edu.neu.ccs.pyramid.elasticsearch.FeatureLoader;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.feature.FeatureMappers;
-import edu.neu.ccs.pyramid.feature.NumericalFeatureMapper;
+import edu.neu.ccs.pyramid.feature.FeatureList;
+import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.UncertainSampler;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
@@ -67,46 +68,46 @@ public class Exp62 {
     static void train(Config config, SingleLabelIndex index) throws Exception{
         int totalDim = config.getInt("featureMatrix.maxNumColumns");
         LabelTranslator labelTranslator = loadLabelTranslator(config, index);
-        FeatureMappers featureMappers = new FeatureMappers();
-        loadInitialFeaturesFromFile(config,featureMappers);
+        FeatureList featureList = new FeatureList();
+        loadInitialFeaturesFromFile(config,featureList);
         Set<String> duplidate = loadDuplicate(config);
         String[] trainIndexIds = sampleTrain(config,index,duplidate);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
 
-        ClfDataSet trainDataSet = loadData(config, index, featureMappers,trainIdTranslator,totalDim,labelTranslator);
+        ClfDataSet trainDataSet = loadData(config, index, featureList,trainIdTranslator,totalDim,labelTranslator);
         System.out.println("in training set :");
-        showDistribution(config,trainDataSet,trainDataSet.getSetting().getLabelTranslator());
+        showDistribution(config,trainDataSet,trainDataSet.getLabelTranslator());
 
         String[] validIndexIds = sampleValid(config,index,duplidate);
         IdTranslator validIdTranslator = loadIdTranslator(validIndexIds);
-        ClfDataSet validDataSet = loadData(config, index, featureMappers,validIdTranslator,totalDim,labelTranslator);
+        ClfDataSet validDataSet = loadData(config, index, featureList,validIdTranslator,totalDim,labelTranslator);
         System.out.println("in validation set :");
-        showDistribution(config,validDataSet,validDataSet.getSetting().getLabelTranslator());
+        showDistribution(config,validDataSet,validDataSet.getLabelTranslator());
 
         String[] testIndexIds = sampleTest(config,index);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
-        ClfDataSet testDataSet = loadData(config, index, featureMappers,testIdTranslator,totalDim,labelTranslator);
+        ClfDataSet testDataSet = loadData(config, index, featureList,testIdTranslator,totalDim,labelTranslator);
         System.out.println("in test set :");
-        showDistribution(config,testDataSet,testDataSet.getSetting().getLabelTranslator());
+        showDistribution(config,testDataSet,testDataSet.getLabelTranslator());
 
-        trainModel(config,trainDataSet,validDataSet, testDataSet, featureMappers,
-                index, trainDataSet.getSetting().getIdTranslator());
+        trainModel(config,trainDataSet,validDataSet, testDataSet, featureList,
+                index, trainDataSet.getIdTranslator());
 
         //only keep used columns
-        trainDataSet = DataSetUtil.trim(trainDataSet, featureMappers.getTotalDim());
-        DataSetUtil.setFeatureMappers(trainDataSet,featureMappers);
+        trainDataSet = DataSetUtil.trim(trainDataSet, featureList.size());
+        trainDataSet.setFeatureList(featureList);
         saveDataSet(config, trainDataSet, config.getString("archive.trainingSet"));
         if (config.getBoolean("archive.dumpFields")){
-            dumpTrainFeatures(config,index,trainDataSet.getSetting().getIdTranslator());
+            dumpTrainFeatures(config,index,trainDataSet.getIdTranslator());
         }
 
 
-        validDataSet = DataSetUtil.trim(validDataSet, featureMappers.getTotalDim());
-        DataSetUtil.setFeatureMappers(validDataSet,featureMappers);
+        validDataSet = DataSetUtil.trim(validDataSet, featureList.size());
+        validDataSet.setFeatureList(featureList);
         saveDataSet(config, validDataSet, config.getString("archive.validSet"));
 
-        testDataSet = DataSetUtil.trim(testDataSet, featureMappers.getTotalDim());
-        DataSetUtil.setFeatureMappers(testDataSet,featureMappers);
+        testDataSet = DataSetUtil.trim(testDataSet, featureList.size());
+        testDataSet.setFeatureList(featureList);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
 
 
@@ -143,7 +144,7 @@ public class Exp62 {
 
 
     static void trainModel(Config config, ClfDataSet trainSet, ClfDataSet validSet, ClfDataSet testSet,
-                           FeatureMappers featureMappers,
+                           FeatureList featureList,
                            SingleLabelIndex index, IdTranslator trainIdTranslator) throws Exception{
         String archive = config.getString("archive.folder");
         File archiveFolder = new File(archive);
@@ -153,9 +154,9 @@ public class Exp62 {
 
         String modelName = config.getString("archive.model");
 
-        LabelTranslator labelTranslator = trainSet.getSetting().getLabelTranslator();
+        LabelTranslator labelTranslator = trainSet.getLabelTranslator();
 
-        List<List<String>> longDocs = longDocs(index,validSet.getSetting().getIdTranslator().getAllExtIds(),validSet.getNumClasses());
+        List<List<String>> longDocs = longDocs(index,validSet.getIdTranslator().getAllExtIds(),validSet.getNumClasses());
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -179,8 +180,8 @@ public class Exp62 {
         UncertainSampler sampler = new UncertainSampler(validSet);
 
         //add initial unigrams to blacklist
-        for (int i=0;i<featureMappers.getTotalDim();i++){
-            blackList.add(featureMappers.getName(i));
+        for (int i=0;i<featureList.size();i++){
+            blackList.add(featureList.get(i).getName());
         }
 
         List<Integer> ns = config.getIntegers("ngram.n");
@@ -190,7 +191,7 @@ public class Exp62 {
 
         statsWriter.write("initially");
         statsWriter.write(",");
-        statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
+        statsWriter.write("number of features= " + featureList.size());
         statsWriter.newLine();
 
 
@@ -233,7 +234,7 @@ public class Exp62 {
         System.out.println("set cover docs "+setCoverDocs);
         for (int iteration=0;iteration<numIterations;iteration++) {
             System.out.println("iteration " + iteration);
-            System.out.println("total number of featureList = "+featureMappers.getTotalDim());
+            System.out.println("total number of features = "+featureList.size());
 
             logisticLoss.refresh();
             System.out.println("loss at the start of iteration " + iteration + " = " + logisticLoss.getValue());
@@ -278,7 +279,7 @@ public class Exp62 {
 
 
 
-            boolean condition1 = (featureMappers.getTotalDim()
+            boolean condition1 = (featureList.size()
                     + config.getInt("extraction.topN")
                     < trainSet.getNumFeatures());
 
@@ -316,15 +317,15 @@ public class Exp62 {
                     } else if (config.getString("sample.fashion").equals("easy")){
                             sampleAlgorithmId = sampler.getEasyOne(k).get();
                     } else if (config.getString("sample.fashion").equals("setCover")){
-                        sampleAlgorithmId = validSet.getSetting().getIdTranslator().toIntId(setCoverDocs.get(k).get(iteration));
+                        sampleAlgorithmId = validSet.getIdTranslator().toIntId(setCoverDocs.get(k).get(iteration));
                     } else if (config.getString("sample.fashion").equals("long")) {
-                        sampleAlgorithmId = validSet.getSetting().getIdTranslator().toIntId(longDocs.get(k).get(iteration));
+                        sampleAlgorithmId = validSet.getIdTranslator().toIntId(longDocs.get(k).get(iteration));
                     } else {
                         throw new RuntimeException("illegal fashion");
                     }
 
 
-                    String sampleIndexId = validSet.getSetting().getIdTranslator().toExtId(sampleAlgorithmId);
+                    String sampleIndexId = validSet.getIdTranslator().toExtId(sampleAlgorithmId);
                     System.out.println("focus doc's index id = "+sampleIndexId);
                     System.out.println("focus doc's length = "+docLengths.get(sampleIndexId));
                     System.out.println("focus doc's scores = "+Arrays.toString(logisticRegression.predictClassScores(validSet.getRow(sampleAlgorithmId))));
@@ -335,8 +336,8 @@ public class Exp62 {
                     remainingDataForClass.removeAll(sampler.getBlackList());
                     List<DocInfo> docInfos = new ArrayList<>();
                     for (Integer i: remainingDataForClass){
-                        DocInfo docInfo = new DocInfo(i, validSet.getSetting().getIdTranslator().toExtId(i),
-                                docLengths.get(validSet.getSetting().getIdTranslator().toExtId(i)),
+                        DocInfo docInfo = new DocInfo(i, validSet.getIdTranslator().toExtId(i),
+                                docLengths.get(validSet.getIdTranslator().toExtId(i)),
                                 logisticRegression.predictClassScores(validSet.getRow(i))[k]);
                         docInfos.add(docInfo);
                     }
@@ -385,17 +386,17 @@ public class Exp62 {
                     System.out.println("phrases extracted for class " + k + " (" + labelTranslator.toExtLabel(k) + "):");
                     System.out.println(featuresToAdd);
 
-                    int startFeatureIndex = featureMappers.nextAvailable();
+                    int startFeatureIndex = featureList.nextAvailable();
                     addFeaturesToMatrix(index, trainSet, featuresToAdd, startFeatureIndex);
                     addFeaturesToMatrix(index, validSet, featuresToAdd, startFeatureIndex);
                     addFeaturesToMatrix(index, testSet, featuresToAdd, startFeatureIndex);
 
-                    addFeaturesToMappers(featureMappers,featuresToAdd);
+                    addFeatures(featureList, featuresToAdd);
                     blackList.addAll(featuresToAdd);
                 }
                 statsWriter.write("iteration = " + iteration);
                 statsWriter.write(",");
-                statsWriter.write("number of featureList = " + featureMappers.getTotalDim());
+                statsWriter.write("number of features = " + featureList.size());
                 statsWriter.write(",");
                 statsWriter.write("test acc = "+ Accuracy.accuracy(logisticRegression, testSet));
                 statsWriter.newLine();
@@ -491,7 +492,7 @@ public class Exp62 {
     /**
      * assuming unigram for now
      */
-    static void loadInitialFeaturesFromFile(Config config, FeatureMappers featureMappers) throws Exception{
+    static void loadInitialFeaturesFromFile(Config config, FeatureList featureList) throws Exception{
 
         File initialFeatureFile = new File(config.getString("input.initialFeatureFile"));
         String[] line = FileUtils.readLines(initialFeatureFile).get(0).split(",");
@@ -499,11 +500,13 @@ public class Exp62 {
         System.out.println("initial featureList:");
         System.out.println(unigrams);
         for (String unigram: unigrams){
-            int featureIndex = featureMappers.nextAvailable();
-            NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                    setFeatureIndex(featureIndex).setFeatureName(unigram).
-                    setSource("matching_score").build();
-            featureMappers.addMapper(mapper);
+            Ngram ngram = new Ngram();
+            ngram.setNgram(unigram);
+            ngram.setSlop(0);
+            ngram.setName(unigram);
+            ngram.setField("body");
+            ngram.getSettings().put("source", "matching_score");
+            featureList.add(ngram);
         }
     }
 
@@ -565,7 +568,7 @@ public class Exp62 {
     }
 
     static ClfDataSet loadData(Config config, SingleLabelIndex index,
-                               FeatureMappers featureMappers,
+                               FeatureList featureList,
                                IdTranslator idTranslator, int totalDim,
                                LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
@@ -583,57 +586,10 @@ public class Exp62 {
                     dataSet.setLabel(i,label);
                 });
 
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator);
 
-        featureMappers.getCategoricalFeatureMappers().stream().parallel().
-                forEach(categoricalFeatureMapper -> {
-                    String featureName = categoricalFeatureMapper.getFeatureName();
-                    String source = categoricalFeatureMapper.getSource();
-                    if (source.equalsIgnoreCase("field")){
-                        for (String id: dataIndexIds){
-                            int algorithmId = idTranslator.toIntId(id);
-                            String category = index.getStringField(id,featureName);
-                            // might be a new category unseen in training
-                            if (categoricalFeatureMapper.hasCategory(category)){
-                                int featureIndex = categoricalFeatureMapper.getFeatureIndex(category);
-                                dataSet.setFeatureValue(algorithmId,featureIndex,1);
-                            }
-                        }
-                    }
-                });
-
-
-        featureMappers.getNumericalFeatureMappers().stream().parallel().
-                forEach(numericalFeatureMapper -> {
-                    String featureName = numericalFeatureMapper.getFeatureName();
-                    String source = numericalFeatureMapper.getSource();
-                    int featureIndex = numericalFeatureMapper.getFeatureIndex();
-
-                    if (source.equalsIgnoreCase("field")){
-                        for (String id: dataIndexIds){
-                            int algorithmId = idTranslator.toIntId(id);
-                            float value = index.getFloatField(id,featureName);
-                            dataSet.setFeatureValue(algorithmId,featureIndex,value);
-                        }
-                    }
-
-                    if (source.equalsIgnoreCase("matching_score")){
-                        SearchResponse response = null;
-
-                        //todo assume unigram, so slop doesn't matter
-                        response = index.matchPhrase(index.getBodyField(), featureName, dataIndexIds, 0);
-
-                        SearchHit[] hits = response.getHits().getHits();
-                        for (SearchHit hit: hits){
-                            String indexId = hit.getId();
-                            float score = hit.getScore();
-                            int algorithmId = idTranslator.toIntId(indexId);
-                            dataSet.setFeatureValue(algorithmId,featureIndex,score);
-                        }
-                    }
-                });
-        DataSetUtil.setIdTranslator(dataSet, idTranslator);
-        DataSetUtil.setLabelTranslator(dataSet, labelTranslator);
+        dataSet.setIdTranslator(idTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
         return dataSet;
     }
 
@@ -716,7 +672,7 @@ public class Exp62 {
 
     //we have to preserve order, so use a list
     static void addFeaturesToMatrix(ESIndex index, ClfDataSet dataSet, List<String> features, int startFeatureIndex){
-        IdTranslator idTranslator = dataSet.getSetting().getIdTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
         List<Pair<String, SearchResponse>> searchResponseList = features.stream().parallel()
                 .map(phrase -> new Pair<>(phrase, index.matchPhrase(index.getBodyField(),
                         phrase, idTranslator.getAllExtIds(), 0)))
@@ -736,13 +692,17 @@ public class Exp62 {
         }
     }
 
-    static void addFeaturesToMappers(FeatureMappers featureMappers, List<String> features){
-        features.stream().forEach(feature ->{
-            int featureIndex = featureMappers.nextAvailable();
-            NumericalFeatureMapper mapper = NumericalFeatureMapper.getBuilder().
-                    setFeatureIndex(featureIndex).setFeatureName(feature).
-                    setSource("matching_score").build();
-            featureMappers.addMapper(mapper);
+    static void addFeatures(FeatureList featureList, List<String> features){
+        features.stream().forEach(ngram ->{
+            String featureName = ngram+"(slop="+slop+")";
+            Ngram feature = new Ngram();
+            feature.setIndex(featureList.size());
+            feature.setName(featureName);
+            feature.getSettings().put("source", "matching_score");
+            feature.setNgram(ngram);
+            feature.setSlop(slop);
+            feature.setField(field);
+            featureList.add(feature);
         });
     }
 

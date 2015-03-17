@@ -19,6 +19,13 @@ import java.util.stream.IntStream;
  */
 public class LogisticRegressionInspector {
     //todo if featureList are on different scales, weights are not comparable
+
+    /**
+     * unused features won't be considered
+     * @param logisticRegression
+     * @param k
+     * @return
+     */
     public static List<FeatureUtility> topFeatures(LogisticRegression logisticRegression,
                                                          int k){
         FeatureList featureList = logisticRegression.getFeatureList();

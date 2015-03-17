@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.feature.Feature;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -233,7 +234,7 @@ public class Exp19 {
 
         System.out.println("==========top featureList==========");
         for (int k=0;k<numClasses;k++){
-            List<String> features = LKTBInspector.topFeatureNames(lkTreeBoost, k);
+            List<Feature> features = LKTBInspector.topFeatures(lkTreeBoost, k);
             System.out.println("top featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
             System.out.println(features);
         }

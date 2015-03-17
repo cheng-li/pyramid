@@ -81,6 +81,6 @@
   64: write data to the seql format
   65: index imdb as multi-label
   66: set cover good ngrams
-  67: deal with negations in a dataset
+  67: (obsolete) deal with negations in a dataset
   68: test ridge logistic regression with noisy features
 
