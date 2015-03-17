@@ -694,14 +694,14 @@ public class Exp62 {
 
     static void addFeatures(FeatureList featureList, List<String> features){
         features.stream().forEach(ngram ->{
-            String featureName = ngram+"(slop="+slop+")";
+            String featureName = ngram+"(slop="+0+")";
             Ngram feature = new Ngram();
             feature.setIndex(featureList.size());
             feature.setName(featureName);
             feature.getSettings().put("source", "matching_score");
             feature.setNgram(ngram);
-            feature.setSlop(slop);
-            feature.setField(field);
+            feature.setSlop(0);
+            feature.setField("body");
             featureList.add(feature);
         });
     }

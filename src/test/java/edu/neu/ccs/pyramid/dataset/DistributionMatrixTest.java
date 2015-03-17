@@ -1,10 +1,8 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import static org.junit.Assert.*;
-
 public class DistributionMatrixTest {
     public static void main(String[] args) {
-        DistributionMatrix matrix = new DistributionMatrix(2,2);
+        WeightMatrix matrix = new WeightMatrix(2,2);
         matrix.setProbability(0,0,1);
         matrix.setProbability(0,1,2);
         matrix.setProbability(1,0,3);

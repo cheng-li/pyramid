@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrain
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
+import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
@@ -44,7 +45,7 @@ public class Exp63 {
             System.out.println("for class "+k);
             List<FeatureUtility> features = goodNgrams.get(k);
             for (int i=0;i<features.size();i++){
-                String feature = features.get(i).getName();
+                String feature = features.get(i).getFeature().getName();
                 System.out.println(showDistribution(i,feature, k, dataSet, featureToIndex, docToRank,config));
             }
         }
@@ -63,14 +64,15 @@ public class Exp63 {
 
     public static String getMatchedGoodFeatures(Config config, int docRank, int docId, List<List<FeatureUtility>> goodNgrams, ClfDataSet dataSet){
 
+        IdTranslator idTranslator = dataSet.getIdTranslator();
 
         StringBuilder sb = new StringBuilder();
         Comparator<Pair<String, Integer>> comparator = Comparator.comparing(Pair::getSecond);
-        sb.append("docId = ").append(dataSet.getDataPointSetting(docId).getExtId()).append(", ");
+        sb.append("docId = ").append(idTranslator.toExtId(docId)).append(", ");
         sb.append("doc rank = ").append(docRank).append(", ");
        IntStream.range(0,goodNgrams.size()).forEach(k->
        {
-          List<FeatureUtility> matched = goodNgrams.get(k).stream().filter(featureUtility -> dataSet.getRow(docId).get(featureUtility.getIndex())>0)
+          List<FeatureUtility> matched = goodNgrams.get(k).stream().filter(featureUtility -> dataSet.getRow(docId).get(featureUtility.getFeature().getIndex())>0)
                   .collect(Collectors.toList());
 
            sb.append("number of matched featureList for class ").append(k).append(" = ").append(matched.size()).append(", ");
@@ -133,9 +135,10 @@ public class Exp63 {
         sb.append("doc rank max = ").append(statistics.getMax()).append(", ");
         sb.append("doc rank mean = ").append(statistics.getMean()).append(", ");
         sb.append("doc rank std = ").append(statistics.getStandardDeviation()).append("\n");
+        IdTranslator idTranslator = dataSet.getIdTranslator();
         if (config.getBoolean("showDetail")){
             for (Pair<Integer,Integer> pair: sorted){
-                sb.append("id=").append(dataSet.getDataPointSetting(pair.getFirst()).getExtId()).append(",");
+                sb.append("id=").append(idTranslator.toExtId(pair.getFirst())).append(",");
                 sb.append("rank=").append(pair.getSecond()).append(", ");
             }
         }
@@ -150,7 +153,7 @@ public class Exp63 {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(dataFile, DataSetType.CLF_SPARSE,true);
         Map<String, Integer> featureToIndex = new HashMap<>();
         for (int j=0;j<dataSet.getNumFeatures();j++){
-            String feature = dataSet.getFeatureSetting(j).getFeatureName();
+            String feature = dataSet.getFeatureList().get(j).getName();
             featureToIndex.put(feature,j);
         }
         return featureToIndex;
@@ -220,24 +223,24 @@ public class Exp63 {
         for (int k=0;k<features.size();k++){
             System.out.println("class "+k);
             List<FeatureUtility> list = features.get(k);
-            List<FeatureUtility> unigramUtilities = list.stream().filter(util-> util.getName().split(" ").length == 1)
+            List<FeatureUtility> unigramUtilities = list.stream().filter(util-> util.getFeature().getName().split(" ").length == 1)
                     .collect(Collectors.toList());
-            Set<String> unigrams = unigramUtilities.stream().map(FeatureUtility::getName)
+            Set<String> unigrams = unigramUtilities.stream().map(util-> util.getFeature().getName())
                     .collect(Collectors.toSet());
             System.out.println("number of unigrams = "+unigrams.size());
             System.out.println("sum of unigram weights = "+unigramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
 
-            List<FeatureUtility> ngramUtilities = list.stream().filter(util-> util.getName().split(" ").length > 1)
+            List<FeatureUtility> ngramUtilities = list.stream().filter(util-> util.getFeature().getName().split(" ").length > 1)
                     .collect(Collectors.toList());
             System.out.println("sum of ngram weights = "+ngramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
-            Set<String> ngrams = ngramUtilities.stream().map(FeatureUtility::getName)
+            Set<String> ngrams = ngramUtilities.stream().map(util-> util.getFeature().getName())
                     .collect(Collectors.toSet());
             System.out.println("number of ngrams = "+ngrams.size());
-            List<FeatureUtility> easyNgramUtilities = ngramUtilities.stream().filter(ngram -> isComposedOf(ngram.getName(),unigrams)).collect(Collectors.toList());
+            List<FeatureUtility> easyNgramUtilities = ngramUtilities.stream().filter(ngram -> isComposedOf(ngram.getFeature().getName(),unigrams)).collect(Collectors.toList());
             System.out.println("number of easy ngrams = "+easyNgramUtilities.size());
             System.out.println("sum of easy ngram weights = "+easyNgramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
 
-            List<FeatureUtility> hardNgramUtilities = ngramUtilities.stream().filter(ngram -> !isComposedOf(ngram.getName(),unigrams)).collect(Collectors.toList());
+            List<FeatureUtility> hardNgramUtilities = ngramUtilities.stream().filter(ngram -> !isComposedOf(ngram.getFeature().getName(),unigrams)).collect(Collectors.toList());
             System.out.println("number of hard ngrams = "+hardNgramUtilities.size());
             System.out.println("sum of hard ngram weights = "+hardNgramUtilities.stream().mapToDouble(FeatureUtility::getUtility).sum());
 

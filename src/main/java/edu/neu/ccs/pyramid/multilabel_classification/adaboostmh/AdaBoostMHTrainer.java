@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.adaboostmh;
 
-import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.DistributionMatrix;
+import edu.neu.ccs.pyramid.dataset.WeightMatrix;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ScoreMatrix;
 import edu.neu.ccs.pyramid.multilabel_classification.MLPriorProbClassifier;
@@ -23,7 +22,7 @@ public class AdaBoostMHTrainer {
     private static final Logger logger = LogManager.getLogger();
     private AdaBoostMH boosting;
     private ScoreMatrix scoreMatrix;
-    private DistributionMatrix distribution;
+    private WeightMatrix weightMatrix;
     private MultiLabelClfDataSet dataSet;
     //speed up access; avoid hashing
     private boolean[][] labels;
@@ -38,7 +37,7 @@ public class AdaBoostMHTrainer {
         }
         this.scoreMatrix = new ScoreMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
         this.initStagedClassScoreMatrix();
-        this.distribution = new DistributionMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
+        this.weightMatrix = new WeightMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
         this.updateDistribution();
         this.labels = new boolean[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> {
@@ -100,10 +99,10 @@ public class AdaBoostMHTrainer {
             double[] scores = scoreMatrix.getScoresForData(i);
             for (int k=0;k<numClasses;k++){
                 double prob = Math.exp(-1*y[k]*scores[k]);
-                distribution.setProbability(i,k,prob);
+                weightMatrix.setProbability(i, k, prob);
             }
         });
-        distribution.normalize();
+        weightMatrix.normalize();
     }
 
     private void initStagedClassScoreMatrix(){
@@ -129,16 +128,16 @@ public class AdaBoostMHTrainer {
     }
 
     private RegressionTree fitClassK(int k){
-        double[] probs = distribution.getProbsForClass(k);
+        double[] probs = weightMatrix.getProbsForClass(k);
 
         double match = IntStream.range(0,dataSet.getNumDataPoints())
                 .parallel().filter(i-> labels[i][k])
-                .mapToDouble(i -> distribution.getProbsForData(i)[k])
+                .mapToDouble(i -> weightMatrix.getProbsForData(i)[k])
                 .sum();
 
         double notMatch = IntStream.range(0,dataSet.getNumDataPoints())
                 .parallel().filter(i -> !labels[i][k])
-                .mapToDouble(i -> distribution.getProbsForData(i)[k])
+                .mapToDouble(i -> weightMatrix.getProbsForData(i)[k])
                 .sum();
 
         StumpInfo optimal = IntStream.range(0, dataSet.getNumFeatures())

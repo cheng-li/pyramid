@@ -8,13 +8,13 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 3/15/15.
  */
-public class DistributionMatrix {
+public class WeightMatrix {
     private int numDataPoints;
     private int numClasses;
     private double[][] dataClass;
     private double[][] classData;
 
-    public DistributionMatrix(int numDataPoints, int numClasses) {
+    public WeightMatrix(int numDataPoints, int numClasses) {
         this.numDataPoints = numDataPoints;
         this.numClasses = numClasses;
         this.dataClass = new double[numDataPoints][numClasses];

@@ -127,8 +127,8 @@ public class Exp69 {
                         }
                     }
                 });
-        DataSetUtil.setIdTranslator(dataSet, idTranslator);
-        DataSetUtil.setLabelTranslator(dataSet, labelTranslator);
+        dataSet.setIdTranslator(idTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
         return dataSet;
     }
 
