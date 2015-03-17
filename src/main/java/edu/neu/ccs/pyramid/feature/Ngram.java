@@ -13,8 +13,8 @@ import java.io.IOException;
  */
 @JsonSerialize(using = Ngram.Serializer.class)
 public class Ngram extends Feature {
-    private String ngram;
-    private String field;
+    private String ngram = "unknown";
+    private String field = "unknown";
     private int slop;
 
     public String getNgram() {
@@ -48,8 +48,10 @@ public class Ngram extends Feature {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Ngram{");
-        sb.append("index=").append(index);
-        sb.append(", name=").append(name);
+        if (indexAssigned){
+            sb.append("index=").append(index).append(",");
+        }
+        sb.append("name=").append(name);
         sb.append(", ngram=").append(ngram);
         sb.append(", field=").append(field);
         sb.append(", slop=").append(slop);

@@ -16,7 +16,11 @@ import java.util.Map;
  */
 @JsonSerialize(using = Feature.Serializer.class)
 public class Feature implements Serializable{
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
+    /**
+     * if index is assigned, it will be considered in comparison, otherwise not
+     */
+    protected boolean indexAssigned;
     protected int index;
     protected String name = "unknown";
     protected Map<String,String> settings;
@@ -34,22 +38,37 @@ public class Feature implements Serializable{
     }
 
     public int getIndex() {
+        if (!indexAssigned){
+            throw new RuntimeException("feature index is not yet assigned");
+        }
         return index;
     }
 
     public void setIndex(int index) {
         this.index = index;
+        this.indexAssigned = true;
     }
 
     public Map<String, String> getSettings() {
         return settings;
     }
 
+    public boolean isIndexAssigned() {
+        return indexAssigned;
+    }
+
+    public void clearIndex(){
+        this.indexAssigned = false;
+        this.index=0;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Feature{");
-        sb.append("index=").append(index);
-        sb.append(", name=").append(name);
+        if (indexAssigned){
+            sb.append("index=").append(index);
+        }
+        sb.append(", name='").append(name).append('\'');
         sb.append(", settings=").append(settings);
         sb.append('}');
         return sb.toString();
@@ -63,6 +82,7 @@ public class Feature implements Serializable{
         Feature feature = (Feature) o;
 
         if (index != feature.index) return false;
+        if (indexAssigned != feature.indexAssigned) return false;
         if (!name.equals(feature.name)) return false;
 
         return true;
@@ -70,7 +90,8 @@ public class Feature implements Serializable{
 
     @Override
     public int hashCode() {
-        int result = index;
+        int result = (indexAssigned ? 1 : 0);
+        result = 31 * result + index;
         result = 31 * result + name.hashCode();
         return result;
     }
@@ -79,7 +100,7 @@ public class Feature implements Serializable{
         @Override
         public void serialize(Feature feature, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeNumberField("index",feature.index);
+            jsonGenerator.writeNumberField("index",feature.getIndex());
             jsonGenerator.writeStringField("name",feature.name);
             jsonGenerator.writeEndObject();
         }

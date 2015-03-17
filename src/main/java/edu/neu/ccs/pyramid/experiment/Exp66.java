@@ -12,9 +12,7 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import edu.neu.ccs.pyramid.util.Pair;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -44,16 +42,16 @@ public class Exp66 {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        //todo serialize featureUtilities 
-        BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.features"))));
-        for (int k=0;k<dataSet.getNumClasses();k++){
-            List<String> features = goodNgrams.get(k).stream().map(featureUtility -> featureUtility.getFeature().getName())
-                    .map(str -> str.replaceAll("\\(slop=.\\)", "")).collect(Collectors.toList());
-            String str = features.toString().replace("[","").replace("]","");
-            bw1.write(str);
-            bw1.newLine();
+        //todo serialize featureUtilities
+
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(new File(config.getString("output.folder"),
+                        config.getString("output.features")));
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(goodNgrams);
         }
-        bw1.close();
 
         BufferedWriter bw = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),config.getString("output.docs"))));
 

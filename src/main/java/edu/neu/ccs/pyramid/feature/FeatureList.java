@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.feature;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +45,22 @@ public class FeatureList implements Serializable {
 
     public List<Feature> getAll() {
         return features;
+    }
+
+    public FeatureList deepCopy() throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(this);
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        return (FeatureList) ois.readObject();
+    }
+
+    public void clearInices(){
+        for (Feature feature: features){
+            feature.clearIndex();
+        }
     }
 
 }
