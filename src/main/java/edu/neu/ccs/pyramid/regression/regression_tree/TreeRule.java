@@ -41,12 +41,12 @@ public class TreeRule implements Rule {
             this.score = node.getValue();
         } else {
             int featureIndex = node.getFeatureIndex();
-            String featureName = featureList.get(node.getFeatureIndex()).getName();
+            Feature feature = featureList.get(node.getFeatureIndex());
             double threshold = node.getThreshold();
             double featureValue = vector.get(featureIndex);
             boolean direction = featureValue<=threshold;
             this.checks.featureIndices.add(featureIndex);
-            this.checks.featureNames.add(featureName);
+            this.checks.features.add(feature);
             this.checks.thresholds.add(threshold);
             this.checks.directions.add(direction);
             this.checks.values.add(featureValue);

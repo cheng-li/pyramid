@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.feature.Feature;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ import java.util.List;
 @JsonSerialize(using = Checks.Serializer.class)
 class Checks {
     List<Integer> featureIndices;
-    List<String> featureNames;
+    List<Feature> features;
     List<Double> thresholds;
     //true=go left
     List<Boolean> directions;
@@ -26,7 +27,7 @@ class Checks {
 
     public Checks() {
         this.featureIndices = new ArrayList<>();
-        this.featureNames = new ArrayList<>();
+        this.features = new ArrayList<>();
         this.thresholds = new ArrayList<>();
         this.directions = new ArrayList<>();
         this.values = new ArrayList<>();
@@ -37,7 +38,7 @@ class Checks {
         StringBuilder sb = new StringBuilder();
         for (int i=0;i<featureIndices.size();i++){
             int featureIndex = featureIndices.get(i);
-            String featureName = featureNames.get(i);
+            Feature featureName = features.get(i);
             double threshold = thresholds.get(i);
             double featureValue = values.get(i);
             boolean direction = directions.get(i);
@@ -61,7 +62,7 @@ class Checks {
 
         if (!directions.equals(that.directions)) return false;
         if (!featureIndices.equals(that.featureIndices)) return false;
-        if (!featureNames.equals(that.featureNames)) return false;
+        if (!features.equals(that.features)) return false;
         if (!thresholds.equals(that.thresholds)) return false;
         if (!values.equals(that.values)) return false;
 
@@ -71,7 +72,7 @@ class Checks {
     @Override
     public int hashCode() {
         int result = featureIndices.hashCode();
-        result = 31 * result + featureNames.hashCode();
+        result = 31 * result + features.hashCode();
         result = 31 * result + thresholds.hashCode();
         result = 31 * result + directions.hashCode();
         result = 31 * result + values.hashCode();
@@ -82,7 +83,7 @@ class Checks {
         Checks copy = new Checks();
         for (int i=0;i<this.featureIndices.size();i++){
             copy.featureIndices.add(this.featureIndices.get(i));
-            copy.featureNames.add(this.featureNames.get(i));
+            copy.features.add(this.features.get(i));
             copy.thresholds.add(this.thresholds.get(i));
             copy.directions.add(this.directions.get(i));
             copy.values.add(this.values.get(i));
@@ -100,13 +101,13 @@ class Checks {
             for (int i=0;i< checks.featureIndices.size();i++){
 
                 int featureIndex = checks.featureIndices.get(i);
-                String featureName = checks.featureNames.get(i);
+                Feature feature = checks.features.get(i);
                 double threshold = checks.thresholds.get(i);
                 double featureValue = checks.values.get(i);
                 boolean direction = checks.directions.get(i);
                 jsonGenerator.writeStartObject();
-                jsonGenerator.writeNumberField("feature index", featureIndex);
-                jsonGenerator.writeStringField("feature name", featureName);
+
+                jsonGenerator.writeObjectField("feature",feature);
                 jsonGenerator.writeNumberField("feature value", featureValue);
                 jsonGenerator.writeFieldName("relation");
                 if (direction){
