@@ -83,4 +83,8 @@
   66: set cover good ngrams
   67: (obsolete) deal with negations in a dataset
   68: test ridge logistic regression with noisy features
+  69: check white house vs white/house
+  70: elastic-net logistic regression
+  71: test lbfgs on synthetic functions
+  72: adaboost.MH
 

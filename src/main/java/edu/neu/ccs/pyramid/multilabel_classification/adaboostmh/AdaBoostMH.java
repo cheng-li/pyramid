@@ -7,6 +7,10 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import org.apache.mahout.math.Vector;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,6 +93,27 @@ public class AdaBoostMH implements MultiLabelClassifier {
             scores[k] = this.predictClassScore(vector, k);
         }
         return scores;
+    }
+
+    public static AdaBoostMH deserialize(String file) throws Exception{
+        return deserialize(new File(file));
+    }
+
+    /**
+     * de-serialize from file
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    public static AdaBoostMH deserialize(File file) throws Exception{
+        try(
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            AdaBoostMH boosting = (AdaBoostMH)objectInputStream.readObject();
+            return boosting;
+        }
     }
 
 }
