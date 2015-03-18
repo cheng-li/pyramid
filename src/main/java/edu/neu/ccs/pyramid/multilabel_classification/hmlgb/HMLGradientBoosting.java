@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -13,9 +14,6 @@ import java.util.List;
 
 /**
  * hierarchical multi-label gradient boosting
- * training guide:
- * use very deep tree, run only a few iterations
- * the class-gradient is very complicated, and requires a deep tree to fit well
  * Created by chengli on 9/27/14.
  */
 public class HMLGradientBoosting implements MultiLabelClassifier{
@@ -55,7 +53,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
     public MultiLabel predict(Vector vector){
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
-        double[] classeScores = calClassScores(vector);
+        double[] classeScores = predictClassScores(vector);
         for (MultiLabel assignment: this.assignments){
             double score = this.calAssignmentScore(assignment,classeScores);
             if (score > maxScore){
@@ -66,8 +64,64 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         return prediction;
     }
 
-    //todo output assignment probabilities
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
+        if (!this.assignments.contains(assignment)){
+            return 0;
+        }
+        double[] classScores = predictClassScores(vector);
+        double[] assignmentScores = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
+        }
+        double logNumerator = calAssignmentScore(assignment,classScores);
+        double logDenominator = MathUtil.logSumExp(assignmentScores);
+        double pro = Math.exp(logNumerator-logDenominator);
+        return pro;
+    }
 
+    /**
+     * for legal assignments
+     * @param vector
+     * @return
+     */
+    double[] predictAssignmentProbs(Vector vector){
+        double[] classScores = predictClassScores(vector);
+        double[] assignmentScores = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
+        }
+        double logDenominator = MathUtil.logSumExp(assignmentScores);
+        double[] assignmentProbs = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            double logNumerator = assignmentScores[i];
+            double pro = Math.exp(logNumerator-logDenominator);
+            assignmentProbs[i] = pro;
+        }
+        return assignmentProbs;
+    }
+
+    /**
+     * expensive operation
+     * @param vector
+     * @return
+     */
+    public double[] predictClassProbs(Vector vector){
+        double[] assignmentProbs = predictAssignmentProbs(vector);
+        double[] classProbs = new double[numClasses];
+        for (int a=0;a<assignments.size();a++){
+            MultiLabel assignment = assignments.get(a);
+            double prob = assignmentProbs[a];
+            for (Integer label:assignment.getMatchedLabels()){
+                double oldProb = classProbs[label];
+                classProbs[label] = oldProb + prob;
+            }
+        }
+        return classProbs;
+    }
+
+    public double predictClassProb(Vector vector, int classIndex){
+        return predictClassProbs(vector)[classIndex];
+    }
 
     /**
      *
@@ -84,7 +138,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         return score;
     }
 
-     double[] calClassScores(Vector vector){
+     double[] predictClassScores(Vector vector){
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){

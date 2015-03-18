@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
 import org.apache.commons.lang3.time.StopWatch;
 
@@ -124,8 +125,6 @@ public class LKTreeBoostTest {
         System.out.println(confusionMatrix.printWithExtLabels());
         System.out.println("top featureList for class 0");
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
-        System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
-        System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
 
         System.out.println(new PerClassMeasures(confusionMatrix,0));
         System.out.println(new PerClassMeasures(confusionMatrix,1));
@@ -386,8 +385,6 @@ public class LKTreeBoostTest {
         System.out.println(confusionMatrix.printWithExtLabels());
         System.out.println("top featureList for class 0");
         System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
-        System.out.println(LKTBInspector.topFeatureIndices(lkTreeBoost,0));
-        System.out.println(LKTBInspector.topFeatureNames(lkTreeBoost,0));
 
         System.out.println(new PerClassMeasures(confusionMatrix,0));
         System.out.println(new PerClassMeasures(confusionMatrix,1));
@@ -622,7 +619,7 @@ public class LKTreeBoostTest {
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
         System.out.println(confusionMatrix.printWithIntLabels());
 
-        List<Integer> topFeatureIndex = LKTBInspector.topFeatureIndices(lkTreeBoost,0);
+        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost,0);
         System.out.println("Top non-influence featureList index:"+topFeatureIndex);
 
 //        int[] predicts = lkTreeBoost.predict(dataSet);
@@ -710,7 +707,7 @@ public class LKTreeBoostTest {
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
         System.out.println(confusionMatrix.printWithIntLabels());
 
-        List<Integer> topFeatureIndex = LKTBInspector.topFeatureIndices(lkTreeBoost,0);
+        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost, 0);
         System.out.println("Top non-influence featureList index:"+topFeatureIndex);
 //        List<String> topFeatureNames = LKTBInspector.topFeatureNames(lkTreeBoost,0);
 //        System.out.println("Top influence featureList name:"+topFeatureNames);

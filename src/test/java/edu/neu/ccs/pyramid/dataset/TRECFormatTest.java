@@ -25,14 +25,14 @@ public class TRECFormatTest {
         clfDataSet.setLabel(2,3);
         clfDataSet.setLabel(3,5);
         clfDataSet.setLabel(4,2);
-        clfDataSet.putDataPointSetting(0,new ClfDataPointSetting().setExtId("zero").setExtLabel("spam"));
-        clfDataSet.putDataPointSetting(1,new ClfDataPointSetting().setExtId("first").setExtLabel("non-spam"));
-        clfDataSet.putDataPointSetting(2,new ClfDataPointSetting().setExtId("second").setExtLabel("good"));
-        clfDataSet.putDataPointSetting(3,new ClfDataPointSetting().setExtId("third").setExtLabel("bad"));
-        clfDataSet.putDataPointSetting(4,new ClfDataPointSetting().setExtId("fourth").setExtLabel("iii"));
-        clfDataSet.putFeatureSetting(0,new FeatureSetting().setFeatureName("color").setFeatureType(FeatureType.BINARY));
-        clfDataSet.putFeatureSetting(1,new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
-        clfDataSet.putFeatureSetting(2,new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
+//        clfDataSet.putDataPointSetting(0,new ClfDataPointSetting().setExtId("zero").setExtLabel("spam"));
+//        clfDataSet.putDataPointSetting(1,new ClfDataPointSetting().setExtId("first").setExtLabel("non-spam"));
+//        clfDataSet.putDataPointSetting(2,new ClfDataPointSetting().setExtId("second").setExtLabel("good"));
+//        clfDataSet.putDataPointSetting(3,new ClfDataPointSetting().setExtId("third").setExtLabel("bad"));
+//        clfDataSet.putDataPointSetting(4,new ClfDataPointSetting().setExtId("fourth").setExtLabel("iii"));
+//        clfDataSet.putFeatureSetting(0,new FeatureSetting().setFeatureName("color").setFeatureType(FeatureType.BINARY));
+//        clfDataSet.putFeatureSetting(1,new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
+//        clfDataSet.putFeatureSetting(2,new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
         TRECFormat.save(clfDataSet,new File(TMP,"/tmp_clfdata.trec"));
         ClfDataSet clfDataSet1 = TRECFormat.loadClfDataSet(new File(TMP,"/tmp_clfdata.trec"),DataSetType.CLF_SPARSE,true);
         System.out.println(clfDataSet1.getMetaInfo());
@@ -78,7 +78,7 @@ public class TRECFormatTest {
 
         String[] extLabels = {"non-spam","spam","spam_A","spam_B"};
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
-        DataSetUtil.setLabelTranslator(dataSet, labelTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
 
         TRECFormat.save(dataSet,new File(TMP,"/4labels/train.trec"));
         MultiLabelClfDataSet loaded = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"/4labels/train.trec"),DataSetType.ML_CLF_DENSE,true);
@@ -112,7 +112,7 @@ public class TRECFormatTest {
 
         String[] extLabels = {"non-spam","spam","spam_A","spam_B"};
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
-        DataSetUtil.setLabelTranslator(dataSet, labelTranslator);
+        dataSet.setLabelTranslator(labelTranslator);
 
         TRECFormat.save(dataSet,new File(TMP,"/4labels/test.trec"));
         MultiLabelClfDataSet loaded = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"/4labels/test.trec"),DataSetType.ML_CLF_DENSE,true);

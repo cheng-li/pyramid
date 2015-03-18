@@ -39,7 +39,7 @@ public class SplitterTest {
         List<Integer> results = Splitter.getAllSplits(regTreeConfig,dataSet,gradient)
                 .stream().sorted(comparator.reversed()).map(result -> result.getFeatureIndex()).limit(100)
                 .collect(Collectors.toList());
-        results.stream().forEach(i-> System.out.println(dataSet.getFeatureSetting(i).getFeatureName()));
+//        results.stream().forEach(i-> System.out.println(dataSet.getFeatureSetting(i).getFeatureName()));
         System.out.println(results);
     }
 

@@ -15,6 +15,7 @@ import org.apache.mahout.math.Vector;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 9/27/14.
@@ -122,7 +123,7 @@ public class HMLGBInspector {
 //        StringBuilder sb = new StringBuilder();
 //        List<Integer> difference = MultiLabel.symmetricDifference(trueLabel,prediction).stream().sorted().collect(Collectors.toList());
 //
-//        double[] classScores = boosting.calClassScores(vector);
+//        double[] classScores = boosting.predictClassScores(vector);
 //        sb.append("score for the true labels ").append(trueLabel)
 //                .append("(").append(trueLabel.toStringWithExtLabels(labelTranslator)).append(") = ");
 //        sb.append(boosting.calAssignmentScore(trueLabel,classScores)).append("\n");
@@ -149,6 +150,8 @@ public class HMLGBInspector {
                                                         Vector vector, int classIndex, int limit){
         ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
                 boosting.predictClassScore(vector,classIndex));
+        double prob = boosting.predictClassProb(vector,classIndex);
+        classScoreCalculation.setClassProbability(prob);
         List<Regressor> regressors = boosting.getRegressors(classIndex);
         List<TreeRule> treeRules = new ArrayList<>();
         for (Regressor regressor : regressors) {
@@ -173,35 +176,6 @@ public class HMLGBInspector {
         return classScoreCalculation;
     }
 
-
-    //todo  speed up
-    public static MultiLabelPredictionAnalysis analyzePrediction(HMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
-                                                                 int dataPointIndex, int limit){
-        MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
-        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
-        IdTranslator idTranslator = dataSet.getIdTranslator();
-        predictionAnalysis.setInternalId(dataPointIndex);
-        predictionAnalysis.setId(idTranslator.toExtId(dataPointIndex));
-        predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
-        List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
-                .map(labelTranslator::toExtLabel).collect(Collectors.toList());
-        predictionAnalysis.setLabels(labels);
-
-        List<Integer> internalPrediction = boosting.predict(dataSet.getRow(dataPointIndex)).getMatchedLabelsOrdered();
-        predictionAnalysis.setInternalPrediction(internalPrediction);
-        List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
-        predictionAnalysis.setPrediction(prediction);
-
-        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
-        for (int k=0;k<dataSet.getNumClasses();k++){
-            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
-                    dataSet.getRow(dataPointIndex),k,limit);
-            classScoreCalculations.add(classScoreCalculation);
-        }
-        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
-        return predictionAnalysis;
-    }
-
     public static MultiLabelPredictionAnalysis analyzePrediction(HMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, List<Integer> classes, int limit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
@@ -213,11 +187,15 @@ public class HMLGBInspector {
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setLabels(labels);
+        predictionAnalysis.setProbForTrueLabels(boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex),
+                dataSet.getMultiLabels()[dataPointIndex]));
 
-        List<Integer> internalPrediction = boosting.predict(dataSet.getRow(dataPointIndex)).getMatchedLabelsOrdered();
+        MultiLabel predictedLabels = boosting.predict(dataSet.getRow(dataPointIndex));
+        List<Integer> internalPrediction = predictedLabels.getMatchedLabelsOrdered();
         predictionAnalysis.setInternalPrediction(internalPrediction);
         List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setPrediction(prediction);
+        predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex), predictedLabels));
 
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){
@@ -227,5 +205,11 @@ public class HMLGBInspector {
         }
         predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
         return predictionAnalysis;
+    }
+
+    public static MultiLabelPredictionAnalysis analyzePrediction(HMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
+                                                                 int dataPointIndex, int limit){
+        List<Integer> classes = IntStream.range(0,boosting.getNumClasses()).mapToObj(i-> i).collect(Collectors.toList());
+        return analyzePrediction(boosting,dataSet,dataPointIndex,classes,limit);
     }
 }
