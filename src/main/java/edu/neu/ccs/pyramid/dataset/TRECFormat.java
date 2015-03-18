@@ -174,25 +174,6 @@ public class TRECFormat {
         return dataSet;
     }
 
-//    public static RankDataSet loadRankDataSet(File trecFile, DataSetType dataSetType) throws Exception{
-//        boolean legalArg = ((dataSetType == DataSetType.RANK_DENSE)
-//                ||(dataSetType==DataSetType.RANK_SPARSE));
-//        if (!legalArg){
-//            throw new IllegalArgumentException("illegal data set type");
-//        }
-//        int numDataPoints = parseNumDataPoints(trecFile);
-//        int numFeatures = parseNumFeaturess(trecFile);
-//        RankDataSet rankDataSet = null;
-//        if (dataSetType==DataSetType.RANK_DENSE){
-//            rankDataSet = new DenseRankDataSet(numDataPoints,numFeatures);
-//        }
-//        if (dataSetType==DataSetType.RANK_SPARSE){
-//            rankDataSet = new SparseRankDataSet(numDataPoints,numFeatures);
-//        }
-//        fillRankDataSet(rankDataSet,trecFile);
-    //todo load settings
-//        return rankDataSet;
-//    }
 
     /**
      * parse comments in a TREC file
@@ -353,31 +334,7 @@ public class TRECFormat {
         }
     }
 
-    private static void fillRankDataSet(RankDataSet dataSet, File trecFile) throws IOException {
-        File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
-        try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
-        ) {
-            String line = null;
-            int dataIndex = 0;
-            while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
-                int label = Integer.parseInt(lineSplit[0]);
-                dataSet.setLabel(dataIndex,label);
-                for (int i=1;i<lineSplit.length;i++){
-                    String pair = lineSplit[i];
-                    // ignore things after #
-                    if (pair.startsWith("#")){
-                        break;
-                    }
-                    String[] pairSplit = pair.split(":");
-                    int featureIndex = Integer.parseInt(pairSplit[0]);
-                    double featureValue = Double.parseDouble(pairSplit[1]);
-                    dataSet.setFeatureValue(dataIndex, featureIndex,featureValue);
-                }
-                dataIndex += 1;
-            }
-        }
-    }
+
 
 
 
@@ -422,18 +379,6 @@ public class TRECFormat {
         }
     }
 
-    private static void writeConfigFile(RankDataSet dataSet, File trecFile) {
-        File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
-        Config config = new Config();
-        config.setInt(TREC_CONFIG_NUM_DATA_POINTS,dataSet.getNumDataPoints());
-        config.setInt(TREC_CONFIG_NUM_FEATURES,dataSet.getNumFeatures());
-        config.setBoolean(TREC_CONFIG_MISSING_VALUE,dataSet.hasMissingValue());
-        try {
-            config.store(configFile);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private static void writeMatrixFile(ClfDataSet dataSet, File trecFile) {
         File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
