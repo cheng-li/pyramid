@@ -6,18 +6,19 @@ import java.util.List;
 /**
  * Created by chengli on 2/28/15.
  */
-
+//todo json serialize
 public class ClassScoreCalculation {
     private int internalClassIndex;
     private String className;
-    private double totalScore;
+    private double classScore;
+    private double classProbability;
 
     private List<Rule> rules;
 
     public ClassScoreCalculation(int internalClassIndex, String className, double totalScore) {
         this.internalClassIndex = internalClassIndex;
         this.className = className;
-        this.totalScore = totalScore;
+        this.classScore = totalScore;
         this.rules = new ArrayList<>();
     }
 
@@ -26,8 +27,8 @@ public class ClassScoreCalculation {
         this.rules.add(rule);
     }
 
-    public double getTotalScore() {
-        return totalScore;
+    public double getClassScore() {
+        return classScore;
     }
 
     public List<Rule> getRules() {
@@ -40,5 +41,13 @@ public class ClassScoreCalculation {
 
     public String getClassName() {
         return className;
+    }
+
+    public double getClassProbability() {
+        return classProbability;
+    }
+
+    public void setClassProbability(double classProbability) {
+        this.classProbability = classProbability;
     }
 }

@@ -125,6 +125,8 @@ public class IMLGBInspector {
                                                         Vector vector, int classIndex, int limit){
         ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
                 boosting.predictClassScore(vector,classIndex));
+        double prob = boosting.predictClassProb(vector,classIndex);
+        classScoreCalculation.setClassProbability(prob);
         List<Regressor> regressors = boosting.getRegressors(classIndex);
         List<TreeRule> treeRules = new ArrayList<>();
         for (Regressor regressor : regressors) {
@@ -151,32 +153,7 @@ public class IMLGBInspector {
 
 
     //todo  speed up
-    public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
-                                                                 int dataPointIndex, int limit){
-        MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
-        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
-        IdTranslator idTranslator = dataSet.getIdTranslator();
-        predictionAnalysis.setInternalId(dataPointIndex);
-        predictionAnalysis.setId(idTranslator.toExtId(dataPointIndex));
-        predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
-        List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
-                .map(labelTranslator::toExtLabel).collect(Collectors.toList());
-        predictionAnalysis.setLabels(labels);
 
-        List<Integer> internalPrediction = boosting.predict(dataSet.getRow(dataPointIndex)).getMatchedLabelsOrdered();
-        predictionAnalysis.setInternalPrediction(internalPrediction);
-        List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
-        predictionAnalysis.setPrediction(prediction);
-
-        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
-        for (int k=0;k<dataSet.getNumClasses();k++){
-            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
-                    dataSet.getRow(dataPointIndex),k,limit);
-            classScoreCalculations.add(classScoreCalculation);
-        }
-        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
-        return predictionAnalysis;
-    }
 
     public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, List<Integer> classes, int limit){
@@ -189,11 +166,15 @@ public class IMLGBInspector {
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setLabels(labels);
+        predictionAnalysis.setProbForTrueLabels(boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex),
+                dataSet.getMultiLabels()[dataPointIndex]));
 
-        List<Integer> internalPrediction = boosting.predict(dataSet.getRow(dataPointIndex)).getMatchedLabelsOrdered();
+        MultiLabel predictedLabels = boosting.predict(dataSet.getRow(dataPointIndex));
+        List<Integer> internalPrediction = predictedLabels.getMatchedLabelsOrdered();
         predictionAnalysis.setInternalPrediction(internalPrediction);
         List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setPrediction(prediction);
+        predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex),predictedLabels));
 
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){

@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -143,6 +144,30 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     public List<Regressor> getRegressors(int k){
         return this.regressors.get(k);
     }
+
+
+    public double predictClassProb(Vector vector, int classIndex){
+        double score = predictClassScore(vector,classIndex);
+        double logNumerator = score;
+        double[] scores = new double[2];
+        scores[0] = 0;
+        scores[1] = score;
+        double logDenominator = MathUtil.logSumExp(scores);
+        double pro = Math.exp(logNumerator-logDenominator);
+        return pro;
+    }
+
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
+        if (assignment.outOfBound(this.numClasses)){
+            return 0;
+        }
+        double prob = 1;
+        for (int k: assignment.getMatchedLabels()){
+            prob *= predictClassProb(vector,k);
+        }
+        return prob;
+    }
+
 
     @Override
     public String toString() {

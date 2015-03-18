@@ -13,8 +13,10 @@ public class MultiLabelPredictionAnalysis {
     private String id;
     private List<Integer> internalLabels;
     private List<String> labels;
+    private double probForTrueLabels;
     private List<Integer> internalPrediction;
     private List<String> prediction;
+    private double probForPredictedLabels;
     private List<ClassScoreCalculation> classScoreCalculations;
 
     public MultiLabelPredictionAnalysis() {
@@ -74,5 +76,21 @@ public class MultiLabelPredictionAnalysis {
 
     public void setClassScoreCalculations(List<ClassScoreCalculation> classScoreCalculations) {
         this.classScoreCalculations = classScoreCalculations;
+    }
+
+    public double getProbForTrueLabels() {
+        return probForTrueLabels;
+    }
+
+    public void setProbForTrueLabels(double probForTrueLabels) {
+        this.probForTrueLabels = probForTrueLabels;
+    }
+
+    public double getProbForPredictedLabels() {
+        return probForPredictedLabels;
+    }
+
+    public void setProbForPredictedLabels(double probForPredictedLabels) {
+        this.probForPredictedLabels = probForPredictedLabels;
     }
 }
