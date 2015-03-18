@@ -11,6 +11,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.BufferedWriter;
@@ -391,60 +392,25 @@ public class Exp4 {
                 System.out.println("model "+modelIndex);
                 System.out.println("==========top featureList==========");
                 for (int k=0;k<config.getInt("numClasses");k++){
-                    List<Feature> features = LKTBInspector.topFeatures(lkTreeBoost, k);
+                    TopFeatures features = LKTBInspector.topFeatures(lkTreeBoost, k);
                     System.out.println("top featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
                     System.out.println(features);
                 }
             }
         }
         if (config.getBoolean("verify.topFeatures.overall")){
-            System.out.println("overall top featureList among all models:");
+            System.out.println("overall top features among all models:");
             for (int k=0;k<config.getInt("numClasses");k++){
-                List<String> featureNames = LKTBInspector.topFeatureNames(lkTreeBoosts, k);
-                List<Integer> featureIndices = LKTBInspector.topFeatureIndices(lkTreeBoosts,k);
+                TopFeatures featureNames = LKTBInspector.topFeatures(lkTreeBoosts, k);
+//                List<Integer> featureIndices = LKTBInspector.topFeatureIndices(lkTreeBoosts,k);
                 System.out.println("top featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
                 System.out.println(featureNames);
-                if (config.getBoolean("verify.topFeatures.writeToFiles")){
-                    File featureFolder = new File(archive,"top_features");
-                    if (!featureFolder.exists()){
-                        featureFolder.mkdirs();
-                    }
-                    File featureNamesFile = new File(featureFolder,""+k+".names");
-                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureNamesFile))
-                    ){
-//                        bw.write(labelTranslator.get(k));
-//                        bw.newLine();
-                        for (String feature: featureNames){
-                            bw.write(feature);
-                            bw.newLine();
-                        }
-                    }
 
-                    File featureIndicesFile = new File(featureFolder,""+k+".indices");
-                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(featureIndicesFile))
-                    ){
-//                        bw.write(labelTranslator.get(k));
-//                        bw.newLine();
-                        for (Integer featureIndex: featureIndices){
-                            bw.write(""+featureIndex);
-                            bw.newLine();
-                        }
-                    }
-                }
-            }
-        }
 
-        if (config.getBoolean("verify.topNgramFeatures.overall")){
-            System.out.println("overall top featureList among all models:");
-            for (int k=0;k<config.getInt("numClasses");k++){
-                List<String> featureNames = LKTBInspector.topFeatureNames(lkTreeBoosts, k)
-                        .stream().filter(name -> name.split(" ").length>1)
-                        .collect(Collectors.toList());
-                System.out.println("top ngram featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
-                System.out.println(featureNames);
 
             }
         }
+
     }
 
 

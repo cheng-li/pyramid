@@ -619,8 +619,8 @@ public class LKTreeBoostTest {
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
         System.out.println(confusionMatrix.printWithIntLabels());
 
-        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost,0);
-        System.out.println("Top non-influence featureList index:"+topFeatureIndex);
+//        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost,0);
+//        System.out.println("Top non-influence featureList index:"+topFeatureIndex);
 
 //        int[] predicts = lkTreeBoost.predict(dataSet);
 //        int[] labels = dataSet.getLabels();
@@ -707,8 +707,8 @@ public class LKTreeBoostTest {
         ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
         System.out.println(confusionMatrix.printWithIntLabels());
 
-        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost, 0);
-        System.out.println("Top non-influence featureList index:"+topFeatureIndex);
+//        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost, 0);
+//        System.out.println("Top non-influence featureList index:"+topFeatureIndex);
 //        List<String> topFeatureNames = LKTBInspector.topFeatureNames(lkTreeBoost,0);
 //        System.out.println("Top influence featureList name:"+topFeatureNames);
 

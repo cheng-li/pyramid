@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
@@ -31,7 +32,7 @@ public class LKTBInspector {
      * @param classIndex
      * @return list of feature index and feature name pairs
      */
-    public static List<Feature> topFeatures(LKTreeBoost boosting, int classIndex){
+    public static TopFeatures topFeatures(LKTreeBoost boosting, int classIndex){
         Map<Feature,Double> totalContributions = new HashMap<>();
         List<Regressor> regressors = boosting.getRegressors(classIndex);
         List<RegressionTree> trees = regressors.stream().filter(regressor ->
@@ -51,7 +52,12 @@ public class LKTBInspector {
         Comparator<Map.Entry<Feature,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
         List<Feature> list = totalContributions.entrySet().stream().sorted(comparator.reversed())
                 .map(Map.Entry::getKey).collect(Collectors.toList());
-        return list;
+        TopFeatures topFeatures = new TopFeatures();
+        topFeatures.setTopFeatures(list);
+        topFeatures.setClassIndex(classIndex);
+        LabelTranslator labelTranslator = boosting.getLabelTranslator();
+        topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
+        return topFeatures;
     }
 
 
@@ -61,7 +67,7 @@ public class LKTBInspector {
      * @param classIndex
      * @return
      */
-    public static List<Feature> topFeatures(List<LKTreeBoost> lkTreeBoosts, int classIndex){
+    public static TopFeatures topFeatures(List<LKTreeBoost> lkTreeBoosts, int classIndex){
         Map<Feature,Double> totalContributions = new HashMap<>();
         for (LKTreeBoost lkTreeBoost: lkTreeBoosts){
             List<Regressor> regressors = lkTreeBoost.getRegressors(classIndex);
@@ -84,18 +90,14 @@ public class LKTBInspector {
         Comparator<Map.Entry<Feature,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
         List<Feature> list = totalContributions.entrySet().stream().sorted(comparator.reversed())
                 .map(Map.Entry::getKey).collect(Collectors.toList());
-        return list;
+        TopFeatures topFeatures = new TopFeatures();
+        topFeatures.setTopFeatures(list);
+        topFeatures.setClassIndex(classIndex);
+        LabelTranslator labelTranslator = lkTreeBoosts.get(0).getLabelTranslator();
+        topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
+        return topFeatures;
     }
 
-    public static List<Integer> topFeatureIndices(List<LKTreeBoost> lkTreeBoosts, int classIndex){
-        return topFeatures(lkTreeBoosts,classIndex).stream().map(Feature::getIndex)
-                .collect(Collectors.toList());
-    }
-
-    public static List<String> topFeatureNames(List<LKTreeBoost> lkTreeBoosts, int classIndex){
-        return topFeatures(lkTreeBoosts,classIndex).stream().map(Feature::getName)
-                .collect(Collectors.toList());
-    }
 
     public static Set<Integer> recentlyUsedFeatures(LKTreeBoost boosting, int k){
         Set<Integer> features = new HashSet<>();
