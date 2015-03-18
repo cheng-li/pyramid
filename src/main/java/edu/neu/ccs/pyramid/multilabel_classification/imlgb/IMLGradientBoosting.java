@@ -10,6 +10,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,6 +26,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     /**
      * legal assignments of labels, optional
      */
+    //todo add a boolean for this
     private List<MultiLabel> assignments;
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
@@ -97,7 +99,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     private MultiLabel predictWithConstraints(Vector vector){
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
-        double[] classScores = calClassScores(vector);
+        double[] classScores = predictClassScores(vector);
         for (MultiLabel assignment: this.assignments){
             double score = this.calAssignmentScore(assignment,classScores);
             if (score > maxScore){
@@ -131,7 +133,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         return score;
     }
 
-    double[] calClassScores(Vector vector){
+    double[] predictClassScores(Vector vector){
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){
@@ -146,6 +148,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
     }
 
 
+    //todo think about this when having assignments, maybe doesn't matter much
     public double predictClassProb(Vector vector, int classIndex){
         double score = predictClassScore(vector,classIndex);
         double logNumerator = score;
@@ -161,12 +164,48 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         if (assignment.outOfBound(this.numClasses)){
             return 0;
         }
-        double prob = 1;
-        for (int k: assignment.getMatchedLabels()){
-            prob *= predictClassProb(vector,k);
+        if (this.assignments!=null){
+            return predictAssignmentProbWithConstraint(vector,assignment);
+        } else {
+            return predictAssignmentProbWithoutConstraint(vector,assignment);
         }
-        return prob;
     }
+
+    double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
+        if (!this.assignments.contains(assignment)){
+            return 0;
+        }
+        double[] classScores = predictClassScores(vector);
+        double[] assignmentScores = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
+        }
+        double logNumerator = calAssignmentScore(assignment,classScores);
+        double logDenominator = MathUtil.logSumExp(assignmentScores);
+        double pro = Math.exp(logNumerator-logDenominator);
+        return pro;
+    }
+
+    double predictAssignmentProbWithoutConstraint(Vector vector, MultiLabel assignment){
+        double[] classScores = predictClassScores(vector);
+        double logProb = 0;
+        for (int k=0;k<numClasses;k++){
+            double logNumerator = 0;
+            if (assignment.matchClass(k)){
+                logNumerator = classScores[k];
+            }
+            double[] scores = new double[2];
+            scores[0] = 0;
+            scores[1] = classScores[k];
+            double logDenominator = MathUtil.logSumExp(scores);
+
+            logProb += logNumerator;
+            logProb -= logDenominator;
+        }
+
+        return Math.exp(logProb);
+    }
+
 
 
     @Override

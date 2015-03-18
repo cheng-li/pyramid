@@ -4,7 +4,9 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
@@ -19,7 +21,8 @@ public class IMLGradientBoostingTest {
 
     public static void main(String[] args) throws Exception{
 //        test1();
-        test4();
+        test5();
+//    test4();
     }
 
     private static void test1() throws Exception{
@@ -381,7 +384,7 @@ public class IMLGradientBoostingTest {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        for (int round =0;round<100;round++){
+        for (int round =0;round<10;round++){
             System.out.println("round="+round);
             trainer.iterate();
             System.out.println(stopWatch);
@@ -391,6 +394,46 @@ public class IMLGradientBoostingTest {
         System.out.println("training overlap = "+ Overlap.overlap(boosting,dataSet));
         System.out.println("test accuracy="+ Accuracy.accuracy(boosting, testSet));
         System.out.println("test overlap = "+ Overlap.overlap(boosting,testSet));
+        System.out.println("label = ");
+        System.out.println(dataSet.getMultiLabels()[0]);
+        System.out.println("pro for 1 = "+boosting.predictClassProb(dataSet.getRow(0),1));
+        System.out.println("pro for 17 = "+boosting.predictClassProb(dataSet.getRow(0),17));
+        System.out.println(boosting.predictAssignmentProb(dataSet.getRow(0),dataSet.getMultiLabels()[0]));
+
+//        System.out.println(boosting.predictAssignmentProbWithConstraint(dataSet.getRow(0), dataSet.getMultiLabels()[0]));
+        System.out.println(boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(0), dataSet.getMultiLabels()[0]));
+
+        for (MultiLabel multiLabel: boosting.getAssignments()){
+            System.out.println("multilabel = "+multiLabel);
+            System.out.println("prob = "+boosting.predictAssignmentProbWithConstraint(dataSet.getRow(0),multiLabel));
+        }
+
+        double sum = boosting.getAssignments().stream().mapToDouble(multiLabel ->boosting.predictAssignmentProbWithConstraint(dataSet.getRow(0),multiLabel))
+                .sum();
+        System.out.println(sum);
+    }
+
+    private static void test5(){
+        IMLGradientBoosting boosting = new IMLGradientBoosting(2);
+        boosting.addRegressor(new ConstantRegressor(1),0);
+        boosting.addRegressor(new ConstantRegressor(-1),1);
+        Vector vector = new DenseVector(2);
+        MultiLabel label1 = new MultiLabel().addLabel(0);
+        MultiLabel label2 = new MultiLabel().addLabel(1);
+        MultiLabel label3 = new MultiLabel();
+        MultiLabel label4 = new MultiLabel().addLabel(0).addLabel(1);
+        List<MultiLabel> assignments = new ArrayList<>();
+        assignments.add(label1);
+        assignments.add(label2);
+//        assignments.add(label3);
+//        assignments.add(label4);
+        boosting.setAssignments(assignments);
+        System.out.println(boosting.predictAssignmentProbWithoutConstraint(vector,label1));
+        System.out.println(boosting.predictAssignmentProbWithConstraint(vector, label1));
+//        for (MultiLabel multiLabel: boosting.getAssignments()){
+//            System.out.println("multilabel = "+multiLabel);
+//            System.out.println("prob = "+boosting.predictAssignmentProbWithConstraint(vector,multiLabel));
+//        }
     }
 
 }

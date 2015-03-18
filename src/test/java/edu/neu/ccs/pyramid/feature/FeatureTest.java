@@ -1,10 +1,13 @@
 package edu.neu.ccs.pyramid.feature;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 public class FeatureTest {
     public static void main(String[] args) {
-        test7();
+        test8();
 
     }
 
@@ -64,6 +67,18 @@ public class FeatureTest {
         Feature cate = new CategoricalFeature();
         System.out.println(ngram.equals(cate));
         System.out.println(ngram.getClass());
+    }
+
+    private static void test8(){
+        Feature feature1 = new Feature();
+        feature1.setName("a");
+        feature1.setIndex(0);
+        Feature feature2 = new Feature();
+        feature2.setName("a");
+        feature2.setIndex(0);
+        List<Feature> features = new ArrayList<>();
+        features.add(feature1);
+        System.out.println(features.contains(feature2));
     }
 
 }
