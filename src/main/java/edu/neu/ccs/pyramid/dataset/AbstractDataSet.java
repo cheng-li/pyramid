@@ -92,7 +92,7 @@ abstract class AbstractDataSet implements DataSet{
         StringBuilder sb = new StringBuilder();
         sb.append("data set meta information:").append("\n");
         sb.append("number of data points = ").append(getNumDataPoints()).append("\n");
-        sb.append("number of featureList = ").append(getNumFeatures()).append("\n");
+        sb.append("number of features = ").append(getNumFeatures()).append("\n");
         sb.append("has missing value = ").append(missingValue).append("\n");
         return sb.toString();
     }

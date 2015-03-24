@@ -104,8 +104,10 @@ public class Exp33 {
 
         int limit = config.getInt("verify.topFeature.limit");
         for (int k=0;k<logisticRegression.getNumClasses();k++){
-            System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
-            System.out.println(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit));
+            System.out.println("gradientSelection feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
+            System.out.println(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit).stream().map(featureUtility ->((Ngram)featureUtility.getFeature()).getNgram())
+                    .collect(Collectors.toList()).toString()
+            );
             List<Ngram> longNgrams = LogisticRegressionInspector.topFeatures(logisticRegression, k, 10000).stream()
                     .map(FeatureUtility::getFeature)
                     .filter(feature -> feature instanceof Ngram)

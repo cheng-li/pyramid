@@ -15,9 +15,10 @@ import java.util.stream.IntStream;
  * Created by chengli on 8/19/14.
  */
 public class PriorProbClassifier implements ProbabilityEstimator{
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private int numClasses;
+    private int[] counts;
     private double[] probs;
     private int topClass;
     private FeatureList featureList;
@@ -27,10 +28,10 @@ public class PriorProbClassifier implements ProbabilityEstimator{
     public PriorProbClassifier(int numClasses) {
         this.numClasses = numClasses;
         this.probs = new double[numClasses];
+        this.counts = new int[numClasses];
     }
 
     public void fit(ClfDataSet clfDataSet){
-        int[] counts = new int[this.numClasses];
         int[] labels = clfDataSet.getLabels();
         for (int label: labels){
             counts[label] += 1;
@@ -109,5 +110,9 @@ public class PriorProbClassifier implements ProbabilityEstimator{
 
     public void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
+    }
+
+    public int[] getCounts() {
+        return counts;
     }
 }

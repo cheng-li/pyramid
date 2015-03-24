@@ -87,4 +87,6 @@
   70: elastic-net logistic regression
   71: test lbfgs on synthetic functions
   72: adaboost.MH
-
+  73: logistic gradient feature selection
+  74: regression stump feature selection
+  75: bounds for logistic gradient feature selection
