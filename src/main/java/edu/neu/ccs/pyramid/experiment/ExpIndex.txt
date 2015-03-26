@@ -89,4 +89,5 @@
   72: adaboost.MH
   73: logistic gradient feature selection
   74: regression stump feature selection
-  75: bounds for logistic gradient feature selection
+  75: approximate logistic gradients
+  76: elasticsearch benchmark
