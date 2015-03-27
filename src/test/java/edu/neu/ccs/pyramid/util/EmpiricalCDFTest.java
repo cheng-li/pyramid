@@ -64,7 +64,7 @@ public class EmpiricalCDFTest {
         for (int i=4;i<10;i++){
             list.add(0.0);
         }
-        EmpiricalCDF cdf = new EmpiricalCDF(list,3);
+        EmpiricalCDF cdf = new EmpiricalCDF(list,0,7,7);
         System.out.println(cdf);
 
         List<Double> list2 = new ArrayList<>();
@@ -74,7 +74,7 @@ public class EmpiricalCDFTest {
         for (int i=8;i<10;i++){
             list2.add(0.0);
         }
-        EmpiricalCDF cdf2 = new EmpiricalCDF(list2,3);
+        EmpiricalCDF cdf2 = new EmpiricalCDF(list2,0,7,7);
         System.out.println(cdf2);
         System.out.println(EmpiricalCDF.distance(cdf,cdf2));
 

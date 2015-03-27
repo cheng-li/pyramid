@@ -21,11 +21,11 @@ public class FusedKolmogorovFilter {
 
     public double score(Vector vector, int[] labels, int numClasses){
         List<List<Double>> inputsEachClass = generateInputsEachClass(vector,labels,numClasses);
-        List<EmpiricalCDF> empiricalCDFs = generateCDFs(inputsEachClass);
+        List<EmpiricalCDF> empiricalCDFs = generateCDFs(vector,inputsEachClass);
         return maxDistance(empiricalCDFs);
     }
 
-    List<List<Double>> generateInputsEachClass(Vector vector, int[] labels, int numClasses){
+    public List<List<Double>> generateInputsEachClass(Vector vector, int[] labels, int numClasses){
         Vector input;
         if (vector.isDense()){
             input = vector;
@@ -44,8 +44,16 @@ public class FusedKolmogorovFilter {
 
     }
 
-    List<EmpiricalCDF> generateCDFs(List<List<Double>> inputsEachClass){
-        return inputsEachClass.stream().map(list -> new EmpiricalCDF(list,numBins)).collect(Collectors.toList());
+    /**
+     * always use global min and max
+     * @param vector
+     * @param inputsEachClass
+     * @return
+     */
+    public List<EmpiricalCDF> generateCDFs(Vector vector, List<List<Double>> inputsEachClass){
+        double min = vector.minValue();
+        double max = vector.maxValue();
+        return inputsEachClass.stream().map(list -> new EmpiricalCDF(list,min,max,numBins)).collect(Collectors.toList());
 
     }
 

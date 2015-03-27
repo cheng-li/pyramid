@@ -32,7 +32,7 @@ public class FusedKolmogorovFilterTest {
         filter.setNumBins(10);
         List<List<Double>> inputsEachClass = filter.generateInputsEachClass(vector, labels, 2);
         System.out.println(inputsEachClass);
-        List<EmpiricalCDF> empiricalCDFs = filter.generateCDFs(inputsEachClass);
+        List<EmpiricalCDF> empiricalCDFs = filter.generateCDFs(vector,inputsEachClass);
         System.out.println(empiricalCDFs);
         System.out.println(filter.maxDistance(empiricalCDFs));
     }
@@ -56,7 +56,7 @@ public class FusedKolmogorovFilterTest {
         filter.setNumBins(10);
         List<List<Double>> inputsEachClass = filter.generateInputsEachClass(vector, labels, 3);
         System.out.println(inputsEachClass);
-        List<EmpiricalCDF> empiricalCDFs = filter.generateCDFs(inputsEachClass);
+        List<EmpiricalCDF> empiricalCDFs = filter.generateCDFs(vector,inputsEachClass);
         System.out.println(empiricalCDFs);
         System.out.println(filter.maxDistance(empiricalCDFs));
         System.out.println(EmpiricalCDF.distance(empiricalCDFs.get(0),empiricalCDFs.get(1)));

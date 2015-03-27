@@ -23,11 +23,18 @@ public class EmpiricalCDF {
     private double[] thresholds;
     private double[] probabilities;
 
-    public EmpiricalCDF(List<Double> list, int numBins) {
+    /**
+     * if global min and global max are provided, use them, in order to match thresholds
+     * @param list
+     * @param globalMin
+     * @param globalMax
+     * @param numBins
+     */
+    public EmpiricalCDF(List<Double> list, double globalMin, double globalMax, int numBins) {
         this.numBins = numBins;
         int numIntervals = numBins +1;
-        this.min = list.stream().mapToDouble(i->i).min().getAsDouble();
-        this.max = list.stream().mapToDouble(i->i).max().getAsDouble();
+        this.min = globalMin;
+        this.max = globalMax;
         double length = (max - min)/numBins;
         this.thresholds = new double[numIntervals];
         this.probabilities = new double[numIntervals];
@@ -52,6 +59,17 @@ public class EmpiricalCDF {
         }
     }
 
+    /**
+     * if no global min and max are provided, local min and max are inferred from data
+     * @param list
+     * @param numBins
+     */
+    public EmpiricalCDF(List<Double> list, int numBins) {
+        this(list,list.stream().mapToDouble(i->i).min().getAsDouble(),
+                list.stream().mapToDouble(i->i).max().getAsDouble(),
+                numBins);
+    }
+
     public EmpiricalCDF(List<Double> list) {
         this(list,100);
     }
@@ -73,8 +91,8 @@ public class EmpiricalCDF {
     }
 
     public static double distance(EmpiricalCDF cdf1, EmpiricalCDF cdf2){
-        if (cdf1.numBins!=cdf2.numBins){
-            throw new IllegalArgumentException("cdf1.numBins!=cdf2.numBins");
+        if (cdf1.numBins!=cdf2.numBins || cdf1.min!=cdf2.min ||cdf1.max!=cdf2.max){
+            throw new IllegalArgumentException("cdf1.numBins!=cdf2.numBins || cdf1.min!=cdf2.min ||cdf1.max!=cdf2.max");
         }
         return IntStream.range(0,cdf1.numBins+1).mapToDouble(i -> Math.abs(cdf1.probabilities[i]-cdf2.probabilities[i]))
                 .max().getAsDouble();
