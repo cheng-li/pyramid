@@ -45,9 +45,9 @@ public class Exp77 {
                 })
                 .sorted(Comparator.comparing(FeatureUtility::getUtility).reversed()).limit(config.getInt("limit"))
                 .collect(Collectors.toList());
-//        for (FeatureUtility featureUtility: featureUtilityList){
-//            System.out.println(featureUtility);
-//        }
+        for (FeatureUtility featureUtility: featureUtilityList){
+            System.out.println(featureUtility);
+        }
         return featureUtilityList.stream().map(utility -> utility.getFeature().getIndex()).collect(Collectors.toList());
     }
 

@@ -91,3 +91,5 @@
   74: regression stump feature selection
   75: approximate logistic gradients
   76: elasticsearch benchmark
+  77: test fused kolmogorov filter on a complete matrix
+  78: visualize Kolmogorov–Smirnov test
