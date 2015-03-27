@@ -18,6 +18,13 @@ public class FusedKolmogorovFilter {
         this.numBins = numBins;
     }
 
+
+    public double score(Vector vector, int[] labels, int numClasses){
+        List<List<Double>> inputsEachClass = generateInputsEachClass(vector,labels,numClasses);
+        List<EmpiricalCDF> empiricalCDFs = generateCDFs(inputsEachClass);
+        return maxDistance(empiricalCDFs);
+    }
+
     List<List<Double>> generateInputsEachClass(Vector vector, int[] labels, int numClasses){
         Vector input;
         if (vector.isDense()){

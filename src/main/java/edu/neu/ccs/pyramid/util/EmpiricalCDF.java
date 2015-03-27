@@ -60,8 +60,8 @@ public class EmpiricalCDF {
         int ceil = (int)Math.ceil((featureValue-minFeature)/intervalLength);
         //this should not happen in theory
         //add this to handle round error
-        if (ceil>numIntervals){
-            ceil=numIntervals;
+        if (ceil>numIntervals-1){
+            ceil=numIntervals-1;
         }
         int intervalIndex;
         if (ceil<=0){

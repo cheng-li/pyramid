@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * dump ngram featureList
+ * dump ngram features
  * split to train/valid/test
  * Created by chengli on 12/19/14.
  *
