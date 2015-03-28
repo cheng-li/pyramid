@@ -13,12 +13,18 @@ import java.io.IOException;
  */
 @JsonSerialize(using = Ngram.Serializer.class)
 public class Ngram extends Feature {
+    private static final long serialVersionUID = 3L;
     private String ngram = "unknown";
     private String field = "unknown";
     private int slop;
+    private boolean inOrder=true;
 
     public String getNgram() {
         return ngram;
+    }
+
+    public String[] getTerms(){
+        return ngram.split(" ");
     }
 
     public void setNgram(String ngram) {
@@ -45,6 +51,14 @@ public class Ngram extends Feature {
         return ngram.split(" ").length;
     }
 
+    public boolean isInOrder() {
+        return inOrder;
+    }
+
+    public void setInOrder(boolean inOrder) {
+        this.inOrder = inOrder;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Ngram{");
@@ -55,6 +69,7 @@ public class Ngram extends Feature {
         sb.append(", ngram=").append(ngram);
         sb.append(", field=").append(field);
         sb.append(", slop=").append(slop);
+        sb.append(", inOrder=").append(inOrder);
         sb.append(", settings=").append(settings);
         sb.append('}');
         return sb.toString();
@@ -81,6 +96,7 @@ public class Ngram extends Feature {
 
         Ngram ngram1 = (Ngram) o;
 
+        if (inOrder != ngram1.inOrder) return false;
         if (slop != ngram1.slop) return false;
         if (!field.equals(ngram1.field)) return false;
         if (!ngram.equals(ngram1.ngram)) return false;
@@ -94,6 +110,7 @@ public class Ngram extends Feature {
         result = 31 * result + ngram.hashCode();
         result = 31 * result + field.hashCode();
         result = 31 * result + slop;
+        result = 31 * result + (inOrder ? 1 : 0);
         return result;
     }
 }

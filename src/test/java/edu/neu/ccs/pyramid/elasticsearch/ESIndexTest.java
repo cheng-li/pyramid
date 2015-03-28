@@ -1,8 +1,14 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanQuery;
+import org.apache.lucene.search.spans.SpanTermQuery;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.*;
 
 import static org.junit.Assert.*;
 
@@ -101,6 +107,34 @@ public class ESIndexTest {
         ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
                 .build();
         System.out.println(index.getField("0","a"));
+
+
+        index.close();
+    }
+
+    static void test11() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build();
+//        SpanTermQuery quick = new SpanTermQuery(new Term("body", "skip"));
+//        SpanTermQuery brown = new SpanTermQuery(new Term("body", "thi"));
+//        SpanTermQuery fox = new SpanTermQuery(new Term("body", "movi"));
+//        SpanQuery[] quick_brown_dog =
+//                new SpanQuery[]{quick, brown, fox};
+//        SpanNearQuery snq =
+//                new SpanNearQuery(quick_brown_dog, 0, true);
+
+        QueryBuilder builder = QueryBuilders.spanNearQuery().clause(new SpanTermQueryBuilder("body", "skip"))
+                .clause(new SpanTermQueryBuilder("body", "thi"))
+                .clause(new SpanTermQueryBuilder("body","movi")).slop(0)
+                .inOrder(true);
+
+
+        SearchResponse response = index.getClient().prepareSearch(index.getIndexName()).setSize(index.getNumDocs()).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(builder).
+                execute().actionGet();
+        System.out.println(response.getHits().getTotalHits());
 
 
         index.close();

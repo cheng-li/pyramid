@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.elasticsearch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import edu.neu.ccs.pyramid.feature.Ngram;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -504,6 +505,52 @@ public class ESIndex {
 //        System.out.println(builder.string());
 
         return response;
+    }
+
+    public SearchResponse match(Ngram ngram){
+        String field = ngram.getField();
+        int slop = ngram.getSlop();
+        boolean inOrder = ngram.isInOrder();
+        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+        for (String term: ngram.getTerms()){
+            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+        }
+        queryBuilder.inOrder(inOrder);
+        queryBuilder.slop(slop);
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(queryBuilder)
+                .execute().actionGet();
+
+        return response;
+
+    }
+
+
+    public SearchResponse match(Ngram ngram, String[] ids){
+        String field = ngram.getField();
+        int slop = ngram.getSlop();
+        boolean inOrder = ngram.isInOrder();
+        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+        for (String term: ngram.getTerms()){
+            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+        }
+        queryBuilder.inOrder(inOrder);
+        queryBuilder.slop(slop);
+
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+        idsFilterBuilder.addIds(ids);
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
+                        .execute().actionGet();
+
+        return response;
+
     }
 
 
