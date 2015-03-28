@@ -108,4 +108,25 @@ public class NgramEnumerator {
         str = str.concat(sequence.get(end));
         return str;
     }
+
+    public static List<List<Integer>> createTemplate(int n, int slop){
+        KaryTree<Integer> tree = new KaryTree<>();
+        tree.root.setValue(0);
+        List<Node<Integer>> currentLeaves = new ArrayList<>();
+        currentLeaves.add(tree.root);
+        for (int i=0;i<n-1;i++){
+            List<Node<Integer>> nextLeaves = new ArrayList<>();
+            for (Node<Integer> leaf: currentLeaves){
+                for (int j=0;j<=slop;j++){
+                    Node<Integer> child = new Node<>();
+                    child.setValue(leaf.getValue() + j+1);
+                    leaf.addChild(child);
+                    nextLeaves.add(child);
+                }
+            }
+            currentLeaves = nextLeaves;
+        }
+        tree.leaves = currentLeaves;
+        return tree.getAllPaths();
+    }
 }

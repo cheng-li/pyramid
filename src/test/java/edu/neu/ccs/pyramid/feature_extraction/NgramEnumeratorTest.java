@@ -11,7 +11,8 @@ public class NgramEnumeratorTest {
     public static void main(String[] args) {
 //        test1();
 //        test2();
-        test3();
+//        test3();
+    test4();
     }
 
     private static void test1(){
@@ -50,6 +51,16 @@ public class NgramEnumeratorTest {
         tv.put(7,"a");
         tv.put(8,"b");
         System.out.println(NgramEnumerator.getNgramCounts(tv,2));
+    }
+
+    private static void test4(){
+        System.out.println(NgramEnumerator.createTemplate(3, 1));
+        System.out.println(NgramEnumerator.createTemplate(1, 0));
+        System.out.println(NgramEnumerator.createTemplate(1, 1));
+        System.out.println(NgramEnumerator.createTemplate(2, 0));
+        System.out.println(NgramEnumerator.createTemplate(2, 1));
+        System.out.println(NgramEnumerator.createTemplate(2, 2));
+        System.out.println(NgramEnumerator.createTemplate(3, 2));
     }
 
 }
