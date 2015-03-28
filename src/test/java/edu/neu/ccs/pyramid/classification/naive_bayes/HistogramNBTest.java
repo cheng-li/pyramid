@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.classification.boosting.naive_bayes;
+package edu.neu.ccs.pyramid.classification.naive_bayes;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.naive_bayes.*;
@@ -53,42 +53,42 @@ public class HistogramNBTest {
     }
 
     private static void multinomialNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
-                DataSetType.CLF_DENSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
+                DataSetType.CLF_SPARSE, true);
 
-        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
-                DataSetType.CLF_DENSE, true);
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
+                DataSetType.CLF_SPARSE, true);
 
         NaiveBayes<Multinomial> naiveBayes = new NaiveBayes<>(Multinomial.class);
         naiveBayes.build(dataSet);
 
         double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
         System.out.println("Accuracy on training set: " + accuracy);
-        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
+//        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
 
         accuracy = Accuracy.accuracy(naiveBayes, testDataset);
         System.out.println("Accuracy on testing set: " + accuracy);
         System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
-        System.out.println();
+//        System.out.println();
     }
 
     private static void bernoulliNBTest() throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
-                DataSetType.CLF_DENSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
+                DataSetType.CLF_SPARSE, true);
 
-        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
-                DataSetType.CLF_DENSE, true);
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
+                DataSetType.CLF_SPARSE, true);
 
         NaiveBayes<Bernoulli> naiveBayes = new NaiveBayes<>(Bernoulli.class);
         naiveBayes.build(dataSet);
 
         double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
         System.out.println("Accuracy on training set: " + accuracy);
-        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
+//        System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
 
         accuracy = Accuracy.accuracy(naiveBayes, testDataset);
         System.out.println("Accuracy on testing set: " + accuracy);
-        System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
+//        System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
         System.out.println();
 
     }
@@ -136,11 +136,11 @@ public class HistogramNBTest {
     }
 
     protected static void histogramNBTest(int maxBins) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
-                DataSetType.CLF_DENSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
+                DataSetType.CLF_SPARSE, true);
 
-        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
-                DataSetType.CLF_DENSE, true);
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
+                DataSetType.CLF_SPARSE, true);
 
         for (int bins=1; bins<maxBins; bins++) {
 
@@ -149,11 +149,11 @@ public class HistogramNBTest {
 
             double accuracy = Accuracy.accuracy(naiveBayes,dataSet);
             System.out.println("#Bins: " + bins + " Accuracy on training set: " + accuracy);
-            System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
+//            System.out.println("auc on training set ="+ AUC.auc(naiveBayes,dataSet));
 
             accuracy = Accuracy.accuracy(naiveBayes, testDataset);
             System.out.println("#Bins: " + bins + " Accuracy on testing set: " + accuracy);
-            System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
+//            System.out.println("auc on test set ="+ AUC.auc(naiveBayes,testDataset));
             System.out.println();
         }
 

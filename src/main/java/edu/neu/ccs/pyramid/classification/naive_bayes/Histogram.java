@@ -56,7 +56,7 @@ public class Histogram implements Distribution {
         setMin(Arrays.stream(variables).min().getAsDouble());
         setMax(Arrays.stream(variables).max().getAsDouble());
 
-        if (getMin() >= getMax()) {
+        if (getMin() > getMax()) {
             throw new IllegalArgumentException("Minimum value" +
                     " should be smaller than Maximum");
         }

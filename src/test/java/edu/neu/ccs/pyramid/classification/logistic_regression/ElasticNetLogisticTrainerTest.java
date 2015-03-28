@@ -29,9 +29,9 @@ public class ElasticNetLogisticTrainerTest {
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
-        loggerConfig.setLevel(Level.DEBUG);
+        loggerConfig.setLevel(Level.OFF);
         ctx.updateLoggers();
-        test6();
+        test7();
     }
 
     private static void test1() throws Exception{
@@ -157,6 +157,23 @@ public class ElasticNetLogisticTrainerTest {
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
         System.out.println("number of non-zeros= "+logisticRegression.getWeights().getAllWeights().getNumNonZeroElements());
+
+
+    }
+
+    private static void test7() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println(dataSet.getMetaInfo());
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
+                .setEpsilon(0.01).setL1Ratio(0.1111111111111111).setRegularization(1.1233240329780266E-6).build();
+
+        trainer.train();
+        System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
+        System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
 
 
     }
