@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.stream.IntStream;
+
 /**
  * Created by chengli on 3/28/15.
  */
@@ -57,7 +59,7 @@ public class NaiveBayes implements Classifier{
         return null;
     }
 
-    private double predictClassScore(Vector vector, int k){
+    public double predictClassScore(Vector vector, int k){
         double[] conditionForClass = conditionals[k];
         double score = Math.log(priors[k]);
         Vector input;
@@ -75,5 +77,9 @@ public class NaiveBayes implements Classifier{
             }
         }
         return score;
+    }
+
+    public double[] predictClassScores(Vector vector) {
+        return IntStream.range(0, numClasses).mapToDouble(k -> predictClassScore(vector, k)).toArray();
     }
 }
