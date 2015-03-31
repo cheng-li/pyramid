@@ -1,8 +1,11 @@
 package edu.neu.ccs.pyramid.feature_extraction;
 
+import com.google.common.collect.ConcurrentHashMultiset;
+import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
+import edu.neu.ccs.pyramid.feature.Ngram;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,6 +16,34 @@ import java.util.stream.Collectors;
  * Created by chengli on 1/15/15.
  */
 public class NgramEnumerator {
+
+    public static Multiset<Ngram> gatherNgram(ESIndex index, String[] ids, NgramTemplate template){
+        Multiset<Ngram> multiset = ConcurrentHashMultiset.create();
+        String field = template.getField();
+        Arrays.stream(ids).parallel().forEach(id -> {
+            Map<Integer,String> termVector = index.getTermVectorFromIndex(field, id);
+            add(termVector,multiset,template);
+        });
+        return multiset;
+    }
+
+    public static Multiset<Ngram> gatherNgram(ESIndex index, String[] ids, NgramTemplate template, int minDF){
+        Multiset<Ngram> multiset = ConcurrentHashMultiset.create();
+        String field = template.getField();
+        Arrays.stream(ids).parallel().forEach(id -> {
+            Map<Integer,String> termVector = index.getTermVectorFromIndex(field, id);
+            add(termVector,multiset,template);
+        });
+        Multiset<Ngram> filtered = ConcurrentHashMultiset.create();
+        for (Multiset.Entry entry: multiset.entrySet()){
+            Ngram ngram = (Ngram)entry.getElement();
+            int count = entry.getCount();
+            if (count>=minDF){
+                filtered.add(ngram,count);
+            }
+        }
+        return filtered;
+    }
 
     /**
      * gather ngrams with document frequency >= threshold
@@ -109,24 +140,35 @@ public class NgramEnumerator {
         return str;
     }
 
-    public static List<List<Integer>> createTemplate(int n, int slop){
-        KaryTree<Integer> tree = new KaryTree<>();
-        tree.root.setValue(0);
-        List<Node<Integer>> currentLeaves = new ArrayList<>();
-        currentLeaves.add(tree.root);
-        for (int i=0;i<n-1;i++){
-            List<Node<Integer>> nextLeaves = new ArrayList<>();
-            for (Node<Integer> leaf: currentLeaves){
-                for (int j=0;j<=slop;j++){
-                    Node<Integer> child = new Node<>();
-                    child.setValue(leaf.getValue() + j+1);
-                    leaf.addChild(child);
-                    nextLeaves.add(child);
+
+
+     private static void add(List<String> source, Multiset<Ngram> multiset, String field, int slop, List<Integer> template){
+        for (int i=0;i<source.size();i++){
+            if(i+template.get(template.size()-1)<source.size()){
+                List<String> list = new ArrayList<>();
+                for (int j: template){
+                    list.add(source.get(i+j));
                 }
+                Ngram ngram = new Ngram();
+                ngram.setNgram(Ngram.toNgramString(list));
+                ngram.setSlop(slop);
+                ngram.setField(field);
+                ngram.setInOrder(true);
+                multiset.add(ngram);
             }
-            currentLeaves = nextLeaves;
         }
-        tree.leaves = currentLeaves;
-        return tree.getAllPaths();
+    }
+
+    public static void add(List<String> source, Multiset<Ngram> multiset, NgramTemplate template){
+        for (List<Integer> list: template.getPositionTemplate()){
+            add(source,multiset,template.getField(),template.getSlop(),list);
+        }
+    }
+
+    public static void add(Map<Integer, String> termVector, Multiset<Ngram> multiset, NgramTemplate template){
+        Comparator<Map.Entry<Integer,String>> comparator = Comparator.comparing(Map.Entry::getKey);
+        List<String> source = termVector.entrySet().stream()
+                .sorted(comparator).map(Map.Entry::getValue).collect(Collectors.toList());
+        add(source,multiset,template);
     }
 }

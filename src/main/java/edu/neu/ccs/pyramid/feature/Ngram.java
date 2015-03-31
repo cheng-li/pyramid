@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by chengli on 3/7/15.
@@ -18,6 +19,8 @@ public class Ngram extends Feature {
     private String field = "unknown";
     private int slop;
     private boolean inOrder=true;
+
+
 
     public String getNgram() {
         return ngram;
@@ -57,6 +60,17 @@ public class Ngram extends Feature {
 
     public void setInOrder(boolean inOrder) {
         this.inOrder = inOrder;
+    }
+
+    public static String toNgramString(List<String> terms){
+        String str = "";
+        for (int i=0;i<terms.size();i++){
+            str = str.concat(terms.get(i));
+            if (i!=terms.size()-1){
+                str = str.concat(" ");
+            }
+        }
+        return str;
     }
 
     @Override

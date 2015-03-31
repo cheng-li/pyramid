@@ -5,6 +5,8 @@ import edu.neu.ccs.pyramid.feature.CategoricalFeature;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.Ngram;
+import org.apache.mahout.math.RandomAccessSparseVector;
+import org.apache.mahout.math.Vector;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
@@ -81,12 +83,7 @@ public class FeatureLoader {
                 dataSet.setFeatureValue(algorithmId,featureIndex,value);
             });
         } else if (source.equals("matching_score")){
-            SearchResponse response = null;
-            int slop = feature.getSlop();
-            String ngram = feature.getNgram();
-            String field = feature.getField();
-            response = index.matchPhrase(field, ngram, dataIndexIds, slop);
-
+            SearchResponse response = index.match(feature,dataIndexIds);
             SearchHit[] hits = response.getHits().getHits();
             for (SearchHit hit: hits){
                 String indexId = hit.getId();
@@ -98,5 +95,19 @@ public class FeatureLoader {
 
 
 
+    }
+
+    public static Vector loadNgramFeature(ESIndex index, Ngram feature, IdTranslator idTranslator ){
+        String[] dataIndexIds = idTranslator.getAllExtIds();
+        SearchResponse response = index.match(feature,dataIndexIds);
+        SearchHit[] hits = response.getHits().getHits();
+        Vector vector = new RandomAccessSparseVector(idTranslator.numData());
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            int algorithmId = idTranslator.toIntId(indexId);
+            vector.set(algorithmId,score);
+        }
+        return vector;
     }
 }
