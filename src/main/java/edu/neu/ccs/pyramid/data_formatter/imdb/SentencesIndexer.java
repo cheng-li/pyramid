@@ -46,7 +46,9 @@ public class SentencesIndexer {
 
 
     static String getBody(File file) throws Exception{
-        String entireFileText = FileUtils.readFileToString(file);
+        String entireFileText = FileUtils.readFileToString(file)
+                .replaceAll("\\?", " punctuationquestion ")
+                .replaceAll("!"," punctuationexclamation ");;
         return entireFileText;
     }
 
