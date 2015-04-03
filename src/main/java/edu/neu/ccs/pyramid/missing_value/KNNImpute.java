@@ -45,7 +45,7 @@ public class KNNImpute {
             BufferedWriter writer0 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/feature_names.txt")));
             BufferedWriter writer1 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/train_data.txt")));
             BufferedWriter writer2 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/train_label.txt")));
-            BufferedWriter writer3 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/log_train_data.txt")));
+            BufferedWriter writer3 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/train_data.txt")));
             line = reader.readLine();
             String[] words = line.split("\t");
             for (int i = 4; i < words.length; i++) {
@@ -61,11 +61,11 @@ public class KNNImpute {
                     for (int k = 2; k < feature_num - 2; k++) {
                         if (!missing_col.contains(k)) {
                             writer1.write(words[k] + ",");
-                            writer3.write(Double.toString(Math.log(Double.parseDouble(words[k]) + 1)) + ",");
+                            writer3.write(Double.toString(Double.parseDouble(words[k])) + ",");
                         }
                     }
                     writer1.write(words[feature_num - 2] + "\n");
-                    writer3.write(Double.toString(Math.log(Double.parseDouble(words[feature_num - 2]) + 1)) + "\n");
+                    writer3.write(Double.toString(Double.parseDouble(words[feature_num - 2])) + "\n");
                     if (words.length == feature_num) {
                         writer2.write(words[feature_num - 1] + "\n");
                     }
@@ -95,6 +95,12 @@ public class KNNImpute {
         List<String> featureNames = loadFeatures();
         ClfDataSet data = StandardFormat.loadClfDataSet(6, new File(DATASETS, "gene_expression/log_train_data.txt"),
                 new File(DATASETS, "gene_expression/train_label.txt"), ",", DataSetType.CLF_DENSE, false);
+        for (int i = 0; i < data.getNumFeatures(); i++) {
+            Vector temp = data.getColumn(i).normalize();
+            for (int j = 0; j < data.getNumDataPoints(); j++) {
+                data.setFeatureValue(j, i, temp.get(j));
+            }
+        }
 
         DataSetUtil.setFeatureNames(data, featureNames);
         String[] extLabels = {"0","1","2","3","4","5"};
@@ -189,19 +195,20 @@ public class KNNImpute {
         for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
             for (int j = 0; j < dataSet.getNumFeatures(); j++) {
                 if (Double.isNaN(dataSet.getRow(i).get(j))) {
-                    dataSet.getRow(i).set(j, new_values.get(k));
-                    dataSet.getColumn(j).set(i, new_values.get(k));
+                    dataSet.setFeatureValue(i, j, new_values.get(k));
                     k++;
                     rms += Math.pow(dataSet.getRow(i).get(j) - completeDataSet.getRow(i).get(j), 2);
+//                    rms += Math.pow(Math.exp(dataSet.getRow(i).get(j)) - Math.exp(completeDataSet.getRow(i).get(j)), 2);
                 }
                 total += dataSet.getRow(i).get(j);
+//                total += Math.exp(dataSet.getRow(i).get(j));
             }
         }
         double rmse = Math.sqrt(rms / k) / (total / (dataSet.getNumDataPoints() * dataSet.getNumFeatures()));
         System.out.println("RMSE: " + rmse);
     }
     public static void main(String[] args) throws Exception{
-        loadDataSet();
+//        loadDataSet();
 //        saveTrainData();
 //        double[] percentages = {0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9};
 //        for (double p: percentages){
