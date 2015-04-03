@@ -27,7 +27,7 @@
   26: gradient boosting hyper parameter tuning, single label
   27: (obsolete) lasso hyper parameter tuning
   28: (obsolete) ridge hyper parameter tuning
-  29: index imdb_stopwords
+  29: index imdb
   30: given logistic regression coefficients, print top features
   31: feature extraction by logistic regression, see 37
   32: (obsolete) given feature indices, get feature names
