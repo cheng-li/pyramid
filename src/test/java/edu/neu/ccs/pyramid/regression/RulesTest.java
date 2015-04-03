@@ -53,7 +53,7 @@ public class RulesTest {
         TreeRule rule1 = new TreeRule(regressionTree,dataSet.getRow(100));
         TreeRule rule2 = new TreeRule(regressionTree,dataSet.getRow(1));
         ConstantRule rule3 = new ConstantRule(0.8);
-        Rule rule4 = new LinearRule(3,"age",0.1,50);
+        Rule rule4 = new LinearRule();
         List<Rule> rules = new ArrayList<>();
         rules.add(rule1);
         rules.add(rule2);

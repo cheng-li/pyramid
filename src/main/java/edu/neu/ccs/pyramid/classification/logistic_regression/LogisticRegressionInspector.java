@@ -1,15 +1,21 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
+import edu.neu.ccs.pyramid.classification.ClassProbability;
+import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.IdTranslator;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.regression.*;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
+import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import org.apache.mahout.math.Vector;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -44,6 +50,64 @@ public class LogisticRegressionInspector {
                                                          int k,
                                                          int limit){
         return topFeatures(logisticRegression,k).stream().limit(limit).collect(Collectors.toList());
+    }
+
+    public static ClassScoreCalculation decisionProcess(LogisticRegression logisticRegression,
+                                                        LabelTranslator labelTranslator, Vector vector, int classIndex, int limit){
+        ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
+                logisticRegression.predictClassScore(vector,classIndex));
+        List<LinearRule> linearRules = new ArrayList<>();
+        Rule bias = new ConstantRule(logisticRegression.getWeights().getBiasForClass(classIndex));
+        classScoreCalculation.addRule(bias);
+        for (int j=0;j<logisticRegression.getNumFeatures();j++){
+            Feature feature = logisticRegression.getFeatureList().get(j);
+            double weight = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex).get(j);
+            double featureValue = vector.get(j);
+            double score = weight*featureValue;
+            LinearRule rule = new LinearRule();
+            rule.setFeature(feature);
+            rule.setFeatureValue(featureValue);
+            rule.setScore(score);
+            rule.setWeight(weight);
+            linearRules.add(rule);
+        }
+
+        Comparator<LinearRule> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
+        List<LinearRule> sorted = linearRules.stream().sorted(comparator.reversed()).limit(limit).collect(Collectors.toList());
+
+        for (LinearRule linearRule : sorted){
+            classScoreCalculation.addRule(linearRule);
+        }
+
+        return classScoreCalculation;
+    }
+
+    public static PredictionAnalysis analyzePrediction(LogisticRegression logisticRegression, ClfDataSet dataSet, int dataPointIndex, int limit){
+        PredictionAnalysis predictionAnalysis = new PredictionAnalysis();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        predictionAnalysis.setInternalId(dataPointIndex)
+                .setId(idTranslator.toExtId(dataPointIndex))
+                .setInternalLabel(dataSet.getLabels()[dataPointIndex])
+                .setLabel(labelTranslator.toExtLabel(dataSet.getLabels()[dataPointIndex]));
+        int prediction = logisticRegression.predict(dataSet.getRow(dataPointIndex));
+        predictionAnalysis.setInternalPrediction(prediction);
+        predictionAnalysis.setPrediction(labelTranslator.toExtLabel(prediction));
+        double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
+        List<ClassProbability> classProbabilities = new ArrayList<>();
+        for (int k=0;k<probs.length;k++){
+            ClassProbability classProbability = new ClassProbability(k,labelTranslator.toExtLabel(k),probs[k]);
+            classProbabilities.add(classProbability);
+        }
+        predictionAnalysis.setClassProbabilities(classProbabilities);
+        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
+        for (int k=0;k<probs.length;k++){
+            ClassScoreCalculation classScoreCalculation = decisionProcess(logisticRegression,labelTranslator,
+                    dataSet.getRow(dataPointIndex),k,limit);
+            classScoreCalculations.add(classScoreCalculation);
+        }
+        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
+        return predictionAnalysis;
     }
 
     public static int[] numOfUsedFeaturesEachClass(LogisticRegression logisticRegression){

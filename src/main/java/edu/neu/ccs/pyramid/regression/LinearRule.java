@@ -1,41 +1,48 @@
 package edu.neu.ccs.pyramid.regression;
 
+import edu.neu.ccs.pyramid.feature.Feature;
+
 /**
  * Created by chengli on 2/28/15.
  */
 public class LinearRule implements Rule {
-    private int featureIndex;
-    private String featureName;
+    private Feature feature;
     private double weight;
     private double featureValue;
     private double score;
 
-    public LinearRule(int featureIndex, String featureName,
-                      double weight, double featureValue) {
-        this.featureIndex = featureIndex;
-        this.featureName = featureName;
-        this.weight = weight;
-        this.featureValue = featureValue;
-        this.score = weight*featureValue;
+    public LinearRule() {
     }
 
-    public int getFeatureIndex() {
-        return featureIndex;
+    public Feature getFeature() {
+        return feature;
     }
 
-    public String getFeatureName() {
-        return featureName;
+    public void setFeature(Feature feature) {
+        this.feature = feature;
     }
 
     public double getWeight() {
         return weight;
     }
 
+    public void setWeight(double weight) {
+        this.weight = weight;
+    }
+
     public double getFeatureValue() {
         return featureValue;
     }
 
+    public void setFeatureValue(double featureValue) {
+        this.featureValue = featureValue;
+    }
+
     public double getScore() {
         return score;
+    }
+
+    public void setScore(double score) {
+        this.score = score;
     }
 }
