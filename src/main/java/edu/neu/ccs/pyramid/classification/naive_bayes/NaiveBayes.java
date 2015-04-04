@@ -1,12 +1,11 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.lang.reflect.Array;
@@ -18,7 +17,7 @@ import java.util.ArrayList;
 /**
  * Created by Rainicy on 10/8/14.
  */
-public class NaiveBayes<T extends Distribution> implements ProbabilityEstimator {
+public class NaiveBayes<T extends Distribution> implements Classifier.ProbabilityEstimator {
 
     private Class<T> clazz;
 

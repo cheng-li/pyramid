@@ -21,8 +21,8 @@ public class IMLGradientBoostingTest {
 
     public static void main(String[] args) throws Exception{
 //        test1();
-        test5();
-//    test4();
+//        test5();
+    test4();
     }
 
     private static void test1() throws Exception{

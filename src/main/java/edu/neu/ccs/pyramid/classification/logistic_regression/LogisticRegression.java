@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
-import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.FeatureList;
@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 11/28/14.
  */
-public class LogisticRegression implements ProbabilityEstimator {
+public class LogisticRegression implements Classifier.ProbabilityEstimator, Classifier.ScoreEstimator {
     private static final long serialVersionUID = 2L;
     private int numClasses;
     private int numFeatures;

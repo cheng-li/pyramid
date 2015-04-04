@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Created by chengli on 9/9/14.
  */
-public class ProbabilityVoting implements ProbabilityEstimator{
+public class ProbabilityVoting implements Classifier.ProbabilityEstimator {
     private int numClasses;
     private List<ProbabilityEstimator> estimatorList;
     private FeatureList featureList;

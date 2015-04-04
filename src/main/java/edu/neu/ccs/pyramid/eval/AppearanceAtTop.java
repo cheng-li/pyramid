@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.eval;
 
-import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.util.ArgSort;
 
@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
  */
 public class AppearanceAtTop {
 
-    public static double rate(ProbabilityEstimator probabilityEstimator,
+    public static double rate(Classifier.ProbabilityEstimator probabilityEstimator,
                               ClfDataSet clfDataSet,
                               int top){
         int[] labels = clfDataSet.getLabels();

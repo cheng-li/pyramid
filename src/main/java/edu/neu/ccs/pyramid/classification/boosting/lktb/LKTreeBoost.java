@@ -1,27 +1,21 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
-import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
-import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.GradientMatrix;
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
-import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.feature.FeatureList;
-import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
 /**
  * Created by chengli on 8/14/14.
  */
-public class LKTreeBoost implements ProbabilityEstimator{
+public class LKTreeBoost implements Classifier.ProbabilityEstimator, Classifier.ScoreEstimator{
     private static final long serialVersionUID = 3L;
     /**
      * regressors.get(k).get(i) is the ith regressor for class k

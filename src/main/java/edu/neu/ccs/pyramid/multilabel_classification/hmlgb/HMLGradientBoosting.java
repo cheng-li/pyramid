@@ -16,7 +16,7 @@ import java.util.List;
  * hierarchical multi-label gradient boosting
  * Created by chengli on 9/27/14.
  */
-public class HMLGradientBoosting implements MultiLabelClassifier{
+public class HMLGradientBoosting implements MultiLabelClassifier, MultiLabelClassifier.ClassScoreEstimator {
     private static final long serialVersionUID = 2L;
     private List<List<Regressor>> regressors;
     private int numClasses;
@@ -138,7 +138,7 @@ public class HMLGradientBoosting implements MultiLabelClassifier{
         return score;
     }
 
-     double[] predictClassScores(Vector vector){
+     public double[] predictClassScores(Vector vector){
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){

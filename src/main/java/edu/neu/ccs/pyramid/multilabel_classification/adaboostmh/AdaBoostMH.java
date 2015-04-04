@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Created by chengli on 3/15/15.
  */
-public class AdaBoostMH implements MultiLabelClassifier {
+public class AdaBoostMH implements MultiLabelClassifier, MultiLabelClassifier.ClassScoreEstimator {
     private static final long serialVersionUID = 2L;
     private List<List<Regressor>> regressors;
     private int numClasses;

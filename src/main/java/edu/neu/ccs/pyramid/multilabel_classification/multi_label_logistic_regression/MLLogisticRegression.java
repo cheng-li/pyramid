@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 12/23/14.
  */
-public class MLLogisticRegression implements MultiLabelClassifier{
+public class MLLogisticRegression implements MultiLabelClassifier, MultiLabelClassifier.ClassScoreEstimator {
     private static final long serialVersionUID = 1L;
     private int numClasses;
     private int numFeatures;
@@ -89,7 +89,7 @@ public class MLLogisticRegression implements MultiLabelClassifier{
         return prediction;
     }
 
-    public double calClassScore(Vector dataPoint, int k){
+    public double predictClassScore(Vector dataPoint, int k){
         double score = 0;
         score += this.weights.getBiasForClass(k);
         score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
@@ -99,7 +99,7 @@ public class MLLogisticRegression implements MultiLabelClassifier{
     public double[] calClassScores(Vector dataPoint){
         double[] scores = new double[this.numClasses];
         for (int k=0;k<this.numClasses;k++){
-            scores[k] = calClassScore(dataPoint, k);
+            scores[k] = predictClassScore(dataPoint, k);
         }
         return scores;
     }

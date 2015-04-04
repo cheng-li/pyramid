@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.eval;
 
-import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.util.ArgSort;
 
@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
  */
 public class MRR {
 
-    public static double mrr(ProbabilityEstimator probabilityEstimator,
+    public static double mrr(Classifier.ProbabilityEstimator probabilityEstimator,
                              ClfDataSet clfDataSet){
         int[] labels = clfDataSet.getLabels();
         return IntStream.range(0, clfDataSet.getNumDataPoints()).parallel()

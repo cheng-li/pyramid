@@ -10,8 +10,8 @@ import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * gradient boosting for independent labels
@@ -19,7 +19,7 @@ import java.util.List;
  * the prediction part can consider label relations
  * Created by chengli on 10/8/14.
  */
-public class IMLGradientBoosting implements MultiLabelClassifier{
+public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstimator, MultiLabelClassifier.ClassProbEstimator {
     private static final long serialVersionUID = 2L;
     private List<List<Regressor>> regressors;
     private int numClasses;
@@ -133,7 +133,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         return score;
     }
 
-    double[] predictClassScores(Vector vector){
+    public double[] predictClassScores(Vector vector){
         int numClasses = this.numClasses;
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){
@@ -158,6 +158,12 @@ public class IMLGradientBoosting implements MultiLabelClassifier{
         double logDenominator = MathUtil.logSumExp(scores);
         double pro = Math.exp(logNumerator-logDenominator);
         return pro;
+    }
+
+    @Override
+    public double[] predictClassProbs(Vector vector) {
+        return IntStream.range(0,numClasses)
+                .mapToDouble(k -> predictClassProb(vector,k)).toArray();
     }
 
     public double predictAssignmentProb(Vector vector, MultiLabel assignment){

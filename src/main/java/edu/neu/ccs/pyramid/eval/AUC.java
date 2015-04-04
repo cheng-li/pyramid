@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.eval;
 
-import edu.neu.ccs.pyramid.classification.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.util.Pair;
 
@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 9/9/14.
  */
 public class AUC {
-    public static double auc(ProbabilityEstimator probEstimator, ClfDataSet dataSet){
+    public static double auc(Classifier.ProbabilityEstimator probEstimator, ClfDataSet dataSet){
         if (dataSet.getNumClasses()!=2){
             throw new IllegalArgumentException("dataSet.getNumClasses()!=2");
         }
