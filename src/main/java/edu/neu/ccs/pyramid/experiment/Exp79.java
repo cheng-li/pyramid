@@ -44,6 +44,12 @@ public class Exp79 {
                 DataSetType.CLF_SPARSE, true);
 
         LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(config.getString("input.model")));
+
+        for (int k=0;k<dataSet.getNumClasses();k++){
+            System.out.println("top features for class "+k);
+            System.out.println(LogisticRegressionInspector.topFeatures(logisticRegression,k,100));
+        }
+
         List<Integer> candidates = new ArrayList<>();
         int[] prediction = logisticRegression.predict(dataSet);
         int[] labels = dataSet.getLabels();
