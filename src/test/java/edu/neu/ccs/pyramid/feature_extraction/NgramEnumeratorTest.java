@@ -17,9 +17,9 @@ public class NgramEnumeratorTest {
 //        test1();
 //        test2();
 //        test3();
-//    test4();
+    test4();
 //    test7();
-    test8();
+//    test8();
     }
 
     private static void test1(){
@@ -60,15 +60,10 @@ public class NgramEnumeratorTest {
         System.out.println(NgramEnumerator.getNgramCounts(tv,2));
     }
 
-//    private static void test4(){
-//        System.out.println(NgramEnumerator.createTemplate(3, 1));
-//        System.out.println(NgramEnumerator.createTemplate(1, 0));
-//        System.out.println(NgramEnumerator.createTemplate(1, 1));
-//        System.out.println(NgramEnumerator.createTemplate(2, 0));
-//        System.out.println(NgramEnumerator.createTemplate(2, 1));
-//        System.out.println(NgramEnumerator.createTemplate(2, 2));
-//        System.out.println(NgramEnumerator.createTemplate(3, 2));
-//    }
+    private static void test4(){
+        System.out.println(new NgramTemplate("body",3, 2));
+
+    }
 //
 //    private static void test5(){
 //        List<List<Integer>> templates = NgramEnumerator.createTemplate(3, 1);

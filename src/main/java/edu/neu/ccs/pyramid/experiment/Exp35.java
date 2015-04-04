@@ -219,10 +219,10 @@ public class Exp35 {
         List<Integer> slops = config.getIntegers("ngram.slop");
         for (String field: fields){
             for (int n: ns){
-                for (int slop: slops){
-                    if (n==1 && slop>0){
-                        continue;
-                    }
+                for (int slop=0; slop<=n;slop++){
+//                    if (n==1 && slop>0){
+//                        continue;
+//                    }
                     System.out.println("gathering "+n+ "-grams from field "+field+" with slop "+slop+" and minDf "+minDf);
                     NgramTemplate template = new NgramTemplate(field,n,slop);
                     Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index,ids,template,minDf);
@@ -241,6 +241,15 @@ public class Exp35 {
             }
         }
         System.out.println("there are "+allNgrams.elementSet().size()+" ngrams in total");
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"allFeatures.txt")));
+        for (Multiset.Entry<Ngram> ngramEntry: allNgrams.entrySet()){
+            bufferedWriter.write(ngramEntry.getElement().toString());
+            bufferedWriter.write("\t");
+            bufferedWriter.write(""+ngramEntry.getCount());
+            bufferedWriter.newLine();
+        }
+
+        bufferedWriter.close();
         return allNgrams.elementSet();
     }
 

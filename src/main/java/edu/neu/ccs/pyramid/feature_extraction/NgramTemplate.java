@@ -18,22 +18,27 @@ public class NgramTemplate {
         this.slop = slop;
         KaryTree<Integer> tree = new KaryTree<>();
         tree.root.setValue(0);
-        List<Node<Integer>> currentLeaves = new ArrayList<>();
-        currentLeaves.add(tree.root);
-        for (int i=0;i<n-1;i++){
-            List<Node<Integer>> nextLeaves = new ArrayList<>();
-            for (Node<Integer> leaf: currentLeaves){
-                for (int j=0;j<=slop;j++){
-                    Node<Integer> child = new Node<>();
-                    child.setValue(leaf.getValue() + j+1);
-                    leaf.addChild(child);
-                    nextLeaves.add(child);
-                }
-            }
-            currentLeaves = nextLeaves;
-        }
-        tree.leaves = currentLeaves;
+        tree.root.setSlop(0);
+        tree.root.setLength(1);
+        grow(tree,tree.root,n,slop);
         this.positionTemplate = tree.getAllPaths();
+    }
+
+    private static void grow(KaryTree<Integer> tree, Node<Integer> node, int n, int slop){
+        int currentN= node.getLength();
+        int currentSlop = node.getSlop();
+        if (currentN==n){
+            tree.leaves.add(node);
+            return;
+        }
+        for (int i=0;i<=slop-currentSlop;i++){
+            Node<Integer> child = new Node<>();
+            child.setValue(node.getValue() + i+1);
+            child.setLength(currentN+1);
+            child.setSlop(currentSlop+i);
+            node.addChild(child);
+            grow(tree,child,n,slop);
+        }
     }
 
     public int getN() {

@@ -86,7 +86,7 @@ public class IndexBuilder {
 
 
         }
-        builder.field("raw",text); 
+        builder.field("raw",text);
         builder.field("body",bodyBuilder.toString());
         builder.field("pos",posBuilder.toString());
         builder.field("body_pos",bodyPosBuilder.toString());

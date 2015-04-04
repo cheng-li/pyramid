@@ -11,6 +11,8 @@ public class Node<T> {
     List<Node<T>> children;
     Node<T> parent;
     boolean leaf;
+    int slop;
+    int length;
 
     public Node() {
         this.children = new ArrayList<>();
@@ -51,5 +53,21 @@ public class Node<T> {
 
     public void setLeaf(boolean leaf) {
         this.leaf = leaf;
+    }
+
+    public int getSlop() {
+        return slop;
+    }
+
+    public void setSlop(int slop) {
+        this.slop = slop;
+    }
+
+    public int getLength() {
+        return length;
+    }
+
+    public void setLength(int length) {
+        this.length = length;
     }
 }
