@@ -6,7 +6,6 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.stream.IntStream;
@@ -14,7 +13,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 8/19/14.
  */
-public class PriorProbClassifier implements ProbabilityEstimator{
+public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
     private static final long serialVersionUID = 2L;
 
     private int numClasses;
