@@ -1,10 +1,13 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import com.google.common.collect.ConcurrentHashMultiset;
+import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.*;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
+import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -21,7 +24,7 @@ import java.util.stream.IntStream;
 
 /**
  * for multi label dataset,
- * dump feature matrix with initial featureList and ngram featureList
+ * dump feature matrix with initial features and ngram features
  * follow exp11
  * Created by chengli on 10/11/14.
  */
@@ -135,7 +138,7 @@ public class Exp12 {
         List<String> featureFields = allFields.stream().
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
-        System.out.println("all possible initial featureList:"+featureFields);
+        System.out.println("all possible initial features:"+featureFields);
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);
@@ -178,69 +181,71 @@ public class Exp12 {
 
     }
 
-    static List<String> gather(Config config, ESIndex index, String field,
+    static boolean interesting(Multiset<Ngram> allNgrams, Ngram candidate, int count){
+        for (int slop = 0;slop<candidate.getSlop();slop++){
+            Ngram toCheck = new Ngram();
+            toCheck.setInOrder(candidate.isInOrder());
+            toCheck.setField(candidate.getField());
+            toCheck.setNgram(candidate.getNgram());
+            toCheck.setSlop(slop);
+            toCheck.setName(candidate.getName());
+            if (allNgrams.count(toCheck)==count){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static Set<Ngram> gather(Config config, ESIndex index,
                                String[] ids) throws Exception{
+        Multiset<Ngram> allNgrams = ConcurrentHashMultiset.create();
         List<Integer> ns = config.getIntegers("ngram.n");
-        List<Integer> minDfs = config.getIntegers("ngram.minDf");
-        List<String> list = new ArrayList<>();
-        for (int i=0;i<ns.size();i++){
-            int n = ns.get(i);
-            int minDf = minDfs.get(i);
-            if (n==1){
-                list.addAll(gatherUnigrams(index,field, ids,minDf));
-            } else {
-                list.addAll(gatherNgrams(index, field,ids, n, minDf));
+        int minDf = config.getInt("ngram.minDf");
+        List<String> fields = config.getStrings("fields");
+        List<Integer> slops = config.getIntegers("ngram.slop");
+        for (String field: fields){
+            for (int n: ns){
+                for (int slop:slops){
+                    if (n==1 && slop>0){
+                        continue;
+                    }
+                    System.out.println("gathering "+n+ "-grams from field "+field+" with slop "+slop+" and minDf "+minDf);
+                    NgramTemplate template = new NgramTemplate(field,n,slop);
+                    Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index,ids,template,minDf);
+                    System.out.println("gathered "+ngrams.elementSet().size()+ " ngrams");
+                    int newCounter = 0;
+                    for (Multiset.Entry<Ngram> entry: ngrams.entrySet()){
+                        Ngram ngram = entry.getElement();
+                        int count = entry.getCount();
+                        if (interesting(allNgrams,ngram,count)){
+                            allNgrams.add(ngram,count);
+                            newCounter += 1;
+                        }
+                    }
+                    System.out.println(newCounter+" are really new");
+                }
             }
         }
-        return list;
+        System.out.println("there are "+allNgrams.elementSet().size()+" ngrams in total");
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"allFeatures.txt")));
+        for (Multiset.Entry<Ngram> ngramEntry: allNgrams.entrySet()){
+            bufferedWriter.write(ngramEntry.getElement().toString());
+            bufferedWriter.write("\t");
+            bufferedWriter.write(""+ngramEntry.getCount());
+            bufferedWriter.newLine();
+        }
+
+        bufferedWriter.close();
+        return allNgrams.elementSet();
     }
 
-    static List<String> gatherUnigrams(ESIndex index, String field,
-                                       String[] ids, int minDf) throws Exception{
-        System.out.println("gathering unigrams with minDf "+minDf+" from field "+field);
-        Set<TermStat> unigrams = Collections.newSetFromMap(new ConcurrentHashMap<TermStat, Boolean>());
-        Arrays.stream(ids).parallel().forEach(id -> {
-            Set<TermStat> termStats = null;
-            try {
-                termStats = index.getTermStats(field, id);
-            } catch (IOException e) {
-                System.out.println("id= "+id);
-                e.printStackTrace();
-            }
-            termStats.stream().filter(termStat -> termStat.getDf() > minDf).forEach(unigrams::add);
+
+
+    static void addNgramFeatures(FeatureList featureList, Set<Ngram> ngrams){
+        ngrams.stream().forEach(ngram -> {
+            ngram.getSettings().put("source","matching_score");
+            featureList.add(ngram);
         });
-
-        List<String> list = unigrams.stream().sorted(Comparator.comparing(TermStat::getTerm))
-                .sorted(Comparator.comparing(TermStat::getDf).reversed())
-                .map(TermStat::getTerm)
-                .collect(Collectors.toList());
-        System.out.println("done");
-        System.out.println("there are "+list.size()+" unigrams");
-        return list;
-    }
-
-    static List<String> gatherNgrams(ESIndex index, String field,
-                                     String[] ids, int n, int minDf) throws Exception{
-
-        System.out.println("gathering "+n+"-grams with minDf "+minDf+" from field "+field);
-        List<String> ngrams = NgramEnumerator.gatherNgrams(index,field,ids,n,minDf);
-        System.out.println("done");
-        System.out.println("there are "+ngrams.size()+" "+n+"-grams");
-        return ngrams;
-    }
-
-    static void addNgramFeatures(FeatureList featureList, List<String> ngrams, String field, int slop){
-        for (String ngram: ngrams){
-            String featureName = ngram+"(slop="+slop+")";
-            Ngram feature = new Ngram();
-            feature.setIndex(featureList.size());
-            feature.setName(featureName);
-            feature.getSettings().put("source", "matching_score");
-            feature.setNgram(ngram);
-            feature.setSlop(slop);
-            feature.setField(field);
-            featureList.add(feature);
-        }
     }
 
     //todo keep track of feature types(numerical /binary)
@@ -412,16 +417,8 @@ public class Exp12 {
             addInitialFeatures(config,index,featureList,trainIndexIds);
         }
 
-
-        List<String> fields = config.getStrings("fields");
-        List<Integer> slops = config.getIntegers("ngram.slop");
-        for (String field: fields){
-            List<String> ngrams = gather(config,index,field, trainIndexIds);
-            for (int slop: slops){
-                addNgramFeatures(featureList, ngrams,field, slop);
-            }
-        }
-
+        Set<Ngram> ngrams = gather(config,index,trainIndexIds);
+        addNgramFeatures(featureList,ngrams);
 
         MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureList, trainIdTranslator, trainLabelTranslator);
         System.out.println("in training set :");
