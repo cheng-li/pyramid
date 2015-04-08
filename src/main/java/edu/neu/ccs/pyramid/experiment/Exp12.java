@@ -36,6 +36,8 @@ public class Exp12 {
 
         Config config = new Config(args[0]);
         System.out.println(config);
+        File output = new File(config.getString("archive.folder"));
+        output.mkdirs();
 
         MultiLabelIndex index = loadIndex(config);
         build(config,index);

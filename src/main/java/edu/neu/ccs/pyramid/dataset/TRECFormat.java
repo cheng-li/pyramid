@@ -610,6 +610,13 @@ public class TRECFormat {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        File txtFile = new File(trecFile, TREC_LABEL_TRANSLATOR_TEXT_FILE_NAME);
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(txtFile))
+        ){
+            bufferedWriter.write(labelTranslator.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
