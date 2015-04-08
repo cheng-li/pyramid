@@ -120,7 +120,7 @@ def writeTableTFPNColumns(row, line_count, output):
     output.write("</td>")
     # column 7 TN
     output.write("<td style='vertical-align:top;text-align:left;display:none' width='12%'>")
-    for i in range(0,23):
+    for i in range(0,len(row["classScoreCalculations"])):
         if (i not in labelSet) and (i not in predictionSet):
             writeClass(row["id"],line_count, output, row["classScoreCalculations"][i])
     output.write("</td>")
@@ -159,6 +159,7 @@ def writeTable(output, data):
         # test break after first line
         if(line_count % 100 == 0):
             print "Current parsing ID: ", line_count
+            break
 
 
 def writeBody(output, data):
@@ -313,24 +314,55 @@ function highlightText(rownum) {
 
 	var table = document.getElementById("mytable");
 	var rows = table.getElementsByTagName('tr');
-
 	var cols = rows[rownum[0]].children;
-
 	var cell = cols[2];
 
 	var text = cell.innerHTML;
-	text = text.replace(/<font color="red">/g, "");
-	text = text.replace(/<\/font>/g, "");
+	text = text.replace(/<font color=/g, "<font-color=");
 	var words = text.split(" ");
 
-	for(var j = 1; j < rownum.length; j++) {
-		pos = rownum[j];
-		words[pos] = "<font color='red'>"+words[pos]+"</font>";
+	if(isNewHighLight(words, rownum)) {
+
+		var colors = ["red", "Magenta", "ForestGreen", "blue", "lime", "BurlyWood", "Purple", "brown", "yellow", "pink"];
+		var pickColor = pickNewColor(text, colors);
+
+		for(var i = 1; i < rownum.length; i++) {
+			var pos = rownum[i];
+			words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
+			words[pos] = "<font color='" + pickColor + "'>"+words[pos]+"</font>";
+		}
+	}
+	else {
+		for(var i = 1; i < rownum.length; i++) {
+			var pos = rownum[i];
+			words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
+		}
 	}
 
-	cell.innerHTML = words.join(" ");
+	text = words.join(" ");
+	cell.innerHTML = text.replace(/<font-color=/g, "<font color=");
 
 }
+
+function pickNewColor(text, colors) {
+	for (var i=0; i<colors.length; i++) {
+		var fonttext = '<font-color="' + colors[i] + '">';
+		if(text.indexOf(fonttext) == -1) {
+			return colors[i];
+		}
+	}
+	return colors[0];
+}
+
+function isNewHighLight(words, rownum) {
+	for(var i = 1; i < rownum.length; i++) {
+		if (words[rownum[i]].indexOf("<font-color=") == -1) {
+			return true;
+		}
+	}
+	return false;
+}
+
 </script>
 '''
 
