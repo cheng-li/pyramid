@@ -202,6 +202,9 @@ border-collapse: collapse;
 float : center;
 width : 30%;
 }
+.ruleList {
+list-style-type: square;
+}
 </style>
 </head>
 '''
@@ -265,12 +268,12 @@ function refreshTable() {
 	for (var i=0; i<rulelists.length; i++) {
 		var singleRuleLists = rulelists[i].getElementsByTagName("li");
 		for (var j=0; j<singleRuleLists.length && j<ruleNum; j++) {
-			singleRuleLists[j].style.display = 'block';
+			singleRuleLists[j].style.display = 'list-item';
 		}
 		for (var j=ruleNum; j<singleRuleLists.length; j++) {
 			singleRuleLists[j].style.display = 'none';
 		}
-	}esIndex
+	}
 	
 	var tp = document.getElementById("TP");
 	var fp = document.getElementById("FP");
@@ -288,7 +291,7 @@ function refreshTable() {
 			tn.checked && cols[6].innerHTML != "") {
 			cols[0].style.display = 'block';
 			cols[1].style.display = 'block';
-			esIndexcols[2].style.display = 'block';
+			cols[2].style.display = 'block';
 			cols[3].style.display = tp.checked ? 'block' : 'none';
 			cols[4].style.display = fp.checked ? 'block' : 'none';
 			cols[5].style.display = fn.checked ? 'block' : 'none';
