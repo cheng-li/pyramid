@@ -32,7 +32,7 @@ def getPositions(docId, field, keywords, slop, in_order):
                                           "collect_payloads": False}},
                                   "filter":{"ids":{"values":[docId]}}}},
                           "highlight":{"fields":{"body":{}}},
-                          "size":10000})
+                          "size":1})
     if len(res["hits"]["hits"]) <= 0:
         return []
     positions = []
