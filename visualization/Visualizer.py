@@ -320,7 +320,7 @@ function highlightText(rownum) {
 
 	if(isNewHighLight(words, rownum)) {
 
-		var colors = ["red", "Magenta", "ForestGreen", "blue", "lime", "BurlyWood", "Purple", "brown", "yellow", "pink"];
+		var colors = ["red", "Magenta", "lime", "blue", "GreenYellow", "LightPink", "orange", "yellow", "LightSeaGreen", "Orchid"];
 		var pickColor = pickNewColor(text, colors);
 
 		for(var i = 1; i < rownum.length; i++) {
