@@ -143,7 +143,7 @@ public class Exp35 {
         List<String> featureFields = allFields.stream().
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
-        System.out.println("all possible initial featureList:"+featureFields);
+        System.out.println("all possible initial features:"+featureFields);
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);
@@ -219,7 +219,7 @@ public class Exp35 {
         List<Integer> slops = config.getIntegers("ngram.slop");
         for (String field: fields){
             for (int n: ns){
-                for (int slop=0; slop<=n;slop++){
+                for (int slop: slops){
 //                    if (n==1 && slop>0){
 //                        continue;
 //                    }
@@ -406,8 +406,6 @@ public class Exp35 {
         String archive = config.getString("archive.folder");
         File dataFile = new File(archive,name);
         TRECFormat.save(dataSet, dataFile);
-        DataSetUtil.dumpDataPointSettings(dataSet, new File(dataFile, "data_settings.txt"));
-        DataSetUtil.dumpFeatureSettings(dataSet,new File(dataFile,"feature_settings.txt"));
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 

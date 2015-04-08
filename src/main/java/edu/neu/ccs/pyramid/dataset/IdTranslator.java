@@ -96,4 +96,13 @@ public class IdTranslator implements Serializable {
         }
         return idTranslator;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("IdTranslator{");
+        sb.append("intToExt=").append(intToExt);
+        sb.append(", extToInt=").append(extToInt);
+        sb.append('}');
+        return sb.toString();
+    }
 }

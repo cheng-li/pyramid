@@ -59,7 +59,7 @@ public class IndexBuilder {
         StringBuilder bodyBuilder = new StringBuilder();
         StringBuilder posBuilder = new StringBuilder();
         StringBuilder bodyPosBuilder = new StringBuilder();
-
+        StringBuilder bodyWithPosBuilder = new StringBuilder();
         Annotation document = new Annotation(text);
 
         // run all Annotators on this text
@@ -82,6 +82,7 @@ public class IndexBuilder {
                 String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
                 posBuilder.append(pos).append(" ");
                 bodyPosBuilder.append(lemma).append(" ").append(pos).append(" ");
+                bodyWithPosBuilder.append(lemma).append("/").append(pos).append(" ");
             }
 
 
@@ -90,6 +91,9 @@ public class IndexBuilder {
         builder.field("body",bodyBuilder.toString());
         builder.field("pos",posBuilder.toString());
         builder.field("body_pos",bodyPosBuilder.toString());
+        builder.field("body/pos",bodyWithPosBuilder.toString());
+        builder.field("feature_num_sentences",sentences.size());
+
     }
 
     static String getFileName(File file) throws Exception{

@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
@@ -26,8 +27,11 @@ public class TRECFormat {
     private static final String TREC_CONFIG_NUM_CLASSES = "numClasses";
     private static final String TREC_CONFIG_MISSING_VALUE = "missingValue";
     private static final String TREC_FEATURE_LIST_FILE_NAME = "feature_list.ser";
+    private static final String TREC_FEATURE_LIST_TEXT_FILE_NAME = "feature_list.txt";
     private static final String TREC_ID_TRANSLATOR_FILE_NAME = "id_translator.ser";
+    private static final String TREC_ID_TRANSLATOR_TEXT_FILE_NAME = "id_translator.txt";
     private static final String TREC_LABEL_TRANSLATOR_FILE_NAME = "label_translator.ser";
+    private static final String TREC_LABEL_TRANSLATOR_TEXT_FILE_NAME = "label_translator.txt";
 
 
     public static void save(ClfDataSet dataSet, String trecFile){
@@ -491,6 +495,16 @@ public class TRECFormat {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        File txtFile = new File(trecFile, TREC_FEATURE_LIST_TEXT_FILE_NAME);
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(txtFile))
+        ){
+            for (Feature feature: featureList.getAll()){
+                bufferedWriter.write(feature.toString());
+                bufferedWriter.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -521,6 +535,13 @@ public class TRECFormat {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        File txtFile = new File(trecFile, TREC_ID_TRANSLATOR_TEXT_FILE_NAME);
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(txtFile))
+        ){
+            bufferedWriter.write(idTranslator.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -548,6 +569,14 @@ public class TRECFormat {
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
         ){
             objectOutputStream.writeObject(labelTranslator);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        File txtFile = new File(trecFile, TREC_LABEL_TRANSLATOR_TEXT_FILE_NAME);
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(txtFile))
+        ){
+            bufferedWriter.write(labelTranslator.toString());
         } catch (IOException e) {
             e.printStackTrace();
         }
