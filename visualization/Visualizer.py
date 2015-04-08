@@ -120,7 +120,7 @@ def writeTableTFPNColumns(row, line_count, output):
     output.write("</td>")
     # column 7 TN
     output.write("<td style='vertical-align:top;text-align:left;display:none' width='12%'>")
-    for i in range(0,len(row["classScoreCalculations"])):
+    for i in range(0,classNumber):
         if (i not in labelSet) and (i not in predictionSet):
             writeClass(row["id"],line_count, output, row["classScoreCalculations"][i])
     output.write("</td>")
@@ -159,7 +159,6 @@ def writeTable(output, data):
         # test break after first line
         if(line_count % 100 == 0):
             print "Current parsing ID: ", line_count
-            break
 
 
 def writeBody(output, data):
@@ -171,14 +170,12 @@ def writeBody(output, data):
     output.write("</body>")
 
 
-def parse(inputJsonFile):
-    global esIndex
+def parse(input_json_file):
     # read input
-    input_json = open(inputJsonFile, "r")
+    input_json = open(input_json_file, "r")
     data = json.load(input_json)
     print "Json load successfully.\nStart Parsing..."
     # define output
-    esIndex = "ohsumed_20000"
     output = open("Viewer.html", "w")
     # write html file
     output.write("<html>")
@@ -367,14 +364,19 @@ function isNewHighLight(words, rownum) {
 '''
 
 es = Elasticsearch("localhost:9200", timeout=600, max_retries=10, revival_delay=0)
-esIndex = ""
+esIndex = "ohsumed_20000"
+classNumber = 23
 
 def main():
+    global esIndex
+    global classNumber
     # usage: myprog json_file
-    if len(sys.argv) >= 2:
-        jsonFile = sys.argv[1]
+    if len(sys.argv) >= 3:
+        esIndex = sys.argv[1]
+        classNumber = int(sys.argv[2])
+        jsonFile = sys.argv[3]
     else:
-        print "usage: myprog json_file"
+        print "Usage: python Visualizor.py index NumberofClasses json_file"
         return
     start = time.time()
     parse(jsonFile)
