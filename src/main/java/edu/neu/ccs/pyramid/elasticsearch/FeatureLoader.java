@@ -47,6 +47,8 @@ public class FeatureLoader {
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);
                     } else if (feature instanceof Ngram){
                         loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator);
+                    } else {
+                        loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
                 });
     }
@@ -109,5 +111,21 @@ public class FeatureLoader {
             vector.set(algorithmId,score);
         }
         return vector;
+    }
+
+
+    public static void loadNumericalFeature(ESIndex index, DataSet dataSet, Feature feature,
+                                              IdTranslator idTranslator){
+        String[] dataIndexIds = idTranslator.getAllExtIds();
+        String variableName = feature.getName();
+        int featureIndex = feature.getIndex();
+        String source = feature.getSettings().get("source");
+        if (source.equals("field")){
+            Arrays.stream(dataIndexIds).forEach(id -> {
+                int algorithmId = idTranslator.toIntId(id);
+                double value = index.getFloatField(id,variableName);
+                dataSet.setFeatureValue(algorithmId, featureIndex, value);
+            });
+        }
     }
 }
