@@ -8,7 +8,7 @@ import sys
 # This program read in a json file data and output to a html file.
 # The data is then shown in a big table with many options in front of the page.
 # The javascript then adjust the style(block or none) of each cell to determine
-# whether to show that in the table.
+# whether to display the cells in the table.
 
 
 def writeHeader(output):
@@ -16,11 +16,10 @@ def writeHeader(output):
 
 
 def getPositions(docId, field, keywords, slop, in_order):
-    clauses = "["
+    clauses = []
     for keyword in keywords.split():
-        clauses += "{'span_term':{'" + field + "':'" + keyword + "'}},"
-    clauses = clauses[0:-1] + "]"
-    res = es.search(index="ohsumed_20000",
+        clauses.append({'span_term':{ field : keyword}})
+    res = es.search(index=esIndex,
                     doc_type="document",
                     body={"explain":False,
                           "query":{
@@ -34,7 +33,6 @@ def getPositions(docId, field, keywords, slop, in_order):
                                   "filter":{"ids":{"values":[docId]}}}},
                           "highlight":{"fields":{"body":{}}},
                           "size":10000})
-    print res
     if len(res["hits"]["hits"]) <= 0:
         return []
     positions = []
@@ -62,7 +60,7 @@ def writeRule(docId, line_count, num, output, rule, show):
     if show:
         output.write("<li>")
     else:
-        output.write("<li display:none>")
+        output.write("<li style='display:none'>")
     output.write("rule%d: %.2f" % (num,rule["score"]))
     output.write("<ul>")
     for check in rule["checks"]:
@@ -84,12 +82,12 @@ def writeClass(docId, line_count, output, clas):
     output.write("%d : %s<br>" % (clas["internalClassIndex"], clas["className"]))
     output.write("classProbability: %.2f<br>" % clas["classProbability"] )
     output.write("TotalScore: %.2f<br>" % clas["classScore"])
-    # default rule number is 5
-    output.write("<ul>")
+    # default rule number is 6
+    output.write("<ul class='ruleList'>")
     output.write("<li>prior: %.2f</li>" % clas["rules"][0]["score"])
-    for i in range(1, min(6,len(clas["rules"]))):
+    for i in range(1, min(7,len(clas["rules"]))):
         writeRule(docId, line_count, i, output, clas["rules"][i], True)
-    for i in range(6, len(clas["rules"])):
+    for i in range(7, len(clas["rules"])):
         writeRule(docId, line_count, i, output, clas["rules"][i], False)
     output.write("</ul>")
 
@@ -131,8 +129,6 @@ def writeTableTFPNColumns(row, line_count, output):
 def writeTable(output, data):
     line_count = 0
     for row in data:
-        #if not (row["id"] == 16966 or row["id"] == 24362 or row["id"] == 19749):
-        #    continue
         line_count += 1
         # row begin
         output.write("<tr>")
@@ -151,7 +147,7 @@ def writeTable(output, data):
         output.write("</td>")
         # column 3 text
         output.write("<td style='vertical-align:top;text-align:left;' width='15%'>")
-        res = es.get(index="ohsumed_20000",
+        res = es.get(index=esIndex,
                      doc_type="document",
                      id=row["id"])
         output.write(res["_source"]["body"].encode('utf-8'))
@@ -161,9 +157,8 @@ def writeTable(output, data):
         # finish row
         output.write("</tr>")
         # test break after first line
-        if(line_count % 1 == 0):
-            break
-            print "cur line: ", line_count
+        if(line_count % 100 == 0):
+            print "Current parsing ID: ", line_count
 
 
 def writeBody(output, data):
@@ -176,11 +171,13 @@ def writeBody(output, data):
 
 
 def parse(inputJsonFile):
+    global esIndex
     # read input
     input_json = open(inputJsonFile, "r")
     data = json.load(input_json)
-    print "load finish"
+    print "Json load successfully.\nStart Parsing..."
     # define output
+    esIndex = "ohsumed_20000"
     output = open("Viewer.html", "w")
     # write html file
     output.write("<html>")
@@ -195,31 +192,43 @@ def parse(inputJsonFile):
 header = '''
 <head>
 <style>
-table, th, td {
+#mytable{
 border: 1px solid black;
 border-collapse: collapse;
+}
+#optionTable {
+border : 1px solid black;
+border-collapse: collapse;
+float : center;
+width : 30%;
 }
 </style>
 </head>
 '''
 
+
 preBody = '''
-<p>This is a hospital's patients data table:</p>
 <br>
-
-<p>Number of rules per class:
-<input type="text" name="ruleNum" value="6" size="4"></p>
-
-<p>Please select the fields to display</p>
+<table id='optionTable'>
+<tr><th><br> Data Viewer Options: </th></tr>
+<tr><td><br>
+<p style="text-indent: 1em;">Max number of rules per class:&nbsp;&nbsp;
+<input id="ruleNum" type="number" name="ruleNum" value="6" min="1" max="20"></p>
+</td></tr><tr><td><br>
+<p style="text-indent: 1em;">Select the fields to display
 <input id="TP" type="checkbox" name="TP" value="TP" checked>TP
 <input id="FP" type="checkbox" name="FP" value="FP" checked>FP
 <input id="FN" type="checkbox" name="FN" value="FN" checked>FN
-<input id="TN" type="checkbox" name="TN" value="TN" >TN
-<button onclick="refreshTable()">Refresh</button>
+<input id="TN" type="checkbox" name="TN" value="TN" >TN</p>
+</td></tr><tr><td><br><br>
+<center><button onclick="refreshTable()">Submit</button></center>
+<br></td></tr>
+</table>
+
 <br><br>
 
 <p>Rules and classes:</p>
-<p>(Press any rules would highlight matched query in the text)</p>
+<p>(Press any rules would highlight matched keywords in the text if they exist)</p>
 <table id="mytable" border=1  align="center" style="width:100%">
 <caption> XXX  data table</caption>
 
@@ -242,6 +251,27 @@ scripts = '''
 <script>
 function refreshTable() {
 
+	var ruleNum = document.getElementById("ruleNum").value;
+
+	if (ruleNum == '') {
+		alert("Wrong Number input");
+		return;
+	}
+
+	ruleNum = ruleNum * 2 + 1;
+
+	var rulelists = document.getElementsByClassName("ruleList");
+
+	for (var i=0; i<rulelists.length; i++) {
+		var singleRuleLists = rulelists[i].getElementsByTagName("li");
+		for (var j=0; j<singleRuleLists.length && j<ruleNum; j++) {
+			singleRuleLists[j].style.display = 'block';
+		}
+		for (var j=ruleNum; j<singleRuleLists.length; j++) {
+			singleRuleLists[j].style.display = 'none';
+		}
+	}esIndex
+	
 	var tp = document.getElementById("TP");
 	var fp = document.getElementById("FP");
 	var fn = document.getElementById("FN");
@@ -258,7 +288,7 @@ function refreshTable() {
 			tn.checked && cols[6].innerHTML != "") {
 			cols[0].style.display = 'block';
 			cols[1].style.display = 'block';
-			cols[2].style.display = 'block';
+			esIndexcols[2].style.display = 'block';
 			cols[3].style.display = tp.checked ? 'block' : 'none';
 			cols[4].style.display = fp.checked ? 'block' : 'none';
 			cols[5].style.display = fn.checked ? 'block' : 'none';
@@ -302,19 +332,19 @@ function highlightText(rownum) {
 '''
 
 es = Elasticsearch("localhost:9200", timeout=600, max_retries=10, revival_delay=0)
-
+esIndex = ""
 
 def main():
     # usage: myprog json_file
-    if len(sys.argv) > 1:
+    if len(sys.argv) >= 2:
         jsonFile = sys.argv[1]
     else:
         print "usage: myprog json_file"
-        jsonFile = "train_prediction_analysis.json"
+        return
     start = time.time()
     parse(jsonFile)
     end = time.time()
-    print "parsing cost time ", start-end, " seconds"
+    print "parsing cost time ", end-start, " seconds"
 
 
 if __name__ == '__main__':
