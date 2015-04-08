@@ -142,7 +142,9 @@ public class NgramEnumerator {
 
 
 
+    // each ngram is counted only once in each doc
      private static void add(List<String> source, Multiset<Ngram> multiset, String field, int slop, List<Integer> template){
+        Multiset<Ngram> multiSetForDoc = ConcurrentHashMultiset.create();
         for (int i=0;i<source.size();i++){
             if(i+template.get(template.size()-1)<source.size()){
                 List<String> list = new ArrayList<>();
@@ -154,9 +156,10 @@ public class NgramEnumerator {
                 ngram.setSlop(slop);
                 ngram.setField(field);
                 ngram.setInOrder(true);
-                multiset.add(ngram);
+                multiSetForDoc.setCount(ngram,1);
             }
         }
+         multiset.addAll(multiSetForDoc);
     }
 
     public static void add(List<String> source, Multiset<Ngram> multiset, NgramTemplate template){
