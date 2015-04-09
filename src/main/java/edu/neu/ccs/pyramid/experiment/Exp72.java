@@ -188,9 +188,26 @@ public class Exp72 {
                     }
             )
                     .collect(Collectors.toList());
-            ObjectMapper mapper = new ObjectMapper();
-            String file = config.getString("verify.analyze.file");
-            mapper.writeValue(new File(config.getString("output.folder"),file), analysisList);
+            int numDocsPerFile = config.getInt("verify.analyze.numDocsPerFile");
+            int numFiles = (int)Math.ceil((double)analysisList.size()/numDocsPerFile);
+
+
+            for (int i=0;i<numFiles;i++){
+                int start = i;
+                int end = i+numDocsPerFile;
+                List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
+                for (int a=start;a<end;a++){
+                    partition.add(analysisList.get(a));
+                }
+                ObjectMapper mapper = new ObjectMapper();
+                String fileName = config.getString("verify.analyze.file");
+                int suffixIndex = fileName.lastIndexOf(".json");
+                if (suffixIndex==-1){
+                    suffixIndex=fileName.length();
+                }
+                String file = fileName.substring(0,suffixIndex)+"_"+(i+1)+".json";
+                mapper.writeValue(new File(config.getString("output.folder"),file), partition);
+            }
 
         }
     }
@@ -242,9 +259,27 @@ public class Exp72 {
                     }
             )
                     .collect(Collectors.toList());
-            ObjectMapper mapper = new ObjectMapper();
-            String file = config.getString("test.analyze.file");
-            mapper.writeValue(new File(config.getString("output.folder"),file), analysisList);
+
+            int numDocsPerFile = config.getInt("test.analyze.numDocsPerFile");
+            int numFiles = (int)Math.ceil((double)analysisList.size()/numDocsPerFile);
+
+
+            for (int i=0;i<numFiles;i++){
+                int start = i;
+                int end = i+numDocsPerFile;
+                List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
+                for (int a=start;a<end;a++){
+                    partition.add(analysisList.get(a));
+                }
+                ObjectMapper mapper = new ObjectMapper();
+                String fileName = config.getString("test.analyze.file");
+                int suffixIndex = fileName.lastIndexOf(".json");
+                if (suffixIndex==-1){
+                    suffixIndex=fileName.length();
+                }
+                String file = fileName.substring(0, suffixIndex)+"_"+(i+1)+".json";
+                mapper.writeValue(new File(config.getString("output.folder"),file), partition);
+            }
 
         }
     }

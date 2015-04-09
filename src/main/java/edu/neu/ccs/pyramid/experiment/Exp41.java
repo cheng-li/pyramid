@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -8,6 +9,8 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticLoss;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegression;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegressionInspector;
@@ -19,6 +22,7 @@ import org.apache.mahout.math.Vector;
 import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * multi-label logistic regression
@@ -69,8 +73,8 @@ public class Exp41 {
     }
 
     static void train(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
+        String archive = config.getString("output.folder");
+        String modelName = config.getString("output.model");
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -90,6 +94,7 @@ public class Exp41 {
         MLLogisticRegression mlLogisticRegression = new MLLogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures(),
                 assignments);
         mlLogisticRegression.setFeatureList(dataSet.getFeatureList());
+        mlLogisticRegression.setLabelTranslator(dataSet.getLabelTranslator());
 
         mlLogisticRegression.setFeatureExtraction(false);
 
@@ -136,8 +141,8 @@ public class Exp41 {
     }
 
     static void test(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
+        String archive = config.getString("output.folder");
+        String modelName = config.getString("output.model");
 
         MLLogisticRegression mlLogisticRegression = MLLogisticRegression.deserialize(new File(archive,modelName));
         System.out.println("test data set loaded");
@@ -152,16 +157,19 @@ public class Exp41 {
         String input = config.getString("input.folder");
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(input,"train.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
-        File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
+        File modelFile = new File(config.getString("output.folder"),config.getString("output.model"));
         MLLogisticRegression mlLogisticRegression = MLLogisticRegression.deserialize(modelFile);
 
 
-        int limit = config.getInt("verify.topFeature.limit");
-        for (int k=0;k<mlLogisticRegression.getNumClasses();k++){
-            System.out.println("top feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
-            System.out.println(MLLogisticRegressionInspector.topFeatures(mlLogisticRegression, k)
-                    .stream().limit(limit).map(FeatureUtility::getFeature).collect(Collectors.toList()));
+        if (config.getBoolean("verify.topFeatures")){
+            int limit = config.getInt("verify.topFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0, dataSet.getNumClasses())
+                    .mapToObj(k -> MLLogisticRegressionInspector.topFeatures(mlLogisticRegression, k, limit))
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("verify.topFeatures.file");
+            mapper.writeValue(new File(config.getString("output.folder"),file), topFeaturesList);
+
         }
     }
 

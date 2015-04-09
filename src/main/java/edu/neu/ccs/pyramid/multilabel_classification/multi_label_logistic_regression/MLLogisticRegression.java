@@ -197,7 +197,7 @@ public class MLLogisticRegression implements MultiLabelClassifier, MultiLabelCla
         return labelTranslator;
     }
 
-    void setLabelTranslator(LabelTranslator labelTranslator) {
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
     }
 }
