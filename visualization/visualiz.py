@@ -31,7 +31,7 @@ def getPositions(docId, field, keywords, slop, in_order):
                                           "in_order": in_order,
                                           "collect_payloads": False}},
                                   "filter":{"ids":{"values":[docId]}}}},
-                          "highlight":{"fields":{"body":{}}},
+                          "highlight":{"fields":{field:{}}},
                           "size":1})
     if len(res["hits"]["hits"]) <= 0:
         return []
@@ -159,6 +159,7 @@ def writeTable(output, data):
         # test break after first line
         if(line_count % 100 == 0):
             print "Current parsing ID: ", line_count
+            break
 
 
 def writeBody(output, data):
