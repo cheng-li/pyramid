@@ -281,7 +281,7 @@ public class Exp14 {
                 int start = i;
                 int end = i+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
-                for (int a=start;a<end;a++){
+                for (int a=start;a<end && a<analysisList.size();a++){
                     partition.add(analysisList.get(a));
                 }
                 ObjectMapper mapper = new ObjectMapper();
@@ -354,7 +354,7 @@ public class Exp14 {
                 int start = i;
                 int end = i+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
-                for (int a=start;a<end;a++){
+                for (int a=start;a<end && a<analysisList.size();a++){
                     partition.add(analysisList.get(a));
                 }
                 ObjectMapper mapper = new ObjectMapper();
