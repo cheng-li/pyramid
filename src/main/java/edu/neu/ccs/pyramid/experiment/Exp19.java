@@ -64,6 +64,10 @@ public class Exp19 {
         //re-sample
         ClfDataSet dataSet = loadTrainData(config);
         System.out.println(dataSet.getMetaInfo());
+
+        String testFile = new File(config.getString("input.folder"),
+                config.getString("input.testData")).getAbsolutePath();
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(testFile,DataSetType.CLF_SPARSE,true);
         int numClasses = dataSet.getNumClasses();
 
         System.out.println("training model ");
@@ -86,6 +90,10 @@ public class Exp19 {
             stopWatch1.start();
 
             trainer.iterate();
+            if (i%10==0){
+                System.out.println("accuracy on training set = "+Accuracy.accuracy(lkTreeBoost,dataSet));
+                System.out.println("accuracy on test set = "+Accuracy.accuracy(lkTreeBoost,testSet));
+            }
             System.out.println("time spent on one iteration = "+stopWatch1);
             //debug
 //                double[] gradient = lkTreeBoost.getGradient(0);
