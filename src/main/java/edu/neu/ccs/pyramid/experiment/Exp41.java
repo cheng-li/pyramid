@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticLoss;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegression;
@@ -151,6 +152,68 @@ public class Exp41 {
         System.out.println("accuracy on test set = "+Accuracy.accuracy(mlLogisticRegression,dataSet));
         System.out.println("overlap on test set = "+ Overlap.overlap(mlLogisticRegression,dataSet));
 
+
+        if (config.getBoolean("test.analyze")){
+            int limit = config.getInt("test.analyze.rule.limit");
+
+
+            List<MultiLabelPredictionAnalysis> analysisList = IntStream.range(0,dataSet.getNumDataPoints()).parallel().filter(
+                    i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = mlLogisticRegression.predict(dataSet.getRow(i));
+                        boolean accept = false;
+                        if (config.getBoolean("test.analyze.doc.withRightPrediction")) {
+                            accept = accept || multiLabel.equals(prediction);
+                        }
+
+                        if (config.getBoolean("test.analyze.doc.withWrongPrediction")) {
+                            accept = accept || !multiLabel.equals(prediction);
+                        }
+                        return accept;
+                    }
+            ).mapToObj(i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = mlLogisticRegression.predict(dataSet.getRow(i));
+                        List<Integer> classes = new ArrayList<Integer>();
+                        for (int k = 0; k < dataSet.getNumClasses(); k++) {
+                            boolean condition1 = multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("test.analyze.class.truePositive");
+                            boolean condition2 = !multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("test.analyze.class.trueNegative");
+                            boolean condition3 = !multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("test.analyze.class.falsePositive");
+                            boolean condition4 = multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("test.analyze.class.falseNegative");
+                            boolean condition5 = k<mlLogisticRegression.getNumClasses();
+                            boolean accept = (condition1 || condition2 || condition3 || condition4) && condition5;
+                            if (accept) {
+                                classes.add(k);
+                            }
+                        }
+                        return MLLogisticRegressionInspector.analyzePrediction(mlLogisticRegression, dataSet, i, classes, limit);
+                    }
+            )
+                    .collect(Collectors.toList());
+
+            int numDocsPerFile = config.getInt("test.analyze.numDocsPerFile");
+            int numFiles = (int)Math.ceil((double)analysisList.size()/numDocsPerFile);
+
+
+            for (int i=0;i<numFiles;i++){
+                int start = i;
+                int end = i+numDocsPerFile;
+                List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
+                for (int a=start;a<end && a<analysisList.size();a++){
+                    partition.add(analysisList.get(a));
+                }
+                ObjectMapper mapper = new ObjectMapper();
+                String fileName = config.getString("test.analyze.file");
+                int suffixIndex = fileName.lastIndexOf(".json");
+                if (suffixIndex==-1){
+                    suffixIndex=fileName.length();
+                }
+                String file = fileName.substring(0, suffixIndex)+"_"+(i+1)+".json";
+                mapper.writeValue(new File(config.getString("output.folder"),file), partition);
+            }
+
+        }
+
     }
 
     private static void verify(Config config) throws Exception{
@@ -171,6 +234,69 @@ public class Exp41 {
             mapper.writeValue(new File(config.getString("output.folder"),file), topFeaturesList);
 
         }
+
+
+        if (config.getBoolean("verify.analyze")){
+            int limit = config.getInt("verify.analyze.rule.limit");
+
+
+            List<MultiLabelPredictionAnalysis> analysisList = IntStream.range(0,dataSet.getNumDataPoints()).parallel().filter(
+                    i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = mlLogisticRegression.predict(dataSet.getRow(i));
+                        boolean accept = false;
+                        if (config.getBoolean("verify.analyze.doc.withRightPrediction")) {
+                            accept = accept || multiLabel.equals(prediction);
+                        }
+
+                        if (config.getBoolean("verify.analyze.doc.withWrongPrediction")) {
+                            accept = accept || !multiLabel.equals(prediction);
+                        }
+                        return accept;
+                    }
+            ).mapToObj(i -> {
+                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+                        MultiLabel prediction = mlLogisticRegression.predict(dataSet.getRow(i));
+                        List<Integer> classes = new ArrayList<Integer>();
+                        for (int k = 0; k < dataSet.getNumClasses(); k++) {
+                            boolean condition1 = multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("verify.analyze.class.truePositive");
+                            boolean condition2 = !multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("verify.analyze.class.trueNegative");
+                            boolean condition3 = !multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("verify.analyze.class.falsePositive");
+                            boolean condition4 = multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("verify.analyze.class.falseNegative");
+                            boolean accept = condition1 || condition2 || condition3 || condition4;
+                            if (accept) {
+                                classes.add(k);
+                            }
+                        }
+                        return MLLogisticRegressionInspector.analyzePrediction(mlLogisticRegression, dataSet, i, classes, limit);
+                    }
+            )
+                    .collect(Collectors.toList());
+
+            int numDocsPerFile = config.getInt("verify.analyze.numDocsPerFile");
+            int numFiles = (int)Math.ceil((double)analysisList.size()/numDocsPerFile);
+
+
+            for (int i=0;i<numFiles;i++){
+                int start = i;
+                int end = i+numDocsPerFile;
+                List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
+                for (int a=start;a<end && a<analysisList.size();a++){
+                    partition.add(analysisList.get(a));
+                }
+                ObjectMapper mapper = new ObjectMapper();
+                String fileName = config.getString("verify.analyze.file");
+                int suffixIndex = fileName.lastIndexOf(".json");
+                if (suffixIndex==-1){
+                    suffixIndex=fileName.length();
+                }
+                String file = fileName.substring(0,suffixIndex)+"_"+(i+1)+".json";
+                mapper.writeValue(new File(config.getString("output.folder"),file), partition);
+            }
+
+        }
+
+
     }
 
 
