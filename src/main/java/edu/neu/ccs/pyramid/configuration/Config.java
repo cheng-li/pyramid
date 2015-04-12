@@ -65,6 +65,9 @@ public class Config {
         }
         List<String> list = new ArrayList<>();
         String values = this.properties.getProperty(key);
+        if (values.equals("")){
+            return list;
+        }
         String[] valuesSplit = values.split(",");
         for (String valueString: valuesSplit){
             list.add(valueString.trim());

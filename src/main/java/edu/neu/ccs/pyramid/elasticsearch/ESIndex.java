@@ -370,6 +370,9 @@ public class ESIndex {
 
         Map<Integer,String> map = new HashMap<>();
         Terms terms = response.getFields().terms(field);
+        if (terms==null){
+            return map;
+        }
         TermsEnum iterator = terms.iterator(null);
         for (int i=0;i<terms.size();i++){
             String term = iterator.next().utf8ToString();

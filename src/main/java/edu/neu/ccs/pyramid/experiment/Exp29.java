@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.data_formatter.imdb.SentencesIndexer;
 import edu.neu.ccs.pyramid.util.DirWalker;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
@@ -45,6 +47,16 @@ public class Exp29 {
 
         Node node = nodeBuilder().client(true).clusterName(config.getString("index.clusterName")).node();
         Client client = node.client();
+
+        XContentBuilder mapping = IndexBuilder.creatMapping();
+
+        PutMappingResponse putMappingResponse = client.admin().indices()
+                .preparePutMapping("imdb")
+                .setType("document")
+                .setSource(mapping)
+                .execute().actionGet();
+
+
         int id = 0;
         for (File file: files){
             if (SentencesIndexer.acceptFile(file)){
