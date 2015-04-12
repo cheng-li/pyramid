@@ -216,6 +216,16 @@ public class Exp35 {
         List<Integer> ns = config.getIntegers("ngram.n");
         int minDf = config.getInt("ngram.minDf");
         List<String> fields = config.getStrings("fields");
+        if (config.getBoolean("useNounField")){
+            Set<String> all = index.listAllFields();
+            for (String field: all){
+                if (field.startsWith("noun_")){
+                    fields.add(field);
+                }
+            }
+        }
+        System.out.println("fields to be considered = "+fields);
+
         List<Integer> slops = config.getIntegers("ngram.slop");
         for (String field: fields){
             for (int n: ns){
