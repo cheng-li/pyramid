@@ -6,9 +6,11 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.FeatureList;
+import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.lang3.time.StopWatch;
 
@@ -49,11 +51,10 @@ public class Exp70 {
                 .stream().sorted().collect(Collectors.toList());
 
         List<Double> regularizations = Grid.logUniform(config.getDouble("train.regularization.min"),
-                config.getDouble("train.regularization.max") , config.getInt("train.regularization.size"))
+                config.getDouble("train.regularization.max"), config.getInt("train.regularization.size"))
                 .stream().sorted(comparator.reversed()).collect(Collectors.toList());
 
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(config.getString("input.folder"),"test.trec"),
-                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = loadTest(config);
 
         List<Performance> performanceList = new ArrayList<>();
 
@@ -114,13 +115,7 @@ public class Exp70 {
 
     private static void train(Config config) throws Exception{
 
-        String input = config.getString("input.folder");
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, "train.trec"),
-                DataSetType.CLF_SPARSE, true);
-        System.out.println(dataSet.getMetaInfo());
-
-
-
+        ClfDataSet dataSet = loadTrain(config);
 
 
         Comparator<Double> comparator = Comparator.comparing(Double::doubleValue);
@@ -161,6 +156,78 @@ public class Exp70 {
 
             }
         }
+    }
+
+    private static ClfDataSet loadTrain(Config config) throws Exception{
+        String input = config.getString("input.folder");
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, config.getString("input.trainData")),
+                DataSetType.CLF_SPARSE, true);
+
+        ClfDataSet subSet = null;
+        if (config.getBoolean("featureSampling")){
+            if (config.getBoolean("featureSampling.byField")){
+                List<Integer> indices = sampleFeatures(config);
+                subSet = DataSetUtil.sampleFeatures(dataSet, indices);
+            } else if (config.getBoolean("featureSampling.byNumber")){
+                int numFeatures = config.getInt("featureSampling.numFeaturesToUse");
+                subSet = DataSetUtil.sampleFeatures(dataSet, numFeatures);
+            }
+        } else {
+            subSet = dataSet;
+        }
+
+        System.out.println(subSet.getMetaInfo());
+        return subSet;
+    }
+
+
+    private static ClfDataSet loadTest(Config config) throws Exception{
+        String input = config.getString("input.folder");
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, config.getString("input.testData")),
+                DataSetType.CLF_SPARSE, true);
+
+        ClfDataSet subSet = null;
+        if (config.getBoolean("featureSampling")){
+            if (config.getBoolean("featureSampling.byField")){
+                List<Integer> indices = sampleFeatures(config);
+                subSet = DataSetUtil.sampleFeatures(dataSet, indices);
+            } else if (config.getBoolean("featureSampling.byNumber")){
+                int numFeatures = config.getInt("featureSampling.numFeaturesToUse");
+                subSet = DataSetUtil.sampleFeatures(dataSet, numFeatures);
+            }
+        } else {
+            subSet = dataSet;
+        }
+
+        System.out.println(subSet.getMetaInfo());
+        return subSet;
+    }
+
+    private static List<Integer> sampleFeatures(Config config) throws Exception{
+        String input = config.getString("input.folder");
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, config.getString("input.trainData")),
+                DataSetType.CLF_SPARSE, true);
+        Set<String> fields = new HashSet<>(config.getStrings("featureSampling.fields"));
+        Set<String> fieldPrefixes = new HashSet<>(config.getStrings("featureSampling.fieldPrefixes"));
+
+        FeatureList featureList = dataSet.getFeatureList();
+        List<Integer> collect = featureList.getAll().stream().filter(feature -> {
+                    boolean cond1 = !(feature instanceof Ngram);
+                    boolean cond2 = (feature instanceof Ngram) && fields.contains(((Ngram) feature).getField());
+                    boolean cond3 = (feature instanceof Ngram) && matchPrefix((((Ngram) feature).getField()), fieldPrefixes);
+                    return cond1 || cond2 || cond3;
+                }
+        ).map(feature -> feature.getIndex()).collect(Collectors.toList());
+        return collect;
+    }
+
+    private static boolean matchPrefix(String field, Set<String> prefixes){
+        for (String prefix: prefixes){
+            if (field.startsWith(prefix)){
+                return true;
+            }
+        }
+        return false;
     }
 
 
