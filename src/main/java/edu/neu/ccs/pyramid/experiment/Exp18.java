@@ -75,7 +75,7 @@
 //        trainModel(config,trainDataSet,featureMappers,index, trainIdTranslator,unigramStart,unigramEnd);
 //
 //        //only keep used columns
-//        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet,featureMappers.getTotalDim());
+//        ClfDataSet trimmedTrainDataSet = DataSetUtil.sampleFeatures(trainDataSet,featureMappers.getTotalDim());
 //        DataSetUtil.setFeatureMappers(trimmedTrainDataSet,featureMappers);
 //        saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
 //        if (config.getBoolean("archive.dumpFields")){
@@ -441,7 +441,7 @@
 //                                   FeatureMappers featureMappers,
 //                                   String[] ids) throws Exception{
 //        String featureFieldPrefix = config.getString("index.featureFieldPrefix");
-//        Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
+//        Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::sampleFeatures).collect(Collectors.toSet());
 //
 //        Set<String> allFields = index.listAllFields();
 //        List<String> featureFields = allFields.stream().

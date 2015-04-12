@@ -83,7 +83,7 @@ public class Exp9 {
     }
 
     private static ClfDataSet trim(ClfDataSet input, List<Integer> toKeep){
-        return  DataSetUtil.trim(input,toKeep);
+        return  DataSetUtil.sampleFeatures(input, toKeep);
     }
 
     private static void saveNew(Config config, ClfDataSet newData) throws Exception{

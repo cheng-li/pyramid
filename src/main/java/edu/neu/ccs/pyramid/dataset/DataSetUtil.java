@@ -54,7 +54,7 @@ public class DataSetUtil {
      * @param dataSet
      * @return
      */
-    public static ClfDataSet trim(ClfDataSet dataSet, List<Integer> columnsToKeep){
+    public static ClfDataSet sampleFeatures(ClfDataSet dataSet, List<Integer> columnsToKeep){
         ClfDataSet trimmed ;
         int numClasses = dataSet.getNumClasses();
         boolean missingValue = dataSet.hasMissingValue();
@@ -98,7 +98,7 @@ public class DataSetUtil {
      * @param dataSet
      * @return
      */
-    public static MultiLabelClfDataSet trim(MultiLabelClfDataSet dataSet, List<Integer> columnsToKeep){
+    public static MultiLabelClfDataSet sampleFeatures(MultiLabelClfDataSet dataSet, List<Integer> columnsToKeep){
         MultiLabelClfDataSet trimmed ;
         boolean missingValue = dataSet.hasMissingValue();
         int numClasses = dataSet.getNumClasses();
@@ -146,9 +146,9 @@ public class DataSetUtil {
      * @param numFeatures
      * @return
      */
-    public static ClfDataSet trim(ClfDataSet clfDataSet, int numFeatures){
+    public static ClfDataSet sampleFeatures(ClfDataSet clfDataSet, int numFeatures){
         List<Integer> columnsToKeep = IntStream.range(0,numFeatures).mapToObj(i->i).collect(Collectors.toList());
-        return  trim(clfDataSet,columnsToKeep);
+        return  sampleFeatures(clfDataSet, columnsToKeep);
     }
 
     /**
@@ -293,18 +293,18 @@ public class DataSetUtil {
             }
         }
 
-        return subSet(clfDataSet,sampledIndices);
+        return sampleData(clfDataSet, sampledIndices);
     }
 
     /**
      * create a subset with the indices
      * it's fine to have duplicate indices
-     * idTranslator is not saved in subSet as we may have duplicate extIds
+     * idTranslator is not saved in sampleData as we may have duplicate extIds
      * @param dataSet
      * @param indices
      * @return
      */
-    public static ClfDataSet subSet(ClfDataSet dataSet, List<Integer> indices){
+    public static ClfDataSet sampleData(ClfDataSet dataSet, List<Integer> indices){
         ClfDataSet sample;
         int numClasses = dataSet.getNumClasses();
         boolean missingValue = dataSet.hasMissingValue();
@@ -350,8 +350,8 @@ public class DataSetUtil {
         testIndicesSet.removeAll(trainIndices);
         List<Integer> testIndices = testIndicesSet.stream().collect(Collectors.toList());
         Pair<ClfDataSet,ClfDataSet> pair = new Pair<>();
-        pair.setFirst(DataSetUtil.subSet(clfDataSet,trainIndices));
-        pair.setSecond(DataSetUtil.subSet(clfDataSet,testIndices));
+        pair.setFirst(DataSetUtil.sampleData(clfDataSet, trainIndices));
+        pair.setSecond(DataSetUtil.sampleData(clfDataSet, testIndices));
         return pair;
     }
 

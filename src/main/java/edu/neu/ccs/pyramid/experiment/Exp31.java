@@ -60,7 +60,7 @@
 //                index, trainDataSet.getSettings().getIdTranslator());
 //
 //        //only keep used columns
-//        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet, trainDataSet.getSettings().getFeatureMappers().getTotalDim());
+//        ClfDataSet trimmedTrainDataSet = DataSetUtil.sampleFeatures(trainDataSet, trainDataSet.getSettings().getFeatureMappers().getTotalDim());
 //        DataSetUtil.setFeatureMappers(trimmedTrainDataSet,trainDataSet.getSettings().getFeatureMappers());
 //        saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
 //        if (config.getBoolean("archive.dumpFields")){

@@ -83,7 +83,7 @@ public class Exp55 {
                 index, trainDataSet.getIdTranslator());
 
         //only keep used columns
-        ClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet, featureList.size());
+        ClfDataSet trimmedTrainDataSet = DataSetUtil.sampleFeatures(trainDataSet, featureList.size());
         trimmedTrainDataSet.setFeatureList(featureList);
         saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
         if (config.getBoolean("archive.dumpFields")){

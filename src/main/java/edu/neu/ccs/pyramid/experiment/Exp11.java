@@ -133,7 +133,7 @@
 //                                   FeatureMappers featureMappers,
 //                                   String[] ids) throws Exception{
 //        String featureFieldPrefix = config.getString("index.featureFieldPrefix");
-//        Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
+//        Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::sampleFeatures).collect(Collectors.toSet());
 //
 //        Set<String> allFields = index.listAllFields();
 //        List<String> featureFields = allFields.stream().

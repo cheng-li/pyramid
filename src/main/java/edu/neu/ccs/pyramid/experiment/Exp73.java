@@ -123,12 +123,12 @@ public class Exp73 {
 
     private static void dump(Config config,ClfDataSet dataSet, PriorProbClassifier priorProbClassifier)throws Exception{
         List<Integer> list = simpleSelectedIndices(config,dataSet,priorProbClassifier);
-        ClfDataSet trimed = DataSetUtil.trim(dataSet,list);
+        ClfDataSet trimed = DataSetUtil.sampleFeatures(dataSet, list);
         TRECFormat.save(trimed,new File(config.getString("output.folder"),"train.trec"));
         String input = config.getString("input.folder");
         ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(input, "test.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet trimedTest = DataSetUtil.trim(testSet,list);
+        ClfDataSet trimedTest = DataSetUtil.sampleFeatures(testSet, list);
         TRECFormat.save(trimedTest,new File(config.getString("output.folder"),"test.trec"));
     }
 }

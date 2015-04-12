@@ -36,7 +36,7 @@ public class DataSetUtilTest {
 //        clfDataSet.putFeatureSetting(1,new FeatureSetting().setFeatureName("age").setFeatureType(FeatureType.NUMERICAL));
 //        clfDataSet.putFeatureSetting(2,new FeatureSetting().setFeatureName("income").setFeatureType(FeatureType.NUMERICAL));
 //        System.out.println(clfDataSet);
-        ClfDataSet trimmed = DataSetUtil.trim(clfDataSet,2);
+        ClfDataSet trimmed = DataSetUtil.sampleFeatures(clfDataSet, 2);
         System.out.println(trimmed);
     }
 

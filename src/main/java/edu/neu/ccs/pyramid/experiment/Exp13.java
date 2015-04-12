@@ -102,7 +102,7 @@ public class Exp13 {
         MultiLabelClfDataSet testDataSet = loadTestData(config);
 
 
-//        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.features").split(",")).map(string -> string.trim())
+//        Set<String> featuresToUseOption = Arrays.stream(config.getString("train.features").split(",")).map(string -> string.sampleFeatures())
 //                .collect(Collectors.toSet());
 //        FeatureMappers featureMappers = dataSet.getSetting().getFeatureMappers();
 //

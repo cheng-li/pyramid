@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.experiment;
 
-import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
@@ -55,12 +54,12 @@ public class Exp77 {
         String input = config.getString("input.folder");
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, "train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet trimed = DataSetUtil.trim(dataSet, selected);
+        ClfDataSet trimed = DataSetUtil.sampleFeatures(dataSet, selected);
         TRECFormat.save(trimed,new File(config.getString("output.folder"),"train.trec"));
 
         ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(input, "test.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet trimedTest = DataSetUtil.trim(testSet,selected);
+        ClfDataSet trimedTest = DataSetUtil.sampleFeatures(testSet, selected);
         TRECFormat.save(trimedTest,new File(config.getString("output.folder"),"test.trec"));
     }
 }

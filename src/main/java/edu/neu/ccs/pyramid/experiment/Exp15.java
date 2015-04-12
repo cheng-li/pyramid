@@ -17,7 +17,6 @@ import edu.neu.ccs.pyramid.util.Sampling;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 
 import java.io.BufferedWriter;
@@ -667,7 +666,7 @@ public class Exp15 {
         //only keep used columns
         List<Integer> columns = IntStream.range(0,featureList.size()).mapToObj(i-> i)
                 .collect(Collectors.toList());
-        MultiLabelClfDataSet trimmedTrainDataSet = DataSetUtil.trim(trainDataSet,columns);
+        MultiLabelClfDataSet trimmedTrainDataSet = DataSetUtil.sampleFeatures(trainDataSet, columns);
         trimmedTrainDataSet.setFeatureList(featureList);
         saveDataSet(config, trimmedTrainDataSet, config.getString("archive.trainingSet"));
         if (config.getBoolean("archive.dumpFields")){

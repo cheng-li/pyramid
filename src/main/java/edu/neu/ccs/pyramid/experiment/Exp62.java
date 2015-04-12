@@ -94,7 +94,7 @@ public class Exp62 {
                 index, trainDataSet.getIdTranslator());
 
         //only keep used columns
-        trainDataSet = DataSetUtil.trim(trainDataSet, featureList.size());
+        trainDataSet = DataSetUtil.sampleFeatures(trainDataSet, featureList.size());
         trainDataSet.setFeatureList(featureList);
         saveDataSet(config, trainDataSet, config.getString("archive.trainingSet"));
         if (config.getBoolean("archive.dumpFields")){
@@ -102,11 +102,11 @@ public class Exp62 {
         }
 
 
-        validDataSet = DataSetUtil.trim(validDataSet, featureList.size());
+        validDataSet = DataSetUtil.sampleFeatures(validDataSet, featureList.size());
         validDataSet.setFeatureList(featureList);
         saveDataSet(config, validDataSet, config.getString("archive.validSet"));
 
-        testDataSet = DataSetUtil.trim(testDataSet, featureList.size());
+        testDataSet = DataSetUtil.sampleFeatures(testDataSet, featureList.size());
         testDataSet.setFeatureList(featureList);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
 
