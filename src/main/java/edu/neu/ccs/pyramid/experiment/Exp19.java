@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
@@ -10,6 +11,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -19,6 +21,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * single label gradient boosting without probabilistic voting
@@ -49,12 +52,12 @@ public class Exp19 {
     }
 
     static void train(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
+        String output = config.getString("output.folder");
         int numIterations = config.getInt("train.numIterations");
         int numLeaves = config.getInt("train.numLeaves");
         double learningRate = config.getDouble("train.learningRate");
         int minDataPerLeaf = config.getInt("train.minDataPerLeaf");
-        String modelName = config.getString("archive.model");
+        String modelName = config.getString("output.model");
         double featureSamplingRate = config.getDouble("train.featureSamplingRate");
         double dataSamplingRate = config.getDouble("train.dataSamplingRate");
         boolean overwriteModels = config.getBoolean("train.overwriteModels");
@@ -114,7 +117,7 @@ public class Exp19 {
         }
         System.out.println(stopWatch);
 
-        File serializedModel =  new File(archive,modelName);
+        File serializedModel =  new File(output,modelName);
         if (!overwriteModels && serializedModel.exists()){
             throw new RuntimeException(serializedModel.getAbsolutePath()+"already exists");
         }
@@ -129,8 +132,8 @@ public class Exp19 {
 
 
     static void verify(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
+        String output = config.getString("output.folder");
+        String modelName = config.getString("output.model");
         String trainFile = new File(config.getString("input.folder"),
                 config.getString("input.trainData")).getAbsolutePath();
 
@@ -142,7 +145,7 @@ public class Exp19 {
             dataSet= TRECFormat.loadClfDataSet(new File(trainFile), DataSetType.CLF_DENSE,
                     true);
         }
-        File serializedModel =  new File(archive,modelName);
+        File serializedModel =  new File(output,modelName);
         LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(serializedModel);
         double acc = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println("accuracy on training set = "+acc);
@@ -156,8 +159,14 @@ public class Exp19 {
         }
 
 
-        if (config.getBoolean("verify.topFeatures")){
-            getTopFeatures(config,dataSet.getNumClasses());
+        if (config.getBoolean("verify.topFeatures")) {
+            int limit = config.getInt("verify.topFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0, lkTreeBoost.getNumClasses())
+                    .mapToObj(k -> LKTBInspector.topFeatures(lkTreeBoost, k, limit))
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("verify.topFeatures.file");
+            mapper.writeValue(new File(config.getString("output.folder"), file), topFeaturesList);
         }
 
         if (config.getBoolean("verify.showTrees")){
@@ -185,8 +194,8 @@ public class Exp19 {
 
 
     static void test(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
+        String output = config.getString("output.folder");
+        String modelName = config.getString("output.model");
         String testFile = new File(config.getString("input.folder"),
                 config.getString("input.testData")).getAbsolutePath();
 
@@ -198,7 +207,7 @@ public class Exp19 {
             dataSet= TRECFormat.loadClfDataSet(new File(testFile), DataSetType.CLF_DENSE,
                     true);
         }
-        File serializedModel =  new File(archive,modelName);
+        File serializedModel =  new File(output,modelName);
         LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(serializedModel);
         double acc = Accuracy.accuracy(lkTreeBoost,dataSet);
         System.out.println("accuracy on test set = "+acc);
@@ -232,31 +241,13 @@ public class Exp19 {
 
 
 
-    static void getTopFeatures(Config config, int numClasses) throws Exception{
-        LabelTranslator labelTranslator = loadLabelTranslator(config);
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
-
-
-        File serializedModel =  new File(archive,modelName);
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(serializedModel);
-
-        System.out.println("==========top featureList==========");
-        for (int k=0;k<numClasses;k++){
-            TopFeatures features = LKTBInspector.topFeatures(lkTreeBoost, k);
-            System.out.println("top featureList for class "+k+"("+labelTranslator.toExtLabel(k)+"):");
-            System.out.println(features);
-        }
-
-
-    }
 
 
 
     static void showTrees(Config config) throws Exception{
-        String archive = config.getString("archive.folder");
-        String modelName = config.getString("archive.model");
-        File serializedModel =  new File(archive,modelName);
+        String output = config.getString("output.folder");
+        String modelName = config.getString("output.model");
+        File serializedModel =  new File(output,modelName);
         LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(serializedModel);
         System.out.println(lkTreeBoost);
 
