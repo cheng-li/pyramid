@@ -93,3 +93,6 @@
   76: elasticsearch benchmark
   77: test fused kolmogorov filter on a complete matrix
   78: visualize Kolmogorov–Smirnov test
+  79: logistic regression analysis, can take any logistic regression(ridge, lasso, elasticnet)
+  80: get frequent nouns
+  82: step-wise logistic regression on a given matrix
