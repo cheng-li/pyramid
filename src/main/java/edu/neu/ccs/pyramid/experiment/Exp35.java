@@ -12,6 +12,7 @@ import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
 import edu.neu.ccs.pyramid.feature_selection.FusedKolmogorovFilter;
+import edu.neu.ccs.pyramid.sentiment_analysis.Negation;
 import edu.neu.ccs.pyramid.util.NgramUtil;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.io.FileUtils;
@@ -196,6 +197,9 @@ public class Exp35 {
      * @return
      */
     static boolean interesting(Multiset<Ngram> allNgrams, Ngram candidate, int count){
+        if (allNgrams.contains(candidate)){
+            return false;
+        }
         for (int slop = 0;slop<candidate.getSlop();slop++){
             Ngram toCheck = new Ngram();
             toCheck.setInOrder(candidate.isInOrder());
@@ -237,11 +241,14 @@ public class Exp35 {
                     NgramTemplate template = new NgramTemplate(field,n,slop);
                     Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index,ids,template,minDf);
                     System.out.println("gathered "+ngrams.elementSet().size()+ " ngrams");
+
                     int newCounter = 0;
                     for (Multiset.Entry<Ngram> entry: ngrams.entrySet()){
                         Ngram ngram = entry.getElement();
                         int count = entry.getCount();
-                        if (interesting(allNgrams,ngram,count)){
+                        boolean cond1 = interesting(allNgrams,ngram,count);
+                        boolean condition = cond1;
+                        if (condition){
                             allNgrams.add(ngram,count);
                             newCounter += 1;
                         }
@@ -250,6 +257,35 @@ public class Exp35 {
                 }
             }
         }
+
+
+
+
+        for (String field: fields){
+            for (int n: config.getIntegers("negation.n")){
+                for (int slop: config.getIntegers("negation.slop")){
+
+                    System.out.println("gathering "+n+ "-grams with negations from field "+field+" with slop "+slop+" and minDf "+minDf);
+                    NgramTemplate template = new NgramTemplate(field,n,slop);
+                    Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index,ids,template,minDf);
+
+                    int newCounter = 0;
+                    for (Multiset.Entry<Ngram> entry: ngrams.entrySet()){
+                        Ngram ngram = entry.getElement();
+                        int count = entry.getCount();
+                        boolean cond1 = interesting(allNgrams,ngram,count);
+                        boolean cond2 =  Negation.containsNegation(ngram.getNgram());
+                        boolean condition = cond1 && cond2;
+                        if (condition){
+                            allNgrams.add(ngram,count);
+                            newCounter += 1;
+                        }
+                    }
+                    System.out.println(newCounter+" are really new");
+                }
+            }
+        }
+
         System.out.println("there are "+allNgrams.elementSet().size()+" ngrams in total");
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"allFeatures.txt")));
         for (Multiset.Entry<Ngram> ngramEntry: allNgrams.entrySet()){

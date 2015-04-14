@@ -6,10 +6,7 @@ import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
-import edu.neu.ccs.pyramid.feature.Feature;
-import edu.neu.ccs.pyramid.feature.FeatureList;
-import edu.neu.ccs.pyramid.feature.FeatureUtility;
-import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
@@ -26,30 +23,40 @@ import java.util.stream.IntStream;
 public class LogisticRegressionInspector {
     //todo if featureList are on different scales, weights are not comparable
 
-    /**
-     * unused features won't be considered
-     * @param logisticRegression
-     * @param k
-     * @return
-     */
-    public static List<FeatureUtility> topFeatures(LogisticRegression logisticRegression,
-                                                         int k){
+
+//    public static List<FeatureUtility> topFeatures(LogisticRegression logisticRegression,
+//                                                         int k){
+//        FeatureList featureList = logisticRegression.getFeatureList();
+//        Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+//        Comparator<FeatureUtility> comparator = Comparator.comparing(FeatureUtility::getUtility);
+//        List<FeatureUtility> list = IntStream.range(0,weights.size())
+//                .mapToObj(i -> new FeatureUtility(featureList.get(i)).setUtility(weights.get(i)))
+//                .filter(featureUtility -> featureUtility.getUtility()>0)
+//                .sorted(comparator.reversed())
+//                .collect(Collectors.toList());
+//        IntStream.range(0,list.size()).forEach(i-> list.get(i).setRank(i));
+//        return list;
+//    }
+
+    public static TopFeatures topFeatures(LogisticRegression logisticRegression,
+                                                         int classIndex,
+                                                         int limit){
         FeatureList featureList = logisticRegression.getFeatureList();
-        Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+        Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
         Comparator<FeatureUtility> comparator = Comparator.comparing(FeatureUtility::getUtility);
-        List<FeatureUtility> list = IntStream.range(0,weights.size())
+        List<Feature> list = IntStream.range(0, weights.size())
                 .mapToObj(i -> new FeatureUtility(featureList.get(i)).setUtility(weights.get(i)))
                 .filter(featureUtility -> featureUtility.getUtility()>0)
                 .sorted(comparator.reversed())
+                .map(FeatureUtility::getFeature)
+                .limit(limit)
                 .collect(Collectors.toList());
-        IntStream.range(0,list.size()).forEach(i-> list.get(i).setRank(i));
-        return list;
-    }
-
-    public static List<FeatureUtility> topFeatures(LogisticRegression logisticRegression,
-                                                         int k,
-                                                         int limit){
-        return topFeatures(logisticRegression,k).stream().limit(limit).collect(Collectors.toList());
+        TopFeatures topFeatures = new TopFeatures();
+        topFeatures.setTopFeatures(list);
+        topFeatures.setClassIndex(classIndex);
+        LabelTranslator labelTranslator = logisticRegression.getLabelTranslator();
+        topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
+        return topFeatures;
     }
 
     public static ClassScoreCalculation decisionProcess(LogisticRegression logisticRegression,

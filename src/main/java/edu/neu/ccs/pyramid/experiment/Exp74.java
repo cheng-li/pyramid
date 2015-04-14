@@ -104,8 +104,8 @@ public class Exp74 {
         File model = new File(config.getString("input.model"));
         int limit = config.getInt("limit");
         LogisticRegression logisticRegression = LogisticRegression.deserialize(model);
-        return LogisticRegressionInspector.topFeatures(logisticRegression, classIndex, limit)
-                .stream().map(featureUtility ->((Ngram)featureUtility.getFeature()).getNgram())
+        return LogisticRegressionInspector.topFeatures(logisticRegression, classIndex, limit).getTopFeatures()
+                .stream().map(feature->((Ngram)feature).getNgram())
                 .collect(Collectors.toSet());
     }
 

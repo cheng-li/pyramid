@@ -2,20 +2,25 @@ package edu.neu.ccs.pyramid.experiment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
+import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * logistic regression analysis
+ * can take any logistic regression(ridge, lasso, elasticnet)
+ * produced by other exps
  * Created by chengli on 3/31/15.
  */
 public class Exp79 {
@@ -45,9 +50,14 @@ public class Exp79 {
 
         LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(config.getString("input.model")));
 
-        for (int k=0;k<dataSet.getNumClasses();k++){
-            System.out.println("top features for class "+k);
-            System.out.println(LogisticRegressionInspector.topFeatures(logisticRegression,k,100));
+        if (config.getBoolean("verify.topFeatures")) {
+            int limit = config.getInt("verify.topFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0, logisticRegression.getNumClasses())
+                    .mapToObj(k -> LogisticRegressionInspector.topFeatures(logisticRegression, k, limit))
+                    .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = config.getString("verify.topFeatures.file");
+            mapper.writeValue(new File(config.getString("output.folder"), file), topFeaturesList);
         }
 
         List<Integer> candidates = new ArrayList<>();

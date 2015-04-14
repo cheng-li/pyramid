@@ -59,9 +59,9 @@ public class ElasticNetLogisticTrainer {
                 logger.debug("loss = "+loss);
             }
 
-            if (loss > lastLoss){
-                throw new RuntimeException("loss > lastLoss");
-            }
+//            if (loss > lastLoss){
+//                throw new RuntimeException("loss > lastLoss");
+//            }
             if (Math.abs(lastLoss-loss)<=threshold){
                 break;
             }

@@ -13,6 +13,8 @@ import java.util.Set;
 public class Negation {
     public static final Set<String> negations = defineNegations();
 
+
+
     public static boolean containsNegation(String ngram){
         for (String term : ngram.split(" ")){
             if (negations.contains(term)){
