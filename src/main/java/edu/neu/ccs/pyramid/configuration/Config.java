@@ -76,26 +76,18 @@ public class Config {
     }
 
     public List<Integer> getIntegers(String key){
-        if (!containsKey(key)){
-            throw new IllegalArgumentException("config does not contain the key "+key);
-        }
+        List<String> strings = getStrings(key);
         List<Integer> list = new ArrayList<>();
-        String values = this.properties.getProperty(key);
-        String[] valuesSplit = values.split(",");
-        for (String valueString: valuesSplit){
+        for (String valueString: strings){
             list.add(Integer.parseInt(valueString.trim()));
         }
         return list;
     }
 
     public List<Double> getDoubles(String key){
-        if (!containsKey(key)){
-            throw new IllegalArgumentException("config does not contain the key "+key);
-        }
+        List<String> strings = getStrings(key);
         List<Double> list = new ArrayList<>();
-        String values = this.properties.getProperty(key);
-        String[] valuesSplit = values.split(",");
-        for (String valueString: valuesSplit){
+        for (String valueString: strings){
             list.add(Double.parseDouble(valueString.trim()));
         }
         return list;

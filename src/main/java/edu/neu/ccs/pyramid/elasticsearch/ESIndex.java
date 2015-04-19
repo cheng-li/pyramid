@@ -252,9 +252,9 @@ public class ESIndex {
     }
 
     // it seems we should allow int field, as it seems difficult to handle missing values
-//    public int getIntField(String id, String field){
-//        return Integer.parseInt(getField(id,field).toString());
-//    }
+    public int getIntField(String id, String field){
+        return Integer.parseInt(getField(id,field).toString());
+    }
 
     public float getFloatField(String id, String field){
         Object object = getField(id,field);
@@ -410,6 +410,10 @@ public class ESIndex {
                 setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
         //todo safe?
         return (int)response.getHits().totalHits();
+    }
+
+    public boolean hasField(String id, String field){
+        return getField(id, field) != null;
     }
 
     public Object getField(String id, String field){
