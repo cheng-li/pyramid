@@ -12,6 +12,7 @@ import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.util.Grid;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -36,15 +37,15 @@ public class Exp70 {
             train(config);
         }
 
-        if (config.getBoolean("verify")){
-            verify(config);
+        if (config.getBoolean("test")){
+            test(config);
         }
 
 
     }
 
 
-    private static void verify(Config config) throws Exception{
+    public static double test(Config config) throws Exception{
         Comparator<Double> comparator = Comparator.comparing(Double::doubleValue);
         List<Double> l1Ratios = Grid.uniform(config.getDouble("train.l1Ratio.min"),
                 config.getDouble("train.l1Ratio.max"), config.getInt("train.l1Ratio.size"))
@@ -110,10 +111,16 @@ public class Exp70 {
                 LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
         System.out.println(LogisticRegressionInspector.checkNgramUsage(logisticRegression));
 
+        File bestModelFolder = new File(config.getString("output.folder"),"best");
+
+        bestModelFolder.mkdirs();
+        FileUtils.copyFileToDirectory(serFile,bestModelFolder);
+        return best.accuracy;
+
     }
 
 
-    private static void train(Config config) throws Exception{
+    public static void train(Config config) throws Exception{
 
         ClfDataSet dataSet = loadTrain(config);
 

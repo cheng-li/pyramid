@@ -1,10 +1,7 @@
 package edu.neu.ccs.pyramid.configuration;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by chengli on 8/11/14.
@@ -151,6 +148,21 @@ public class Config {
             String key = keys[i];
             copy(src,des,key);
         }
+    }
+
+    /**
+     * copy all key-value pairs
+     * @param src
+     * @param des
+     */
+    public static void copy(Config src, Config des){
+        for (String key: src.getKeys()){
+            copy(src,des,key);
+        }
+    }
+
+    public Set<String> getKeys(){
+        return properties.stringPropertyNames();
     }
 
 
