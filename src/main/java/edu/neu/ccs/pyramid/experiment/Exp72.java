@@ -8,7 +8,9 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.multilabel_classification.MLACPlattScaling;
 import edu.neu.ccs.pyramid.multilabel_classification.MLPlattScaling;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.adaboostmh.AdaBoostMH;
 import edu.neu.ccs.pyramid.multilabel_classification.adaboostmh.AdaBoostMHInspector;
@@ -127,8 +129,14 @@ public class Exp72 {
         File serializedModel =  new File(output,modelName);
         boosting.serialize(serializedModel);
 
-        MLPlattScaling plattScaling = new MLPlattScaling(dataSet,boosting);
-        plattScaling.serialize(new File(output,config.getString("output.plattScaling")));
+        MultiLabelClassifier.ClassProbEstimator scaling;
+        if (config.getBoolean("train.scaling.acrossClasses")){
+            scaling = new MLACPlattScaling(dataSet,boosting);
+        } else {
+            scaling = new MLPlattScaling(dataSet,boosting);
+        }
+
+        Serialization.serialize(scaling,new File(output,config.getString("output.plattScaling")));
         System.out.println(stopWatch);
     }
 
@@ -137,7 +145,7 @@ public class Exp72 {
         String modelName = config.getString("output.model");
         AdaBoostMH boosting = AdaBoostMH.deserialize(new File(output,modelName));
 
-        MLPlattScaling plattScaling = (MLPlattScaling)Serialization.deserialize(new File(output,config.getString("output.plattScaling")));
+        MultiLabelClassifier.ClassProbEstimator plattScaling = (MultiLabelClassifier.ClassProbEstimator)Serialization.deserialize(new File(output,config.getString("output.plattScaling")));
         MultiLabelClfDataSet dataSet = loadTrainData(config);
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
 
@@ -217,7 +225,7 @@ public class Exp72 {
         String modelName = config.getString("output.model");
 
         AdaBoostMH boosting = AdaBoostMH.deserialize(new File(output,modelName));
-        MLPlattScaling plattScaling = (MLPlattScaling)Serialization.deserialize(new File(output,config.getString("output.plattScaling")));
+        MultiLabelClassifier.ClassProbEstimator plattScaling = (MultiLabelClassifier.ClassProbEstimator)Serialization.deserialize(new File(output,config.getString("output.plattScaling")));
         MultiLabelClfDataSet dataSet = loadTestData(config);
         System.out.println("accuracy on test set = "+Accuracy.accuracy(boosting,dataSet));
         System.out.println("overlap on test set = "+ Overlap.overlap(boosting,dataSet));
