@@ -45,7 +45,7 @@ public class Exp70 {
     }
 
 
-    public static double test(Config config) throws Exception{
+    public static void test(Config config) throws Exception{
         Comparator<Double> comparator = Comparator.comparing(Double::doubleValue);
         List<Double> l1Ratios = Grid.uniform(config.getDouble("train.l1Ratio.min"),
                 config.getDouble("train.l1Ratio.max"), config.getInt("train.l1Ratio.size"))
@@ -115,7 +115,6 @@ public class Exp70 {
 
         bestModelFolder.mkdirs();
         FileUtils.copyFileToDirectory(serFile,bestModelFolder);
-        return best.accuracy;
 
     }
 
