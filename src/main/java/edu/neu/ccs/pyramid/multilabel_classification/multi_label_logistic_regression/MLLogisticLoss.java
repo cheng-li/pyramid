@@ -155,7 +155,7 @@ public class MLLogisticLoss implements Optimizable.ByGradient, Optimizable.ByGra
 
     private void updateClassScoreMatrix(){
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .forEach(i-> classScoreMatrix[i] = mlLogisticRegression.calClassScores(dataSet.getRow(i)));
+                .forEach(i-> classScoreMatrix[i] = mlLogisticRegression.predictClassScores(dataSet.getRow(i)));
     }
 
     private void updateAssignmentScoreMatrix(){

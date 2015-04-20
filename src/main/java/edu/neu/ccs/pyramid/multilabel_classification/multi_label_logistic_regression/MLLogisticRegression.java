@@ -78,7 +78,7 @@ public class MLLogisticRegression implements MultiLabelClassifier, MultiLabelCla
     public MultiLabel predict(Vector vector){
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
-        double[] classeScores = calClassScores(vector);
+        double[] classeScores = predictClassScores(vector);
         for (MultiLabel assignment: this.assignments){
             double score = this.calAssignmentScore(assignment,classeScores);
             if (score > maxScore){
@@ -96,12 +96,74 @@ public class MLLogisticRegression implements MultiLabelClassifier, MultiLabelCla
         return score;
     }
 
-    public double[] calClassScores(Vector dataPoint){
+    public double[] predictClassScores(Vector dataPoint){
         double[] scores = new double[this.numClasses];
         for (int k=0;k<this.numClasses;k++){
             scores[k] = predictClassScore(dataPoint, k);
         }
         return scores;
+    }
+
+
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
+        if (!this.assignments.contains(assignment)){
+            return 0;
+        }
+        double[] classScores = predictClassScores(vector);
+        double[] assignmentScores = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
+        }
+        double logNumerator = calAssignmentScore(assignment,classScores);
+        double logDenominator = MathUtil.logSumExp(assignmentScores);
+        double pro = Math.exp(logNumerator-logDenominator);
+        return pro;
+    }
+
+
+    /**
+     * for legal assignments
+     * @param vector
+     * @return
+     */
+    double[] predictAssignmentProbs(Vector vector){
+        double[] classScores = predictClassScores(vector);
+        double[] assignmentScores = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
+        }
+        double logDenominator = MathUtil.logSumExp(assignmentScores);
+        double[] assignmentProbs = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            double logNumerator = assignmentScores[i];
+            double pro = Math.exp(logNumerator-logDenominator);
+            assignmentProbs[i] = pro;
+        }
+        return assignmentProbs;
+    }
+
+
+    /**
+     * expensive operation
+     * @param vector
+     * @return
+     */
+    public double[] predictClassProbs(Vector vector){
+        double[] assignmentProbs = predictAssignmentProbs(vector);
+        double[] classProbs = new double[numClasses];
+        for (int a=0;a<assignments.size();a++){
+            MultiLabel assignment = assignments.get(a);
+            double prob = assignmentProbs[a];
+            for (Integer label:assignment.getMatchedLabels()){
+                double oldProb = classProbs[label];
+                classProbs[label] = oldProb + prob;
+            }
+        }
+        return classProbs;
+    }
+
+    public double predictClassProb(Vector vector, int classIndex){
+        return predictClassProbs(vector)[classIndex];
     }
 
     double calAssignmentScore(MultiLabel assignment, double[] classScores){
@@ -135,7 +197,7 @@ public class MLLogisticRegression implements MultiLabelClassifier, MultiLabelCla
 
 
     double logLikelihood(Vector vector, MultiLabel multiLabel){
-        double[] classScores = calClassScores(vector);
+        double[] classScores = predictClassScores(vector);
         int numAssignments = assignments.size();
         double[] assignmentScores = new double[numAssignments];
         for (int a=0;a<numAssignments;a++){

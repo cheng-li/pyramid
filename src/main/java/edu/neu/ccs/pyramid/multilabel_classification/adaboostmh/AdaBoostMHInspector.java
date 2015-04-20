@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.adaboostmh;
 
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.PlattScaling;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -7,7 +8,9 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.multilabel_classification.MLACPlattScaling;
 import edu.neu.ccs.pyramid.multilabel_classification.MLPlattScaling;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.regression.*;
@@ -53,12 +56,12 @@ public class AdaBoostMHInspector {
         return topFeatures;
     }
 
-    public static ClassScoreCalculation decisionProcess(AdaBoostMH boosting, MLPlattScaling plattScaling,
+    public static ClassScoreCalculation decisionProcess(AdaBoostMH boosting, MultiLabelClassifier.ClassProbEstimator scaling,
                                                         LabelTranslator labelTranslator,
                                                         Vector vector, int classIndex, int limit){
         ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
                 boosting.predictClassScore(vector,classIndex));
-        double prob = plattScaling.predictClassProb(vector,classIndex);
+        double prob = scaling.predictClassProb(vector,classIndex);
         classScoreCalculation.setClassProbability(prob);
         List<Regressor> regressors = boosting.getRegressors(classIndex);
         List<TreeRule> treeRules = new ArrayList<>();
@@ -84,7 +87,17 @@ public class AdaBoostMHInspector {
         return classScoreCalculation;
     }
 
-    public static MultiLabelPredictionAnalysis analyzePrediction(AdaBoostMH boosting, MLPlattScaling plattScaling,
+    /**
+     * can be binary scaling or across-class scaling
+     * @param boosting
+     * @param scaling
+     * @param dataSet
+     * @param dataPointIndex
+     * @param classes
+     * @param limit
+     * @return
+     */
+    public static MultiLabelPredictionAnalysis analyzePrediction(AdaBoostMH boosting, MultiLabelClassifier.ClassProbEstimator  scaling,
                                                                  MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, List<Integer> classes, int limit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
@@ -96,23 +109,38 @@ public class AdaBoostMHInspector {
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setLabels(labels);
-        predictionAnalysis.setProbForTrueLabels(Double.NaN);
+        double probForTrueLabels = Double.NaN;
+        if (scaling instanceof MultiLabelClassifier.AssignmentProbEstimator){
+            probForTrueLabels = ((MultiLabelClassifier.AssignmentProbEstimator) scaling).predictAssignmentProb(dataSet.getRow(dataPointIndex),
+                    dataSet.getMultiLabels()[dataPointIndex]);
+        }
+        predictionAnalysis.setProbForTrueLabels(probForTrueLabels);
 
         MultiLabel predictedLabels = boosting.predict(dataSet.getRow(dataPointIndex));
         List<Integer> internalPrediction = predictedLabels.getMatchedLabelsOrdered();
         predictionAnalysis.setInternalPrediction(internalPrediction);
         List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setPrediction(prediction);
-        predictionAnalysis.setProbForPredictedLabels(Double.NaN);
+        double probForPredictedLabels = Double.NaN;
+
+        if (scaling instanceof MultiLabelClassifier.AssignmentProbEstimator){
+            probForPredictedLabels = ((MultiLabelClassifier.AssignmentProbEstimator) scaling).predictAssignmentProb(dataSet.getRow(dataPointIndex),
+                    predictedLabels);
+        }
+
+        predictionAnalysis.setProbForPredictedLabels(probForPredictedLabels);
 
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){
-            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,plattScaling,labelTranslator,
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,scaling,labelTranslator,
                     dataSet.getRow(dataPointIndex),k,limit);
             classScoreCalculations.add(classScoreCalculation);
         }
         predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
         return predictionAnalysis;
     }
+
+
+
 
 }

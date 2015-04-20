@@ -14,8 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
-
 public class MLLogisticTrainerTest {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
@@ -193,7 +191,7 @@ public class MLLogisticTrainerTest {
                 System.out.println("---");
                 System.out.println("label = "+label);
                 System.out.println("prediction = "+pred);
-                System.out.println(Arrays.toString(mlLogisticRegression.calClassScores(dataSet.getRow(i))));
+                System.out.println(Arrays.toString(mlLogisticRegression.predictClassScores(dataSet.getRow(i))));
             }
         }
 

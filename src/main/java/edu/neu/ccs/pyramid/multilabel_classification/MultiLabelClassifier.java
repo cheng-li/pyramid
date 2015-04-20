@@ -72,4 +72,8 @@ public interface MultiLabelClassifier extends Serializable{
         }
     }
 
+    public interface AssignmentProbEstimator extends MultiLabelClassifier{
+        public double predictAssignmentProb(Vector vector, MultiLabel assignment);
+    }
+
 }
