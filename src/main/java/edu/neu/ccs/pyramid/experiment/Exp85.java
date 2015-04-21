@@ -1,14 +1,14 @@
 package edu.neu.ccs.pyramid.experiment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.FMeasure;
-import edu.neu.ccs.pyramid.eval.Precision;
-import edu.neu.ccs.pyramid.eval.Recall;
+import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.util.Serialization;
 
 import java.io.File;
@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * run logistic regression on all trec8 queries
@@ -84,6 +85,8 @@ public class Exp85 {
         List<Double> precisions = new ArrayList<>();
         List<Double> recalls = new ArrayList<>();
         List<Double> f1s = new ArrayList<>();
+        List<Double> aucs = new ArrayList<>();
+        List<Double> ndcgs = new ArrayList<>();
         for (int qid=401;qid<=450;qid++){
             if (goodQuerySet.contains(qid)){
                 System.out.println("=============================");
@@ -100,10 +103,33 @@ public class Exp85 {
                 double precision = Precision.precision(logisticRegression,dataSet,1);
                 double recall = Recall.recall(logisticRegression,dataSet,1);
                 double f1 = FMeasure.f1(precision,recall);
+                double auc = AUC.auc(logisticRegression,dataSet);
+                int[] labels = dataSet.getLabels();
+                double[] scores = IntStream.range(0,dataSet.getNumDataPoints())
+                        .mapToDouble(i -> logisticRegression.predictClassScore(dataSet.getRow(i),1))
+                        .toArray();
+                double ndcg = NDCG.ndcg(labels,scores);
+
                 accuracies.add(accuracy);
                 precisions.add(precision);
                 recalls.add(recall);
                 f1s.add(f1);
+                aucs.add(auc);
+                ndcgs.add(ndcg);
+                System.out.println("accuracy = "+accuracy);
+                System.out.println("precision = "+precision);
+                System.out.println("recall = "+recall);
+                System.out.println("auc = "+auc);
+                System.out.println("ndcg = "+ndcg);
+
+
+                List<TopFeatures> topFeaturesList = IntStream.range(0, logisticRegression.getNumClasses())
+                        .mapToObj(k -> LogisticRegressionInspector.topFeatures(logisticRegression, k, 100000))
+                        .collect(Collectors.toList());
+                ObjectMapper mapper = new ObjectMapper();
+                File file = new File(perQidConfig.getString("output.folder"),"topFeatures.json");
+                System.out.println("writing to "+file.getAbsolutePath());
+                mapper.writeValue(file, topFeaturesList);
             }
 
         }
@@ -128,7 +154,13 @@ public class Exp85 {
                 .mapToDouble(num -> num)
                 .average().getAsDouble());
 
+        System.out.println("average auc = "+aucs.stream()
+                .mapToDouble(num -> num)
+                .average().getAsDouble());
 
+        System.out.println("average ndcg = "+ndcgs.stream()
+                .mapToDouble(num -> num)
+                .average().getAsDouble());
     }
 
     static Config perQidConfig(Config config, int qid){
