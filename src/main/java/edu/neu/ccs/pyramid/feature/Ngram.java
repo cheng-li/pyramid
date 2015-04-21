@@ -5,9 +5,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.util.SetUtil;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by chengli on 3/7/15.
@@ -28,6 +32,28 @@ public class Ngram extends Feature {
 
     public String[] getTerms(){
         return ngram.split(" ");
+    }
+
+    public boolean contains(String term){
+        String[] terms = getTerms();
+        for (String str: terms){
+            if (str.equals(term)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean overlap(Ngram ngram1, Ngram ngram2){
+        Set<String> set1 = new HashSet<>();
+        Set<String> set2 = new HashSet<>();
+        String[] terms1 = ngram1.getTerms();
+        String[] terms2 = ngram2.getTerms();
+        Collections.addAll(set1, terms1);
+        Collections.addAll(set2, terms2);
+
+        Set<String> intersection = SetUtil.intersect(set1,set2);
+        return !intersection.isEmpty();
     }
 
     public void setNgram(String ngram) {

@@ -9,9 +9,13 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,7 +62,82 @@ public class Exp79 {
             ObjectMapper mapper = new ObjectMapper();
             String file = config.getString("verify.topFeatures.file");
             mapper.writeValue(new File(config.getString("output.folder"), file), topFeaturesList);
+
         }
+
+
+        if (config.getBoolean("verify.topSeeds")) {
+            int limit = config.getInt("verify.topSeeds.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0, logisticRegression.getNumClasses())
+                    .mapToObj(k -> LogisticRegressionInspector.topFeatures(logisticRegression, k, logisticRegression.getNumFeatures()))
+                    .collect(Collectors.toList());
+
+            String file = config.getString("verify.topSeeds.file");
+
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"), file)));
+            for (int k=0;k<logisticRegression.getNumClasses();k++){
+                TopFeatures topFeatures = topFeaturesList.get(k);
+                List<String> topUnigrams = topFeatures.getTopFeatures().stream().filter(feature -> feature instanceof Ngram)
+                        .filter(feature -> ((Ngram)feature).getN()==1)
+                        .map(feature -> ((Ngram)feature).getNgram())
+                        .limit(limit)
+                        .collect(Collectors.toList());
+                for (String unigram: topUnigrams){
+                    bufferedWriter.write(unigram);
+                    bufferedWriter.newLine();
+                }
+            }
+
+            bufferedWriter.close();
+        }
+
+
+        if (config.getBoolean("verify.compareFeatures")) {
+            int limit = config.getInt("verify.compareFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0, logisticRegression.getNumClasses())
+                    .mapToObj(k -> LogisticRegressionInspector.topFeatures(logisticRegression, k, limit))
+                    .collect(Collectors.toList());
+
+            List<List<Ngram>> ngrams = topFeaturesList.stream().map(topfeatures -> topfeatures.getTopFeatures())
+                    .map(featureList -> featureList.stream().filter(feature -> feature instanceof Ngram).map(feature -> (Ngram)feature)
+                    .collect(Collectors.toList())).collect(Collectors.toList());
+
+            String file = config.getString("verify.compareFeatures.file");
+
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"), file)));
+
+            List<FeatureComparision> comparisions = new ArrayList<>();
+            for (int k=0;k<logisticRegression.getNumClasses();k++){
+                List<Ngram> ngramList = ngrams.get(k);
+                for (Ngram ngram: ngramList){
+                    List<FeatureComparision> comparisionsForThis = new ArrayList<>();
+                    for (int j=k+1;j<logisticRegression.getNumClasses();j++){
+                        List<Ngram> against = ngrams.get(j);
+                        for (Ngram ngram1:against){
+                            if(Ngram.overlap(ngram,ngram1)){
+                                FeatureComparision comparision = new FeatureComparision();
+                                comparision.add(ngram,k);
+                                comparision.add(ngram1,j);
+                                comparisionsForThis.add(comparision);
+                            }
+                        }
+                    }
+                    if (comparisionsForThis.size()<=100){
+                        comparisions.addAll(comparisionsForThis);
+                    }
+                }
+
+            }
+
+            for (int i=0;i<comparisions.size();i++){
+                bufferedWriter.write(comparisions.get(i).toString());
+                bufferedWriter.newLine();
+            }
+
+            bufferedWriter.close();
+        }
+
+
 
         List<Integer> candidates = new ArrayList<>();
         int[] prediction = logisticRegression.predict(dataSet);
@@ -106,4 +185,32 @@ public class Exp79 {
         String file = config.getString("test.analyze.file");
         mapper.writeValue(new File(config.getString("output.folder"),file), predictionAnalysisList);
     }
+
+    public static class FeatureComparision{
+        private List<Ngram> features;
+        private List<Integer> labels;
+
+        public FeatureComparision() {
+            features = new ArrayList<>();
+            labels = new ArrayList<>();
+        }
+
+        public void add(Ngram feature, int label){
+            features.add(feature);
+            labels.add(label);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            for (int i=0;i<features.size();i++){
+                sb.append(features.get(i).getNgram());
+                sb.append(":");
+                sb.append(labels.get(i));
+                sb.append("\t");
+            }
+            return sb.toString();
+        }
+    }
+
 }
