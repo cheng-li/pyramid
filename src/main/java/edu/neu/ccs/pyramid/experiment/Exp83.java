@@ -42,8 +42,6 @@ public class Exp83 {
         ESIndex index = loadIndex(config);
         build(config,index);
         index.close();
-
-        
     }
 
     public static void mainFromConfig(Config config) throws Exception{
