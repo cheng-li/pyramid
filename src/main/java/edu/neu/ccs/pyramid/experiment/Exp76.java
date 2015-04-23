@@ -24,6 +24,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * elasticsearch benchmark
@@ -48,20 +49,73 @@ public class Exp76 {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, "train.trec"),
                 DataSetType.CLF_SPARSE, true);
         ESIndex index = loadIndex(config);
-        countSearch(dataSet,index);
-        benchIntersection(dataSet,index);
-        smartSearch(dataSet,index);
-        completeSearch(dataSet,index);
-
+//        countSearch(dataSet,index);
+//        benchIntersection(dataSet,index);
+//        smartSearch(dataSet,index);
+//        completeSearch(dataSet,index);
+//        smallSizeSearch(dataSet, index);
+        count(dataSet,index);
+//        compare(dataSet,index);
     }
 
     private static void completeSearch(DataSet dataSet, ESIndex index){
+
+        List<Ngram> ngrams = dataSet.getFeatureList().getAll().stream()
+                .filter(feature -> feature instanceof Ngram)
+                .map(feature -> ((Ngram) feature))
+                .collect(Collectors.toList());
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        List<String> ngrams = dataSet.getFeatureList().getAll().stream().map(feature -> ((Ngram)feature).getNgram())
-                .collect(Collectors.toList());
-        ngrams.parallelStream().forEach(ngram -> index.matchPhrase(index.getBodyField(),ngram,0));
+        ngrams.parallelStream().forEach(index::match);
         System.out.println("time spent on complete search = "+stopWatch);
+    }
+
+
+    private static void smallSizeSearch(DataSet dataSet, ESIndex index){
+
+        List<Ngram> ngrams = dataSet.getFeatureList().getAll().stream()
+                .filter(feature -> feature instanceof Ngram)
+                .map(feature -> ((Ngram) feature))
+                .collect(Collectors.toList());
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        ngrams.parallelStream().forEach(ngram -> index.match(ngram,0));
+        System.out.println("time spent on small size search = "+stopWatch);
+    }
+
+    private static void count(DataSet dataSet, ESIndex index){
+        IdTranslator idTranslator = dataSet.getIdTranslator();
+        String[] ids = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToObj(i -> idTranslator.toExtId(i))
+                .toArray(String[]::new);
+        List<Ngram> ngrams = dataSet.getFeatureList().getAll().stream()
+                .filter(feature -> feature instanceof Ngram)
+                .map(feature -> ((Ngram) feature))
+                .collect(Collectors.toList());
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        ngrams.parallelStream().forEach(ngram -> index.count(ngram,ids));
+        System.out.println("time spent on count = "+stopWatch);
+    }
+
+
+    private static void compare(DataSet dataSet, ESIndex index){
+
+        List<Ngram> ngrams = dataSet.getFeatureList().getAll().stream()
+                .filter(feature -> feature instanceof Ngram)
+                .map(feature -> ((Ngram) feature))
+                .collect(Collectors.toList());
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        long count = ngrams.parallelStream().filter(ngram -> {
+            if (index.match(ngram).getHits().getTotalHits() == index.count(ngram)) {
+                return true;
+
+            } else {
+                return false;
+            }
+        }).count();
+        System.out.println(count);
+
     }
 
     private static void smartSearch(DataSet dataSet, ESIndex index) throws Exception{

@@ -405,11 +405,13 @@ public class ESIndex {
         //todo  this admin method seems buggy!
 //        return (int)client.admin().indices().prepareStats(this.indexName)
 //                .get().getIndex(this.indexName).getTotal().getDocs().getCount();
-        SearchResponse response = client.prepareSearch(indexName).setSize(Integer.MAX_VALUE).
-                addField("").
-                setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
-        //todo safe?
-        return (int)response.getHits().totalHits();
+        return (int)client.prepareCount(indexName).setQuery(QueryBuilders.matchAllQuery()).execute()
+                .actionGet().getCount();
+//        SearchResponse response = client.prepareSearch(indexName).setSize(Integer.MAX_VALUE).
+//                addField("").
+//                setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
+//        //todo safe?
+//        return (int)response.getHits().totalHits();
     }
 
     public boolean hasField(String id, String field){
@@ -530,6 +532,63 @@ public class ESIndex {
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(queryBuilder)
                 .execute().actionGet();
+
+        return response;
+
+    }
+
+    public long count(Ngram ngram){
+        String field = ngram.getField();
+        int slop = ngram.getSlop();
+        boolean inOrder = ngram.isInOrder();
+        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+        for (String term: ngram.getTerms()){
+            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+        }
+        queryBuilder.inOrder(inOrder);
+        queryBuilder.slop(slop);
+
+        long hits = client.prepareCount(this.indexName).setQuery(queryBuilder)
+                .execute().actionGet().getCount();
+        return hits;
+    }
+
+    public long count(Ngram ngram, String[] ids){
+        String field = ngram.getField();
+        int slop = ngram.getSlop();
+        boolean inOrder = ngram.isInOrder();
+        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+        for (String term: ngram.getTerms()){
+            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+        }
+        queryBuilder.inOrder(inOrder);
+        queryBuilder.slop(slop);
+
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+        idsFilterBuilder.addIds(ids);
+
+        long hits = client.prepareCount(this.indexName).setQuery(queryBuilder)
+                .execute().actionGet().getCount();
+        return hits;
+    }
+
+    public SearchResponse match(Ngram ngram, int size){
+        String field = ngram.getField();
+        int slop = ngram.getSlop();
+        boolean inOrder = ngram.isInOrder();
+        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+        for (String term: ngram.getTerms()){
+            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+        }
+        queryBuilder.inOrder(inOrder);
+        queryBuilder.slop(slop);
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(queryBuilder)
+                .execute().actionGet();
+        System.out.println(response.getHits().getTotalHits());
 
         return response;
 

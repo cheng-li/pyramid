@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -83,6 +84,8 @@ public class Exp81 {
             System.out.println("number of features = "+usedFeatures.size());
             System.out.println("accuracy on training set = "+ Accuracy.accuracy(logisticRegression,trainData));
             System.out.println("accuracy on test set = "+ Accuracy.accuracy(logisticRegression,testData));
+            System.out.println("number of used features in all classes = "+
+                    LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
 
             if (remainingFeatures.size()==0){
                 break;
