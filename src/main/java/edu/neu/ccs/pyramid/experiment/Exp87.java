@@ -22,6 +22,7 @@ import static edu.neu.ccs.pyramid.data_formatter.congressional_bill.IndexBuilder
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
+ * index congressional bill dataset
  * Created by Rainicy on 4/23/15.
  */
 public class Exp87 {

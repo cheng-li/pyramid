@@ -100,3 +100,4 @@
   84: dump features for all queries in trec 8
   85: run logistic regression on all trec8 queries
   86: build trec8 index
+  87: index congressional bill dataset
