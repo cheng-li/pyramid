@@ -155,16 +155,26 @@ public class Exp35 {
         System.out.println("all possible initial features:"+featureFields);
 
         for (String field: featureFields){
+
             String featureType = index.getFieldType(field);
             if (featureType.equalsIgnoreCase("string")){
+                System.out.println("expanding categorical feature "+field);
                 CategoricalFeatureExpander expander = new CategoricalFeatureExpander();
                 expander.setStart(featureList.size());
                 expander.setVariableName(field);
                 expander.putSetting("source","field");
-                for (String id: ids){
+                Set<String> categories = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+                Arrays.stream(ids).parallel().forEach(id -> {
                     String category = index.getStringField(id, field);
+                    categories.add(category);
+                });
+                for (String category: categories){
                     expander.addCategory(category);
                 }
+//                for (String id: ids){
+//                    String category = index.getStringField(id, field);
+//                    expander.addCategory(category);
+//                }
                 List<CategoricalFeature> group = expander.expand();
                 boolean toAdd = true;
                 if (config.getBoolean("categFeature.filter")){
@@ -188,7 +198,7 @@ public class Exp35 {
                 Feature feature = new Feature();
                 feature.setName(field);
                 feature.setIndex(featureList.size());
-                feature.getSettings().put("source","field");
+                feature.getSettings().put("source", "field");
                 featureList.add(feature);
             }
         }
@@ -435,11 +445,14 @@ public class Exp35 {
 
 
     static LabelTranslator loadLabelTranslator(Config config,ESIndex index,String[] trainIndexIds) throws Exception{
-        Set<String> extLabelSet = new HashSet<>();
-        for (String i: trainIndexIds){
+        System.out.println("loading label translator...");
+        Set<String> extLabelSet = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+        Arrays.stream(trainIndexIds).parallel().forEach( i -> {
             String extLabel = index.getStringField(i,config.getString("index.labelField"));
             extLabelSet.add(extLabel);
-        }
+        });
+
         //make the translation consistent
         List<String> sorted = extLabelSet.stream().sorted().collect(Collectors.toList());
         LabelTranslator labelTranslator = new LabelTranslator(sorted);

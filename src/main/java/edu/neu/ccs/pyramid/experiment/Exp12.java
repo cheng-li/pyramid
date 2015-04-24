@@ -149,10 +149,19 @@ public class Exp12 {
                 expander.setStart(featureList.size());
                 expander.setVariableName(field);
                 expander.putSetting("source","field");
-                for (String id: ids){
+
+                Set<String> categories = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+                Arrays.stream(ids).parallel().forEach(id -> {
                     String category = index.getStringField(id, field);
+                    categories.add(category);
+                });
+                for (String category: categories){
                     expander.addCategory(category);
                 }
+//                for (String id: ids){
+//                    String category = index.getStringField(id, field);
+//                    expander.addCategory(category);
+//                }
                 List<CategoricalFeature> group = expander.expand();
                 boolean toAdd = true;
                 if (config.getBoolean("categFeature.filter")){
