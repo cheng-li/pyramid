@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * dump features for one trec 8 query
+     * dump features for one trec 8 query
  * following exp35
  * Created by chengli on 4/18/15.
  */

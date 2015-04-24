@@ -96,4 +96,7 @@
   79: logistic regression analysis, can take any logistic regression(ridge, lasso, elasticnet)
   80: get frequent nouns
   81: step-wise logistic regression on a given matrix
-  90: build trec8 index
+  83: dump features for one trec 8 query
+  84: dump features for all queries in trec 8
+  85: run logistic regression on all trec8 queries
+  86: build trec8 index
