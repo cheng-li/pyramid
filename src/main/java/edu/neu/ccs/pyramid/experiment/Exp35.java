@@ -44,25 +44,23 @@ public class Exp35 {
         File output = new File(config.getString("archive.folder"));
         output.mkdirs();
 
-        SingleLabelIndex index = loadIndex(config);
+        ESIndex index = loadIndex(config);
         build(config,index);
         index.close();
     }
 
-    static SingleLabelIndex loadIndex(Config config) throws Exception{
-        SingleLabelIndex.Builder builder = new SingleLabelIndex.Builder()
+    static ESIndex loadIndex(Config config) throws Exception{
+        ESIndex.Builder builder = new ESIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
                 .setClientType(config.getString("index.clientType"))
-                .setLabelField(config.getString("index.labelField"))
-                .setExtLabelField(config.getString("index.extLabelField"))
                 .setDocumentType(config.getString("index.documentType"));
         if (config.getString("index.clientType").equals("transport")){
             String[] hosts = config.getString("index.hosts").split(Pattern.quote(","));
             String[] ports = config.getString("index.ports").split(Pattern.quote(","));
             builder.addHostsAndPorts(hosts,ports);
         }
-        SingleLabelIndex index = builder.build();
+        ESIndex index = builder.build();
         System.out.println("index loaded");
         System.out.println("there are "+index.getNumDocs()+" documents in the index.");
 //        for (int i=0;i<index.getNumDocs();i++){
@@ -72,20 +70,30 @@ public class Exp35 {
         return index;
     }
 
-    static String[] sampleTrain(Config config, SingleLabelIndex index, Set<String> duplicate){
+    static String[] sampleTrain(Config config, ESIndex index, Set<String> duplicate){
         int numDocsInIndex = index.getNumDocs();
         String[] ids = null;
 
-        String splitField = config.getString("index.splitField");
-        List<String> train = IntStream.range(0, numDocsInIndex).parallel()
-                .filter(i -> index.getStringField("" + i, splitField).
-                        equalsIgnoreCase("train")).
-                        mapToObj(i -> "" + i).filter(id -> !duplicate.contains(id)).collect(Collectors.toList());
-        ids = train.toArray(new String[train.size()]);
+        if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
+            String splitField = config.getString("index.splitField");
+            List<String> train = IntStream.range(0, numDocsInIndex).parallel()
+                    .filter(i -> index.getStringField("" + i, splitField).
+                            equalsIgnoreCase("train")).
+                            mapToObj(i -> "" + i).filter(id -> !duplicate.contains(id)).collect(Collectors.toList());
+            ids = train.toArray(new String[train.size()]);
+        } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
+            int numFolds = config.getInt("split.random.numFolds");
+            ids = IntStream.range(0, numDocsInIndex).parallel()
+                    //todo make a parameter?
+                    .filter(i -> i % numFolds != 0).mapToObj(i -> ""+i).toArray(String[]::new);
+        } else {
+            throw new RuntimeException("illegal split fashion");
+        }
+
         return ids;
     }
 
-    static String[] sampleTest(Config config, SingleLabelIndex index){
+    static String[] sampleTest(Config config, ESIndex index){
         int numDocsInIndex = index.getNumDocs();
         String[] ids = null;
 
@@ -214,7 +222,7 @@ public class Exp35 {
         return true;
     }
 
-    static Set<Ngram> gather(Config config, SingleLabelIndex index,
+    static Set<Ngram> gather(Config config, ESIndex index,
                                String[] ids) throws Exception{
         Multiset<Ngram> allNgrams = ConcurrentHashMultiset.create();
         List<Integer> ns = config.getIntegers("ngram.n");
@@ -299,18 +307,20 @@ public class Exp35 {
         return allNgrams.elementSet();
     }
 
-    static List<Ngram> rank(Config config, Set<Ngram> ngrams, SingleLabelIndex index,
-                            IdTranslator idTranslator) throws Exception{
+    static List<Ngram> rank(Config config, Set<Ngram> ngrams, ESIndex index,
+                            IdTranslator idTranslator,
+                            LabelTranslator labelTranslator) throws Exception{
         System.out.println("start ranking");
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        int numClasses = config.getInt("numClasses");
+        int numClasses = labelTranslator.getNumClasses();
         int numDataPoints = idTranslator.numData();
         int[] labels = new int[numDataPoints];
+        String labelField = config.getString("index.labelField");
         IntStream.range(0,numDataPoints).parallel()
                 .forEach(i -> {
                     String dataIndexId = idTranslator.toExtId(i);
-                    int label = index.getLabel(dataIndexId);
+                    int label = labelTranslator.toIntLabel(index.getStringField(dataIndexId, labelField));
                     labels[i] = label;
                 });
         List<Ngram> ranked = ngrams.stream().parallel().map(ngram -> {
@@ -363,22 +373,22 @@ public class Exp35 {
         });
     }
 
-    static ClfDataSet loadData(Config config, SingleLabelIndex index,
+    static ClfDataSet loadData(Config config, ESIndex index,
                                FeatureList featureList,
                                IdTranslator idTranslator, int totalDim,
                                LabelTranslator labelTranslator) throws Exception{
         int numDataPoints = idTranslator.numData();
-        int numClasses = config.getInt("numClasses");
+        int numClasses = labelTranslator.getNumClasses();
         ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(totalDim)
                 .numClasses(numClasses).dense(!config.getBoolean("featureMatrix.sparse"))
                 .missingValue(config.getBoolean("featureMatrix.missingValue"))
                 .build();
-
+        String labelField = config.getString("index.labelField");
         IntStream.range(0,numDataPoints).parallel()
                 .forEach(i -> {
                     String dataIndexId = idTranslator.toExtId(i);
-                    int label = index.getLabel(dataIndexId);
+                    int label = labelTranslator.toIntLabel(index.getStringField(dataIndexId, labelField));
                     dataSet.setLabel(i,label);
                 });
 
@@ -389,7 +399,7 @@ public class Exp35 {
         return dataSet;
     }
 
-    static ClfDataSet loadTrainData(Config config, SingleLabelIndex index, FeatureList features,
+    static ClfDataSet loadTrainData(Config config, ESIndex index, FeatureList features,
                                     IdTranslator idTranslator, LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating training set");
         int totalDim = features.size();
@@ -399,7 +409,7 @@ public class Exp35 {
         return dataSet;
     }
 
-    static ClfDataSet loadTestData(Config config, SingleLabelIndex index,
+    static ClfDataSet loadTestData(Config config, ESIndex index,
                                    FeatureList features, IdTranslator idTranslator,
                                    LabelTranslator labelTranslator) throws Exception{
         System.out.println("creating test set");
@@ -423,24 +433,24 @@ public class Exp35 {
 //        return dataSet;
 //    }
 
-    //todo speed up and only look at train
-    static LabelTranslator loadLabelTranslator(Config config, SingleLabelIndex index) throws Exception{
-        System.out.println("loading label translator...");
-        int numClasses = config.getInt("numClasses");
-        int numDocs = index.getNumDocs();
-        Map<Integer, String> map = new ConcurrentHashMap<>();
-        while(map.size()<numClasses){
-            int i = Sampling.intUniform(0,numDocs-1);
-            int intLabel = index.getLabel(""+i);
-            String extLabel = index.getExtLabel("" + i);
-            map.put(intLabel,extLabel);
+
+    static LabelTranslator loadLabelTranslator(Config config,ESIndex index,String[] trainIndexIds) throws Exception{
+        Set<String> extLabelSet = new HashSet<>();
+        for (String i: trainIndexIds){
+            String extLabel = index.getStringField(i,config.getString("index.labelField"));
+            extLabelSet.add(extLabel);
         }
-        System.out.println("loaded");
-        return new LabelTranslator(map);
+        //make the translation consistent
+        List<String> sorted = extLabelSet.stream().sorted().collect(Collectors.toList());
+        LabelTranslator labelTranslator = new LabelTranslator(sorted);
+
+        System.out.println("there are "+labelTranslator.getNumClasses()+" classes in the training set.");
+        System.out.println(labelTranslator);
+        return labelTranslator;
     }
 
-    static void showDistribution(Config config, ClfDataSet dataSet, LabelTranslator labelTranslator){
-        int numClasses = config.getInt("numClasses");
+    static void showDistribution(ClfDataSet dataSet, LabelTranslator labelTranslator){
+        int numClasses = dataSet.getNumClasses();
         int[] counts = new int[numClasses];
         int[] labels = dataSet.getLabels();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -462,21 +472,21 @@ public class Exp35 {
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 
-    static void dumpTrainFeatures(Config config, SingleLabelIndex index, IdTranslator idTranslator) throws Exception{
+    static void dumpTrainFeatures(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
         String archive = config.getString("archive.folder");
         String trecFile = new File(archive,config.getString("archive.trainingSet")).getAbsolutePath();
         String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
         dumpFeatures(config,index,idTranslator,file);
     }
 
-    static void dumpTestFeatures(Config config, SingleLabelIndex index, IdTranslator idTranslator) throws Exception{
+    static void dumpTestFeatures(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
         String archive = config.getString("archive.folder");
         String trecFile = new File(archive,config.getString("archive.testSet")).getAbsolutePath();
         String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
         dumpFeatures(config,index,idTranslator,file);
     }
 
-    static void dumpFeatures(Config config, SingleLabelIndex index, IdTranslator idTranslator, String fileName) throws Exception{
+    static void dumpFeatures(Config config, ESIndex index, IdTranslator idTranslator, String fileName) throws Exception{
 
         String[] fields = config.getString("archive.dumpedFields").split(",");
         int numDocs = idTranslator.numData();
@@ -505,15 +515,14 @@ public class Exp35 {
 
     }
 
-    static void build(Config config, SingleLabelIndex index) throws Exception{
-        int numDocsInIndex = index.getNumDocs();
+    static void build(Config config, ESIndex index) throws Exception{
         Set<String> duplidate = loadDuplicate(config);
         String[] trainIndexIds = sampleTrain(config,index,duplidate);
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureList featureList = new FeatureList();
 
-        LabelTranslator labelTranslator = loadLabelTranslator(config, index);
+        LabelTranslator labelTranslator = loadLabelTranslator(config, index, trainIndexIds);
         if (config.getBoolean("useInitialFeatures")){
             addInitialFeatures(config,index,featureList,trainIndexIds);
         }
@@ -525,14 +534,14 @@ public class Exp35 {
 
 
         if (config.getBoolean("rank")){
-            rank(config,ngrams,index,trainIdTranslator);
+            rank(config,ngrams,index,trainIdTranslator,labelTranslator);
         }
 
         addNgramFeatures(config, featureList);
 
         ClfDataSet trainDataSet = loadTrainData(config,index,featureList, trainIdTranslator, labelTranslator);
         System.out.println("in training set :");
-        showDistribution(config,trainDataSet,labelTranslator);
+        showDistribution(trainDataSet,labelTranslator);
 
         trainDataSet.setFeatureList(featureList);
 
