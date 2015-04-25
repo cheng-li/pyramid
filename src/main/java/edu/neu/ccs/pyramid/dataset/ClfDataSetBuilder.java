@@ -55,14 +55,17 @@ public class ClfDataSetBuilder {
 
     private boolean valid(){
         if (numDataPoints<=0){
+            System.out.println("numDataPoints<=0");
             return false;
         }
 
         if (numFeatures<=0){
+            System.out.println("numFeatures<=0");
             return false;
         }
 
         if (numClasses<=0){
+            System.out.println("numClasses<=0");
             return false;
         }
 

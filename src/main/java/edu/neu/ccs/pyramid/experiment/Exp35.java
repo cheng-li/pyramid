@@ -97,16 +97,26 @@ public class Exp35 {
         return ids;
     }
 
-    static String[] sampleTest(Config config, ESIndex index){
+    static String[] sampleTest(Config config, ESIndex index) {
         int numDocsInIndex = index.getNumDocs();
         String[] ids = null;
 
-        String splitField = config.getString("index.splitField");
-        ids = IntStream.range(0, numDocsInIndex).parallel().
-                filter(i -> index.getStringField("" + i, splitField).
-                        equalsIgnoreCase("test")).
-                mapToObj(i -> "" + i).collect(Collectors.toList()).
-                toArray(new String[0]);
+        if (config.getString("split.fashion").equalsIgnoreCase("fixed")) {
+            String splitField = config.getString("index.splitField");
+            List<String> list = IntStream.range(0, numDocsInIndex).parallel()
+                    .filter(i -> index.getStringField("" + i, splitField).
+                            equalsIgnoreCase("test")).
+                            mapToObj(i -> "" + i).collect(Collectors.toList());
+            ids = list.toArray(new String[list.size()]);
+        } else if (config.getString("split.fashion").equalsIgnoreCase("random")) {
+            int numFolds = config.getInt("split.random.numFolds");
+            ids = IntStream.range(0, numDocsInIndex).parallel()
+                    //todo make a parameter?
+                    .filter(i -> i % numFolds == 0).mapToObj(i -> "" + i).toArray(String[]::new);
+        } else {
+            throw new RuntimeException("illegal split fashion");
+        }
+
         return ids;
     }
 
@@ -571,6 +581,7 @@ public class Exp35 {
         String[] testIndexIds = sampleTest(config,index);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
 
+        //todo new labels in test?
         ClfDataSet testDataSet = loadTestData(config,index,featureList,testIdTranslator,labelTranslator);
         testDataSet.setFeatureList(featureList);
         saveDataSet(config, testDataSet, config.getString("archive.testSet"));
