@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
 
 
 /**
@@ -535,6 +536,37 @@ public class ESIndex {
 
         return response;
 
+    }
+
+    public Collection<org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket> termAggregation(String field){
+        SearchResponse response = client.prepareSearch(indexName)
+                //no return for matches
+                .setSize(0)
+                .setQuery(QueryBuilders.matchAllQuery())
+                //return all terms
+                .addAggregation(terms("agg").field(field).size(Integer.MAX_VALUE))
+                .execute().actionGet();
+        org.elasticsearch.search.aggregations.bucket.terms.Terms terms = response.getAggregations().get("agg");
+        Collection<org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket> buckets = terms.getBuckets();
+        return buckets;
+    }
+
+
+    public Collection<org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket> termAggregation(String field, String[] ids){
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+        idsFilterBuilder.addIds(ids);
+
+        SearchResponse response = client.prepareSearch(indexName)
+                //no return for matches
+                .setSize(0)
+                .setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
+                        idsFilterBuilder))
+                        //return all terms
+                .addAggregation(terms("agg").field(field).size(Integer.MAX_VALUE))
+                .execute().actionGet();
+        org.elasticsearch.search.aggregations.bucket.terms.Terms terms = response.getAggregations().get("agg");
+        Collection<org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket> buckets = terms.getBuckets();
+        return buckets;
     }
 
     public long count(Ngram ngram){
