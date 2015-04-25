@@ -18,6 +18,10 @@ import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.*;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.IdsFilterBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.*;
 import java.util.*;
@@ -445,19 +449,20 @@ public class Exp35 {
 
 
     static LabelTranslator loadLabelTranslator(Config config,ESIndex index,String[] trainIndexIds) throws Exception{
-        System.out.println("loading label translator...");
-        Set<String> extLabelSet = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
+        System.out.println("there are "+buckets.size()+" classes in the training set.");
+        List<String> labels = new ArrayList<>();
+        System.out.println("label distribution in training set:");
+        for (Terms.Bucket bucket: buckets){
+            System.out.print(bucket.getKey());
+            System.out.print(":");
+            System.out.print(bucket.getDocCount());
+            System.out.print(", ");
+            labels.add(bucket.getKey());
+        }
+        System.out.println();
 
-        Arrays.stream(trainIndexIds).parallel().forEach( i -> {
-            String extLabel = index.getStringField(i,config.getString("index.labelField"));
-            extLabelSet.add(extLabel);
-        });
-
-        //make the translation consistent
-        List<String> sorted = extLabelSet.stream().sorted().collect(Collectors.toList());
-        LabelTranslator labelTranslator = new LabelTranslator(sorted);
-
-        System.out.println("there are "+labelTranslator.getNumClasses()+" classes in the training set.");
+        LabelTranslator labelTranslator = new LabelTranslator(labels);
         System.out.println(labelTranslator);
         return labelTranslator;
     }

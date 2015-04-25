@@ -11,6 +11,7 @@ import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,7 +50,7 @@ public class Exp12 {
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
                 .setClientType(config.getString("index.clientType"))
-                .setExtMultiLabelField(config.getString("index.extMultiLabelField"))
+                .setExtMultiLabelField(config.getString("index.labelField"))
                 .setDocumentType(config.getString("index.documentType"));
         if (config.getString("index.clientType").equals("transport")){
             String[] hosts = config.getString("index.hosts").split(Pattern.quote(","));
@@ -310,58 +311,52 @@ public class Exp12 {
 
 
 
-    static LabelTranslator loadTrainLabelTranslator(MultiLabelIndex index, String[] trainIndexIds) throws Exception{
-
-        Set<String> extLabelSet = new HashSet<>();
-
-        for (String i: trainIndexIds){
-            List<String> extLabel = index.getExtMultiLabel(i);
-            extLabelSet.addAll(extLabel);
+    static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds) throws Exception{
+        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
+        System.out.println("there are "+buckets.size()+" classes in the training set.");
+        List<String> labels = new ArrayList<>();
+        System.out.println("label distribution in training set:");
+        for (Terms.Bucket bucket: buckets){
+            System.out.print(bucket.getKey());
+            System.out.print(":");
+            System.out.print(bucket.getDocCount());
+            System.out.print(", ");
+            labels.add(bucket.getKey());
         }
+        System.out.println();
 
-        LabelTranslator labelTranslator = new LabelTranslator(extLabelSet);
-
-        System.out.println("there are "+labelTranslator.getNumClasses()+" classes in the training set.");
+        LabelTranslator labelTranslator = new LabelTranslator(labels);
         System.out.println(labelTranslator);
         return labelTranslator;
     }
 
-    static LabelTranslator loadTestLabelTranslator(MultiLabelIndex index, String[] testIndexIds, LabelTranslator trainLabelTranslator){
+    static LabelTranslator loadTestLabelTranslator(Config config, MultiLabelIndex index, String[] testIndexIds, LabelTranslator trainLabelTranslator){
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
             extLabels.add(trainLabelTranslator.toExtLabel(i));
         }
 
-        Set<String> testExtLabelSet = new HashSet<>();
-        for (String i: testIndexIds){
-            List<String> extLabel = index.getExtMultiLabel(i);
-            testExtLabelSet.addAll(extLabel);
+        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), testIndexIds);
+        List<String> newLabels = new ArrayList<>();
+        System.out.println("label distribution in test set:");
+        for (Terms.Bucket bucket: buckets){
+            System.out.print(bucket.getKey());
+            System.out.print(":");
+            System.out.print(bucket.getDocCount());
+            System.out.print(", ");
+            if (!extLabels.contains(bucket.getKey())){
+                extLabels.add(bucket.getKey());
+                newLabels.add(bucket.getKey());
+            }
         }
-
-        testExtLabelSet.removeAll(extLabels);
-        for (String extLabel: testExtLabelSet){
-            extLabels.add(extLabel);
+        System.out.println();
+        if (!newLabels.isEmpty()){
+            System.out.println("WARNING: found new labels in test set: "+newLabels);
         }
-
         return new LabelTranslator(extLabels);
-
     }
 
-//    static void showDistribution(Config config, ClfDataSet dataSet, Map<Integer, String> labelTranslator){
-//        int numClasses = labelTranslator.size();
-//        int[] counts = new int[numClasses];
-//        int[] labels = dataSet.getLabels();
-//        for (int i=0;i<dataSet.getNumDataPoints();i++){
-//            int label = labels[i];
-//            counts[label] += 1;
-//
-//        }
-//        System.out.println("label distribution:");
-//        for (int i=0;i<numClasses;i++){
-//            System.out.print(i+"("+labelTranslator.get(i)+"):"+counts[i]+", ");
-//        }
-//        System.out.println("");
-//    }
+
 
     static void saveDataSet(Config config, MultiLabelClfDataSet dataSet, String name) throws Exception{
         String archive = config.getString("archive.folder");
@@ -423,7 +418,7 @@ public class Exp12 {
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureList featureList = new FeatureList();
 
-        LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(index, trainIndexIds);
+        LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(config, index, trainIndexIds);
         if (config.getBoolean("useInitialFeatures")){
             addInitialFeatures(config,index,featureList,trainIndexIds);
         }
@@ -444,7 +439,7 @@ public class Exp12 {
 
         String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
-        LabelTranslator testLabelTranslator = loadTestLabelTranslator(index, testIndexIds,trainLabelTranslator);
+        LabelTranslator testLabelTranslator = loadTestLabelTranslator(config, index, testIndexIds,trainLabelTranslator);
 
         MultiLabelClfDataSet testDataSet = loadTestData(config,index,featureList,testIdTranslator,testLabelTranslator);
         testDataSet.setFeatureList(featureList);
