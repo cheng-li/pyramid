@@ -11,7 +11,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -85,7 +84,7 @@ public class FeatureLoader {
                 dataSet.setFeatureValue(algorithmId,featureIndex,value);
             });
         } else if (source.equals("matching_score")){
-            SearchResponse response = index.match(feature,dataIndexIds);
+            SearchResponse response = index.spanNear(feature, dataIndexIds);
             SearchHit[] hits = response.getHits().getHits();
             for (SearchHit hit: hits){
                 String indexId = hit.getId();
@@ -101,7 +100,7 @@ public class FeatureLoader {
 
     public static Vector loadNgramFeature(ESIndex index, Ngram feature, IdTranslator idTranslator ){
         String[] dataIndexIds = idTranslator.getAllExtIds();
-        SearchResponse response = index.match(feature,dataIndexIds);
+        SearchResponse response = index.spanNear(feature, dataIndexIds);
         SearchHit[] hits = response.getHits().getHits();
         Vector vector = new RandomAccessSparseVector(idTranslator.numData());
         for (SearchHit hit: hits){

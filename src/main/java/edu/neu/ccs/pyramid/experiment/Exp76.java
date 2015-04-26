@@ -1,27 +1,19 @@
 package edu.neu.ccs.pyramid.experiment;
 
-import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
-import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
-import edu.neu.ccs.pyramid.regression.regression_tree.SplitResult;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
-import org.elasticsearch.action.ListenableActionFuture;
-import org.elasticsearch.action.search.MultiSearchRequestBuilder;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -66,7 +58,7 @@ public class Exp76 {
                 .collect(Collectors.toList());
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        ngrams.parallelStream().forEach(index::match);
+        ngrams.parallelStream().forEach(index::spanNear);
         System.out.println("time spent on complete search = "+stopWatch);
     }
 
@@ -79,7 +71,7 @@ public class Exp76 {
                 .collect(Collectors.toList());
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        ngrams.parallelStream().forEach(ngram -> index.match(ngram,0));
+        ngrams.parallelStream().forEach(ngram -> index.spanNear(ngram, 0));
         System.out.println("time spent on small size search = "+stopWatch);
     }
 
@@ -107,7 +99,7 @@ public class Exp76 {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         long count = ngrams.parallelStream().filter(ngram -> {
-            if (index.match(ngram).getHits().getTotalHits() == index.count(ngram)) {
+            if (index.spanNear(ngram).getHits().getTotalHits() == index.count(ngram)) {
                 return true;
 
             } else {

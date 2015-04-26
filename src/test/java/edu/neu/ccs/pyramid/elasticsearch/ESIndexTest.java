@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
+import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
@@ -14,7 +16,7 @@ import static org.junit.Assert.*;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test9();
+        test12();
 
     }
 
@@ -134,6 +136,36 @@ public class ESIndexTest {
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(builder).
                 execute().actionGet();
+        System.out.println(response.getHits().getTotalHits());
+
+
+        index.close();
+    }
+
+    static void test12() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build();
+
+        Ngram ngram1 = new Ngram();
+        ngram1.setInOrder(true);
+        ngram1.setNgram("recommend");
+        ngram1.setField("body");
+        ngram1.setSlop(0);
+
+
+        Ngram ngram2 = new Ngram();
+        ngram2.setInOrder(true);
+        ngram2.setNgram("not");
+        ngram2.setField("body");
+        ngram2.setSlop(0);
+
+        SpanNotNgram spanNotNgram = new SpanNotNgram();
+        spanNotNgram.setInclude(ngram1);
+        spanNotNgram.setExclude(ngram2);
+        spanNotNgram.setPre(2);
+
+        SearchResponse response = index.spanNot(spanNotNgram);
+ 
         System.out.println(response.getHits().getTotalHits());
 
 

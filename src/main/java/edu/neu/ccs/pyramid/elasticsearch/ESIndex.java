@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -517,7 +518,7 @@ public class ESIndex {
         return response;
     }
 
-    public SearchResponse match(Ngram ngram){
+    public SearchResponse spanNear(Ngram ngram){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -604,7 +605,7 @@ public class ESIndex {
         return hits;
     }
 
-    public SearchResponse match(Ngram ngram, int size){
+    public SearchResponse spanNear(Ngram ngram, int size){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -627,7 +628,7 @@ public class ESIndex {
     }
 
 
-    public SearchResponse match(Ngram ngram, String[] ids){
+    public SearchResponse spanNear(Ngram ngram, String[] ids){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -646,6 +647,90 @@ public class ESIndex {
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
                         .execute().actionGet();
+
+        return response;
+
+    }
+
+
+    public SearchResponse spanNot(SpanNotNgram ngram, String[] ids){
+        Ngram include = ngram.getInclude();
+        String field1 = include.getField();
+        int slop1 = include.getSlop();
+        boolean inOrder1 = include.isInOrder();
+        SpanNearQueryBuilder queryBuilder1 = QueryBuilders.spanNearQuery();
+        for (String term: include.getTerms()){
+            queryBuilder1.clause(new SpanTermQueryBuilder(field1, term));
+        }
+        queryBuilder1.inOrder(inOrder1);
+        queryBuilder1.slop(slop1);
+
+
+        Ngram exclude = ngram.getExclude();
+
+        String field2 = exclude.getField();
+        int slop2 = exclude.getSlop();
+        boolean inOrder2 = exclude.isInOrder();
+        SpanNearQueryBuilder queryBuilder2 = QueryBuilders.spanNearQuery();
+        for (String term: exclude.getTerms()){
+            queryBuilder2.clause(new SpanTermQueryBuilder(field2, term));
+        }
+        queryBuilder2.inOrder(inOrder2);
+        queryBuilder2.slop(slop2);
+
+        int pre = ngram.getPre();
+        int post = ngram.getPost();
+
+        SpanNotQueryBuilder spanNotQueryBuilder = QueryBuilders.spanNotQuery().include(queryBuilder1)
+                .exclude(queryBuilder2).pre(pre).post(post);
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+        idsFilterBuilder.addIds(ids);
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(spanNotQueryBuilder, idsFilterBuilder))
+                .execute().actionGet();
+
+        return response;
+
+    }
+
+    public SearchResponse spanNot(SpanNotNgram ngram){
+        Ngram include = ngram.getInclude();
+        String field1 = include.getField();
+        int slop1 = include.getSlop();
+        boolean inOrder1 = include.isInOrder();
+        SpanNearQueryBuilder queryBuilder1 = QueryBuilders.spanNearQuery();
+        for (String term: include.getTerms()){
+            queryBuilder1.clause(new SpanTermQueryBuilder(field1, term));
+        }
+        queryBuilder1.inOrder(inOrder1);
+        queryBuilder1.slop(slop1);
+
+        Ngram exclude = ngram.getExclude();
+        String field2 = exclude.getField();
+        int slop2 = exclude.getSlop();
+        boolean inOrder2 = exclude.isInOrder();
+        SpanNearQueryBuilder queryBuilder2 = QueryBuilders.spanNearQuery();
+        for (String term: exclude.getTerms()){
+            queryBuilder2.clause(new SpanTermQueryBuilder(field2, term));
+        }
+        queryBuilder2.inOrder(inOrder2);
+        queryBuilder2.slop(slop2);
+
+        int pre = ngram.getPre();
+        int post = ngram.getPost();
+
+        SpanNotQueryBuilder spanNotQueryBuilder = QueryBuilders.spanNotQuery().include(queryBuilder1)
+                .exclude(queryBuilder2).pre(pre).post(post);
+
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(spanNotQueryBuilder)
+                .execute().actionGet();
 
         return response;
 
