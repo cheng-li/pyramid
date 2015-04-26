@@ -86,6 +86,10 @@ public class NgramClassDistribution implements Serializable{
         this.totalCount = totalCount;
     }
 
+    public Ngram getNgram() {
+        return ngram;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("NgramClassDistribution{");

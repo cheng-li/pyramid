@@ -6,23 +6,16 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.FeatureLoader;
-import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
-import edu.neu.ccs.pyramid.elasticsearch.TermStat;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
 import edu.neu.ccs.pyramid.feature_selection.FusedKolmogorovFilter;
+import edu.neu.ccs.pyramid.feature_selection.LRGradientSelection;
 import edu.neu.ccs.pyramid.feature_selection.NgramClassDistribution;
 import edu.neu.ccs.pyramid.sentiment_analysis.Negation;
-import edu.neu.ccs.pyramid.util.NgramUtil;
-import edu.neu.ccs.pyramid.util.Sampling;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.mahout.math.*;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.query.IdsFilterBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.*;
@@ -330,13 +323,18 @@ public class Exp35 {
         }
 
         bufferedWriter.close();
+        //for serialization
+        Set<Ngram> uniques = new HashSet<>();
+        uniques.addAll(allNgrams.elementSet());
+        Serialization.serialize(uniques,new File(config.getString("archive.folder"),"allFeatures.ser"));
         return allNgrams.elementSet();
     }
 
-    static List<Ngram> rank(Config config, Set<Ngram> ngrams, ESIndex index,
-                            IdTranslator idTranslator,
-                            LabelTranslator labelTranslator) throws Exception{
+    static List<Ngram> fkFilter(Config config, ESIndex index,
+                                IdTranslator idTranslator,
+                                LabelTranslator labelTranslator) throws Exception{
         System.out.println("start ranking");
+        Set<Ngram> ngrams = (Set)Serialization.deserialize(new File(config.getString("archive.folder"),"allFeatures.ser"));
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         int numClasses = labelTranslator.getNumClasses();
@@ -384,11 +382,10 @@ public class Exp35 {
         System.out.println("generating ngram distributions");
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        File file = new File(config.getString("archive.folder"),"rankedFeatures.ser");
-        List<Ngram> ngrams= (List) Serialization.deserialize(file);
-        int limit = config.getInt("numFeatures");
+        File file = new File(config.getString("archive.folder"),"allFeatures.ser");
+        Set<Ngram> ngrams= (Set) Serialization.deserialize(file);
         String labelFields = config.getString("index.labelField");
-        List<NgramClassDistribution> distributions = ngrams.stream().limit(limit).parallel()
+        List<NgramClassDistribution> distributions = ngrams.stream().parallel()
                 .map(ngram -> new NgramClassDistribution(ngram, index, labelFields, ids, labelTranslator))
                 .collect(Collectors.toList());
         Serialization.serialize(distributions,new File(config.getString("archive.folder"),"distributions.ser"));
@@ -578,18 +575,21 @@ public class Exp35 {
             addInitialFeatures(config,index,featureList,trainIndexIds);
         }
 
-        Set<Ngram> ngrams = null;
-        if (config.getBoolean("rank")){
-            ngrams = gather(config,index,trainIndexIds);
+        if (config.getBoolean("gather")){
+            gather(config,index,trainIndexIds);
         }
 
 
-        if (config.getBoolean("rank")){
-            rank(config,ngrams,index,trainIdTranslator,labelTranslator);
+        if (config.getBoolean("FKFilter")){
+            fkFilter(config,index, trainIdTranslator, labelTranslator);
         }
 
         if (config.getBoolean("generateDistribution")){
             getNgramDistributions(config,index,trainIndexIds,labelTranslator);
+        }
+
+        if (config.getBoolean("LRGradientSelection")){
+            gradientSelection(config,index,labelTranslator,trainIndexIds);
         }
 
         addNgramFeatures(config, featureList);
@@ -635,5 +635,45 @@ public class Exp35 {
 
         Arrays.stream(strArr).forEach(set::add);
         return set;
+    }
+
+    static double[] getClassDistribution(Config config, ESIndex index, LabelTranslator labelTranslator, String[] trainIndexIds){
+        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
+
+        double[] probs = new double[labelTranslator.getNumClasses()];
+        for (Terms.Bucket bucket: buckets){
+            String extLabel = bucket.getKey();
+            int label = labelTranslator.toIntLabel(extLabel);
+            long count = bucket.getDocCount();
+            probs[label] = (double)count / trainIndexIds.length;
+        }
+        System.out.println("class distribution = "+Arrays.toString(probs));
+        return probs;
+    }
+
+    static void gradientSelection(Config config, ESIndex index, LabelTranslator labelTranslator, String[] trainIndexIds) throws Exception{
+        double[] probs = getClassDistribution(config,index,labelTranslator,trainIndexIds);
+        File input = new File(config.getString("archive.folder"),"distributions.ser");
+        List<NgramClassDistribution> distributions = (List)Serialization.deserialize(input);
+        File folder = new File(config.getString("archive.folder"),"lrg_selection");
+        folder.mkdirs();
+
+        List<List<NgramClassDistribution>> lists = new ArrayList<>();
+
+        IntStream.range(0,labelTranslator.getNumClasses()).forEach(k -> {
+            Comparator<NgramClassDistribution> comparator = Comparator.comparing(dis -> LRGradientSelection.utility(dis,probs,k));
+            List<NgramClassDistribution> sorted = distributions.stream().parallel().sorted(comparator.reversed())
+                    .collect(Collectors.toList());
+            lists.add(sorted);
+        });
+
+        for (int k=0;k<labelTranslator.getNumClasses();k++){
+            BufferedWriter bw = new BufferedWriter(new FileWriter(new File(folder,""+k)));
+            for (NgramClassDistribution distribution: lists.get(k)){
+                bw.write(distribution.toString());
+                bw.newLine();
+            }
+            bw.close();
+        }
     }
 }
