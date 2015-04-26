@@ -12,9 +12,11 @@ import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
 import edu.neu.ccs.pyramid.feature_selection.FusedKolmogorovFilter;
+import edu.neu.ccs.pyramid.feature_selection.NgramClassDistribution;
 import edu.neu.ccs.pyramid.sentiment_analysis.Negation;
 import edu.neu.ccs.pyramid.util.NgramUtil;
 import edu.neu.ccs.pyramid.util.Sampling;
+import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.*;
@@ -378,7 +380,28 @@ public class Exp35 {
     }
 
 
+    static void getNgramDistributions(Config config, ESIndex index, String[] ids,LabelTranslator labelTranslator ) throws Exception{
+        System.out.println("generating ngram distributions");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        File file = new File(config.getString("archive.folder"),"rankedFeatures.ser");
+        List<Ngram> ngrams= (List) Serialization.deserialize(file);
+        int limit = config.getInt("numFeatures");
+        String labelFields = config.getString("index.labelField");
+        List<NgramClassDistribution> distributions = ngrams.stream().limit(limit).parallel()
+                .map(ngram -> new NgramClassDistribution(ngram, index, labelFields, ids, labelTranslator))
+                .collect(Collectors.toList());
+        Serialization.serialize(distributions,new File(config.getString("archive.folder"),"distributions.ser"));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"distributions.txt")));
+        for (NgramClassDistribution distribution: distributions){
+            bufferedWriter.write(distribution.toString());
+            bufferedWriter.newLine();
+        }
 
+        bufferedWriter.close();
+        System.out.println("done");
+        System.out.println("time spent on generating distributions = "+stopWatch);
+    }
 
     static void addNgramFeatures(Config config, FeatureList featureList) throws Exception{
         List<Ngram> ngrams;
@@ -563,6 +586,10 @@ public class Exp35 {
 
         if (config.getBoolean("rank")){
             rank(config,ngrams,index,trainIdTranslator,labelTranslator);
+        }
+
+        if (config.getBoolean("generateDistribution")){
+            getNgramDistributions(config,index,trainIndexIds,labelTranslator);
         }
 
         addNgramFeatures(config, featureList);

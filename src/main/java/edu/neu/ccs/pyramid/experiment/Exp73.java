@@ -21,10 +21,10 @@
 //import java.util.stream.Collectors;
 //
 ///**
-// * todo: fix
-// * logistic gradient feature selection
-// * Created by chengli on 3/20/15.
-// */
+//* todo: fix
+//* logistic gradient feature selection
+//* Created by chengli on 3/20/15.
+//*/
 //public class Exp73 {
 //    public static void main(String[] args) throws Exception{
 //        if (args.length !=1){
