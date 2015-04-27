@@ -67,52 +67,49 @@ public class Exp12 {
         return index;
     }
 
-    static String[] sampleTrain(Config config, MultiLabelIndex index){
+    static String[] sampleTrain(Config config, ESIndex index){
         int numDocsInIndex = index.getNumDocs();
-        String[] trainIds = null;
+        String[] ids = null;
+
         if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
             String splitField = config.getString("index.splitField");
-            trainIds = IntStream.range(0, numDocsInIndex).
-                    filter(i -> index.getStringField("" + i, splitField).
+            List<String> train = IntStream.range(0, numDocsInIndex).parallel()
+                    .filter(i -> index.getStringField("" + i, splitField).
                             equalsIgnoreCase("train")).
-                    mapToObj(i -> "" + i).collect(Collectors.toList()).
-                    toArray(new String[0]);
+                            mapToObj(i -> "" + i).collect(Collectors.toList());
+            ids = train.toArray(new String[train.size()]);
         } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
-            trainIds = Arrays.stream(Sampling.sampleByPercentage(numDocsInIndex,config.getDouble("split.random.trainPercentage"))).
-                    mapToObj(i-> ""+i).
-                    collect(Collectors.toList()).
-                    toArray(new String[0]);
-//            throw new IllegalArgumentException("random is not supported");
-//            todo : how to do stratified sampling?
-//            double trainPercentage = config.getDouble("split.random.trainPercentage");
-//            int[] labels = new int[numDocsInIndex];
-//            for (int i=0;i<labels.length;i++){
-//                labels[i] = index.getLabel(""+i);
-//            }
-//            List<Integer> sample = Sampling.stratified(labels, trainPercentage);
-//            trainIds = new String[sample.size()];
-//            for (int i=0;i<trainIds.length;i++){
-//                trainIds[i] = ""+sample.get(i);
-//            }
+            int numFolds = config.getInt("split.random.numFolds");
+            ids = IntStream.range(0, numDocsInIndex).parallel()
+                    .filter(i -> i % numFolds != 0).mapToObj(i -> ""+i).toArray(String[]::new);
         } else {
             throw new RuntimeException("illegal split fashion");
         }
 
-        return trainIds;
+        return ids;
     }
 
-    static String[] sampleTest(int numDocsInIndex, String[] trainIndexIds){
-        Set<String> test = new HashSet<>(numDocsInIndex);
-        for (int i=0;i<numDocsInIndex;i++){
-            test.add(""+i);
-        }
-        List<String> _trainIndexIds = new ArrayList<>(trainIndexIds.length);
-        for (String id: trainIndexIds){
-            _trainIndexIds.add(id);
+    static String[] sampleTest(Config config, ESIndex index) {
+        int numDocsInIndex = index.getNumDocs();
+        String[] ids = null;
+
+        if (config.getString("split.fashion").equalsIgnoreCase("fixed")) {
+            String splitField = config.getString("index.splitField");
+            List<String> list = IntStream.range(0, numDocsInIndex).parallel()
+                    .filter(i -> index.getStringField("" + i, splitField).
+                            equalsIgnoreCase("test")).
+                            mapToObj(i -> "" + i).collect(Collectors.toList());
+            ids = list.toArray(new String[list.size()]);
+        } else if (config.getString("split.fashion").equalsIgnoreCase("random")) {
+            int numFolds = config.getInt("split.random.numFolds");
+            ids = IntStream.range(0, numDocsInIndex).parallel()
+                    //todo make a parameter?
+                    .filter(i -> i % numFolds == 0).mapToObj(i -> "" + i).toArray(String[]::new);
+        } else {
+            throw new RuntimeException("illegal split fashion");
         }
 
-        test.removeAll(_trainIndexIds);
-        return test.toArray(new String[0]);
+        return ids;
     }
 
     static IdTranslator loadIdTranslator(String[] indexIds) throws Exception{
@@ -437,7 +434,7 @@ public class Exp12 {
             dumpTrainFields(config, index, trainIdTranslator);
         }
 
-        String[] testIndexIds = sampleTest(numDocsInIndex,trainIndexIds);
+        String[] testIndexIds = sampleTest(config,index);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
         LabelTranslator testLabelTranslator = loadTestLabelTranslator(config, index, testIndexIds,trainLabelTranslator);
 
