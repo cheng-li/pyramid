@@ -682,7 +682,9 @@ public class ESIndex {
         int post = ngram.getPost();
 
         SpanNotQueryBuilder spanNotQueryBuilder = QueryBuilders.spanNotQuery().include(queryBuilder1)
-                .exclude(queryBuilder2).pre(pre).post(post);
+                .exclude(queryBuilder2);
+        //todo upgrade to 1.5
+//                .pre(pre).post(post);
         IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
         idsFilterBuilder.addIds(ids);
 
@@ -723,7 +725,9 @@ public class ESIndex {
         int post = ngram.getPost();
 
         SpanNotQueryBuilder spanNotQueryBuilder = QueryBuilders.spanNotQuery().include(queryBuilder1)
-                .exclude(queryBuilder2).pre(pre).post(post);
+                .exclude(queryBuilder2);
+        //todo: upgrade to 1.5
+//                .pre(pre).post(post);
 
 
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).

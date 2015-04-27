@@ -165,7 +165,7 @@ public class ESIndexTest {
         spanNotNgram.setPre(2);
 
         SearchResponse response = index.spanNot(spanNotNgram);
- 
+
         System.out.println(response.getHits().getTotalHits());
 
 

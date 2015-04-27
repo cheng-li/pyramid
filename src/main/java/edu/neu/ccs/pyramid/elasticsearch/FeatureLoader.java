@@ -1,10 +1,7 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.feature.CategoricalFeature;
-import edu.neu.ccs.pyramid.feature.Feature;
-import edu.neu.ccs.pyramid.feature.FeatureList;
-import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.feature.*;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.elasticsearch.action.search.SearchResponse;
@@ -46,6 +43,8 @@ public class FeatureLoader {
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);
                     } else if (feature instanceof Ngram){
                         loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator);
+                    } else if (feature instanceof SpanNotNgram){
+                        loadSpanNotNgramFeature(index, dataSet, (SpanNotNgram)feature, idTranslator);;
                     } else {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
@@ -74,28 +73,31 @@ public class FeatureLoader {
     public static void loadNgramFeature(ESIndex index, DataSet dataSet, Ngram feature,
                                         IdTranslator idTranslator){
         String[] dataIndexIds = idTranslator.getAllExtIds();
-        String source = feature.getSettings().get("source");
-        String featureName = feature.getName();
         int featureIndex = feature.getIndex();
-        if (source.equals("field")){
-            Arrays.stream(dataIndexIds).parallel().forEach(id -> {
-                int algorithmId = idTranslator.toIntId(id);
-                float value = index.getFloatField(id,featureName);
-                dataSet.setFeatureValue(algorithmId,featureIndex,value);
-            });
-        } else if (source.equals("matching_score")){
             SearchResponse response = index.spanNear(feature, dataIndexIds);
             SearchHit[] hits = response.getHits().getHits();
-            for (SearchHit hit: hits){
-                String indexId = hit.getId();
-                float score = hit.getScore();
-                int algorithmId = idTranslator.toIntId(indexId);
-                dataSet.setFeatureValue(algorithmId,featureIndex,score);
-            }
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            int algorithmId = idTranslator.toIntId(indexId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,score);
         }
+    }
 
+    public static void loadSpanNotNgramFeature(ESIndex index, DataSet dataSet, SpanNotNgram feature,
+                                        IdTranslator idTranslator){
+        String[] dataIndexIds = idTranslator.getAllExtIds();
 
+        int featureIndex = feature.getIndex();
 
+        SearchResponse response = index.spanNot(feature, dataIndexIds);
+        SearchHit[] hits = response.getHits().getHits();
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            int algorithmId = idTranslator.toIntId(indexId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,score);
+        }
     }
 
     public static Vector loadNgramFeature(ESIndex index, Ngram feature, IdTranslator idTranslator ){

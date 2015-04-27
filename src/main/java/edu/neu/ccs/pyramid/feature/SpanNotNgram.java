@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.feature;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by chengli on 4/26/15.
  */
@@ -42,6 +45,39 @@ public class SpanNotNgram extends Feature {
     }
 
 
+    public static List<SpanNotNgram> breakBigram(Ngram ngram){
+        if (ngram.getN()!=2){
+            throw new IllegalArgumentException("n!=2");
+        }
+
+        Ngram ngram1 = new Ngram();
+        ngram1.setNgram(ngram.getTerms()[0]);
+        ngram1.setSlop(0);
+        ngram1.setField(ngram.getField());
+        ngram1.setInOrder(true);
+
+
+        Ngram ngram2 = new Ngram();
+        ngram2.setNgram(ngram.getTerms()[1]);
+        ngram2.setSlop(0);
+        ngram2.setField(ngram.getField());
+        ngram2.setInOrder(true);
+
+        List<SpanNotNgram> spanNotNgrams = new ArrayList<>();
+        SpanNotNgram spanNotNgram1 = new SpanNotNgram();
+        spanNotNgram1.setInclude(ngram1);
+        spanNotNgram1.setExclude(ngram);
+
+        SpanNotNgram spanNotNgram2 = new SpanNotNgram();
+        spanNotNgram2.setInclude(ngram2);
+        spanNotNgram2.setExclude(ngram);
+
+        spanNotNgrams.add(spanNotNgram1);
+        spanNotNgrams.add(spanNotNgram2);
+        return spanNotNgrams;
+
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -66,5 +102,16 @@ public class SpanNotNgram extends Feature {
         result = 31 * result + pre;
         result = 31 * result + post;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SpanNotNgram{");
+        sb.append("include=").append(include);
+        sb.append(", exclude=").append(exclude);
+        sb.append(", pre=").append(pre);
+        sb.append(", post=").append(post);
+        sb.append('}');
+        return sb.toString();
     }
 }

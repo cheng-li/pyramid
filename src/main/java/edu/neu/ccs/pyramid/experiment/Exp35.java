@@ -83,7 +83,6 @@ public class Exp35 {
         } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
             int numFolds = config.getInt("split.random.numFolds");
             ids = IntStream.range(0, numDocsInIndex).parallel()
-                    //todo make a parameter?
                     .filter(i -> i % numFolds != 0).mapToObj(i -> ""+i).toArray(String[]::new);
         } else {
             throw new RuntimeException("illegal split fashion");
