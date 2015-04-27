@@ -215,7 +215,7 @@ preBody = '''
 <tr><th><br> Data Viewer Options: </th></tr>
 <tr><td><br>
 <p style="text-indent: 1em;">Max number of rules per class:&nbsp;&nbsp;
-<input id="ruleNum" type="number" name="ruleNum" value="6" min="1" max="20"></p>
+<input id="ruleNum" type="number" name="ruleNum" value="6" min="1"></p>
 </td></tr><tr><td><br>
 <p style="text-indent: 1em;">Select the fields to display
 <input id="TP" type="checkbox" name="TP" value="TP" checked>TP
@@ -387,7 +387,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 
 
 
