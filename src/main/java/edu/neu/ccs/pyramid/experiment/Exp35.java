@@ -11,7 +11,7 @@ import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
 import edu.neu.ccs.pyramid.feature_selection.FusedKolmogorovFilter;
 import edu.neu.ccs.pyramid.feature_selection.LRGradientSelection;
-import edu.neu.ccs.pyramid.feature_selection.NgramClassDistribution;
+import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.sentiment_analysis.Negation;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
@@ -384,12 +384,12 @@ public class Exp35 {
         File file = new File(config.getString("archive.folder"),"allFeatures.ser");
         Set<Ngram> ngrams= (Set) Serialization.deserialize(file);
         String labelFields = config.getString("index.labelField");
-        List<NgramClassDistribution> distributions = ngrams.stream().parallel()
-                .map(ngram -> new NgramClassDistribution(ngram, index, labelFields, ids, labelTranslator))
+        List<FeatureDistribution> distributions = ngrams.stream().parallel()
+                .map(ngram -> new FeatureDistribution(ngram, index, labelFields, ids, labelTranslator))
                 .collect(Collectors.toList());
         Serialization.serialize(distributions,new File(config.getString("archive.folder"),"distributions.ser"));
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"distributions.txt")));
-        for (NgramClassDistribution distribution: distributions){
+        for (FeatureDistribution distribution: distributions){
             bufferedWriter.write(distribution.toString());
             bufferedWriter.newLine();
         }
@@ -653,22 +653,22 @@ public class Exp35 {
     static void gradientSelection(Config config, ESIndex index, LabelTranslator labelTranslator, String[] trainIndexIds) throws Exception{
         double[] probs = getClassDistribution(config,index,labelTranslator,trainIndexIds);
         File input = new File(config.getString("archive.folder"),"distributions.ser");
-        List<NgramClassDistribution> distributions = (List)Serialization.deserialize(input);
+        List<FeatureDistribution> distributions = (List)Serialization.deserialize(input);
         File folder = new File(config.getString("archive.folder"),"lrg_selection");
         folder.mkdirs();
 
-        List<List<NgramClassDistribution>> lists = new ArrayList<>();
+        List<List<FeatureDistribution>> lists = new ArrayList<>();
 
         IntStream.range(0,labelTranslator.getNumClasses()).forEach(k -> {
-            Comparator<NgramClassDistribution> comparator = Comparator.comparing(dis -> LRGradientSelection.utility(dis,probs,k));
-            List<NgramClassDistribution> sorted = distributions.stream().parallel().sorted(comparator.reversed())
+            Comparator<FeatureDistribution> comparator = Comparator.comparing(dis -> LRGradientSelection.utility(dis,probs,k));
+            List<FeatureDistribution> sorted = distributions.stream().parallel().sorted(comparator.reversed())
                     .collect(Collectors.toList());
             lists.add(sorted);
         });
 
         for (int k=0;k<labelTranslator.getNumClasses();k++){
             BufferedWriter bw = new BufferedWriter(new FileWriter(new File(folder,""+k)));
-            for (NgramClassDistribution distribution: lists.get(k)){
+            for (FeatureDistribution distribution: lists.get(k)){
                 bw.write(distribution.toString());
                 bw.newLine();
             }

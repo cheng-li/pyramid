@@ -9,9 +9,8 @@ import edu.neu.ccs.pyramid.elasticsearch.FeatureLoader;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
-import edu.neu.ccs.pyramid.feature_selection.FusedKolmogorovFilter;
+import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.feature_selection.LRGradientSelection;
-import edu.neu.ccs.pyramid.feature_selection.NgramClassDistribution;
 import edu.neu.ccs.pyramid.sentiment_analysis.Negation;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
@@ -354,25 +353,33 @@ public class Exp88 {
 
     static void addSpanNotNgramFeatures(Config config, FeatureList featureList) throws Exception{
 
-        File file = new File(config.getString("archive.folder"),"allFeatures.ser");
-        Collection<Ngram> ngrams;
-        try(
-                FileInputStream fileInputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-        ){
-            ngrams = (Collection)objectInputStream.readObject();
+//        File file = new File(config.getString("archive.folder"),"allFeatures.ser");
+//        Collection<Ngram> ngrams;
+//        try(
+//                FileInputStream fileInputStream = new FileInputStream(file);
+//                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+//                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+//        ){
+//            ngrams = (Collection)objectInputStream.readObject();
+//        }
+//
+//
+//        ngrams.stream().filter(ngram -> ngram.getN()==2)
+//                .forEach(ngram -> {
+//                    List<SpanNotNgram> spanNotNgrams = SpanNotNgram.breakBigram(ngram);
+//
+//                    for (SpanNotNgram spanNotNgram: spanNotNgrams){
+//                        featureList.add(spanNotNgram);
+//                    }
+//                });
+
+        if (config.getString("input.spanNotNgrams").equals("")){
+            return;
         }
-
-
-        ngrams.stream().filter(ngram -> ngram.getN()==2)
-                .forEach(ngram -> {
-                    List<SpanNotNgram> spanNotNgrams = SpanNotNgram.breakBigram(ngram);
-
-                    for (SpanNotNgram spanNotNgram: spanNotNgrams){
-                        featureList.add(spanNotNgram);
-                    }
-                });
+        Collection<SpanNotNgram> spanNotNgrams = (Collection)Serialization.deserialize(config.getString("input.spanNotNgrams"));
+        for (SpanNotNgram spanNotNgram: spanNotNgrams){
+            featureList.add(spanNotNgram);
+        }
     }
 
     static ClfDataSet loadData(Config config, ESIndex index,
@@ -544,7 +551,34 @@ public class Exp88 {
 
         addSpanNotNgramFeatures(config,featureList);
 
-        ClfDataSet trainDataSet = loadTrainData(config,index,featureList, trainIdTranslator, labelTranslator);
+
+        getNgramDistributions(config,index,trainIndexIds,labelTranslator,featureList);
+
+
+        gradientSelection(config,index,labelTranslator,trainIndexIds);
+
+//
+        dealWithTrain(config,index,featureList,trainIdTranslator,labelTranslator);
+//
+        dealWithTest(config,index,featureList,labelTranslator);
+
+    }
+
+    static Set<String> loadDuplicate(Config config) throws Exception{
+        Set<String> set = new HashSet<>();
+        if (config.getString("input.duplicate").equals("")){
+            return set;
+        }
+        File file = new File(config.getString("input.duplicate"));
+        String[] strArr = FileUtils.readFileToString(file).split(",");
+
+        Arrays.stream(strArr).forEach(set::add);
+        return set;
+    }
+
+    static void dealWithTrain(Config config, ESIndex index, FeatureList featureList,
+                              IdTranslator idTranslator, LabelTranslator labelTranslator) throws Exception{
+        ClfDataSet trainDataSet = loadTrainData(config,index,featureList, idTranslator, labelTranslator);
         System.out.println("in training set :");
         showDistribution(trainDataSet,labelTranslator);
 
@@ -552,10 +586,15 @@ public class Exp88 {
 
         saveDataSet(config, trainDataSet, config.getString("archive.trainingSet"));
         if (config.getBoolean("archive.dumpFields")){
-            dumpTrainFeatures(config,index,trainIdTranslator);
+            dumpTrainFeatures(config,index,idTranslator);
         }
 
-        String[] testIndexIds = sampleTest(config,index);
+    }
+
+
+    static void dealWithTest(Config config, ESIndex index, FeatureList featureList,
+                             LabelTranslator labelTranslator) throws Exception{
+        String[] testIndexIds = sampleTest(config, index);
         IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
 
         //todo new labels in test?
@@ -571,20 +610,80 @@ public class Exp88 {
 //        saveDataSet(config, validDataSet, config.getString("archive.validSet"));
 
         if (config.getBoolean("archive.dumpFields")){
-            dumpTestFeatures(config,index,testIdTranslator);
+            dumpTestFeatures(config, index, testIdTranslator);
         }
+
     }
 
-    static Set<String> loadDuplicate(Config config) throws Exception{
-        Set<String> set = new HashSet<>();
-        if (config.getString("input.duplicate").equals("")){
-            return set;
-        }
-        File file = new File(config.getString("input.duplicate"));
-        String[] strArr = FileUtils.readFileToString(file).split(",");
+    static void getNgramDistributions(Config config, ESIndex index, String[] ids,LabelTranslator labelTranslator, FeatureList featureList ) throws Exception{
+        System.out.println("generating ngram distributions");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
 
-        Arrays.stream(strArr).forEach(set::add);
-        return set;
+
+
+        String labelFields = config.getString("index.labelField");
+        List<FeatureDistribution> distributions = featureList.getAll().stream().parallel()
+                .filter(feature -> (feature instanceof Ngram || feature instanceof SpanNotNgram))
+                .map(ngram -> {
+                    if (ngram instanceof Ngram) {
+                        return new FeatureDistribution((Ngram) ngram, index, labelFields, ids, labelTranslator);
+                    } else {
+                        return new FeatureDistribution((SpanNotNgram) ngram, index, labelFields, ids, labelTranslator);
+                    }
+
+                })
+                .collect(Collectors.toList());
+        Serialization.serialize(distributions,new File(config.getString("archive.folder"),"distributions.ser"));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"distributions.txt")));
+        for (FeatureDistribution distribution: distributions){
+            bufferedWriter.write(distribution.toString());
+            bufferedWriter.newLine();
+        }
+
+        bufferedWriter.close();
+        System.out.println("done");
+        System.out.println("time spent on generating distributions = "+stopWatch);
+    }
+
+    static double[] getClassDistribution(Config config, ESIndex index, LabelTranslator labelTranslator, String[] trainIndexIds){
+        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
+
+        double[] probs = new double[labelTranslator.getNumClasses()];
+        for (Terms.Bucket bucket: buckets){
+            String extLabel = bucket.getKey();
+            int label = labelTranslator.toIntLabel(extLabel);
+            long count = bucket.getDocCount();
+            probs[label] = (double)count / trainIndexIds.length;
+        }
+        System.out.println("class distribution = "+Arrays.toString(probs));
+        return probs;
+    }
+
+    static void gradientSelection(Config config, ESIndex index, LabelTranslator labelTranslator, String[] trainIndexIds) throws Exception{
+        double[] probs = getClassDistribution(config,index,labelTranslator,trainIndexIds);
+        File input = new File(config.getString("archive.folder"),"distributions.ser");
+        List<FeatureDistribution> distributions = (List)Serialization.deserialize(input);
+        File folder = new File(config.getString("archive.folder"),"lrg_selection");
+        folder.mkdirs();
+
+        List<List<FeatureDistribution>> lists = new ArrayList<>();
+
+        IntStream.range(0,labelTranslator.getNumClasses()).forEach(k -> {
+            Comparator<FeatureDistribution> comparator = Comparator.comparing(dis -> LRGradientSelection.utility(dis, probs, k));
+            List<FeatureDistribution> sorted = distributions.stream().parallel().sorted(comparator.reversed())
+                    .collect(Collectors.toList());
+            lists.add(sorted);
+        });
+
+        for (int k=0;k<labelTranslator.getNumClasses();k++){
+            BufferedWriter bw = new BufferedWriter(new FileWriter(new File(folder,""+k)));
+            for (FeatureDistribution distribution: lists.get(k)){
+                bw.write(distribution.toString());
+                bw.newLine();
+            }
+            bw.close();
+        }
     }
 
 }

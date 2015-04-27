@@ -111,6 +111,9 @@ public class SpanNotNgram extends Feature {
         sb.append(", exclude=").append(exclude);
         sb.append(", pre=").append(pre);
         sb.append(", post=").append(post);
+        if (indexAssigned){
+            sb.append("index=").append(index);
+        }
         sb.append('}');
         return sb.toString();
     }

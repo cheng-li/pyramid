@@ -12,7 +12,7 @@ public class LRGradientSelection {
      * @param classIndex
      * @return
      */
-    public static double utility(NgramClassDistribution distribution, double[] probs, int classIndex){
+    public static double utility(FeatureDistribution distribution, double[] probs, int classIndex){
         double actual = distribution.getClassCount(classIndex);
         double expected = ((double)distribution.getTotalCount())*probs[classIndex];
         return actual - expected;

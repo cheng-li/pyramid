@@ -11,7 +11,9 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.util.Serialization;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -111,16 +113,21 @@ public class Exp79 {
                 List<Ngram> ngramList = ngrams.get(k);
                 for (Ngram ngram: ngramList){
                     List<FeatureComparision> comparisionsForThis = new ArrayList<>();
-                    for (int j=k+1;j<logisticRegression.getNumClasses();j++){
-                        List<Ngram> against = ngrams.get(j);
-                        for (Ngram ngram1:against){
-                            if(Ngram.overlap(ngram,ngram1)){
-                                FeatureComparision comparision = new FeatureComparision();
-                                comparision.add(ngram,k);
-                                comparision.add(ngram1,j);
-                                comparisionsForThis.add(comparision);
+                    for (int j=0;j<logisticRegression.getNumClasses();j++){
+                        if (j!=k){
+                            List<Ngram> against = ngrams.get(j);
+                            for (Ngram ngram1:against){
+                                boolean condition = ngram.getN()==1&&ngram1.getN()==2
+                                        &&Ngram.overlap(ngram,ngram1)&&ngram.getSlop()==0&&ngram1.getSlop()==0;
+                                if(condition){
+                                    FeatureComparision comparision = new FeatureComparision();
+                                    comparision.add(ngram,k);
+                                    comparision.add(ngram1,j);
+                                    comparisionsForThis.add(comparision);
+                                }
                             }
                         }
+
                     }
                     if (comparisionsForThis.size()<=100){
                         comparisions.addAll(comparisionsForThis);
@@ -135,7 +142,22 @@ public class Exp79 {
             }
 
             bufferedWriter.close();
+
+
+            List<SpanNotNgram> spanNotNgrams = new ArrayList<>();
+            for (FeatureComparision comparision: comparisions){
+                Ngram ngram1 = comparision.features.get(0);
+                Ngram ngram2 = comparision.features.get(1);
+                SpanNotNgram spanNotNgram = new SpanNotNgram();
+                spanNotNgram.setInclude(ngram1);
+                spanNotNgram.setExclude(ngram2);
+                spanNotNgrams.add(spanNotNgram);
+            }
+
+            Serialization.serialize(spanNotNgrams,new File(config.getString("output.folder"), "spanNotNgrams.ser"));
         }
+
+
 
 
 

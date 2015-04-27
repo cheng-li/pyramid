@@ -44,7 +44,7 @@ public class FeatureLoader {
                     } else if (feature instanceof Ngram){
                         loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator);
                     } else if (feature instanceof SpanNotNgram){
-                        loadSpanNotNgramFeature(index, dataSet, (SpanNotNgram)feature, idTranslator);;
+                        loadSpanNotNgramFeature(index, dataSet, (SpanNotNgram)feature, idTranslator);
                     } else {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
