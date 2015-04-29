@@ -246,14 +246,16 @@ public class Exp35 {
         List<Integer> ns = config.getIntegers("ngram.n");
         int minDf = config.getInt("ngram.minDf");
         List<String> fields = config.getStrings("fields");
-        if (config.getBoolean("useNounField")){
-            Set<String> all = index.listAllFields();
-            for (String field: all){
-                if (field.startsWith("noun_")){
+        List<String> fieldsPrefixes = config.getStrings("fieldsPrefixes");
+        Set<String> all = index.listAllFields();
+        for (String field: all){
+            for (String prefix: fieldsPrefixes){
+                if (field.startsWith(prefix)){
                     fields.add(field);
                 }
             }
         }
+
         System.out.println("fields to be considered = "+fields);
 
         List<Integer> slops = config.getIntegers("ngram.slop");
@@ -400,18 +402,9 @@ public class Exp35 {
     }
 
     static void addNgramFeatures(Config config, FeatureList featureList) throws Exception{
-        List<Ngram> ngrams;
-        File file = new File(config.getString("archive.folder"),"rankedFeatures.ser");
-        try(
-                FileInputStream fileInputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-        ){
-            ngrams = (List)objectInputStream.readObject();
-        }
-        int limit = config.getInt("numFeatures");
-        ngrams.stream().limit(limit).forEach(ngram -> {
-            ngram.getSettings().put("source","matching_score");
+        Collection<Ngram> ngrams = (Collection)Serialization.deserialize(new File(config.getString("archive.folder"),"allFeatures.ser"));
+        ngrams.stream().forEach(ngram -> {
+            ngram.getSettings().put("source", "matching_score");
             featureList.add(ngram);
         });
     }
@@ -519,52 +512,10 @@ public class Exp35 {
         System.out.println("data set saved to "+dataFile.getAbsolutePath());
     }
 
-    static void dumpTrainFeatures(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
-        String archive = config.getString("archive.folder");
-        String trecFile = new File(archive,config.getString("archive.trainingSet")).getAbsolutePath();
-        String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
-        dumpFeatures(config,index,idTranslator,file);
-    }
-
-    static void dumpTestFeatures(Config config, ESIndex index, IdTranslator idTranslator) throws Exception{
-        String archive = config.getString("archive.folder");
-        String trecFile = new File(archive,config.getString("archive.testSet")).getAbsolutePath();
-        String file = new File(trecFile,"dumped_fields.txt").getAbsolutePath();
-        dumpFeatures(config,index,idTranslator,file);
-    }
-
-    static void dumpFeatures(Config config, ESIndex index, IdTranslator idTranslator, String fileName) throws Exception{
-
-        String[] fields = config.getString("archive.dumpedFields").split(",");
-        int numDocs = idTranslator.numData();
-        try(BufferedWriter bw = new BufferedWriter(new FileWriter(fileName))
-        ){
-            for (int intId=0;intId<numDocs;intId++){
-                bw.write("intId=");
-                bw.write(""+intId);
-                bw.write(",");
-                bw.write("extId=");
-                String extId = idTranslator.toExtId(intId);
-                bw.write(extId);
-                bw.write(",");
-                for (int i=0;i<fields.length;i++){
-                    String field = fields[i];
-                    bw.write(field+"=");
-                    bw.write(index.getStringField(extId,field));
-                    if (i!=fields.length-1){
-                        bw.write(",");
-                    }
-
-                }
-                bw.write("\n");
-            }
-        }
-
-    }
 
     static void build(Config config, ESIndex index) throws Exception{
-        Set<String> duplidate = loadDuplicate(config);
-        String[] trainIndexIds = sampleTrain(config,index,duplidate);
+        Set<String> duplicate = loadDuplicate(config);
+        String[] trainIndexIds = sampleTrain(config,index,duplicate);
         System.out.println("number of training documents = "+trainIndexIds.length);
         IdTranslator trainIdTranslator = loadIdTranslator(trainIndexIds);
         FeatureList featureList = new FeatureList();
@@ -591,37 +542,13 @@ public class Exp35 {
             gradientSelection(config,index,labelTranslator,trainIndexIds);
         }
 
-        addNgramFeatures(config, featureList);
-
-        ClfDataSet trainDataSet = loadTrainData(config,index,featureList, trainIdTranslator, labelTranslator);
-        System.out.println("in training set :");
-        showDistribution(trainDataSet,labelTranslator);
-
-        trainDataSet.setFeatureList(featureList);
-
-        saveDataSet(config, trainDataSet, config.getString("archive.trainingSet"));
-        if (config.getBoolean("archive.dumpFields")){
-            dumpTrainFeatures(config,index,trainIdTranslator);
+        if (config.getBoolean("dump")){
+            addNgramFeatures(config, featureList);
+            dumpTrain(config,index,featureList,trainIdTranslator,labelTranslator);
+            dumpTest(config,index,featureList,labelTranslator);
         }
 
-        String[] testIndexIds = sampleTest(config,index);
-        IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
 
-        //todo new labels in test?
-        ClfDataSet testDataSet = loadTestData(config,index,featureList,testIdTranslator,labelTranslator);
-        testDataSet.setFeatureList(featureList);
-        saveDataSet(config, testDataSet, config.getString("archive.testSet"));
-
-//        String[] validIndexIds = sampleValid(config,index);
-//        IdTranslator validIdTranslator = loadIdTranslator(validIndexIds);
-//
-//        ClfDataSet validDataSet = loadValidData(config,index,featureMappers,validIdTranslator,labelTranslator);
-//        DataSetUtil.setFeatureMappers(validDataSet,featureMappers);
-//        saveDataSet(config, validDataSet, config.getString("archive.validSet"));
-
-        if (config.getBoolean("archive.dumpFields")){
-            dumpTestFeatures(config,index,testIdTranslator);
-        }
     }
 
     static Set<String> loadDuplicate(Config config) throws Exception{
@@ -674,5 +601,28 @@ public class Exp35 {
             }
             bw.close();
         }
+    }
+
+    static void dumpTrain(Config config, ESIndex index, FeatureList featureList,
+                          IdTranslator trainIdTranslator, LabelTranslator labelTranslator) throws Exception{
+        ClfDataSet trainDataSet = loadTrainData(config,index,featureList, trainIdTranslator, labelTranslator);
+        System.out.println("in training set :");
+        showDistribution(trainDataSet,labelTranslator);
+
+        trainDataSet.setFeatureList(featureList);
+
+        saveDataSet(config, trainDataSet, config.getString("archive.trainingSet"));
+    }
+
+    static void dumpTest(Config config, ESIndex index, FeatureList featureList,
+                         LabelTranslator labelTranslator) throws Exception{
+
+        String[] testIndexIds = sampleTest(config,index);
+        IdTranslator testIdTranslator = loadIdTranslator(testIndexIds);
+
+        //todo new labels in test?
+        ClfDataSet testDataSet = loadTestData(config,index,featureList,testIdTranslator,labelTranslator);
+        testDataSet.setFeatureList(featureList);
+        saveDataSet(config, testDataSet, config.getString("archive.testSet"));
     }
 }
