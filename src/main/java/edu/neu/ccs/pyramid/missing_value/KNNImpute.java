@@ -1,161 +1,79 @@
 package edu.neu.ccs.pyramid.missing_value;
 
-import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import org.apache.mahout.math.Vector;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Created by chengli on 2/17/15.
  */
 public class KNNImpute {
-    private static final Config config = new Config("configs/local.config");
-    private static final String DATASETS = config.getString("input.datasets");
-    private static final String TMP = config.getString("output.tmp");
     private static final int N = 10;
+    private static double[][] stats = null;
 
-    public static void loadDataSet() {
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(new File(DATASETS, "gene_expression/array.txt")));
-            ArrayList<Integer> missing_row = new ArrayList<Integer>();
-            ArrayList<Integer> missing_col = new ArrayList<Integer>();
-            String line = reader.readLine();
-            int feature_num = line.split("\t").length - 1;
-            int row = 0;
-            while ((line = reader.readLine()) != null) {
-                String[] words = line.split("\t");
-                for (int k = 2; k < words.length; k++) {
-                    if (words[k].equals("")) {
-                        if (!missing_row.contains(row)) {
-                            missing_row.add(row);
-                        }
-                        if (!missing_col.contains(k)) {
-                            missing_col.add(k);
-                        }
-                    }
-                }
-                row++;
+    /*
+     * Normalize data if normFlag == 1
+     * Save data as trec fomat
+     */
+    static ClfDataSet saveData(ClfDataSet data, List<String> featureNames, int normFlag)throws Exception{
+        if (normFlag == 1) {
+            if (stats == null) {
+                stats = new double[data.getNumFeatures()][2];
             }
-            reader.close();
-            reader = new BufferedReader(new FileReader(new File(DATASETS, "gene_expression/array.txt")));
-            BufferedWriter writer0 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/feature_names.txt")));
-            BufferedWriter writer1 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/train_data.txt")));
-            BufferedWriter writer2 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/train_label.txt")));
-            BufferedWriter writer3 = new BufferedWriter(new FileWriter(new File(TMP, "gene_expression/train_data.txt")));
-            line = reader.readLine();
-            String[] words = line.split("\t");
-            for (int i = 4; i < words.length; i++) {
-                if (!words[i].equals("")) {
-                    writer0.write(words[i] + ":" + "\t" + "continuous." + "\n");
-                }
-            }
-            writer0.close();
-            int i = 0;
-            while ((line = reader.readLine()) != null) {
-                if (!missing_row.contains(i)) {
-                    words = line.split("\t");
-                    for (int k = 2; k < feature_num - 2; k++) {
-                        if (!missing_col.contains(k)) {
-                            writer1.write(words[k] + ",");
-                            writer3.write(Double.toString(Double.parseDouble(words[k])) + ",");
-                        }
+            for (int i = 0; i < data.getNumFeatures(); i++) {
+                if (stats == null) {
+                    for (int j = 0; j < data.getColumn(i).size(); j++) {
+                        stats[i][0] += data.getColumn(i).get(j);
                     }
-                    writer1.write(words[feature_num - 2] + "\n");
-                    writer3.write(Double.toString(Double.parseDouble(words[feature_num - 2])) + "\n");
-                    if (words.length == feature_num) {
-                        writer2.write(words[feature_num - 1] + "\n");
+                    stats[i][0] = stats[i][0] * 1.0 / data.getColumn(i).size();
+                    for (int j = 0; j < data.getColumn(i).size(); j++) {
+                        stats[i][1] += Math.pow((data.getColumn(i).get(j) - stats[i][0]), 2);
                     }
-                    else {
-                        writer2.write("0\n");
-                    }
+                    stats[i][1] = Math.sqrt(stats[i][1]);
                 }
-                i++;
-            }
-            reader.close();
-            writer1.close();
-            writer2.close();
-            writer3.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e1) {
+                if (stats[i][1] == 0) {
+                    continue;
                 }
-            }
-        }
-    }
-
-    static void saveTrainData()throws Exception{
-        List<String> featureNames = loadFeatures();
-        ClfDataSet data = StandardFormat.loadClfDataSet(6, new File(DATASETS, "gene_expression/log_train_data.txt"),
-                new File(DATASETS, "gene_expression/train_label.txt"), ",", DataSetType.CLF_DENSE, false);
-        for (int i = 0; i < data.getNumFeatures(); i++) {
-            Vector temp = data.getColumn(i).normalize();
-            for (int j = 0; j < data.getNumDataPoints(); j++) {
-                data.setFeatureValue(j, i, temp.get(j));
+                for (int j = 0; j < data.getNumDataPoints(); j++) {
+                    data.setFeatureValue(j, i, (data.getColumn(i).get(j) - stats[i][0]) * 1.0 / stats[i][1]);
+                }
             }
         }
 
         DataSetUtil.setFeatureNames(data, featureNames);
-        String[] extLabels = {"0","1","2","3","4","5"};
+        String[] extLabels = {"0","1"};
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
 
         data.setLabelTranslator(labelTranslator);
-        TRECFormat.save(data, new File(TMP, "gene_expression/train.trec"));
+        return data;
     }
 
-    static List<String> loadFeatures() throws IOException {
-        List<String> names = new ArrayList<String>();
-        try(BufferedReader br = new BufferedReader(new FileReader(new File(DATASETS, "gene_expression/feature_names.txt")))
-        ){
-            String line;
-            while((line = br.readLine())!=null){
-                String name = line.split(Pattern.quote(":"))[0];
-                names.add(name);
-            }
-        }
-        return names;
-    }
-
-    private static void produce_train(double p) throws Exception{
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "gene_expression/trec_data/train.trec"),
-                DataSetType.CLF_DENSE, true);
-
-        DataSetUtil.allowMissingValue(dataSet);
-
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int j=0;j<dataSet.getNumFeatures();j++){
-                if (Math.random()<p){
-                    //todo change back
-//                    dataSet.setFeatureValue(i,j,0);
-                    dataSet.setFeatureValue(i,j,Double.NaN);
-                }
-            }
-        }
-        File folder = new File(TMP,"gene_expression/missing_value/"+p+"_missing");
-
-        TRECFormat.save(dataSet,new File(folder,"train.trec"));
-    }
-
+    /*
+     * Compute normalized Euclidean distance
+     */
     public static double euclidean(Vector v1, Vector v2, int i) {
         double distance = 0;
+        int num = 0;
         for (int j = 0; j < v1.size(); j++) {
             if (i != j && !Double.isNaN(v1.get(j)) && !Double.isNaN(v2.get(j))) {
                 distance += Math.pow((v1.get(j) - v2.get(j)), 2.0);
+                num++;
             }
         }
-        return Math.sqrt(distance);
+        return Math.sqrt(distance) / num;
     }
 
-    public static void impute(ClfDataSet dataSet) throws Exception{
-        ClfDataSet completeDataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "gene_expression/trec_data/train.trec"),
-                DataSetType.CLF_DENSE, true);
+    /*
+     * Input dataSet to be imputed, completeDataSet to calculate rmse, and trainDataSet to compute distance
+     * Output imputed dataSet
+     */
+    public ClfDataSet impute(ClfDataSet dataSet, ClfDataSet completeDataSet, ClfDataSet trainDataSet) throws Exception{
         double rms = 0;
         double total = 0;
         ArrayList<Double> new_values = new ArrayList<Double>();
@@ -164,10 +82,10 @@ public class KNNImpute {
                 if (Double.isNaN(dataSet.getRow(i).get(j))) {
                     ArrayList<Double> distance = new ArrayList<Double>();
                     ArrayList<Double> value = new ArrayList<Double>();
-                    for (int k = 0; k < dataSet.getNumDataPoints(); k++) {
-                        if (i != k && !Double.isNaN(dataSet.getRow(k).get(j))) {
-                            distance.add(euclidean(dataSet.getRow(i), dataSet.getRow(k), j));
-                            value.add(dataSet.getRow(k).get(j));
+                    for (int k = 0; k < trainDataSet.getNumDataPoints(); k++) {
+                        if (i != k && !Double.isNaN(trainDataSet.getRow(k).get(j))) {
+                            distance.add(euclidean(dataSet.getRow(i), trainDataSet.getRow(k), j));
+                            value.add(trainDataSet.getRow(k).get(j));
                         }
                     }
                     Integer[] indexes = new Integer[distance.size()];
@@ -197,27 +115,14 @@ public class KNNImpute {
                 if (Double.isNaN(dataSet.getRow(i).get(j))) {
                     dataSet.setFeatureValue(i, j, new_values.get(k));
                     k++;
-                    rms += Math.pow(dataSet.getRow(i).get(j) - completeDataSet.getRow(i).get(j), 2);
-//                    rms += Math.pow(Math.exp(dataSet.getRow(i).get(j)) - Math.exp(completeDataSet.getRow(i).get(j)), 2);
+                    rms += Math.pow(dataSet.getRow(i).get(j) -
+                            completeDataSet.getRow(i).get(j), 2);
                 }
                 total += dataSet.getRow(i).get(j);
-//                total += Math.exp(dataSet.getRow(i).get(j));
             }
         }
         double rmse = Math.sqrt(rms / k) / (total / (dataSet.getNumDataPoints() * dataSet.getNumFeatures()));
         System.out.println("RMSE: " + rmse);
-    }
-    public static void main(String[] args) throws Exception{
-//        loadDataSet();
-//        saveTrainData();
-//        double[] percentages = {0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9};
-//        for (double p: percentages){
-//            produce_train(p);
-//        }
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/gene_expression/missing_value/0.2_missing/train.trec"),
-                DataSetType.CLF_SPARSE, false);
-        impute(dataSet);
-        TRECFormat.save(dataSet, new File(TMP, "/gene_expression/impute/0.2_missing/train.trec"));
-        System.out.println();
+        return dataSet;
     }
 }
