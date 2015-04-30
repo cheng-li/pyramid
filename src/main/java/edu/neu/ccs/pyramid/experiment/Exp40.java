@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.data_formatter.amazon_review.IndexBuilder;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -30,6 +32,15 @@ public class Exp40 {
         String fileName = config.getString("input.file");
         String indexName = config.getString("index.name");
 
+
+        String taggerModel = config.getString("input.taggerModel");
+
+        Properties props = new Properties();
+        props.setProperty("annotators", "tokenize, ssplit, pos, lemma");
+        props.setProperty("pos.model",taggerModel);
+        StanfordCoreNLP nlp = new StanfordCoreNLP(props);
+
+
         Node node = nodeBuilder().client(true).clusterName(config.getString("index.clusterName")).node();
         Client client = node.client();
         int id = 0;
@@ -44,7 +55,7 @@ public class Exp40 {
                 } else {
                     if (IndexBuilder.accept(paragragh)){
                         System.out.println("id = "+ id);
-                        XContentBuilder builder = IndexBuilder.getBuilder(paragragh, id);
+                        XContentBuilder builder = IndexBuilder.getBuilder(paragragh, nlp,id);
                         IndexResponse response = client.prepareIndex(indexName, "document",""+id)
                                 .setSource(builder)
                                 .execute()
