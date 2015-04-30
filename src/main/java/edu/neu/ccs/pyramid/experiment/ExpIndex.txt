@@ -103,3 +103,5 @@
   87: index congressional bill dataset
   88: spanNot query based on bigrams
   89: index recon
+  90: elasticnet logistic regression, fix regularization first
+  91: select a subset of features based on feature types
