@@ -242,7 +242,8 @@ preBody = '''
 <tr>
 <td align="center" width="10%"><b>id & labels</b></td>
 <td align="center" width="10%"><b>predictions</b></td>
-<td align="center" width="10%"><b>predictedRanking</b></td>
+
+<td align="center" width="10%"><b>predictedRanking</b></td>
 <td align="center" width="20%"><b>Text</b></td>
 <td align="center" width="15%"><b>TP</b></td>
 <td align="center" width="15%"><b>FP</b></td>
@@ -321,7 +322,7 @@ function highlightText(rownum) {
 	var table = document.getElementById("mytable");
 	var rows = table.getElementsByTagName('tr');
 	var cols = rows[rownum[0]].children;
-	var cell = cols[2];
+	var cell = cols[3];
 
 	var text = cell.innerHTML;
 	text = text.replace(/<font color=/g, "<font-color=");
