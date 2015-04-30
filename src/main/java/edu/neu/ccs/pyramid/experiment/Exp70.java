@@ -15,7 +15,9 @@ import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,6 +69,11 @@ public class Exp70 {
                 double acc = Accuracy.accuracy(logisticRegression, testSet);
                 Performance performance = new Performance(regularization,l1ratio,acc);
                 performanceList.add(performance);
+                System.out.println("l1Ratio = "+l1ratio);
+                System.out.println("regularization = "+regularization);
+                System.out.println("accuracy = "+acc);
+                System.out.println("number of used features in all classes = "+
+                        LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
             }
         }
 
@@ -90,33 +97,59 @@ public class Exp70 {
                     LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
 
             System.out.println(LogisticRegressionInspector.checkNgramUsage(logisticRegression));
+
         }
 
         System.out.println("**********************");
         System.out.println("overall best one");
         Performance best = performanceList.stream()
                 .max(Comparator.comparing(Performance::getAccuracy)).get();
-        double regularization = best.regularization;
-        double l1ratio = best.l1Ratio;
-        File outputFolder = new File(new File(config.getString("output.folder"),""+l1ratio),""+regularization);
-        File serFile = new File(outputFolder,"model");
-        LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
+        double bestRegularization = best.regularization;
+        double bestL1ratio = best.l1Ratio;
+        File bestOutputFolder = new File(new File(config.getString("output.folder"),""+bestL1ratio),""+bestRegularization);
+        File bestSerFile = new File(bestOutputFolder,"model");
+        LogisticRegression bestLogisticRegression = LogisticRegression.deserialize(bestSerFile);
         System.out.println("regularization = "+best.regularization);
         System.out.println("l1Ratio = "+best.l1Ratio);
         System.out.println("accuracy = "+best.accuracy);
         System.out.println("number of used features in each class = "+
-                Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
+                Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(bestLogisticRegression)));
 
         System.out.println("number of used features in all classes = "+
-                LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
-        System.out.println(LogisticRegressionInspector.checkNgramUsage(logisticRegression));
+                LogisticRegressionInspector.numOfUsedFeaturesCombined(bestLogisticRegression));
+        System.out.println(LogisticRegressionInspector.checkNgramUsage(bestLogisticRegression));
 
         File bestModelFolder = new File(config.getString("output.folder"),"best");
 
         bestModelFolder.mkdirs();
-        FileUtils.copyFileToDirectory(serFile,bestModelFolder);
+        FileUtils.copyFileToDirectory(bestSerFile,bestModelFolder);
+
+
+
+
+        BufferedWriter bw = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),"stats")));
+        for (double regularization: regularizations){
+
+            File outputFolder = new File(new File(config.getString("output.folder"),""+bestL1ratio),""+regularization);
+            File serFile = new File(outputFolder,"model");
+            LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
+            double acc = Accuracy.accuracy(logisticRegression, testSet);
+            bw.write(""+bestL1ratio);
+            bw.write(",");
+            bw.write(""+regularization);
+            bw.write(",");
+            bw.write(""+LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+            bw.write(",");
+            bw.write(""+acc);
+            bw.newLine();
+
+        }
+
+        bw.close();
 
     }
+
+
 
 
     public static void train(Config config) throws Exception{
@@ -169,21 +202,8 @@ public class Exp70 {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, config.getString("input.trainData")),
                 DataSetType.CLF_SPARSE, true);
 
-        ClfDataSet subSet = null;
-        if (config.getBoolean("featureSampling")){
-            if (config.getBoolean("featureSampling.byField")){
-                List<Integer> indices = sampleFeatures(config);
-                subSet = DataSetUtil.sampleFeatures(dataSet, indices);
-            } else if (config.getBoolean("featureSampling.byNumber")){
-                int numFeatures = config.getInt("featureSampling.numFeaturesToUse");
-                subSet = DataSetUtil.sampleFeatures(dataSet, numFeatures);
-            }
-        } else {
-            subSet = dataSet;
-        }
-
-        System.out.println(subSet.getMetaInfo());
-        return subSet;
+        System.out.println(dataSet.getMetaInfo());
+        return dataSet;
     }
 
 
@@ -191,50 +211,13 @@ public class Exp70 {
         String input = config.getString("input.folder");
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, config.getString("input.testData")),
                 DataSetType.CLF_SPARSE, true);
-
-        ClfDataSet subSet = null;
-        if (config.getBoolean("featureSampling")){
-            if (config.getBoolean("featureSampling.byField")){
-                List<Integer> indices = sampleFeatures(config);
-                subSet = DataSetUtil.sampleFeatures(dataSet, indices);
-            } else if (config.getBoolean("featureSampling.byNumber")){
-                int numFeatures = config.getInt("featureSampling.numFeaturesToUse");
-                subSet = DataSetUtil.sampleFeatures(dataSet, numFeatures);
-            }
-        } else {
-            subSet = dataSet;
-        }
-
-        System.out.println(subSet.getMetaInfo());
-        return subSet;
+        System.out.println(dataSet.getMetaInfo());
+        return dataSet;
     }
 
-    private static List<Integer> sampleFeatures(Config config) throws Exception{
-        String input = config.getString("input.folder");
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, config.getString("input.trainData")),
-                DataSetType.CLF_SPARSE, true);
-        Set<String> fields = new HashSet<>(config.getStrings("featureSampling.fields"));
-        Set<String> fieldPrefixes = new HashSet<>(config.getStrings("featureSampling.fieldPrefixes"));
 
-        FeatureList featureList = dataSet.getFeatureList();
-        List<Integer> collect = featureList.getAll().stream().filter(feature -> {
-                    boolean cond1 = !(feature instanceof Ngram);
-                    boolean cond2 = (feature instanceof Ngram) && fields.contains(((Ngram) feature).getField());
-                    boolean cond3 = (feature instanceof Ngram) && matchPrefix((((Ngram) feature).getField()), fieldPrefixes);
-                    return cond1 || cond2 || cond3;
-                }
-        ).map(feature -> feature.getIndex()).collect(Collectors.toList());
-        return collect;
-    }
 
-    private static boolean matchPrefix(String field, Set<String> prefixes){
-        for (String prefix: prefixes){
-            if (field.startsWith(prefix)){
-                return true;
-            }
-        }
-        return false;
-    }
+
 
 
     private static class Performance{
