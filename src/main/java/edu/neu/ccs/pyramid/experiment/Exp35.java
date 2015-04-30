@@ -385,9 +385,10 @@ public class Exp35 {
         stopWatch.start();
         File file = new File(config.getString("archive.folder"),"allFeatures.ser");
         Set<Ngram> ngrams= (Set) Serialization.deserialize(file);
-        String labelFields = config.getString("index.labelField");
+        String labelField = config.getString("index.labelField");
+        long[] labelDistribution = LabelDistribution.getLabelDistribution(index,labelField,ids,labelTranslator);
         List<FeatureDistribution> distributions = ngrams.stream().parallel()
-                .map(ngram -> new FeatureDistribution(ngram, index, labelFields, ids, labelTranslator))
+                .map(ngram -> new FeatureDistribution(ngram, index, labelField, ids, labelTranslator,labelDistribution))
                 .collect(Collectors.toList());
         Serialization.serialize(distributions,new File(config.getString("archive.folder"),"distributions.ser"));
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"distributions.txt")));

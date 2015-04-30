@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.feature;
 
+import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
+
 import java.util.List;
 
 /**
@@ -9,6 +11,7 @@ public class TopFeatures {
     private int classIndex;
     private String className;
     private List<Feature> topFeatures;
+    private List<FeatureDistribution> featureDistributions;
 
     public TopFeatures() {
     }
@@ -35,5 +38,13 @@ public class TopFeatures {
 
     public void setTopFeatures(List<Feature> topFeatures) {
         this.topFeatures = topFeatures;
+    }
+
+    public List<FeatureDistribution> getFeatureDistributions() {
+        return featureDistributions;
+    }
+
+    public void setFeatureDistributions(List<FeatureDistribution> featureDistributions) {
+        this.featureDistributions = featureDistributions;
     }
 }

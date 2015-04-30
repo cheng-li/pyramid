@@ -8,7 +8,9 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.feature.Ngram;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,7 +29,7 @@ public class Exp91 {
 
         (new File(config.getString("output.folder"))).mkdirs();
         sampleTrain(config);
-//        sampleTest(config);
+        sampleTest(config);
 
     }
 
@@ -36,7 +38,7 @@ public class Exp91 {
 
         (new File(config.getString("output.folder"))).mkdirs();
         sampleTrain(config);
-//        sampleTest(config);
+        sampleTest(config);
     }
 
 
@@ -44,9 +46,11 @@ public class Exp91 {
     static ClfDataSet sample(Config config, ClfDataSet dataSet){
         int maxN = config.getInt("maxN");
         int maxSlop = config.getInt("maxSlop");
-        //todo field filter
+        Set<String> fields = new HashSet<>(config.getStrings("fields"));
+
         List<Integer> list = dataSet.getFeatureList().getAll().stream()
-                .filter(feature -> ((Ngram)feature).getN()<=maxN&&((Ngram)feature).getSlop()<=maxSlop)
+                .filter(feature -> ((Ngram)feature).getN()<=maxN&&((Ngram)feature).getSlop()<=maxSlop
+                &&fields.contains(((Ngram) feature).getField()))
                 .map(feature -> feature.getIndex()).collect(Collectors.toList());
 
         ClfDataSet subSet = DataSetUtil.sampleFeatures(dataSet,list);
@@ -70,4 +74,6 @@ public class Exp91 {
         String output = config.getString("output.folder");
         TRECFormat.save(subSet,new File(output, config.getString("output.testData")));
     }
+
+
 }

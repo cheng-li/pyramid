@@ -1,5 +1,10 @@
 package edu.neu.ccs.pyramid.feature_selection;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.feature.Feature;
@@ -9,29 +14,38 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
 
 /**
  * Created by chengli on 4/25/15.
  */
+@JsonSerialize(using = FeatureDistribution.Serializer.class)
 public class FeatureDistribution implements Serializable{
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
     private Feature feature;
     private long totalCount;
-    private long[] classCounts;
+    private long[] occurInEach;
+    private long[] labelDistribution;
+    private LabelTranslator labelTranslator;
 
 
 
     public FeatureDistribution(Ngram ngram, ESIndex index,
                                String labelField, String[] ids,
-                               LabelTranslator labelTranslator) {
+                               LabelTranslator labelTranslator,
+                               long[] labelDistribution) {
         this.feature = ngram;
+        this.labelDistribution = labelDistribution;
+        this.labelTranslator = labelTranslator;
         int numClasses = labelTranslator.getNumClasses();
-        this.classCounts = new long[numClasses];
+        this.occurInEach = new long[numClasses];
 
         String field = ngram.getField();
         int slop = ngram.getSlop();
@@ -62,7 +76,7 @@ public class FeatureDistribution implements Serializable{
             String extLabel = bucket.getKey();
             long count = bucket.getDocCount();
             int classIndex = labelTranslator.toIntLabel(extLabel);
-            this.classCounts[classIndex] = count;
+            this.occurInEach[classIndex] = count;
         }
     }
 
@@ -71,7 +85,7 @@ public class FeatureDistribution implements Serializable{
                                LabelTranslator labelTranslator) {
         this.feature = ngram;
         int numClasses = labelTranslator.getNumClasses();
-        this.classCounts = new long[numClasses];
+        this.occurInEach = new long[numClasses];
 
         Ngram include = ngram.getInclude();
         String field1 = include.getField();
@@ -124,16 +138,16 @@ public class FeatureDistribution implements Serializable{
             String extLabel = bucket.getKey();
             long count = bucket.getDocCount();
             int classIndex = labelTranslator.toIntLabel(extLabel);
-            this.classCounts[classIndex] = count;
+            this.occurInEach[classIndex] = count;
         }
     }
 
     public void setClassCount(int classIndex, long count){
-        classCounts[classIndex] = count;
+        occurInEach[classIndex] = count;
     }
 
     public long getClassCount(int classIndex){
-        return classCounts[classIndex];
+        return occurInEach[classIndex];
     }
 
     public long getTotalCount() {
@@ -148,13 +162,49 @@ public class FeatureDistribution implements Serializable{
         return feature;
     }
 
+    public void setFeature(Feature feature) {
+        this.feature = feature;
+    }
+
+    public long[] getOccurInEach() {
+        return occurInEach;
+    }
+
+    public void setOccurInEach(long[] occurInEach) {
+        this.occurInEach = occurInEach;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("NgramClassDistribution{");
         sb.append("feature=").append(feature);
         sb.append(", totalCount=").append(totalCount);
-        sb.append(", classCounts=").append(Arrays.toString(classCounts));
+        sb.append(", occurInEach=").append(Arrays.toString(occurInEach));
         sb.append('}');
         return sb.toString();
+    }
+
+    public List<String> pretty(){
+        List<String> list = new ArrayList<>();
+        for (int i=0;i<occurInEach.length;i++){
+            StringBuilder sb = new StringBuilder();
+            sb.append(labelTranslator.toExtLabel(i)).append(":");
+            sb.append(occurInEach[i]).append("/").append(labelDistribution[i]);
+            list.add(sb.toString());
+        }
+        return list;
+    }
+
+    public static class Serializer extends JsonSerializer<FeatureDistribution> {
+        @Override
+        public void serialize(FeatureDistribution distribution, JsonGenerator jsonGenerator,
+                              SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeObjectField("feature",distribution.feature);
+            jsonGenerator.writeNumberField("totalCount", distribution.totalCount);
+            jsonGenerator.writeObjectField("occurrence",distribution.pretty());
+            jsonGenerator.writeEndObject();
+
+        }
     }
 }

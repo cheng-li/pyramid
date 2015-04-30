@@ -17,7 +17,9 @@ public class MultiLabelPredictionAnalysis {
     private List<Integer> internalPrediction;
     private List<String> prediction;
     private double probForPredictedLabels;
+    private List<String> predictedRanking;
     private List<ClassScoreCalculation> classScoreCalculations;
+
 
     public MultiLabelPredictionAnalysis() {
     }
@@ -92,5 +94,13 @@ public class MultiLabelPredictionAnalysis {
 
     public void setProbForPredictedLabels(double probForPredictedLabels) {
         this.probForPredictedLabels = probForPredictedLabels;
+    }
+
+    public List<String> getPredictedRanking() {
+        return predictedRanking;
+    }
+
+    public void setPredictedRanking(List<String> predictedRanking) {
+        this.predictedRanking = predictedRanking;
     }
 }

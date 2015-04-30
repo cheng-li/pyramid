@@ -9,12 +9,14 @@ import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
+import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -214,9 +216,10 @@ public class Exp14 {
 //        System.out.println("macro-averaged measure on training set:");
 //        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
         if (config.getBoolean("verify.topFeatures")){
+            Collection<FeatureDistribution> distributions = (Collection)Serialization.deserialize(new File(config.getString("input.folder"),"distributions.ser"));
             int limit = config.getInt("verify.topFeatures.limit");
             List<TopFeatures> topFeaturesList = IntStream.range(0,dataSet.getNumClasses())
-                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit))
+                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit,distributions))
                     .collect(Collectors.toList());
             ObjectMapper mapper = new ObjectMapper();
             String file = config.getString("verify.topFeatures.file");

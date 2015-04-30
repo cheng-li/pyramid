@@ -8,7 +8,10 @@ import edu.neu.ccs.pyramid.elasticsearch.*;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
+import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.util.Sampling;
+import edu.neu.ccs.pyramid.util.Serialization;
+import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
@@ -245,6 +248,11 @@ public class Exp12 {
         }
 
         bufferedWriter.close();
+
+        //for serialization
+        Set<Ngram> uniques = new HashSet<>();
+        uniques.addAll(allNgrams.elementSet());
+        Serialization.serialize(uniques,new File(config.getString("archive.folder"),"allFeatures.ser"));
         return allNgrams.elementSet();
     }
 
@@ -408,6 +416,29 @@ public class Exp12 {
 
     }
 
+    static void getNgramDistributions(Config config, ESIndex index, String[] ids,LabelTranslator labelTranslator ) throws Exception{
+        System.out.println("generating ngram distributions");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        File file = new File(config.getString("archive.folder"),"allFeatures.ser");
+        Set<Ngram> ngrams= (Set) Serialization.deserialize(file);
+        String labelField = config.getString("index.labelField");
+        long[] labelDistribution = LabelDistribution.getLabelDistribution(index,labelField,ids,labelTranslator);
+        List<FeatureDistribution> distributions = ngrams.stream().parallel()
+                .map(ngram -> new FeatureDistribution(ngram, index, labelField, ids, labelTranslator,labelDistribution))
+                .collect(Collectors.toList());
+        Serialization.serialize(distributions,new File(config.getString("archive.folder"),"distributions.ser"));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("archive.folder"),"distributions.txt")));
+        for (FeatureDistribution distribution: distributions){
+            bufferedWriter.write(distribution.toString());
+            bufferedWriter.newLine();
+        }
+
+        bufferedWriter.close();
+        System.out.println("done");
+        System.out.println("time spent on generating distributions = "+stopWatch);
+    }
+
     static void build(Config config, MultiLabelIndex index) throws Exception{
         int numDocsInIndex = index.getNumDocs();
         String[] trainIndexIds = sampleTrain(config,index);
@@ -421,6 +452,8 @@ public class Exp12 {
         }
 
         Set<Ngram> ngrams = gather(config,index,trainIndexIds);
+        getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
+
         addNgramFeatures(featureList,ngrams);
 
         MultiLabelClfDataSet trainDataSet = loadTrainData(config,index,featureList, trainIdTranslator, trainLabelTranslator);
