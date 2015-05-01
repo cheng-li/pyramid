@@ -43,6 +43,10 @@ public class Exp70 {
             test(config);
         }
 
+        if (config.getBoolean("plot")){
+            plot(config);
+        }
+
 
     }
 
@@ -127,14 +131,28 @@ public class Exp70 {
 
 
 
-        BufferedWriter bw = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),"stats")));
+
+
+    }
+
+    public static void plot(Config config) throws Exception{
+        ClfDataSet testSet = loadTest(config);
+
+        Comparator<Double> comparator = Comparator.comparing(Double::doubleValue);
+        List<Double> regularizations = Grid.logUniform(config.getDouble("train.regularization.min"),
+                config.getDouble("train.regularization.max"), config.getInt("train.regularization.size"))
+                .stream().sorted(comparator.reversed()).collect(Collectors.toList());
+
+
+        double l1Ratio = config.getDouble("plot.l1Ratio");
+        BufferedWriter bw = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),"stats_"+l1Ratio)));
         for (double regularization: regularizations){
 
-            File outputFolder = new File(new File(config.getString("output.folder"),""+bestL1ratio),""+regularization);
+            File outputFolder = new File(new File(config.getString("output.folder"),""+l1Ratio),""+regularization);
             File serFile = new File(outputFolder,"model");
             LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
             double acc = Accuracy.accuracy(logisticRegression, testSet);
-            bw.write(""+bestL1ratio);
+            bw.write(""+l1Ratio);
             bw.write(",");
             bw.write(""+regularization);
             bw.write(",");
@@ -146,7 +164,6 @@ public class Exp70 {
         }
 
         bw.close();
-
     }
 
 
