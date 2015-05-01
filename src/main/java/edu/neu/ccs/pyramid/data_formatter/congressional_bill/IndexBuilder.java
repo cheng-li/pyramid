@@ -18,10 +18,6 @@ import java.util.Set;
 public class IndexBuilder {
 
 
-
-
-
-
     public static XContentBuilder getBuilder(String docno, String label, String billText, String featureList) throws IOException {
 
         // parsing billText into text and title string from JSON format

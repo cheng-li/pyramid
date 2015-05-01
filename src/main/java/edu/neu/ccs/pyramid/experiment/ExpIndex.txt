@@ -101,3 +101,5 @@
   85: run logistic regression on all trec8 queries
   86: build trec8 index
   87: index congressional bill dataset
+
+  92: index yelp
