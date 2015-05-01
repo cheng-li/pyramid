@@ -10,19 +10,16 @@ import java.io.IOException;
  */
 public class IndexBuilder {
 
-
-    public static XContentBuilder getBuilder(String reviewId, String body, String label) throws IOException {
-
+    public static XContentBuilder createBuilder(String reviewId, String body, String label) throws IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder();
 
         builder.startObject();
-        builder.field("label", label);
-        builder.field("reviweId", reviewId);
+        builder.field("reviewId", reviewId);
         builder.field("body", body);
+        builder.field("label", label);
         builder.endObject();
 
         return builder;
-
     }
 
     public static XContentBuilder createMapping() throws Exception {

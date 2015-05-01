@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 
 import static edu.neu.ccs.pyramid.data_formatter.yelp.IndexBuilder.createMapping;
+import static edu.neu.ccs.pyramid.data_formatter.yelp.IndexBuilder.createBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 
@@ -71,7 +72,7 @@ public class Exp92 {
 
             System.out.println("id : " + id);
 
-            XContentBuilder builder = getBuilder(id, reviewId, body, label);
+            XContentBuilder builder = createBuilder(reviewId, body, label);
             IndexResponse response = client.prepareIndex(indexName, indexDocumentType, ""+id)
                     .setSource(builder)
                     .execute()
