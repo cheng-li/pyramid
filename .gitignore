@@ -2,7 +2,6 @@ out/
 .idea/
 *.iml
 .DS_Store
-lib/
 configs/local.config
 src/main/java/edu/neu/ccs/pyramid/tmp/
 logs/
