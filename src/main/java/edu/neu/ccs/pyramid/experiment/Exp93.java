@@ -19,7 +19,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 /**
  * Created by Rainicy on 5/1/15.
  */
-public class Exp92 {
+public class Exp93 {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
