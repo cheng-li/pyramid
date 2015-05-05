@@ -105,4 +105,7 @@
   89: index recon
   90: elasticnet logistic regression, fix regularization first
   91: select a subset of features based on feature types
-  92: index yelp
+  92: partition train into train/valid
+  93: same as exp70, for tunning
+  94: keep features with mindf
+  95: index yelp
