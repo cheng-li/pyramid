@@ -38,6 +38,9 @@ public class FeatureLoader {
         IntStream.range(0,features.size()).parallel().
                 filter(i -> toHandle[i])
                 .forEach(i-> {
+                    if (i%10000==0){
+                        System.out.println("feature "+i);
+                    }
                     Feature feature = features.get(i);
                     if (feature instanceof CategoricalFeature){
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);

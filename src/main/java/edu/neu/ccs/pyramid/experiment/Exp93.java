@@ -6,11 +6,8 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
-import edu.neu.ccs.pyramid.eval.*;
-import edu.neu.ccs.pyramid.feature.FeatureList;
-import edu.neu.ccs.pyramid.feature.Ngram;
+import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -18,14 +15,17 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * elastic-net logistic regression
- * Created by chengli on 2/25/15.
+ * same as exp70, for tunning
+ * Created by chengli on 5/3/15.
  */
-public class Exp70 {
+public class Exp93 {
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("please specify the config file");
@@ -93,7 +93,7 @@ public class Exp70 {
             File outputFolder = new File(new File(config.getString("output.folder"),""+l1ratio),""+regularization);
             File serFile = new File(outputFolder,"model");
             LogisticRegression logisticRegression = LogisticRegression.deserialize(serFile);
-                    System.out.println("regularization = "+best.regularization);
+            System.out.println("regularization = "+best.regularization);
             System.out.println("accuracy = "+best.accuracy);
             System.out.println("number of used features in each class = "+
                     Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
@@ -127,7 +127,7 @@ public class Exp70 {
         File bestModelFolder = new File(config.getString("output.folder"),"best");
 
         bestModelFolder.mkdirs();
-        FileUtils.copyFileToDirectory(bestSerFile,bestModelFolder);
+        FileUtils.copyFileToDirectory(bestSerFile, bestModelFolder);
 
 
 
@@ -147,10 +147,7 @@ public class Exp70 {
 
 
 
-        List<Double> l1Ratios = new ArrayList<>();
-        l1Ratios.add(0.0);
-        l1Ratios.add(0.1);
-        l1Ratios.add(1.0);
+        List<Double> l1Ratios = config.getDoubles("plot.l1Ratio");
 
         for (double l1Ratio: l1Ratios){
             BufferedWriter bw = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),"stats_"+l1Ratio)));

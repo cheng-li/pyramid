@@ -137,6 +137,18 @@ public class LogisticRegressionInspector {
 
     }
 
+    public static Set<Integer> usedFeaturesCombined(LogisticRegression logisticRegression){
+        Set<Integer> usedFeatures = new HashSet<>();
+        for (int k=0;k<logisticRegression.getNumClasses();k++){
+            Vector vector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+            for (Vector.Element element: vector.nonZeroes()){
+                usedFeatures.add(element.index());
+            }
+        }
+        return usedFeatures;
+
+    }
+
     public static String checkNgramUsage(LogisticRegression logisticRegression){
         StringBuilder sb = new StringBuilder();
         FeatureList featureList = logisticRegression.getFeatureList();

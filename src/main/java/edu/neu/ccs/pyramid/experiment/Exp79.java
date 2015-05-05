@@ -14,13 +14,17 @@ import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.util.Serialization;
+import org.apache.mahout.math.Vector;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 /**
@@ -46,6 +50,15 @@ public class Exp79 {
 
         if (config.getBoolean("test")){
             test(config);
+        }
+
+        if (config.getBoolean("count")){
+            count(config);
+        }
+
+
+        if (config.getBoolean("weight")){
+            weight(config);
         }
     }
 
@@ -179,6 +192,93 @@ public class Exp79 {
         ObjectMapper mapper = new ObjectMapper();
         String file = config.getString("verify.analyze.file");
         mapper.writeValue(new File(config.getString("output.folder"),file), predictionAnalysisList);
+    }
+
+    public static void count(Config config) throws Exception{
+        System.out.println("count");
+        LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(config.getString("input.model")));
+
+        Set<Integer> selected = LogisticRegressionInspector.usedFeaturesCombined(logisticRegression);
+
+        List<Ngram> ngrams = logisticRegression.getFeatureList().getAll().stream()
+                .filter(feature -> selected.contains(feature.getIndex()))
+                .filter(feature -> feature instanceof Ngram)
+                .map(feature -> (Ngram) feature).collect(Collectors.toList());
+
+        int maxN = ngrams.stream().mapToInt(Ngram::getN).max().getAsInt();
+        int maxSlop = ngrams.stream().mapToInt(Ngram::getSlop).max().getAsInt();
+        double[][] counts = new double[maxN][maxSlop+1];
+        ngrams.stream().forEach(ngram ->{
+            int n = ngram.getN();
+            int slop = ngram.getSlop();
+            counts[n-1][slop] += 1;
+        });
+
+        double total = ngrams.size();
+        System.out.println("total = "+total);
+        for (int i=0;i<maxN;i++){
+            for (int j=0;j<maxSlop+1;j++){
+                counts[i][j] /= total;
+            }
+        }
+
+        for (int i=0;i<maxN;i++){
+            for (int j=0;j<maxSlop+1;j++){
+                System.out.println("n="+(i+1)+", slop="+j+", p="+counts[i][j]);
+            }
+        }
+
+
+    }
+
+
+    public static void weight(Config config) throws Exception{
+        System.out.println("weight");
+        LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(config.getString("input.model")));
+
+        List<Ngram> ngrams = logisticRegression.getFeatureList().getAll().stream()
+                .map(feature-> (Ngram)feature).collect(Collectors.toList());
+
+        int maxN = ngrams.stream().mapToInt(Ngram::getN).max().getAsInt();
+        int maxSlop = ngrams.stream().mapToInt(Ngram::getSlop).max().getAsInt();
+        double[][] counts = new double[maxN][maxSlop+1];
+
+
+        for (int k=0;k<logisticRegression.getNumClasses();k++){
+            Vector vector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+            for (Vector.Element element: vector.nonZeroes()){
+                int featureIndex = element.index();
+                double weight = element.get();
+                Ngram ngram = ngrams.get(featureIndex);
+                int n = ngram.getN();
+                int slop = ngram.getSlop();
+                counts[n-1][slop] += Math.abs(weight);
+            }
+        }
+
+
+        double total = 0;
+
+        for (int i=0;i<maxN;i++){
+            for (int j=0;j<maxSlop+1;j++){
+                total+= counts[i][j];
+            }
+        }
+
+        System.out.println("total = "+total);
+        for (int i=0;i<maxN;i++){
+            for (int j=0;j<maxSlop+1;j++){
+                counts[i][j] /= total;
+            }
+        }
+
+        for (int i=0;i<maxN;i++){
+            for (int j=0;j<maxSlop+1;j++){
+                System.out.println("n="+(i+1)+", slop="+j+", p="+counts[i][j]);
+            }
+        }
+
+
     }
 
 
