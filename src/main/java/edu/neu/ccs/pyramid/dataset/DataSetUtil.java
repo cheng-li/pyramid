@@ -334,6 +334,141 @@ public class DataSetUtil {
         return sample;
     }
 
+
+    /**
+     * assuming they have different feature sets
+     * @param dataSet1
+     * @param dataSet2
+     * @return
+     */
+    public static ClfDataSet concatenateByColumn(ClfDataSet dataSet1, ClfDataSet dataSet2){
+        int numDataPoints = dataSet1.getNumDataPoints();
+        int numFeatures1 = dataSet1.getNumFeatures();
+        int numFeatures2 = dataSet2.getNumFeatures();
+        int numFeatures = numFeatures1 + numFeatures2;
+        ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(dataSet1.getNumClasses())
+                .dense(dataSet1.isDense())
+                .missingValue(dataSet1.hasMissingValue())
+                .build();
+
+        int featureIndex = 0;
+        for (int j=0;j<numFeatures1;j++){
+            Vector vector = dataSet1.getColumn(j);
+            for (Vector.Element element: vector.nonZeroes()){
+                int i = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(i,featureIndex,value);
+            }
+            featureIndex += 1;
+        }
+
+
+        for (int j=0;j<numFeatures2;j++){
+            Vector vector = dataSet1.getColumn(j);
+            for (Vector.Element element: vector.nonZeroes()){
+                int i = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(i,featureIndex,value);
+            }
+            featureIndex += 1;
+        }
+
+        int[] labels = dataSet1.getLabels();
+        for (int i=0;i<numDataPoints;i++){
+            dataSet.setLabel(i,labels[i]);
+        }
+
+        FeatureList featureList = new FeatureList();
+        for (Feature feature: dataSet1.getFeatureList().getAll()){
+            featureList.add(feature);
+        }
+
+        for (Feature feature: dataSet2.getFeatureList().getAll()){
+            featureList.add(feature);
+        }
+
+        dataSet.setFeatureList(featureList);
+
+        dataSet.setLabelTranslator(dataSet1.getLabelTranslator());
+        dataSet.setIdTranslator(dataSet1.getIdTranslator());
+
+        return dataSet;
+    }
+
+
+    public static ClfDataSet concatenateByRow(ClfDataSet dataSet1, ClfDataSet dataSet2){
+        int numDataPoints1 = dataSet1.getNumDataPoints();
+        int numDataPoints2 = dataSet2.getNumDataPoints();
+        int numDataPoints = numDataPoints1 + numDataPoints2;
+        int numFeatures = dataSet1.getNumFeatures();
+
+        ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(dataSet1.getNumClasses())
+                .dense(dataSet1.isDense())
+                .missingValue(dataSet1.hasMissingValue())
+                .build();
+
+
+        int dataIndex = 0;
+        for (int i=0;i<dataSet1.getNumDataPoints();i++){
+            Vector row = dataSet1.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                int j = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(dataIndex,j,value);
+            }
+            dataSet.setLabel(dataIndex,dataSet1.getLabels()[i]);
+            dataIndex+=1;
+        }
+
+        for (int i=0;i<dataSet2.getNumDataPoints();i++){
+            Vector row = dataSet2.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                int j = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(dataIndex,j,value);
+            }
+            dataSet.setLabel(dataIndex,dataSet2.getLabels()[i]);
+            dataIndex+=1;
+        }
+
+        dataSet.setFeatureList(dataSet1.getFeatureList());
+        dataSet.setLabelTranslator(dataSet1.getLabelTranslator());
+        //id translator is not set
+
+        return dataSet;
+    }
+
+    /**
+     *
+     * @param dataSet
+     * @param numFolds
+     * @param foldIndices 1 - numfolds
+     * @return
+     */
+    public static ClfDataSet sampleByFold(ClfDataSet dataSet, int numFolds, Set<Integer> foldIndices){
+        for (int fold: foldIndices){
+            boolean con = fold>=1 && fold<=numFolds;
+            if (! con){
+                throw new IllegalArgumentException("should have fold>=1 && fold<=numFolds");
+            }
+        }
+
+        int numData = dataSet.getNumDataPoints();
+        List<Integer> keep = new ArrayList<>();
+        for (int i=0;i<numData;i++){
+            int rem = i%numFolds;
+            if (foldIndices.contains(rem+1)){
+                keep.add(i);
+            }
+        }
+
+        return sampleData(dataSet,keep);
+    }
+
     /**
      *
      * @param clfDataSet

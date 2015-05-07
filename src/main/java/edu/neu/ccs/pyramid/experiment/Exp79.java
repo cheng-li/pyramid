@@ -9,6 +9,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.SpanNotNgram;
@@ -68,6 +69,8 @@ public class Exp79 {
                 DataSetType.CLF_SPARSE, true);
 
         LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(config.getString("input.model")));
+
+        System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
 
         if (config.getBoolean("verify.topFeatures")) {
             int limit = config.getInt("verify.topFeatures.limit");
@@ -288,6 +291,9 @@ public class Exp79 {
                 DataSetType.CLF_SPARSE, true);
 
         LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(config.getString("input.model")));
+
+        System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
+
         List<Integer> candidates = new ArrayList<>();
         int[] prediction = logisticRegression.predict(dataSet);
         int[] labels = dataSet.getLabels();

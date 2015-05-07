@@ -72,7 +72,7 @@ public class Exp35 {
     static String[] sampleTrain(Config config, ESIndex index, Set<String> duplicate){
         int numDocsInIndex = index.getNumDocs();
         String[] ids = null;
-
+//todo fix
         if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
             String splitField = config.getString("index.splitField");
             List<String> train = IntStream.range(0, numDocsInIndex).parallel()
@@ -84,6 +84,9 @@ public class Exp35 {
             int numFolds = config.getInt("split.random.numFolds");
             ids = IntStream.range(0, numDocsInIndex).parallel()
                     .filter(i -> i % numFolds != 0).mapToObj(i -> ""+i).toArray(String[]::new);
+        } else if (config.getString("split.fashion").equalsIgnoreCase("small")){
+            ids = IntStream.range(0, numDocsInIndex).parallel()
+                    .filter(i -> i % 10== 0).mapToObj(i -> ""+i).toArray(String[]::new);
         } else {
             throw new RuntimeException("illegal split fashion");
         }
