@@ -26,13 +26,13 @@ public class Exp99 {
         Config config = new Config(args[0]);
         System.out.println(config);
 
-        (new File(config.getString("output.folder"))).mkdirs();
+//        (new File(config.getString("output.folder"))).mkdirs();
 
         List<Double> ridgeAccs = new ArrayList<>();
         List<Double> elasticAccs = new ArrayList<>();
         List<Double> lassoAccs = new ArrayList<>();
         for (int fold = 1;fold<=5;fold++){
-            train(config,fold);
+//            train(config,fold);
             test(config,ridgeAccs,elasticAccs,lassoAccs,fold);
         }
 
@@ -49,41 +49,41 @@ public class Exp99 {
     }
 
 
-    public static void train(Config config, int fold) throws Exception{
-        System.out.println("training fold "+fold);
-        String input = config.getString("input.folder");
-        File foldFolder = new File(input,"fold_"+fold);
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(foldFolder, "train.trec"),
-                DataSetType.CLF_SPARSE, true);
-
-        File outputFolder = new File(config.getString("output.folder"),"fold_"+fold);
-        outputFolder.mkdirs();
-
-        LogisticRegression ridge = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer ridgeTrainer = ElasticNetLogisticTrainer.newBuilder(ridge,dataSet)
-                .setEpsilon(0.01).setL1Ratio(0).setRegularization(config.getDouble("ridge.reg")).build();
-        ridgeTrainer.train();
-
-        System.out.println("ridge training acc ="+Accuracy.accuracy(ridge,dataSet));
-        Serialization.serialize(ridge,new File(outputFolder,"ridge.ser"));
-
-
-        LogisticRegression elastic = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer elasticTrainer = ElasticNetLogisticTrainer.newBuilder(elastic,dataSet)
-                .setEpsilon(0.01).setL1Ratio(0.1).setRegularization(config.getDouble("elastic.reg")).build();
-        elasticTrainer.train();
-        System.out.println("elastic training acc ="+Accuracy.accuracy(elastic,dataSet));
-        Serialization.serialize(elastic,new File(outputFolder,"elastic.ser"));
-
-
-        LogisticRegression lasso = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        ElasticNetLogisticTrainer lassoTrainer = ElasticNetLogisticTrainer.newBuilder(lasso,dataSet)
-                .setEpsilon(0.01).setL1Ratio(1).setRegularization(config.getDouble("lasso.reg")).build();
-        lassoTrainer.train();
-        System.out.println("lasso training acc ="+Accuracy.accuracy(lasso,dataSet));
-        Serialization.serialize(lasso,new File(outputFolder,"lasso.ser"));
-
-    }
+//    public static void train(Config config, int fold) throws Exception{
+//        System.out.println("training fold "+fold);
+//        String input = config.getString("input.folder");
+//        File foldFolder = new File(input,"fold_"+fold);
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(foldFolder, "train.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//
+//        File outputFolder = new File(config.getString("output.folder"),"fold_"+fold);
+//        outputFolder.mkdirs();
+//
+//        LogisticRegression ridge = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+//        ElasticNetLogisticTrainer ridgeTrainer = ElasticNetLogisticTrainer.newBuilder(ridge,dataSet)
+//                .setEpsilon(0.01).setL1Ratio(0).setRegularization(config.getDouble("ridge.reg")).build();
+//        ridgeTrainer.train();
+//
+//        System.out.println("ridge training acc ="+Accuracy.accuracy(ridge,dataSet));
+//        Serialization.serialize(ridge,new File(outputFolder,"ridge.ser"));
+//
+//
+//        LogisticRegression elastic = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+//        ElasticNetLogisticTrainer elasticTrainer = ElasticNetLogisticTrainer.newBuilder(elastic,dataSet)
+//                .setEpsilon(0.01).setL1Ratio(0.1).setRegularization(config.getDouble("elastic.reg")).build();
+//        elasticTrainer.train();
+//        System.out.println("elastic training acc ="+Accuracy.accuracy(elastic,dataSet));
+//        Serialization.serialize(elastic,new File(outputFolder,"elastic.ser"));
+//
+//
+//        LogisticRegression lasso = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+//        ElasticNetLogisticTrainer lassoTrainer = ElasticNetLogisticTrainer.newBuilder(lasso,dataSet)
+//                .setEpsilon(0.01).setL1Ratio(1).setRegularization(config.getDouble("lasso.reg")).build();
+//        lassoTrainer.train();
+//        System.out.println("lasso training acc ="+Accuracy.accuracy(lasso,dataSet));
+//        Serialization.serialize(lasso,new File(outputFolder,"lasso.ser"));
+//
+//    }
 
     public static void test(Config config, List<Double> ridgeAccs, List<Double> elasticAccs,
                             List<Double> lassoAccs, int fold) throws Exception{
