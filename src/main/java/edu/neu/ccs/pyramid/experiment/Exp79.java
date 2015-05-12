@@ -14,6 +14,7 @@ import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.mahout.math.Vector;
 
@@ -43,6 +44,8 @@ public class Exp79 {
         Config config = new Config(args[0]);
         System.out.println(config);
         (new File(config.getString("output.folder"))).mkdirs();
+
+//        showSkip(config);
 
         if (config.getBoolean("verify")){
             verify(config);
@@ -280,6 +283,18 @@ public class Exp79 {
                 System.out.println("n="+(i+1)+", slop="+j+", p="+counts[i][j]);
             }
         }
+
+
+    }
+
+    public static void showSkip(Config config) throws Exception{
+        LogisticRegression logisticRegression = LogisticRegression.deserialize(new File(config.getString("input.model")));
+
+        List<TopFeatures> topFeaturesList = IntStream.range(0,2)
+                .mapToObj(k -> LogisticRegressionInspector.topFeatures(logisticRegression,k,1000))
+                .collect(Collectors.toList());
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(new File(config.getString("output.folder"),"top.json"), topFeaturesList);
 
 
     }

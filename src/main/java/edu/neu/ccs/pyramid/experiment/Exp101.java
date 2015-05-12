@@ -14,18 +14,18 @@ import java.util.List;
 public class Exp101 {
 
     //imdb
-
-//    static String performanceFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/imdb/fixed_test/performance.csv";
-//    static String seleFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/imdb/fixed_test/selection.csv";
-//    static double total = 50000;
-//    static double testFrac = 0.5;
+    static String folder = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/imdb/fixed_test/";
+    static String performanceFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/imdb/fixed_test/performance.csv";
+    static String seleFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/imdb/fixed_test/selection.csv";
+    static double total = 50000;
+    static double testFrac = 0.5;
 
     //amazon_phone
-    static String folder = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/amazon_phone/";
-    static String performanceFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/amazon_phone/performance.csv";
-    static String seleFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/amazon_phone/selection.csv";
-    static double total = 70211;
-    static double testFrac = 0.2;
+//    static String folder = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/amazon_phone/";
+//    static String performanceFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/amazon_phone/performance.csv";
+//    static String seleFile = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/amazon_phone/selection.csv";
+//    static double total = 70211;
+//    static double testFrac = 0.2;
 
     //amazon_baby
 //    static String folder = "/Users/chengli/Documents/papers/LTR/Ngrams/CIKM15-Cheng-SkipgramSentiment/figures/amazon_baby/";
@@ -37,7 +37,7 @@ public class Exp101 {
 
 
     public static void main(String[] args) throws Exception{
-//        accSelecton();
+        accSelecton();
 
 
 //        accImprove();
@@ -51,7 +51,7 @@ public class Exp101 {
 
 //        System.out.println(prepareFolds());
 
-        accSelectonSig();
+//        accSelectonSig();
     }
 
 
@@ -103,7 +103,13 @@ public class Exp101 {
             sb.append(power((int)sel[i][allColumn])).append("&");
             for (int j=0;j<sel[0].length;j++){
                 sb.append(df.format(acc[i][j])).append("&");
-                String portion = df.format(sel[i][j]/sel[i][allColumn]*100);
+                double por = sel[i][j]/sel[i][allColumn]*100;
+                String portion;
+                if (por>=1){
+                    portion = ""+(int)por+"\\%";
+                } else {
+                    portion = "<"+"1\\%";
+                }
                 sb.append(portion);
                 if (j!=sel[0].length-1){
                     sb.append("&");
@@ -121,6 +127,7 @@ public class Exp101 {
 
     public static void accSelectonSig() throws Exception{
         DecimalFormat df = new DecimalFormat("0.00");
+
         int allColumn = 0;
         String[] h = getHeaders();
         double[][] sel = loadSelection();
@@ -159,7 +166,14 @@ public class Exp101 {
 
                 sb.append("&");
 
-                String portion = df.format(sel[i][j]/sel[i][allColumn]*100);
+                double por = sel[i][j]/sel[i][allColumn]*100;
+                String portion;
+                if (por>=1){
+                    portion = ""+(int)por+"\\%";
+                } else {
+                    portion = "<"+"1\\%";
+                }
+
                 sb.append(portion);
                 if (j!=sel[0].length-1){
                     sb.append("&");
