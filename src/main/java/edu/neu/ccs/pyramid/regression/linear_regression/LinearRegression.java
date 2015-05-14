@@ -23,6 +23,11 @@ public class LinearRegression implements Regressor{
         this.weights = new Weights(numFeatures);
     }
 
+    /**
+     *
+     * @param numFeatures
+     * @param weightVector the first element is the bias
+     */
     public LinearRegression(int numFeatures, Vector weightVector){
         this.weights = new Weights(numFeatures,weightVector);
     }
