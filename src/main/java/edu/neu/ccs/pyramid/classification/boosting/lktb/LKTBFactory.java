@@ -29,7 +29,6 @@ public class LKTBFactory implements ClassifierFactory{
                 .dataSamplingRate(config.getDataSamplingRate())
                 .featureSamplingRate(config.getFeatureSamplingRate())
                 .numSplitIntervals(config.getNumSplitIntervals())
-                .usePrior(config.usePrior())
                 .build();
         LKTreeBoost lkTreeBoost = new LKTreeBoost(dataSet.getNumClasses());
         LKTBTrainer trainer  = new LKTBTrainer(lktbConfig,lkTreeBoost);

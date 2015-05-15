@@ -13,7 +13,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -52,25 +54,20 @@ public class LKTBTrainer {
         lkTreeBoost.setLabelTranslator(dataSet.getLabelTranslator());
         int numDataPoints = dataSet.getNumDataPoints();
         this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
-        //only add priors to empty models
-        if (lktbConfig.usePrior() && lkTreeBoost.getRegressors(0).size()==0){
-            setPriorProbs(dataSet);
-        }
         this.initStagedScores();
         this.probabilityMatrix = new ProbabilityMatrix(numDataPoints,numClasses);
         this.updateProbabilityMatrix();
         this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateGradientMatrix();
-
     }
 
-    public void iterate(){
+    public void addRegressors(List<Regressor> regressors){
         int numClasses = lkTreeBoost.getNumClasses();
+        if (regressors.size()!=numClasses){
+            throw new IllegalArgumentException("regressors.size()!=numClasses");
+        }
         for (int k=0;k<numClasses;k++){
-            /**
-             * parallel by feature
-             */
-            Regressor regressor = fitClassK(k);
+            Regressor regressor = regressors.get(k);
             lkTreeBoost.addRegressor(regressor, k);
             /**
              * parallel by data
@@ -83,6 +80,35 @@ public class LKTBTrainer {
          */
         updateProbabilityMatrix();
         updateGradientMatrix();
+    }
+
+    public void addPriorRegressors(){
+        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.lkTreeBoost.getNumClasses());
+        priorProbClassifier.fit(this.lktbConfig.getDataSet());
+        double[] probs = priorProbClassifier.getClassProbs();
+        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+        List<Regressor> regressors = new ArrayList<>();
+        for (int k=0;k<this.lkTreeBoost.getNumClasses();k++){
+            double score = Math.log(probs[k] - average);
+            Regressor constant = new ConstantRegressor(score);
+            regressors.add(constant);
+        }
+        addRegressors(regressors);
+    }
+
+
+
+    public void iterate(){
+        int numClasses = lkTreeBoost.getNumClasses();
+        List<Regressor> regressors = new ArrayList<>();
+        for (int k=0;k<numClasses;k++){
+            /**
+             * parallel by feature
+             */
+            Regressor regressor = fitClassK(k);
+            regressors.add(regressor);
+        }
+        addRegressors(regressors);
     }
 
     public void setActiveFeatures(int[] activeFeatures) {
@@ -104,29 +130,6 @@ public class LKTBTrainer {
 
 
     //======================== PRIVATE ===============================================
-
-    private void setPriorProbs(double[] probs){
-        if (probs.length!=this.lkTreeBoost.getNumClasses()){
-            throw new IllegalArgumentException("probs.length!=this.numClasses");
-        }
-        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
-        for (int k=0;k<this.lkTreeBoost.getNumClasses();k++){
-            double score = Math.log(probs[k] - average);
-            Regressor constant = new ConstantRegressor(score);
-            lkTreeBoost.addRegressor(constant, k);
-        }
-    }
-
-    /**
-     * start with prior probabilities
-     * should be called before setTrainConfig
-     */
-    private void setPriorProbs(ClfDataSet dataSet){
-        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.lkTreeBoost.getNumClasses());
-        priorProbClassifier.fit(dataSet);
-        double[] probs = priorProbClassifier.getClassProbs();
-        this.setPriorProbs(probs);
-    }
 
 
     /**

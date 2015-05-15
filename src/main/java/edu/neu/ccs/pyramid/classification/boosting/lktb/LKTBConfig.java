@@ -16,12 +16,8 @@ public class LKTBConfig {
     private int[] activeFeatures;
     private int[] activeDataPoints;
     private int numSplitIntervals;
-    private boolean usePrior;
     private int randomLevel;
 
-    boolean usePrior() {
-        return usePrior;
-    }
 
     ClfDataSet getDataSet() {
         return dataSet;
@@ -78,7 +74,6 @@ public class LKTBConfig {
         double dataSamplingRate=1;
         double featureSamplingRate=1;
         private int numSplitIntervals =100;
-        boolean usePrior = true;
         private int randomLevel =1;
 
         public Builder(ClfDataSet dataSet) {
@@ -116,10 +111,6 @@ public class LKTBConfig {
             return this;
         }
 
-        public Builder usePrior(boolean usePrior) {
-            this.usePrior = usePrior;
-            return this;
-        }
 
         public Builder randomLevel(int randomLevel){
             this.randomLevel = randomLevel;
@@ -142,7 +133,6 @@ public class LKTBConfig {
         double dataSamplingRate = builder.dataSamplingRate;
         double featureSamplingRate = builder.featureSamplingRate;
         this.numSplitIntervals = builder.numSplitIntervals;
-        this.usePrior = builder.usePrior;
         this.randomLevel = builder.randomLevel;
         int numDataPoints = dataSet.getNumDataPoints();
         if (dataSamplingRate == 1) {

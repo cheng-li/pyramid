@@ -170,14 +170,15 @@ public class LKTreeBoostTest {
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                        .dataSamplingRate(1).featureSamplingRate(1).usePrior(true)
-                        .randomLevel(10)
+                        .dataSamplingRate(1).featureSamplingRate(1)
+                        .randomLevel(1)
                         .build();
 
         LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
+        trainer.addPriorRegressors();
         for (int round =0;round<200;round++){
             System.out.println("round="+round);
             trainer.iterate();
