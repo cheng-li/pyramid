@@ -13,7 +13,7 @@ public class LKTBTrainConfig extends TrainConfig{
     private double dataSamplingRate=1;
     private double featureSamplingRate=1;
     private int numIterations = 500;
-    private boolean usePrior = true;
+
 
     public LKTBTrainConfig() {
     }
@@ -81,12 +81,4 @@ public class LKTBTrainConfig extends TrainConfig{
         return this;
     }
 
-    public boolean usePrior() {
-        return usePrior;
-    }
-
-    public LKTBTrainConfig setUsePrior(boolean usePrior) {
-        this.usePrior = usePrior;
-        return this;
-    }
 }

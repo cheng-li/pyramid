@@ -6,6 +6,9 @@ import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
 import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
+import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
@@ -63,8 +66,6 @@ public class Exp19 {
         boolean overwriteModels = config.getBoolean("train.overwriteModels");
 
 
-
-        //re-sample
         ClfDataSet dataSet = loadTrainData(config);
         System.out.println(dataSet.getMetaInfo());
 
@@ -86,6 +87,29 @@ public class Exp19 {
         LKTreeBoost lkTreeBoost = new LKTreeBoost(numClasses);
 
         LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+
+
+        if (config.getBoolean("train.usePrior")){
+            trainer.addPriorRegressors();
+        }
+
+
+        if (config.getBoolean("train.useLR")){
+            LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+            ElasticNetLogisticTrainer logisticTrainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
+                    .setEpsilon(0.01).setL1Ratio(config.getDouble("train.lr.l1Ratio"))
+                    .setRegularization(config.getDouble("train.lr.regularization")).build();
+            logisticTrainer.train();
+            System.out.println("lr loss = "+logisticTrainer.getLoss());
+            System.out.println("lr accuracy on training set = "+Accuracy.accuracy(logisticRegression,dataSet));
+            System.out.println("lr accuracy on test set = "+Accuracy.accuracy(logisticRegression,testSet));
+
+            System.out.println("lr number of used features in all classes = "+
+                    LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+            trainer.addLogisticRegression(logisticRegression);
+        }
+
+
         for (int i=0;i<numIterations;i++){
 
             System.out.println("iteration "+i);

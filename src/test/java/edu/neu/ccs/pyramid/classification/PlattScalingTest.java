@@ -38,7 +38,7 @@ public class PlattScalingTest {
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1).usePrior(true)
+                .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(10)
                 .build();
 

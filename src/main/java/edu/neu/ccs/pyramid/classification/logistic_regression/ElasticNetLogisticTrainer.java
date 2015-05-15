@@ -75,6 +75,10 @@ public class ElasticNetLogisticTrainer {
         }
     }
 
+    public double getLoss(){
+        return loss();
+    }
+
 
 
     private void optimizeOneClass(int classIndex){
@@ -128,6 +132,9 @@ public class ElasticNetLogisticTrainer {
         // infer searchDirection
         Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
 
+        if (logger.isDebugEnabled()){
+            logger.debug("norm of the search direction = " + searchDirection.norm(2));
+        }
         // move back to starting point
         logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
 

@@ -211,6 +211,7 @@ public class Exp70 {
                 stopWatch.start();
                 trainer.train();
                 System.out.println("time spent = " + stopWatch);
+                System.out.println("loss = "+trainer.getLoss());
                 System.out.println("number of used features in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 
                 File outputFolder = new File(new File(config.getString("output.folder"),""+l1ratio),""+regularization);
