@@ -2,6 +2,9 @@ package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
+import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
@@ -19,7 +22,7 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        spam_test();
+//        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
@@ -32,6 +35,7 @@ public class LKTreeBoostTest {
 //        classic3_all();
 //        bingyu_all();
 //        faculty_all();
+        logisticTest();
     }
 
     static void spam_resume_train() throws Exception{
@@ -749,6 +753,43 @@ public class LKTreeBoostTest {
         System.out.println(accuracy);
 
         lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+    }
+
+    static void logisticTest() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
+                DataSetType.CLF_SPARSE,true);
+        System.out.println(dataSet.getMetaInfo());
+
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
+                DataSetType.CLF_DENSE,true);
+
+        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+
+
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
+                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .dataSamplingRate(1).featureSamplingRate(1)
+                .randomLevel(1)
+                .build();
+
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        ElasticNetLogisticTrainer logisticTrainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
+                .setEpsilon(0.01).setL1Ratio(0.9).setRegularization(0.001).build();
+        logisticTrainer.train();
+        System.out.println("logistic regression accuracy = "+Accuracy.accuracy(logisticRegression,testSet));
+
+        System.out.println("num feature used = "+ LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+
+        LKTBTrainer lktbTrainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+//        lktbTrainer.addLogisticRegression(logisticRegression);
+        System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+        for (int i=0;i<100;i++){
+            lktbTrainer.iterate();
+            System.out.println("iteration "+i);
+            System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+        }
+        System.out.println(lkTreeBoost.getRegressors(0).get(0).predict(testSet.getRow(0)));
+        System.out.println(lkTreeBoost.getRegressors(0).get(1).predict(testSet.getRow(0)));
     }
 
 }

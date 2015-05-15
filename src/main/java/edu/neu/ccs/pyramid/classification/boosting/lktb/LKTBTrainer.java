@@ -1,9 +1,11 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
@@ -96,8 +98,26 @@ public class LKTBTrainer {
         addRegressors(regressors);
     }
 
+    public void addLogisticRegression(LogisticRegression logisticRegression){
+        if (!lkTreeBoost.getRegressors(0).isEmpty()){
+            throw new RuntimeException("adding logistic regression to non-empty model");
+        }
+
+        List<Regressor> regressors = new ArrayList<>();
+        int numClasses = lkTreeBoost.getNumClasses();
+        for (int k=0;k<numClasses;k++){
+            //todo decide ratio
+            Vector weightVector = logisticRegression.getWeights().getWeightsForClass(k).times(1);
+            LinearRegression linearRegression = new LinearRegression(logisticRegression.getNumFeatures(),weightVector);
+            regressors.add(linearRegression);
+        }
+        addRegressors(regressors);
+    }
 
 
+    /**
+     * by default, add trees in each iteration
+     */
     public void iterate(){
         int numClasses = lkTreeBoost.getNumClasses();
         List<Regressor> regressors = new ArrayList<>();

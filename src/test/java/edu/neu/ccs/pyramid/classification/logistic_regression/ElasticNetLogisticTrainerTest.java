@@ -31,7 +31,7 @@ public class ElasticNetLogisticTrainerTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.OFF);
         ctx.updateLoggers();
-        test7();
+        test3();
     }
 
     private static void test1() throws Exception{
