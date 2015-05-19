@@ -25,6 +25,7 @@ public class NBTrainer {
             for (int j=0;j<dataSet.getNumFeatures();j++){
                 naiveBayes.logPositive[k][j] = Math.log(naiveBayes.conditionals[k][j]);
                 naiveBayes.logNegative[k][j] = Math.log(1-naiveBayes.conditionals[k][j]);
+
             }
         }
 
@@ -38,6 +39,7 @@ public class NBTrainer {
         Vector vector = dataSet.getColumn(featureIndex);
         int[] labels = dataSet.getLabels();
         for (Vector.Element element: vector.nonZeroes()){
+            
             int dataIndex = element.index();
             int label = labels[dataIndex];
             positiveCountPerClass[label] += 1;

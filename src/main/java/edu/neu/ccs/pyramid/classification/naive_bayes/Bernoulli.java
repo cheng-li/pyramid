@@ -14,75 +14,42 @@ public class Bernoulli implements Distribution {
     /** Phi is the ratio of non-zero to
      *  total counts. And using smoothing. */
     private double phi;
+    private double logPosPhi;
+    private double logNegPhi;
 
 
     /** Default constructor */
     public Bernoulli(double phi) {
         this.phi = phi;
+        this.logPosPhi = FastMath.log(phi);
+        this.logNegPhi = FastMath.log(1 - phi);
     }
 
-    /** Constructor by given variables */
-    public Bernoulli(double[] variables) {
-        fit(variables);
+    /** Constructor by given vector */
+    public Bernoulli (double[] nonzeroVars, int numPerClass) {
+        fit(nonzeroVars, numPerClass);
     }
 
     @Override
-    public void fit(double[] variables) throws IllegalArgumentException {
-        if (variables.length <= 0) {
-            throw new IllegalArgumentException("Given variables should " +
-                    "be more than 0.");
-        }
+    public void fit(double[] nonzeroVars, int numPerClass) {
+        int countsNonZeros = nonzeroVars.length;
 
-        int countsNonZeros = 0;
-        for (int i=0; i<variables.length; i++) {
-            if (variables[i] != 0.0) {
-                countsNonZeros++;
-            }
-        }
-        // smoothing
-        this.phi = ((double) countsNonZeros + 1) / (variables.length + 2);
+        // smoothing and fitting the parameters.
+        this.phi = ((double) countsNonZeros + 1) / (numPerClass + 2);
+        this.logPosPhi = Math.log(phi);
+        this.logNegPhi = Math.log(1 - phi);
     }
 
     @Override
     public double probability(double x) throws IllegalArgumentException {
-        if (x != 0.0) {
-            return getPhi();
-        }
-        return 1 - getPhi();
+        return Math.exp(logProbability(x));
     }
 
     @Override
     public double logProbability(double x) throws IllegalArgumentException {
-        return FastMath.log(probability(x));
-    }
-
-    @Override
-    public double cumulativeProbability(double x) {
-        if (x == 0) {
-            return 1 - getPhi();
+        if (x > 0.0) {
+            return logPosPhi;
         }
-        return 1;
-    }
-
-    @Override
-    public double getMean() throws IllegalAccessException {
-        return getPhi();
-    }
-
-    @Override
-    public double getVariance() throws IllegalAccessException {
-        return getPhi() * (1 - getPhi());
-    }
-
-    @Override
-    public boolean isValid() throws IllegalAccessException {
-        if ((getPhi() < 0) || (getPhi()>1)) {
-            return false;
-        }
-        return true;
-    }
-
-    public double getPhi() {
-        return this.phi;
+        return logNegPhi;
     }
 }

@@ -14,7 +14,7 @@ public class NaiveBayesTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test2();
+        test1();
 
     }
 

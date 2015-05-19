@@ -7,12 +7,12 @@ package edu.neu.ccs.pyramid.classification.naive_bayes;
  *
  * It can be extended by different distribution.
  */
-public interface Distribution extends Probability{
+public interface Distribution{
 
     /**
-     * Given by batch of data, fits its distribution.
+     * Given by batch of nonzero variables, fits its distribution.
      */
-    public void fit(double[] variables)
+    public void fit(double[] nonzeroVars, int numPerClass)
             throws IllegalArgumentException;
 
     /**
@@ -25,19 +25,4 @@ public interface Distribution extends Probability{
      */
     public double logProbability(double x) throws  IllegalArgumentException;
 
-    /**
-     * Given a varibale, return its cumulative probability.
-     */
-    public double cumulativeProbability(double x) throws IllegalAccessException;
-
-
-    /**
-     * Returns the mean value of this distribution.
-     */
-    public double getMean() throws IllegalAccessException;
-
-    /**
-     * Returns the variance of this distribution.
-     */
-    public double getVariance() throws IllegalAccessException;
 }

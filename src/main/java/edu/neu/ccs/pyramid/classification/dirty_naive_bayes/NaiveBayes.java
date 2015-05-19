@@ -60,7 +60,7 @@ public class NaiveBayes implements Classifier{
     }
 
     public double predictClassScore(Vector vector, int k){
-        double[] conditionForClass = conditionals[k];
+//        double[] conditionForClass = conditionals[k];
         double score = Math.log(priors[k]);
         Vector input;
         if (vector.isDense()){

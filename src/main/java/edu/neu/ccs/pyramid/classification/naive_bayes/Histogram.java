@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.util.Arrays;
 
 /**
@@ -14,7 +16,7 @@ public class Histogram implements Distribution {
 
 
     /** numBins. */
-    protected int numBins;
+    static public int numBins;
     /** Values for each bin. */
     protected double[] values;
 
@@ -24,6 +26,8 @@ public class Histogram implements Distribution {
     protected double max;
     /** Each step */
     protected double step;
+    /** default log density by given variable is 0. */
+    private double defaultZeroLogProb;
 
 
     /** Default constructor, set numBins equals 2. */
@@ -38,59 +42,63 @@ public class Histogram implements Distribution {
     }
 
     /** Constructor by given numBins and variables. */
-    public Histogram(int numBins, double[] variables) {
+    public Histogram(int numBins, double[] nonzeroVars, int numPerClass) {
         this(numBins);
-        fit(variables);
+        fit(nonzeroVars, numPerClass);
     }
 
     /**
      * Use the Laplace smoothing.
      * (counts + 1) / (Total_counts + numBins.)
      *
-     * @param variables double array.
+     * @param nonzeroVars nonzero variables array.
+     * @param numPerClass total number of variables including zeros.
      * @throws IllegalArgumentException
      */
     @Override
-    public void fit(double[] variables) throws IllegalArgumentException{
+    public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException{
 
-        setMin(Arrays.stream(variables).min().getAsDouble());
-        setMax(Arrays.stream(variables).max().getAsDouble());
+        double[] zeroVars = new double[numPerClass];
+        double[] variables = ArrayUtils.addAll(nonzeroVars, zeroVars);
 
-        if (getMin() > getMax()) {
+
+        this.min = Arrays.stream(variables).min().getAsDouble();
+        this.max = Arrays.stream(variables).max().getAsDouble();
+
+        if (this.min > this.max) {
             throw new IllegalArgumentException("Minimum value" +
                     " should be smaller than Maximum");
         }
 
-        setStep( (double)(max-min) / getBins() );
-        double start = getMin();
+        this.step = (max-min) / this.numBins;
 
         // value for each bin
-        int[] counts = new int[getBins()];
-        int totalNumVariables = variables.length;
-        for (int i=0; i<totalNumVariables; i++) {
+        int[] counts = new int[this.numBins];
+        for (int i=0; i<variables.length; i++) {
             int binIndex = getIndexOfBins(variables[i]);
             counts[binIndex] += 1;
         }
 
-
         // Smoothing here.
-        for (int i=0; i<getBins(); i++) {
-            double value = ((double)counts[i]+1)/(totalNumVariables + getBins());
-            setValue(value, i);
+        for (int i=0; i<this.numBins; i++) {
+            this.values[i] = ((double)counts[i]+1)/(variables.length + this.numBins);
         }
+
+        this.defaultZeroLogProb = logProbability(0.0);
     }
+
 
     /** By given a variable, find the index bin for this variable. */
     private int getIndexOfBins(double x) {
 
-        double distance = x - getMin();
-        int index = (int) (distance / getStep());
+        double distance = x - this.min;
+        int index = (int) (distance / this.step);
 
         if (index < 0) {
             return 0;
         }
-        else if (index > getBins()-1) {
-            return getBins()-1;
+        else if (index > this.numBins-1) {
+            return this.numBins-1;
         }
 
         return index;
@@ -98,105 +106,25 @@ public class Histogram implements Distribution {
 
     @Override
     public double probability(double x) {
-        return getValue(getIndexOfBins(x));
+        return values[getIndexOfBins(x)];
     }
 
     @Override
     public double logProbability(double x) throws IllegalArgumentException {
-        return Math.log(probability(x));
-    }
-
-    @Override
-    public double cumulativeProbability(double x) {
-        int index = getIndexOfBins(x);
-        double cum = 0;
-        for (int i=0; i<=index; i++) {
-            cum += getValue(i);
+        if (x == 0.0) {
+            return this.defaultZeroLogProb;
         }
-        return cum;
+        return Math.log(values[getIndexOfBins(x)]);
     }
 
-    /**
-     Not Support in Histogram.
-      */
-    @Override
-    public double getMean() throws IllegalAccessException {
-        throw new IllegalAccessException("Histogram does not support" +
-                "getMean() operation.");
-    }
-
-    /**
-    Not Support in Histogram.
-     */
-    @Override
-    public double getVariance() throws IllegalAccessException {
-        throw new IllegalAccessException("Histogram does not support" +
-                "getVariance() operation.");
-    }
-
-    @Override
-    public boolean isValid() {
-        double sum = 0;
-        for (int i=0; i<getBins(); i++) {
-            double prob = getValue(i);
-            if (prob < 0 || prob > 1) {
-                return false;
-            }
-            sum += prob;
-        }
-        if (Math.abs(1-sum) > THRESHOLD) {
-            return false;
-        }
-        return true;
-    }
 
     public String toString() {
         String str;
-        str = "Total numBins: " + getBins() + "\n";
-        for (int i=0; i<getBins(); i++) {
-            str += "(" + i + ") \t" + getValue(i) + "\n";
+        str = "Total numBins: " + this.numBins + "\n";
+        for (int i=0; i<this.numBins; i++) {
+            str += "(" + i + ") \t" + this.values[i] + "\n";
         }
         return str;
-    }
-
-    public int getBins() {
-        return numBins;
-    }
-
-    private void setBins(int numBins) {
-        this.numBins = numBins;
-    }
-
-    private double getValue(int index) {
-        return values[index];
-    }
-
-    private void setValue(double value, int index) {
-        this.values[index] = value;
-    }
-
-    private double getMax() {
-        return max;
-    }
-
-    private void setMax(double max) {
-        this.max = max;
-    }
-
-    private double getMin() {
-        return min;
-    }
-
-    private void setMin(double min) {
-        this.min = min;
-    }
-
-    private double getStep() {
-        return step;
-    }
-
-    private void setStep(double step) {
-        this.step = step;
     }
 
 }

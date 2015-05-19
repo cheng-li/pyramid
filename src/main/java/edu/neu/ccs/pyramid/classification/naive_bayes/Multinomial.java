@@ -22,6 +22,9 @@ public class Multinomial implements Distribution {
      */
     private Map<Integer, Double> phis;
 
+    /** default log density by given variable is 0. */
+    private double defaultZeroLogProb;
+
     /**
      * If we cannot find the given frequency in
      * the dictionary phis, returns missingPhi.
@@ -35,20 +38,18 @@ public class Multinomial implements Distribution {
     }
 
     /** Constructor by given variables. */
-    public Multinomial(double[] variables) {
-        fit(variables);
+    public Multinomial(double[] nonzeroVars, int numPerClass) {
+        fit(nonzeroVars, numPerClass);
     }
 
     @Override
-    public void fit(double[] variables) throws IllegalArgumentException {
-        if (variables.length <= 0) {
-            throw new IllegalArgumentException("Given variables should " +
-                    "be more than 0.");
-        }
+    public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException {
 
         Map<Integer, Integer> frequencies = new HashMap<>();
-        for (int i=0; i<variables.length; i++) {
-            Integer key = new Integer((int) variables[i]);
+        // first put key=0.
+        frequencies.put(0, numPerClass-nonzeroVars.length);
+        for (int i=0; i<nonzeroVars.length; i++) {
+            Integer key = new Integer((int) nonzeroVars[i]);
             if (frequencies.containsKey(key)) {
                 frequencies.put(key, frequencies.get(key)+1);
             }
@@ -60,76 +61,31 @@ public class Multinomial implements Distribution {
         this.phis = new HashMap<>();
         double sumProbability = 0;
         int totalKeySize = frequencies.size();
-        int totalSize = variables.length;
+//        int totalSize = variables.length;
         for (Integer integer : frequencies.keySet()) {
             double phi = 0;
-            phi = ((double) frequencies.get(integer) + 1) / (totalSize+totalKeySize+1);
+            phi = ((double) frequencies.get(integer) + 1) / (numPerClass+totalKeySize+1);
             phis.put(integer, phi);
             sumProbability += phi;
         }
         this.missingPhi = 1 - sumProbability;
+        this.defaultZeroLogProb = logProbability(0);
     }
 
     @Override
     public double probability(double x) throws IllegalArgumentException {
-        Integer integer = new Integer((int) x);
-        if (this.phis.containsKey(integer)) {
-            return phis.get(integer);
-        }
-        return missingPhi;
+        return FastMath.exp(logProbability(x));
     }
 
     @Override
     public double logProbability(double x) throws IllegalArgumentException {
-        return FastMath.log(probability(x));
-    }
-
-    @Override
-    public double cumulativeProbability(double x) throws IllegalAccessException {
-        throw new IllegalAccessException("Mutinomial distribution cannot " +
-                "support cumulative operation.");
-    }
-
-    /**
-     * Because of smoothing, cannot get mean easily.
-     * @return
-     * @throws IllegalAccessException
-     */
-    @Override
-    public double getMean() throws IllegalAccessException {
-        throw new IllegalAccessException("Mutinomial distribution cannot " +
-                "support getMean operation.");
-    }
-
-    /**
-     * Because of smoothing, cannot get variance easily.
-     * @return
-     * @throws IllegalAccessException
-     */
-    @Override
-    public double getVariance() throws IllegalAccessException {
-        throw new IllegalAccessException("Mutinomial distribution cannot " +
-                "support getVariance operation.");
-    }
-
-    @Override
-    public boolean isValid() throws IllegalAccessException {
-
-        double sumProbability = 0;
-        for (Integer integer : phis.keySet()) {
-            double phi = phis.get(integer);
-            if ((phi<0) || (phi>1)) {
-                return false;
-            }
-            sumProbability += phi;
+        if (x == 0.0) {
+            return this.defaultZeroLogProb;
         }
-
-        sumProbability += this.missingPhi;
-
-        if ((sumProbability - 1) < THRESHOLD) {
-            return true;
+        Integer integer = new Integer((int) x);
+        if (this.phis.containsKey(integer)) {
+            return Math.log(phis.get(integer));
         }
-
-        return false;
+        return Math.log(missingPhi);
     }
 }
