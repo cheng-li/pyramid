@@ -138,8 +138,6 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
         double maxLogProb = Double.NEGATIVE_INFINITY;
         int predictLabel = -1;
 
-//        System.out.println(Arrays.toString(logProbs));
-
         // find the maximum log probability label
         for (int i=0; i<numClasses; i++) {
             if (logProbs[i] > maxLogProb) {
@@ -197,14 +195,11 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
 
         for (int label=0; label<numClasses; label++) {
             logProbs[label] = priors.logPriorProb(label);
-            for (Vector.Element element : input.all()) {
-                logProbs[label] += getDistribution(label, element.index()).logProbability(element.get());
+            for (int feature=0; feature<input.size(); feature++) {
+                double variable = input.get(feature);
+                logProbs[label] += getDistribution(label,
+                        feature).logProbability(variable);
             }
-//            for (int feature=0; feature<input.size(); feature++) {
-//                double variable = input.get(feature);
-//                logProbs[label] += getDistribution(label,
-//                        feature).logProbability(variable);
-//            }
         }
         return logProbs;
     }
