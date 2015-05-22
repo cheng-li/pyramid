@@ -77,6 +77,9 @@ public class LabelTranslator implements Serializable{
         if (extToInt==null){
             System.out.println("BUG: extToInt is null");
         }
+        if (extToInt.get(extLabel)==null){
+            System.out.println("BUG: there is an unknown extlabel "+extLabel);
+        }
         return extToInt.get(extLabel);
     }
 
