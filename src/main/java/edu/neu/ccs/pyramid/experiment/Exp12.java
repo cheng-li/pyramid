@@ -280,6 +280,12 @@ public class Exp12 {
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
             for (String extLabel: extMultiLabel){
+                if (labelTranslator==null){
+                    System.out.println("BUG: label translator is null");
+                }
+                if (extLabel==null){
+                    System.out.println("BUG:  ext label is null");
+                }
                 int intLabel = labelTranslator.toIntLabel(extLabel);
                 dataSet.addLabel(i,intLabel);
             }
