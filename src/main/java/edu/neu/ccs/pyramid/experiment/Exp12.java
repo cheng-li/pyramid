@@ -278,15 +278,8 @@ public class Exp12 {
                 .missingValue(config.getBoolean("featureMatrix.missingValue")).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
-            System.out.println("id ="+dataIndexId);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
             for (String extLabel: extMultiLabel){
-                if (labelTranslator==null){
-                    System.out.println("BUG: label translator is null");
-                }
-                if (extLabel==null){
-                    System.out.println("BUG:  ext label is null");
-                }
                 int intLabel = labelTranslator.toIntLabel(extLabel);
                 dataSet.addLabel(i,intLabel);
             }
