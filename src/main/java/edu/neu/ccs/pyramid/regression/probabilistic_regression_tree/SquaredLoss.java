@@ -2,6 +2,8 @@ package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -12,6 +14,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 5/21/15.
  */
 public class SquaredLoss implements Optimizable.ByGradientValue {
+    private static final Logger logger = LogManager.getLogger();
 
     private DataSet dataSet;
     private double[] labels;
@@ -26,6 +29,9 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
         this.dataSet = dataSet;
         this.labels = labels;
         this.vector = new DenseVector(dataSet.getNumFeatures() + 3);
+
+        vector.set(vector.size()-2,0);
+        vector.set(vector.size()-1,1);
     }
 
     public SquaredLoss(DataSet dataSet, double[] labels, Vector vector) {
@@ -34,25 +40,30 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
         this.vector = vector;
     }
 
-    private Vector getWeightsWithoutBias(){
+
+
+    Vector getWeightsWithoutBias(){
         return vector.viewPart(1,vector.size()-3);
     }
 
-    private double getBias(){
+    double getBias(){
         return vector.get(0);
     }
 
-    private double getLeftValue(){
+    double getLeftValue(){
         return vector.get(vector.size()-2);
     }
 
-    private double getRightValue(){
+    double getRightValue(){
         return vector.get(vector.size()-1);
     }
 
 
     @Override
     public Vector getGradient() {
+        if (logger.isDebugEnabled()){
+            logger.debug("calculating gradient");
+        }
         Vector gradient = new DenseVector(vector.size());
 
         Sigmoid sigmoid = new Sigmoid(getWeightsWithoutBias(),getBias());
@@ -64,10 +75,18 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
                 i-> hx[i] = sigmoid.leftProbability(dataSet.getRow(i))
         );
 
+//        if (logger.isDebugEnabled()){
+//            logger.debug("hx = "+Arrays.toString(hx));
+//        }
+
         double[] fx = new double[dataSet.getNumDataPoints()];
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(
                 i-> fx[i] = hx[i]*leftValue + (1-hx[i])*rightValue
         );
+
+//        if (logger.isDebugEnabled()){
+//            logger.debug("fx = "+Arrays.toString(fx));
+//        }
 
         Vector d = new DenseVector(dataSet.getNumDataPoints());
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(
@@ -84,10 +103,22 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
         );
 
         //gradient for left value
-        double sumOfH = Arrays.stream(hx).parallel().sum();
-        gradient.set(gradient.size()-2,sumOfH);
+        double leftGrad = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(
+                i->(fx[i]-labels[i])*hx[i]
+        ).sum();
+        gradient.set(gradient.size()-2,leftGrad);
+
         //gradient for right value
-        gradient.set(gradient.size()-1,dataSet.getNumDataPoints()-sumOfH);
+        double rightGrad = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(
+                i->(fx[i]-labels[i])*(1-hx[i])
+        ).sum();
+        gradient.set(gradient.size()-1,rightGrad);
+        if (logger.isDebugEnabled()){
+            logger.debug("gradient = "+gradient.toString());
+        }
+        if (logger.isDebugEnabled()){
+            logger.debug("gradient calculation done");
+        }
         return gradient;
     }
 

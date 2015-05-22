@@ -27,4 +27,13 @@ public class Sigmoid implements GatingFunction {
         logProb -= logDenominator;
         return Math.exp(logProb);
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Sigmoid{");
+        sb.append("weights=").append(weights);
+        sb.append(", bias=").append(bias);
+        sb.append('}');
+        return sb.toString();
+    }
 }

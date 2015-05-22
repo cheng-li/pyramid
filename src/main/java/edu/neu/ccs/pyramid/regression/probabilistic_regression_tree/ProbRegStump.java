@@ -8,10 +8,10 @@ import org.apache.mahout.math.Vector;
  * Created by chengli on 5/21/15.
  */
 public class ProbRegStump implements Regressor{
-    private FeatureList featureList;
-    private GatingFunction gatingFunction;
-    private double leftOutput;
-    private double rightOutput;
+    FeatureList featureList;
+    GatingFunction gatingFunction;
+    double leftOutput;
+    double rightOutput;
 
     @Override
     public double predict(Vector vector) {
@@ -21,6 +21,16 @@ public class ProbRegStump implements Regressor{
 
     @Override
     public FeatureList getFeatureList() {
-        return null;
+        return featureList;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ProbRegStump{");
+        sb.append("gatingFunction=").append(gatingFunction);
+        sb.append(", leftOutput=").append(leftOutput);
+        sb.append(", rightOutput=").append(rightOutput);
+        sb.append('}');
+        return sb.toString();
     }
 }
