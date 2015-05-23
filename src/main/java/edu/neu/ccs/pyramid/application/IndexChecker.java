@@ -26,7 +26,9 @@ public class IndexChecker {
         for (String field: fields){
             check(index,field);
         }
-
+        for (String field: fields){
+            checkEmpty(index,field);
+        }
         index.close();
 
 
@@ -41,6 +43,21 @@ public class IndexChecker {
             System.out.println("all documents have the field "+field);
         } else {
             System.out.println("the following documents miss the field "+field);
+            System.out.println(ids);
+        }
+
+
+    }
+
+    private static void checkEmpty(ESIndex index, String field){
+        List<String> ids = IntStream.range(0,index.getNumDocs()).parallel()
+                .mapToObj(i -> "" + i)
+                .filter(id -> index.getField(id, field) != null && ((String) index.getField(id, field)).trim().equals(""))
+                .collect(Collectors.toList());
+        if (ids.size()==0){
+            System.out.println("all documents have non-empty field "+field);
+        } else {
+            System.out.println("the following documents have empty field "+field);
             System.out.println(ids);
         }
 
