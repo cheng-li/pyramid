@@ -15,6 +15,14 @@ public class Sigmoid implements GatingFunction {
         this.bias = bias;
     }
 
+    public Vector getWeights() {
+        return weights;
+    }
+
+    public double getBias() {
+        return bias;
+    }
+
     @Override
     public double leftProbability(Vector row) {
         double logProb = 0;

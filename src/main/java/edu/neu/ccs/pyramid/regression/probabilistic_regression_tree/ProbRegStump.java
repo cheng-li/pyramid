@@ -24,6 +24,18 @@ public class ProbRegStump implements Regressor{
         return featureList;
     }
 
+    public GatingFunction getGatingFunction() {
+        return gatingFunction;
+    }
+
+    public double getLeftOutput() {
+        return leftOutput;
+    }
+
+    public double getRightOutput() {
+        return rightOutput;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ProbRegStump{");
