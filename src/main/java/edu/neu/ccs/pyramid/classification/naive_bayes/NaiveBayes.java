@@ -25,7 +25,8 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
     private Class<T> clazz;
 
     /** Prior Probability. */
-    protected PriorProbability priors;
+    protected double[] priors;
+    protected double[] logPriors;
 
     /**
      * Conditional Probability distribution for each label and
@@ -49,8 +50,29 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
         this.numClasses = clfDataSet.getNumClasses();
         this.numFeatures = clfDataSet.getNumFeatures();
         this.distribution = (T[][])Array.newInstance(clazz, numClasses, numFeatures);
-        this.priors = new PriorProbability(clfDataSet);
+        initPriors(clfDataSet.getLabels(), clfDataSet.getNumClasses());
 
+    }
+
+    /**
+     * Given the labels and number of classes, then initialize prior probability.
+     * @param labels
+     * @param numClasses
+     */
+    private void initPriors(int[] labels, int numClasses) {
+        if (labels.length == 0) {
+            throw new IllegalArgumentException("Given labels' length equals zero.");
+        }
+        priors = new double[numClasses];
+        logPriors = new double[numClasses];
+        int[] counts = new int[numClasses];
+        for (int i=0; i<labels.length; i++) {
+            counts[labels[i]]++;
+        }
+        for (int i=0; i<numClasses; i++) {
+            priors[i] = (double) counts[i] / labels.length;
+            logPriors[i] = Math.log(priors[i]);
+        }
     }
 
     // change the newInstance function using Vector
@@ -140,8 +162,9 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
 
         // find the maximum log probability label
         for (int i=0; i<numClasses; i++) {
-            if (logProbs[i] > maxLogProb) {
-                maxLogProb = logProbs[i];
+            double logProb = logProbs[i];
+            if (logProb > maxLogProb) {
+                maxLogProb = logProb;
                 predictLabel = i;
             }
         }
@@ -194,14 +217,24 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
         double[] logProbs = new double[numClasses];
 
         for (int label=0; label<numClasses; label++) {
-            logProbs[label] = priors.logPriorProb(label);
+            Distribution[] distsByLabel = getDistributionByLabel(label);
+            logProbs[label] = logPriors[label];
             for (int feature=0; feature<input.size(); feature++) {
                 double variable = input.get(feature);
-                logProbs[label] += getDistribution(label,
-                        feature).logProbability(variable);
+                logProbs[label] += distsByLabel[feature].logProbability(variable);
             }
         }
         return logProbs;
+    }
+
+
+    /**
+     * Returns the distribution array by given label.
+     * @param label
+     * @return
+     */
+    private Distribution[] getDistributionByLabel(int label) {
+        return this.distribution[label];
     }
 
     /**

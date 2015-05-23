@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.util.FastMath;
 
 /**
@@ -22,7 +20,7 @@ public class Gaussian implements Distribution {
     /** The value of {log(std) + 0.5*log(2*pi) } */
     private double logStandardVariancePlusHalfLog2Pi;
     /** default log density by given variable is 0. */
-    private double defaultZeroLogProb;
+//    private double defaultZeroLogProb;
 
     /** Defualt constructor with standard normal distribution. */
     public Gaussian() {
@@ -34,8 +32,7 @@ public class Gaussian implements Distribution {
         this.mean = mean;
         this.standardDeviation = standardDeviation;
         this.logStandardVariancePlusHalfLog2Pi =
-                Math.log(standardDeviation) +
-                        0.5 * FastMath.log(2 * FastMath.PI);
+                Math.log(standardDeviation) + 0.5 * Math.log(2 * Math.PI);
     }
 
     /** Gaussian constructor by given variables. */
@@ -43,16 +40,44 @@ public class Gaussian implements Distribution {
         fit(nonzeroVars, numPerClass);
     }
 
+    /**
+     * Using following method to calculate the mean and variance.
+     * refer: http://www.cs.berkeley.edu/~mhoemmen/cs194/Tutorials/variance.pdf
+     * @param nonzeroVars
+     * @param numPerClass
+     * @throws IllegalArgumentException
+     */
     @Override
     public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException {
+        if (nonzeroVars.length == 0) {
+            this.mean = 0;
+            this.standardDeviation = 0;
+            return;
+        }
 
-        double mean = StatUtils.sum(nonzeroVars) / numPerClass;
-        double[] zeroVars = new double[numPerClass];
-        double[] variables = ArrayUtils.addAll(nonzeroVars, zeroVars);
+        double Mk = nonzeroVars[0];
+        double Qk = 0;
 
-        this.mean = mean;
-        this.standardDeviation = Math.sqrt(StatUtils.variance(variables));
-        this.defaultZeroLogProb = logProbability(0);
+        int count = 1;
+        for(; count<nonzeroVars.length; count++) {
+            double diff = nonzeroVars[count] - Mk;
+            int k = count+1;
+            Mk += diff / k;
+            Qk += (count * diff * diff) / k;
+        }
+        // continue with zero variables
+        // Mn = [(k-1)/(k+n-1)] * Mk
+        // Qn = Qk + (Mk*Mk) * [(k-1)*n/(k+n-1)]
+        int n = numPerClass - nonzeroVars.length;
+        Qk += Mk * Mk * count * n / (count + n);
+        Mk = Mk * count / (count + n);
+
+        this.mean = Mk;
+        this.standardDeviation = Math.sqrt(Qk / numPerClass);
+        if (standardDeviation != 0.0) {
+            this.logStandardVariancePlusHalfLog2Pi =
+                    Math.log(standardDeviation) + 0.5 * Math.log(2 * Math.PI);
+        }
     }
 
     @Override
@@ -70,10 +95,6 @@ public class Gaussian implements Distribution {
      */
     @Override
     public double logProbability(double x) throws IllegalArgumentException {
-
-        if (x == 0.0) {
-            return this.defaultZeroLogProb;
-        }
 
         if (this.standardDeviation == 0.0) {
             return 0;
