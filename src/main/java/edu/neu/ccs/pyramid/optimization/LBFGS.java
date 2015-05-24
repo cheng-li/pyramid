@@ -32,7 +32,9 @@ public class LBFGS {
     /**
      * stop condition
      */
-    private double epsilon = 0.1;
+    private double epsilon = 0.01;
+    private int maxIteration = 10000;
+    private boolean checkConvergence =true;
 
     public LBFGS(Optimizable.ByGradientValue function) {
         this.function = function;
@@ -49,22 +51,42 @@ public class LBFGS {
         if (logger.isDebugEnabled()){
             logger.debug("initial value = "+function.getValue(function.getParameters()));
         }
+        int iteration = 0;
         iterate();
+        iteration += 1;
         if (logger.isDebugEnabled()){
+            logger.debug("iteration "+iteration);
             logger.debug("value = "+function.getValue(function.getParameters()));
         }
         valueQueue.add(function.getValue(function.getParameters()));
+
+        int convergenceTraceCounter = 0;
         while(true){
-//            System.out.println("objective = "+valueQueue.getLast());
-            if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<epsilon){
+
+            if (checkConvergence){
+                if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<epsilon*valueQueue.getFirst()){
+                    convergenceTraceCounter += 1;
+                } else {
+                    convergenceTraceCounter =0;
+                }
+                if (convergenceTraceCounter == 5){
+                    break;
+                }
+            }
+
+
+            if (iteration==maxIteration){
                 break;
             }
             iterate();
+            iteration += 1;
             valueQueue.remove();
             valueQueue.add(function.getValue(function.getParameters()));
             if (logger.isDebugEnabled()){
+                logger.debug("iteration "+iteration);
                 logger.debug("value = "+function.getValue(function.getParameters()));
             }
+
         }
 
     }
@@ -81,6 +103,7 @@ public class LBFGS {
         Vector direction = findDirection();
         if (logger.isDebugEnabled()){
             logger.debug("search direction = "+direction);
+            logger.debug("norm of direction = "+direction.norm(2));
         }
 //        System.out.println("doing line search");
         double stepLength = lineSearcher.findStepLength(direction);
@@ -183,5 +206,13 @@ public class LBFGS {
 
     public void setEpsilon(double epsilon) {
         this.epsilon = epsilon;
+    }
+
+    public void setMaxIteration(int maxIteration) {
+        this.maxIteration = maxIteration;
+    }
+
+    public void setCheckConvergence(boolean checkConvergence) {
+        this.checkConvergence = checkConvergence;
     }
 }

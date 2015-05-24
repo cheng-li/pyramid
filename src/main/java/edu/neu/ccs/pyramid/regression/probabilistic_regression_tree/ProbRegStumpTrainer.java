@@ -9,13 +9,26 @@ import edu.neu.ccs.pyramid.optimization.LBFGS;
  * Created by chengli on 5/21/15.
  */
 public class ProbRegStumpTrainer {
-    public static ProbRegStump train(DataSet dataSet, double[] labels){
-        SquaredLoss squaredLoss = new SquaredLoss(dataSet,labels);
-        LBFGS lbfgs = new LBFGS(squaredLoss);
-        lbfgs.setEpsilon(0.000001);
-        for (int i=0;i<100;i++){
-            lbfgs.iterate();
-        }
+    private DataSet dataSet;
+    private SquaredLoss squaredLoss;
+    private LBFGS lbfgs;
+
+    public ProbRegStumpTrainer(DataSet dataSet, double[] labels) {
+        this.dataSet = dataSet;
+        this.squaredLoss = new SquaredLoss(dataSet,labels);
+        this.lbfgs = new LBFGS(squaredLoss);
+    }
+
+    /**
+     * set parameters here
+     * @return
+     */
+    public LBFGS getLbfgs() {
+        return lbfgs;
+    }
+
+    public ProbRegStump train(){
+        lbfgs.optimize();
 
 //        GradientDescent gradientDescent = new GradientDescent(squaredLoss,1);
 //        for (int i=0;i<100;i++){

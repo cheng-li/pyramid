@@ -10,7 +10,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
  */
 public class RegressionSynthesizer {
 
-    public static RegDataSet univarStepFunction(){
+    public static RegDataSet univarStep(){
         int numDataPoints = 100;
         double noiseSD = 0.00001;
         double noiseMean = 0;
