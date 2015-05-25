@@ -334,6 +334,39 @@ public class DataSetUtil {
         return sample;
     }
 
+    /**
+     * create a subset with the indices
+     * it's fine to have duplicate indices
+     * idTranslator is not saved in sampleData as we may have duplicate extIds
+     * @param dataSet
+     * @param indices
+     * @return
+     */
+    public static RegDataSet sampleData(RegDataSet dataSet, List<Integer> indices){
+        RegDataSet sample;
+        sample = RegDataSetBuilder.getBuilder().numDataPoints(indices.size())
+                .numFeatures(dataSet.getNumFeatures())
+                .missingValue(dataSet.hasMissingValue())
+                .dense(dataSet.isDense())
+                .build();
+        double[] labels = dataSet.getLabels();
+        for (int i=0;i<indices.size();i++){
+            int indexInOld = indices.get(i);
+            Vector oldVector = dataSet.getRow(indexInOld);
+            double label = labels[indexInOld];
+            //copy label
+            sample.setLabel(i,label);
+            //copy row feature values, optimized for sparse vector
+            for (Vector.Element element: oldVector.nonZeroes()){
+                sample.setFeatureValue(i,element.index(),element.get());
+            }
+        }
+        sample.setFeatureList(dataSet.getFeatureList());
+
+        //ignore idTranslator as we may have duplicate extIds
+        return sample;
+    }
+
 
     /**
      * assuming they have different feature sets
@@ -487,6 +520,29 @@ public class DataSetUtil {
         Pair<ClfDataSet,ClfDataSet> pair = new Pair<>();
         pair.setFirst(DataSetUtil.sampleData(clfDataSet, trainIndices));
         pair.setSecond(DataSetUtil.sampleData(clfDataSet, testIndices));
+        return pair;
+    }
+
+
+    /**
+     *
+     * @param dataSet
+     * @return training set and validation set
+     */
+    public static Pair<RegDataSet,RegDataSet> splitToTrainValidation(RegDataSet dataSet, double trainPercentage){
+        int numDataPoints = dataSet.getNumDataPoints();
+        List<Integer> all = IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i->i).collect(Collectors.toList());
+        List<Integer> trainIndices = Sampling.sampleByPercentage(all,trainPercentage);
+
+        Set<Integer> testIndicesSet = new HashSet<>();
+        for (int i=0;i<numDataPoints;i++){
+            testIndicesSet.add(i);
+        }
+        testIndicesSet.removeAll(trainIndices);
+        List<Integer> testIndices = testIndicesSet.stream().collect(Collectors.toList());
+        Pair<RegDataSet,RegDataSet> pair = new Pair<>();
+        pair.setFirst(DataSetUtil.sampleData(dataSet, trainIndices));
+        pair.setSecond(DataSetUtil.sampleData(dataSet, testIndices));
         return pair;
     }
 

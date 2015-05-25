@@ -118,7 +118,7 @@ public class Node implements Serializable {
     }
 
 
-    int getFeatureIndex() {
+    public int getFeatureIndex() {
         return featureIndex;
     }
 

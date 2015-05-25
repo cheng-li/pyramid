@@ -30,7 +30,7 @@ public class Exp106 {
 
 
     public static void main(String[] args) throws Exception{
-        String[] functionNames = {"step","line","quadratic","exponential","sine"};
+        String[] functionNames = {"1","2","3","4","5","6","7","8"};
         int[] iterations = {10,50,100,1000};
         for (String name: functionNames){
             //clear old results
@@ -47,20 +47,29 @@ public class Exp106 {
     private static RegDataSet sample(String name){
         RegDataSet dataSet = null;
         switch (name) {
-            case "step":
+            case "1":
                 dataSet = RegressionSynthesizer.univarStep();
                 break;
-            case "line":
+            case "2":
                 dataSet = RegressionSynthesizer.univarLine();
                 break;
-            case "quadratic":
+            case "3":
                 dataSet = RegressionSynthesizer.univarQuadratic();
                 break;
-            case "exponential":
+            case "4":
                 dataSet = RegressionSynthesizer.univarExp();
                 break;
-            case "sine":
+            case "5":
                 dataSet = RegressionSynthesizer.univarSine();
+                break;
+            case "6":
+                dataSet = RegressionSynthesizer.univarNormal();
+                break;
+            case "7":
+                dataSet = RegressionSynthesizer.univarBeta();
+                break;
+            case "8":
+                dataSet = RegressionSynthesizer.univarPiecewiseLinear();
                 break;
         }
 
@@ -106,7 +115,7 @@ public class Exp106 {
         FileUtils.writeStringToFile(new File(folder,"hardTestPrediction"),hardTestPrediction);
         FileUtils.writeStringToFile(new File(folder,"hardTestMSE"),""+MSE.mse(tree,testSet));
 
-        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels());
+        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels(),ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE);
         LBFGS lbfgs = trainer.getLbfgs();
         lbfgs.setCheckConvergence(false);
         lbfgs.setMaxIteration(iteration);

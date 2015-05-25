@@ -4,6 +4,12 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
+
+import java.util.Enumeration;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 5/21/15.
@@ -13,9 +19,29 @@ public class ProbRegStumpTrainer {
     private SquaredLoss squaredLoss;
     private LBFGS lbfgs;
 
-    public ProbRegStumpTrainer(DataSet dataSet, double[] labels) {
+    public ProbRegStumpTrainer(DataSet dataSet, double[] labels, FeatureType featureType) {
         this.dataSet = dataSet;
-        this.squaredLoss = new SquaredLoss(dataSet,labels);
+        int[] activeFeatures = null;
+        switch (featureType) {
+            case ALL_FEATURES:
+                activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+                break;
+            case FOLLOW_HARD_TREE_FEATURE:
+                // train a hard tree first
+                RegTreeConfig regTreeConfig = new RegTreeConfig();
+                regTreeConfig.setActiveFeatures(IntStream.range(0, dataSet.getNumFeatures()).toArray());
+                regTreeConfig.setMaxNumLeaves(2);
+                regTreeConfig.setMinDataPerLeaf(1);
+                regTreeConfig.setActiveDataPoints(IntStream.range(0, dataSet.getNumDataPoints()).toArray());
+                regTreeConfig.setNumSplitIntervals(1000);
+                RegressionTree hardTree = RegTreeTrainer.fit(regTreeConfig, dataSet,labels);
+                int usedFeature = hardTree.getRoot().getFeatureIndex();
+                activeFeatures = new int[1];
+                activeFeatures[0] = usedFeature;
+                break;
+        }
+
+        this.squaredLoss = new SquaredLoss(dataSet,labels, activeFeatures);
         this.lbfgs = new LBFGS(squaredLoss);
     }
 
@@ -45,5 +71,9 @@ public class ProbRegStumpTrainer {
         probRegStump.featureList = dataSet.getFeatureList();
 
         return probRegStump;
+    }
+
+    public static enum FeatureType{
+        ALL_FEATURES, FOLLOW_HARD_TREE_FEATURE
     }
 }

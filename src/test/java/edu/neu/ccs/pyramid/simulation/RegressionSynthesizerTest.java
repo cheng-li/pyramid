@@ -85,7 +85,7 @@ public class RegressionSynthesizerTest {
         FileUtils.writeStringToFile(new File(TMP,"hardTestPrediction"),hardTestPrediction);
         FileUtils.writeStringToFile(new File(TMP,"hardTestMSE"),""+MSE.mse(tree,testSet));
 
-        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels());
+        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels(),ProbRegStumpTrainer.FeatureType.ALL_FEATURES);
         LBFGS lbfgs = trainer.getLbfgs();
         lbfgs.setCheckConvergence(true);
         lbfgs.setMaxIteration(10000);

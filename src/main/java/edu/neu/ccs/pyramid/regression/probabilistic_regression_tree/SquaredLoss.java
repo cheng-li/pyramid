@@ -23,21 +23,24 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
      * bias, weights, left output, right output
      */
     private Vector vector;
+    private int[] activeFeatures;
 
-
-    public SquaredLoss(DataSet dataSet, double[] labels) {
+    public SquaredLoss(DataSet dataSet, double[] labels, int[] activeFeatures) {
         this.dataSet = dataSet;
         this.labels = labels;
         this.vector = new DenseVector(dataSet.getNumFeatures() + 3);
+        this.activeFeatures = activeFeatures;
 
         vector.set(vector.size()-2,0);
         vector.set(vector.size()-1,1);
+
     }
 
-    public SquaredLoss(DataSet dataSet, double[] labels, Vector vector) {
+    public SquaredLoss(DataSet dataSet, double[] labels, Vector vector, int[] activeFeatures) {
         this.dataSet = dataSet;
         this.labels = labels;
         this.vector = vector;
+        this.activeFeatures = activeFeatures;
     }
 
 
@@ -96,9 +99,8 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
         //gradient for bias
         gradient.set(0,(leftValue - rightValue)*d.zSum());
 
-        //gradients for all features
-        //assuming we want to update all weights
-        IntStream.range(0,dataSet.getNumFeatures()).parallel().forEach(
+        //gradients for all features specified in active features
+        Arrays.stream(this.activeFeatures).parallel().forEach(
                 j -> gradient.set(j+1,(leftValue - rightValue)*d.dot(dataSet.getColumn(j)))
         );
 
@@ -143,7 +145,7 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
 
     @Override
     public double getValue(Vector parameters) {
-        SquaredLoss loss = new SquaredLoss(this.dataSet,this.labels,parameters);
+        SquaredLoss loss = new SquaredLoss(this.dataSet,this.labels,parameters, this.activeFeatures);
         return loss.getValue();
     }
 
