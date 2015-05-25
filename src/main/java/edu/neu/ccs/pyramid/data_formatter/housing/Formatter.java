@@ -1,8 +1,10 @@
 package edu.neu.ccs.pyramid.data_formatter.housing;
 
+import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,6 +15,11 @@ import java.util.regex.Pattern;
  * Created by chengli on 9/4/14.
  */
 public class Formatter {
+
+    private static final Config config = new Config("configs/local.config");
+    private static final String DATASETS = config.getString("input.datasets");
+    private static final String TMP = config.getString("output.tmp");
+
     public static void main(String[] args) throws Exception{
         saveData();
     }
@@ -41,11 +48,11 @@ public class Formatter {
     }
 
     static void saveData() throws Exception{
-        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/housing/standard_format/featureList.txt",
-                "/Users/chengli/Datasets/housing/standard_format/labels.txt", ",", DataSetType.REG_DENSE,false);
-        List<String> names = loadFeatures();
-        DataSetUtil.setFeatureNames(dataSet,names);
-        TRECFormat.save(dataSet,"/Users/chengli/Datasets/housing/trec_format/all.trec");
+        RegDataSet dataSet = StandardFormat.loadRegDataSet(new File(DATASETS,"/housing/standard_format/features.txt"),
+                new File(DATASETS,"housing/standard_format/labels.txt"), ",", DataSetType.REG_DENSE,false);
+//        List<String> names = loadFeatures();
+//        DataSetUtil.setFeatureNames(dataSet,names);
+        TRECFormat.save(dataSet,new File(DATASETS,"housing/trec_format/all.trec"));
     }
 
 }
