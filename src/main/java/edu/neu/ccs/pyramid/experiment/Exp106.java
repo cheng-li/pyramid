@@ -14,24 +14,31 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.simulation.RegressionSynthesizer;
 import org.apache.commons.io.FileUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * soft regression stump
- * fit univariate function
  * Created by chengli on 5/24/15.
  */
-public class Exp105 {
+public class Exp106 {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 
+
     public static void main(String[] args) throws Exception{
         String[] functionNames = {"step","line","quadratic","exponential","sine"};
+        int[] iterations = {10,50,100,1000};
         for (String name: functionNames){
-            testFunction(name);
+            //clear old results
+            FileUtils.deleteDirectory(new File(TMP,name));
+            for (int iteration: iterations){
+                testFunction(name,iteration);
+            }
+
         }
 
     }
@@ -60,9 +67,12 @@ public class Exp105 {
         return dataSet;
 
     }
-    private static void testFunction(String name) throws Exception{
-        File folder = new File(TMP,name);
+    private static void testFunction(String name, int iteration) throws Exception{
+        File folder = new File(new File(TMP,name),""+iteration);
         folder.mkdirs();
+
+        File csvFile = new File(new File(TMP,name),"parameters.csv");
+
         RegDataSet trainSet = sample(name);
         RegDataSet testSet = sample(name);
 
@@ -99,7 +109,7 @@ public class Exp105 {
         ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels());
         LBFGS lbfgs = trainer.getLbfgs();
         lbfgs.setCheckConvergence(false);
-        lbfgs.setMaxIteration(100);
+        lbfgs.setMaxIteration(iteration);
         ProbRegStump probRegStump = trainer.train();
         System.out.println("prob rt");
         System.out.println("training mse = "+ MSE.mse(probRegStump,trainSet));
@@ -124,8 +134,52 @@ public class Exp105 {
         sb.append(probRegStump.getLeftOutput());
         sb.append(",");
         sb.append(probRegStump.getRightOutput());
+        sb.append("\n");
 
-        FileUtils.writeStringToFile(new File(folder,"curve"),sb.toString());
+        FileUtils.writeStringToFile(new File(folder, "curve"), sb.toString());
+
+
+        if (!csvFile.exists()){
+            StringBuilder sb2 = new StringBuilder();
+            sb2.append("iteration");
+            sb2.append(",");
+            sb2.append("a");
+            sb2.append(",");
+            sb2.append("b");
+            sb2.append(",");
+            sb2.append("left value");
+            sb2.append(",");
+            sb2.append("right value");
+            sb2.append(",");
+            sb2.append("train MSE");
+            sb2.append(",");
+            sb2.append("test MSE");
+            sb2.append("\n");
+            FileUtils.writeStringToFile(csvFile, sb2.toString(), true);
+        }
+
+        DecimalFormat df = new DecimalFormat("0.00");
+        DecimalFormat df2 = new DecimalFormat("0.##E0");
+        StringBuilder sb3 = new StringBuilder();
+        sb3.append(iteration);
+        sb3.append(",");
+        sb3.append(df.format(((Sigmoid) probRegStump.getGatingFunction()).getWeights().get(0)));
+        sb3.append(",");
+        sb3.append(df.format(((Sigmoid) probRegStump.getGatingFunction()).getBias()));
+        sb3.append(",");
+        sb3.append(df.format(probRegStump.getLeftOutput()));
+        sb3.append(",");
+        sb3.append(df.format(probRegStump.getRightOutput()));
+        sb3.append(",");
+        sb3.append(df2.format(MSE.mse(probRegStump, trainSet)));
+        sb3.append(",");
+        sb3.append(df2.format(MSE.mse(probRegStump, testSet)));
+        sb3.append("\n");
+
+        FileUtils.writeStringToFile(csvFile, sb3.toString(), true);
+
+
+
 
     }
 }
