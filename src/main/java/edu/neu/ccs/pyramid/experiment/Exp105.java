@@ -39,30 +39,31 @@ public class Exp105 {
 
     private static RegDataSet sample(String name){
         RegDataSet dataSet = null;
+        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder().build();
         switch (name) {
             case "1":
-                dataSet = RegressionSynthesizer.univarStep();
+                dataSet = regressionSynthesizer.univarStep();
                 break;
             case "2":
-                dataSet = RegressionSynthesizer.univarLine();
+                dataSet = regressionSynthesizer.univarLine();
                 break;
             case "3":
-                dataSet = RegressionSynthesizer.univarQuadratic();
+                dataSet = regressionSynthesizer.univarQuadratic();
                 break;
             case "4":
-                dataSet = RegressionSynthesizer.univarExp();
+                dataSet = regressionSynthesizer.univarExp();
                 break;
             case "5":
-                dataSet = RegressionSynthesizer.univarSine();
+                dataSet = regressionSynthesizer.univarSine();
                 break;
             case "6":
-                dataSet = RegressionSynthesizer.univarNormal();
+                dataSet = regressionSynthesizer.univarNormal();
                 break;
             case "7":
-                dataSet = RegressionSynthesizer.univarBeta();
+                dataSet = regressionSynthesizer.univarBeta();
                 break;
             case "8":
-                dataSet = RegressionSynthesizer.univarPiecewiseLinear();
+                dataSet = regressionSynthesizer.univarPiecewiseLinear();
                 break;
         }
 
@@ -84,7 +85,7 @@ public class Exp105 {
         regTreeConfig.setActiveFeatures(activeFeatures);
 
         regTreeConfig.setMaxNumLeaves(2);
-        regTreeConfig.setMinDataPerLeaf(5);
+        regTreeConfig.setMinDataPerLeaf(1);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
 
         regTreeConfig.setNumSplitIntervals(1000);

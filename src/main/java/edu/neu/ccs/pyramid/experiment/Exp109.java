@@ -14,32 +14,23 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.simulation.RegressionSynthesizer;
 import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * convergence test
- * Created by chengli on 5/24/15.
+ * fitting sparse data
+ * Created by chengli on 5/26/15.
  */
-public class Exp106 {
+public class Exp109 {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 
-
     public static void main(String[] args) throws Exception{
         String[] functionNames = {"1","2","3","4","5","6","7","8"};
-        int[] iterations = {10,20,50,100};
         for (String name: functionNames){
-            //clear old results
-            FileUtils.deleteDirectory(new File(TMP,name));
-            for (int iteration: iterations){
-                testFunction(name,iteration);
-            }
-
+            testFunction(name);
         }
 
     }
@@ -47,7 +38,9 @@ public class Exp106 {
 
     private static RegDataSet sample(String name){
         RegDataSet dataSet = null;
-        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder().build();
+        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder()
+                .setNumDataPoints(10)
+                .setNoiseSD(0.000001).build();
         switch (name) {
             case "1":
                 dataSet = regressionSynthesizer.univarStep();
@@ -78,12 +71,9 @@ public class Exp106 {
         return dataSet;
 
     }
-    private static void testFunction(String name, int iteration) throws Exception{
-        File folder = new File(new File(TMP,name),""+iteration);
+    private static void testFunction(String name) throws Exception{
+        File folder = new File(TMP,name);
         folder.mkdirs();
-
-        File csvFile = new File(new File(TMP,name),"parameters.csv");
-
         RegDataSet trainSet = sample(name);
         RegDataSet testSet = sample(name);
 
@@ -117,10 +107,11 @@ public class Exp106 {
         FileUtils.writeStringToFile(new File(folder,"hardTestPrediction"),hardTestPrediction);
         FileUtils.writeStringToFile(new File(folder,"hardTestMSE"),""+MSE.mse(tree,testSet));
 
-        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels(),ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE);
+
+        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels(), ProbRegStumpTrainer.FeatureType.ALL_FEATURES);
         LBFGS lbfgs = trainer.getLbfgs();
         lbfgs.setCheckConvergence(false);
-        lbfgs.setMaxIteration(iteration);
+        lbfgs.setMaxIteration(100);
         ProbRegStump probRegStump = trainer.train();
         System.out.println("prob rt");
         System.out.println("training mse = "+ MSE.mse(probRegStump,trainSet));
@@ -145,52 +136,8 @@ public class Exp106 {
         sb.append(probRegStump.getLeftOutput());
         sb.append(",");
         sb.append(probRegStump.getRightOutput());
-        sb.append("\n");
 
-        FileUtils.writeStringToFile(new File(folder, "curve"), sb.toString());
-
-
-        if (!csvFile.exists()){
-            StringBuilder sb2 = new StringBuilder();
-            sb2.append("iteration");
-            sb2.append(",");
-            sb2.append("a");
-            sb2.append(",");
-            sb2.append("b");
-            sb2.append(",");
-            sb2.append("left value");
-            sb2.append(",");
-            sb2.append("right value");
-            sb2.append(",");
-            sb2.append("train MSE");
-            sb2.append(",");
-            sb2.append("test MSE");
-            sb2.append("\n");
-            FileUtils.writeStringToFile(csvFile, sb2.toString(), true);
-        }
-
-        DecimalFormat df = new DecimalFormat("0.00");
-        DecimalFormat df2 = new DecimalFormat("0.##E0");
-        StringBuilder sb3 = new StringBuilder();
-        sb3.append(iteration);
-        sb3.append(",");
-        sb3.append(df.format(((Sigmoid) probRegStump.getGatingFunction()).getWeights().get(0)));
-        sb3.append(",");
-        sb3.append(df.format(((Sigmoid) probRegStump.getGatingFunction()).getBias()));
-        sb3.append(",");
-        sb3.append(df.format(probRegStump.getLeftOutput()));
-        sb3.append(",");
-        sb3.append(df.format(probRegStump.getRightOutput()));
-        sb3.append(",");
-        sb3.append(df2.format(MSE.mse(probRegStump, trainSet)));
-        sb3.append(",");
-        sb3.append(df2.format(MSE.mse(probRegStump, testSet)));
-        sb3.append("\n");
-
-        FileUtils.writeStringToFile(csvFile, sb3.toString(), true);
-
-
-
+        FileUtils.writeStringToFile(new File(folder,"curve"),sb.toString());
 
     }
 }

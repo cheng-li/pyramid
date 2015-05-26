@@ -51,9 +51,10 @@ public class RegressionSynthesizerTest {
 //        RegDataSet trainSet = RegressionSynthesizer.univarQuadratic();
 //        RegDataSet testSet = RegressionSynthesizer.univarQuadratic();
 
+        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder().build();
 
-        RegDataSet trainSet = RegressionSynthesizer.univarExp();
-        RegDataSet testSet = RegressionSynthesizer.univarExp();
+        RegDataSet trainSet = regressionSynthesizer.univarExp();
+        RegDataSet testSet = regressionSynthesizer.univarExp();
 
         TRECFormat.save(trainSet,new File(TMP,"train.trec"));
         TRECFormat.save(testSet,new File(TMP,"test.trec"));

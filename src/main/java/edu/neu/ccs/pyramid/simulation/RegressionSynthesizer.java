@@ -10,14 +10,17 @@ import org.apache.commons.math3.distribution.NormalDistribution;
  * Created by chengli on 5/21/15.
  */
 public class RegressionSynthesizer {
-    static double noiseMean = 0;
-    static double noiseSD = 0.00001;
-    private static NormalDistribution noise = new NormalDistribution(noiseMean,noiseSD);
+    private int numDataPoints;
+    private double noiseMean;
+    private double noiseSD;
+    private NormalDistribution noise;
 
+    public static Builder getBuilder(){
+        return new Builder();
+    }
 
+    public  RegDataSet univarStep(){
 
-    public static RegDataSet univarStep(){
-        int numDataPoints = 100;
 
         RegDataSet dataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints)
@@ -41,8 +44,8 @@ public class RegressionSynthesizer {
     }
 
 
-    public static RegDataSet univarSine(){
-        int numDataPoints = 100;
+    public  RegDataSet univarSine(){
+
 
         RegDataSet dataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints)
@@ -61,8 +64,8 @@ public class RegressionSynthesizer {
         return dataSet;
     }
 
-    public static RegDataSet univarLine(){
-        int numDataPoints = 100;
+    public  RegDataSet univarLine(){
+
 
         RegDataSet dataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints)
@@ -81,8 +84,8 @@ public class RegressionSynthesizer {
         return dataSet;
     }
 
-    public static RegDataSet univarQuadratic(){
-        int numDataPoints = 100;
+    public  RegDataSet univarQuadratic(){
+
 
         RegDataSet dataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints)
@@ -101,8 +104,8 @@ public class RegressionSynthesizer {
         return dataSet;
     }
 
-    public static RegDataSet univarExp(){
-        int numDataPoints = 100;
+    public  RegDataSet univarExp(){
+
 
         RegDataSet dataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints)
@@ -121,8 +124,8 @@ public class RegressionSynthesizer {
         return dataSet;
     }
 
-    public static RegDataSet univarNormal(){
-        int numDataPoints = 100;
+    public  RegDataSet univarNormal(){
+
 
         NormalDistribution normalDistribution = new NormalDistribution(0,1);
 
@@ -145,8 +148,8 @@ public class RegressionSynthesizer {
 
 
 
-    public static RegDataSet univarBeta(){
-        int numDataPoints = 100;
+    public  RegDataSet univarBeta(){
+
 
         BetaDistribution betaDistribution = new BetaDistribution(2,5);
 
@@ -167,8 +170,8 @@ public class RegressionSynthesizer {
         return dataSet;
     }
 
-    public static RegDataSet univarPiecewiseLinear(){
-        int numDataPoints = 100;
+    public  RegDataSet univarPiecewiseLinear(){
+
 
 
 
@@ -191,5 +194,36 @@ public class RegressionSynthesizer {
             dataSet.setLabel(i,label);
         }
         return dataSet;
+    }
+
+
+    public static class Builder {
+        private int numDataPoints=100;
+        private double noiseMean=0;
+        private double noiseSD=0.001;
+
+        public Builder setNumDataPoints(int numDataPoints) {
+            this.numDataPoints = numDataPoints;
+            return this;
+        }
+
+        public Builder setNoiseMean(double noiseMean) {
+            this.noiseMean = noiseMean;
+            return this;
+        }
+
+        public Builder setNoiseSD(double noiseSD) {
+            this.noiseSD = noiseSD;
+            return this;
+        }
+
+        public RegressionSynthesizer build() {
+            RegressionSynthesizer regressionSynthesizer = new RegressionSynthesizer();
+            regressionSynthesizer.numDataPoints = this.numDataPoints;
+            regressionSynthesizer.noiseMean = this.noiseMean;
+            regressionSynthesizer.noiseSD = this.noiseSD;
+            regressionSynthesizer.noise = new NormalDistribution(noiseMean,noiseSD);
+            return regressionSynthesizer;
+        }
     }
 }
