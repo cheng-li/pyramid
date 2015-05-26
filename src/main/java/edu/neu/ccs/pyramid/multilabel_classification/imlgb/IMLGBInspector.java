@@ -87,14 +87,15 @@ public class IMLGBInspector {
         List<FeatureDistribution> featureDistributions = new ArrayList<>();
 
 
-        for (Feature feature: list){
-            feature.clearIndex();
-        }
+//        for (Feature feature: list){
+//            feature.clearIndex();
+//        }
 
         for (Feature feature: list){
             if (feature instanceof Ngram){
                 FeatureDistribution featureDistribution = null;
                 for (FeatureDistribution distribution: inputDistributions){
+                    distribution.getFeature().setIndex(feature.getIndex());
                     if (distribution.getFeature().equals(feature)){
                         featureDistribution = distribution;
                         break;

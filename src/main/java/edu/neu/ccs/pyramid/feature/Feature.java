@@ -100,7 +100,9 @@ public class Feature implements Serializable{
         @Override
         public void serialize(Feature feature, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeNumberField("index",feature.getIndex());
+            if (feature.isIndexAssigned()){
+                jsonGenerator.writeNumberField("index",feature.getIndex());
+            }
             jsonGenerator.writeStringField("name",feature.name);
             jsonGenerator.writeEndObject();
         }
