@@ -31,16 +31,16 @@ public class HistogramNBTest {
 
 //        localBernoulliTest();
         // tests for Spam
-//        localBernoulliSpamTest();
+        localBernoulliSpamTest();
         localGaussianSpamTest();
-//        localHistSpamTest(100);
-//        localMulSpamTest();
+        localHistSpamTest(100);
+        localMulSpamTest();
 
         // tests for 20newsgroup
-//        localBernoulli20Test();
-//        localHist20Test(5);
-//        localMul20Test();
-//        localGaussian20Test();
+        localBernoulli20Test();
+        localHist20Test(5);
+        localMul20Test();
+        localGaussian20Test();
 
 //        localBernoulliIMDBTest();
 //        localHistIMDBTest(5);

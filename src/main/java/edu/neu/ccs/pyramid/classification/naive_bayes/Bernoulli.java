@@ -27,22 +27,12 @@ public class Bernoulli implements Distribution {
 
     /** Constructor by given vector */
     public Bernoulli (double[] nonzeroVars, int numPerClass) {
-        fit(nonzeroVars, numPerClass);
-    }
-
-    @Override
-    public void fit(double[] nonzeroVars, int numPerClass) {
         int countsNonZeros = nonzeroVars.length;
 
         // smoothing and fitting the parameters.
         this.phi = ((double) countsNonZeros + 1) / (numPerClass + 2);
         this.logPosPhi = Math.log(phi);
         this.logNegPhi = Math.log(1 - phi);
-    }
-
-    @Override
-    public double probability(double x) throws IllegalArgumentException {
-        return Math.exp(logProbability(x));
     }
 
     @Override

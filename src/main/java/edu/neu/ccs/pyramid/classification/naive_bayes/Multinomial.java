@@ -1,10 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import org.apache.commons.math3.util.FastMath;
-
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Created by Rainicy on 10/10/14.
  *
@@ -14,78 +9,42 @@ import java.util.Map;
  *
  * @reference
  * http://nlp.stanford.edu/IR-book/html/htmledition/naive-bayes-text-classification-1.html
+ *
  */
 public class Multinomial implements Distribution {
 
-    /** Phis to save ratios of each value to
-     *  total number counts. *
-     */
-    private Map<Integer, Double> phis;
+    private double theta;
+    private double logPosTheta;
+    private double logNegTheta;
 
-    /** default log density by given variable is 0. */
-    private double defaultZeroLogProb;
 
     /**
-     * If we cannot find the given frequency in
-     * the dictionary phis, returns missingPhi.
+     * Constructor by given Nyi: the number of times feature i appears
+     * in a sample of class y in the training set; Ny: the total count
+     * of all features for class y; and n: the number of features.
+     *
+     * @param Nyi
+     * @param Ny
+     * @param n
+     *
+     * http://scikit-learn.org/stable/modules/naive_bayes.html
      */
-    private double missingPhi;
-
-
-    /** Default constructor. */
-    public Multinomial(Map<Integer, Double> phis) {
-        this.phis = phis;
-    }
-
-    /** Constructor by given variables. */
-    public Multinomial(double[] nonzeroVars, int numPerClass) {
-        fit(nonzeroVars, numPerClass);
-    }
-
-    @Override
-    public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException {
-
-        Map<Integer, Integer> frequencies = new HashMap<>();
-        // first put key=0.
-        frequencies.put(0, numPerClass-nonzeroVars.length);
-        for (int i=0; i<nonzeroVars.length; i++) {
-            Integer key = new Integer((int) nonzeroVars[i]);
-            if (frequencies.containsKey(key)) {
-                frequencies.put(key, frequencies.get(key)+1);
-            }
-            else {
-                frequencies.put(key, 1);
-            }
-        }
-
-        this.phis = new HashMap<>();
-        double sumProbability = 0;
-        int totalKeySize = frequencies.size();
-//        int totalSize = variables.length;
-        for (Integer integer : frequencies.keySet()) {
-            double phi = 0;
-            phi = ((double) frequencies.get(integer) + 1) / (numPerClass+totalKeySize+1);
-            phis.put(integer, phi);
-            sumProbability += phi;
-        }
-        this.missingPhi = 1 - sumProbability;
-        this.defaultZeroLogProb = logProbability(0);
+    public Multinomial(int Nyi, int Ny, int n) {
+        this.theta = (double) (Nyi + 1) / (Ny + n);
+        this.logPosTheta = Math.log(theta);
+        this.logNegTheta = Math.log(1 - theta);
     }
 
     @Override
     public double probability(double x) throws IllegalArgumentException {
-        return FastMath.exp(logProbability(x));
+        return Math.exp(logProbability(x));
     }
 
     @Override
     public double logProbability(double x) throws IllegalArgumentException {
-        if (x == 0.0) {
-            return this.defaultZeroLogProb;
+        if (x > 0.0) {
+            return logPosTheta;
         }
-        Integer integer = new Integer((int) x);
-        if (this.phis.containsKey(integer)) {
-            return Math.log(phis.get(integer));
-        }
-        return Math.log(missingPhi);
+        return logNegTheta;
     }
 }

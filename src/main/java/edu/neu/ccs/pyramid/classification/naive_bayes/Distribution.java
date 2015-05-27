@@ -10,15 +10,11 @@ package edu.neu.ccs.pyramid.classification.naive_bayes;
 public interface Distribution{
 
     /**
-     * Given by batch of nonzero variables, fits its distribution.
-     */
-    public void fit(double[] nonzeroVars, int numPerClass)
-            throws IllegalArgumentException;
-
-    /**
      * Given a variable, calculate its probability.
      */
-    public double probability(double x) throws IllegalArgumentException;
+    public default double probability(double x) throws IllegalArgumentException {
+        return Math.exp(logProbability(x));
+    }
 
     /**
      * GIven a variable, calculate its log probability.

@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import org.apache.commons.math3.util.FastMath;
-
 /**
  * Created by Rainicy on 10/8/14.
  *
@@ -47,7 +45,6 @@ public class Gaussian implements Distribution {
      * @param numPerClass
      * @throws IllegalArgumentException
      */
-    @Override
     public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException {
         if (nonzeroVars.length == 0) {
             this.mean = 0;
@@ -78,11 +75,6 @@ public class Gaussian implements Distribution {
             this.logStandardVariancePlusHalfLog2Pi =
                     Math.log(standardDeviation) + 0.5 * Math.log(2 * Math.PI);
         }
-    }
-
-    @Override
-    public double probability(double x) throws IllegalArgumentException {
-        return FastMath.exp(logProbability(x));
     }
 
     /**

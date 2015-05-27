@@ -55,7 +55,6 @@ public class Histogram implements Distribution {
      * @param numPerClass total number of variables including zeros.
      * @throws IllegalArgumentException
      */
-    @Override
     public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException{
 
         double[] zeroVars = new double[numPerClass];
