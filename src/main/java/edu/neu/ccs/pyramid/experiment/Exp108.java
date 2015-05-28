@@ -107,7 +107,13 @@ public class Exp108 {
         FileUtils.writeStringToFile(new File(folder,"hardTestMSE"),""+MSE.mse(tree,testSet));
 
 
-        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels(), ProbRegStumpTrainer.FeatureType.ALL_FEATURES);
+        ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
+                .setDataSet(trainSet)
+                .setLabels(trainSet.getLabels())
+                .setFeatureType(ProbRegStumpTrainer.FeatureType.ALL_FEATURES)
+                .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                .build();
+
         LBFGS lbfgs = trainer.getLbfgs();
         lbfgs.setCheckConvergence(false);
         lbfgs.setMaxIteration(100);

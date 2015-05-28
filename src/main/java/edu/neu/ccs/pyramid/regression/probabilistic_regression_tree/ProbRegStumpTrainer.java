@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.optimization.Optimizable;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -13,33 +14,16 @@ import java.util.stream.IntStream;
  */
 public class ProbRegStumpTrainer {
     private DataSet dataSet;
-    private SquaredLossOfExpectation squaredLossOfExpectation;
+    private FeatureType featureType;
+    private LossType lossType;
+    private Optimizable.ByGradientValue loss;
     private LBFGS lbfgs;
 
-    public ProbRegStumpTrainer(DataSet dataSet, double[] labels, FeatureType featureType) {
-        this.dataSet = dataSet;
-        int[] activeFeatures = null;
-        switch (featureType) {
-            case ALL_FEATURES:
-                activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
-                break;
-            case FOLLOW_HARD_TREE_FEATURE:
-                // train a hard tree first
-                RegTreeConfig regTreeConfig = new RegTreeConfig();
-                regTreeConfig.setActiveFeatures(IntStream.range(0, dataSet.getNumFeatures()).toArray());
-                regTreeConfig.setMaxNumLeaves(2);
-                regTreeConfig.setMinDataPerLeaf(1);
-                regTreeConfig.setActiveDataPoints(IntStream.range(0, dataSet.getNumDataPoints()).toArray());
-                regTreeConfig.setNumSplitIntervals(1000);
-                RegressionTree hardTree = RegTreeTrainer.fit(regTreeConfig, dataSet,labels);
-                int usedFeature = hardTree.getRoot().getFeatureIndex();
-                activeFeatures = new int[1];
-                activeFeatures[0] = usedFeature;
-                break;
-        }
+    public ProbRegStumpTrainer() {
+    }
 
-        this.squaredLossOfExpectation = new SquaredLossOfExpectation(dataSet,labels, activeFeatures);
-        this.lbfgs = new LBFGS(squaredLossOfExpectation);
+    public static Builder getBuilder(){
+        return new Builder();
     }
 
     /**
@@ -53,18 +37,26 @@ public class ProbRegStumpTrainer {
     public ProbRegStump train(){
         lbfgs.optimize();
 
-//        GradientDescent gradientDescent = new GradientDescent(squaredLoss,1);
-//        for (int i=0;i<100;i++){
-//            gradientDescent.update();
-//        }
-
-        GatingFunction gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
-
-
         ProbRegStump probRegStump = new ProbRegStump();
-        probRegStump.gatingFunction = gatingFunction;
-        probRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
-        probRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
+
+        switch (this.lossType) {
+            case SquaredLossOfExpectation:
+                SquaredLossOfExpectation squaredLossOfExpectation = (SquaredLossOfExpectation)loss;
+                probRegStump.gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
+                probRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
+                probRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
+
+                break;
+
+            case ExpectationOfSquaredLoss:
+                ExpectationOfSquaredLoss expectationOfSquaredLoss = (ExpectationOfSquaredLoss)loss;
+                probRegStump.gatingFunction = new Sigmoid(expectationOfSquaredLoss.getWeightsWithoutBias(), expectationOfSquaredLoss.getBias());
+                probRegStump.leftOutput = expectationOfSquaredLoss.getLeftValue();
+                probRegStump.rightOutput = expectationOfSquaredLoss.getRightValue();
+
+                break;
+        }
+
         probRegStump.featureList = dataSet.getFeatureList();
 
         return probRegStump;
@@ -72,5 +64,77 @@ public class ProbRegStumpTrainer {
 
     public static enum FeatureType{
         ALL_FEATURES, FOLLOW_HARD_TREE_FEATURE
+    }
+
+    public static enum LossType{
+        SquaredLossOfExpectation, ExpectationOfSquaredLoss
+    }
+
+
+    public static class Builder {
+        private DataSet dataSet;
+        private ProbRegStumpTrainer.FeatureType featureType;
+        private ProbRegStumpTrainer.LossType lossType;
+        private double[] labels;
+
+        public Builder setDataSet(DataSet dataSet) {
+            this.dataSet = dataSet;
+            return this;
+        }
+
+        public Builder setFeatureType(ProbRegStumpTrainer.FeatureType featureType) {
+            this.featureType = featureType;
+            return this;
+        }
+
+        public Builder setLossType(ProbRegStumpTrainer.LossType lossType) {
+            this.lossType = lossType;
+            return this;
+        }
+
+
+        public Builder setLabels(double[] labels) {
+            this.labels = labels;
+            return this;
+        }
+
+        public ProbRegStumpTrainer build() {
+            ProbRegStumpTrainer trainer = new ProbRegStumpTrainer();
+            trainer.dataSet = dataSet;
+            trainer.featureType = featureType;
+            trainer.lossType = lossType;
+            int[] activeFeatures = null;
+            switch (featureType) {
+                case ALL_FEATURES:
+                    activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+                    break;
+                case FOLLOW_HARD_TREE_FEATURE:
+                    // train a hard tree first
+                    RegTreeConfig regTreeConfig = new RegTreeConfig();
+                    regTreeConfig.setActiveFeatures(IntStream.range(0, dataSet.getNumFeatures()).toArray());
+                    regTreeConfig.setMaxNumLeaves(2);
+                    regTreeConfig.setMinDataPerLeaf(1);
+                    regTreeConfig.setActiveDataPoints(IntStream.range(0, dataSet.getNumDataPoints()).toArray());
+                    regTreeConfig.setNumSplitIntervals(1000);
+                    RegressionTree hardTree = RegTreeTrainer.fit(regTreeConfig, dataSet,labels);
+                    int usedFeature = hardTree.getRoot().getFeatureIndex();
+                    activeFeatures = new int[1];
+                    activeFeatures[0] = usedFeature;
+                    break;
+            }
+
+            switch (lossType) {
+                case SquaredLossOfExpectation:
+                    trainer.loss = new SquaredLossOfExpectation(dataSet,labels, activeFeatures);
+                    break;
+                case ExpectationOfSquaredLoss:
+                    trainer.loss = new ExpectationOfSquaredLoss(dataSet,labels, activeFeatures);
+                    break;
+            }
+
+            trainer.lbfgs = new LBFGS(trainer.loss);
+
+            return trainer;
+        }
     }
 }

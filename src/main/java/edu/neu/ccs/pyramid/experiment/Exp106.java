@@ -14,7 +14,6 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.simulation.RegressionSynthesizer;
 import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -117,7 +116,13 @@ public class Exp106 {
         FileUtils.writeStringToFile(new File(folder,"hardTestPrediction"),hardTestPrediction);
         FileUtils.writeStringToFile(new File(folder,"hardTestMSE"),""+MSE.mse(tree,testSet));
 
-        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels(),ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE);
+        ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
+                .setDataSet(trainSet)
+                .setLabels(trainSet.getLabels())
+                .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+                .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                .build();
+
         LBFGS lbfgs = trainer.getLbfgs();
         lbfgs.setCheckConvergence(false);
         lbfgs.setMaxIteration(iteration);

@@ -22,8 +22,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.*;
-
 public class RegressionSynthesizerTest {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
@@ -86,7 +84,12 @@ public class RegressionSynthesizerTest {
         FileUtils.writeStringToFile(new File(TMP,"hardTestPrediction"),hardTestPrediction);
         FileUtils.writeStringToFile(new File(TMP,"hardTestMSE"),""+MSE.mse(tree,testSet));
 
-        ProbRegStumpTrainer trainer = new ProbRegStumpTrainer(trainSet,trainSet.getLabels(),ProbRegStumpTrainer.FeatureType.ALL_FEATURES);
+        ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
+                .setDataSet(trainSet)
+                .setLabels(trainSet.getLabels())
+                .setFeatureType(ProbRegStumpTrainer.FeatureType.ALL_FEATURES)
+                .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                .build();
         LBFGS lbfgs = trainer.getLbfgs();
         lbfgs.setCheckConvergence(true);
         lbfgs.setMaxIteration(10000);
