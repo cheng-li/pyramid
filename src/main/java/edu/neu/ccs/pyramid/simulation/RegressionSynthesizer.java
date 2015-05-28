@@ -197,6 +197,33 @@ public class RegressionSynthesizer {
     }
 
 
+
+
+    public  RegDataSet multivarLine(){
+
+        int numFeatures = 2;
+
+        RegDataSet dataSet = RegDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints)
+                .numFeatures(2)
+                .dense(true)
+                .missingValue(false)
+                .build();
+        for (int i=0;i<numDataPoints;i++){
+            for (int j=0;j<numFeatures;j++){
+                double featureValue = Sampling.doubleUniform(0,1);
+                dataSet.setFeatureValue(i,j,featureValue);
+            }
+            double label = 0;
+            for (int j=0;j<numFeatures;j++){
+                label += dataSet.getRow(i).get(j);
+            }
+            label += noise.sample();
+            dataSet.setLabel(i,label);
+        }
+        return dataSet;
+    }
+
     public static class Builder {
         private int numDataPoints=100;
         private double noiseMean=0;
