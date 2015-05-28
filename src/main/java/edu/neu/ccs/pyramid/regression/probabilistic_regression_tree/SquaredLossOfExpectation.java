@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 5/21/15.
  */
-public class SquaredLoss implements Optimizable.ByGradientValue {
+public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
     private static final Logger logger = LogManager.getLogger();
 
     private DataSet dataSet;
@@ -25,7 +25,7 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
     private Vector vector;
     private int[] activeFeatures;
 
-    public SquaredLoss(DataSet dataSet, double[] labels, int[] activeFeatures) {
+    public SquaredLossOfExpectation(DataSet dataSet, double[] labels, int[] activeFeatures) {
         this.dataSet = dataSet;
         this.labels = labels;
         this.vector = new DenseVector(dataSet.getNumFeatures() + 3);
@@ -36,7 +36,7 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
 
     }
 
-    public SquaredLoss(DataSet dataSet, double[] labels, Vector vector, int[] activeFeatures) {
+    public SquaredLossOfExpectation(DataSet dataSet, double[] labels, Vector vector, int[] activeFeatures) {
         this.dataSet = dataSet;
         this.labels = labels;
         this.vector = vector;
@@ -145,7 +145,7 @@ public class SquaredLoss implements Optimizable.ByGradientValue {
 
     @Override
     public double getValue(Vector parameters) {
-        SquaredLoss loss = new SquaredLoss(this.dataSet,this.labels,parameters, this.activeFeatures);
+        SquaredLossOfExpectation loss = new SquaredLossOfExpectation(this.dataSet,this.labels,parameters, this.activeFeatures);
         return loss.getValue();
     }
 

@@ -1,14 +1,11 @@
 package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.RegDataSet;
-import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 
-import java.util.Enumeration;
 import java.util.stream.IntStream;
 
 /**
@@ -16,7 +13,7 @@ import java.util.stream.IntStream;
  */
 public class ProbRegStumpTrainer {
     private DataSet dataSet;
-    private SquaredLoss squaredLoss;
+    private SquaredLossOfExpectation squaredLossOfExpectation;
     private LBFGS lbfgs;
 
     public ProbRegStumpTrainer(DataSet dataSet, double[] labels, FeatureType featureType) {
@@ -41,8 +38,8 @@ public class ProbRegStumpTrainer {
                 break;
         }
 
-        this.squaredLoss = new SquaredLoss(dataSet,labels, activeFeatures);
-        this.lbfgs = new LBFGS(squaredLoss);
+        this.squaredLossOfExpectation = new SquaredLossOfExpectation(dataSet,labels, activeFeatures);
+        this.lbfgs = new LBFGS(squaredLossOfExpectation);
     }
 
     /**
@@ -61,13 +58,13 @@ public class ProbRegStumpTrainer {
 //            gradientDescent.update();
 //        }
 
-        GatingFunction gatingFunction = new Sigmoid(squaredLoss.getWeightsWithoutBias(),squaredLoss.getBias());
+        GatingFunction gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
 
 
         ProbRegStump probRegStump = new ProbRegStump();
         probRegStump.gatingFunction = gatingFunction;
-        probRegStump.leftOutput = squaredLoss.getLeftValue();
-        probRegStump.rightOutput = squaredLoss.getRightValue();
+        probRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
+        probRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
         probRegStump.featureList = dataSet.getFeatureList();
 
         return probRegStump;
