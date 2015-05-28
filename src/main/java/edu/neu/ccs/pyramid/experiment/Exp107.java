@@ -72,7 +72,7 @@ public class Exp107 {
 
             LBFGS lbfgs = trainer.getLbfgs();
             lbfgs.setCheckConvergence(false);
-            lbfgs.setMaxIteration(1000);
+            lbfgs.setMaxIteration(100);
             ProbRegStump softTree = trainer.train();
             System.out.println("soft tree = "+softTree);
 
