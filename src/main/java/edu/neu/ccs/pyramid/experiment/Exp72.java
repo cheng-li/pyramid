@@ -17,6 +17,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.adaboostmh.AdaBoostMHInspec
 import edu.neu.ccs.pyramid.multilabel_classification.adaboostmh.AdaBoostMHTrainer;
 
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
+import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLFlatScaling;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.lang3.time.StopWatch;
 
@@ -129,11 +130,19 @@ public class Exp72 {
         File serializedModel =  new File(output,modelName);
         boosting.serialize(serializedModel);
 
-        MultiLabelClassifier.ClassProbEstimator scaling;
-        if (config.getBoolean("train.scaling.acrossClasses")){
-            scaling = new MLACPlattScaling(dataSet,boosting);
-        } else {
-            scaling = new MLPlattScaling(dataSet,boosting);
+        MultiLabelClassifier.ClassProbEstimator scaling = null;
+        switch (config.getString("train.scaling")){
+            case "eachClass":
+                scaling = new MLPlattScaling(dataSet,boosting);
+                break;
+            case "multiLabel":
+                scaling = new MLACPlattScaling(dataSet,boosting);
+                break;
+            case "flat":
+                scaling = new MLFlatScaling(dataSet,boosting);
+                break;
+            default:
+                throw new RuntimeException("unknown scaling fashion");
         }
 
         Serialization.serialize(scaling,new File(output,config.getString("output.plattScaling")));
