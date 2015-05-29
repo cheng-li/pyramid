@@ -39,18 +39,27 @@ def getPositions(docId, field, keywords, slop, in_order):
     text = res["hits"]["hits"][0]["_source"]["body"]
     highlights = res["hits"]["hits"][0]["highlight"]["body"]
     for HL in highlights:
-        cleanHL = HL.replace("<em>","")
-        cleanHL = cleanHL.replace("</em>","")
+        #test =  " beautiful set designs, a nice erotic feel and a nice sex scene. But (again) predictable and <em>not</em> <em>even</em> remotely"
+
+        cleanHL = HL.replace("<em>", "")
+        cleanHL = cleanHL.replace("</em>", "")
         baseindex = text.find(cleanHL)
+
         # in case the highlight not found in body
         if baseindex == -1:
             continue
         curPos = len(text[0:baseindex].split())
+        if HL == test:
+            print "curPos1:", curPos
         # returned highlight may cutoff words, so word position may minus 1
         if text[baseindex] != " " and curPos>0 and text[baseindex-1] != " ":
             curPos = curPos - 1
+        #if HL == test:
+            #print "curPos2:", curPos
         for word in HL.split():
             if word.find("<em>") != -1:
+                #if HL == test:
+                    #print "curPos3", curPos
                 positions.append(curPos)
             curPos += 1
     return positions
@@ -239,7 +248,7 @@ pre_data = '''<html>
       <p style="text-indent: 1em;">Rule display:
     <input id="details" type="checkbox" name="details" value="details">Details
   </td></tr><tr><td>
-      <center></center>
+      <center><button id="download" onclick="download()">Download</button></center>
       <br></td></tr>
 </table>
 
@@ -267,6 +276,39 @@ pre_data = '''<html>
 </table>
 
 <script>
+    function changeFeedback(row) {
+        document.getElementById('feedback' + row).style.display = "block";
+    }
+
+    function download() {
+        feedbacks = []
+
+        var table = document.getElementById("mytable");
+        var rows = table.getElementsByTagName("tr");
+        for (var row = 0; row < rows.length; row++) {
+            var feedback = {}
+            myselect = document.getElementById('sel' + row)
+            if (myselect != null && (option = myselect.options[myselect.selectedIndex].value) != 'none') {
+                key = document.getElementsByTagName('pre')[row].firstChild.data.replace (/\t+$/, '')
+                feedback[key] = {'option:': option, 'text': document.getElementById('feedback' + row).value}
+                feedbacks.push(feedback)
+            }
+        }
+        var text = JSON.stringify(feedbacks);
+
+        url = window.location.href
+        var pom = document.createElement('a');
+        pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        pom.setAttribute('download', 'Viewer_with_Feedbacks.html');
+
+        pom.style.display = 'none';
+        document.body.appendChild(pom);
+
+        pom.click();
+
+        document.body.removeChild(pom);
+    }
+
     function highlightText(poses, rowNum) {
         var table = document.getElementById("mytable");
         var rows = table.getElementsByTagName('tr');
@@ -290,8 +332,8 @@ pre_data = '''<html>
             }
         }
         else {
-            for(var i = 1; i < rownum.length; i++) {
-                var pos = rownum[i];
+            for(var i = 1; i < poses.length; i++) {
+                var pos = poses[i];
                 words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
             }
         }
@@ -331,23 +373,29 @@ pre_data = '''<html>
 
                 html += '<tr>' +
                     "<td style='vertical-align:top;text-align:left;' width='5%'>" + 
-                    "<input id=row.idlabels type='text' name=row.idlabels value=i><br>ID: " +
-                    + row.idlabels.id + ' Internal_ID: ' 
-                    + row.idlabels.internalId + '<br><br>Internal Labels:' +  
+                    "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
+                    "<br>ID:" + row.idlabels.id + " Iternal_ID: " + row.idlabels.internalId + 
+                    '<br><br>Internal Labels:' +  
                     serialize(row.idlabels.internalLabels, function (lb) {
                         var str = ''
                         for (var k in lb) {
                             str += '<br>' + k + ' : ' + lb[k] + '<br>'
                         }
                         return str
-                     }) + '<br>Predictions:' +
+                     }) + 
+                    '<br>Predictions:' +
                     serialize(row.idlabels.predictions, function (lb) {
                         var str = ''
                         for (var k in lb) {
                             str += '<br>' + k + ' : ' + lb[k] + '<br>'
                         }
                         return str
-                    }) + '<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + '</td>' +
+                    }) + 
+                    '<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + 
+                    '<br><br>Feedback:' +
+                    "<select value = '0', onchange='changeFeedback(" + i + ")' id=sel" + i + " ><option value='none'>none</option><option value='failure'>failure</option><option value='incomplete'>incomplete</option><option value='bad rule'>bad rule</option><option value='bad matching'>bad matching</option></select>" +
+                    "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5'/>" +
+                    '</td>' +
                     "<td style='vertical-align:top;text-align:left;' width='5%'> " + 
                     serialize(row.predictedRanking, function (lb) {
                         var str = lb + '<br>'
@@ -365,6 +413,10 @@ pre_data = '''<html>
 
             $body.append(html)
             refreshTable(options)
+        }
+
+        function getSelectValue() {
+            //alert('lallalal')
         }
 
         function createRuleDetails(rule, options, rowNum) {
@@ -627,6 +679,13 @@ pre_data = '''<html>
             var rows = table.getElementsByTagName("tr");
             for (var row = 0; row < rows.length; row++) {
                 var cols = rows[row].children;
+                var selId = 'sel' + row
+                /*
+                if (document.getElementById(selId) != null) {
+                    document.getElementById(selId).value = '3'
+                } else {
+                    //alert(selId)
+                }*/
 
                 if ($.inArray("TP", options.fields) && cols[3].innerHTML != "" ||
                     $.inArray("FP", options.fields) && cols[4].innerHTML != "" ||
@@ -667,6 +726,11 @@ width : 40%;
 }
 .ruleList {
 list-style-type: square;
+}
+.mytext {
+    width: 200px;
+    height:200px;
+    display: none;
 }
 </style>
 <script id="raw-data" type="application/json">

@@ -5,3 +5,10 @@ out/
 configs/local.config
 src/main/java/edu/neu/ccs/pyramid/tmp/
 logs/
+visualization/test_prediction_analysis_1.json
+
+visualization/text
+
+visualization/Viewer.html
+
+visualization/train_prediction_analysis_9.json
