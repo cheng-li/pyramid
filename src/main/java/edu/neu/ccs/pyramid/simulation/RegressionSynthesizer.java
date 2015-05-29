@@ -54,7 +54,7 @@ public class RegressionSynthesizer {
                 .missingValue(false)
                 .build();
         for (int i=0;i<numDataPoints;i++){
-            double featureValue = Sampling.doubleUniform(-Math.PI/2,Math.PI/2);
+            double featureValue = Sampling.doubleUniform(-Math.PI,Math.PI);
             double label;
             label = Math.sin(featureValue);
             label += noise.sample();

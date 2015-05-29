@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.classification.TrainConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 
 /**
  * Created by chengli on 10/4/14.
@@ -13,6 +14,7 @@ public class LKTBTrainConfig extends TrainConfig{
     private double dataSamplingRate=1;
     private double featureSamplingRate=1;
     private int numIterations = 500;
+    private LeafOutputType leafOutputType = LeafOutputType.NEWTON;
 
 
     public LKTBTrainConfig() {
@@ -81,4 +83,11 @@ public class LKTBTrainConfig extends TrainConfig{
         return this;
     }
 
+    public LeafOutputType getLeafOutputType() {
+        return leafOutputType;
+    }
+
+    public void setLeafOutputType(LeafOutputType leafOutputType) {
+        this.leafOutputType = leafOutputType;
+    }
 }

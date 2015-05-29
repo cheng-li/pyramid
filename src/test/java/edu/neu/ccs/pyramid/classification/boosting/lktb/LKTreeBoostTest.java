@@ -35,7 +35,8 @@ public class LKTreeBoostTest {
 //        classic3_all();
 //        bingyu_all();
 //        faculty_all();
-        logisticTest();
+//        logisticTest();
+        softTreeTest();
     }
 
     static void spam_resume_train() throws Exception{
@@ -790,6 +791,34 @@ public class LKTreeBoostTest {
         }
         System.out.println(lkTreeBoost.getRegressors(0).get(0).predict(testSet.getRow(0)));
         System.out.println(lkTreeBoost.getRegressors(0).get(1).predict(testSet.getRow(0)));
+    }
+
+
+    static void softTreeTest() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
+                DataSetType.CLF_SPARSE,true);
+        System.out.println(dataSet.getMetaInfo());
+
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
+                DataSetType.CLF_DENSE,true);
+
+        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+
+
+        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
+                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .dataSamplingRate(1).featureSamplingRate(1)
+                .randomLevel(1)
+                .build();
+
+        LKTBTrainer lktbTrainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+//        lktbTrainer.addLogisticRegression(logisticRegression);
+        System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+        for (int i=0;i<100;i++){
+            lktbTrainer.iterate();
+            System.out.println("iteration "+i);
+            System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+        }
     }
 
 }

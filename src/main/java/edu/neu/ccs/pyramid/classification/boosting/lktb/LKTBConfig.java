@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.util.Sampling;
 
 import java.util.stream.IntStream;
@@ -17,6 +19,7 @@ public class LKTBConfig {
     private int[] activeDataPoints;
     private int numSplitIntervals;
     private int randomLevel;
+    private LeafOutputType leafOutputType;
 
 
     ClfDataSet getDataSet() {
@@ -59,6 +62,10 @@ public class LKTBConfig {
         return randomLevel;
     }
 
+    LeafOutputType getLeafOutputType() {
+        return leafOutputType;
+    }
+
     public static class Builder {
         /**
          * required
@@ -75,6 +82,7 @@ public class LKTBConfig {
         double featureSamplingRate=1;
         private int numSplitIntervals =100;
         private int randomLevel =1;
+        private LeafOutputType leafOutputType = LeafOutputType.NEWTON;
 
         public Builder(ClfDataSet dataSet) {
             this.dataSet = dataSet;
@@ -117,6 +125,11 @@ public class LKTBConfig {
             return this;
         }
 
+        public Builder setLeafOutputType(LeafOutputType leafOutputType) {
+            this.leafOutputType = leafOutputType;
+            return this;
+        }
+
         public LKTBConfig build() {
             return new LKTBConfig(this);
         }
@@ -135,6 +148,7 @@ public class LKTBConfig {
         this.numSplitIntervals = builder.numSplitIntervals;
         this.randomLevel = builder.randomLevel;
         int numDataPoints = dataSet.getNumDataPoints();
+        this.leafOutputType = builder.leafOutputType;
         if (dataSamplingRate == 1) {
             /**
              * preserve orders (seems does not matter for data)

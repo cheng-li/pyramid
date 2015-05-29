@@ -56,7 +56,7 @@ public class Node implements Serializable {
         return this;
     }
 
-    Node getLeftChild() {
+    public Node getLeftChild() {
         return leftChild;
     }
 
@@ -66,7 +66,7 @@ public class Node implements Serializable {
         return this;
     }
 
-    Node getRightChild() {
+    public Node getRightChild() {
         return rightChild;
     }
 
@@ -107,7 +107,7 @@ public class Node implements Serializable {
         return this;
     }
 
-    double getValue() {
+    public double getValue() {
         return value;
     }
 
@@ -127,7 +127,7 @@ public class Node implements Serializable {
         return this;
     }
 
-    double getThreshold() {
+    public double getThreshold() {
         return threshold;
     }
 

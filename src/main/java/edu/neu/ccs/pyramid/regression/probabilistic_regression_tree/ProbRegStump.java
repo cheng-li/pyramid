@@ -45,4 +45,9 @@ public class ProbRegStump implements Regressor{
         sb.append('}');
         return sb.toString();
     }
+
+    public void shrink(double learningRate){
+        leftOutput *= learningRate;
+        rightOutput *= learningRate;
+    }
 }

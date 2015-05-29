@@ -6,10 +6,9 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
-import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -266,37 +265,47 @@ public class LKTBTrainer {
         int numClasses = this.lkTreeBoost.getNumClasses();
         double learningRate = this.lktbConfig.getLearningRate();
 
-        LeafOutputCalculator leafOutputCalculator = probabilities -> {
-            double numerator = 0;
-            double denominator = 0;
-            for (int i=0;i<probabilities.length;i++) {
-                double label = pseudoResponse[i];
-                numerator += label*probabilities[i];
-                denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
-            }
-            double out;
-            if (denominator == 0) {
-                out = 0;
-            } else {
-                out = ((numClasses - 1) * numerator) / (numClasses * denominator);
-            }
-            //protection from numerically unstable issue
-            //todo does the threshold matter?
-            if (out>1){
-                out=1;
-            }
-            if (out<-1){
-                out=-1;
-            }
-            if (Double.isNaN(out)) {
-                throw new RuntimeException("leaf value is NaN");
-            }
-            if (Double.isInfinite(out)){
-                throw new RuntimeException("leaf value is Infinite");
-            }
-            out *= learningRate;
-            return out;
-        };
+        LeafOutputCalculator leafOutputCalculator = null;
+
+        switch (lktbConfig.getLeafOutputType()){
+            case NEWTON:
+                leafOutputCalculator = probabilities -> {
+                    double numerator = 0;
+                    double denominator = 0;
+                    for (int i=0;i<probabilities.length;i++) {
+                        double label = pseudoResponse[i];
+                        numerator += label*probabilities[i];
+                        denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
+                    }
+                    double out;
+                    if (denominator == 0) {
+                        out = 0;
+                    } else {
+                        out = ((numClasses - 1) * numerator) / (numClasses * denominator);
+                    }
+                    //protection from numerically unstable issue
+                    //todo does the threshold matter?
+                    if (out>1){
+                        out=1;
+                    }
+                    if (out<-1){
+                        out=-1;
+                    }
+                    if (Double.isNaN(out)) {
+                        throw new RuntimeException("leaf value is NaN");
+                    }
+                    if (Double.isInfinite(out)){
+                        throw new RuntimeException("leaf value is Infinite");
+                    }
+                    out *= learningRate;
+                    return out;
+                };
+                break;
+            case AVERAGE:
+                leafOutputCalculator = new AverageOutputCalculator(pseudoResponse);
+                break;
+        }
+
 
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         regTreeConfig.setMaxNumLeaves(this.lktbConfig.getNumLeaves());
@@ -306,12 +315,31 @@ public class LKTBTrainer {
         regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
         regTreeConfig.setRandomLevel(this.lktbConfig.getRandomLevel());
 
+
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
                 this.lktbConfig.getDataSet(),
                 pseudoResponse,
                 leafOutputCalculator);
+
         return regressionTree;
     }
+
+
+//    private Regressor fitClassK(int k){
+//        double[] pseudoResponse = this.gradientMatrix.getGradientsForClass(k);
+//        double learningRate = this.lktbConfig.getLearningRate();
+//
+//        ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
+//                .setDataSet(lktbConfig.getDataSet())
+//                .setLabels(pseudoResponse)
+//                .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+//                .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+//                .build();
+//
+//        ProbRegStump tree = trainer.train();
+//        tree.shrink(learningRate);
+//        return tree;
+//    }
 
 
 
