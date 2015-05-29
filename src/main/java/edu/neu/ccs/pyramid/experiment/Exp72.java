@@ -155,6 +155,7 @@ public class Exp72 {
         AdaBoostMH boosting = AdaBoostMH.deserialize(new File(output,modelName));
 
         MultiLabelClassifier.ClassProbEstimator plattScaling = (MultiLabelClassifier.ClassProbEstimator)Serialization.deserialize(new File(output,config.getString("output.plattScaling")));
+
         MultiLabelClfDataSet dataSet = loadTrainData(config);
         System.out.println("accuracy on training set = "+Accuracy.accuracy(boosting,dataSet));
 

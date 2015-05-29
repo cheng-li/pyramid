@@ -17,6 +17,7 @@ import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
@@ -111,6 +112,7 @@ public class AdaBoostMHInspector {
         predictionAnalysis.setLabels(labels);
         double probForTrueLabels = Double.NaN;
         if (scaling instanceof MultiLabelClassifier.AssignmentProbEstimator){
+
             probForTrueLabels = ((MultiLabelClassifier.AssignmentProbEstimator) scaling).predictAssignmentProb(dataSet.getRow(dataPointIndex),
                     dataSet.getMultiLabels()[dataPointIndex]);
         }
@@ -137,6 +139,12 @@ public class AdaBoostMHInspector {
             classScoreCalculations.add(classScoreCalculation);
         }
         predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
+
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
+        List<String> ranking = classes.stream().map(label -> new Pair<Integer,Double>(label,scaling.predictClassProb(dataSet.getRow(dataPointIndex),label)))
+                .sorted(comparator.reversed()).map(pair -> labelTranslator.toExtLabel(pair.getFirst())).collect(Collectors.toList());
+        predictionAnalysis.setPredictedRanking(ranking);
+
         return predictionAnalysis;
     }
 
