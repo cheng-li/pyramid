@@ -9,18 +9,23 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * visualize residuals for lktb with hard trees
- * Created by chengli on 5/28/15.
+ * visualize residuals for lktb with expectation trees
+ * Created by chengli on 5/29/15.
  */
-public class Exp112 {
+public class Exp113 {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
@@ -46,6 +51,9 @@ public class Exp112 {
                 .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(1)
                 .setLeafOutputType(LeafOutputType.AVERAGE)
+                .considerHardTree(false)
+                .considerExpectationTree(true)
+                .considerProbabilisticTree(false)
                 .build();
 
         LKTBTrainer lktbTrainer = new LKTBTrainer(trainConfig,lkTreeBoost);
@@ -73,7 +81,7 @@ public class Exp112 {
         for (int i=0;i<100;i++){
 
             System.out.println("iteration "+i);
-            System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,dataSet));
+            System.out.println("boosting accuracy = "+ Accuracy.accuracy(lkTreeBoost, dataSet));
             GradientMatrix gradientMatrix = lktbTrainer.getGradientMatrix();
             double[] gradients = gradientMatrix.getGradientsForClass(0);
             String gradientStr = Arrays.toString(gradients).replace("[","").replace("]","").concat("\n");
@@ -81,13 +89,15 @@ public class Exp112 {
 
             lktbTrainer.iterate();
 
-            RegressionTree tree = ((RegressionTree)lkTreeBoost.getRegressor(i,0));
+            ProbRegStump tree = ((ProbRegStump)lkTreeBoost.getRegressor(i,0));
 
 
-            int featurePicked = tree.getRoot().getFeatureIndex();
-            double threshold = tree.getRoot().getThreshold();
-            double left = tree.getRoot().getLeftChild().getValue();
-            double right = tree.getRoot().getRightChild().getValue();
+            int featurePicked = ((Sigmoid)tree.getGatingFunction()).getActiveFeatures().get(0);
+            double weight = ((Sigmoid)tree.getGatingFunction()).getWeights().get(featurePicked);
+            double bias = ((Sigmoid)tree.getGatingFunction()).getBias();
+            double threshold = -bias/weight;
+            double left = tree.getLeftOutput();
+            double right = tree.getRightOutput();
             FileUtils.writeStringToFile(featuresFile,""+featurePicked+"\n",true);
             FileUtils.writeStringToFile(thresFile,""+threshold+"\n",true);
             FileUtils.writeStringToFile(leftFile,""+left+"\n",true);
@@ -98,6 +108,29 @@ public class Exp112 {
             String predStr = Arrays.toString(predctions).replace("[","").replace("]","").concat("\n");
             FileUtils.writeStringToFile(predFile,predStr,true);
         }
-        System.out.println(lkTreeBoost);
+//        System.out.println(lkTreeBoost);
+
+
+        List<Regressor> regressors = lkTreeBoost.getRegressors(0);
+        for (int i=0;i<regressors.size();i++){
+            System.out.println("iteration "+i);
+            Regressor regressor = regressors.get(i);
+            if (regressor instanceof RegressionTree){
+                System.out.println("hard tree");
+            }
+            if (regressor instanceof ProbRegStump){
+                ProbRegStump probRegStump = (ProbRegStump)regressor;
+                if (probRegStump.getLossType()== ProbRegStumpTrainer.LossType.SquaredLossOfExpectation){
+                    System.out.println("expectation tree");
+                }
+                if (probRegStump.getLossType()== ProbRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
+                    System.out.println("probabilistic tree");
+                }
+            }
+        }
+
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println("test accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
     }
 }
