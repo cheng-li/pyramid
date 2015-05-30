@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression;
+package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrainer;

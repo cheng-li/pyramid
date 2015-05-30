@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.neu.ccs.pyramid.classification.PlattScaling;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -16,8 +15,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.adaboostmh.AdaBoostMH;
 import edu.neu.ccs.pyramid.multilabel_classification.adaboostmh.AdaBoostMHInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.adaboostmh.AdaBoostMHTrainer;
 
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
-import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLFlatScaling;
+import edu.neu.ccs.pyramid.multilabel_classification.MLFlatScaling;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.lang3.time.StopWatch;
 

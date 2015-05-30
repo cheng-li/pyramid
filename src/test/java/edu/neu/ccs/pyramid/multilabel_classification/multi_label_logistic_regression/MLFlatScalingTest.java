@@ -2,7 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regre
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.multilabel_classification.MLPlattScaling;
+import edu.neu.ccs.pyramid.multilabel_classification.MLFlatScaling;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
@@ -11,8 +11,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class MLFlatScalingTest {
     private static final Config config = new Config("configs/local.config");
