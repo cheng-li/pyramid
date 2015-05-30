@@ -12,6 +12,7 @@ public class ProbRegStump implements Regressor{
     GatingFunction gatingFunction;
     double leftOutput;
     double rightOutput;
+    ProbRegStumpTrainer.LossType lossType;
 
     @Override
     public double predict(Vector vector) {
@@ -34,6 +35,10 @@ public class ProbRegStump implements Regressor{
 
     public double getRightOutput() {
         return rightOutput;
+    }
+
+    public ProbRegStumpTrainer.LossType getLossType() {
+        return lossType;
     }
 
     @Override

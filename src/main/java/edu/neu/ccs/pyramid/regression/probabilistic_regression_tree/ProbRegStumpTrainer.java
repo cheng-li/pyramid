@@ -38,6 +38,7 @@ public class ProbRegStumpTrainer {
         lbfgs.optimize();
 
         ProbRegStump probRegStump = new ProbRegStump();
+        probRegStump.lossType = lossType;
 
         switch (this.lossType) {
             case SquaredLossOfExpectation:

@@ -3,6 +3,9 @@ package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by chengli on 5/21/15.
  */
@@ -21,6 +24,15 @@ public class Sigmoid implements GatingFunction {
 
     public double getBias() {
         return bias;
+    }
+
+    public List<Integer> getActiveFeatures(){
+        List list = new ArrayList<>();
+        for (Vector.Element element: weights.nonZeroes()){
+            int index = element.index();
+            list.add(index);
+        }
+        return list;
     }
 
     @Override

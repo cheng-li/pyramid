@@ -20,6 +20,9 @@ public class LKTBConfig {
     private int numSplitIntervals;
     private int randomLevel;
     private LeafOutputType leafOutputType;
+    private boolean considerHardTree;
+    private boolean considerExpectationTree;
+    private boolean considerProbabilisticTree;
 
 
     ClfDataSet getDataSet() {
@@ -66,6 +69,19 @@ public class LKTBConfig {
         return leafOutputType;
     }
 
+
+    public boolean considerHardTree() {
+        return considerHardTree;
+    }
+
+    public boolean considerExpectationTree() {
+        return considerExpectationTree;
+    }
+
+    public boolean considerProbabilisticTree() {
+        return considerProbabilisticTree;
+    }
+
     public static class Builder {
         /**
          * required
@@ -83,6 +99,9 @@ public class LKTBConfig {
         private int numSplitIntervals =100;
         private int randomLevel =1;
         private LeafOutputType leafOutputType = LeafOutputType.NEWTON;
+        private boolean considerHardTree=true;
+        private boolean considerExpectationTree=false;
+        private boolean considerProbabilisticTree=false;
 
         public Builder(ClfDataSet dataSet) {
             this.dataSet = dataSet;
@@ -130,6 +149,22 @@ public class LKTBConfig {
             return this;
         }
 
+
+        public Builder considerHardTree(boolean considerHardTree) {
+            this.considerHardTree = considerHardTree;
+            return this;
+        }
+
+        public Builder considerExpectationTree(boolean considerExpectationTree) {
+            this.considerExpectationTree = considerExpectationTree;
+            return this;
+        }
+
+        public Builder considerProbabilisticTree(boolean considerProbabilisticTree) {
+            this.considerProbabilisticTree = considerProbabilisticTree;
+            return this;
+        }
+
         public LKTBConfig build() {
             return new LKTBConfig(this);
         }
@@ -149,6 +184,9 @@ public class LKTBConfig {
         this.randomLevel = builder.randomLevel;
         int numDataPoints = dataSet.getNumDataPoints();
         this.leafOutputType = builder.leafOutputType;
+        this.considerHardTree=builder.considerHardTree;
+        this.considerExpectationTree=builder.considerExpectationTree;
+        this.considerProbabilisticTree=builder.considerProbabilisticTree;
         if (dataSamplingRate == 1) {
             /**
              * preserve orders (seems does not matter for data)
