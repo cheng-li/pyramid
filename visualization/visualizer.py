@@ -49,8 +49,8 @@ def getPositions(docId, field, keywords, slop, in_order):
         if baseindex == -1:
             continue
         curPos = len(text[0:baseindex].split())
-        if HL == test:
-            print "curPos1:", curPos
+        #if HL == test:
+            #print "curPos1:", curPos
         # returned highlight may cutoff words, so word position may minus 1
         if text[baseindex] != " " and curPos>0 and text[baseindex-1] != " ":
             curPos = curPos - 1
