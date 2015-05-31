@@ -3,13 +3,8 @@ package edu.neu.ccs.pyramid.dataset;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -112,9 +107,78 @@ public class LibSvmFormat {
         }
     }
 
-    public static ClfDataSet loadClfDataSet(String libSvmFile, DataSetType dataSetType,
-                                            boolean loadSettings) throws IOException, ClassNotFoundException {
-        return null;
+    public static ClfDataSet loadClfDataSet(String libSvmFile,
+                                            int numFeatures, int numClasses, boolean dense) throws IOException, ClassNotFoundException {
+        LabelTranslator labelTranslator = loadLabelTranslator(libSvmFile);
+        System.out.println(labelTranslator);
+
+        if (labelTranslator.getNumClasses()!=numClasses){
+            throw new RuntimeException("labelTranslator.getNumClasses()!=numClasse");
+        }
+
+        int numDataPoints = getNumDataPoints(libSvmFile);
+
+        ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints)
+                .numFeatures(numFeatures)
+                .numClasses(numClasses)
+                .dense(dense)
+                .build();
+        try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
+        ) {
+            String line = null;
+            int dataIndex = 0;
+            while ((line=br.readLine())!=null){
+                String[] lineSplit = line.split(" ");
+                int extIntLabel = (int)Double.parseDouble(lineSplit[0]);
+                String extLabel = ""+extIntLabel;
+                int label = labelTranslator.toIntLabel(extLabel);
+                dataSet.setLabel(dataIndex,label);
+                for (int i=1;i<lineSplit.length;i++){
+                    String pair = lineSplit[i];
+                    // ignore things after #
+                    if (pair.startsWith("#")){
+                        break;
+                    }
+                    String[] pairSplit = pair.split(":");
+                    int featureIndex = Integer.parseInt(pairSplit[0])-1;
+                    double featureValue = Double.parseDouble(pairSplit[1]);
+                    dataSet.setFeatureValue(dataIndex, featureIndex,featureValue);
+                }
+                dataIndex += 1;
+            }
+        }
+        dataSet.setLabelTranslator(labelTranslator);
+        return dataSet;
+
+    }
+
+    public static LabelTranslator loadLabelTranslator(String libSvmFile) throws IOException{
+        Set<Integer> oldLabels = new HashSet<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
+        ) {
+            String line = null;
+            while ((line=br.readLine())!=null){
+                String[] lineSplit = line.split(" ");
+                int label = (int)Double.parseDouble(lineSplit[0]);
+                oldLabels.add(label);
+            }
+        }
+        List<String> labelStrings = oldLabels.stream().sorted().map(label -> ""+label).collect(Collectors.toList());
+        LabelTranslator labelTranslator = new LabelTranslator(labelStrings);
+        return labelTranslator;
+    }
+
+    public static int getNumDataPoints(String libSvmFile) throws IOException{
+        int num = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
+        ) {
+            String line = null;
+            while ((line=br.readLine())!=null){
+                num += 1;
+            }
+        }
+        return num;
     }
 
     public static RegDataSet loadRegDataSet(String libSvmFile, DataSetType dataSetType,
