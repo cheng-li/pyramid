@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -33,6 +34,22 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
 
         vector.set(vector.size()-2,0);
         vector.set(vector.size()-1,1);
+
+    }
+
+    public SquaredLossOfExpectation(DataSet dataSet, double[] labels, int[] activeFeatures, RegressionTree regressionTree) {
+        this.dataSet = dataSet;
+        this.labels = labels;
+        this.vector = new DenseVector(dataSet.getNumFeatures() + 3);
+        this.activeFeatures = activeFeatures;
+
+        vector.set(vector.size()-2,regressionTree.getRoot().getLeftChild().getValue());
+        vector.set(vector.size()-1,regressionTree.getRoot().getRightChild().getValue());
+        double threshold = regressionTree.getRoot().getThreshold();
+        int featureIndex = regressionTree.getRoot().getFeatureIndex();
+        double a = -100;
+        vector.set(0,-a*threshold);
+        vector.set(featureIndex+1, a);
 
     }
 

@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
+import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
@@ -425,6 +426,9 @@ public class LKTBTrainer {
                     .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
                     .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     .build();
+            LBFGS lbfgs = expectationTrainer.getLbfgs();
+            lbfgs.setCheckConvergence(false);
+            lbfgs.setMaxIteration(100);
 
             ProbRegStump expectationTree = expectationTrainer.train();
             expectationTree.shrink(learningRate);

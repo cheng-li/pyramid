@@ -100,6 +100,7 @@ public class ProbRegStumpTrainer {
         }
 
         public ProbRegStumpTrainer build() {
+            RegressionTree hardTree = null;
             ProbRegStumpTrainer trainer = new ProbRegStumpTrainer();
             trainer.dataSet = dataSet;
             trainer.featureType = featureType;
@@ -117,7 +118,7 @@ public class ProbRegStumpTrainer {
                     regTreeConfig.setMinDataPerLeaf(1);
                     regTreeConfig.setActiveDataPoints(IntStream.range(0, dataSet.getNumDataPoints()).toArray());
                     regTreeConfig.setNumSplitIntervals(1000);
-                    RegressionTree hardTree = RegTreeTrainer.fit(regTreeConfig, dataSet,labels);
+                    hardTree = RegTreeTrainer.fit(regTreeConfig, dataSet,labels);
                     int usedFeature = hardTree.getRoot().getFeatureIndex();
                     activeFeatures = new int[1];
                     activeFeatures[0] = usedFeature;
@@ -125,8 +126,9 @@ public class ProbRegStumpTrainer {
             }
 
             switch (lossType) {
+                //todo re-factor
                 case SquaredLossOfExpectation:
-                    trainer.loss = new SquaredLossOfExpectation(dataSet,labels, activeFeatures);
+                    trainer.loss = new SquaredLossOfExpectation(dataSet,labels, activeFeatures,hardTree);
                     break;
                 case ExpectationOfSquaredLoss:
                     trainer.loss = new ExpectationOfSquaredLoss(dataSet,labels, activeFeatures);

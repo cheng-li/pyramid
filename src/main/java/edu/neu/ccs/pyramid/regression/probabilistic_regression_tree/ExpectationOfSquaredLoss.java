@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -35,6 +36,8 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
         vector.set(vector.size()-1,1);
 
     }
+
+
 
     public ExpectationOfSquaredLoss(DataSet dataSet, double[] labels, Vector vector, int[] activeFeatures) {
         this.dataSet = dataSet;
