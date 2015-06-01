@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
@@ -29,7 +30,7 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
     public SquaredLossOfExpectation(DataSet dataSet, double[] labels, int[] activeFeatures) {
         this.dataSet = dataSet;
         this.labels = labels;
-        this.vector = new DenseVector(dataSet.getNumFeatures() + 3);
+        this.vector = new RandomAccessSparseVector(dataSet.getNumFeatures() + 3);
         this.activeFeatures = activeFeatures;
 
         vector.set(vector.size()-2,0);
@@ -40,7 +41,7 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
     public SquaredLossOfExpectation(DataSet dataSet, double[] labels, int[] activeFeatures, RegressionTree regressionTree) {
         this.dataSet = dataSet;
         this.labels = labels;
-        this.vector = new DenseVector(dataSet.getNumFeatures() + 3);
+        this.vector = new RandomAccessSparseVector(dataSet.getNumFeatures() + 3);
         this.activeFeatures = activeFeatures;
 
         vector.set(vector.size()-2,regressionTree.getRoot().getLeftChild().getValue());
@@ -108,6 +109,7 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
 //            logger.debug("fx = "+Arrays.toString(fx));
 //        }
 
+        // parallel set for dense vector
         Vector d = new DenseVector(dataSet.getNumDataPoints());
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(
                 i-> d.set(i,(fx[i]-labels[i])*hx[i]*(1-hx[i]))
@@ -117,6 +119,7 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
         gradient.set(0,(leftValue - rightValue)*d.zSum());
 
         //gradients for all features specified in active features
+        // note: we can not do parallel set for sparse vector
         Arrays.stream(this.activeFeatures).parallel().forEach(
                 j -> gradient.set(j+1,(leftValue - rightValue)*d.dot(dataSet.getColumn(j)))
         );
@@ -138,7 +141,7 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
         if (logger.isDebugEnabled()){
             logger.debug("gradient calculation done");
         }
-        return gradient;
+        return new RandomAccessSparseVector(gradient);
     }
 
     private double getValue(){

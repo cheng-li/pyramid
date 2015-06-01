@@ -427,7 +427,7 @@ public class LKTBTrainer {
                     .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     .build();
             LBFGS lbfgs = expectationTrainer.getLbfgs();
-            lbfgs.setCheckConvergence(false);
+            lbfgs.setCheckConvergence(true);
             lbfgs.setMaxIteration(100);
 
             ProbRegStump expectationTree = expectationTrainer.train();

@@ -16,6 +16,7 @@ import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.Arrays;
@@ -34,7 +35,10 @@ public class Exp115 {
         File folder = new File(TMP);
         FileUtils.cleanDirectory(folder);
         train_hard();
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         train_expectation();
+        System.out.println(stopWatch);
         train_hybrid();
     }
 

@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.optimization;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Iterator;
@@ -146,7 +147,8 @@ public class LBFGS {
 
     Vector findDirection(){
         Vector g = function.getGradient();
-        Vector q = new DenseVector(g.size());
+        //todo double check, should it be sparse or dense?
+        Vector q = new RandomAccessSparseVector(g.size());
         q.assign(g);
         Iterator<Double> rhoDesIterator = rhoQueue.descendingIterator();
         Iterator<Vector> sDesIterator = sQueue.descendingIterator();

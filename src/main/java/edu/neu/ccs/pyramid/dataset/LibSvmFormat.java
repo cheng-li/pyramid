@@ -129,7 +129,8 @@ public class LibSvmFormat {
             String line = null;
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                // sometimes, they use more than one spaces
+                String[] lineSplit = line.split("\\s+");
                 int extIntLabel = (int)Double.parseDouble(lineSplit[0]);
                 String extLabel = ""+extIntLabel;
                 int label = labelTranslator.toIntLabel(extLabel);
@@ -159,7 +160,7 @@ public class LibSvmFormat {
         ) {
             String line = null;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                String[] lineSplit = line.split("\\s+");
                 int label = (int)Double.parseDouble(lineSplit[0]);
                 oldLabels.add(label);
             }
