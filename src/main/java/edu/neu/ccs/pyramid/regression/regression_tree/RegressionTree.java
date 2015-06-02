@@ -35,6 +35,14 @@ public class RegressionTree implements Regressor, Serializable {
         this.leaves = new ArrayList<>();
     }
 
+    //todo use an array to save these values in boosting
+    public void shrink(double shrinkage){
+        for (Node leaf: leaves){
+            double value = leaf.getValue();
+            leaf.setValue(value*shrinkage);
+        }
+    }
+
     //todo deal with reduction and probabilities
     public static RegressionTree newStump(int featureIndex, double threshold,
                                           double leftOutput, double rightOutput){

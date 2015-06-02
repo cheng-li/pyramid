@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
+import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -22,7 +23,7 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-//        spam_test();
+        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
@@ -36,7 +37,7 @@ public class LKTreeBoostTest {
 //        bingyu_all();
 //        faculty_all();
 //        logisticTest();
-        softTreeTest();
+//        softTreeTest();
     }
 
     static void spam_resume_train() throws Exception{
@@ -174,9 +175,13 @@ public class LKTreeBoostTest {
 
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
                         .dataSamplingRate(1).featureSamplingRate(1)
                         .randomLevel(1)
+                        .considerHardTree(true)
+                        .considerExpectationTree(false)
+                        .considerProbabilisticTree(false)
+                        .setLeafOutputType(LeafOutputType.AVERAGE)
                         .build();
 
         LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
