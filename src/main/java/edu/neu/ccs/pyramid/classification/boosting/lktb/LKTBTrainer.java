@@ -326,26 +326,15 @@ public class LKTBTrainer {
 //                this.lktbConfig.getDataSet(),
 //                pseudoResponse,
 //                leafOutputCalculator);
+//        if (lktbConfig.getLeafOutputType()==LeafOutputType.AVERAGE){
+//            regressionTree.shrink(learningRate);
+//        }
 //
 //        return regressionTree;
 //    }
 
 
-//    private Regressor fitClassK(int k){
-//        double[] pseudoResponse = this.gradientMatrix.getGradientsForClass(k);
-//        double learningRate = this.lktbConfig.getLearningRate();
-//
-//        ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
-//                .setDataSet(lktbConfig.getDataSet())
-//                .setLabels(pseudoResponse)
-//                .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-//                .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
-//                .build();
-//
-//        ProbRegStump tree = trainer.train();
-//        tree.shrink(learningRate);
-//        return tree;
-//    }
+
 
 
     /**
@@ -362,6 +351,7 @@ public class LKTBTrainer {
             LeafOutputCalculator leafOutputCalculator = null;
 
             switch (lktbConfig.getLeafOutputType()){
+                //todo make newton step better
                 case NEWTON:
                     leafOutputCalculator = probabilities -> {
                         double numerator = 0;
@@ -391,6 +381,7 @@ public class LKTBTrainer {
                         if (Double.isInfinite(out)){
                             throw new RuntimeException("leaf value is Infinite");
                         }
+                        //todo move this outside
                         out *= learningRate;
                         return out;
                     };
@@ -414,7 +405,15 @@ public class LKTBTrainer {
                     this.lktbConfig.getDataSet(),
                     pseudoResponse,
                     leafOutputCalculator);
+            // use un-shrunk one to calculate mse
             double mse = MSE.mse(pseudoResponse,regressionTree.predict(lktbConfig.getDataSet()));
+            System.out.println("hard tree mse = "+mse);
+
+            if (lktbConfig.getLeafOutputType()==LeafOutputType.AVERAGE){
+                regressionTree.shrink(learningRate);
+            }
+
+
             competitors.add(new Pair<>(regressionTree, mse));
         }
 
@@ -431,9 +430,10 @@ public class LKTBTrainer {
             lbfgs.setMaxIteration(100);
 
             ProbRegStump expectationTree = expectationTrainer.train();
-            expectationTree.shrink(learningRate);
 
             double mse = MSE.mse(pseudoResponse, expectationTree.predict(lktbConfig.getDataSet()));
+            System.out.println("expectation tree mse = "+mse);
+            expectationTree.shrink(learningRate);
             competitors.add(new Pair<>(expectationTree, mse));
         }
 
@@ -446,9 +446,12 @@ public class LKTBTrainer {
                     .build();
 
             ProbRegStump probabilisticTree = probabilisticTrainer.train();
-            probabilisticTree.shrink(learningRate);
+
 
             double mse = MSE.mse(pseudoResponse,probabilisticTree.predict(lktbConfig.getDataSet()));
+            System.out.println("probabilistic tree mse = "+mse);
+
+            probabilisticTree.shrink(learningRate);
             competitors.add(new Pair<>(probabilisticTree, mse));
         }
 
