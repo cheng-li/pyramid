@@ -19,11 +19,10 @@ import java.io.File;
 import java.util.List;
 
 /**
- * hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, no newton, no shrinkage
- * Created by chengli on 5/30/15.
+ * hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, with shrinkage, without newton
+ * Created by chengli on 6/1/15.
  */
-public class Exp116 {
-
+public class Exp117 {
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("please specify the config file");
@@ -51,7 +50,7 @@ public class Exp116 {
         LKTreeBoost lkTreeBoost = new LKTreeBoost(dataSet.getNumClasses());
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
                 .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(1)
                 .setLeafOutputType(LeafOutputType.AVERAGE)
@@ -66,7 +65,7 @@ public class Exp116 {
         File testFile = new File(outputFolder,"test_acc");
         File typeFile = new File(outputFolder,"type");
 
-        for (int i=0;i<100;i++){
+        for (int i=0;i<config.getInt("iterations");i++){
             System.out.println("iteration "+i);
             System.out.println("boosting accuracy = "+ Accuracy.accuracy(lkTreeBoost, dataSet));
 
@@ -107,7 +106,7 @@ public class Exp116 {
         LKTreeBoost lkTreeBoost = new LKTreeBoost(dataSet.getNumClasses());
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
                 .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(1)
                 .setLeafOutputType(LeafOutputType.AVERAGE)
@@ -122,7 +121,7 @@ public class Exp116 {
         File testFile = new File(outputFolder,"test_acc");
         File typeFile = new File(outputFolder,"type");
 
-        for (int i=0;i<100;i++){
+        for (int i=0;i<config.getInt("iterations");i++){
             System.out.println("iteration "+i);
             System.out.println("boosting accuracy = "+ Accuracy.accuracy(lkTreeBoost, dataSet));
 
@@ -162,7 +161,7 @@ public class Exp116 {
         LKTreeBoost lkTreeBoost = new LKTreeBoost(dataSet.getNumClasses());
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
                 .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(1)
                 .setLeafOutputType(LeafOutputType.AVERAGE)
@@ -177,7 +176,7 @@ public class Exp116 {
         File testFile = new File(outputFolder,"test_acc");
         File typeFile = new File(outputFolder,"type");
 
-        for (int i=0;i<100;i++){
+        for (int i=0;i<config.getInt("iterations");i++){
             System.out.println("iteration "+i);
             System.out.println("boosting accuracy = "+ Accuracy.accuracy(lkTreeBoost, dataSet));
 
