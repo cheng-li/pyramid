@@ -14,6 +14,7 @@ import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.List;
@@ -65,14 +66,19 @@ public class Exp117 {
         File testFile = new File(outputFolder,"test_acc");
         File typeFile = new File(outputFolder,"type");
 
+
         for (int i=0;i<config.getInt("iterations");i++){
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             System.out.println("iteration "+i);
             System.out.println("boosting accuracy = "+ Accuracy.accuracy(lkTreeBoost, dataSet));
 
+            System.out.println("time spent on accuracy = "+stopWatch);
+
             lktbTrainer.iterate();
+            System.out.println("time spent on one iteration = "+stopWatch);
 
-
-            FileUtils.writeStringToFile(trainFile,""+Accuracy.accuracy(lkTreeBoost, dataSet)+"\n",true);
+            FileUtils.writeStringToFile(trainFile, "" + Accuracy.accuracy(lkTreeBoost, dataSet) + "\n", true);
             FileUtils.writeStringToFile(testFile,""+Accuracy.accuracy(lkTreeBoost, testSet)+"\n",true);
             List<Regressor> regressors = lkTreeBoost.getRegressors(0);
             Regressor regressor = regressors.get(i);
@@ -122,11 +128,15 @@ public class Exp117 {
         File typeFile = new File(outputFolder,"type");
 
         for (int i=0;i<config.getInt("iterations");i++){
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             System.out.println("iteration "+i);
-            System.out.println("boosting accuracy = "+ Accuracy.accuracy(lkTreeBoost, dataSet));
+            System.out.println("boosting accuracy = " + Accuracy.accuracy(lkTreeBoost, dataSet));
+
+            System.out.println("time spent on accuracy = "+stopWatch);
 
             lktbTrainer.iterate();
-
+            System.out.println("time spent on one iteration = "+stopWatch);
 
             FileUtils.writeStringToFile(trainFile,""+Accuracy.accuracy(lkTreeBoost, dataSet)+"\n",true);
             FileUtils.writeStringToFile(testFile,""+Accuracy.accuracy(lkTreeBoost, testSet)+"\n",true);
@@ -177,10 +187,15 @@ public class Exp117 {
         File typeFile = new File(outputFolder,"type");
 
         for (int i=0;i<config.getInt("iterations");i++){
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             System.out.println("iteration "+i);
             System.out.println("boosting accuracy = "+ Accuracy.accuracy(lkTreeBoost, dataSet));
 
+            System.out.println("time spent on accuracy = "+stopWatch);
+
             lktbTrainer.iterate();
+            System.out.println("time spent on one iteration = " + stopWatch);
 
 
             FileUtils.writeStringToFile(trainFile,""+Accuracy.accuracy(lkTreeBoost, dataSet)+"\n",true);
