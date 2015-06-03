@@ -73,6 +73,8 @@ def writeRule(docId, line_count, num, rule):
         if check["feature value"] != 0.0 and check["feature"].has_key("ngram"):
             pos += getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], check["feature"]["slop"], check["feature"]["inOrder"])
             checkOneRule['ngram'] = check["feature"]["ngram"]
+        elif check["feature"].has_key("ngram"):
+            checkOneRule['ngram'] = check["feature"]["ngram"]
         else:
             checkOneRule['ngram'] = ""
         checkOneRule['index'] = check["feature"]["index"]
