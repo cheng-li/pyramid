@@ -20,11 +20,11 @@ import java.io.File;
 import java.util.List;
 
 /**
- * hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, with shrinkage, without newton
- * used convergence check to stop early
- * Created by chengli on 6/1/15.
+ *  * hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, with shrinkage, without newton
+ * always run lbfgs for 100 iterations
+ * Created by chengli on 6/2/15.
  */
-public class Exp117 {
+public class Exp118 {
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("please specify the config file");
