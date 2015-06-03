@@ -22,6 +22,9 @@ public class LSBConfig {
     private boolean considerExpectationTree;
     private boolean considerProbabilisticTree;
 
+    public static Builder getBuilder(RegDataSet regDataSet){
+        return new Builder(regDataSet);
+    }
 
     RegDataSet getDataSet() {
         return dataSet;
