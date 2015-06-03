@@ -122,4 +122,28 @@ public class RegressionSynthesizerTest {
 
     }
 
+    private static void test2(){
+        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder()
+                .setNumDataPoints(100)
+                .build();
+
+        //        RegDataSet trainSet = RegressionSynthesizer.univarStep();
+//        RegDataSet testSet = RegressionSynthesizer.univarStep();
+
+//        RegDataSet trainSet = RegressionSynthesizer.univarSine();
+//        RegDataSet testSet = RegressionSynthesizer.univarSine();
+
+//        RegDataSet trainSet = RegressionSynthesizer.univarLine();
+//        RegDataSet testSet = RegressionSynthesizer.univarLine();
+
+//        RegDataSet trainSet = RegressionSynthesizer.univarQuadratic();
+//        RegDataSet testSet = RegressionSynthesizer.univarQuadratic();
+
+        RegDataSet trainSet = regressionSynthesizer.univarExp();
+        RegDataSet testSet = regressionSynthesizer.univarExp();
+
+        TRECFormat.save(trainSet,new File(TMP,"train.trec"));
+        TRECFormat.save(testSet,new File(TMP,"test.trec"));
+    }
+
 }

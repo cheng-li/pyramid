@@ -15,7 +15,7 @@ public class LSBoost implements Regressor {
     List<Regressor> regressors;
     List<Double> weights;
 
-    LSBoost() {
+    public LSBoost() {
         this.regressors = new ArrayList<>();
         this.weights = new ArrayList<>();
     }
@@ -34,5 +34,13 @@ public class LSBoost implements Regressor {
     @Override
     public FeatureList getFeatureList() {
         return this.featureList;
+    }
+
+    public List<Regressor> getRegressors() {
+        return regressors;
+    }
+
+    public List<Double> getWeights() {
+        return weights;
     }
 }

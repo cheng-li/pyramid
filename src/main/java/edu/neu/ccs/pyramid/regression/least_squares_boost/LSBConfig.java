@@ -21,6 +21,7 @@ public class LSBConfig {
     private boolean considerHardTree;
     private boolean considerExpectationTree;
     private boolean considerProbabilisticTree;
+    private boolean softTreeEarlyStop;
 
     public static Builder getBuilder(RegDataSet regDataSet){
         return new Builder(regDataSet);
@@ -79,6 +80,10 @@ public class LSBConfig {
         return considerProbabilisticTree;
     }
 
+    public boolean softTreeEarlyStop() {
+        return softTreeEarlyStop;
+    }
+
     public static class Builder {
         /**
          * required
@@ -98,6 +103,7 @@ public class LSBConfig {
         private boolean considerHardTree=true;
         private boolean considerExpectationTree=false;
         private boolean considerProbabilisticTree=false;
+        private boolean softTreeEarlyStop=false;
 
         public Builder(RegDataSet dataSet) {
             this.dataSet = dataSet;
@@ -156,6 +162,11 @@ public class LSBConfig {
             return this;
         }
 
+        public Builder softTreeEarlyStop(boolean softTreeEarlyStop) {
+            this.softTreeEarlyStop = softTreeEarlyStop;
+            return this;
+        }
+
         public LSBConfig build() {
             return new LSBConfig(this);
         }
@@ -177,6 +188,7 @@ public class LSBConfig {
         this.considerHardTree=builder.considerHardTree;
         this.considerExpectationTree=builder.considerExpectationTree;
         this.considerProbabilisticTree=builder.considerProbabilisticTree;
+        this.softTreeEarlyStop=builder.softTreeEarlyStop;
         if (dataSamplingRate == 1) {
             /**
              * preserve orders (seems does not matter for data)

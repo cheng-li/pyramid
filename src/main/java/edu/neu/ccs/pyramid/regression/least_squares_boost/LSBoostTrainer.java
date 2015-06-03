@@ -130,7 +130,7 @@ public class LSBoostTrainer {
                     .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     .build();
             LBFGS lbfgs = expectationTrainer.getLbfgs();
-            lbfgs.setCheckConvergence(false);
+            lbfgs.setCheckConvergence(lsbConfig.softTreeEarlyStop());
             lbfgs.setMaxIteration(100);
 
             ProbRegStump expectationTree = expectationTrainer.train();
