@@ -37,9 +37,10 @@ def getPositions(docId, field, keywords, slop, in_order):
         return []
     positions = []
     text = res["hits"]["hits"][0]["_source"]["body"]
+    text = text.replace("<br />", "")
     highlights = res["hits"]["hits"][0]["highlight"]["body"]
     for HL in highlights:
-        #test =  " beautiful set designs, a nice erotic feel and a nice sex scene. But (again) predictable and <em>not</em> <em>even</em> remotely"
+        
 
         cleanHL = HL.replace("<em>", "")
         cleanHL = cleanHL.replace("</em>", "")
@@ -49,17 +50,11 @@ def getPositions(docId, field, keywords, slop, in_order):
         if baseindex == -1:
             continue
         curPos = len(text[0:baseindex].split())
-        #if HL == test:
-            #print "curPos1:", curPos
         # returned highlight may cutoff words, so word position may minus 1
         if text[baseindex] != " " and curPos>0 and text[baseindex-1] != " ":
             curPos = curPos - 1
-        #if HL == test:
-            #print "curPos2:", curPos
         for word in HL.split():
             if word.find("<em>") != -1:
-                #if HL == test:
-                    #print "curPos3", curPos
                 positions.append(curPos)
             curPos += 1
     return positions
@@ -75,11 +70,12 @@ def writeRule(docId, line_count, num, rule):
         #read pos from ElasticSearch
         checkOneRule = {}
         pos = [line_count]
-        if check["feature value"] != 0.0:
+        if check["feature value"] != 0.0 and check["feature"].has_key("ngram"):
             pos += getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], check["feature"]["slop"], check["feature"]["inOrder"])
-        
+            checkOneRule['ngram'] = check["feature"]["ngram"]
+        else:
+            checkOneRule['ngram'] = ""
         checkOneRule['index'] = check["feature"]["index"]
-        checkOneRule['ngram'] = check["feature"]["ngram"]
         checkOneRule['field'] = check["feature"]["field"]
         checkOneRule['slop'] = check["feature"]["slop"]
         checkOneRule['value'] = check["feature value"]
