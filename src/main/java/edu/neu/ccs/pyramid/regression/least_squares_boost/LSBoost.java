@@ -11,9 +11,9 @@ import java.util.List;
  * Created by chengli on 6/3/15.
  */
 public class LSBoost implements Regressor {
-    private FeatureList featureList;
-    private List<Regressor> regressors;
-    private List<Double> weights;
+    FeatureList featureList;
+    List<Regressor> regressors;
+    List<Double> weights;
 
     LSBoost() {
         this.regressors = new ArrayList<>();
