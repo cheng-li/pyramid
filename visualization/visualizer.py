@@ -72,11 +72,12 @@ def writeRule(docId, line_count, num, rule):
         pos = [line_count]
         if check["feature value"] != 0.0 and check["feature"].has_key("ngram"):
             pos += getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], check["feature"]["slop"], check["feature"]["inOrder"])
-            checkOneRule['ngram'] = check["feature"]["ngram"]
-        elif check["feature"].has_key("ngram"):
+        
+        if check["feature"].has_key("ngram"):
             checkOneRule['ngram'] = check["feature"]["ngram"]
         else:
             checkOneRule['ngram'] = ""
+            
         checkOneRule['index'] = check["feature"]["index"]
         checkOneRule['field'] = check["feature"]["field"]
         checkOneRule['slop'] = check["feature"]["slop"]
@@ -154,6 +155,8 @@ def createTable(data):
         idlabels['id'] = row['id']
         idlabels['internalId'] = row["internalId"]
         idlabels['internalLabels'] = row['internalLabels']
+        idlabels['feedbackSelect'] = 'none'
+        idlabels['feedbackText'] = ''
 
         # internal labels
         internalLabels = []
@@ -247,7 +250,7 @@ pre_data = '''<html>
       <p style="text-indent: 1em;">Rule display:
     <input id="details" type="checkbox" name="details" value="details">Details
   </td></tr><tr><td>
-      <center><button id="download" onclick="download()">Download</button></center>
+      <center><button id="create">Create file</button> <a download="new.html" id="downloadlink" style="display: none">Download</a></center>
       <br></td></tr>
 </table>
 
@@ -288,7 +291,7 @@ pre_data = '''<html>
             var feedback = {}
             myselect = document.getElementById('sel' + row)
             if (myselect != null && (option = myselect.options[myselect.selectedIndex].value) != 'none') {
-                key = document.getElementsByTagName('pre')[row].firstChild.data.replace (/\t+$/, '')
+                key = document.getElementsByTagName('pre')[row].firstChild.data.replace (/  +$/, '')
                 feedback[key] = {'option:': option, 'text': document.getElementById('feedback' + row).value}
                 feedbacks.push(feedback)
             }
@@ -360,6 +363,37 @@ pre_data = '''<html>
         }
         return false;
     }
+    function createOption(value, isSelected) {
+        if (isSelected) {
+            return "<option value=" + value + " selected>" + value + "</option>"
+        } else {
+            return "<option value=" + value + ">" + value + "</option>"
+        }
+    }
+
+
+    function createTextarea(i, display, text) {
+        if (display) {
+            return "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5'>" +
+                text + "</textarea>"
+        } else {
+            return "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5' style='display:none'>" +
+                text + "</textarea>" 
+        }
+    }
+
+    function displayFeedback(i, sel, text) {
+        return "<select onchange='changeFeedback(" + i + ")' id=sel" + i + " >" + 
+        createOption('none', sel=='none') + 
+        createOption('failure', sel=='failure') + 
+        createOption('incomplete', sel=='incomplete') + 
+        createOption('bad_rule', sel=='bad_rule') + 
+        createOption('bad_matching', sel=='bad_matching') + 
+        "</select>" + 
+        createTextarea(i, sel!='none', text)
+        
+    }
+
     (function () {
         var _data = null
 
@@ -392,15 +426,14 @@ pre_data = '''<html>
                     }) + 
                     '<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + 
                     '<br><br>Feedback:' +
-                    "<select value = '0', onchange='changeFeedback(" + i + ")' id=sel" + i + " ><option value='none'>none</option><option value='failure'>failure</option><option value='incomplete'>incomplete</option><option value='bad rule'>bad rule</option><option value='bad matching'>bad matching</option></select>" +
-                    "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5'/>" +
+                    displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                     '</td>' +
                     "<td style='vertical-align:top;text-align:left;' width='5%'> " + 
                     serialize(row.predictedRanking, function (lb) {
                         var str = lb + '<br>'
                         return str
                     }) + '</td>' +
-                    "<td style='vertical-align:top;text-align:left;' width='15%'>" + row.text
+                    "<td style='vertical-align:top;text-align:left;' width='10%'>" + row.text
                     + '</td>' +
                     displayClass(row.TP, options, i) +
                     displayClass(row.FP, options, i) +
@@ -411,11 +444,7 @@ pre_data = '''<html>
             })
 
             $body.append(html)
-            refreshTable(options)
-        }
-
-        function getSelectValue() {
-            //alert('lallalal')
+            refreshTable(data, options)
         }
 
         function createRuleDetails(rule, options, rowNum) {
@@ -708,6 +737,56 @@ pre_data = '''<html>
                     cols[6].style.display = 'none';
                 }
             }
+
+            var textFile = null
+            makeTextFile = function (text) {
+                var data = new Blob([text], {type: 'text/plain'});
+
+                // If we are replacing a previously generated file we need to
+                // manually revoke the object URL to avoid memory leaks.
+                if (textFile !== null) {
+                    window.URL.revokeObjectURL(textFile);
+                }
+
+                textFile = window.URL.createObjectURL(data);
+
+                return textFile;
+            }
+
+            var create = document.getElementById('create')
+            create.addEventListener('click', function () {
+                feedbacks = {}
+                startStr = "<script id=\\"raw-data\\" type=\\"application/json\\">"
+                endStr = "<\/script><\/body><\/html>"
+
+                var table = document.getElementById("mytable");
+                var rows = table.getElementsByTagName("tr");
+                for (var row = 0; row < rows.length; row++) {
+                    myselect = document.getElementById('sel' + row)
+                    if (myselect != null && (option = myselect.options[myselect.selectedIndex].value) != 'none') {
+                        key = parseInt(document.getElementsByTagName('pre')[row].firstChild.data.replace (/  +$/, ''))
+                        feedbacks[key] = {'option': option, 'text': document.getElementById('feedback' + row).value}
+                    }
+                }
+
+                data = dataFromJson()
+                data.forEach(function(row) {
+                    key = parseInt(row.idlabels.id)
+                    if (feedbacks[key] != undefined) {
+                        row.idlabels.feedbackSelect = feedbacks[key]['option']
+                        row.idlabels.feedbackText = feedbacks[key]['text']
+                    }
+                    else {
+                        row.idlabels.feedbackSelect = 'none'
+                    }
+                })
+                dataJson = JSON.stringify(data);
+                text = document.documentElement.innerHTML
+                finalHTML = text.substring(0, text.indexOf(startStr)) + startStr + dataJson + endStr
+                var link = document.getElementById('downloadlink');
+                link.href = makeTextFile(finalHTML);
+                link.style.display = 'block';
+            }, false);
         }
 }())
 </script>
@@ -729,7 +808,6 @@ list-style-type: square;
 .mytext {
     width: 200px;
     height:200px;
-    display: none;
 }
 </style>
 <script id="raw-data" type="application/json">
