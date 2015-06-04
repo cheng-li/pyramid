@@ -53,7 +53,7 @@ public class Exp119 {
         LSBoost boost = new LSBoost();
 
         LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(config.getDouble("learningRate")).numSplitIntervals(50).minDataPerLeaf(1)
                 .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(1)
                 .softTreeEarlyStop(config.getBoolean("softTreeEarlyStop"))
@@ -64,8 +64,8 @@ public class Exp119 {
 
         LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
 
-        File trainFile = new File(outputFolder,"train_acc");
-        File testFile = new File(outputFolder,"test_acc");
+        File trainFile = new File(outputFolder,"train_per");
+        File testFile = new File(outputFolder,"test_per");
         File typeFile = new File(outputFolder,"type");
 
 
@@ -114,7 +114,7 @@ public class Exp119 {
         LSBoost boost = new LSBoost();
 
         LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(config.getDouble("learningRate")).numSplitIntervals(50).minDataPerLeaf(1)
                 .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(1)
                 .softTreeEarlyStop(config.getBoolean("softTreeEarlyStop"))
@@ -125,8 +125,8 @@ public class Exp119 {
 
         LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
 
-        File trainFile = new File(outputFolder,"train_acc");
-        File testFile = new File(outputFolder,"test_acc");
+        File trainFile = new File(outputFolder,"train_per");
+        File testFile = new File(outputFolder,"test_per");
         File typeFile = new File(outputFolder,"type");
 
         for (int i=0;i<config.getInt("iterations");i++){
@@ -173,7 +173,7 @@ public class Exp119 {
         LSBoost boost = new LSBoost();
 
         LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(config.getDouble("learningRate")).numSplitIntervals(50).minDataPerLeaf(1)
                 .dataSamplingRate(1).featureSamplingRate(1)
                 .randomLevel(1)
                 .softTreeEarlyStop(config.getBoolean("softTreeEarlyStop"))
@@ -184,8 +184,8 @@ public class Exp119 {
 
         LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
 
-        File trainFile = new File(outputFolder,"train_acc");
-        File testFile = new File(outputFolder,"test_acc");
+        File trainFile = new File(outputFolder,"train_per");
+        File testFile = new File(outputFolder,"test_per");
         File typeFile = new File(outputFolder,"type");
 
         for (int i=0;i<config.getInt("iterations");i++){
