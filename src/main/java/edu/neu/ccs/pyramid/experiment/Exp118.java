@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.List;
 
 /**
+ * classification
  *  * hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, with shrinkage, without newton
  * always run lbfgs for 100 iterations
  * Created by chengli on 6/2/15.
