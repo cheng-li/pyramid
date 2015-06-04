@@ -154,6 +154,42 @@ public class LibSvmFormat {
 
     }
 
+    public static RegDataSet loadRegDataSet(String libSvmFile,
+                                            int numFeatures, boolean dense) throws IOException, ClassNotFoundException {
+        int numDataPoints = getNumDataPoints(libSvmFile);
+
+        RegDataSet dataSet = RegDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints)
+                .numFeatures(numFeatures)
+                .dense(dense)
+                .build();
+        try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
+        ) {
+            String line = null;
+            int dataIndex = 0;
+            while ((line=br.readLine())!=null){
+                // sometimes, they use more than one spaces
+                String[] lineSplit = line.split("\\s+");
+                double label = Double.parseDouble(lineSplit[0]);
+
+                dataSet.setLabel(dataIndex,label);
+                for (int i=1;i<lineSplit.length;i++){
+                    String pair = lineSplit[i];
+                    // ignore things after #
+                    if (pair.startsWith("#")){
+                        break;
+                    }
+                    String[] pairSplit = pair.split(":");
+                    int featureIndex = Integer.parseInt(pairSplit[0])-1;
+                    double featureValue = Double.parseDouble(pairSplit[1]);
+                    dataSet.setFeatureValue(dataIndex, featureIndex,featureValue);
+                }
+                dataIndex += 1;
+            }
+        }
+        return dataSet;
+    }
+
     public static LabelTranslator loadLabelTranslator(String libSvmFile) throws IOException{
         Set<Integer> oldLabels = new HashSet<>();
         try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
