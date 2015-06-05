@@ -48,7 +48,7 @@ def getPositions(docId, field, keywords, slop, in_order):
         # in case the highlight not found in body
         if baseindex == -1:
             continue
-        curPos = len(text[0:baseindex].replace("<br />", "").split())
+        curPos = len(text[0:baseindex].split())
         # returned highlight may cutoff words, so word position may minus 1
         if text[baseindex] != " " and curPos>0 and text[baseindex-1] != " ":
             curPos = curPos - 1
@@ -186,7 +186,7 @@ def createTable(data):
         
         # column 3 text
         res = es.get(index=esIndex, doc_type="document", id=row["id"])
-        oneRow['text'] = res["_source"]["body"].encode('utf-8')
+        oneRow['text'] = res["_source"]["body"].encode('utf-8').replace("<", "&lt").replace(">", "&gt")
         
         # column 4 - 7 TP FP FN TN columns
         createTFPNColumns(row, line_count, oneRow)
@@ -460,14 +460,14 @@ pre_data = '''<html>
                 score += ": -" + Math.abs(rule.score.toFixed(2))
             }
             str += '<li>' + serialize(rule['checks'], function (check) {
-                        style = "style='color:#0000FF' onclick='highlightText(" + check.highlights + ", " + 
+                        style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
                             (rowNum + 1) + ")'"
-                        str = '<p' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
+                        str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
                         check.threshold.toFixed(2) +']'
                         if (displayOptions.details) {
                             str += 'index=' + check.index + ' field=' + check.field + ' slop:' + check.slop
                         }
-                        return str += '</p><br>'
+                        return str
                     }) + '</li>'
  
 
