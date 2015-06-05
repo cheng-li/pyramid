@@ -37,10 +37,9 @@ def getPositions(docId, field, keywords, slop, in_order):
         return []
     positions = []
     text = res["hits"]["hits"][0]["_source"]["body"]
-    text = text.replace("<br />", "")
+    textWithoutBr = text.replace("<br />", "")
     highlights = res["hits"]["hits"][0]["highlight"]["body"]
     for HL in highlights:
-        
 
         cleanHL = HL.replace("<em>", "")
         cleanHL = cleanHL.replace("</em>", "")
@@ -49,7 +48,7 @@ def getPositions(docId, field, keywords, slop, in_order):
         # in case the highlight not found in body
         if baseindex == -1:
             continue
-        curPos = len(text[0:baseindex].split())
+        curPos = len(text[0:baseindex].replace("<br />", "").split())
         # returned highlight may cutoff words, so word position may minus 1
         if text[baseindex] != " " and curPos>0 and text[baseindex-1] != " ":
             curPos = curPos - 1
@@ -116,7 +115,7 @@ def createTFPNColumns(row, line_count, oneRow):
         labelSet.add(eachLabel)
     predictionSet = set()
     for eachPredict in row["internalPrediction"]:
-        predictionSet.add(eachPredict)
+        predictionSet.add(eachPredict)  
         
     # column 4 TP
     oneRow['TP'] = []
@@ -176,7 +175,11 @@ def createTable(data):
         
         # column 2 predicted Ranking
         predictedRanking = []
-        for i in range(0, len(row["predictedRanking"])):
+        if row.has_key('predictedRanking'):
+            length = len(row["predictedRanking"])
+        else:
+            length = 0
+        for i in range(0, length):
             predictedRanking.append(row["predictedRanking"][i])
         oneRow['probForPredictedLabels'] = row['probForPredictedLabels']
         oneRow['predictedRanking'] = predictedRanking
@@ -269,7 +272,7 @@ pre_data = '''<html>
       <td align="center" width="20%"><b>TP</b></td>
       <td align="center" width="20%"><b>FP</b></td>
       <td align="center" width="20%"><b>FN</b></td>
-      <td align="center" width="20%" style="display:none"><b>TN</b></td>
+      <td align="center" width="20%"><b>TN</b></td>
     </tr>
   </thead>
 
@@ -296,7 +299,7 @@ pre_data = '''<html>
                 feedbacks.push(feedback)
             }
         }
-        var text = JSON.stringify(feedbacks);
+        var text = JSON.stringify(feedbacks); 
 
         url = window.location.href
         var pom = document.createElement('a');
@@ -397,7 +400,7 @@ pre_data = '''<html>
     (function () {
         var _data = null
 
-        function render(data, options) {
+        function render(data, displayOptions) {
             var $body = $('#data-table')
             $body.empty()
             var html = ''
@@ -405,7 +408,7 @@ pre_data = '''<html>
                 var labels = ''
 
                 html += '<tr>' +
-                    "<td style='vertical-align:top;text-align:left;' width='5%'>" + 
+                    "<td style='vertical-align:top;text-align:left;'>" + 
                     "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
                     "<br>ID:" + row.idlabels.id + " Iternal_ID: " + row.idlabels.internalId + 
                     '<br><br>Internal Labels:' +  
@@ -428,26 +431,27 @@ pre_data = '''<html>
                     '<br><br>Feedback:' +
                     displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                     '</td>' +
-                    "<td style='vertical-align:top;text-align:left;' width='5%'> " + 
+                    "<td style='vertical-align:top;text-align:left;'> " + 
                     serialize(row.predictedRanking, function (lb) {
                         var str = lb + '<br>'
                         return str
                     }) + '</td>' +
-                    "<td style='vertical-align:top;text-align:left;' width='10%'>" + row.text
+                    "<td style='vertical-align:top;text-align:left;'>" + row.text
                     + '</td>' +
-                    displayClass(row.TP, options, i) +
-                    displayClass(row.FP, options, i) +
-                    displayClass(row.FN, options, i) +
-                    displayClass(row.TN, options, i)
+                    displayClass(row.TP, displayOptions, i) +
+                    displayClass(row.FP, displayOptions, i) +
+                    displayClass(row.FN, displayOptions, i) +
+                    displayClass(row.TN, displayOptions, i)
+                    + '</tr>'
 
 
             })
 
             $body.append(html)
-            refreshTable(data, options)
+            refreshTable(data, displayOptions)
         }
 
-        function createRuleDetails(rule, options, rowNum) {
+        function createRuleDetails(rule, displayOptions, rowNum) {
             str = ""
             score = ''
             if (rule.score >= 0) {
@@ -455,35 +459,34 @@ pre_data = '''<html>
             } else {
                 score += ": -" + Math.abs(rule.score.toFixed(2))
             }
-            str += serialize(rule['checks'], function (check) {
+            str += '<li>' + serialize(rule['checks'], function (check) {
                         style = "style='color:#0000FF' onclick='highlightText(" + check.highlights + ", " + 
                             (rowNum + 1) + ")'"
-                        str = '<li ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
+                        str = '<p' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
                         check.threshold.toFixed(2) +']'
-                        if (options.details) {
+                        if (displayOptions.details) {
                             str += 'index=' + check.index + ' field=' + check.field + ' slop:' + check.slop
                         }
-                        str += '</li>'
-                        return str
-                    })
+                        return str += '</p><br>'
+                    }) + '</li>'
  
 
             return str + score
         }
         
-        function displayClass(clas, options, rowNum) {
+        function displayClass(clas, displayOptions, rowNum) {
             str = ""
-            str += "<td style='vertical-align:top;text-align:left;' width='12%'>" +
+            str += "<td style='vertical-align:top;text-align:left;'>" +
                     serialize(clas, function (lb) {
                         return lb.id + ' : ' + lb.name + '<br><br>classProbability: ' + 
                         lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
                         lb.totalScore.toFixed(2) + '<br><ul>' + '<li>prior: ' + 
                         lb.prior.toFixed(2) + '</li>' +
                         serialize(lb.rules, function (rule, i) {
-                            if (i >= options.ruleNum) {
+                            if (i >= displayOptions.ruleNum) {
                                 return ""
                             }  
-                            return createRuleDetails(rule, options, rowNum)
+                            return createRuleDetails(rule, displayOptions, rowNum)
                         })+ '</ul>'
                     }) + '</td>'
             return str
@@ -502,28 +505,27 @@ pre_data = '''<html>
         }
 
         function viewOptions() {
-            var options = {}
+            var displayOptions = {}
 
-            options.ruleNum = parseInt($('#ruleNum').val())
-            options.fields = []
+            displayOptions.ruleNum = parseInt($('#ruleNum').val())
+            displayOptions.fields = []
             if ($('#TP').prop('checked'))
-                options.fields.push('TP')
+                displayOptions.fields.push('TP')
             if ($('#FP').prop('checked'))
-                options.fields.push('FP')
+                displayOptions.fields.push('FP')
             if ($('#FN').prop('checked'))
-                options.fields.push('FN')
+                displayOptions.fields.push('FN')
             if ($('#TN').prop('checked'))
-                options.fields.push('TN')
+                displayOptions.fields.push('TN')
 
-            options.sortDocs = $('input[name=sd]:checked').val()
-            options.sortRules = $('input[name=sr]:checked').val()
-            options.details = $('#details').prop('checked')
-
-            return options
+            displayOptions.sortDocs = $('input[name=sd]:checked').val()
+            displayOptions.sortRules = $('input[name=sr]:checked').val()
+            displayOptions.details = $('#details').prop('checked')
+            return displayOptions
         }
 
-        function sortByViewOptions(data, options) {
-            if (options.sortRules === 'abs') {
+        function sortByViewOptions(data, displayOptions) {
+            if (displayOptions.sortRules === 'abs') {
                 data.forEach(function (row) {
                     row.TP.forEach(function (lb) {
                         lb.rules = lb.rules.sort(function (a, b) {
@@ -546,7 +548,7 @@ pre_data = '''<html>
                         })
                     })
                 })
-            } else if (options.sortRules === 'anticorrelation') {
+            } else if (displayOptions.sortRules === 'anticorrelation') {
                 data.forEach(function (row) {
                     row.TP.forEach(function (lb) {
                         lb.rules = lb.rules.sort(function (a, b) {
@@ -575,7 +577,7 @@ pre_data = '''<html>
                         })
                     })
                 })
-            } else if (options.sortRules == 'pos') {
+            } else if (displayOptions.sortRules == 'pos') {
                 data.forEach(function (row) {
                     row.TP.forEach(function (lb) {
                         lb.rules = lb.rules.sort(function (a, b) {
@@ -605,15 +607,15 @@ pre_data = '''<html>
                     })
                 })
             } else {
-                alert(options.sortRules)
+                alert(displayOptions.sortRules)
             }
 
-            // Sort data by options
-            if (options.sortDocs == 'confide') {
+            // Sort data by displayOptions
+            if (displayOptions.sortDocs == 'confide') {
                 data.sort(function (a, b) {
                     return a.probForPredictedLabels - b.probForPredictedLabels
                 })
-            } else if (options.sortDocs == 'mistake') {
+            } else if (displayOptions.sortDocs == 'mistake') {
                 data.sort(function (a, b) {
                     return b.probForPredictedLabels - a.probForPredictedLabels
                 })
@@ -629,13 +631,13 @@ pre_data = '''<html>
         function refresh() {
             console.log(dataFromJson()[0])
 
-            var options = viewOptions()
-            render(sortByViewOptions(dataFromJson(), options), options)
+            var displayOptions = viewOptions()
+            render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
         }
 
         $(document).ready(function () {
-            var options = viewOptions()
-            render(sortByViewOptions(dataFromJson(), options), options) 
+            var displayOptions = viewOptions()
+            render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions) 
 
             $('#btn-submit').click(function () {
                 refresh()
@@ -675,8 +677,8 @@ pre_data = '''<html>
             })
         })
 
-        function refreshTable(options) {
-
+        function refreshTable(test) {
+            displayOptions = viewOptions()
             var ruleNum = document.getElementById("ruleNum").value;
 
             if (ruleNum == '') {
@@ -708,33 +710,29 @@ pre_data = '''<html>
             for (var row = 0; row < rows.length; row++) {
                 var cols = rows[row].children;
                 var selId = 'sel' + row
-                /*
-                if (document.getElementById(selId) != null) {
-                    document.getElementById(selId).value = '3'
-                } else {
-                    //alert(selId)
-                }*/
-
-                if ($.inArray("TP", options.fields) && cols[3].innerHTML != "" ||
-                    $.inArray("FP", options.fields) && cols[4].innerHTML != "" ||
-                    $.inArray("FN", options.fields) && cols[5].innerHTML != "" ||
-                    $.inArray("TN", options.fields) && cols[6].innerHTML != "") {
-                    cols[0].style.display = 'block';
-                    cols[1].style.display = 'block';
-                    cols[2].style.display = 'block';
-                    cols[3].style.display = tp.checked ? 'block' : 'none';
-                    cols[4].style.display = fp.checked ? 'block' : 'none';
-                    cols[5].style.display = fn.checked ? 'block' : 'none';
-                    cols[6].style.display = tn.checked ? 'block' : 'none';
-                }
-                else {
-                    cols[0].style.display = 'none';
-                    cols[1].style.display = 'none';
-                    cols[2].style.display = 'none';
+                
+                if (displayOptions.fields.indexOf('TP') == -1) {
                     cols[3].style.display = 'none';
+                } else {
+                    cols[3].style.display = 'table-cell';
+                }
+
+                if (displayOptions.fields.indexOf('FP') == -1) {
                     cols[4].style.display = 'none';
+                }else {
+                    cols[4].style.display = 'table-cell';
+                }
+
+                if (displayOptions.fields.indexOf('FN') == -1) {
                     cols[5].style.display = 'none';
+                } else {
+                    cols[5].style.display = 'table-cell';
+                }
+
+                if (displayOptions.fields.indexOf('TN') == -1) {
                     cols[6].style.display = 'none';
+                } else {
+                    cols[6].style.display = 'table-cell';
                 }
             }
 
