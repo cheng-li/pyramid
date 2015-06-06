@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.eval.MSE;
+import edu.neu.ccs.pyramid.eval.RMSE;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBConfig;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
@@ -106,15 +107,18 @@ public class Exp121 {
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             System.out.println("iteration "+i);
-            System.out.println("mse = "+ MSE.mse(boost, dataSet));
 
-            System.out.println("time spent on mse = "+stopWatch);
+            if (i==0){
+                trainer.addPriorRegressor();
+            } else {
+                trainer.iterate();
+            }
 
-            trainer.iterate();
+
             System.out.println("time spent on one iteration = "+stopWatch);
 
-            FileUtils.writeStringToFile(trainFile, "" + MSE.mse(boost, dataSet) + "\n", true);
-            FileUtils.writeStringToFile(testFile,""+MSE.mse(boost, testSet)+"\n",true);
+            FileUtils.writeStringToFile(trainFile, "" + RMSE.rmse(boost, dataSet) + "\n", true);
+            FileUtils.writeStringToFile(testFile,""+RMSE.rmse(boost, testSet)+"\n",true);
             List<Regressor> regressors = boost.getRegressors();
             Regressor regressor = regressors.get(i);
             if (regressor instanceof RegressionTree){
@@ -162,15 +166,17 @@ public class Exp121 {
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             System.out.println("iteration "+i);
-            System.out.println("mse = " + MSE.mse(boost, dataSet));
 
-            System.out.println("time spent on mse = "+stopWatch);
 
-            trainer.iterate();
+            if (i==0){
+                trainer.addPriorRegressor();
+            } else {
+                trainer.iterate();
+            }
             System.out.println("time spent on one iteration = "+stopWatch);
 
-            FileUtils.writeStringToFile(trainFile,""+MSE.mse(boost, dataSet)+"\n",true);
-            FileUtils.writeStringToFile(testFile,""+MSE.mse(boost, testSet)+"\n",true);
+            FileUtils.writeStringToFile(trainFile,""+RMSE.rmse(boost, dataSet)+"\n",true);
+            FileUtils.writeStringToFile(testFile,""+RMSE.rmse(boost, testSet)+"\n",true);
             List<Regressor> regressors = boost.getRegressors();
             Regressor regressor = regressors.get(i);
             if (regressor instanceof RegressionTree){
@@ -216,16 +222,18 @@ public class Exp121 {
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             System.out.println("iteration "+i);
-            System.out.println("mse = "+ MSE.mse(boost, dataSet));
 
-            System.out.println("time spent on mse = "+stopWatch);
 
-            trainer.iterate();
+            if (i==0){
+                trainer.addPriorRegressor();
+            } else {
+                trainer.iterate();
+            }
             System.out.println("time spent on one iteration = " + stopWatch);
 
 
-            FileUtils.writeStringToFile(trainFile,""+MSE.mse(boost, dataSet)+"\n",true);
-            FileUtils.writeStringToFile(testFile,""+MSE.mse(boost, testSet)+"\n",true);
+            FileUtils.writeStringToFile(trainFile,""+RMSE.rmse(boost, dataSet)+"\n",true);
+            FileUtils.writeStringToFile(testFile,""+RMSE.rmse(boost, testSet)+"\n",true);
             List<Regressor> regressors = boost.getRegressors();
             Regressor regressor = regressors.get(i);
             if (regressor instanceof RegressionTree){
