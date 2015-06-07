@@ -58,44 +58,17 @@ public class LogisticLoss implements Optimizable.ByGradientValue{
         this.isGradientCacheValid=false;
     }
 
-    /**
-     *
-     * @param logisticRegression
-     * @param dataSet
-     * @param gaussianPriorVariance
-     * @param empiricalCounts has nothing to do with parameters
-     */
-    private LogisticLoss(LogisticRegression logisticRegression,
-                        ClfDataSet dataSet, double gaussianPriorVariance,
-                        Vector empiricalCounts) {
-        this.logisticRegression = logisticRegression;
-        numParameters = logisticRegression.getWeights().totalSize();
-        this.dataSet = dataSet;
-        this.gaussianPriorVariance = gaussianPriorVariance;
-        this.predictedCounts = new DenseVector(numParameters);
-        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
-        this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses(), GradientMatrix.Objective.MAXIMIZE);
-        this.empiricalCounts = empiricalCounts;
-        this.isValueCacheValid=false;
-        this.isGradientCacheValid=false;
-    }
 
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();
     }
 
-    @Override
-    public ByGradientValue newInstance(Vector parameters) {
-        LogisticRegression newFunction = new LogisticRegression(this.logisticRegression.getNumClasses(),
-                this.logisticRegression.getNumFeatures(),parameters);
-        return new LogisticLoss(newFunction, this.dataSet, this.gaussianPriorVariance, this.empiricalCounts);
 
-    }
 
     @Override
     public void setParameters(Vector parameters) {
-        this.getParameters().assign(parameters);
+        this.logisticRegression.getWeights().setWeightVector(parameters);
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
 

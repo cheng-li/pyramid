@@ -44,20 +44,6 @@ public class IMLLogisticLoss implements Optimizable.ByGradientValue {
         this.isGradientCacheValid=false;
     }
 
-    private IMLLogisticLoss(IMLLogisticRegression mlLogisticRegression,
-                           MultiLabelClfDataSet dataSet, double gaussianPriorVariance,
-                           Vector empiricalCounts) {
-        this.logisticRegression = mlLogisticRegression;
-        numParameters = mlLogisticRegression.getWeights().totalSize();
-        this.dataSet = dataSet;
-        this.gaussianPriorVariance = gaussianPriorVariance;
-
-        this.predictedCounts = new DenseVector(numParameters);
-        this.classProbMatrix = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
-        this.empiricalCounts = empiricalCounts;
-        this.isValueCacheValid=false;
-        this.isGradientCacheValid=false;
-    }
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();
@@ -65,17 +51,11 @@ public class IMLLogisticLoss implements Optimizable.ByGradientValue {
 
     @Override
     public void setParameters(Vector parameters) {
-        this.getParameters().assign(parameters);
+        this.
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
     }
 
-    @Override
-    public ByGradientValue newInstance(Vector parameters) {
-        IMLLogisticRegression newFunction = new IMLLogisticRegression(this.logisticRegression.getNumClasses(),
-                this.logisticRegression.getNumFeatures(),this.logisticRegression.getAssignments(), parameters);
-        return new IMLLogisticLoss(newFunction, this.dataSet, this.gaussianPriorVariance, this.empiricalCounts);
-    }
 
     public double getValue(){
         if (isValueCacheValid){

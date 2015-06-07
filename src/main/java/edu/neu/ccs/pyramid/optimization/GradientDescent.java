@@ -27,9 +27,7 @@ public class GradientDescent {
         Vector parameters = function.getParameters();
         Vector gradient = function.getGradient();
         Vector direction = gradient.times(-1);
-        double stepLength = lineSearcher.findStepLength(direction);
-        System.out.println("stepLength="+stepLength);
-        Vector updatedParams = parameters.plus(direction.times(stepLength));
-        function.setParameters(updatedParams);
+        lineSearcher.moveAlongDirection(direction);
+
     }
 }

@@ -30,7 +30,6 @@ public class LBFGS {
     private LinkedList<Vector> sQueue;
     private LinkedList<Vector> yQueue;
     private LinkedList<Double> rhoQueue;
-    private LinkedList<Vector> gradientQueue;
     /**
      * stop condition, relative threshold
      */
@@ -99,24 +98,15 @@ public class LBFGS {
         if (logger.isDebugEnabled()){
             logger.debug("start one iteration");
         }
-        Vector parameters = function.getParameters();
-//        if (logger.isDebugEnabled()){
-//            logger.debug("current parameters = "+parameters);
-//        }
+
         Vector oldGradient = function.getGradient();
         Vector direction = findDirection();
         if (logger.isDebugEnabled()){
-//            logger.debug("search direction = "+direction);
             logger.debug("norm of direction = "+direction.norm(2));
         }
-        double stepLength = lineSearcher.findStepLength(direction);
+        BackTrackingLineSearcher.MoveInfo moveInfo = lineSearcher.moveAlongDirection(direction);
 
-        Vector s = direction.times(stepLength);
-        Vector updatedParams = parameters.plus(s);
-        function.setParameters(updatedParams);
-//        if (logger.isDebugEnabled()){
-//            logger.debug("updated parameters = "+parameters);
-//        }
+        Vector s = moveInfo.getStep();
         Vector newGradient = function.getGradient();
         Vector y = newGradient.minus(oldGradient);
         double denominator = y.dot(s);
@@ -145,8 +135,8 @@ public class LBFGS {
 
     Vector findDirection(){
         Vector g = function.getGradient();
-        //todo double check, should it be sparse or dense?
-        Vector q = new RandomAccessSparseVector(g.size());
+        //we need minus operation for q, using dense vector is much faster
+        Vector q = new DenseVector(g.size());
         q.assign(g);
         Iterator<Double> rhoDesIterator = rhoQueue.descendingIterator();
         Iterator<Vector> sDesIterator = sQueue.descendingIterator();

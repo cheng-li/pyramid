@@ -2,6 +2,8 @@ package edu.neu.ccs.pyramid.optimization;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 /**
@@ -22,28 +24,45 @@ public class BackTrackingLineSearcher {
         this.function = function;
     }
 
-    public double findStepLength(Vector searchDirection){
+    /**
+     * move to a new position along the direction
+     */
+    public MoveInfo moveAlongDirection(Vector searchDirection){
         if (logger.isDebugEnabled()){
             logger.debug("start line search");
         }
+        MoveInfo moveInfo = new MoveInfo();
+
         double stepLength = initialStepLength;
         double value = function.getValue();
+        moveInfo.setOldValue(value);
         Vector gradient = function.getGradient();
         double product = gradient.dot(searchDirection);
+        Vector initialPosition;
+        // keep a copy of initial parameters
+        if (function.getParameters().isDense()){
+            initialPosition = new DenseVector(function.getParameters());
+        } else {
+            initialPosition = new RandomAccessSparseVector(function.getParameters());
+        }
         while(true){
             Vector step = searchDirection.times(stepLength);
-            Vector target = function.getParameters().plus(step);
+            Vector target = initialPosition.plus(step);
+            function.setParameters(target);
 
-            double targetValue = function.newInstance(target).getValue();
+            double targetValue = function.getValue();
             if (targetValue <= value + c*stepLength*product){
+                moveInfo.setStep(step);
+                moveInfo.setStepLength(stepLength);
+                moveInfo.setNewValue(targetValue);
                 break;
             }
             stepLength *= shrinkage;
         }
         if (logger.isDebugEnabled()){
-            logger.debug("line search done. Step length = "+stepLength);
+            logger.debug("line search done. "+moveInfo);
         }
-        return stepLength;
+        return moveInfo;
     }
 
 
@@ -58,5 +77,53 @@ public class BackTrackingLineSearcher {
 
     public void setC(double c) {
         this.c = c;
+    }
+
+    public static class MoveInfo{
+        private double oldValue;
+        private double newValue;
+        private Vector step;
+        private double stepLength;
+
+        public Vector getStep() {
+            return step;
+        }
+
+        public void setStep(Vector step) {
+            this.step = step;
+        }
+
+        public double getStepLength() {
+            return stepLength;
+        }
+
+        public void setStepLength(double stepLength) {
+            this.stepLength = stepLength;
+        }
+
+        public double getOldValue() {
+            return oldValue;
+        }
+
+        public void setOldValue(double oldValue) {
+            this.oldValue = oldValue;
+        }
+
+        public double getNewValue() {
+            return newValue;
+        }
+
+        public void setNewValue(double newValue) {
+            this.newValue = newValue;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("oldValue=").append(oldValue);
+            sb.append(", newValue=").append(newValue);
+            sb.append(", stepLength=").append(stepLength);
+            return sb.toString();
+        }
     }
 }

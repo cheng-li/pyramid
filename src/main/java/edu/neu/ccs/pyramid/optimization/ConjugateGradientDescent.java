@@ -32,10 +32,7 @@ public class ConjugateGradientDescent {
     public void update(){
         Vector parameters = function.getParameters();
         Vector direction = this.oldP;
-        double stepLength = lineSearcher.findStepLength(direction);
-        System.out.println("stepLength="+stepLength);
-        Vector updatedParams = parameters.plus(direction.times(stepLength));
-        function.setParameters(updatedParams);
+        lineSearcher.moveAlongDirection(direction);
         Vector newGradient = function.getGradient();
         double beta = newGradient.dot(newGradient)/oldGradient.dot(oldGradient);
         Vector newP = oldP.times(beta).minus(newGradient);
