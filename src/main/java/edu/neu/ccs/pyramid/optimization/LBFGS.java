@@ -104,7 +104,7 @@ public class LBFGS {
 //            logger.debug("current parameters = "+parameters);
 //        }
         Vector oldGradient = function.getGradient();
-        Vector direction = findDirection(oldGradient);
+        Vector direction = findDirection();
         if (logger.isDebugEnabled()){
 //            logger.debug("search direction = "+direction);
             logger.debug("norm of direction = "+direction.norm(2));
@@ -143,8 +143,8 @@ public class LBFGS {
         }
     }
 
-    Vector findDirection(Vector gradient){
-        Vector g = gradient;
+    Vector findDirection(){
+        Vector g = function.getGradient();
         //todo double check, should it be sparse or dense?
         Vector q = new RandomAccessSparseVector(g.size());
         q.assign(g);

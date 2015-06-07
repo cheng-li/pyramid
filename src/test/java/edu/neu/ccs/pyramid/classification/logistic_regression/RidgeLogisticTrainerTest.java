@@ -71,7 +71,7 @@ public class RidgeLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
-                .setEpsilon(0.1)
+                .setEpsilon(0.01)
                 .setGaussianPriorVariance(0.5)
                 .setHistory(5)
                 .build();

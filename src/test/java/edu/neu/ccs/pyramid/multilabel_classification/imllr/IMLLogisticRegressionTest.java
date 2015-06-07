@@ -6,6 +6,11 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import java.io.File;
 import java.util.List;
@@ -18,6 +23,11 @@ public class IMLLogisticRegressionTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(Level.DEBUG);
+        ctx.updateLoggers();
         test1();
     }
 
@@ -25,7 +35,7 @@ public class IMLLogisticRegressionTest {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
         List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
-        IMLLogisticTrainer trainer = IMLLogisticTrainer.getBuilder().setEpsilon(1).setGaussianPriorVariance(1)
+        IMLLogisticTrainer trainer = IMLLogisticTrainer.getBuilder().setEpsilon(0.01).setGaussianPriorVariance(1)
                 .setHistory(5).build();
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
