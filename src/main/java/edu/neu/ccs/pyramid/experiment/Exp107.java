@@ -12,6 +12,11 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,6 +31,11 @@ import java.util.stream.IntStream;
 public class Exp107 {
 
     public static void main(String[] args) throws Exception{
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(Level.DEBUG);
+        ctx.updateLoggers();
 //        String data = "/Users/chengli/Dropbox/Shared/pyramid_shared/Datasets/housing/trec_format";
 
         String data = "/Users/chengli/Dropbox/Shared/pyramid_shared/Datasets/slice_location/trec_format";
@@ -66,7 +76,7 @@ public class Exp107 {
             ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
                     .setDataSet(trainSet)
                     .setLabels(trainSet.getLabels())
-                    .setFeatureType(ProbRegStumpTrainer.FeatureType.ALL_FEATURES)
+                    .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
                     .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     .build();
 

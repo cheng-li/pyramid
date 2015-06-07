@@ -8,15 +8,19 @@ import org.apache.mahout.math.Vector;
  */
 public interface Optimizable {
     Vector getParameters();
-    void refresh();
+    void setParameters(Vector parameters);
+    Optimizable newInstance(Vector parameters);
 
     public interface ByGradient extends Optimizable {
         Vector getGradient();
+        Optimizable.ByGradient newInstance(Vector parameters);
     }
 
     public interface ByGradientValue extends Optimizable{
         Vector getGradient();
-        double getValue(Vector parameters);
+        double getValue();
+        Optimizable.ByGradientValue newInstance(Vector parameters);
+
     }
 
 }

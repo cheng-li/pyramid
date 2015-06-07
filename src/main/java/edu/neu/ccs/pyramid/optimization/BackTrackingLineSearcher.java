@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.optimization;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 /**
@@ -10,6 +12,7 @@ import org.apache.mahout.math.Vector;
  * Created by chengli on 12/9/14.
  */
 public class BackTrackingLineSearcher {
+    private static final Logger logger = LogManager.getLogger();
     private Optimizable.ByGradientValue function;
     private double initialStepLength = 1;
     private double shrinkage = 0.5;
@@ -20,18 +23,25 @@ public class BackTrackingLineSearcher {
     }
 
     public double findStepLength(Vector searchDirection){
+        if (logger.isDebugEnabled()){
+            logger.debug("start line search");
+        }
         double stepLength = initialStepLength;
-        double value = function.getValue(function.getParameters());
+        double value = function.getValue();
         Vector gradient = function.getGradient();
         double product = gradient.dot(searchDirection);
         while(true){
             Vector step = searchDirection.times(stepLength);
             Vector target = function.getParameters().plus(step);
-            double targetValue = function.getValue(target);
+
+            double targetValue = function.newInstance(target).getValue();
             if (targetValue <= value + c*stepLength*product){
                 break;
             }
             stepLength *= shrinkage;
+        }
+        if (logger.isDebugEnabled()){
+            logger.debug("line search done. Step length = "+stepLength);
         }
         return stepLength;
     }

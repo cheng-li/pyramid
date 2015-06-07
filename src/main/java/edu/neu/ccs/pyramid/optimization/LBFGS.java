@@ -30,8 +30,9 @@ public class LBFGS {
     private LinkedList<Vector> sQueue;
     private LinkedList<Vector> yQueue;
     private LinkedList<Double> rhoQueue;
+    private LinkedList<Vector> gradientQueue;
     /**
-     * stop condition
+     * stop condition, relative threshold
      */
     private double epsilon = 0.01;
     private int maxIteration = 10000;
@@ -44,22 +45,24 @@ public class LBFGS {
         this.sQueue = new LinkedList<>();
         this.yQueue = new LinkedList<>();
         this.rhoQueue = new LinkedList<>();
+
     }
 
     public void optimize(){
+        //size = 2
         LinkedList<Double> valueQueue = new LinkedList<>();
-        valueQueue.add(function.getValue(function.getParameters()));
+        valueQueue.add(function.getValue());
         if (logger.isDebugEnabled()){
-            logger.debug("initial value = "+function.getValue(function.getParameters()));
+            logger.debug("initial value = "+ valueQueue.getLast());
         }
         int iteration = 0;
         iterate();
         iteration += 1;
+        valueQueue.add(function.getValue());
         if (logger.isDebugEnabled()){
             logger.debug("iteration "+iteration);
-            logger.debug("value = "+function.getValue(function.getParameters()));
+            logger.debug("value = "+valueQueue.getLast());
         }
-        valueQueue.add(function.getValue(function.getParameters()));
 
         int convergenceTraceCounter = 0;
         while(true){
@@ -82,10 +85,10 @@ public class LBFGS {
             iterate();
             iteration += 1;
             valueQueue.remove();
-            valueQueue.add(function.getValue(function.getParameters()));
+            valueQueue.add(function.getValue());
             if (logger.isDebugEnabled()){
                 logger.debug("iteration "+iteration);
-                logger.debug("value = "+function.getValue(function.getParameters()));
+                logger.debug("value = "+valueQueue.getLast());
             }
 
         }
@@ -97,28 +100,23 @@ public class LBFGS {
             logger.debug("start one iteration");
         }
         Vector parameters = function.getParameters();
-        if (logger.isDebugEnabled()){
-            logger.debug("current parameters = "+parameters);
-        }
+//        if (logger.isDebugEnabled()){
+//            logger.debug("current parameters = "+parameters);
+//        }
         Vector oldGradient = function.getGradient();
-        Vector direction = findDirection();
+        Vector direction = findDirection(oldGradient);
         if (logger.isDebugEnabled()){
-            logger.debug("search direction = "+direction);
+//            logger.debug("search direction = "+direction);
             logger.debug("norm of direction = "+direction.norm(2));
         }
-//        System.out.println("doing line search");
         double stepLength = lineSearcher.findStepLength(direction);
-        if (logger.isDebugEnabled()){
-            logger.debug("step length = "+stepLength);
-        }
-//        System.out.println("line search done");
+
         Vector s = direction.times(stepLength);
         Vector updatedParams = parameters.plus(s);
-        parameters.assign(updatedParams);
-        if (logger.isDebugEnabled()){
-            logger.debug("updated parameters = "+parameters);
-        }
-        function.refresh();
+        function.setParameters(updatedParams);
+//        if (logger.isDebugEnabled()){
+//            logger.debug("updated parameters = "+parameters);
+//        }
         Vector newGradient = function.getGradient();
         Vector y = newGradient.minus(oldGradient);
         double denominator = y.dot(s);
@@ -145,8 +143,8 @@ public class LBFGS {
         }
     }
 
-    Vector findDirection(){
-        Vector g = function.getGradient();
+    Vector findDirection(Vector gradient){
+        Vector g = gradient;
         //todo double check, should it be sparse or dense?
         Vector q = new RandomAccessSparseVector(g.size());
         q.assign(g);

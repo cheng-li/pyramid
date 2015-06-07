@@ -30,7 +30,6 @@ public class GradientDescent {
         double stepLength = lineSearcher.findStepLength(direction);
         System.out.println("stepLength="+stepLength);
         Vector updatedParams = parameters.plus(direction.times(stepLength));
-        parameters.assign(updatedParams);
-        function.refresh();
+        function.setParameters(updatedParams);
     }
 }

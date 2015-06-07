@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
  * Created by chengli on 3/28/15.
  */
 public class KaryTree<T> {
-    Node<T> root;
-    List<Node<T>> leaves;
+    public Node<T> root;
+    public List<Node<T>> leaves;
 
     public KaryTree() {
         root = new Node<>();

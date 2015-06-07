@@ -5,6 +5,11 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import java.io.File;
 
@@ -16,6 +21,11 @@ public class RidgeLogisticTrainerTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(Level.DEBUG);
+        ctx.updateLoggers();
         test3();
     }
 
@@ -61,7 +71,7 @@ public class RidgeLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
-                .setEpsilon(1)
+                .setEpsilon(0.1)
                 .setGaussianPriorVariance(0.5)
                 .setHistory(5)
                 .build();

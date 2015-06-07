@@ -18,7 +18,7 @@ import java.util.stream.IntStream;
  * Conditional Random Fields, Rahul Gupta
  * Created by chengli on 12/7/14.
  */
-public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradientValue{
+public class LogisticLoss implements Optimizable.ByGradientValue{
     private LogisticRegression logisticRegression;
     private ClfDataSet dataSet;
     private double gaussianPriorVariance;
@@ -39,6 +39,9 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
      * numClasses by numDataPoints
      */
     private GradientMatrix gradientMatrix;
+    private double value;
+    private boolean isGradientCacheValid;
+    private boolean isValueCacheValid;
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         ClfDataSet dataSet, double gaussianPriorVariance) {
@@ -51,37 +54,74 @@ public class LogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradi
         this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
         this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses(), GradientMatrix.Objective.MAXIMIZE);
         this.updateEmpricalCounts();
-        this.refresh();
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
     }
+
+    /**
+     *
+     * @param logisticRegression
+     * @param dataSet
+     * @param gaussianPriorVariance
+     * @param empiricalCounts has nothing to do with parameters
+     */
+    private LogisticLoss(LogisticRegression logisticRegression,
+                        ClfDataSet dataSet, double gaussianPriorVariance,
+                        Vector empiricalCounts) {
+        this.logisticRegression = logisticRegression;
+        numParameters = logisticRegression.getWeights().totalSize();
+        this.dataSet = dataSet;
+        this.gaussianPriorVariance = gaussianPriorVariance;
+        this.predictedCounts = new DenseVector(numParameters);
+        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
+        this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses(), GradientMatrix.Objective.MAXIMIZE);
+        this.empiricalCounts = empiricalCounts;
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
+    }
+
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();
     }
 
-    public void refresh(){
-        if (logisticRegression.featureExtraction()){
-            updateEmpricalCounts();
+    @Override
+    public ByGradientValue newInstance(Vector parameters) {
+        LogisticRegression newFunction = new LogisticRegression(this.logisticRegression.getNumClasses(),
+                this.logisticRegression.getNumFeatures(),parameters);
+        return new LogisticLoss(newFunction, this.dataSet, this.gaussianPriorVariance, this.empiricalCounts);
+
+    }
+
+    @Override
+    public void setParameters(Vector parameters) {
+        this.getParameters().assign(parameters);
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
+
+    }
+
+
+    public double getValue() {
+        if (isValueCacheValid){
+            return this.value;
+        }
+        Vector parameters = getParameters();
+        this.value =  -1*logisticRegression.dataSetLogLikelihood(dataSet) + parameters.dot(parameters)/(2*gaussianPriorVariance);
+        this.isValueCacheValid = true;
+        return this.value;
+    }
+
+
+
+    public Vector getGradient(){
+        if (isGradientCacheValid){
+            return this.gradient;
         }
         updateClassProbMatrix();
         updatePredictedCounts();
         updateGradient();
-        if (logisticRegression.featureExtraction()){
-            updateDataGradientMatrix();
-        }
-    }
-
-    public double getValue(){
-        return getValue(logisticRegression.getWeights().getAllWeights());
-    }
-
-    @Override
-    public double getValue(Vector parameters) {
-        LogisticRegression tmpFunction = new LogisticRegression(this.logisticRegression.getNumClasses(),
-                this.logisticRegression.getNumFeatures(),parameters);
-        return -tmpFunction.dataSetLogLikelihood(dataSet) + parameters.dot(parameters)/(2*gaussianPriorVariance);
-    }
-
-    public Vector getGradient(){
+        this.isGradientCacheValid = true;
         return this.gradient;
     }
 
