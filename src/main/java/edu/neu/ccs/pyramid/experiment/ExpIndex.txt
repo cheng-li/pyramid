@@ -66,7 +66,7 @@
   52: index imdb_movie_genre
   53: index amazon_book_genre
   54: check number of ngrams
-  55: feature extraction by logistic regression,
+  55: (obsolete)feature extraction by logistic regression,
       start with specified features
       extract both unigrams and ngrams
       dynamic seeds
@@ -76,7 +76,7 @@
   59: (obsolete) check whether important features in one dataset appear in another dataset
   60: obsolete
   61: dump most common unigrams
-  62: extract all frequent ngrams from a document, check how probability estimation changes
+  62: (obsolete)extract all frequent ngrams from a document, check how probability estimation changes
   63: check distribution of good ngrams
   64: write data to the seql format
   65: index imdb as multi-label
@@ -85,7 +85,7 @@
   68: test ridge logistic regression with noisy features
   69: check white house vs white/house
   70: elastic-net logistic regression
-  71: test lbfgs on synthetic functions
+  71: (obsolete)test lbfgs on synthetic functions
   72: adaboost.MH
   73: logistic gradient feature selection
   74: regression stump feature selection

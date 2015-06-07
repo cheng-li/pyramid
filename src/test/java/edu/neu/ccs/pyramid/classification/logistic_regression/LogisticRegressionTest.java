@@ -55,7 +55,7 @@ public class LogisticRegressionTest {
             System.out.println("--------");
             System.out.println("iteration "+i);
             conjugateGradientDescent.update();
-            System.out.println("loss: " + function.getValue(logisticRegression.getWeights().getAllWeights()));
+            System.out.println("loss: " + function.getValue());
             System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
         }
@@ -79,7 +79,7 @@ public class LogisticRegressionTest {
             System.out.println("--------");
             System.out.println("iteration "+i);
             lbfgs.iterate();
-            System.out.println("loss: " + function.getValue(logisticRegression.getWeights().getAllWeights()));
+            System.out.println("loss: " + function.getValue());
             System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
         }

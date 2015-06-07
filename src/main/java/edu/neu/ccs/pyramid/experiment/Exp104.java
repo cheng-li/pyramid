@@ -103,13 +103,13 @@ public class Exp104 {
         lbfgs.setEpsilon(config.getDouble("train.epsilon"));
         lbfgs.setHistory(5);
         LinkedList<Double> valueQueue = new LinkedList<>();
-        valueQueue.add(function.getValue(function.getParameters()));
+        valueQueue.add(function.getValue());
         System.out.println("done");
 
         int iteration=0;
         System.out.println("iteration = "+iteration);
         lbfgs.iterate();
-        valueQueue.add(function.getValue(function.getParameters()));
+        valueQueue.add(function.getValue());
         iteration+=1;
         while(true){
             System.out.println("iteration = "+iteration);
@@ -123,7 +123,7 @@ public class Exp104 {
             }
             lbfgs.iterate();
             valueQueue.remove();
-            valueQueue.add(function.getValue(function.getParameters()));
+            valueQueue.add(function.getValue());
             iteration += 1;
         }
 
