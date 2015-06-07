@@ -51,7 +51,7 @@ public class IMLLogisticLoss implements Optimizable.ByGradientValue {
 
     @Override
     public void setParameters(Vector parameters) {
-        this.
+        this.logisticRegression.getWeights().setWeightVector(parameters);
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
     }

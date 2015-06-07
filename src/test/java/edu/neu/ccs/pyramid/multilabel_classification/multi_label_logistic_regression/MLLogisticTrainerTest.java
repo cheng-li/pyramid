@@ -233,7 +233,7 @@ public class MLLogisticTrainerTest {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
         List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
-        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(1).setGaussianPriorVariance(1)
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(0.01).setGaussianPriorVariance(1)
                 .setHistory(5).build();
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

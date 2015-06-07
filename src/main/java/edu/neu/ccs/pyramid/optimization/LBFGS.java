@@ -135,7 +135,7 @@ public class LBFGS {
 
     Vector findDirection(){
         Vector g = function.getGradient();
-        //we need minus operation for q, using dense vector is much faster
+        //using dense vector is much faster
         Vector q = new DenseVector(g.size());
         q.assign(g);
         Iterator<Double> rhoDesIterator = rhoQueue.descendingIterator();

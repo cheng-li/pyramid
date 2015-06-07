@@ -34,6 +34,9 @@ public class MLLogisticLoss implements Optimizable.ByGradient, Optimizable.ByGra
     private double[][] assignmentProbMatrix;
 
     private double[][] assignmentScoreMatrix;
+    private double value;
+    private boolean isGradientCacheValid;
+    private boolean isValueCacheValid;
 
     public MLLogisticLoss(MLLogisticRegression mlLogisticRegression,
                         MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
@@ -52,16 +55,35 @@ public class MLLogisticLoss implements Optimizable.ByGradient, Optimizable.ByGra
         this.assignmentProbMatrix = new double[numDataPoints][numAssignments];
         this.assignmentScoreMatrix = new double[numDataPoints][numAssignments];
         this.updateEmpricalCounts();
-        this.refresh();
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
     }
 
     public Vector getParameters(){
         return mlLogisticRegression.getWeights().getAllWeights();
     }
 
-    public void refresh(){
-        if (mlLogisticRegression.featureExtraction()){
-            updateEmpricalCounts();
+    @Override
+    public void setParameters(Vector parameters) {
+        this.mlLogisticRegression.getWeights().setWeightVector(parameters);
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
+    }
+
+    public double getValue(){
+        if (isValueCacheValid){
+            return this.value;
+        }
+        Vector parameters = getParameters();
+        this.value =  -1*mlLogisticRegression.dataSetLogLikelihood(dataSet) + parameters.dot(parameters)/(2*gaussianPriorVariance);
+        this.isValueCacheValid = true;
+        return this.value;
+    }
+
+
+    public Vector getGradient(){
+        if (isGradientCacheValid){
+            return this.gradient;
         }
         updateClassScoreMatrix();
         updateAssignmentScoreMatrix();
@@ -69,20 +91,7 @@ public class MLLogisticLoss implements Optimizable.ByGradient, Optimizable.ByGra
         updateClassProbMatrix();
         updatePredictedCounts();
         updateGradient();
-    }
-
-    public double getValue(){
-        return getValue(mlLogisticRegression.getWeights().getAllWeights());
-    }
-
-    @Override
-    public double getValue(Vector parameters) {
-        MLLogisticRegression tmpFunction = new MLLogisticRegression(this.mlLogisticRegression.getNumClasses(),
-                this.mlLogisticRegression.getNumFeatures(),this.mlLogisticRegression.getAssignments(),parameters);
-        return -tmpFunction.dataSetLogLikelihood(dataSet) + parameters.dot(parameters)/(2*gaussianPriorVariance);
-    }
-
-    public Vector getGradient(){
+        this.isGradientCacheValid = true;
         return this.gradient;
     }
 

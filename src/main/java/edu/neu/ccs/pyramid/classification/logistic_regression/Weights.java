@@ -39,7 +39,7 @@ public class Weights implements Serializable {
         this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
-    void setWeightVector(Vector weightVector) {
+    public void setWeightVector(Vector weightVector) {
         if (weightVector.size()!=(numFeatures + 1)*numClasses){
             throw new IllegalArgumentException("weightVector.size()!=(numFeatures + 1)*numClasses");
         }

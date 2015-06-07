@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -41,6 +42,7 @@ public class RidgeLogisticTrainerTest {
                 .setHistory(5)
                 .build();
 
+
         LogisticRegression logisticRegression = trainer.train(dataSet);
         System.out.println("train: "+ Accuracy.accuracy(logisticRegression, dataSet));
         System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
@@ -76,7 +78,10 @@ public class RidgeLogisticTrainerTest {
                 .setHistory(5)
                 .build();
 
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         LogisticRegression logisticRegression = trainer.train(dataSet);
+        System.out.println(stopWatch);
         System.out.println("train: "+ Accuracy.accuracy(logisticRegression, dataSet));
         System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
     }
