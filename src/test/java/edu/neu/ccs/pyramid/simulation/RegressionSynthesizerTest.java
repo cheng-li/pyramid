@@ -87,7 +87,7 @@ public class RegressionSynthesizerTest {
         ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
                 .setDataSet(trainSet)
                 .setLabels(trainSet.getLabels())
-                .setFeatureType(ProbRegStumpTrainer.FeatureType.ALL_FEATURES)
+                .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
                 .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
                 .build();
         LBFGS lbfgs = trainer.getLbfgs();

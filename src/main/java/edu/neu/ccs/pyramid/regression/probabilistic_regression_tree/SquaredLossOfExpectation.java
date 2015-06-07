@@ -27,6 +27,11 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
     private Vector vector;
     private int[] activeFeatures;
 
+    private double value;
+    private Vector gradient;
+    private boolean isGradientCacheValid=false;
+    private boolean isValueCacheValid=false;
+
     public SquaredLossOfExpectation(DataSet dataSet, double[] labels, int[] activeFeatures) {
         this.dataSet = dataSet;
         this.labels = labels;
@@ -81,7 +86,30 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
 
 
     @Override
-    public Vector getGradient() {
+    public void setParameters(Vector parameters) {
+        this.vector = parameters;
+    }
+
+    public double getValue(){
+        if (isValueCacheValid){
+            return this.value;
+        }
+        updateValue();
+        this.isValueCacheValid = true;
+        return this.value;
+    }
+
+
+    public Vector getGradient(){
+        if (isGradientCacheValid){
+            return this.gradient;
+        }
+        updateGradient();
+        this.isGradientCacheValid = true;
+        return this.gradient;
+    }
+
+    private void updateGradient() {
         if (logger.isDebugEnabled()){
             logger.debug("calculating gradient");
         }
@@ -141,10 +169,11 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
         if (logger.isDebugEnabled()){
             logger.debug("gradient calculation done");
         }
-        return new RandomAccessSparseVector(gradient);
+        //todo should it be dense?
+        this.gradient= new RandomAccessSparseVector(gradient);
     }
 
-    private double getValue(){
+    private void updateValue(){
         Sigmoid sigmoid = new Sigmoid(getWeightsWithoutBias(),getBias());
         double leftValue = getLeftValue();
         double rightValue = getRightValue();
@@ -160,22 +189,15 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
 
         double squaredLoss = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i -> Math.pow(fx[i]-labels[i],2)).sum()*0.5;
-        return squaredLoss;
+        this.value = squaredLoss;
     }
 
-    @Override
-    public double getValue(Vector parameters) {
-        SquaredLossOfExpectation loss = new SquaredLossOfExpectation(this.dataSet,this.labels,parameters, this.activeFeatures);
-        return loss.getValue();
-    }
+
 
     @Override
     public Vector getParameters() {
         return vector;
     }
 
-    @Override
-    public void refresh() {
 
-    }
 }

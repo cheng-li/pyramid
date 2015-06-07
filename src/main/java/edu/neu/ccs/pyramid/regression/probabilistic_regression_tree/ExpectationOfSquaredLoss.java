@@ -26,6 +26,11 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
     private Vector vector;
     private int[] activeFeatures;
 
+    private double value;
+    private Vector gradient;
+    private boolean isGradientCacheValid;
+    private boolean isValueCacheValid;
+
     public ExpectationOfSquaredLoss(DataSet dataSet, double[] labels, int[] activeFeatures) {
         this.dataSet = dataSet;
         this.labels = labels;
@@ -65,8 +70,8 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
     }
 
 
-    @Override
-    public Vector getGradient() {
+
+    private void updateGradient() {
         if (logger.isDebugEnabled()){
             logger.debug("calculating gradient");
         }
@@ -119,10 +124,10 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
         if (logger.isDebugEnabled()){
             logger.debug("gradient calculation done");
         }
-        return gradient;
+        this.gradient = gradient;
     }
 
-    private double getValue(){
+    private void updateValue(){
         Sigmoid sigmoid = new Sigmoid(getWeightsWithoutBias(),getBias());
         double leftValue = getLeftValue();
         double rightValue = getRightValue();
@@ -134,14 +139,10 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
         double loss = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i -> hx[i] * Math.pow(leftValue - labels[i], 2) + (1 - hx[i]) * Math.pow(rightValue - labels[i], 2))
                 .sum();
-        return loss;
+        this.value = loss;
     }
 
-    @Override
-    public double getValue(Vector parameters) {
-        ExpectationOfSquaredLoss loss = new ExpectationOfSquaredLoss(this.dataSet,this.labels,parameters, this.activeFeatures);
-        return loss.getValue();
-    }
+
 
     @Override
     public Vector getParameters() {
@@ -149,7 +150,26 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
     }
 
     @Override
-    public void refresh() {
+    public void setParameters(Vector parameters) {
+        this.vector = parameters;
+    }
 
+    public double getValue(){
+        if (isValueCacheValid){
+            return this.value;
+        }
+        updateValue();
+        this.isValueCacheValid = true;
+        return this.value;
+    }
+
+
+    public Vector getGradient(){
+        if (isGradientCacheValid){
+            return this.gradient;
+        }
+        updateGradient();
+        this.isGradientCacheValid = true;
+        return this.gradient;
     }
 }
