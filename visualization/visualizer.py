@@ -72,14 +72,15 @@ def writeRule(docId, line_count, num, rule):
         if check["feature value"] != 0.0 and check["feature"].has_key("ngram"):
             pos += getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], check["feature"]["slop"], check["feature"]["inOrder"])
         
-        if check["feature"].has_key("ngram"):
-            checkOneRule['ngram'] = check["feature"]["ngram"]
+        if not check["feature"].has_key("ngram"):
+            checkOneRule["name"] = check["feature"]["name"]
+            checkOneRule["index"] = check["feature"]["index"]
         else:
-            checkOneRule['ngram'] = ""
-            
-        checkOneRule['index'] = check["feature"]["index"]
-        checkOneRule['field'] = check["feature"]["field"]
-        checkOneRule['slop'] = check["feature"]["slop"]
+            checkOneRule["ngram"] = check["feature"]["ngram"]
+            checkOneRule["index"] = check["feature"]["index"]
+            checkOneRule["field"] = check["feature"]["field"]
+            checkOneRule["slop"] = check["feature"]["slop"]
+
         checkOneRule['value'] = check["feature value"]
         checkOneRule['relation'] = check["relation"]
         checkOneRule['threshold'] = check["threshold"]
@@ -325,7 +326,6 @@ pre_data = '''<html>
         var words = text.split(" ");
 
         if(isNewHighLight(words, poses)) {
-
             var colors = ["red", "Magenta", "lime", "blue", "GreenYellow", "LightPink", 
                 "orange", "yellow", "LightSeaGreen", "Orchid"];
             var pickColor = pickNewColor(text, colors);
@@ -462,10 +462,20 @@ pre_data = '''<html>
             str += '<li>' + serialize(rule['checks'], function (check) {
                         style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
                             (rowNum + 1) + ")'"
-                        str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
-                        check.threshold.toFixed(2) +']'
-                        if (displayOptions.details) {
-                            str += 'index=' + check.index + ' field=' + check.field + ' slop:' + check.slop
+                        // alert(Object.keys(check))
+                        if ('ngram' in check) {
+                            str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
+                            check.threshold.toFixed(2) +']'
+                            if (displayOptions.details) {
+                                str += 'index=' + check.index + ' field=' + check.field + ' slop:' + check.slop
+                            }
+                        }
+                        else {
+                            str = '<p ' + style + '>' + check.name + ' [' + check.value.toFixed(2) + check.relation + 
+                            check.threshold.toFixed(2) +']'
+                            if (displayOptions.details) {
+                                str += 'index=' + check.index
+                            }
                         }
                         return str
                     }) + '</li>'
