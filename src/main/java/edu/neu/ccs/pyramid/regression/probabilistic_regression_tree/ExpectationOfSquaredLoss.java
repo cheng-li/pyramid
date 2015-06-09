@@ -152,6 +152,8 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
     @Override
     public void setParameters(Vector parameters) {
         this.vector = parameters;
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
     }
 
     public double getValue(){
