@@ -109,3 +109,28 @@
   93: same as exp70, for tunning
   94: keep features with mindf
   95: index yelp
+  96: concatenate datasets by features
+  97: merge train and test, repartition into folds
+  98: loop on Exp97
+  99: elastic for 5folds
+  100: check dataset information
+  103: index amazon_phone, class demo
+  104: multi-label logistic regression, trained independently
+  105: soft regression stump, fit univariate function
+  106: soft tree, convergence test
+  107: hard regression stump vs soft regresson stump on real datasets, use the same split feature
+  108: tree noise test, noise =0.1
+  109: tree, fitting sparse data
+  110: tree, fitting sparse and noisy data
+  111: fitting multi-variate function with regression stumps
+  112: visualize residuals for lktb with hard trees
+  113: visualize residuals for lktb with expectation trees
+  114: visualize residuals for lktb with probabilistic trees
+  115: hard tree vs expectation tree vs hybrid tree, accuracy test, spam data
+  116: hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, no newton, no shrinkage
+  117: hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, with shrinkage, without newton, used convergence check to stop early
+  118:  classification, hard tree vs expectation tree vs hybrid tree, accuracy test, on fiji, with shrinkage, without newton, always run lbfgs for 100 iterations
+  119:  regression, LS BOOST, soft tree vs hard tree vs hybrid tree, fiji
+  120: LS BOOST, soft tree vs hard tree vs hybrid tree, simulation data, local, no shrinkage
+  121: LS BOOST, soft tree vs hard tree vs hybrid tree, simulation data, local, shrinkage=0.1
+  122: follow exp119, check why soft tree performs worse on certain iterations

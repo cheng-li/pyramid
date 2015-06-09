@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * noise test, noise =0.1
+ * tree noise test, noise =0.1
  * Created by chengli on 5/26/15.
  */
 public class Exp108 {

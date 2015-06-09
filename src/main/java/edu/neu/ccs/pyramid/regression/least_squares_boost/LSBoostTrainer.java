@@ -61,6 +61,10 @@ public class LSBoostTrainer {
         addRegressor(regressor,1.0);
     }
 
+    public double[] getGradients() {
+        return gradients;
+    }
+
     void updateScores(Regressor regressor, double weight){
         DataSet dataSet = lsbConfig.getDataSet();
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(

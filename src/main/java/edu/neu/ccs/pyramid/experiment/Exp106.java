@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * convergence test
+ * soft tree, convergence test
  * Created by chengli on 5/24/15.
  */
 public class Exp106 {

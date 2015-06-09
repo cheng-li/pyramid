@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * fitting sparse and noisy data
+ * tree, fitting sparse and noisy data
  * Created by chengli on 5/26/15.
  */
 public class Exp110 {
