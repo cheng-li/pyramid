@@ -17,14 +17,16 @@ public class LogisticRegressionTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test4();
+        test1();
 
     }
 
     private static void test1() throws Exception{
 
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/train.trec"),
-                DataSetType.CLF_SPARSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+                DataSetType.CLF_SPARSE, false);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
+                DataSetType.CLF_SPARSE, false);
         System.out.println(dataSet.getMetaInfo());
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
@@ -32,7 +34,7 @@ public class LogisticRegressionTest {
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,1000);
         GradientDescent gradientDescent = new GradientDescent(function,1);
         for (int i=0;i<500;i++){
-            gradientDescent.update();
+            gradientDescent.iterate();
             System.out.println(Accuracy.accuracy(logisticRegression,dataSet));
         }
 
@@ -88,10 +90,10 @@ public class LogisticRegressionTest {
 
     private static void test4() throws Exception{
 
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/train.trec"),
-                DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/test.trec"),
-                DataSetType.CLF_SPARSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+                DataSetType.CLF_SPARSE, false);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
+                DataSetType.CLF_SPARSE, false);
         System.out.println(dataSet.getMetaInfo());
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
