@@ -46,11 +46,15 @@ public class BackTrackingLineSearcher {
             initialPosition = new RandomAccessSparseVector(function.getParameters());
         }
         while(true){
+
             Vector step = searchDirection.times(stepLength);
             Vector target = initialPosition.plus(step);
             function.setParameters(target);
 
             double targetValue = function.getValue();
+            if (logger.isDebugEnabled()){
+                logger.debug("step length = "+stepLength+", target value = "+targetValue);
+            }
             if (targetValue <= value + c*stepLength*product){
                 moveInfo.setStep(step);
                 moveInfo.setStepLength(stepLength);

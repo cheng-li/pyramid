@@ -115,7 +115,7 @@ public class ProbRegStumpTrainer {
                     RegTreeConfig regTreeConfig = new RegTreeConfig();
                     regTreeConfig.setActiveFeatures(IntStream.range(0, dataSet.getNumFeatures()).toArray());
                     regTreeConfig.setMaxNumLeaves(2);
-                    regTreeConfig.setMinDataPerLeaf(1);
+                    regTreeConfig.setMinDataPerLeaf(5);
                     regTreeConfig.setActiveDataPoints(IntStream.range(0, dataSet.getNumDataPoints()).toArray());
                     regTreeConfig.setNumSplitIntervals(1000);
                     hardTree = RegTreeTrainer.fit(regTreeConfig, dataSet,labels);

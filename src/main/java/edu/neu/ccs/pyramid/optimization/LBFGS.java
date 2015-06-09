@@ -36,6 +36,7 @@ public class LBFGS {
     private double epsilon = 0.01;
     private int maxIteration = 10000;
     private boolean checkConvergence =true;
+    private boolean terminate = false;
 
     public LBFGS(Optimizable.ByGradientValue function) {
         this.function = function;
@@ -73,14 +74,19 @@ public class LBFGS {
                     convergenceTraceCounter =0;
                 }
                 if (convergenceTraceCounter == 5){
-                    break;
+                    terminate = true;
                 }
             }
 
 
             if (iteration==maxIteration){
+               terminate = true;
+            }
+
+            if (terminate){
                 break;
             }
+
             iterate();
             iteration += 1;
             valueQueue.remove();
@@ -111,13 +117,22 @@ public class LBFGS {
         Vector y = newGradient.minus(oldGradient);
         double denominator = y.dot(s);
 
+        //todo what to do if denominator is not positive?
+
         double rho = 0;
         if (denominator>0){
             rho = 1/denominator;
         }
+        else {
+            terminate = true;
+            if (logger.isWarnEnabled()){
+                logger.warn("denominator <= 0");
+            }
+        }
 
 
         if (logger.isDebugEnabled()){
+            logger.debug("denominator = "+denominator);
             logger.debug("rho = "+rho);
         }
         sQueue.add(s);
