@@ -1,8 +1,10 @@
 package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -17,7 +19,7 @@ public class ProbRegStumpTrainer {
     private FeatureType featureType;
     private LossType lossType;
     private Optimizable.ByGradientValue loss;
-    private LBFGS lbfgs;
+    private Optimizer optimizer;
 
     public ProbRegStumpTrainer() {
     }
@@ -26,16 +28,18 @@ public class ProbRegStumpTrainer {
         return new Builder();
     }
 
+    public Optimizer getOptimizer() {
+        return optimizer;
+    }
+
     /**
      * set parameters here
      * @return
      */
-    public LBFGS getLbfgs() {
-        return lbfgs;
-    }
+
 
     public ProbRegStump train(){
-        lbfgs.optimize();
+        optimizer.optimize();
 
         ProbRegStump probRegStump = new ProbRegStump();
         probRegStump.lossType = lossType;
@@ -71,11 +75,16 @@ public class ProbRegStumpTrainer {
         SquaredLossOfExpectation, ExpectationOfSquaredLoss
     }
 
+    public static enum OptimizerType{
+        GRADIENT_DESCENT, LBFGS
+    }
+
 
     public static class Builder {
         private DataSet dataSet;
         private ProbRegStumpTrainer.FeatureType featureType;
         private ProbRegStumpTrainer.LossType lossType;
+        private OptimizerType optimizerType=OptimizerType.LBFGS;
         private double[] labels;
 
         public Builder setDataSet(DataSet dataSet) {
@@ -96,6 +105,11 @@ public class ProbRegStumpTrainer {
 
         public Builder setLabels(double[] labels) {
             this.labels = labels;
+            return this;
+        }
+
+        public Builder setOptimizerType(OptimizerType optimizerType) {
+            this.optimizerType = optimizerType;
             return this;
         }
 
@@ -135,8 +149,13 @@ public class ProbRegStumpTrainer {
                     break;
             }
 
-            trainer.lbfgs = new LBFGS(trainer.loss);
-
+            switch (optimizerType) {
+                case GRADIENT_DESCENT:
+                    trainer.optimizer = new GradientDescent(trainer.loss);
+                    break;
+                case LBFGS:
+                    trainer.optimizer = new LBFGS(trainer.loss);
+            }
             return trainer;
         }
     }

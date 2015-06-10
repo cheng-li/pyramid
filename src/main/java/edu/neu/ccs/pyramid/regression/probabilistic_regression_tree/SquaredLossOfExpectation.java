@@ -53,7 +53,7 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
         vector.set(vector.size()-1,regressionTree.getRoot().getRightChild().getValue());
         double threshold = regressionTree.getRoot().getThreshold();
         int featureIndex = regressionTree.getRoot().getFeatureIndex();
-        double a = -1000;
+        double a = -100;
         vector.set(0,-a*threshold);
         vector.set(featureIndex+1, a);
 

@@ -9,7 +9,7 @@ import java.util.LinkedList;
 /**
  * Created by chengli on 12/7/14.
  */
-public class GradientDescent {
+public class GradientDescent implements Optimizer{
     private static final Logger logger = LogManager.getLogger();
     private Optimizable.ByGradientValue function;
     private BackTrackingLineSearcher lineSearcher;
@@ -22,11 +22,13 @@ public class GradientDescent {
     private boolean terminate = false;
 
 
-    public GradientDescent(Optimizable.ByGradientValue function,
-                           double initialStepLength) {
+    public GradientDescent(Optimizable.ByGradientValue function) {
         this.function = function;
         this.lineSearcher = new BackTrackingLineSearcher(function);
-        lineSearcher.setInitialStepLength(initialStepLength);
+    }
+
+    public BackTrackingLineSearcher getLineSearcher() {
+        return lineSearcher;
     }
 
     public void optimize(){

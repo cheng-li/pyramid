@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
@@ -113,9 +114,11 @@ public class Exp105 {
                 .setFeatureType(ProbRegStumpTrainer.FeatureType.ALL_FEATURES)
                 .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
                 .build();
-        LBFGS lbfgs = trainer.getLbfgs();
-        lbfgs.setCheckConvergence(false);
-        lbfgs.setMaxIteration(100);
+
+        Optimizer optimizer = trainer.getOptimizer();
+        optimizer.setCheckConvergence(false);
+        optimizer.setMaxIteration(100);
+
         ProbRegStump probRegStump = trainer.train();
         System.out.println("prob rt");
         System.out.println("training mse = "+ MSE.mse(probRegStump,trainSet));

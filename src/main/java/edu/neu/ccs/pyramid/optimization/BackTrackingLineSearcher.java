@@ -55,7 +55,7 @@ public class BackTrackingLineSearcher {
             if (logger.isDebugEnabled()){
                 logger.debug("step length = "+stepLength+", target value = "+targetValue);
             }
-            if (targetValue <= value + c*stepLength*product){
+            if (targetValue <= value + c*stepLength*product || stepLength==0){
                 moveInfo.setStep(step);
                 moveInfo.setStepLength(stepLength);
                 moveInfo.setNewValue(targetValue);

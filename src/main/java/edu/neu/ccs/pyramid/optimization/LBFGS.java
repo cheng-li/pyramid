@@ -19,7 +19,7 @@ import java.util.LinkedList;
  * Formula 2.7
  * Created by chengli on 12/9/14.
  */
-public class LBFGS {
+public class LBFGS implements Optimizer{
     private static final Logger logger = LogManager.getLogger();
     private Optimizable.ByGradientValue function;
     private BackTrackingLineSearcher lineSearcher;

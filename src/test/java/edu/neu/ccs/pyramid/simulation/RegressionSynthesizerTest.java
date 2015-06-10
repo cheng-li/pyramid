@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
@@ -90,9 +91,11 @@ public class RegressionSynthesizerTest {
                 .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
                 .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
                 .build();
-        LBFGS lbfgs = trainer.getLbfgs();
-        lbfgs.setCheckConvergence(true);
-        lbfgs.setMaxIteration(10000);
+
+        Optimizer optimizer = trainer.getOptimizer();
+        optimizer.setCheckConvergence(true);
+        optimizer.setMaxIteration(10000);
+
         ProbRegStump probRegStump = trainer.train();
         System.out.println("prob rt");
         System.out.println("training mse = "+ MSE.mse(probRegStump,trainSet));

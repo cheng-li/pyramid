@@ -8,6 +8,11 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.optimization.ConjugateGradientDescent;
 import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import java.io.File;
 
@@ -17,6 +22,11 @@ public class LogisticRegressionTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(Level.DEBUG);
+        ctx.updateLoggers();
         test1();
 
     }
@@ -32,7 +42,8 @@ public class LogisticRegressionTest {
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         logisticRegression.setFeatureExtraction(true);
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,1000);
-        GradientDescent gradientDescent = new GradientDescent(function,1);
+        GradientDescent gradientDescent = new GradientDescent(function);
+        gradientDescent.getLineSearcher().setInitialStepLength(1.0E-4);
         for (int i=0;i<500;i++){
             gradientDescent.iterate();
             System.out.println(Accuracy.accuracy(logisticRegression,dataSet));

@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
@@ -132,10 +133,15 @@ public class LSBoostTrainer {
                     .setLabels(gradients)
                     .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
                     .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                    //todo
+                    .setOptimizerType(ProbRegStumpTrainer.OptimizerType.LBFGS)
                     .build();
-            LBFGS lbfgs = expectationTrainer.getLbfgs();
-            lbfgs.setCheckConvergence(lsbConfig.softTreeEarlyStop());
-            lbfgs.setMaxIteration(100);
+
+            Optimizer optimizer = expectationTrainer.getOptimizer();
+            optimizer.setCheckConvergence(lsbConfig.softTreeEarlyStop());
+            optimizer.setMaxIteration(100);
+
+
 
             ProbRegStump expectationTree = expectationTrainer.train();
 
