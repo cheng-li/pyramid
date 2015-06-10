@@ -12,6 +12,9 @@ import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoostTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -19,6 +22,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * follow exp119, check why soft tree performs worse on certain iterations
@@ -83,23 +87,40 @@ public class Exp122 {
                     double[] gradients = trainer.getGradients();
                     RegDataSet subTask = RegDataSetBuilder.getBuilder()
                             .numDataPoints(dataSet.getNumDataPoints())
-                            .numFeatures(dataSet.getNumFeatures())
+                            .numFeatures(1)
                             .dense(false)
                             .build();
                     for (int a=0;a<subTask.getNumDataPoints();a++){
                         subTask.setLabel(a,gradients[a]);
-                        Vector row = dataSet.getRow(a);
-                        for (Vector.Element element: row.nonZeroes()){
-                            int b = element.index();
-                            double v = element.get();
-                            subTask.setFeatureValue(a,b,v);
-                        }
+
                     }
+                    int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
+                    int[] activeDataPoints = IntStream.range(0, dataSet.getNumDataPoints()).toArray();
+                    RegTreeConfig regTreeConfig = new RegTreeConfig();
+                    regTreeConfig.setActiveFeatures(activeFeatures);
+
+                    regTreeConfig.setMaxNumLeaves(2);
+                    regTreeConfig.setMinDataPerLeaf(1);
+                    regTreeConfig.setActiveDataPoints(activeDataPoints);
+
+                    regTreeConfig.setNumSplitIntervals(1000);
+                    RegressionTree tree = RegTreeTrainer.fit(regTreeConfig, dataSet,gradients);
+                    int pickedFeature = tree.getRoot().getFeatureIndex();
+
+                    Vector column = dataSet.getColumn(pickedFeature);
+                    for (Vector.Element element: column.nonZeroes()){
+                        int b = element.index();
+                        double v = element.get();
+                        subTask.setFeatureValue(b,0,v);
+                    }
+
                     TRECFormat.save(subTask,new File(outputFolder,""+i+".trec"));
+
                 }
 
 
                 trainer.iterate();
+
             }
             System.out.println("time spent on one iteration = "+stopWatch);
 

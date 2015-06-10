@@ -10,10 +10,12 @@ import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -36,7 +38,7 @@ public class Exp123 {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        String path = "/Users/chengli/tmp/exp122/cpusmall/1/hybrid_tree/3.trec";
+        String path = "/Users/chengli/tmp/exp122/e2006-tfidf/1/hybrid_tree/1.trec";
         testDataSet(path);
     }
 
@@ -50,10 +52,10 @@ public class Exp123 {
         regTreeConfig.setActiveFeatures(activeFeatures);
 
         regTreeConfig.setMaxNumLeaves(2);
-        regTreeConfig.setMinDataPerLeaf(5);
+        regTreeConfig.setMinDataPerLeaf(1);
         regTreeConfig.setActiveDataPoints(activeDataPoints);
 
-        regTreeConfig.setNumSplitIntervals(1000);
+        regTreeConfig.setNumSplitIntervals(50);
         RegressionTree hardTree = RegTreeTrainer.fit(regTreeConfig, trainSet);
         System.out.println("hard tree = "+hardTree);
         System.out.println("mse = "+ MSE.mse(hardTree, trainSet));
@@ -61,22 +63,39 @@ public class Exp123 {
         double hardMse = MSE.mse(hardTree, trainSet);
         System.out.println(hardMse*0.5*trainSet.getNumDataPoints());
 
-        ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
-                .setDataSet(trainSet)
-                .setLabels(trainSet.getLabels())
-                .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
-                .build();
-
-        Optimizer optimizer = trainer.getOptimizer();
-        optimizer.setCheckConvergence(false);
-        optimizer.setMaxIteration(100);
 
 
-        ProbRegStump softTree = trainer.train();
-        System.out.println("soft tree = "+softTree);
-        System.out.println("mse = "+ MSE.mse(softTree, trainSet));
 
+        int[] iterations = {0,10,20,100};
+        for (int i: iterations){
+            System.out.println("=====================");
+            ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
+                    .setDataSet(trainSet)
+                    .setLabels(trainSet.getLabels())
+                    .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+                    .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                    .build();
+            Optimizer optimizer = trainer.getOptimizer();
+            optimizer.setCheckConvergence(false);
+            optimizer.setMaxIteration(i);
+
+
+            ProbRegStump softTree = trainer.train();
+            System.out.println("soft tree = "+softTree);
+            System.out.println("mse = "+ MSE.mse(softTree, trainSet));
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(((Sigmoid)softTree.getGatingFunction()).getWeights().get(0));
+            sb.append(",");
+            sb.append(((Sigmoid)softTree.getGatingFunction()).getBias());
+            sb.append(",");
+            sb.append(softTree.getLeftOutput());
+            sb.append(",");
+            sb.append(softTree.getRightOutput());
+
+            FileUtils.writeStringToFile(new File(path, "curve"+i), sb.toString());
+
+        }
 
 
     }

@@ -49,6 +49,9 @@ public class LBFGS implements Optimizer{
     }
 
     public void optimize(){
+        if (maxIteration==0){
+            return;
+        }
         //size = 2
         LinkedList<Double> valueQueue = new LinkedList<>();
         valueQueue.add(function.getValue());

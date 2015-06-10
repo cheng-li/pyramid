@@ -1,8 +1,11 @@
 package edu.neu.ccs.pyramid.regression.probabilistic_regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
+import edu.neu.ccs.pyramid.util.Grid;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -10,6 +13,7 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -46,17 +50,70 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
     public SquaredLossOfExpectation(DataSet dataSet, double[] labels, int[] activeFeatures, RegressionTree regressionTree) {
         this.dataSet = dataSet;
         this.labels = labels;
-        this.vector = new RandomAccessSparseVector(dataSet.getNumFeatures() + 3);
-        this.activeFeatures = activeFeatures;
 
-        vector.set(vector.size()-2,regressionTree.getRoot().getLeftChild().getValue());
-        vector.set(vector.size()-1,regressionTree.getRoot().getRightChild().getValue());
+        this.activeFeatures = activeFeatures;
+        this.vector = findSharpness(dataSet,labels,activeFeatures,regressionTree);
+//        double leftValue = regressionTree.getRoot().getLeftChild().getValue();
+//        double rightValue = regressionTree.getRoot().getRightChild().getValue();
+//        vector.set(vector.size()-2,leftValue);
+//        vector.set(vector.size()-1,rightValue);
+//        double threshold = regressionTree.getRoot().getThreshold();
+//        int featureIndex = regressionTree.getRoot().getFeatureIndex();
+//        double maxFeature = dataSet.getColumn(featureIndex).maxValue();
+//        double minFeature = dataSet.getColumn(featureIndex).minValue();
+//        int numIntervals = 1000;
+//        double intervalLength = (maxFeature-minFeature)/numIntervals;
+//        double tangent = Math.abs(rightValue-leftValue)/intervalLength;
+//
+//        double a = -tangent;
+//        vector.set(0,-a*threshold);
+//        vector.set(featureIndex+1, a);
+
+    }
+
+    public static Vector findSharpness(DataSet dataSet, double[] labels, int[] activeFeatures, RegressionTree regressionTree){
+
+        double leftValue = regressionTree.getRoot().getLeftChild().getValue();
+        double rightValue = regressionTree.getRoot().getRightChild().getValue();
         double threshold = regressionTree.getRoot().getThreshold();
         int featureIndex = regressionTree.getRoot().getFeatureIndex();
-        double a = -100;
-        vector.set(0,-a*threshold);
-        vector.set(featureIndex+1, a);
+        double maxFeature = dataSet.getColumn(featureIndex).maxValue();
+        double minFeature = dataSet.getColumn(featureIndex).minValue();
+        int numIntervals = 1000;
+        double intervalLength = (maxFeature-minFeature)/numIntervals;
+        double tangent = Math.abs(rightValue-leftValue)/intervalLength;
 
+        double bestSharpness = 10;
+        double bestMSE = Double.POSITIVE_INFINITY;
+        Vector bestVector = null;
+
+        List<Double> sharpnesses = Grid.logUniform(1, tangent, 10);
+        for (double sharpness: sharpnesses){
+            System.out.println("sharpness = "+sharpness);
+            Vector initialVector = new RandomAccessSparseVector(dataSet.getNumFeatures() + 3);
+            initialVector.set(initialVector.size()-2,leftValue);
+            initialVector.set(initialVector.size()-1,rightValue);
+            double a = -sharpness;
+            initialVector.set(0,-a*threshold);
+            initialVector.set(featureIndex+1, a);
+
+            SquaredLossOfExpectation squaredLossOfExpectation = new SquaredLossOfExpectation(dataSet,labels,initialVector,activeFeatures);
+            ProbRegStump probRegStump = new ProbRegStump();
+            probRegStump.gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
+            probRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
+            probRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
+            double mse  = MSE.mse(labels,probRegStump.predict(dataSet));
+            System.out.println("mse = "+mse);
+
+            if (mse<bestMSE){
+                bestMSE = mse;
+                bestSharpness = sharpness;
+                bestVector = initialVector;
+            }
+
+        }
+
+        return bestVector;
     }
 
     public SquaredLossOfExpectation(DataSet dataSet, double[] labels, Vector vector, int[] activeFeatures) {
