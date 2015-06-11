@@ -87,7 +87,7 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
         double bestMSE = Double.POSITIVE_INFINITY;
         Vector bestVector = null;
 
-        List<Double> sharpnesses = Grid.logUniform(1, tangent, 10);
+        List<Double> sharpnesses = Grid.logUniform(Math.exp(Math.log(tangent)-5), Math.exp(Math.log(tangent)+5), 10);
         for (double sharpness: sharpnesses){
             System.out.println("sharpness = "+sharpness);
             Vector initialVector = new RandomAccessSparseVector(dataSet.getNumFeatures() + 3);
