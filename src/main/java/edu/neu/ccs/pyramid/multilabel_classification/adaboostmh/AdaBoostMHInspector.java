@@ -140,10 +140,16 @@ public class AdaBoostMHInspector {
         }
         predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
 
-        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
-        List<String> ranking = classes.stream().map(label -> new Pair<Integer,Double>(label,scaling.predictClassProb(dataSet.getRow(dataPointIndex),label)))
-                .sorted(comparator.reversed()).map(pair -> labelTranslator.toExtLabel(pair.getFirst())).collect(Collectors.toList());
-        predictionAnalysis.setPredictedRanking(ranking);
+        List<MultiLabelPredictionAnalysis.ClassRankInfo> ranking = classes.stream().map(label -> {
+                    MultiLabelPredictionAnalysis.ClassRankInfo rankInfo = new MultiLabelPredictionAnalysis.ClassRankInfo();
+                    rankInfo.setClassIndex(label);
+                    rankInfo.setClassName(labelTranslator.toExtLabel(label));
+                    rankInfo.setProb(scaling.predictClassProb(dataSet.getRow(dataPointIndex), label));
+                    return rankInfo;
+                }
+        ).collect(Collectors.toList());
+
+
 
         return predictionAnalysis;
     }

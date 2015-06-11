@@ -3,7 +3,9 @@ package edu.neu.ccs.pyramid.multilabel_classification;
 import edu.neu.ccs.pyramid.classification.ClassProbability;
 import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 2/28/15.
@@ -17,7 +19,7 @@ public class MultiLabelPredictionAnalysis {
     private List<Integer> internalPrediction;
     private List<String> prediction;
     private double probForPredictedLabels;
-    private List<String> predictedRanking;
+    private List<ClassRankInfo> predictedRanking;
     private List<ClassScoreCalculation> classScoreCalculations;
 
 
@@ -93,14 +95,46 @@ public class MultiLabelPredictionAnalysis {
     }
 
     public void setProbForPredictedLabels(double probForPredictedLabels) {
+
         this.probForPredictedLabels = probForPredictedLabels;
     }
 
-    public List<String> getPredictedRanking() {
+    public List<ClassRankInfo> getPredictedRanking() {
         return predictedRanking;
     }
 
-    public void setPredictedRanking(List<String> predictedRanking) {
-        this.predictedRanking = predictedRanking;
+    public void setPredictedRanking(List<ClassRankInfo> predictedRanking) {
+        Comparator<ClassRankInfo> comparator = Comparator.comparing(ClassRankInfo::getProb);
+        this.predictedRanking = predictedRanking.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+    }
+
+    public static class ClassRankInfo{
+        private int classIndex;
+        private String className;
+        private double prob;
+
+        public int getClassIndex() {
+            return classIndex;
+        }
+
+        public void setClassIndex(int classIndex) {
+            this.classIndex = classIndex;
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        public void setClassName(String className) {
+            this.className = className;
+        }
+
+        public double getProb() {
+            return prob;
+        }
+
+        public void setProb(double prob) {
+            this.prob = prob;
+        }
     }
 }
