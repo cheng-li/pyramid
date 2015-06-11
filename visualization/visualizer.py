@@ -70,7 +70,8 @@ def writeRule(docId, line_count, num, rule):
         checkOneRule = {}
         pos = [line_count]
         if check["feature value"] != 0.0 and check["feature"].has_key("ngram"):
-            pos += getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], check["feature"]["slop"], check["feature"]["inOrder"])
+            pos += getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], 
+                check["feature"]["slop"], check["feature"]["inOrder"])
         
         if not check["feature"].has_key("ngram"):
             checkOneRule["name"] = check["feature"]["name"]
@@ -223,601 +224,568 @@ def parse(input_json_file):
 
 # Constant Strings
 pre_data = '''<html>
-  <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script src="jquery.min.js"></script>
-  </head>
-<body>
-<br>
-<table id='optionTable'>
-  <tr><th><br> Data Viewer Options: </th></tr>
-  <tr><td><br>
-      <p style="text-indent: 1em;">Max number of rules per class:&nbsp;&nbsp;
-    <input id="ruleNum" type="number" name="ruleNum" value="6" min="1" style='width:3em'>   <button id="btn-submit">Update</button></p>
-  </td></tr><tr><td>
-      <p style="text-indent: 1em;">Select the fields to display
-    <input id="TP" type="checkbox" name="TP" value="TP" checked>TP
-    <input id="FP" type="checkbox" name="FP" value="FP" checked>FP
-    <input id="FN" type="checkbox" name="FN" value="FN" checked>FN
-    <input id="TN" type="checkbox" name="TN" value="TN">TN</p>
-  </td></tr><tr><td>
-      <p style="text-indent: 1em;">Sort Docs:
-    <input id="Confide" type="radio" name="sd" value="confide" checked>Confide
-    <input id="Mistake" type="radio" name="sd" value="mistake">Mistake
-    <input id="test" type="radio" name="sd" value="test">By Id
-  </td></tr><tr><td>
-      <p style="text-indent: 1em;">Sort Rules:
-    <input id="abs" type="radio" name="sr" value="abs" checked>Abs Descending
-    <input id="anticorrelation" type="radio" name="sr" value="anticorrelation">Ascending
-    <input id="pos" type="radio" name="sr" value="pos">Descending
-  </td></tr><tr><td>
-      <p style="text-indent: 1em;">Rule display:
-    <input id="details" type="checkbox" name="details" value="details">Details
-  </td></tr><tr><td>
-      <center><button id="create">Create file</button> <a download="new.html" id="downloadlink" style="display: none">Download</a></center>
-      <br></td></tr>
-</table>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="jquery.min.js"></script>
+    </head>
+    <body><br>
+        <table id='optionTable'>
+            <tr><th><br> Data Viewer Options: 
+            </th></tr>
+            <tr><td><br>
+                <p style="text-indent: 1em;">Max number of rules per class:&nbsp;&nbsp;
+                <input id="ruleNum" type="number" name="ruleNum" value="6" min="1" style='width:3em' onchange="refresh()"></p>
+            </td></tr>
+            <tr><td>
+                <p style="text-indent: 1em;">Number of labels in predictedRanking:&nbsp;&nbsp;
+                <select id="numOfLabels" onchange="refresh()">
+                    <option value=5 selected>TOP 5
+                    <option value=1 >TOP 10
+                    <option value=15 >TOP 15
+                    <option value=-1 >ALL
+                </select>
+            </td></tr>
+            <tr><td>
+                <p style="text-indent: 1em;">Select the fields to display
+                <input id="TP" type="checkbox" name="TP" value="TP" checked>TP
+                <input id="FP" type="checkbox" name="FP" value="FP" checked>FP
+                <input id="FN" type="checkbox" name="FN" value="FN" checked>FN
+                <input id="TN" type="checkbox" name="TN" value="TN">TN</p>
+            </td></tr>
+            <tr><td>
+                <p style="text-indent: 1em;">Sort Docs:
+                <input id="Confide" type="radio" name="sd" value="confide" checked>Confide
+                <input id="Mistake" type="radio" name="sd" value="mistake">Mistake
+                <input id="test" type="radio" name="sd" value="test">By Id
+            </td></tr>
+            <tr><td>
+                <p style="text-indent: 1em;">Sort Rules:
+                <input id="abs" type="radio" name="sr" value="abs" checked>Abs Descending
+                <input id="ascending" type="radio" name="sr" value="ascending">Ascending
+                <input id="descending" type="radio" name="sr" value="descending">Descending
+            </td></tr>
+            <tr><td>
+                <p style="text-indent: 1em;">Rule display:
+                <input id="details" type="checkbox" name="details" value="details">Details
+            </td></tr>
+            <tr><td>
+                <center><button id="createFile">Create New HTML</button> 
+                <a download="new.html" id="downloadlink" style="display: none">Download</a></center><br>
+            </td></tr>
+        </table><br><br>
 
-<br><br>
+        <p>Feedbacks:</p>
+        <table id="feedbackTable" border=1>
+            <thead><tr>
+                <td align="center"><b>failure</b></td>
+                <td align="center"><b>incomplete</b></td>
+                <td align="center"><b>bad_rule</b></td>
+                <td align="center"><b>bad_matching</b></td>
+            </tr></thead>
+            <tbody id="data-feedbackTable"></tbody>
+        </table>
 
-<p>Rules and classes:</p>
-<p>(Press any rules would highlight matched keywords in the text if they exist)</p>
+        <p>Rules and classes:</p>
+        <p>(Press any rules would highlight matched keywords in the text if they exist)</p>
 
-<table id="mytable" border=1  align="center" style="width:100%">
-  <caption> XXX  data table</caption>
-  <thead>
-    <tr>
-      <td align="center" width="5%"><b>id & labels</b></td>
-      <td align="center" width="5%"><b>predictedRanking</b></td>
-      <td align="center" width="10%"><b>Text</b></td>
-      <td align="center" width="20%"><b>TP</b></td>
-      <td align="center" width="20%"><b>FP</b></td>
-      <td align="center" width="20%"><b>FN</b></td>
-      <td align="center" width="20%"><b>TN</b></td>
-    </tr>
-  </thead>
+        <table id="mytable" border=1  align="center" style="width:100%">
+            <caption> XXX  data table</caption>
+                <thead><tr>
+                    <td align="center" width="5%"><b>id & labels</b></td>
+                    <td align="center" width="5%"><b>predictedRanking</b></td>
+                    <td align="center" width="10%"><b>Text</b></td>
+                    <td align="center" width="20%"><b>TP</b></td>
+                    <td align="center" width="20%"><b>FP</b></td>
+                    <td align="center" width="20%"><b>FN</b></td>
+                    <td align="center" width="20%"><b>TN</b></td>
+                </tr></thead>
+            <tbody id="data-table"></tbody>
+        </table>
 
-  <tbody id="data-table">
-  </tbody>
-</table>
-
-<script>
-    function changeFeedback(row) {
-        document.getElementById('feedback' + row).style.display = "block";
-    }
-
-    function download() {
-        feedbacks = []
-
-        var table = document.getElementById("mytable");
-        var rows = table.getElementsByTagName("tr");
-        for (var row = 0; row < rows.length; row++) {
-            var feedback = {}
-            myselect = document.getElementById('sel' + row)
-            if (myselect != null && (option = myselect.options[myselect.selectedIndex].value) != 'none') {
-                key = document.getElementsByTagName('pre')[row].firstChild.data.replace (/  +$/, '')
-                feedback[key] = {'option:': option, 'text': document.getElementById('feedback' + row).value}
-                feedbacks.push(feedback)
+        <script>
+            function changeFeedback(row) {
+                document.getElementById('feedback' + row).style.display = "block";
             }
-        }
-        var text = JSON.stringify(feedbacks); 
 
-        url = window.location.href
-        var pom = document.createElement('a');
-        pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-        pom.setAttribute('download', 'Viewer_with_Feedbacks.html');
+            function download() {
+                feedbacks = []
 
-        pom.style.display = 'none';
-        document.body.appendChild(pom);
+                var table = document.getElementById("mytable");
+                var rows = table.getElementsByTagName("tr");
+                for (var row = 0; row < rows.length; row++) {
+                    var feedback = {}
+                    myselect = document.getElementById('sel' + row)
+                    if (myselect != null && (option = myselect.options[myselect.selectedIndex].value) != 'none') {
+                        key = document.getElementsByTagName('pre')[row].firstChild.data.replace (/  +$/, '')
+                        feedback[key] = {'option:': option, 'text': document.getElementById('feedback' + row).value}
+                        feedbacks.push(feedback)
+                    }
+                }
+                var text = JSON.stringify(feedbacks); 
 
-        pom.click();
+                url = window.location.href
+                var pom = document.createElement('a');
+                pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                pom.setAttribute('download', 'Viewer_with_Feedbacks.html');
 
-        document.body.removeChild(pom);
-    }
+                pom.style.display = 'none';
+                document.body.appendChild(pom);
 
-    function highlightText(poses, rowNum) {
-        var table = document.getElementById("mytable");
-        var rows = table.getElementsByTagName('tr');
-        var cols = rows[rowNum].children;
-        var cell = cols[2];
+                pom.click();
 
-        var text = cell.innerHTML;
-        text = text.replace(/<font color=/g, "<font-color=");
-        var words = text.split(" ");
-
-        if(isNewHighLight(words, poses)) {
-            var colors = ["red", "Magenta", "lime", "blue", "GreenYellow", "LightPink", 
-                "orange", "yellow", "LightSeaGreen", "Orchid"];
-            var pickColor = pickNewColor(text, colors);
-
-            for(var i = 1; i < poses.length; i++) {
-                var pos = poses[i];
-                words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
-                words[pos] = "<font color='" + pickColor + "'>"+words[pos]+"</font>";
+                document.body.removeChild(pom);
             }
-        }
-        else {
-            for(var i = 1; i < poses.length; i++) {
-                var pos = poses[i];
-                words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
+
+            function highlightText(poses, rowNum) {
+                var table = document.getElementById("mytable");
+                var rows = table.getElementsByTagName('tr');
+                var cols = rows[rowNum].children;
+                var cell = cols[2];
+
+                var text = cell.innerHTML;
+                text = text.replace(/<font color=/g, "<font-color=");
+                var words = text.split(" ");
+
+                if(isNewHighLight(words, poses)) {
+                    var colors = ["red", "Magenta", "lime", "blue", "GreenYellow", "LightPink", 
+                        "orange", "yellow", "LightSeaGreen", "Orchid"];
+                    var pickColor = pickNewColor(text, colors);
+
+                    for(var i = 1; i < poses.length; i++) {
+                        var pos = poses[i];
+                        words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
+                        words[pos] = "<font color='" + pickColor + "'>"+words[pos]+"</font>";
+                    }
+                }
+                else {
+                    for(var i = 1; i < poses.length; i++) {
+                        var pos = poses[i];
+                        words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
+                    }
+                }
+
+                text = words.join(" ");
+                cell.innerHTML = text.replace(/<font-color=/g, "<font color=");
+
             }
-        }
 
-        text = words.join(" ");
-        cell.innerHTML = text.replace(/<font-color=/g, "<font color=");
-
-    }
-
-    function pickNewColor(text, colors) {
-        for (var i=0; i<colors.length; i++) {
-            var fonttext = '<font-color="' + colors[i] + '">';
-            if(text.indexOf(fonttext) == -1) {
-                return colors[i];
+            function pickNewColor(text, colors) {
+                for (var i=0; i<colors.length; i++) {
+                    var fonttext = '<font-color="' + colors[i] + '">';
+                    if(text.indexOf(fonttext) == -1) {
+                        return colors[i];
+                    }
+                }
+                return colors[0];
             }
-        }
-        return colors[0];
-    }
 
-    function isNewHighLight(words, rownum) {
-        for(var i = 1; i < rownum.length; i++) {
-            if (words[rownum[i]].indexOf("<font-color=") == -1) {
-                return true;
+            function isNewHighLight(words, rownum) {
+                for(var i = 1; i < rownum.length; i++) {
+                    if (words[rownum[i]].indexOf("<font-color=") == -1) {
+                        return true;
+                    }
+                }
+                return false;
             }
-        }
-        return false;
-    }
-    function createOption(value, isSelected) {
-        if (isSelected) {
-            return "<option value=" + value + " selected>" + value + "</option>"
-        } else {
-            return "<option value=" + value + ">" + value + "</option>"
-        }
-    }
 
+            function createOption(value, isSelected) {
+                if (isSelected) {
+                    return "<option value=" + value + " selected>" + value + "</option>"
+                } else {
+                    return "<option value=" + value + ">" + value + "</option>"
+                }
+            }
 
-    function createTextarea(i, display, text) {
-        if (display) {
-            return "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5'>" +
-                text + "</textarea>"
-        } else {
-            return "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5' style='display:none'>" +
-                text + "</textarea>" 
-        }
-    }
+            function createTextarea(i, display, text) {
+                if (display) {
+                    return "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5'>" +
+                        text + "</textarea>"
+                } else {
+                    return "<textarea id=feedback" + i + " maxlength='512' class='mytext' cols='40' rows='5' style='display:none'>" +
+                        text + "</textarea>" 
+                }
+            }
 
-    function displayFeedback(i, sel, text) {
-        return "<select onchange='changeFeedback(" + i + ")' id=sel" + i + " >" + 
-        createOption('none', sel=='none') + 
-        createOption('failure', sel=='failure') + 
-        createOption('incomplete', sel=='incomplete') + 
-        createOption('bad_rule', sel=='bad_rule') + 
-        createOption('bad_matching', sel=='bad_matching') + 
-        "</select>" + 
-        createTextarea(i, sel!='none', text)
-        
-    }
+            function displayFeedback(i, sel, text) {
+                return "<select onchange='changeFeedback(" + i + ")' id=sel" + i + " >" + 
+                createOption('none', sel=='none') + 
+                createOption('failure', sel=='failure') + 
+                createOption('incomplete', sel=='incomplete') + 
+                createOption('bad_rule', sel=='bad_rule') + 
+                createOption('bad_matching', sel=='bad_matching') + 
+                "</select>" + 
+                createTextarea(i, sel!='none', text)
+                
+            }
 
-    (function () {
-        var _data = null
+            function createNewHTML() {
+                //var textFile = null
+                var create = document.getElementById('createFile')
+                create.addEventListener('click', function () {
+                    feedbacks = {}
+                    startStr = "<script id=\\"raw-data\\" type=\\"application/json\\">"
+                    endStr = "<\/script><\/body><\/html>"
 
-        function render(data, displayOptions) {
-            var $body = $('#data-table')
-            $body.empty()
-            var html = ''
-            data.forEach(function (row, i) {
-                var labels = ''
-
-                html += '<tr>' +
-                    "<td style='vertical-align:top;text-align:left;'>" + 
-                    "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
-                    "<br>ID:" + row.idlabels.id + " Iternal_ID: " + row.idlabels.internalId + 
-                    '<br><br>Internal Labels:' +  
-                    serialize(row.idlabels.internalLabels, function (lb) {
-                        var str = ''
-                        for (var k in lb) {
-                            str += '<br>' + k + ' : ' + lb[k] + '<br>'
+                    var table = document.getElementById("mytable");
+                    var rows = table.getElementsByTagName("tr");
+                    for (var row = 0; row < rows.length; row++) {
+                        myselect = document.getElementById('sel' + row)
+                        if (myselect != null && (option = myselect.options[myselect.selectedIndex].value) != 'none') {
+                            key = parseInt(document.getElementsByTagName('pre')[row].firstChild.data.replace (/  +$/, ''))
+                            feedbacks[key] = {'option': option, 'text': document.getElementById('feedback' + row).value}
                         }
-                        return str
-                     }) + 
-                    '<br>Predictions:' +
-                    serialize(row.idlabels.predictions, function (lb) {
-                        var str = ''
-                        for (var k in lb) {
-                            str += '<br>' + k + ' : ' + lb[k] + '<br>'
-                        }
-                        return str
-                    }) + 
-                    '<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + 
-                    '<br><br>Feedback:' +
-                    displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
-                    '</td>' +
-                    "<td style='vertical-align:top;text-align:left;'> " + 
-                    serialize(row.predictedRanking, function (lb) {
-                        var str = lb + '<br>'
-                        return str
-                    }) + '</td>' +
-                    "<td style='vertical-align:top;text-align:left;'>" + row.text
-                    + '</td>' +
-                    displayClass(row.TP, displayOptions, i) +
-                    displayClass(row.FP, displayOptions, i) +
-                    displayClass(row.FN, displayOptions, i) +
-                    displayClass(row.TN, displayOptions, i)
-                    + '</tr>'
+                    }
 
-
-            })
-
-            $body.append(html)
-            refreshTable(data, displayOptions)
-        }
-
-        function createRuleDetails(rule, displayOptions, rowNum) {
-            str = ""
-            score = ''
-            if (rule.score >= 0) {
-                score += ": +" + Math.abs(rule.score.toFixed(2))
-            } else {
-                score += ": -" + Math.abs(rule.score.toFixed(2))
-            }
-            str += '<li>' + serialize(rule['checks'], function (check) {
-                        style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
-                            (rowNum + 1) + ")'"
-                        // alert(Object.keys(check))
-                        if ('ngram' in check) {
-                            str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
-                            check.threshold.toFixed(2) +']'
-                            if (displayOptions.details) {
-                                str += 'index=' + check.index + ' field=' + check.field + ' slop:' + check.slop
-                            }
+                    data = dataFromJson()
+                    data.forEach(function(row) {
+                        key = parseInt(row.idlabels.id)
+                        if (feedbacks[key] != undefined) {
+                            row.idlabels.feedbackSelect = feedbacks[key]['option']
+                            row.idlabels.feedbackText = feedbacks[key]['text']
                         }
                         else {
-                            str = '<p ' + style + '>' + check.name + ' [' + check.value.toFixed(2) + check.relation + 
-                            check.threshold.toFixed(2) +']'
-                            if (displayOptions.details) {
-                                str += 'index=' + check.index
-                            }
+                            row.idlabels.feedbackSelect = 'none'
                         }
+                    })
+                    dataJson = JSON.stringify(data);
+                    text = document.documentElement.innerHTML
+                    finalHTML = text.substring(0, text.indexOf(startStr)) + startStr + dataJson + endStr
+                    var link = document.getElementById('downloadlink');
+                    link.href = makeTextFile(finalHTML);
+                    link.style.display = 'block';
+                }, false);
+            }
+
+            function refresh() {
+                console.log(dataFromJson()[0])
+
+                var displayOptions = viewOptions()
+                render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
+            }
+
+            function generateFeedbackDataTable(data) {
+                feedbacks = {'failure':0, 'incomplete':0, 'bad_rule':0, 'bad_matching':0}
+                var $body = $('#data-feedbackTable')
+                $body.empty()
+
+                data.forEach(function (row, i) {
+                    feedbacks[row.idlabels.feedbackSelect] += 1
+                })
+
+                var html = ''
+                html += '<tr>' +
+                    "<td style='vertical-align:top;text-align:left;'>" + feedbacks['failure'] + '</td>' +
+                    "<td style='vertical-align:top;text-align:left;'>" + feedbacks['incomplete'] + '</td>' +
+                    "<td style='vertical-align:top;text-align:left;'>" + feedbacks['bad_rule'] + '</td>' +
+                    "<td style='vertical-align:top;text-align:left;'>" + feedbacks['bad_matching'] + '</td>' +
+                    +'</tr>'
+
+                $body.append(html)
+            }
+
+            function render(data, displayOptions) {
+                generateFeedbackDataTable(data)
+
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+                data.forEach(function (row, i) {
+                    var labels = ''
+
+                    html += '<tr>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
+                        "<br>ID:" + row.idlabels.id + " Iternal_ID: " + row.idlabels.internalId + 
+                        '<br><br>Internal Labels:' +  
+                        serialize(-1, row.idlabels.internalLabels, function (lb) {
+                            var str = ''
+                            for (var k in lb) {
+                                str += '<br>' + k + ' : ' + lb[k] + '<br>'
+                            }
+                            return str
+                         }) + 
+                        '<br>Predictions:' +
+                        serialize(-1, row.idlabels.predictions, function (lb) {
+                            var str = ''
+                            for (var k in lb) {
+                                str += '<br>' + k + ' : ' + lb[k] + '<br>'
+                            }
+                            return str
+                        }) + 
+                        '<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + 
+                        '<br><br>Feedback:' +
+                        displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
+                        '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'> " + 
+                        serialize(displayOptions.numOfLabels, row.predictedRanking, function (lb) {
+                            var str = lb + '<br>'
+                            return str
+                        }) + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + row.text
+                        + '</td>' +
+                        displayClass(row.TP, displayOptions, i) +
+                        displayClass(row.FP, displayOptions, i) +
+                        displayClass(row.FN, displayOptions, i) +
+                        displayClass(row.TN, displayOptions, i)
+                        + '</tr>'
+
+
+                })
+
+                $body.append(html)
+                refreshTable(displayOptions)
+                createNewHTML()
+            }
+
+
+            function createRuleDetails(rule, displayOptions, rowNum) {
+                str = ""
+                score = ''
+                if (rule.score >= 0) {
+                    score += ": +" + Math.abs(rule.score.toFixed(2))
+                } else {
+                    score += ": -" + Math.abs(rule.score.toFixed(2))
+                }
+                str += '<li>' + serialize(-1, rule['checks'], function (check) {
+                            style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
+                                (rowNum + 1) + ")'"
+                            // alert(Object.keys(check))
+                            if ('ngram' in check) {
+                                str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
+                                check.threshold.toFixed(2) +']'
+                                if (displayOptions.details) {
+                                    str += 'index=' + check.index + ' field=' + check.field + ' slop:' + check.slop
+                                }
+                            }
+                            else {
+                                str = '<p ' + style + '>' + check.name + ' [' + check.value.toFixed(2) + check.relation + 
+                                check.threshold.toFixed(2) +']'
+                                if (displayOptions.details) {
+                                    str += 'index=' + check.index
+                                }
+                            }
+                            return str
+                        }) + '</li>'
+
+
+                return str + score
+            }
+
+
+            function displayClass(clas, displayOptions, rowNum) {
+                str = ""
+                str += "<td style='vertical-align:top;text-align:left;'>" +
+                        serialize(-1, clas, function (lb) {
+                            return lb.id + ' : ' + lb.name + '<br><br>classProbability: ' + 
+                            lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
+                            lb.totalScore.toFixed(2) + '<br><ul>' + '<li>prior: ' + 
+                            lb.prior.toFixed(2) + '</li>' +
+                            serialize(-1, lb.rules, function (rule, i) {
+                                if (i >= displayOptions.ruleNum) {
+                                    return ""
+                                }  
+                                return createRuleDetails(rule, displayOptions, rowNum)
+                            })+ '</ul>'
+                        }) + '</td>'
+                return str
+            }
+
+            function serialize(num, a, cb) {
+                var str = ''
+                a.forEach(function (obj, i) {
+                    if (num > 0 && i >= num) {
                         return str
-                    }) + '</li>'
- 
+                    }
+                    if (cb) {
+                        str += cb(obj, i)
+                    } else {
+                        str += obj
+                    }
+                })
+                return str
+            }
 
-            return str + score
-        }
-        
-        function displayClass(clas, displayOptions, rowNum) {
-            str = ""
-            str += "<td style='vertical-align:top;text-align:left;'>" +
-                    serialize(clas, function (lb) {
-                        return lb.id + ' : ' + lb.name + '<br><br>classProbability: ' + 
-                        lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
-                        lb.totalScore.toFixed(2) + '<br><ul>' + '<li>prior: ' + 
-                        lb.prior.toFixed(2) + '</li>' +
-                        serialize(lb.rules, function (rule, i) {
-                            if (i >= displayOptions.ruleNum) {
-                                return ""
-                            }  
-                            return createRuleDetails(rule, displayOptions, rowNum)
-                        })+ '</ul>'
-                    }) + '</td>'
-            return str
-        }
+            function viewOptions() {
+                var displayOptions = {}
 
-        function serialize(a, cb) {
-            var str = ''
-            a.forEach(function (obj, i) {
-                if (cb) {
-                    str += cb(obj, i)
+                displayOptions.ruleNum = parseInt($('#ruleNum').val())
+                displayOptions.fields = []
+                if ($('#TP').prop('checked'))
+                    displayOptions.fields.push('TP')
+                if ($('#FP').prop('checked'))
+                    displayOptions.fields.push('FP')
+                if ($('#FN').prop('checked'))
+                    displayOptions.fields.push('FN')
+                if ($('#TN').prop('checked'))
+                    displayOptions.fields.push('TN')
+
+                displayOptions.sortDocs = $('input[name=sd]:checked').val()
+                displayOptions.sortRules = $('input[name=sr]:checked').val()
+                displayOptions.details = $('#details').prop('checked')
+                numOfLabels = document.getElementById('numOfLabels')
+                displayOptions.numOfLabels = numOfLabels.options[numOfLabels.selectedIndex].value
+                return displayOptions
+            }
+
+            function sortByAbsScoreDescending(labels) {
+                labels.forEach(function(lb) {
+                    lb.rules = lb.rules.sort(function(a, b) {
+                        return Math.abs(b.score) - Math.abs(a.score)
+                    })
+                })
+            }
+
+            function sortByScoreAscending(a, b) {
+                labels.forEach(function(lb) {
+                    lb.rules = lb.rules.sort(function(a, b) {
+                        return a.score - b.score
+                    })
+                })
+            }
+
+            function sortByScoreDescending(a, b) {
+                labels.forEach(function(lb) {
+                    lb.rules = lb.rules.sort(function(a, b) {
+                        return b.score - a.score
+                    })
+                })
+            }
+
+            function sortByViewOptions(data, displayOptions) {
+                if (displayOptions.sortRules === 'abs') {
+                    data.forEach(function (row) {
+                        sortByAbsScoreDescending(row.TP)
+                        sortByAbsScoreDescending(row.FP)
+                        sortByAbsScoreDescending(row.FN)
+                        sortByAbsScoreDescending(row.TN)
+                    })
+                } else if (displayOptions.sortRules === 'ascending') {
+                    data.forEach(function (row) {
+                        sortByScoreAscending(row.TP)
+                        sortByScoreAscending(row.FP)
+                        sortByScoreAscending(row.FN)
+                        sortByScoreAscending(row.TN)
+                    })
+                } else if (displayOptions.sortRules == 'descending') {
+                        sortByScoreDescending(row.TP)
+                        sortByScoreDescending(row.FP)
+                        sortByScoreDescending(row.FN)
+                        sortByScoreDescending(row.TN)
                 } else {
-                    str += obj
+                    alert(displayOptions.sortRules)
                 }
-            })
-            return str
-        }
 
-        function viewOptions() {
-            var displayOptions = {}
-
-            displayOptions.ruleNum = parseInt($('#ruleNum').val())
-            displayOptions.fields = []
-            if ($('#TP').prop('checked'))
-                displayOptions.fields.push('TP')
-            if ($('#FP').prop('checked'))
-                displayOptions.fields.push('FP')
-            if ($('#FN').prop('checked'))
-                displayOptions.fields.push('FN')
-            if ($('#TN').prop('checked'))
-                displayOptions.fields.push('TN')
-
-            displayOptions.sortDocs = $('input[name=sd]:checked').val()
-            displayOptions.sortRules = $('input[name=sr]:checked').val()
-            displayOptions.details = $('#details').prop('checked')
-            return displayOptions
-        }
-
-        function sortByViewOptions(data, displayOptions) {
-            if (displayOptions.sortRules === 'abs') {
-                data.forEach(function (row) {
-                    row.TP.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                            return Math.abs(a.score) < Math.abs(b.score)
-                        })
+                // Sort data by displayOptions
+                if (displayOptions.sortDocs == 'confide') {
+                    data.sort(function (a, b) {
+                        return a.probForPredictedLabels - b.probForPredictedLabels
                     })
-                    row.FP.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                            return Math.abs(a.score) < Math.abs(b.score)
-                        })
+                } else if (displayOptions.sortDocs == 'mistake') {
+                    data.sort(function (a, b) {
+                        return b.probForPredictedLabels - a.probForPredictedLabels
                     })
-                    row.FN.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                            return Math.abs(a.score) < Math.abs(b.score)
-                        })
-                    })
-                    row.TN.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                            return Math.abs(a.score) < Math.abs(b.score)
-                        })
-                    })
-                })
-            } else if (displayOptions.sortRules === 'anticorrelation') {
-                data.forEach(function (row) {
-                    row.TP.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score > b.score
-                        })
-                    })
-                })
-                data.forEach(function (row) {
-                    row.FP.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score > b.score
-                        })
-                    })
-                })
-                data.forEach(function (row) {
-                    row.FN.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score > b.score
-                        })
-                    })
-                })
-                data.forEach(function (row) {
-                    row.TN.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score > b.score
-                        })
-                    })
-                })
-            } else if (displayOptions.sortRules == 'pos') {
-                data.forEach(function (row) {
-                    row.TP.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score < b.score
-                        })
-                    })
-                })
-                data.forEach(function (row) {
-                    row.FP.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score < b.score
-                        })
-                    })
-                })
-                data.forEach(function (row) {
-                    row.FN.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score < b.score
-                        })
-                    })
-                })
-                data.forEach(function (row) {
-                    row.TN.forEach(function (lb) {
-                        lb.rules = lb.rules.sort(function (a, b) {
-                           return a.score < b.score
-                        })
-                    })
-                })
-            } else {
-                alert(displayOptions.sortRules)
-            }
-
-            // Sort data by displayOptions
-            if (displayOptions.sortDocs == 'confide') {
-                data.sort(function (a, b) {
-                    return a.probForPredictedLabels - b.probForPredictedLabels
-                })
-            } else if (displayOptions.sortDocs == 'mistake') {
-                data.sort(function (a, b) {
-                    return b.probForPredictedLabels - a.probForPredictedLabels
-                })
-            } else {
-            }
-            return data
-        }
-
-        function dataFromJson() {
-            return JSON.parse($('#raw-data').html())
-        }
-
-        function refresh() {
-            console.log(dataFromJson()[0])
-
-            var displayOptions = viewOptions()
-            render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
-        }
-
-        $(document).ready(function () {
-            var displayOptions = viewOptions()
-            render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions) 
-
-            $('#btn-submit').click(function () {
-                refresh()
-            })
-            $('#TP').click(function () {
-                refresh()
-            })
-            $('#FP').click(function () {
-                refresh()
-            })
-            $('#FN').click(function () {
-                refresh()
-            })
-            $('#TN').click(function () {
-                refresh()
-            })
-            $('#Confide').click(function () {
-                refresh()
-            })
-            $('#Mistake').click(function () {
-                refresh()
-            })
-            $('#abs').click(function () {
-                refresh()
-            })
-            $('#anticorrelation').click(function () {
-                refresh()
-            })
-            $('#pos').click(function () {
-                refresh()
-            })
-            $('#details').click(function () {
-                refresh()
-            })
-            $('#test').click(function () {
-                refresh()
-            })
-        })
-
-        function refreshTable(test) {
-            displayOptions = viewOptions()
-            var ruleNum = document.getElementById("ruleNum").value;
-
-            if (ruleNum == '') {
-                alert("Wrong Number input");
-                return;
-            }
-
-            ruleNum = ruleNum * 2 + 1;
-
-            var rulelists = document.getElementsByClassName("ruleList");
-
-            for (var i=0; i<rulelists.length; i++) {
-                var singleRuleLists = rulelists[i].getElementsByTagName("li");
-                for (var j=0; j<singleRuleLists.length && j<ruleNum; j++) {
-                    singleRuleLists[j].style.display = 'list-item';
-                }
-                for (var j=ruleNum; j<singleRuleLists.length; j++) {
-                    singleRuleLists[j].style.display = 'none';
-                }
-            }
-
-            var tp = document.getElementById("TP");
-            var fp = document.getElementById("FP");
-            var fn = document.getElementById("FN");
-            var tn = document.getElementById("TN");
-
-            var table = document.getElementById("mytable");
-            var rows = table.getElementsByTagName("tr");
-            for (var row = 0; row < rows.length; row++) {
-                var cols = rows[row].children;
-                var selId = 'sel' + row
-                
-                if (displayOptions.fields.indexOf('TP') == -1) {
-                    cols[3].style.display = 'none';
                 } else {
-                    cols[3].style.display = 'table-cell';
                 }
-
-                if (displayOptions.fields.indexOf('FP') == -1) {
-                    cols[4].style.display = 'none';
-                }else {
-                    cols[4].style.display = 'table-cell';
-                }
-
-                if (displayOptions.fields.indexOf('FN') == -1) {
-                    cols[5].style.display = 'none';
-                } else {
-                    cols[5].style.display = 'table-cell';
-                }
-
-                if (displayOptions.fields.indexOf('TN') == -1) {
-                    cols[6].style.display = 'none';
-                } else {
-                    cols[6].style.display = 'table-cell';
-                }
+                return data
             }
 
-            var textFile = null
-            makeTextFile = function (text) {
+            $(document).ready(function () {
+                var displayOptions = viewOptions()
+                render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions) 
+
+                $('#btn-submit').click(function () {
+                    refresh()
+                })
+                $('#TP').click(function () {
+                    refresh()
+                })
+                $('#FP').click(function () {
+                    refresh()
+                })
+                $('#FN').click(function () {
+                    refresh()
+                })
+                $('#TN').click(function () {
+                    refresh()
+                })
+                $('#Confide').click(function () {
+                    refresh()
+                })
+                $('#Mistake').click(function () {
+                    refresh()
+                })
+                $('#abs').click(function () {
+                    refresh()
+                })
+                $('#ascending').click(function () {
+                    refresh()
+                })
+                $('#descending').click(function () {
+                    refresh()
+                })
+                $('#details').click(function () {
+                    refresh()
+                })
+                $('#test').click(function () {
+                    refresh()
+                })
+            })
+
+            function makeTextFile(text) {
                 var data = new Blob([text], {type: 'text/plain'});
-
-                // If we are replacing a previously generated file we need to
-                // manually revoke the object URL to avoid memory leaks.
-                if (textFile !== null) {
-                    window.URL.revokeObjectURL(textFile);
-                }
 
                 textFile = window.URL.createObjectURL(data);
 
                 return textFile;
             }
 
-            var create = document.getElementById('create')
-            create.addEventListener('click', function () {
-                feedbacks = {}
-                startStr = "<script id=\\"raw-data\\" type=\\"application/json\\">"
-                endStr = "<\/script><\/body><\/html>"
+            function refreshTable(displayOptions) {
+                colums = ['TP', 'FP', 'FN', 'TN']
 
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName("tr");
                 for (var row = 0; row < rows.length; row++) {
-                    myselect = document.getElementById('sel' + row)
-                    if (myselect != null && (option = myselect.options[myselect.selectedIndex].value) != 'none') {
-                        key = parseInt(document.getElementsByTagName('pre')[row].firstChild.data.replace (/  +$/, ''))
-                        feedbacks[key] = {'option': option, 'text': document.getElementById('feedback' + row).value}
+                    var cols = rows[row].children;
+                    var selId = 'sel' + row
+
+                    for (var i = 0; i < colums.length; i++) {
+                        if (displayOptions.fields.indexOf(colums[i]) == -1) {
+                            cols[i + 3].style.display = 'none';
+                        } else {
+                            cols[i + 3].style.display = 'table-cell';
+                        }
                     }
                 }
+            }
 
-                data = dataFromJson()
-                data.forEach(function(row) {
-                    key = parseInt(row.idlabels.id)
-                    if (feedbacks[key] != undefined) {
-                        row.idlabels.feedbackSelect = feedbacks[key]['option']
-                        row.idlabels.feedbackText = feedbacks[key]['text']
-                    }
-                    else {
-                        row.idlabels.feedbackSelect = 'none'
-                    }
-                })
-                dataJson = JSON.stringify(data);
-                text = document.documentElement.innerHTML
-                finalHTML = text.substring(0, text.indexOf(startStr)) + startStr + dataJson + endStr
-                var link = document.getElementById('downloadlink');
-                link.href = makeTextFile(finalHTML);
-                link.style.display = 'block';
-            }, false);
-        }
-}())
-</script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+        </script>
 
-<style>
-#mytable{
-border: 1px solid black;
-border-collapse: collapse;
-}
-#optionTable {
-border : 1px solid black;
-border-collapse: collapse;
-float : center;
-width : 40%;
-}
-.ruleList {
-list-style-type: square;
-}
-.mytext {
-    width: 200px;
-    height:200px;
-}
-</style>
+        <style>
+            #feedbackTable{
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            #mytable{
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            #optionTable {
+                border : 1px solid black;
+                border-collapse: collapse;
+                float : center;
+                width : 40%;
+            }
+            .ruleList {
+                list-style-type: square;
+            }
+            .mytext {
+                width: 200px;
+                height:200px;
+            }
+        </style>
 <script id="raw-data" type="application/json">
 '''
 post_data = '''
