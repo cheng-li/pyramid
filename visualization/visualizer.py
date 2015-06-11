@@ -50,7 +50,7 @@ def getPositions(docId, field, keywords, slop, in_order):
             continue
         curPos = len(text[0:baseindex].split())
         # returned highlight may cutoff words, so word position may minus 1
-        if text[baseindex] != " " and curPos>0 and text[baseindex-1] != " ":
+        if text[baseindex] != " " and curPos>0 and baseindex != 0 and text[baseindex-1] != " ":
             curPos = curPos - 1
         for word in HL.split():
             if word.find("<em>") != -1:
