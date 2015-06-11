@@ -794,5 +794,22 @@ public class DataSetUtil {
         }
     }
 
+    /**
+     * make every non-zero feature 1
+     * @param dataSet
+     */
+    public static void binarizeFeature(DataSet dataSet){
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            List<Integer> nonZeors = new ArrayList<>();
+            Vector row = dataSet.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                nonZeors.add(element.index());
+            }
+            for (int j:nonZeors){
+                dataSet.setFeatureValue(i,j,1);
+            }
+        }
+    }
+
 
 }

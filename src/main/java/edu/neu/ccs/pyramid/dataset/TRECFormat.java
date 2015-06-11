@@ -34,6 +34,17 @@ public class TRECFormat {
     private static final String TREC_LABEL_TRANSLATOR_TEXT_FILE_NAME = "label_translator.txt";
 
 
+
+    public static void save(DataSet dataSet, String trecFile){
+        if (dataSet instanceof ClfDataSet){
+            save((ClfDataSet)dataSet,trecFile);
+        } else if (dataSet instanceof RegDataSet){
+            save((RegDataSet) dataSet, trecFile);
+        } else if (dataSet instanceof MultiLabelClfDataSet){
+            save((MultiLabelClfDataSet) dataSet, trecFile);
+        }
+    }
+
     public static void save(ClfDataSet dataSet, String trecFile){
         save(dataSet,new File(trecFile));
     }
