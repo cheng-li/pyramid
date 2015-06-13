@@ -29,6 +29,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 6/13/15.
  */
 public class App2 {
+
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("please specify the config file");
@@ -47,9 +48,19 @@ public class App2 {
         if (config.getBoolean("test")){
             report(config,config.getString("input.testData"));
         }
+    }
 
+    public static void main(Config config) throws Exception{
+        new File(config.getString("output.folder")).mkdirs();
 
+        if (config.getBoolean("train")){
+            train(config);
+            report(config,config.getString("input.trainData"));
+        }
 
+        if (config.getBoolean("test")){
+            report(config,config.getString("input.testData"));
+        }
     }
 
     static MultiLabelClfDataSet loadData(Config config, String dataName) throws Exception{

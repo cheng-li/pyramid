@@ -51,6 +51,19 @@ public class App1 {
         }
     }
 
+    public static void main(Config config) throws Exception{
+        File output = new File(config.getString("output.folder"));
+        output.mkdirs();
+
+        if (config.getBoolean("createTrainSet")){
+            createTrainSet(config);
+        }
+
+        if (config.getBoolean("createTestSet")){
+            createTestSet(config);
+        }
+    }
+
     static MultiLabelIndex loadIndex(Config config) throws Exception{
         MultiLabelIndex.Builder builder = new MultiLabelIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
