@@ -64,9 +64,9 @@ public class App2 {
     }
 
     static MultiLabelClfDataSet loadData(Config config, String dataName) throws Exception{
-        String dataFile = new File(config.getString("input.folder"),
-                dataName).getAbsolutePath();
-        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(dataFile), DataSetType.ML_CLF_SPARSE,
+        File dataFile = new File(new File(config.getString("input.folder"),
+                "data_sets"),dataName);
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(dataFile, DataSetType.ML_CLF_SPARSE,
                 true);
         return dataSet;
     }
@@ -168,9 +168,10 @@ public class App2 {
     }
 
     static void report(Config config, String dataName) throws Exception{
+        System.out.println("generating reports for data set "+dataName);
         String output = config.getString("output.folder");
         String modelName = "model";
-        File analysisFolder = new File(output,dataName+"_reports");
+        File analysisFolder = new File(new File(output,"reports"),dataName+"_reports");
         analysisFolder.mkdirs();
         FileUtils.cleanDirectory(analysisFolder);
 
@@ -182,7 +183,7 @@ public class App2 {
 //        System.out.println("macro-averaged measure on training set:");
 //        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
         if (true){
-            File distributionFile = new File(new File(config.getString("input.folder"), "metaData"),"distributions.ser");
+            File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
             Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
             int limit = config.getInt("report.topFeatures.limit");
             List<TopFeatures> topFeaturesList = IntStream.range(0,dataSet.getNumClasses())
@@ -262,7 +263,7 @@ public class App2 {
             }
 
         }
-
+        System.out.println("reports generated");
     }
 
 

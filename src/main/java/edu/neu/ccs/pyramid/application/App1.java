@@ -196,7 +196,7 @@ public class App1 {
     static Set<Ngram> gather(Config config, ESIndex index,
                              String[] ids) throws Exception{
 
-        File metaDataFolder = new File(config.getString("output.folder"),"metaData");
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
 
         Multiset<Ngram> allNgrams = ConcurrentHashMultiset.create();
@@ -339,7 +339,7 @@ public class App1 {
 
 
     static void getNgramDistributions(Config config, ESIndex index, String[] ids,LabelTranslator labelTranslator ) throws Exception{
-        File metaDataFolder = new File(config.getString("output.folder"),"metaData");
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
 
         System.out.println("generating ngram distributions");
@@ -366,7 +366,7 @@ public class App1 {
     
     static void generateMetaData(Config config) throws Exception{
         System.out.println("generating meta data");
-        File metaDataFolder = new File(config.getString("output.folder"),"metaData");
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
         MultiLabelIndex index = loadIndex(config);
         String[] trainIndexIds = getDocsForSplit(config, index, config.getString("index.splitField.train"));
@@ -399,7 +399,7 @@ public class App1 {
 
     static void createDataSet(Config config, String splitValue) throws Exception{
         System.out.println("creating data set "+splitValue);
-        File metaDataFolder = new File(config.getString("output.folder"),"metaData");
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         MultiLabelIndex index = loadIndex(config);
         String[] indexIds = getDocsForSplit(config, index, splitValue);
         IdTranslator idTranslator = loadIdTranslator(indexIds);
@@ -412,7 +412,9 @@ public class App1 {
         MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator);
         dataSet.setFeatureList(featureList);
 
-        TRECFormat.save(dataSet,new File(archive,splitValue));
+        File dataFile = new File(new File(archive,"data_sets"),splitValue);
+
+        TRECFormat.save(dataSet,dataFile);
         index.close();
         System.out.println("data set "+splitValue+" created");
     }
