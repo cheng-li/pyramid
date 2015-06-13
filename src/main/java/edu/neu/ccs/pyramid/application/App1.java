@@ -42,9 +42,13 @@ public class App1 {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        MultiLabelIndex index = loadIndex(config);
+        if (config.getBoolean("createTrainSet")){
+            createTrainSet(config);
+        }
 
-        index.close();
+        if (config.getBoolean("createTestSet")){
+            createTestSet(config);
+        }
     }
 
     static MultiLabelIndex loadIndex(Config config) throws Exception{
@@ -211,7 +215,7 @@ public class App1 {
             }
         }
         System.out.println("there are "+allNgrams.elementSet().size()+" ngrams in total");
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(config.getString("output.folder"),"all_ngrams.txt")));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(metaDataFolder,"all_ngrams.txt")));
         for (Multiset.Entry<Ngram> ngramEntry: allNgrams.entrySet()){
             bufferedWriter.write(ngramEntry.getElement().toString());
             bufferedWriter.write("\t");
@@ -295,7 +299,7 @@ public class App1 {
 
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), testIndexIds);
         List<String> newLabels = new ArrayList<>();
-        System.out.println("label distribution in test set:");
+        System.out.println("label distribution in data set:");
         for (Terms.Bucket bucket: buckets){
             System.out.print(bucket.getKey());
             System.out.print(":");
@@ -308,7 +312,7 @@ public class App1 {
         }
         System.out.println();
         if (!newLabels.isEmpty()){
-            System.out.println("WARNING: found new labels in test set: "+newLabels);
+            System.out.println("WARNING: found new labels in data set: "+newLabels);
         }
         return new LabelTranslator(extLabels);
     }
@@ -348,6 +352,7 @@ public class App1 {
     }
     
     static void generateMetaData(Config config) throws Exception{
+        System.out.println("generating meta data");
         File metaDataFolder = new File(config.getString("output.folder"),"metaData");
         metaDataFolder.mkdirs();
         MultiLabelIndex index = loadIndex(config);
@@ -376,9 +381,11 @@ public class App1 {
         }
 
         index.close();
+        System.out.println("meta data generated");
     }
 
     static void createDataSet(Config config, String splitValue) throws Exception{
+        System.out.println("creating data set "+splitValue);
         File metaDataFolder = new File(config.getString("output.folder"),"metaData");
         MultiLabelIndex index = loadIndex(config);
         String[] indexIds = getDocsForSplit(config, index, splitValue);
@@ -392,8 +399,9 @@ public class App1 {
         MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator);
         dataSet.setFeatureList(featureList);
 
-        TRECFormat.save(dataSet,new File(archive,splitValue+".trec"));
+        TRECFormat.save(dataSet,new File(archive,splitValue));
         index.close();
+        System.out.println("data set "+splitValue+" created");
     }
 
     static void createTrainSet(Config config) throws Exception{
