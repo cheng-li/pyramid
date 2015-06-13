@@ -3,6 +3,7 @@ from elasticsearch import Elasticsearch
 import json
 import time
 import sys
+import re
 
 
 # This program read in a json file data and output to a html file.
@@ -43,6 +44,7 @@ def getPositions(docId, field, keywords, slop, in_order):
 
         cleanHL = HL.replace("<em>", "")
         cleanHL = cleanHL.replace("</em>", "")
+        cleanHL.lstrip(' ')
         baseindex = text.find(cleanHL)
 
         # in case the highlight not found in body
@@ -64,13 +66,13 @@ def writeRule(docId, line_count, num, rule):
 
     oneRule['score'] = rule['score']
     oneRule['checks'] = []
+    pos = []
     
     for check in rule["checks"]:
         #read pos from ElasticSearch
         checkOneRule = {}
-        pos = [line_count]
         if check["feature value"] != 0.0 and check["feature"].has_key("ngram"):
-            pos += getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], 
+            pos = getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], 
                 check["feature"]["slop"], check["feature"]["inOrder"])
         
         if not check["feature"].has_key("ngram"):
@@ -176,15 +178,15 @@ def createTable(data):
         oneRow['idlabels'] = idlabels
         
         # column 2 predicted Ranking
-        predictedRanking = []
-        if row.has_key('predictedRanking'):
-            length = len(row["predictedRanking"])
-        else:
-            length = 0
-        for i in range(0, length):
-            predictedRanking.append(row["predictedRanking"][i])
+        #predictedRanking = []
+        #if row.has_key('predictedRanking'):
+            #length = len(row["predictedRanking"])
+        #else:
+            #length = 0
+        #for i in range(0, length):
+            #predictedRanking.append(row["predictedRanking"][i])
         oneRow['probForPredictedLabels'] = row['probForPredictedLabels']
-        oneRow['predictedRanking'] = predictedRanking
+        oneRow['predictedRanking'] = row["predictedRanking"]
         
         # column 3 text
         res = es.get(index=esIndex, doc_type="document", id=row["id"])
@@ -240,7 +242,7 @@ pre_data = '''<html>
                 <p style="text-indent: 1em;">Number of labels in predictedRanking:&nbsp;&nbsp;
                 <select id="numOfLabels" onchange="refresh()">
                     <option value=5 selected>TOP 5
-                    <option value=1 >TOP 10
+                    <option value=10 >TOP 10
                     <option value=15 >TOP 15
                     <option value=-1 >ALL
                 </select>
@@ -305,6 +307,8 @@ pre_data = '''<html>
         <script>
             function changeFeedback(row) {
                 document.getElementById('feedback' + row).style.display = "block";
+
+                refreshTable(viewOptions())
             }
 
             function download() {
@@ -351,14 +355,14 @@ pre_data = '''<html>
                         "orange", "yellow", "LightSeaGreen", "Orchid"];
                     var pickColor = pickNewColor(text, colors);
 
-                    for(var i = 1; i < poses.length; i++) {
+                    for(var i = 0; i < poses.length; i++) {
                         var pos = poses[i];
                         words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
                         words[pos] = "<font color='" + pickColor + "'>"+words[pos]+"</font>";
                     }
                 }
                 else {
-                    for(var i = 1; i < poses.length; i++) {
+                    for(var i = 0; i < poses.length; i++) {
                         var pos = poses[i];
                         words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
                     }
@@ -370,7 +374,7 @@ pre_data = '''<html>
             }
 
             function pickNewColor(text, colors) {
-                for (var i=0; i<colors.length; i++) {
+                for (var i = 0; i < colors.length; i++) {
                     var fonttext = '<font-color="' + colors[i] + '">';
                     if(text.indexOf(fonttext) == -1) {
                         return colors[i];
@@ -380,7 +384,7 @@ pre_data = '''<html>
             }
 
             function isNewHighLight(words, rownum) {
-                for(var i = 1; i < rownum.length; i++) {
+                for(var i = 0; i < rownum.length; i++) {
                     if (words[rownum[i]].indexOf("<font-color=") == -1) {
                         return true;
                     }
@@ -497,7 +501,7 @@ pre_data = '''<html>
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
                         "<br>ID:" + row.idlabels.id + " Iternal_ID: " + row.idlabels.internalId + 
                         '<br><br>Internal Labels:' +  
-                        serialize(-1, row.idlabels.internalLabels, function (lb) {
+                        serialize(row.idlabels.internalLabels, function (lb) {
                             var str = ''
                             for (var k in lb) {
                                 str += '<br>' + k + ' : ' + lb[k] + '<br>'
@@ -505,7 +509,7 @@ pre_data = '''<html>
                             return str
                          }) + 
                         '<br>Predictions:' +
-                        serialize(-1, row.idlabels.predictions, function (lb) {
+                        serialize(row.idlabels.predictions, function (lb) {
                             var str = ''
                             for (var k in lb) {
                                 str += '<br>' + k + ' : ' + lb[k] + '<br>'
@@ -517,8 +521,8 @@ pre_data = '''<html>
                         displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                         '</td>' +
                         "<td style='vertical-align:top;text-align:left;'> " + 
-                        serialize(displayOptions.numOfLabels, row.predictedRanking, function (lb) {
-                            var str = lb + '<br>'
+                        serialize(row.predictedRanking.slice(0, displayOptions.numOfLabels), function (lb) {
+                            var str = '<li>' + lb.className + '(' + lb.prob.toFixed(2) + ')</li>'
                             return str
                         }) + '</td>' +
                         "<td style='vertical-align:top;text-align:left;'>" + row.text
@@ -546,7 +550,7 @@ pre_data = '''<html>
                 } else {
                     score += ": -" + Math.abs(rule.score.toFixed(2))
                 }
-                str += '<li>' + serialize(-1, rule['checks'], function (check) {
+                str += '<li>' + serialize(rule['checks'], function (check) {
                             style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
                                 (rowNum + 1) + ")'"
                             // alert(Object.keys(check))
@@ -575,12 +579,12 @@ pre_data = '''<html>
             function displayClass(clas, displayOptions, rowNum) {
                 str = ""
                 str += "<td style='vertical-align:top;text-align:left;'>" +
-                        serialize(-1, clas, function (lb) {
+                        serialize(clas, function (lb) {
                             return lb.id + ' : ' + lb.name + '<br><br>classProbability: ' + 
                             lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
                             lb.totalScore.toFixed(2) + '<br><ul>' + '<li>prior: ' + 
                             lb.prior.toFixed(2) + '</li>' +
-                            serialize(-1, lb.rules, function (rule, i) {
+                            serialize(lb.rules, function (rule, i) {
                                 if (i >= displayOptions.ruleNum) {
                                     return ""
                                 }  
@@ -590,12 +594,9 @@ pre_data = '''<html>
                 return str
             }
 
-            function serialize(num, a, cb) {
+            function serialize(a, cb) {
                 var str = ''
                 a.forEach(function (obj, i) {
-                    if (num > 0 && i >= num) {
-                        return str
-                    }
                     if (cb) {
                         str += cb(obj, i)
                     } else {
@@ -741,12 +742,21 @@ pre_data = '''<html>
 
             function refreshTable(displayOptions) {
                 colums = ['TP', 'FP', 'FN', 'TN']
+                feedbackColumns = ['failure', 'incomplete', 'bad_rule', 'bad_matching']
+                selections = {'failure':0, 'incomplete':0, 'bad_rule':0, 'bad_matching':0}
 
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName("tr");
                 for (var row = 0; row < rows.length; row++) {
                     var cols = rows[row].children;
                     var selId = 'sel' + row
+
+                    sel = document.getElementById(selId)
+                    if (sel == undefined) {
+                        //alert(row)
+                        continue
+                    }
+                    selections[sel.options[sel.selectedIndex].value] += 1
 
                     for (var i = 0; i < colums.length; i++) {
                         if (displayOptions.fields.indexOf(colums[i]) == -1) {
@@ -756,6 +766,14 @@ pre_data = '''<html>
                         }
                     }
                 }
+                
+                var table = document.getElementById("data-feedbackTable")
+                var row = table.getElementsByTagName("tr");
+                cols = row[0].children
+                for (i = 0; i < cols.length; i++) {
+                    cols[i].innerHTML = selections[feedbackColumns[i]]
+                }
+
             }
 
             function dataFromJson() {
