@@ -66,11 +66,11 @@ def writeRule(docId, line_count, num, rule):
 
     oneRule['score'] = rule['score']
     oneRule['checks'] = []
-    pos = []
     
     for check in rule["checks"]:
         #read pos from ElasticSearch
         checkOneRule = {}
+        pos = []
         if check["feature value"] != 0.0 and check["feature"].has_key("ngram"):
             pos = getPositions(docId, check["feature"]["field"], check["feature"]["ngram"], 
                 check["feature"]["slop"], check["feature"]["inOrder"])
@@ -176,6 +176,7 @@ def createTable(data):
             predictions.append(label)
         idlabels['predictions'] = predictions
         oneRow['idlabels'] = idlabels
+        oneRow['probForPredictedLabels'] = row['probForPredictedLabels']
         
         # column 2 predicted Ranking
         #predictedRanking = []
@@ -185,8 +186,17 @@ def createTable(data):
             #length = 0
         #for i in range(0, length):
             #predictedRanking.append(row["predictedRanking"][i])
-        oneRow['probForPredictedLabels'] = row['probForPredictedLabels']
-        oneRow['predictedRanking'] = row["predictedRanking"]
+        oneRow['predictedRanking'] = []
+        for label in row["predictedRanking"]:
+            if label["classIndex"] in row['internalLabels'] and label["classIndex"] in row['internalPrediction']:
+                label["type"] = "TP"
+            elif label["classIndex"] not in row['internalLabels'] and label["classIndex"] in row['internalPrediction']:
+                label["type"] = "FP"
+            elif label["classIndex"] in row['internalLabels'] and label["classIndex"] not in row['internalPrediction']:
+                label["type"] = "FN"
+            else:
+                label["type"] = ""
+            oneRow['predictedRanking'].append(label)
         
         # column 3 text
         res = es.get(index=esIndex, doc_type="document", id=row["id"])
@@ -245,6 +255,7 @@ pre_data = '''<html>
                     <option value=10 >TOP 10
                     <option value=15 >TOP 15
                     <option value=-1 >ALL
+                    <option value=-2 >Show Each Until Only TN
                 </select>
             </td></tr>
             <tr><td>
@@ -291,7 +302,7 @@ pre_data = '''<html>
         <p>(Press any rules would highlight matched keywords in the text if they exist)</p>
 
         <table id="mytable" border=1  align="center" style="width:100%">
-            <caption> XXX  data table</caption>
+            <caption> Report </caption>
                 <thead><tr>
                     <td align="center" width="5%"><b>id & labels</b></td>
                     <td align="center" width="5%"><b>predictedRanking</b></td>
@@ -487,6 +498,52 @@ pre_data = '''<html>
                 $body.append(html)
             }
 
+            function getLabelColor(type) {
+                colors = {"TP": "red", "FP": "green", "FN": "blue"}
+
+                return colors[type]
+            }
+
+            function includesLabel(clas, label) {
+                for (i = 0; i < clas.length; i++) {
+                    if (clas[i].name == label) {
+                        return true
+                    }
+                }
+                return false
+            }
+
+            function displayPredictedRanking(row, displayOptions) {
+                numOfLabels = 0
+                predictedRanking = row.predictedRanking
+
+                if (displayOptions.numOfLabels == -1) {
+                    numOfLabels = predictedRanking.length
+                } else if (displayOptions.numOfLabels == -2) {
+                    for (i = 0; i < predictedRanking.length; i++) {
+                        if (predictedRanking[i].type != "") {
+                            numOfLabels = i + 1
+                        }
+                    }
+                } else {
+                    numOfLabels = displayOptions.numOfLabels
+                }
+
+                if (numOfLabels > 0) {
+                    return serialize(predictedRanking.slice(0, numOfLabels), function (lb) {
+                        if (lb.type != "") {
+                            text = lb.className + '(' + lb.prob.toFixed(2) + ')'
+                            var str = '<li>' + text.fontcolor(getLabelColor(lb.type)) + '</li>'
+                        } else {
+                            var str = '<li>' + lb.className + '(' + lb.prob.toFixed(2) + ')</li>'
+                        }
+                        return str
+                    }) 
+                } else {
+                    return ""
+                }
+            }
+
             function render(data, displayOptions) {
                 generateFeedbackDataTable(data)
 
@@ -499,12 +556,13 @@ pre_data = '''<html>
                     html += '<tr>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
-                        "<br>ID:" + row.idlabels.id + " Iternal_ID: " + row.idlabels.internalId + 
-                        '<br><br>Internal Labels:' +  
+                        "<br>ID:" + row.idlabels.id + 
+                        //" Iternal_ID: " + row.idlabels.internalId + 
+                        '<br><br>Labels:' +  
                         serialize(row.idlabels.internalLabels, function (lb) {
                             var str = ''
                             for (var k in lb) {
-                                str += '<br>' + k + ' : ' + lb[k] + '<br>'
+                                str += '<br>' + lb[k] + '<br>'
                             }
                             return str
                          }) + 
@@ -512,19 +570,16 @@ pre_data = '''<html>
                         serialize(row.idlabels.predictions, function (lb) {
                             var str = ''
                             for (var k in lb) {
-                                str += '<br>' + k + ' : ' + lb[k] + '<br>'
+                                str += '<br>' + lb[k] + '<br>'
                             }
                             return str
                         }) + 
-                        '<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + 
+                        //'<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + 
                         '<br><br>Feedback:' +
                         displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                         '</td>' +
                         "<td style='vertical-align:top;text-align:left;'> " + 
-                        serialize(row.predictedRanking.slice(0, displayOptions.numOfLabels), function (lb) {
-                            var str = '<li>' + lb.className + '(' + lb.prob.toFixed(2) + ')</li>'
-                            return str
-                        }) + '</td>' +
+                        displayPredictedRanking(row, displayOptions) + '</td>' +
                         "<td style='vertical-align:top;text-align:left;'>" + row.text
                         + '</td>' +
                         displayClass(row.TP, displayOptions, i) +
@@ -580,7 +635,7 @@ pre_data = '''<html>
                 str = ""
                 str += "<td style='vertical-align:top;text-align:left;'>" +
                         serialize(clas, function (lb) {
-                            return lb.id + ' : ' + lb.name + '<br><br>classProbability: ' + 
+                            return lb.name + '<br><br>classProbability: ' + 
                             lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
                             lb.totalScore.toFixed(2) + '<br><ul>' + '<li>prior: ' + 
                             lb.prior.toFixed(2) + '</li>' +
