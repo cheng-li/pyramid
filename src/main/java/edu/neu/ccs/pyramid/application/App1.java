@@ -189,7 +189,7 @@ public class App1 {
         Multiset<Ngram> allNgrams = ConcurrentHashMultiset.create();
         List<Integer> ns = config.getIntegers("feature.ngram.n");
         int minDf = config.getInt("feature.ngram.minDf");
-        List<String> fields = config.getStrings("feature.fields");
+        List<String> fields = config.getStrings("index.ngramExtractionFields");
         List<Integer> slops = config.getIntegers("feature.ngram.slop");
         for (String field: fields){
             for (int n: ns){
@@ -250,7 +250,7 @@ public class App1 {
         int numClasses = labelTranslator.getNumClasses();
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(totalDim)
-                .numClasses(numClasses).dense(!config.getBoolean("feature.sparse"))
+                .numClasses(numClasses).dense(false)
                 .missingValue(config.getBoolean("feature.missingValue")).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);

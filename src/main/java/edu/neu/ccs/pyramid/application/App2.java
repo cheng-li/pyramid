@@ -45,7 +45,7 @@ public class App2 {
         }
 
         if (config.getBoolean("test")){
-            report(config,config.getString("output.trainData"));
+            report(config,config.getString("input.testData"));
         }
 
 
