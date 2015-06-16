@@ -209,52 +209,19 @@ public class App2 {
 
         if (true){
             int limit = config.getInt("report.rule.limit");
-
-
-            List<MultiLabelPredictionAnalysis> analysisList = IntStream.range(0,dataSet.getNumDataPoints()).parallel().filter(
-                    i -> {
-//                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
-//                        MultiLabel prediction = boosting.predict(dataSet.getRow(i));
-                        boolean accept = true;
-//                        if (config.getBoolean("verify.analyze.doc.withRightPrediction")) {
-//                            accept = accept || multiLabel.equals(prediction);
-//                        }
-//
-//                        if (config.getBoolean("verify.analyze.doc.withWrongPrediction")) {
-//                            accept = accept || !multiLabel.equals(prediction);
-//                        }
-                        return accept;
-                    }
-            ).mapToObj(i -> {
-//                        MultiLabel multiLabel = dataSet.getMultiLabels()[i];
-//                        MultiLabel prediction = boosting.predict(dataSet.getRow(i));
-                        List<Integer> classes = new ArrayList<Integer>();
-                        for (int k = 0; k < dataSet.getNumClasses(); k++) {
-//                            boolean condition1 = multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("verify.analyze.class.truePositive");
-//                            boolean condition2 = !multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("verify.analyze.class.trueNegative");
-//                            boolean condition3 = !multiLabel.matchClass(k) && prediction.matchClass(k) && config.getBoolean("verify.analyze.class.falsePositive");
-//                            boolean condition4 = multiLabel.matchClass(k) && !prediction.matchClass(k) && config.getBoolean("verify.analyze.class.falseNegative");
-                            boolean condition5 = k<boosting.getNumClasses();
-                            boolean accept = condition5;
-                            if (accept) {
-                                classes.add(k);
-                            }
-                        }
-                        return IMLGBInspector.analyzePrediction(boosting, dataSet, i, classes, limit);
-                    }
-            )
-                    .collect(Collectors.toList());
-
             int numDocsPerFile = config.getInt("report.numDocsPerFile");
-            int numFiles = (int)Math.ceil((double)analysisList.size()/numDocsPerFile);
+            int numFiles = (int)Math.ceil((double)dataSet.getNumDataPoints()/numDocsPerFile);
 
-
+            List<Integer> classes = new ArrayList<Integer>();
+            for (int k = 0; k < boosting.getNumClasses(); k++){
+                classes.add(k);
+            }
             for (int i=0;i<numFiles;i++){
                 int start = i;
                 int end = i+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
-                for (int a=start;a<end && a<analysisList.size();a++){
-                    partition.add(analysisList.get(a));
+                for (int a=start;a<end && a<dataSet.getNumDataPoints();a++){
+                    partition.add(IMLGBInspector.analyzePrediction(boosting, dataSet, a, classes, limit));
                 }
                 ObjectMapper mapper = new ObjectMapper();
 
