@@ -186,7 +186,7 @@ public class App2 {
             File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
             Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
             int limit = config.getInt("report.topFeatures.limit");
-            List<TopFeatures> topFeaturesList = IntStream.range(0,dataSet.getNumClasses())
+            List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
                     .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit, distributions))
                     .collect(Collectors.toList());
             ObjectMapper mapper = new ObjectMapper();
