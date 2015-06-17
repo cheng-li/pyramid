@@ -4,6 +4,9 @@ import json
 import time
 import sys
 import re
+import os
+from os import listdir
+from os.path import isfile, join
 
 
 # This program read in a json file data and output to a html file.
@@ -124,7 +127,7 @@ def createTFPNColumns(row, line_count, oneRow):
     # column 4 TP
     oneRow['TP'] = []
     for eachLabel in row["internalLabels"]:
-        if eachLabel in predictionSet:
+        if eachLabel in predictionSet and eachLabel < len(row["classScoreCalculations"]):
             oneRow['TP'].append(writeClass(row["id"], line_count, row["classScoreCalculations"][eachLabel]))
 
     # column 5 FP
@@ -215,23 +218,39 @@ def createTable(data):
     return output
 
 
-def parse(input_json_file):
+def parse(input_json_file, outputFileName):
     # read input
 
     inputJson = open(input_json_file, "r")
     inputData = json.load(inputJson)
-    print "Json load successfully.\nStart Parsing..."
-
-    outputFile = open("Viewer.html", "w")
+    print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
 
     outputData= createTable(inputData)
     outputJson = json.dumps(outputData)
 
     output = pre_data + outputJson + post_data
 
-
+    outputFile = open(outputFileName, "w")
     outputFile.write(output)
     outputFile.close()
+
+def parseAll(inputPath):
+    directory = "viewer"
+    outputFileName = "Viewer"
+
+    if os.path.isfile(inputPath):
+        parse(inputPath, outputFileName + ".html")
+    else:
+        directoryName = directory + "(" + inputPath + ")"
+        if not os.path.exists(directoryName):
+            os.makedirs(directoryName)
+        for f in listdir(inputPath):
+            absf = join(inputPath, f)
+            if not (isfile(absf) and f.endswith(".json")) or f == "top_features.json":
+                continue
+            outputPath = directoryName + "/" + outputFileName + "(" + f[:-5] + ").html"
+            parse(absf, outputPath)
+
 
 
 # Constant Strings
@@ -562,7 +581,7 @@ pre_data = '''<html>
                         serialize(row.idlabels.internalLabels, function (lb) {
                             var str = ''
                             for (var k in lb) {
-                                str += '<br>' + lb[k] + '<br>'
+                                str += '<li>' + lb[k] + '</li>'
                             }
                             return str
                          }) + 
@@ -570,7 +589,7 @@ pre_data = '''<html>
                         serialize(row.idlabels.predictions, function (lb) {
                             var str = ''
                             for (var k in lb) {
-                                str += '<br>' + lb[k] + '<br>'
+                                str += '<li>' + lb[k] + '</li>'
                             }
                             return str
                         }) + 
@@ -634,8 +653,12 @@ pre_data = '''<html>
             function displayClass(clas, displayOptions, rowNum) {
                 str = ""
                 str += "<td style='vertical-align:top;text-align:left;'>" +
-                        serialize(clas, function (lb) {
-                            return lb.name + '<br><br>classProbability: ' + 
+                        serialize(clas, function (lb, i) {
+                            str = ""
+                            if (i > 0) {
+                                str += '<hr>'
+                            }
+                            str += lb.name + '<br><br>classProbability: ' + 
                             lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
                             lb.totalScore.toFixed(2) + '<br><ul>' + '<li>prior: ' + 
                             lb.prior.toFixed(2) + '</li>' +
@@ -645,6 +668,7 @@ pre_data = '''<html>
                                 }  
                                 return createRuleDetails(rule, displayOptions, rowNum)
                             })+ '</ul>'
+                            return str
                         }) + '</td>'
                 return str
             }
@@ -883,7 +907,7 @@ def main():
         print "Usage: python Visualizor.py index NumberofClasses json_file"
         return
     start = time.time()
-    parse(jsonFile)
+    parseAll(jsonFile)
     end = time.time()
     print "parsing cost time ", end-start, " seconds"
 
