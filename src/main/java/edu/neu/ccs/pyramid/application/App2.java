@@ -212,15 +212,19 @@ public class App2 {
             int numDocsPerFile = config.getInt("report.numDocsPerFile");
             int numFiles = (int)Math.ceil((double)dataSet.getNumDataPoints()/numDocsPerFile);
 
-            List<Integer> classes = new ArrayList<Integer>();
-            for (int k = 0; k < boosting.getNumClasses(); k++){
-                classes.add(k);
-            }
+            double probThreshold=config.getDouble("report.classProbThreshold");
+
             for (int i=0;i<numFiles;i++){
                 int start = i;
                 int end = i+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
                 for (int a=start;a<end && a<dataSet.getNumDataPoints();a++){
+                    List<Integer> classes = new ArrayList<Integer>();
+                    for (int k = 0; k < boosting.getNumClasses(); k++){
+                        if (boosting.predictClassProb(dataSet.getRow(a),k)>=probThreshold){
+                            classes.add(k);
+                        }
+                    }
                     partition.add(IMLGBInspector.analyzePrediction(boosting, dataSet, a, classes, limit));
                 }
                 ObjectMapper mapper = new ObjectMapper();
