@@ -241,7 +241,7 @@ def parseAll(inputPath):
     if os.path.isfile(inputPath):
         parse(inputPath, outputFileName + ".html")
     else:
-        directoryName = directory + "(" + inputPath + ")"
+        directoryName = directory + "_" + inputPath
         if not os.path.exists(directoryName):
             os.makedirs(directoryName)
         for f in listdir(inputPath):
