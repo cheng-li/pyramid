@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.classification.naive_bayes;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Rainicy on 10/6/14.
@@ -13,7 +15,6 @@ import java.util.Arrays;
  * @see edu.neu.ccs.pyramid.classification.naive_bayes.Distribution
  */
 public class Histogram implements Distribution {
-
 
     /** numBins. */
     static public int numBins;
@@ -26,8 +27,6 @@ public class Histogram implements Distribution {
     protected double max;
     /** Each step */
     protected double step;
-    /** default log density by given variable is 0. */
-    private double defaultZeroLogProb;
 
 
     /** Default constructor, set numBins equals 2. */
@@ -37,6 +36,9 @@ public class Histogram implements Distribution {
 
     /**  Constructor by given numBins. */
     public Histogram(int numBins) {
+        if (numBins < 1) {
+            throw new RuntimeException("Number of Bins should be bigger than 0");
+        }
         this.numBins = numBins;
         values = new double[numBins];
     }
@@ -55,50 +57,92 @@ public class Histogram implements Distribution {
      * @param numPerClass total number of variables including zeros.
      * @throws IllegalArgumentException
      */
-    public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException{
+    public void fit(double[] nonzeroVars, int numPerClass){
 
-        double[] zeroVars = new double[numPerClass];
-        double[] variables = ArrayUtils.addAll(nonzeroVars, zeroVars);
+        int numOfZeroes = numPerClass - nonzeroVars.length;
 
-
-        this.min = Arrays.stream(variables).min().getAsDouble();
-        this.max = Arrays.stream(variables).max().getAsDouble();
-
-        if (this.min > this.max) {
-            throw new IllegalArgumentException("Minimum value" +
-                    " should be smaller than Maximum");
+        // find min and max
+        double tempMin = 0;
+        double tempMax =0;
+        for (int i=0; i<nonzeroVars.length; i++) {
+            double value = nonzeroVars[i];
+            if (value < tempMin) {
+                tempMin = value;
+            }
+            if (value > tempMax) {
+                tempMax = value;
+            }
         }
+        this.min = tempMin;
+        this.max = tempMax;
 
-        this.step = (max-min) / this.numBins;
+        this.step = (this.max - this.min) / this.numBins;
 
-        // value for each bin
         int[] counts = new int[this.numBins];
-        for (int i=0; i<variables.length; i++) {
-            int binIndex = getIndexOfBins(variables[i]);
+        int zeroIndex = getIndexOfBins(0);
+        counts[zeroIndex] += numOfZeroes;
+        // value for each bin
+        for (int i=0; i<nonzeroVars.length; i++) {
+            int binIndex = getIndexOfBins(nonzeroVars[i]);
             counts[binIndex] += 1;
         }
 
+
         // Smoothing here.
         for (int i=0; i<this.numBins; i++) {
-            this.values[i] = ((double)counts[i]+1)/(variables.length + this.numBins);
+            this.values[i] = ((double)counts[i]+1)/(numPerClass + this.numBins);
         }
-
-        this.defaultZeroLogProb = logProbability(0.0);
     }
+//    /**
+//     * Use the Laplace smoothing.
+//     * (counts + 1) / (Total_counts + numBins.)
+//     *
+//     * @param nonzeroVars nonzero variables array.
+//     * @param numPerClass total number of variables including zeros.
+//     * @throws IllegalArgumentException
+//     */
+//    public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException{
+//
+//        double[] zeroVars = new double[numPerClass];
+//        double[] variables = ArrayUtils.addAll(nonzeroVars, zeroVars);
+//
+//
+//        this.min = Arrays.stream(variables).min().getAsDouble();
+//        this.max = Arrays.stream(variables).max().getAsDouble();
+//
+//        if (this.min > this.max) {
+//            throw new IllegalArgumentException("Minimum value" +
+//                    " should be smaller than Maximum");
+//        }
+//
+//        this.step = (max-min) / this.numBins;
+//
+//        // value for each bin
+//        int[] counts = new int[this.numBins];
+//        for (int i=0; i<variables.length; i++) {
+//            int binIndex = getIndexOfBins(variables[i]);
+//            counts[binIndex] += 1;
+//        }
+//
+//        // Smoothing here.
+//        for (int i=0; i<this.numBins; i++) {
+//            this.values[i] = ((double)counts[i]+1)/(variables.length + this.numBins);
+//        }
+//    }
 
 
     /** By given a variable, find the index bin for this variable. */
     private int getIndexOfBins(double x) {
 
+        // out of range
+        if (x <= this.min) {
+            return 0;
+        } else if (x >= this.max) {
+            return this.numBins - 1;
+        }
+
         double distance = x - this.min;
         int index = (int) (distance / this.step);
-
-        if (index < 0) {
-            return 0;
-        }
-        else if (index > this.numBins-1) {
-            return this.numBins-1;
-        }
 
         return index;
     }
@@ -110,10 +154,11 @@ public class Histogram implements Distribution {
 
     @Override
     public double logProbability(double x) throws IllegalArgumentException {
-        if (x == 0.0) {
-            return this.defaultZeroLogProb;
-        }
-        return Math.log(values[getIndexOfBins(x)]);
+//        if (x == 0) {
+//            return defaultZeroLogProb;
+//        }
+        double value = Math.log(values[getIndexOfBins(x)]);
+        return value;
     }
 
 

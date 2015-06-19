@@ -7,7 +7,6 @@ import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.lang.reflect.Array;
@@ -15,6 +14,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 
 /**
@@ -41,6 +41,13 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
     private LabelTranslator labelTranslator;
 
 
+    // default values for speeding up prediction
+    double[] sumZeroLogPosterior;  // for each label, sum of posterior probability by 0;
+    double[][] zeroLogPosterior;   // for each label and feature, posterior probability by 0;
+
+
+
+
     public NaiveBayes(Class<T> type) {
         this.clazz = type;
     }
@@ -50,30 +57,18 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
         this.numClasses = clfDataSet.getNumClasses();
         this.numFeatures = clfDataSet.getNumFeatures();
         this.distribution = (T[][])Array.newInstance(clazz, numClasses, numFeatures);
-        initPriors(clfDataSet.getLabels(), clfDataSet.getNumClasses());
+
+        // initialize prior probabilities.
+        this.priors = new double[this.numClasses];
+        this.logPriors = new double[this.numClasses];
+        int[] countPerClass = DataSetUtil.getCountPerClass(clfDataSet);
+        for (int i=0; i<this.numClasses; i++) {
+            this.priors[i] = (double) countPerClass[i] / clfDataSet.getNumDataPoints();
+            this.logPriors[i] = Math.log(this.priors[i]);
+        }
 
     }
 
-    /**
-     * Given the labels and number of classes, then initialize prior probability.
-     * @param labels
-     * @param numClasses
-     */
-    private void initPriors(int[] labels, int numClasses) {
-        if (labels.length == 0) {
-            throw new IllegalArgumentException("Given labels' length equals zero.");
-        }
-        priors = new double[numClasses];
-        logPriors = new double[numClasses];
-        int[] counts = new int[numClasses];
-        for (int i=0; i<labels.length; i++) {
-            counts[labels[i]]++;
-        }
-        for (int i=0; i<numClasses; i++) {
-            priors[i] = (double) counts[i] / labels.length;
-            logPriors[i] = Math.log(priors[i]);
-        }
-    }
 
     // change the newInstance function using Vector
     public void build(ClfDataSet clfDataSet)
@@ -82,68 +77,78 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
         if(this.clazz == Histogram.class) {
             throw new RuntimeException("Histogram distribution needs" +
                     "the numBins.");
-        } else if (this.clazz == Multinomial.class) { // Multi initialization
-            init(clfDataSet);
+        }
+        init(clfDataSet);
+
+        if (this.clazz == Multinomial.class) { // Multi initialization
+
             // get nonzero features counts for each class(Ny)
             int[] nonzeroPerClass = new int[numClasses];
             int[] labels = clfDataSet.getLabels();
             for (int i=0; i<labels.length; i++) {
                 int label = labels[i];
-                int nonzeroCount = clfDataSet.getRow(i).getNumNonZeroElements();
-                nonzeroPerClass[label] += nonzeroCount;
+                nonzeroPerClass[label] += clfDataSet.getRow(i).getNumNonZeroElements();;
             }
 
             Constructor constructor = clazz.getConstructor(int.class, int.class, int.class);
-            for (int i=0; i<numFeatures; i++) {
-                Vector vector = clfDataSet.getColumn(i);
-                List<ArrayList<Double>> classGroup = new ArrayList<>();
-                for (int j=0; j<numClasses; j++) {
-                    classGroup.add(new ArrayList<Double>());
-                }
-                for (Vector.Element element : vector.nonZeroes()) {
-                    int index = element.index();
-                    int label = labels[index];
-                    classGroup.get(label).add(element.get());
-                }
-                for (int y=0; y<numClasses; y++) {
-                    int Nyi = classGroup.get(y).size();
-                    int Ny = nonzeroPerClass[y];
-                    this.distribution[y][i] = (T)constructor.newInstance(Nyi, Ny, numFeatures);
-                }
-            }
+            IntStream.range(0, numFeatures).parallel()
+                    .forEach(i -> buildOneFeatureForMulti(constructor, nonzeroPerClass,
+                            getVariablesForClasses(clfDataSet.getColumn(i), labels), i));
+
         } else { // other cases
-            init(clfDataSet);
 
             int[] countPerClass = DataSetUtil.getCountPerClass(clfDataSet);
             int[] labels = clfDataSet.getLabels();
 
             // initialize the specific distribution class.
             Constructor constructor = clazz.getConstructor(double[].class, int.class);
-            for (int j=0; j<numFeatures; j++) {
-                Vector vector = clfDataSet.getColumn(j);
-                List<ArrayList<Double>> classGroup = new ArrayList<>();
-                for (int i=0; i<numClasses; i++) {
-                    classGroup.add(new ArrayList<Double>());
-                }
-                for (Vector.Element element : vector.nonZeroes()) {
-                    int index = element.index();
-                    int label = labels[index];
-                    classGroup.get(label).add(element.get());
-                }
-                for (int i=0; i<numClasses; i++) {
-                    double[] variables = ArrayUtils.toPrimitive(classGroup.get(i).toArray(
-                            new Double[classGroup.get(i).size()]));
-                    this.distribution[i][j] = (T)constructor.newInstance(variables, countPerClass[i]);
-                }
-            }
+
+            IntStream.range(0, numFeatures).parallel()
+                    .forEach(j -> buildOneFeature(constructor, getVariablesForClasses(clfDataSet.getColumn(j), labels), countPerClass, j));
         }
 
-
+        updateDefaultValues();
     }
 
-    public void build(ClfDataSet clfDataSet, int numBins)
-            throws NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, InstantiationException {
+    // build one feature for multinomial
+    private void buildOneFeatureForMulti(Constructor constructor, int[] nonzeroPerClass, List<ArrayList<Double>> classGroup, int i) {
+
+        for (int y=0; y<numClasses; y++) {
+            int Nyi = classGroup.get(y).size();
+            int Ny = nonzeroPerClass[y];
+            try {
+                this.distribution[y][i] = (T)constructor.newInstance(Nyi, Ny, numFeatures);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // build one feature other distributions
+    private void buildOneFeature(Constructor constructor, List<ArrayList<Double>> classGroup, int[] countPerClass, int j) {
+
+        for (int i=0; i<numClasses; i++) {
+            double[] variables = ArrayUtils.toPrimitive(classGroup.get(i).toArray(
+                    new Double[classGroup.get(i).size()]));
+            try {
+                this.distribution[i][j] = (T)constructor.newInstance(variables, countPerClass[i]);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    // build features for Histogram distribution
+    public void build(ClfDataSet clfDataSet, int numBins) throws NoSuchMethodException {
         if(this.clazz != Histogram.class) {
             throw new RuntimeException("Histogram distribution should be " +
                     "given.");
@@ -156,25 +161,61 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
 
         // initialize the specific distribution class.
         Constructor constructor = clazz.getConstructor(int.class, double[].class, int.class);
-        for (int j=0; j<numFeatures; j++) {
-            Vector vector = clfDataSet.getColumn(j);
-            List<ArrayList<Double>> classGroup = new ArrayList<>();
-            for (int i=0; i<numClasses; i++) {
-                classGroup.add(new ArrayList<Double>());
-            }
-            for (Vector.Element element : vector.nonZeroes()) {
-                int index = element.index();
-                int label = labels[index];
-                classGroup.get(label).add(element.get());
-            }
-            for (int i=0; i<numClasses; i++) {
-                double[] variables = ArrayUtils.toPrimitive(classGroup.get(i).toArray(
-                        new Double[classGroup.get(i).size()]));
+
+        IntStream.range(0, numFeatures).parallel()
+                .forEach(j -> buildOneFeature(constructor, getVariablesForClasses(clfDataSet.getColumn(j), labels), countPerClass, numBins, j));
+
+        updateDefaultValues();
+    }
+
+    // build feature for Histogram distribution
+    private void buildOneFeature(Constructor constructor, List<ArrayList<Double>> classGroup, int[] countPerClass, int numBins, int j) {
+
+        for (int i=0; i<numClasses; i++) {
+            double[] variables = ArrayUtils.toPrimitive(classGroup.get(i).toArray(
+                    new Double[classGroup.get(i).size()]));
+            try {
                 this.distribution[i][j] = (T)constructor.newInstance(numBins, variables, countPerClass[i]);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
         }
     }
 
+    // get variables for each class
+    private List<ArrayList<Double>> getVariablesForClasses(Vector vector, int[] labels) {
+        List<ArrayList<Double>> classGroup = new ArrayList<>();
+        for (int i=0; i<this.numClasses; i++) {
+            classGroup.add(new ArrayList<>());
+        }
+        for (Vector.Element element : vector.nonZeroes()) {
+            int index = element.index();
+            classGroup.get(labels[index]).add(element.get());
+        }
+
+        return classGroup;
+    }
+
+
+    /**
+     * update the sumZeroPosterior and zeroPosterior.
+     */
+    private void updateDefaultValues() {
+        this.sumZeroLogPosterior = new double[numClasses];
+        this.zeroLogPosterior = new double[numClasses][numFeatures];
+
+        for (int i=0; i<numClasses; i++) {
+            for (int j=0; j<numFeatures; j++) {
+                double zeroValue = this.distribution[i][j].logProbability(0);
+                this.zeroLogPosterior[i][j] = zeroValue;
+                this.sumZeroLogPosterior[i] += zeroValue;
+            }
+        }
+    }
 
     @Override
     /**
@@ -232,28 +273,29 @@ public class NaiveBayes<T extends Distribution> implements Classifier.Probabilit
         return probs;
     }
 
+
     /**
      * Returns the posterior probabilities for each label.
      * @param vector
      * @return
      */
     private double[] predictClassLogProbs(Vector vector) {
-        Vector input;
-        if (vector.isDense()) {
-            input = vector;
-        } else {
-            input = new DenseVector(vector);
-        }
 
         double[] logProbs = new double[numClasses];
 
-        for (int label=0; label<numClasses; label++) {
-            logProbs[label] = logPriors[label];
-            for (int feature=0; feature<input.size(); feature++) {
-                double variable = input.get(feature);
-                logProbs[label] += this.distribution[label][feature].logProbability(variable);
+        for (int i=0; i<numClasses; i++) {
+            logProbs[i] = logPriors[i];
+            logProbs[i] += sumZeroLogPosterior[i];
+        }
+
+        for (Vector.Element element : vector.nonZeroes()) {
+            int index = element.index();
+            double value = element.get();
+            for (int i=0; i<numClasses; i++) {
+                logProbs[i] += this.distribution[i][index].logProbability(value) - this.zeroLogPosterior[i][index];
             }
         }
+
         return logProbs;
     }
 
