@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import org.apache.commons.math3.util.FastMath;
-
 /**
  * Created by Rainicy on 10/10/14.
  *
@@ -21,8 +19,8 @@ public class Bernoulli implements Distribution {
     /** Default constructor */
     public Bernoulli(double phi) {
         this.phi = phi;
-        this.logPosPhi = FastMath.log(phi);
-        this.logNegPhi = FastMath.log(1 - phi);
+        this.logPosPhi = Math.log(phi);
+        this.logNegPhi = Math.log(1 - phi);
     }
 
     /** Constructor by given vector */

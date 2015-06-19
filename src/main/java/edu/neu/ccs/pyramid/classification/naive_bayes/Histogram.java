@@ -1,11 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-import org.apache.commons.lang3.ArrayUtils;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Created by Rainicy on 10/6/14.
  *
@@ -93,43 +87,6 @@ public class Histogram implements Distribution {
             this.values[i] = ((double)counts[i]+1)/(numPerClass + this.numBins);
         }
     }
-//    /**
-//     * Use the Laplace smoothing.
-//     * (counts + 1) / (Total_counts + numBins.)
-//     *
-//     * @param nonzeroVars nonzero variables array.
-//     * @param numPerClass total number of variables including zeros.
-//     * @throws IllegalArgumentException
-//     */
-//    public void fit(double[] nonzeroVars, int numPerClass) throws IllegalArgumentException{
-//
-//        double[] zeroVars = new double[numPerClass];
-//        double[] variables = ArrayUtils.addAll(nonzeroVars, zeroVars);
-//
-//
-//        this.min = Arrays.stream(variables).min().getAsDouble();
-//        this.max = Arrays.stream(variables).max().getAsDouble();
-//
-//        if (this.min > this.max) {
-//            throw new IllegalArgumentException("Minimum value" +
-//                    " should be smaller than Maximum");
-//        }
-//
-//        this.step = (max-min) / this.numBins;
-//
-//        // value for each bin
-//        int[] counts = new int[this.numBins];
-//        for (int i=0; i<variables.length; i++) {
-//            int binIndex = getIndexOfBins(variables[i]);
-//            counts[binIndex] += 1;
-//        }
-//
-//        // Smoothing here.
-//        for (int i=0; i<this.numBins; i++) {
-//            this.values[i] = ((double)counts[i]+1)/(variables.length + this.numBins);
-//        }
-//    }
-
 
     /** By given a variable, find the index bin for this variable. */
     private int getIndexOfBins(double x) {

@@ -1,11 +1,5 @@
 package edu.neu.ccs.pyramid.classification.naive_bayes;
 
-
-import org.codehaus.groovy.util.DoubleKeyHashMap;
-
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Created by Rainicy on 10/8/14.
  *
@@ -23,8 +17,6 @@ public class Gaussian implements Distribution {
     private double standardDeviation;
     /** The value of {log(std) + 0.5*log(2*pi) } */
     private double logStandardVariancePlusHalfLog2Pi;
-    /** default log density by given variable is 0. */
-    private double defaultZeroLogProb;
 
     /** Defualt constructor with standard normal distribution. */
     public Gaussian() {
