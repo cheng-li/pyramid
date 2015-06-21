@@ -10,8 +10,8 @@ import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.regression.Regressor;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -89,7 +89,7 @@ public class Exp114 {
 
             lktbTrainer.iterate();
 
-            ProbRegStump tree = ((ProbRegStump)lkTreeBoost.getRegressor(i,0));
+            SoftRegStump tree = ((SoftRegStump)lkTreeBoost.getRegressor(i,0));
 
 
             int featurePicked = ((Sigmoid)tree.getGatingFunction()).getActiveFeatures().get(0);
@@ -118,12 +118,12 @@ public class Exp114 {
             if (regressor instanceof RegressionTree){
                 System.out.println("hard tree");
             }
-            if (regressor instanceof ProbRegStump){
-                ProbRegStump probRegStump = (ProbRegStump)regressor;
-                if (probRegStump.getLossType()== ProbRegStumpTrainer.LossType.SquaredLossOfExpectation){
+            if (regressor instanceof SoftRegStump){
+                SoftRegStump softRegStump = (SoftRegStump)regressor;
+                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.SquaredLossOfExpectation){
                     System.out.println("expectation tree");
                 }
-                if (probRegStump.getLossType()== ProbRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
+                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
                     System.out.println("probabilistic tree");
                 }
             }

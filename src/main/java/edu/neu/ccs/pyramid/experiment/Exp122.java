@@ -10,9 +10,8 @@ import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBConfig;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoostTrainer;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -132,12 +131,12 @@ public class Exp122 {
                 FileUtils.writeStringToFile(typeFile,"hard tree"+", ",true);
 
             }
-            if (regressor instanceof ProbRegStump){
-                ProbRegStump probRegStump = (ProbRegStump)regressor;
-                if (probRegStump.getLossType()== ProbRegStumpTrainer.LossType.SquaredLossOfExpectation){
+            if (regressor instanceof SoftRegStump){
+                SoftRegStump softRegStump = (SoftRegStump)regressor;
+                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.SquaredLossOfExpectation){
                     FileUtils.writeStringToFile(typeFile,"expectation tree"+", ",true);
                 }
-                if (probRegStump.getLossType()== ProbRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
+                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
                     FileUtils.writeStringToFile(typeFile,"probabilistic tree"+", ",true);
                 }
             }

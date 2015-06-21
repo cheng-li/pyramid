@@ -1,20 +1,16 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.eval.RMSE;
-import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
-import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -23,8 +19,6 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -69,18 +63,18 @@ public class Exp123 {
         int[] iterations = {0,10,20,100};
         for (int i: iterations){
             System.out.println("=====================");
-            ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
+            SoftRegStumpTrainer trainer = SoftRegStumpTrainer.getBuilder()
                     .setDataSet(trainSet)
                     .setLabels(trainSet.getLabels())
-                    .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+                    .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     .build();
             Optimizer optimizer = trainer.getOptimizer();
             optimizer.setCheckConvergence(false);
             optimizer.setMaxIteration(i);
 
 
-            ProbRegStump softTree = trainer.train();
+            SoftRegStump softTree = trainer.train();
             System.out.println("soft tree = "+softTree);
             System.out.println("mse = "+ MSE.mse(softTree, trainSet));
 

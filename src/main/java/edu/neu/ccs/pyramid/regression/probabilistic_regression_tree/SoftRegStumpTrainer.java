@@ -14,14 +14,14 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 5/21/15.
  */
-public class ProbRegStumpTrainer {
+public class SoftRegStumpTrainer {
     private DataSet dataSet;
     private FeatureType featureType;
     private LossType lossType;
     private Optimizable.ByGradientValue loss;
     private Optimizer optimizer;
 
-    public ProbRegStumpTrainer() {
+    public SoftRegStumpTrainer() {
     }
 
     public static Builder getBuilder(){
@@ -38,33 +38,33 @@ public class ProbRegStumpTrainer {
      */
 
 
-    public ProbRegStump train(){
+    public SoftRegStump train(){
         optimizer.optimize();
 
-        ProbRegStump probRegStump = new ProbRegStump();
-        probRegStump.lossType = lossType;
+        SoftRegStump softRegStump = new SoftRegStump();
+        softRegStump.lossType = lossType;
 
         switch (this.lossType) {
             case SquaredLossOfExpectation:
                 SquaredLossOfExpectation squaredLossOfExpectation = (SquaredLossOfExpectation)loss;
-                probRegStump.gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
-                probRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
-                probRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
+                softRegStump.gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
+                softRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
+                softRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
 
                 break;
 
             case ExpectationOfSquaredLoss:
                 ExpectationOfSquaredLoss expectationOfSquaredLoss = (ExpectationOfSquaredLoss)loss;
-                probRegStump.gatingFunction = new Sigmoid(expectationOfSquaredLoss.getWeightsWithoutBias(), expectationOfSquaredLoss.getBias());
-                probRegStump.leftOutput = expectationOfSquaredLoss.getLeftValue();
-                probRegStump.rightOutput = expectationOfSquaredLoss.getRightValue();
+                softRegStump.gatingFunction = new Sigmoid(expectationOfSquaredLoss.getWeightsWithoutBias(), expectationOfSquaredLoss.getBias());
+                softRegStump.leftOutput = expectationOfSquaredLoss.getLeftValue();
+                softRegStump.rightOutput = expectationOfSquaredLoss.getRightValue();
 
                 break;
         }
 
-        probRegStump.featureList = dataSet.getFeatureList();
+        softRegStump.featureList = dataSet.getFeatureList();
 
-        return probRegStump;
+        return softRegStump;
     }
 
     public static enum FeatureType{
@@ -82,8 +82,8 @@ public class ProbRegStumpTrainer {
 
     public static class Builder {
         private DataSet dataSet;
-        private ProbRegStumpTrainer.FeatureType featureType;
-        private ProbRegStumpTrainer.LossType lossType;
+        private SoftRegStumpTrainer.FeatureType featureType;
+        private SoftRegStumpTrainer.LossType lossType;
         private OptimizerType optimizerType=OptimizerType.LBFGS;
         private double[] labels;
 
@@ -92,12 +92,12 @@ public class ProbRegStumpTrainer {
             return this;
         }
 
-        public Builder setFeatureType(ProbRegStumpTrainer.FeatureType featureType) {
+        public Builder setFeatureType(SoftRegStumpTrainer.FeatureType featureType) {
             this.featureType = featureType;
             return this;
         }
 
-        public Builder setLossType(ProbRegStumpTrainer.LossType lossType) {
+        public Builder setLossType(SoftRegStumpTrainer.LossType lossType) {
             this.lossType = lossType;
             return this;
         }
@@ -113,9 +113,9 @@ public class ProbRegStumpTrainer {
             return this;
         }
 
-        public ProbRegStumpTrainer build() {
+        public SoftRegStumpTrainer build() {
             RegressionTree hardTree = null;
-            ProbRegStumpTrainer trainer = new ProbRegStumpTrainer();
+            SoftRegStumpTrainer trainer = new SoftRegStumpTrainer();
             trainer.dataSet = dataSet;
             trainer.featureType = featureType;
             trainer.lossType = lossType;

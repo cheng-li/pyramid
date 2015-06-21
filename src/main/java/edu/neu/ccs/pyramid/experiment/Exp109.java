@@ -4,10 +4,9 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
@@ -109,41 +108,41 @@ public class Exp109 {
         FileUtils.writeStringToFile(new File(folder,"hardTestMSE"),""+MSE.mse(tree,testSet));
 
 
-        ProbRegStumpTrainer trainer = ProbRegStumpTrainer.getBuilder()
+        SoftRegStumpTrainer trainer = SoftRegStumpTrainer.getBuilder()
                 .setDataSet(trainSet)
                 .setLabels(trainSet.getLabels())
-                .setFeatureType(ProbRegStumpTrainer.FeatureType.ALL_FEATURES)
-                .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                .setFeatureType(SoftRegStumpTrainer.FeatureType.ALL_FEATURES)
+                .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
                 .build();
 
         Optimizer optimizer = trainer.getOptimizer();
         optimizer.setCheckConvergence(false);
         optimizer.setMaxIteration(100);
 
-        ProbRegStump probRegStump = trainer.train();
+        SoftRegStump softRegStump = trainer.train();
         System.out.println("prob rt");
-        System.out.println("training mse = "+ MSE.mse(probRegStump,trainSet));
-        System.out.println("test mse = "+ MSE.mse(probRegStump,testSet));
-        System.out.println(probRegStump.toString());
+        System.out.println("training mse = "+ MSE.mse(softRegStump,trainSet));
+        System.out.println("test mse = "+ MSE.mse(softRegStump,testSet));
+        System.out.println(softRegStump.toString());
 
 
-        String softTrainPrediction = Arrays.toString(probRegStump.predict(trainSet)).replace("[","").replace("]","");
+        String softTrainPrediction = Arrays.toString(softRegStump.predict(trainSet)).replace("[","").replace("]","");
         FileUtils.writeStringToFile(new File(folder,"softTrainPrediction"),softTrainPrediction);
-        FileUtils.writeStringToFile(new File(folder,"softTrainMSE"),""+MSE.mse(probRegStump,trainSet));
+        FileUtils.writeStringToFile(new File(folder,"softTrainMSE"),""+MSE.mse(softRegStump,trainSet));
 
 
-        String softTestPrediction = Arrays.toString(probRegStump.predict(testSet)).replace("[","").replace("]","");
+        String softTestPrediction = Arrays.toString(softRegStump.predict(testSet)).replace("[","").replace("]","");
         FileUtils.writeStringToFile(new File(folder,"softTestPrediction"),softTestPrediction);
-        FileUtils.writeStringToFile(new File(folder,"softTestMSE"),""+MSE.mse(probRegStump,testSet));
+        FileUtils.writeStringToFile(new File(folder,"softTestMSE"),""+MSE.mse(softRegStump,testSet));
 
         StringBuilder sb = new StringBuilder();
-        sb.append(((Sigmoid)probRegStump.getGatingFunction()).getWeights().get(0));
+        sb.append(((Sigmoid) softRegStump.getGatingFunction()).getWeights().get(0));
         sb.append(",");
-        sb.append(((Sigmoid)probRegStump.getGatingFunction()).getBias());
+        sb.append(((Sigmoid) softRegStump.getGatingFunction()).getBias());
         sb.append(",");
-        sb.append(probRegStump.getLeftOutput());
+        sb.append(softRegStump.getLeftOutput());
         sb.append(",");
-        sb.append(probRegStump.getRightOutput());
+        sb.append(softRegStump.getRightOutput());
 
         FileUtils.writeStringToFile(new File(folder,"curve"),sb.toString());
 

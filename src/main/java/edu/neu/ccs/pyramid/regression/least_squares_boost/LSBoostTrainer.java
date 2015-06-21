@@ -3,12 +3,11 @@ package edu.neu.ccs.pyramid.regression.least_squares_boost;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -128,13 +127,13 @@ public class LSBoostTrainer {
 
 
         if (lsbConfig.considerExpectationTree()){
-            ProbRegStumpTrainer expectationTrainer = ProbRegStumpTrainer.getBuilder()
+            SoftRegStumpTrainer expectationTrainer = SoftRegStumpTrainer.getBuilder()
                     .setDataSet(lsbConfig.getDataSet())
                     .setLabels(gradients)
-                    .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+                    .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     //todo
-                    .setOptimizerType(ProbRegStumpTrainer.OptimizerType.LBFGS)
+                    .setOptimizerType(SoftRegStumpTrainer.OptimizerType.LBFGS)
                     .build();
 
             Optimizer optimizer = expectationTrainer.getOptimizer();
@@ -143,7 +142,7 @@ public class LSBoostTrainer {
 
 
 
-            ProbRegStump expectationTree = expectationTrainer.train();
+            SoftRegStump expectationTree = expectationTrainer.train();
 
             double mse = MSE.mse(gradients, expectationTree.predict(lsbConfig.getDataSet()));
             System.out.println("expectation tree mse = "+mse);
@@ -151,14 +150,14 @@ public class LSBoostTrainer {
         }
 
         if (lsbConfig.considerProbabilisticTree()){
-            ProbRegStumpTrainer probabilisticTrainer = ProbRegStumpTrainer.getBuilder()
+            SoftRegStumpTrainer probabilisticTrainer = SoftRegStumpTrainer.getBuilder()
                     .setDataSet(lsbConfig.getDataSet())
                     .setLabels(gradients)
-                    .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(ProbRegStumpTrainer.LossType.ExpectationOfSquaredLoss)
+                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+                    .setLossType(SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss)
                     .build();
 
-            ProbRegStump probabilisticTree = probabilisticTrainer.train();
+            SoftRegStump probabilisticTree = probabilisticTrainer.train();
 
 
             double mse = MSE.mse(gradients,probabilisticTree.predict(lsbConfig.getDataSet()));

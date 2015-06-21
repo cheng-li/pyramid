@@ -7,12 +7,12 @@ import org.apache.mahout.math.Vector;
 /**
  * Created by chengli on 5/21/15.
  */
-public class ProbRegStump implements Regressor{
+public class SoftRegStump implements Regressor{
     FeatureList featureList;
     GatingFunction gatingFunction;
     double leftOutput;
     double rightOutput;
-    ProbRegStumpTrainer.LossType lossType;
+    SoftRegStumpTrainer.LossType lossType;
 
     @Override
     public double predict(Vector vector) {
@@ -37,7 +37,7 @@ public class ProbRegStump implements Regressor{
         return rightOutput;
     }
 
-    public ProbRegStumpTrainer.LossType getLossType() {
+    public SoftRegStumpTrainer.LossType getLossType() {
         return lossType;
     }
 

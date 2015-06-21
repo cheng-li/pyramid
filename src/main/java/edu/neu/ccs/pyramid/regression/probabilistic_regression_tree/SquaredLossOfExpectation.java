@@ -5,7 +5,6 @@ import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Grid;
-import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -98,11 +97,11 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
             initialVector.set(featureIndex+1, a);
 
             SquaredLossOfExpectation squaredLossOfExpectation = new SquaredLossOfExpectation(dataSet,labels,initialVector,activeFeatures);
-            ProbRegStump probRegStump = new ProbRegStump();
-            probRegStump.gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
-            probRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
-            probRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
-            double mse  = MSE.mse(labels,probRegStump.predict(dataSet));
+            SoftRegStump softRegStump = new SoftRegStump();
+            softRegStump.gatingFunction = new Sigmoid(squaredLossOfExpectation.getWeightsWithoutBias(), squaredLossOfExpectation.getBias());
+            softRegStump.leftOutput = squaredLossOfExpectation.getLeftValue();
+            softRegStump.rightOutput = squaredLossOfExpectation.getRightValue();
+            double mse  = MSE.mse(labels, softRegStump.predict(dataSet));
             System.out.println("mse = "+mse);
 
             if (mse<bestMSE){

@@ -4,13 +4,12 @@ import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
+import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -22,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -420,11 +418,11 @@ public class LKTBTrainer {
 
 
         if (lktbConfig.considerExpectationTree()){
-            ProbRegStumpTrainer expectationTrainer = ProbRegStumpTrainer.getBuilder()
+            SoftRegStumpTrainer expectationTrainer = SoftRegStumpTrainer.getBuilder()
                     .setDataSet(lktbConfig.getDataSet())
                     .setLabels(pseudoResponse)
-                    .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(ProbRegStumpTrainer.LossType.SquaredLossOfExpectation)
+                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+                    .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     .build();
 
             Optimizer optimizer = expectationTrainer.getOptimizer();
@@ -433,7 +431,7 @@ public class LKTBTrainer {
 
 
 
-            ProbRegStump expectationTree = expectationTrainer.train();
+            SoftRegStump expectationTree = expectationTrainer.train();
 
             double mse = MSE.mse(pseudoResponse, expectationTree.predict(lktbConfig.getDataSet()));
             System.out.println("expectation tree mse = "+mse);
@@ -442,14 +440,14 @@ public class LKTBTrainer {
         }
 
         if (lktbConfig.considerProbabilisticTree()){
-            ProbRegStumpTrainer probabilisticTrainer = ProbRegStumpTrainer.getBuilder()
+            SoftRegStumpTrainer probabilisticTrainer = SoftRegStumpTrainer.getBuilder()
                     .setDataSet(lktbConfig.getDataSet())
                     .setLabels(pseudoResponse)
-                    .setFeatureType(ProbRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(ProbRegStumpTrainer.LossType.ExpectationOfSquaredLoss)
+                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+                    .setLossType(SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss)
                     .build();
 
-            ProbRegStump probabilisticTree = probabilisticTrainer.train();
+            SoftRegStump probabilisticTree = probabilisticTrainer.train();
 
 
             double mse = MSE.mse(pseudoResponse,probabilisticTree.predict(lktbConfig.getDataSet()));

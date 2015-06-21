@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.classification.boosting.lktb;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.ProbRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.util.Sampling;
 
