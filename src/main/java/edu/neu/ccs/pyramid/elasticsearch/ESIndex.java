@@ -63,6 +63,19 @@ public class ESIndex {
         return numDocs;
     }
 
+    public List<String> getAllDocs(){
+        SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.matchAllQuery()).
+                execute().actionGet();
+        List<String> list = new ArrayList<>(response.getHits().getHits().length);
+        for (SearchHit searchHit : response.getHits()) {
+            list.add(searchHit.getId());
+        }
+        return list;
+    }
+
     public Client getClient() {
         return client;
     }
@@ -159,7 +172,7 @@ public class ESIndex {
             list.add(searchHit.getId());
         }
         if(logger.isDebugEnabled()){
-            logger.debug("time spent on getDocs() for " + term+ " = " + stopWatch+
+            logger.debug("time spent on termFilter() for " + term+ " = " + stopWatch+
                     " There are "+list.size()+" matched docs");
         }
         return list;
@@ -172,7 +185,7 @@ public class ESIndex {
      * @return
      * @throws Exception
      */
-    public List<String> getDocs(String term) throws Exception{
+    public List<String> termFilter(String field, String term) throws Exception{
         StopWatch stopWatch=null;
         if(logger.isDebugEnabled()){
             stopWatch = new StopWatch();
@@ -183,7 +196,7 @@ public class ESIndex {
          * setSize() has a huge impact on performance, the smaller the faster
          */
 
-        TermFilterBuilder termFilterBuilder = new TermFilterBuilder(this.bodyField, term);
+        TermFilterBuilder termFilterBuilder = new TermFilterBuilder(field, term);
 
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setHighlighterFilter(false).setTrackScores(false).
@@ -196,7 +209,7 @@ public class ESIndex {
             list.add(searchHit.getId());
         }
         if(logger.isDebugEnabled()){
-            logger.debug("time spent on getDocs() for " + term + " = " + stopWatch+
+            logger.debug("time spent on termFilter() for " + term + " = " + stopWatch+
                     " There are "+list.size()+" matched docs");
         }
         return list;
@@ -406,7 +419,7 @@ public class ESIndex {
         //todo cast saft?
         //todo  this admin method seems buggy!
 //        return (int)client.admin().indices().prepareStats(this.indexName)
-//                .get().getIndex(this.indexName).getTotal().getDocs().getCount();
+//                .get().getIndex(this.indexName).getTotal().termFilter().getCount();
         return (int)client.prepareCount(indexName).setQuery(QueryBuilders.matchAllQuery()).execute()
                 .actionGet().getCount();
 //        SearchResponse response = client.prepareSearch(indexName).setSize(Integer.MAX_VALUE).
@@ -880,14 +893,14 @@ public class ESIndex {
 
 
 
-//    public Set<Integer> getDocs(Ngram ngram) throws Exception{
+//    public Set<Integer> termFilter(Ngram ngram) throws Exception{
 //
 //        StopWatch stopWatch = new StopWatch();
 //        stopWatch.start();
 //        String termFilterResponse = termFilter(ngram.getFeatureName());
 //
 //        TermFilterResponsePOJO termFilterResponsePOJO = parseTermFilterResponse(termFilterResponse);
-//        System.out.println("time spent on getDocs() for "+ngram.getFeatureName()+stopWatch);
+//        System.out.println("time spent on termFilter() for "+ngram.getFeatureName()+stopWatch);
 //        return termFilterResponsePOJO.getAllIds();
 //
 //    }
@@ -901,7 +914,7 @@ public class ESIndex {
 //     * @throws Exception
 //     */
 //    //todo using a set seems to be slow, maybe fine
-//    public Set<Integer> getDocs(Ngram ngram) throws Exception{
+//    public Set<Integer> termFilter(Ngram ngram) throws Exception{
 //        StopWatch stopWatch=null;
 //        if(logger.isDebugEnabled()){
 //            stopWatch = new StopWatch();
@@ -919,14 +932,14 @@ public class ESIndex {
 //            set.add(Integer.parseInt(searchHit.getId()));
 //        }
 //        if(logger.isDebugEnabled()){
-//            logger.debug("time spent on getDocs() for " + ngram.getFeatureName() + " = " + stopWatch+
+//            logger.debug("time spent on termFilter() for " + ngram.getFeatureName() + " = " + stopWatch+
 //                    " There are "+set.size()+" matched docs");
 //        }
 //        return set;
 //    }
 
 
-//    public List<String> getDocs(Ngram ngram, String[] ids) throws Exception{
+//    public List<String> termFilter(Ngram ngram, String[] ids) throws Exception{
 //        StopWatch stopWatch=null;
 //        if(logger.isDebugEnabled()){
 //            stopWatch = new StopWatch();
@@ -957,13 +970,13 @@ public class ESIndex {
 //            list.add(searchHit.getId());
 //        }
 //        if(logger.isDebugEnabled()){
-//            logger.debug("time spent on getDocs() for " + ngram.getFeatureName() + " = " + stopWatch+
+//            logger.debug("time spent on termFilter() for " + ngram.getFeatureName() + " = " + stopWatch+
 //                    " There are "+list.size()+" matched docs");
 //        }
 //        return list;
 //    }
 
-//    public List<String> getDocs(Ngram ngram, String[] ids, IdsFilterBuilder idsFilterBuilder) throws Exception{
+//    public List<String> termFilter(Ngram ngram, String[] ids, IdsFilterBuilder idsFilterBuilder) throws Exception{
 //        StopWatch stopWatch=null;
 //        if(logger.isDebugEnabled()){
 //            stopWatch = new StopWatch();
@@ -991,7 +1004,7 @@ public class ESIndex {
 //            list.add(searchHit.getId());
 //        }
 //        if(logger.isDebugEnabled()){
-//            logger.debug("time spent on getDocs() for " + ngram.getFeatureName() + " = " + stopWatch+
+//            logger.debug("time spent on termFilter() for " + ngram.getFeatureName() + " = " + stopWatch+
 //                    " There are "+list.size()+" matched docs");
 //        }
 //        return list;

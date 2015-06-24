@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test12();
+        test13();
 
     }
 
@@ -34,12 +34,12 @@ public class ESIndexTest {
         index.close();
     }
 
-    static void test3() throws Exception{
-        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
-                .build();
-        System.out.println(index.getDocs("possibl").size());
-        index.close();
-    }
+//    static void test3() throws Exception{
+//        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
+//                .build();
+//        System.out.println(index.termFilter("possibl").size());
+//        index.close();
+//    }
 
     static void test4() throws Exception{
         SingleLabelIndex index = new SingleLabelIndex.Builder().setClientType("node").setIndexName("cnn")
@@ -169,6 +169,16 @@ public class ESIndexTest {
         System.out.println(response.getHits().getTotalHits());
 
 
+        index.close();
+    }
+
+
+    static void test13() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build();
+
+        System.out.println(index.getNumDocs());
+        System.out.println(index.getAllDocs().size());
         index.close();
     }
 

@@ -79,21 +79,13 @@ public class App1 {
         MultiLabelIndex index = builder.build();
         System.out.println("index loaded");
         System.out.println("there are "+index.getNumDocs()+" documents in the index.");
-//        for (int i=0;i<index.getNumDocs();i++){
-//            System.out.println(i);
-//            System.out.println(index.getLabel(""+i));
-//        }
         return index;
     }
 
-    static String[] getDocsForSplit(Config config, ESIndex index, String splitValue){
-        int numDocsInIndex = index.getNumDocs();
+    static String[] getDocsForSplit(Config config, ESIndex index, String splitValue) throws Exception{
         String[] ids = null;
         String splitField = config.getString("index.splitField");
-        List<String> docs = IntStream.range(0, numDocsInIndex).parallel()
-                .filter(i -> index.getStringField("" + i, splitField).
-                        equals(splitValue)).
-                        mapToObj(i -> "" + i).collect(Collectors.toList());
+        List<String> docs = index.termFilter(splitField,splitValue);
         ids = docs.toArray(new String[docs.size()]);
         return ids;
     }

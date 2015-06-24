@@ -35,9 +35,8 @@ public class IndexChecker {
     }
 
     private static void check(ESIndex index, String field){
-        List<String> ids = IntStream.range(0,index.getNumDocs()).parallel()
-                .mapToObj(i-> ""+i)
-                .filter(id -> index.getField(id,field)==null)
+        List<String> ids = index.getAllDocs().stream()
+                .filter(id -> index.getField(id, field) == null)
                 .collect(Collectors.toList());
         if (ids.size()==0){
             System.out.println("all documents have the field "+field);
@@ -50,8 +49,7 @@ public class IndexChecker {
     }
 
     private static void checkEmpty(ESIndex index, String field){
-        List<String> ids = IntStream.range(0,index.getNumDocs()).parallel()
-                .mapToObj(i -> "" + i)
+        List<String> ids = index.getAllDocs().stream()
                 .filter(id -> index.getField(id, field) != null && ((String) index.getField(id, field)).trim().equals(""))
                 .collect(Collectors.toList());
         if (ids.size()==0){

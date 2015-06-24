@@ -50,7 +50,7 @@ public class Exp8 {
                 System.out.println("id = "+id);
                 XContentBuilder builder = IndexBuilder.getBuilder(file,nameToCodesMap);
 //               System.out.println(builder.string());
-                IndexResponse response = client.prepareIndex("ohsumed_20000", "document",""+id)
+                IndexResponse response = client.prepareIndex("ohsumed_20000", "document")
                         .setSource(builder)
                         .execute()
                         .actionGet();

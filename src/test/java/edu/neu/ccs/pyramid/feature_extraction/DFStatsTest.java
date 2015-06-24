@@ -70,22 +70,22 @@ public class DFStatsTest {
 
     }
 
-    private static void test5() throws Exception{
-        MultiLabelIndex index = new MultiLabelIndex.Builder()
-                .setIndexName("ohsumed_20000")
-                .setBodyField("body")
-                .setClientType("node")
-                .setClusterName("elasticsearch")
-                .setDocumentType("document")
-                .setExtMultiLabelField("real_labels")
-                .build();
-        DFStats dfStats = new DFStats(23);
-        LabelTranslator labelTranslator = index.loadLabelTranslator();
-        dfStats.update(index,labelTranslator);
-        dfStats.sort();
-        dfStats.serialize(new File(TMP,"dfstats.ser"));
-        index.close();
-    }
+//    private static void test5() throws Exception{
+//        MultiLabelIndex index = new MultiLabelIndex.Builder()
+//                .setIndexName("ohsumed_20000")
+//                .setBodyField("body")
+//                .setClientType("node")
+//                .setClusterName("elasticsearch")
+//                .setDocumentType("document")
+//                .setExtMultiLabelField("real_labels")
+//                .build();
+//        DFStats dfStats = new DFStats(23);
+////
+//        dfStats.update(index,labelTranslator);
+//        dfStats.sort();
+//        dfStats.serialize(new File(TMP,"dfstats.ser"));
+//        index.close();
+//    }
 
     static void test6() throws Exception{
 

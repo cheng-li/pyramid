@@ -55,22 +55,7 @@ public class MultiLabelIndex extends ESIndex{
         return response.getHits().getTotalHits();
     }
 
-    public LabelTranslator loadLabelTranslator() throws Exception{
 
-        int numDocs = this.getNumDocs();
-        Set<String> extLabelSet = new HashSet<>();
-
-        for (int i=0;i<numDocs;i++){
-            List<String> extLabel = this.getExtMultiLabel(""+i);
-            extLabelSet.addAll(extLabel);
-        }
-
-        LabelTranslator labelTranslator = new LabelTranslator(extLabelSet);
-
-//            System.out.println("there are "+labelTranslator.getNumClasses()+" classes.");
-//            System.out.println(labelTranslator);
-        return labelTranslator;
-    }
 
 
 
