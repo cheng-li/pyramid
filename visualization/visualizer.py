@@ -224,6 +224,17 @@ def parse(input_json_file, outputFileName):
 
     outputFile = open(outputFileName, "w")
     outputFile.write(output)
+    inputJson.close()
+    outputFile.close()
+
+def createTopFeatureHTML(input_json_file, outputFileName):
+    inputJson = open(input_json_file, "r")
+    outputJson = inputJson.read()
+    output = pre_tf_data + outputJson + post_data
+
+    outputFile = open(outputFileName, "w")
+    outputFile.write(output)
+    inputJson.close()
     outputFile.close()
 
 def parseAll(inputPath):
@@ -239,12 +250,141 @@ def parseAll(inputPath):
             os.makedirs(directoryName)
         for f in listdir(inputPath):
             absf = join(inputPath, f)
-            if not (isfile(absf) and f.endswith(".json")) or f == "top_features.json":
+            if not (isfile(absf) and f.endswith(".json")):
                 continue
-            outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
-            parse(absf, outputPath)
+
+            if f == "top_features.json":
+                outputPath = directoryName + "top_features.html"
+                createTopFeatureHTML(absf, outputPath)
+            else:
+                outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
+                parse(absf, outputPath)
+
+#constant Strings
+pre_tf_data = ''' <html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="jquery.min.js"></script>
+    </head>
+    <body><br>
+        <table id="mytable" border=1  align="center" style="width:100%">
+            <caption> Report </caption>
+                <thead><tr>
+                    <td align="center" width="10%"><b>classIndex</b></td>
+                    <td align="center" width="30%"><b>className</b></td>
+                    <td align="center" width="30%"><b>topFeatures</b></td>
+                    <td align="center" width="30%"><b>featureDistributions</b></td>
+                </tr></thead>
+            <tbody id="data-table"></tbody>
+        </table>
+
+        <script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+
+            function serialize(a, cb) {
+                var str = ''
+                a.forEach(function (obj, i) {
+                    if (cb) {
+                        str += cb(obj, i)
+                    } else {
+                        str += obj
+                    }
+                })
+                return str
+            }
+
+            function sortByViewOptions(data, displayOptions) {
+                return data
+            }
 
 
+            function displayFeature(feature) {
+                str = ''
+                str += '<br>index: ' + feature.index +
+                        '<br>ngram: ' + feature.ngram +
+                        '<br>field: ' + feature.field +
+                        '<br>slop: ' + feature.slop +
+                        '<br>inOrder: ' + feature.inOrder
+
+                return str
+            }
+
+            function displayOccurrence(occurrence) {
+                str = ''
+                str += serialize(occurrence, function(label, i) {
+                        return "<br>" + label
+                    })
+
+                return str
+            }
+
+            function displayDistribution(distribution) {
+                str = ""
+
+                str += displayFeature(distribution.feature)
+                        + "<br><br>totalCount: " + distribution.totalCount
+                        + "<br>" + displayOccurrence(distribution.occurrence)
+
+                return str
+            }
+
+            function displayFeatureDistributions(featureDistributions) {
+                str = ""
+                str += serialize(featureDistributions, function(distribution, i) {
+                        return displayDistribution(distribution) + '<hr>'
+                    })
+                return str
+            }
+
+            function displayTopFeatures(topFeatures) {
+                str = ''
+                str += serialize(topFeatures, function (feature, i) {
+                            return displayFeature(feature) + '<hr>'
+                        })
+
+                return str
+            }
+
+            function render(data, displayOptions) {
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+                data.forEach(function (row, i) {
+                    var labels = ''
+
+                    html += '<tr>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + row.classIndex + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'> " + 
+                        "<br>" + row.className + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + displayTopFeatures(row.topFeatures) + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + displayFeatureDistributions(row.featureDistributions)+ '</td>' +
+                        + '</tr>'
+
+
+                })
+
+                $body.append(html)
+            }
+
+            function refresh() {
+            //console.log(dataFromJson()[0])
+
+                var displayOptions = ""
+                render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
+            }            
+
+            $(document).ready(function () {
+                refresh()
+            })
+        </script>
+
+    <script id="raw-data" type="application/json">
+'''
 
 # Constant Strings
 pre_data = '''<html>
@@ -292,6 +432,10 @@ pre_data = '''<html>
             <tr><td>
                 <p style="text-indent: 1em;">Rule display:
                 <input id="details" type="checkbox" name="details" value="details">Details
+            </td></tr>
+            <tr><td>
+                <p style="text-indent: 1em;">
+                <a href="top_features.html">Top Features</a>
             </td></tr>
             <tr><td>
                 <center><button id="createFile">Create New HTML</button> 
@@ -542,8 +686,6 @@ pre_data = '''<html>
             }
 
             function refresh() {
-                console.log(dataFromJson()[0])
-
                 var displayOptions = viewOptions()
                 render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
             }
