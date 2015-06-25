@@ -48,6 +48,30 @@ public class Sigmoid implements GatingFunction {
         return Math.exp(logProb);
     }
 
+    public double logLeftProbability(Vector row){
+        double logProb = 0;
+        double[] scores = new double[2];
+        scores[0] = 0;
+        scores[1] = row.dot(weights) + bias;
+        double logNumerator = scores[1];
+        double logDenominator = MathUtil.logSumExp(scores);
+        logProb += logNumerator;
+        logProb -= logDenominator;
+        return logProb;
+    }
+
+    public double logRightProbability(Vector row){
+        double logProb = 0;
+        double[] scores = new double[2];
+        scores[0] = 0;
+        scores[1] = row.dot(weights) + bias;
+        double logNumerator = 0;
+        double logDenominator = MathUtil.logSumExp(scores);
+        logProb += logNumerator;
+        logProb -= logDenominator;
+        return logProb;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Sigmoid{");

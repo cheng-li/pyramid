@@ -7,4 +7,10 @@ import org.apache.mahout.math.Vector;
  */
 public interface GatingFunction {
     double leftProbability(Vector row);
+    default double logLeftProbability(Vector row){
+        return Math.log(logLeftProbability(row));
+    }
+    default double logRightProbability(Vector row){
+        return Math.log(1-logLeftProbability(row));
+    }
 }
