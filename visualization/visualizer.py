@@ -41,26 +41,23 @@ def getPositions(docId, field, keywords, slop, in_order):
         return []
     positions = []
     text = res["hits"]["hits"][0]["_source"]["body"]
-    textWithoutBr = text.replace("<br />", "")
     highlights = res["hits"]["hits"][0]["highlight"]["body"]
     for HL in highlights:
-
         cleanHL = HL.replace("<em>", "")
         cleanHL = cleanHL.replace("</em>", "")
-        cleanHL.lstrip(' ')
         baseindex = text.find(cleanHL)
 
         # in case the highlight not found in body
         if baseindex == -1:
             continue
-        curPos = len(text[0:baseindex].split())
-        # returned highlight may cutoff words, so word position may minus 1
-        if text[baseindex] != " " and curPos>0 and baseindex != 0 and text[baseindex-1] != " ":
-            curPos = curPos - 1
-        for word in HL.split():
-            if word.find("<em>") != -1:
-                positions.append(curPos)
-            curPos += 1
+
+        while HL.find("<em>") != -1:
+            start = HL.find("<em>") + baseindex
+            HL = HL.replace("<em>", "", 1)
+            end = HL.find("</em>") + baseindex
+            HL = HL.replace("</em>", "", 1)
+            curPos = [start, end]
+            positions.append(curPos)
     return positions
 
 
@@ -118,35 +115,30 @@ def createTFPNColumns(row, line_count, oneRow):
     tmpDict = []
     # build set
     labelSet = set()
-    for eachLabel in row["internalLabels"]:
-        labelSet.add(eachLabel)
-    predictionSet = set()
-    for eachPredict in row["internalPrediction"]:
-        predictionSet.add(eachPredict)  
-        
+
     # column 4 TP
     oneRow['TP'] = []
-    for eachLabel in row["internalLabels"]:
-        if eachLabel in predictionSet and eachLabel < len(row["classScoreCalculations"]):
-            oneRow['TP'].append(writeClass(row["id"], line_count, row["classScoreCalculations"][eachLabel]))
+    for clas in row["classScoreCalculations"]:
+        if clas['internalClassIndex'] in row["internalLabels"] and clas['internalClassIndex'] in row["internalPrediction"]:
+            oneRow['TP'].append(writeClass(row["id"], line_count, clas))
 
     # column 5 FP
     oneRow['FP'] = []
-    for eachPredict in row["internalPrediction"]:
-        if eachPredict not in labelSet and eachPredict < len(row["classScoreCalculations"]):
-            oneRow['FP'].append(writeClass(row["id"],line_count, row["classScoreCalculations"][eachPredict]))
+    for clas in row["classScoreCalculations"]:
+        if clas['internalClassIndex'] not in row["internalLabels"] and clas['internalClassIndex'] in row["internalPrediction"]:
+            oneRow['FP'].append(writeClass(row["id"], line_count, clas))
                                   
     # column 6 FN
     oneRow['FN'] = []
-    for eachLabel in row["internalLabels"]:
-        if eachLabel not in predictionSet and eachLabel < len(row["classScoreCalculations"]):
-            oneRow['FN'].append(writeClass(row["id"], line_count, row["classScoreCalculations"][eachLabel]))
+    for clas in row["classScoreCalculations"]:
+        if clas['internalClassIndex'] in row["internalLabels"] and clas['internalClassIndex'] not in row["internalPrediction"]:
+            oneRow['FN'].append(writeClass(row["id"], line_count, clas))
 
     # column 7 TN
     oneRow['TN'] = []
-    for i in range(0, classNumber):
-        if (i not in labelSet) and (i not in predictionSet) and i < len(row["classScoreCalculations"]):
-            oneRow['TN'].append(writeClass(row["id"],line_count, row["classScoreCalculations"][i]))
+    for clas in row["classScoreCalculations"]:
+        if clas['internalClassIndex'] not in row["internalLabels"] and clas['internalClassIndex'] not in row["internalPrediction"]:
+            oneRow['TN'].append(writeClass(row["id"], line_count, clas))
 
 
 def createTable(data):
@@ -232,26 +224,167 @@ def parse(input_json_file, outputFileName):
 
     outputFile = open(outputFileName, "w")
     outputFile.write(output)
+    inputJson.close()
+    outputFile.close()
+
+def createTopFeatureHTML(input_json_file, outputFileName):
+    inputJson = open(input_json_file, "r")
+    outputJson = inputJson.read()
+    output = pre_tf_data + outputJson + post_data
+
+    outputFile = open(outputFileName, "w")
+    outputFile.write(output)
+    inputJson.close()
     outputFile.close()
 
 def parseAll(inputPath):
-    directory = "viewer"
+    directoryName = inputPath
     outputFileName = "Viewer"
 
     if os.path.isfile(inputPath):
         parse(inputPath, outputFileName + ".html")
     else:
-        directoryName = directory + "_" + inputPath
+        if not inputPath.endswith('/'):
+            directoryName += '/'
         if not os.path.exists(directoryName):
             os.makedirs(directoryName)
         for f in listdir(inputPath):
             absf = join(inputPath, f)
-            if not (isfile(absf) and f.endswith(".json")) or f == "top_features.json":
+            if not (isfile(absf) and f.endswith(".json")):
                 continue
-            outputPath = directoryName + "/" + outputFileName + "(" + f[:-5] + ").html"
-            parse(absf, outputPath)
+
+            if f == "top_features.json":
+                outputPath = directoryName + "top_features.html"
+                createTopFeatureHTML(absf, outputPath)
+            else:
+                outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
+                parse(absf, outputPath)
+
+#constant Strings
+pre_tf_data = ''' <html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="jquery.min.js"></script>
+    </head>
+    <body><br>
+        <table id="mytable" border=1  align="center" style="width:100%">
+            <caption> Report </caption>
+                <thead><tr>
+                    <td align="center" width="10%"><b>classIndex</b></td>
+                    <td align="center" width="30%"><b>className</b></td>
+                    <td align="center" width="30%"><b>topFeatures</b></td>
+                    <td align="center" width="30%"><b>featureDistributions</b></td>
+                </tr></thead>
+            <tbody id="data-table"></tbody>
+        </table>
+
+        <script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+
+            function serialize(a, cb) {
+                var str = ''
+                a.forEach(function (obj, i) {
+                    if (cb) {
+                        str += cb(obj, i)
+                    } else {
+                        str += obj
+                    }
+                })
+                return str
+            }
+
+            function sortByViewOptions(data, displayOptions) {
+                return data
+            }
 
 
+            function displayFeature(feature) {
+                str = ''
+                str += '<br>index: ' + feature.index +
+                        '<br>ngram: ' + feature.ngram +
+                        '<br>field: ' + feature.field +
+                        '<br>slop: ' + feature.slop +
+                        '<br>inOrder: ' + feature.inOrder
+
+                return str
+            }
+
+            function displayOccurrence(occurrence) {
+                str = ''
+                str += serialize(occurrence, function(label, i) {
+                        return "<br>" + label
+                    })
+
+                return str
+            }
+
+            function displayDistribution(distribution) {
+                str = ""
+
+                str += displayFeature(distribution.feature)
+                        + "<br><br>totalCount: " + distribution.totalCount
+                        + "<br>" + displayOccurrence(distribution.occurrence)
+
+                return str
+            }
+
+            function displayFeatureDistributions(featureDistributions) {
+                str = ""
+                str += serialize(featureDistributions, function(distribution, i) {
+                        return displayDistribution(distribution) + '<hr>'
+                    })
+                return str
+            }
+
+            function displayTopFeatures(topFeatures) {
+                str = ''
+                str += serialize(topFeatures, function (feature, i) {
+                            return displayFeature(feature) + '<hr>'
+                        })
+
+                return str
+            }
+
+            function render(data, displayOptions) {
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+                data.forEach(function (row, i) {
+                    var labels = ''
+
+                    html += '<tr>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + row.classIndex + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'> " + 
+                        "<br>" + row.className + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + displayTopFeatures(row.topFeatures) + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + displayFeatureDistributions(row.featureDistributions)+ '</td>' +
+                        + '</tr>'
+
+
+                })
+
+                $body.append(html)
+            }
+
+            function refresh() {
+            //console.log(dataFromJson()[0])
+
+                var displayOptions = ""
+                render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
+            }            
+
+            $(document).ready(function () {
+                refresh()
+            })
+        </script>
+
+    <script id="raw-data" type="application/json">
+'''
 
 # Constant Strings
 pre_data = '''<html>
@@ -260,7 +393,7 @@ pre_data = '''<html>
         <script src="jquery.min.js"></script>
     </head>
     <body><br>
-        <table id='optionTable'>
+        <table id='optionTable'  style='width:45%'>
             <tr><th><br> Data Viewer Options: 
             </th></tr>
             <tr><td><br>
@@ -299,6 +432,10 @@ pre_data = '''<html>
             <tr><td>
                 <p style="text-indent: 1em;">Rule display:
                 <input id="details" type="checkbox" name="details" value="details">Details
+            </td></tr>
+            <tr><td>
+                <p style="text-indent: 1em;">
+                <a href="top_features.html">Top Features</a>
             </td></tr>
             <tr><td>
                 <center><button id="createFile">Create New HTML</button> 
@@ -370,56 +507,114 @@ pre_data = '''<html>
                 document.body.removeChild(pom);
             }
 
+            function convertHighlightsIntoPositions(highlights) {
+                var colors = ["red", "Magenta", "lime", "blue", "GreenYellow", "LightPink", 
+                        "orange", "yellow", "LightSeaGreen", "Orchid"];
+                positions = {}
+
+                for (var i = 0; i < highlights.length; i++) {
+                    color = colors[i % colors.length]
+                    poses = highlights[i]
+                    for (var j = 0; j < poses.length; j++) {
+                        positions[poses[j][0]] = {'end': poses[j][1], 'color': color}
+                    }
+                }
+
+                return positions
+            }
+
+            function convertArrayToString(arr) {
+                str = ""
+
+                for (j = 0; j < arr.length; j++) {
+                    a = arr[j]
+                    str += a.toString()
+                    if (j != arr.length - 1) {
+                        str += " "
+                    }
+                }
+                return str
+            }
+
+            function convertStringToArray(str) {
+                arr = []
+                if (str == "") {
+                    return []
+                }
+
+                splits = str.split(" ")
+                for (i = 0; i < splits.length; i++) {
+                    a = []
+                    pairs = splits[i].split(",")
+                    for (j = 0; j < pairs.length; j += 2) {
+                        a.push([pairs[j], pairs[j + 1]])
+                    }
+                    arr.push(a)
+                }
+
+                return arr
+            }
+
+            function areSamePoses(pos1, pos2) {
+                if (pos1.length != pos2.length) {
+                    return false
+                }
+
+                for (k = 0; k < pos1.length; k++) {
+                    if (pos1[k][0] != pos2[k][0] || pos1[k][1] != pos1[k][1]) {
+                        return false
+                    }
+                }
+
+                return true
+            }
+
+            function indexOfHighlights(poses, highlights) {
+                for (i = 0; i < highlights.length; i++) {
+                    highlight = highlights[i]
+                    if (areSamePoses(poses, highlight)) {
+                        return i
+                    }
+                }
+                return -1
+            }
+
             function highlightText(poses, rowNum) {
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName('tr');
                 var cols = rows[rowNum].children;
                 var cell = cols[2];
+                var tagName = "highlights" + (rowNum - 1)
+                var highlightsInput = document.getElementById(tagName)
+                highlights = highlightsInput.value
+                
+                highlights = convertStringToArray(highlights)
+                //alert(highlights)
 
-                var text = cell.innerHTML;
-                text = text.replace(/<font color=/g, "<font-color=");
-                var words = text.split(" ");
-
-                if(isNewHighLight(words, poses)) {
-                    var colors = ["red", "Magenta", "lime", "blue", "GreenYellow", "LightPink", 
-                        "orange", "yellow", "LightSeaGreen", "Orchid"];
-                    var pickColor = pickNewColor(text, colors);
-
-                    for(var i = 0; i < poses.length; i++) {
-                        var pos = poses[i];
-                        words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
-                        words[pos] = "<font color='" + pickColor + "'>"+words[pos]+"</font>";
-                    }
-                }
+                if ((index = indexOfHighlights(poses, highlights)) != -1) {
+                    highlights.splice(index, 1)
+                } 
                 else {
-                    for(var i = 0; i < poses.length; i++) {
-                        var pos = poses[i];
-                        words[pos] = words[pos].replace(/(<([^>]+)>)/ig,"");
-                    }
+                    highlights.push(poses)
                 }
 
-                text = words.join(" ");
-                cell.innerHTML = text.replace(/<font-color=/g, "<font color=");
-
-            }
-
-            function pickNewColor(text, colors) {
-                for (var i = 0; i < colors.length; i++) {
-                    var fonttext = '<font-color="' + colors[i] + '">';
-                    if(text.indexOf(fonttext) == -1) {
-                        return colors[i];
-                    }
+                positions = convertHighlightsIntoPositions(highlights)
+                keys = Object.keys(positions)
+                var text = document.getElementById("text" + (rowNum - 1)).innerHTML;
+                newText = ""
+                start = 0
+                for (var i = 0; i < keys.length; i++) {
+                    color = colors[i]
+                    index = keys[i]
+                    end = index
+                    newText += text.substring(start, end) + 
+                        text.substring(end, positions[index]['end']).fontcolor(positions[index]['color'])
+                    start = positions[index]['end']
                 }
-                return colors[0];
-            }
+                newText += text.substring(start, text.length)
+                cell.innerHTML = newText
 
-            function isNewHighLight(words, rownum) {
-                for(var i = 0; i < rownum.length; i++) {
-                    if (words[rownum[i]].indexOf("<font-color=") == -1) {
-                        return true;
-                    }
-                }
-                return false;
+                highlightsInput.value = convertArrayToString(highlights)
             }
 
             function createOption(value, isSelected) {
@@ -491,8 +686,6 @@ pre_data = '''<html>
             }
 
             function refresh() {
-                console.log(dataFromJson()[0])
-
                 var displayOptions = viewOptions()
                 render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
             }
@@ -575,6 +768,8 @@ pre_data = '''<html>
                     html += '<tr>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
+                        "<input id='highlights" + i + "' style='display:none' value=''>" +
+                        "<pre id='text" + i + "' style='display:none'>" + row.text + '</pre>' + 
                         "<br>ID:" + row.idlabels.id + 
                         //" Iternal_ID: " + row.idlabels.internalId + 
                         '<br><br>Labels:' +  
