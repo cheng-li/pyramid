@@ -1,0 +1,2 @@
+200: Naive Bayes
+201: index reuters_2004
