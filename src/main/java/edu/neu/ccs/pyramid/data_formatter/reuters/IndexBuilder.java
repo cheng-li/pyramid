@@ -32,7 +32,7 @@ public class IndexBuilder {
 
 //        System.out.println(reutersNews);
         builder.startObject();
-        builder.field("fileName", reutersNews.fileName);
+        builder.field("file_name", reutersNews.fileName);
         builder.field("title", reutersNews.title);
         builder.field("headline", reutersNews.headline);
         builder.field("dateline", reutersNews.dateline);
@@ -170,7 +170,7 @@ public class IndexBuilder {
 
 //        System.out.println(reutersNews);
         builder.startObject();
-        builder.field("fileName", reutersNews.fileName);
+        builder.field("file_name", reutersNews.fileName);
         builder.field("title", reutersNews.title);
         builder.field("headline", reutersNews.headline);
         builder.field("dateline", reutersNews.dateline);
