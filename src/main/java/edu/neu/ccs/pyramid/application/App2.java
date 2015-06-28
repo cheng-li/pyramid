@@ -215,8 +215,8 @@ public class App2 {
             double probThreshold=config.getDouble("report.classProbThreshold");
 
             for (int i=0;i<numFiles;i++){
-                int start = i;
-                int end = i+numDocsPerFile;
+                int start = i*numDocsPerFile;
+                int end = start+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
                 for (int a=start;a<end && a<dataSet.getNumDataPoints();a++){
                     List<Integer> classes = new ArrayList<Integer>();
