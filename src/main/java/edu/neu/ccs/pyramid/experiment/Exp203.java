@@ -17,10 +17,13 @@ import java.util.Map;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
- * index reuters 2004.
- * Created by Rainicy on 6/26/15.
+ *
+ * index reuters_2004 by transforming partial labels into features.
+ *
+ * Created by Rainicy on 6/27/15.
  */
-public class Exp201 {
+public class Exp203 {
+
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("please specify the conifg file.");
@@ -32,6 +35,8 @@ public class Exp201 {
 
         String codesDictPath = config.getString("codes.dict");
         Map<String, String> codesDictMap = IndexBuilder.getCodesDict(codesDictPath);
+
+        List<String> transLabels = config.getStrings("trans.labels");
 
 
         String dir = config.getString("input.folder");
@@ -49,7 +54,7 @@ public class Exp201 {
             if (file.getName().endsWith("xml")) {
                 System.out.println("id == " + id);
                 try {
-                    XContentBuilder builder = IndexBuilder.getBuilder(file, codesDictMap, id);
+                    XContentBuilder builder = IndexBuilder.getBuilder(file, codesDictMap, transLabels, id);
                     IndexResponse response = client.prepareIndex(config.getString("index.name"),
                             config.getString("index.type"), ""+id)
                             .setSource(builder)

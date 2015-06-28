@@ -1,2 +1,4 @@
 200: Naive Bayes
 201: index reuters_2004
+202: test on if moving multi-label labels into feature, change the accuracy.
+203: index reuters_2004 by transforming partial labels into features.

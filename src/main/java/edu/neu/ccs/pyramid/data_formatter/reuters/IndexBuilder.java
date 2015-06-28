@@ -9,13 +9,8 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 /**
  * Created by Rainicy on 6/26/15.
@@ -23,20 +18,19 @@ import java.util.List;
 public class IndexBuilder {
 
 //    public static void main(String[] args) throws ParserConfigurationException, XMLStreamException, SAXException, IOException {
-//        String fileName = "/Users/Rainicy/Downloads/287192newsML.xml";
+//        String fileName = "/Users/Rainicy/Downloads/5849newsML.xml";
 //        File file = new File(fileName);
 //        getBuilder(file);
 //    }
 
-    public static XContentBuilder getBuilder (File file) throws IOException, ParserConfigurationException, SAXException, XMLStreamException {
+
+    public static XContentBuilder getBuilder(File file, Map<String, String> codesDictMap, int id) throws IOException, ParserConfigurationException, SAXException, XMLStreamException {
         XContentBuilder builder = XContentFactory.jsonBuilder();
 
 
-        ReutersNews reutersNews = getReutersNews(file);
+        ReutersNews reutersNews = getReutersNews(file, codesDictMap);
 
 //        System.out.println(reutersNews);
-
-
         builder.startObject();
         builder.field("fileName", reutersNews.fileName);
         builder.field("title", reutersNews.title);
@@ -44,12 +38,12 @@ public class IndexBuilder {
         builder.field("dateline", reutersNews.dateline);
         builder.field("body", reutersNews.text);
         builder.array("topic_codes", reutersNews.topicCodes);
-        builder.field("split", (Math.random() < 0.8) ? "train" : "test");
+        builder.field("split", ((id%5) != 0) ? "train" : "test");
         builder.endObject();
         return builder;
     }
 
-    private static ReutersNews getReutersNews(File file) throws XMLStreamException, FileNotFoundException {
+    private static ReutersNews getReutersNews(File file, Map<String, String> codesDictMap) throws XMLStreamException, IOException {
         ReutersNews reutersNews = new ReutersNews();
         reutersNews.fileName = file.toString();
         System.out.println(file.toString());
@@ -81,8 +75,18 @@ public class IndexBuilder {
                             break;
                         case "code":
                             if (ifTopic) {
-                                codes.add(reader.getAttributeValue(0));
+                                String code = reader.getAttributeValue(0);
+                                codes.add(code + " : " + codesDictMap.get(code));
                             }
+                            break;
+                        case "title":
+                            tagContent = "";
+                            break;
+                        case "headline":
+                            tagContent = "";
+                            break;
+                        case "dateline":
+                            tagContent = "";
                             break;
                     }
                     break;
@@ -92,7 +96,7 @@ public class IndexBuilder {
                     if (ifText) {
                         paragraph += reader.getText().trim() + " ";
                     } else {
-                        tagContent = reader.getText().trim();
+                        tagContent += reader.getText().trim() + " ";
                     }
                     break;
 
@@ -123,6 +127,66 @@ public class IndexBuilder {
             }
         }
         return reutersNews;
+    }
+
+    public static Map<String,String> getCodesDict(String codesDictPath) throws IOException {
+
+        BufferedReader br = new BufferedReader(new FileReader(codesDictPath));
+
+        String line = null;
+
+        Map<String, String> result = new HashMap<>();
+
+        while ((line = br.readLine()) != null) {
+            if (line.startsWith(";")) {
+                continue;
+            }
+            try {
+                String[] splitInfo = line.split("\\t");
+                String code = splitInfo[0];
+                String desc = splitInfo[1];
+                result.put(code, desc);
+            } catch (Exception e) {
+                System.out.println("exception in line: " + line);
+                continue;
+            }
+
+        }
+
+        br.close();
+        return result;
+    }
+
+    //
+    public static XContentBuilder getBuilder(File file, Map<String, String> codesDictMap, List<String> transLabels, int id) throws IOException, XMLStreamException {
+        XContentBuilder builder = XContentFactory.jsonBuilder();
+
+        Set<String> transLabelsSet = new HashSet<>();
+        for (String code : transLabels) {
+            transLabelsSet.add(code + " : " + codesDictMap.get(code));
+        }
+
+        ReutersNews reutersNews = getReutersNews(file, codesDictMap);
+
+//        System.out.println(reutersNews);
+        builder.startObject();
+        builder.field("fileName", reutersNews.fileName);
+        builder.field("title", reutersNews.title);
+        builder.field("headline", reutersNews.headline);
+        builder.field("dateline", reutersNews.dateline);
+        builder.field("body", reutersNews.text);
+        builder.array("topic_codes", reutersNews.topicCodes);
+        List<String> featureCodes = new ArrayList<>();
+        for (int i=0; i<reutersNews.topicCodes.length; i++) {
+            String code = reutersNews.topicCodes[i];
+            if (transLabelsSet.contains(code)) {
+                featureCodes.add(code);
+            }
+        }
+        builder.array("feature_codes", featureCodes.toArray(new String[featureCodes.size()]));
+        builder.field("split", ((id%5) != 0) ? "train" : "test");
+        builder.endObject();
+        return builder;
     }
 }
 
