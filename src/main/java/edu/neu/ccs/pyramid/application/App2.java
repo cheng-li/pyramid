@@ -129,6 +129,7 @@ public class App2 {
                 .minDataPerLeaf(minDataPerLeaf)
                 .numLeaves(numLeaves)
                 .numSplitIntervals(config.getInt("train.numSplitIntervals"))
+                .usePrior(config.getBoolean("train.usePrior"))
                 .build();
 
         IMLGradientBoosting boosting;
