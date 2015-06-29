@@ -29,6 +29,8 @@ public class Exp202 {
         Config config = new Config(args[0]);
 
         String path = config.getString("path");
+        String trainPath = config.getString("train.path");
+        String testPath = config.getString("test.path");
         String codesDictPath = config.getString("codes.dict");
         Map<String, String> codesDictMap = IndexBuilder.getCodesDict(codesDictPath);
 
