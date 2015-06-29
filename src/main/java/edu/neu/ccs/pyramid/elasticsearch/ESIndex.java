@@ -216,6 +216,48 @@ public class ESIndex {
     }
 
 
+    /**
+     * use as an inverted index
+     * no score is computed
+     * @param term stemmed term
+     * @return
+     * @throws Exception
+     */
+    public List<String> termFilter(String field, String term, String[] ids) throws Exception{
+        StopWatch stopWatch=null;
+        if(logger.isDebugEnabled()){
+            stopWatch = new StopWatch();
+            stopWatch.start();
+        }
+
+        /**
+         * setSize() has a huge impact on performance, the smaller the faster
+         */
+
+        TermFilterBuilder termFilterBuilder = new TermFilterBuilder(field, term);
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+
+
+        idsFilterBuilder.addIds(ids);
+
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.constantScoreQuery(
+                        FilterBuilders.andFilter(termFilterBuilder,
+                                idsFilterBuilder))).
+                execute().actionGet();
+        List<String> list = new ArrayList<>(response.getHits().getHits().length);
+        for (SearchHit searchHit : response.getHits()) {
+            list.add(searchHit.getId());
+        }
+        if(logger.isDebugEnabled()){
+            logger.debug("time spent on termFilter() for " + term + " = " + stopWatch+
+                    " There are "+list.size()+" matched docs");
+        }
+        return list;
+    }
 
 
 

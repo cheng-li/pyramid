@@ -14,6 +14,7 @@ import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.elasticsearch.search.aggregations.bucket.filters.Filters;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.BufferedWriter;
@@ -128,11 +129,9 @@ public class App1 {
                 expander.setVariableName(field);
                 expander.putSetting("source","field");
 
-                Set<String> categories = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-                Arrays.stream(ids).parallel().forEach(id -> {
-                    String category = index.getStringField(id, field);
-                    categories.add(category);
-                });
+                Collection<org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket> buckets= index.termAggregation(field,ids);
+                Set<String> categories = buckets.stream().map(Terms.Bucket::getKey).collect(Collectors.toSet());
+
                 for (String category: categories){
                     expander.addCategory(category);
                 }
@@ -163,7 +162,7 @@ public class App1 {
                 Feature feature = new Feature();
                 feature.setName(field);
                 feature.setIndex(featureList.size());
-                feature.getSettings().put("source","field");
+                feature.getSettings().put("source", "field");
                 featureList.add(feature);
             }
         }

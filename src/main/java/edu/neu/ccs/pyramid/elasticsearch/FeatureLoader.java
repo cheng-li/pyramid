@@ -8,6 +8,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -19,25 +20,11 @@ public class FeatureLoader {
     // assume categorical featureList are stored contiguously
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator){
-        boolean[] toHandle = new boolean[features.size()];
-        Arrays.fill(toHandle,true);
-        for (int i=0;i<features.size();i++){
-            Feature feature = features.get(i);
-            if (toHandle[i]){
-                if (feature instanceof CategoricalFeature){
-                    int numCategories = ((CategoricalFeature) feature).getNumCategories();
-                    // all categories are already handled
-                    // don't check other categories
-                    for (int pos = i+1;pos<i+numCategories;pos++){
-                        toHandle[pos] = false;
-                    }
-                }
-            }
-        }
 
-        IntStream.range(0,features.size()).parallel().
-                filter(i -> toHandle[i])
-                .forEach(i-> {
+
+
+        IntStream.range(0,features.size()).parallel()
+        .forEach(i-> {
 //                    if (i%10000==0){
 //                        System.out.println("feature "+i);
 //                    }
@@ -58,18 +45,17 @@ public class FeatureLoader {
                                               IdTranslator idTranslator){
         String[] dataIndexIds = idTranslator.getAllExtIds();
         String variableName = feature.getVariableName();
-        Map<String,Integer> categoryIndexMap = feature.getCategoryIndexMap();
-        String source = feature.getSettings().get("source");
-        if (source.equals("field")){
-            Arrays.stream(dataIndexIds).forEach(id -> {
-                int algorithmId = idTranslator.toIntId(id);
-                String category = index.getStringField(id, variableName);
-                // might be a new category unseen in training
-                if (categoryIndexMap.containsKey(category)) {
-                    int featureIndex = categoryIndexMap.get(category);
-                    dataSet.setFeatureValue(algorithmId, featureIndex, 1);
-                }
-            });
+        int featureIndex = feature.getIndex();
+
+        List<String> matchedIds = null;
+        try {
+            matchedIds = index.termFilter(variableName,feature.getCategory(),dataIndexIds);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        for (String matchedId: matchedIds){
+            int algorithmId = idTranslator.toIntId(matchedId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,1);
         }
     }
 
