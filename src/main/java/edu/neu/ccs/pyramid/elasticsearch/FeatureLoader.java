@@ -9,7 +9,6 @@ import org.elasticsearch.search.SearchHit;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -20,11 +19,18 @@ public class FeatureLoader {
     // assume categorical featureList are stored contiguously
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator){
+        loadFeatures(index, dataSet, features, idTranslator, MatchScoreType.ES_ORIGINAL);
+
+    }
+
+    @Deprecated
+    public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
+                                    IdTranslator idTranslator, MatchScoreType matchScoreType){
 
 
 
         IntStream.range(0,features.size()).parallel()
-        .forEach(i-> {
+                .forEach(i-> {
 //                    if (i%10000==0){
 //                        System.out.println("feature "+i);
 //                    }
@@ -32,7 +38,7 @@ public class FeatureLoader {
                     if (feature instanceof CategoricalFeature){
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);
                     } else if (feature instanceof Ngram){
-                        loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator);
+                        loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType);
                     } else if (feature instanceof SpanNotNgram){
                         loadSpanNotNgramFeature(index, dataSet, (SpanNotNgram)feature, idTranslator);
                     } else {
@@ -60,7 +66,7 @@ public class FeatureLoader {
     }
 
     public static void loadNgramFeature(ESIndex index, DataSet dataSet, Ngram feature,
-                                        IdTranslator idTranslator){
+                                        IdTranslator idTranslator, MatchScoreType matchScoreType){
         String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
             SearchResponse response = index.spanNear(feature, dataIndexIds);
@@ -69,6 +75,11 @@ public class FeatureLoader {
             String indexId = hit.getId();
             float score = hit.getScore();
             int algorithmId = idTranslator.toIntId(indexId);
+            if (matchScoreType==MatchScoreType.BINARY){
+                if (score>0){
+                    score=1;
+                }
+            }
             dataSet.setFeatureValue(algorithmId,featureIndex,score);
         }
     }
@@ -117,5 +128,9 @@ public class FeatureLoader {
                 dataSet.setFeatureValue(algorithmId, featureIndex, value);
             });
         }
+    }
+
+    public static enum MatchScoreType{
+        ES_ORIGINAL, BINARY
     }
 }

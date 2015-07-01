@@ -32,7 +32,8 @@ public class App3 {
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
                 "feature.missingValue","index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.featureFieldPrefix","index.ngramExtractionFields",
-                "index.splitField","index.splitField.train","index.splitField.test"};
+                "index.splitField","index.splitField.train","index.splitField.test",
+                "index.ngramMatchScoreType"};
 
         Config.copy(config,app1Config,same);
 

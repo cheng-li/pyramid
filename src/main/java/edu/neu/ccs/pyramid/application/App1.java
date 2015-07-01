@@ -265,7 +265,22 @@ public class App1 {
             }
         }
 
-        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator);
+        String matchScoreTypeString = config.getString("index.ngramMatchScoreType");
+
+        FeatureLoader.MatchScoreType matchScoreType;
+
+        switch (matchScoreTypeString){
+            case "es_original":
+                matchScoreType= FeatureLoader.MatchScoreType.ES_ORIGINAL;
+                break;
+            case "binary":
+                matchScoreType= FeatureLoader.MatchScoreType.BINARY;
+                break;
+            default:
+                throw new IllegalArgumentException("unknown ngramMatchScoreType");
+        }
+
+        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator, matchScoreType);
 
         dataSet.setIdTranslator(idTranslator);
         dataSet.setLabelTranslator(labelTranslator);
