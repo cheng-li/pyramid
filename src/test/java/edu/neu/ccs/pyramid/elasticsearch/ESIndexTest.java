@@ -2,21 +2,14 @@ package edu.neu.ccs.pyramid.elasticsearch;
 
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.SpanNotNgram;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.spans.SpanNearQuery;
-import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.search.spans.SpanTermQuery;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.*;
 
-import static org.junit.Assert.*;
+import java.util.stream.IntStream;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test13();
+        test14();
 
     }
 
@@ -179,6 +172,24 @@ public class ESIndexTest {
 
         System.out.println(index.getNumDocs());
         System.out.println(index.getAllDocs().size());
+        index.close();
+    }
+
+
+    static void test14() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build();
+
+        Ngram ngram1 = new Ngram();
+        ngram1.setInOrder(true);
+        ngram1.setNgram("really nice");
+        ngram1.setField("body");
+        ngram1.setSlop(0);
+
+        String[] ids = IntStream.range(0,500000).mapToObj(i-> ""+i).toArray(String[]::new);
+        SearchResponse searchResponse = index.spanNearTfScore(ngram1, ids);
+        System.out.println(searchResponse);
+
         index.close();
     }
 

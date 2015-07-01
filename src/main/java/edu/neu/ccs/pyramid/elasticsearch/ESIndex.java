@@ -20,10 +20,12 @@ import org.elasticsearch.action.termvector.TermVectorResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.search.SearchHit;
 
@@ -701,6 +703,37 @@ public class ESIndex {
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
+                        .execute().actionGet();
+
+        return response;
+
+    }
+
+    public SearchResponse spanNearTfScore(Ngram ngram, String[] ids){
+        String field = ngram.getField();
+        int slop = ngram.getSlop();
+        boolean inOrder = ngram.isInOrder();
+        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+        for (String term: ngram.getTerms()){
+            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+        }
+        queryBuilder.inOrder(inOrder);
+        queryBuilder.slop(slop);
+
+        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+        idsFilterBuilder.addIds(ids);
+
+
+        Map<String,Object> params = new HashMap<>();
+        params.put("field",ngram.getField());
+        params.put("term",ngram.getTerms()[0]);
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder),
+                        ScoreFunctionBuilders.scriptFunction("getTF","groovy",params))
+                        .boostMode(CombineFunction.REPLACE))
                         .execute().actionGet();
 
         return response;
