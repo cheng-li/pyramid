@@ -41,7 +41,8 @@ def getPositions(docId, field, keywords, slop, in_order):
         return []
     positions = []
     text = res["hits"]["hits"][0]["_source"]["body"]
-    highlights = res["hits"]["hits"][0]["highlight"]["body"]
+    key = res["hits"]["hits"][0]["highlight"].keys()[0]
+    highlights = res["hits"]["hits"][0]["highlight"][key]
     for HL in highlights:
         cleanHL = HL.replace("<em>", "")
         cleanHL = cleanHL.replace("</em>", "")
@@ -102,10 +103,13 @@ def writeClass(docId, line_count, clas):
     oneClass['totalScore'] = clas["classScore"]
 
     # default rule number is 6
-    oneClass['prior'] = clas["rules"][0]["score"]
+    start = 0
+    if not clas["rules"][0].has_key("checks"):
+        oneClass['prior'] = clas["rules"][0]["score"]
+        start = 1
 
     oneClass['rules'] = []
-    for i in range(1, len(clas["rules"])):
+    for i in range(start, len(clas["rules"])):
         oneClass['rules'].append(writeRule(docId, line_count, i, clas["rules"][i]))
 
     return oneClass
@@ -195,7 +199,8 @@ def createTable(data):
         
         # column 3 text
         res = es.get(index=esIndex, doc_type="document", id=row["id"])
-        oneRow['text'] = res["_source"]["body"].encode('utf-8').replace("<", "&lt").replace(">", "&gt")
+        oneRow.update(res["_source"])
+        oneRow["body"] = oneRow["body"].encode('utf-8').replace("<", "&lt").replace(">", "&gt")
         
         # column 4 - 7 TP FP FN TN columns
         createTFPNColumns(row, line_count, oneRow)
@@ -270,10 +275,8 @@ pre_tf_data = ''' <html>
         <table id="mytable" border=1  align="center" style="width:100%">
             <caption> Report </caption>
                 <thead><tr>
-                    <td align="center" width="10%"><b>classIndex</b></td>
-                    <td align="center" width="30%"><b>className</b></td>
-                    <td align="center" width="30%"><b>topFeatures</b></td>
-                    <td align="center" width="30%"><b>featureDistributions</b></td>
+                    <td align="center" width="50%"><b>topFeatures</b></td>
+                    <td align="center" width="50%"><b>featureDistributions</b></td>
                 </tr></thead>
             <tbody id="data-table"></tbody>
         </table>
@@ -281,6 +284,19 @@ pre_tf_data = ''' <html>
         <script>
             function dataFromJson() {
                 return JSON.parse($('#raw-data').html())
+            }
+
+            function showDistribution(totalCount, occurrence, rowNum) {
+                var table = document.getElementById("mytable");
+                var rows = table.getElementsByTagName('tr');
+                var cols = rows[rowNum].children;
+                var cell = cols[1];
+
+                str = ""
+                str += "<br><br>totalCount: " + totalCount
+                        + "<br>" + displayOccurrence(occurrence.split('&'))
+
+                cell.innerHTML = str
             }
 
             function serialize(a, cb) {
@@ -300,13 +316,17 @@ pre_tf_data = ''' <html>
             }
 
 
-            function displayFeature(feature) {
+            function displayFeature(distribution, rowNum) {
                 str = ''
-                str += '<br>index: ' + feature.index +
-                        '<br>ngram: ' + feature.ngram +
-                        '<br>field: ' + feature.field +
-                        '<br>slop: ' + feature.slop +
-                        '<br>inOrder: ' + feature.inOrder
+                feature = distribution.feature
+                //distribution.occurrence.join('&')
+                style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='showDistribution(" + 
+                    distribution.totalCount + ", \\"" + distribution.occurrence.join('&') + "\\", " + (rowNum + 1) + ")'"
+                if ('ngram' in feature) {
+                    str += '<button ' + style + '>' + feature.ngram + '</button>'
+                } else {
+                    str += '<button ' + style + '>' + feature.name + '</button>'
+                }
 
                 return str
             }
@@ -322,26 +342,21 @@ pre_tf_data = ''' <html>
 
             function displayDistribution(distribution) {
                 str = ""
-
-                str += displayFeature(distribution.feature)
-                        + "<br><br>totalCount: " + distribution.totalCount
+                str += "<br><br>totalCount: " + distribution.totalCount
                         + "<br>" + displayOccurrence(distribution.occurrence)
 
                 return str
             }
 
-            function displayFeatureDistributions(featureDistributions) {
-                str = ""
-                str += serialize(featureDistributions, function(distribution, i) {
-                        return displayDistribution(distribution) + '<hr>'
-                    })
-                return str
-            }
-
-            function displayTopFeatures(topFeatures) {
+            function displayTopFeatures(featureDistributions, rowNum) {
                 str = ''
-                str += serialize(topFeatures, function (feature, i) {
-                            return displayFeature(feature) + '<hr>'
+                str += serialize(featureDistributions, function (distribution, i) {
+                            str = ""
+                            if (i != 0) {
+                                str += ","
+                            }
+                            str += displayFeature(distribution, rowNum)
+                            return str
                         })
 
                 return str
@@ -356,13 +371,9 @@ pre_tf_data = ''' <html>
 
                     html += '<tr>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
-                        "<br>" + row.classIndex + '</td>' +
-                        "<td style='vertical-align:top;text-align:left;'> " + 
-                        "<br>" + row.className + '</td>' +
-                        "<td style='vertical-align:top;text-align:left;'>" + 
-                        "<br>" + displayTopFeatures(row.topFeatures) + '</td>' +
-                        "<td style='vertical-align:top;text-align:left;'>" + 
-                        "<br>" + displayFeatureDistributions(row.featureDistributions)+ '</td>' +
+                        "<br>" + row.classIndex + "." + row.className +
+                        "<br>" + displayTopFeatures(row.featureDistributions, i) + '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'></td>" +
                         + '</tr>'
 
 
@@ -382,6 +393,15 @@ pre_tf_data = ''' <html>
                 refresh()
             })
         </script>
+
+        <style>
+            #mytable{
+                border: 1px solid black;
+                border-collapse: collapse;
+                word-wrap: break-word;
+                table-layout:fixed;
+            }
+        </style>
 
     <script id="raw-data" type="application/json">
 '''
@@ -460,9 +480,9 @@ pre_data = '''<html>
         <table id="mytable" border=1  align="center" style="width:100%">
             <caption> Report </caption>
                 <thead><tr>
-                    <td align="center" width="5%"><b>id & labels</b></td>
-                    <td align="center" width="5%"><b>predictedRanking</b></td>
-                    <td align="center" width="10%"><b>Text</b></td>
+                    <td align="center" width="15%"><b>id & labels</b></td>
+                    <td align="center" width="15%"><b>predictedRanking</b></td>
+                    <td align="center" width="15%"><b>Text</b></td>
                     <td align="center" width="20%"><b>TP</b></td>
                     <td align="center" width="20%"><b>FP</b></td>
                     <td align="center" width="20%"><b>FN</b></td>
@@ -711,9 +731,11 @@ pre_data = '''<html>
             }
 
             function getLabelColor(type) {
-                colors = {"TP": "red", "FP": "green", "FN": "blue"}
-
-                return colors[type]
+                if (type == "FP" || type == "FN") {
+                    return "red"
+                } else {
+                    return "green"
+                }
             }
 
             function includesLabel(clas, label) {
@@ -743,12 +765,12 @@ pre_data = '''<html>
 
                 if (numOfLabels > 0) {
                     return serialize(predictedRanking.slice(0, numOfLabels), function (lb) {
-                        if (lb.type != "") {
+                        //if (lb.type != "") {
                             text = lb.className + '(' + lb.prob.toFixed(2) + ')'
                             var str = '<li>' + text.fontcolor(getLabelColor(lb.type)) + '</li>'
-                        } else {
-                            var str = '<li>' + lb.className + '(' + lb.prob.toFixed(2) + ')</li>'
-                        }
+                        //} else {
+                            //var str = '<li>' + lb.className + '(' + lb.prob.toFixed(2) + ')</li>'
+                        //}
                         return str
                     }) 
                 } else {
@@ -766,11 +788,20 @@ pre_data = '''<html>
                     var labels = ''
 
                     html += '<tr>' +
-                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<td style='vertical-align:top;text-align:left;' width='5%'>" + 
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
                         "<input id='highlights" + i + "' style='display:none' value=''>" +
                         "<pre id='text" + i + "' style='display:none'>" + row.text + '</pre>' + 
-                        "<br>ID:" + row.idlabels.id + 
+                        "<br>ID:&nbsp" + row.idlabels.id + 
+                        "<br><br>File&nbspName:&nbsp" + row.file_name +
+                        "<br><br>Codes:&nbsp" + row.codes +
+                        "<br><br>Split:&nbsp" + row.split +
+                        "<br><br>Real&nbspLabels:&nbsp" +
+                        serialize(row.real_labels, function (lb) {
+                            var str = ''
+                            str += '<li>' + lb + '</li>'
+                            return str
+                         }) + 
                         //" Iternal_ID: " + row.idlabels.internalId + 
                         '<br><br>Labels:' +  
                         serialize(row.idlabels.internalLabels, function (lb) {
@@ -794,7 +825,7 @@ pre_data = '''<html>
                         '</td>' +
                         "<td style='vertical-align:top;text-align:left;'> " + 
                         displayPredictedRanking(row, displayOptions) + '</td>' +
-                        "<td style='vertical-align:top;text-align:left;'>" + row.text
+                        "<td style='vertical-align:top;text-align:left;'>" + row.body
                         + '</td>' +
                         displayClass(row.TP, displayOptions, i) +
                         displayClass(row.FP, displayOptions, i) +
@@ -850,13 +881,17 @@ pre_data = '''<html>
                 str += "<td style='vertical-align:top;text-align:left;'>" +
                         serialize(clas, function (lb, i) {
                             str = ""
+                            prior = ""
+                            if (lb.prior != undefined) {
+                                prior = '<li>prior: ' + lb.prior.toFixed(2) + '</li>'
+                            }
                             if (i > 0) {
                                 str += '<hr>'
                             }
                             str += lb.name + '<br><br>classProbability: ' + 
                             lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
-                            lb.totalScore.toFixed(2) + '<br><ul>' + '<li>prior: ' + 
-                            lb.prior.toFixed(2) + '</li>' +
+                            lb.totalScore.toFixed(2) + '<br><ul>' + 
+                            prior +
                             serialize(lb.rules, function (rule, i) {
                                 if (i >= displayOptions.ruleNum) {
                                     return ""
@@ -1063,6 +1098,8 @@ pre_data = '''<html>
             #mytable{
                 border: 1px solid black;
                 border-collapse: collapse;
+                word-wrap: break-word;
+                table-layout:fixed;
             }
             #optionTable {
                 border : 1px solid black;
@@ -1074,7 +1111,7 @@ pre_data = '''<html>
                 list-style-type: square;
             }
             .mytext {
-                width: 200px;
+                width: 100%;
                 height:200px;
             }
         </style>
