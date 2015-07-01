@@ -709,7 +709,7 @@ public class ESIndex {
 
     }
 
-    public SearchResponse spanNearTfScore(Ngram ngram, String[] ids){
+    public SearchResponse spanNearFrequency(Ngram ngram, String[] ids){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -724,6 +724,7 @@ public class ESIndex {
         idsFilterBuilder.addIds(ids);
 
 
+        //todo: hanle ngram frequency properly
         Map<String,Object> params = new HashMap<>();
         params.put("field",ngram.getField());
         params.put("term",ngram.getTerms()[0]);

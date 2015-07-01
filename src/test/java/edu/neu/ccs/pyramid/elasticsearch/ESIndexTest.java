@@ -187,7 +187,7 @@ public class ESIndexTest {
         ngram1.setSlop(0);
 
         String[] ids = IntStream.range(0,500000).mapToObj(i-> ""+i).toArray(String[]::new);
-        SearchResponse searchResponse = index.spanNearTfScore(ngram1, ids);
+        SearchResponse searchResponse = index.spanNearFrequency(ngram1, ids);
         System.out.println(searchResponse);
 
         index.close();

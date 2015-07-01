@@ -67,18 +67,59 @@ public class FeatureLoader {
 
     public static void loadNgramFeature(ESIndex index, DataSet dataSet, Ngram feature,
                                         IdTranslator idTranslator, MatchScoreType matchScoreType){
+        switch (matchScoreType){
+            case ES_ORIGINAL:
+                loadNgramFeatureOriginal(index, dataSet, feature, idTranslator);
+                break;
+            case BINARY:
+                loadNgramFeatureBinary(index, dataSet, feature, idTranslator);
+                break;
+            case FREQUENCY:
+                loadNgramFeatureFrequency(index, dataSet, feature, idTranslator);
+        }
+    }
+
+
+    private static void loadNgramFeatureOriginal(ESIndex index, DataSet dataSet, Ngram feature,
+                                                 IdTranslator idTranslator){
         String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
-            SearchResponse response = index.spanNear(feature, dataIndexIds);
-            SearchHit[] hits = response.getHits().getHits();
+        SearchResponse response = index.spanNear(feature, dataIndexIds);
+        SearchHit[] hits = response.getHits().getHits();
         for (SearchHit hit: hits){
             String indexId = hit.getId();
             float score = hit.getScore();
             int algorithmId = idTranslator.toIntId(indexId);
-            if (matchScoreType==MatchScoreType.BINARY){
-                if (score>0){
-                    score=1;
-                }
+            dataSet.setFeatureValue(algorithmId,featureIndex,score);
+        }
+    }
+
+    private static void loadNgramFeatureFrequency(ESIndex index, DataSet dataSet, Ngram feature,
+                                                  IdTranslator idTranslator){
+        String[] dataIndexIds = idTranslator.getAllExtIds();
+        int featureIndex = feature.getIndex();
+        SearchResponse response = index.spanNearFrequency(feature, dataIndexIds);
+        SearchHit[] hits = response.getHits().getHits();
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            int algorithmId = idTranslator.toIntId(indexId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,score);
+        }
+    }
+
+    public static void loadNgramFeatureBinary(ESIndex index, DataSet dataSet, Ngram feature,
+                                              IdTranslator idTranslator){
+        String[] dataIndexIds = idTranslator.getAllExtIds();
+        int featureIndex = feature.getIndex();
+        SearchResponse response = index.spanNear(feature, dataIndexIds);
+        SearchHit[] hits = response.getHits().getHits();
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            int algorithmId = idTranslator.toIntId(indexId);
+            if (score>0){
+                score=1;
             }
             dataSet.setFeatureValue(algorithmId,featureIndex,score);
         }
@@ -131,6 +172,6 @@ public class FeatureLoader {
     }
 
     public static enum MatchScoreType{
-        ES_ORIGINAL, BINARY
+        ES_ORIGINAL, BINARY, FREQUENCY
     }
 }

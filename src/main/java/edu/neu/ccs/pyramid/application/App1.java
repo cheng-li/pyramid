@@ -276,6 +276,9 @@ public class App1 {
             case "binary":
                 matchScoreType= FeatureLoader.MatchScoreType.BINARY;
                 break;
+            case "frequency":
+                matchScoreType= FeatureLoader.MatchScoreType.FREQUENCY;
+                break;
             default:
                 throw new IllegalArgumentException("unknown ngramMatchScoreType");
         }
