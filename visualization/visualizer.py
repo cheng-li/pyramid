@@ -905,6 +905,11 @@ pre_data = '''<html>
 
             function serialize(a, cb) {
                 var str = ''
+
+                if (a.length <= 0) {
+                    return str
+                }
+                
                 a.forEach(function (obj, i) {
                     if (cb) {
                         str += cb(obj, i)
