@@ -624,7 +624,6 @@ pre_data = '''<html>
                 newText = ""
                 start = 0
                 for (var i = 0; i < keys.length; i++) {
-                    color = colors[i]
                     index = keys[i]
                     end = index
                     newText += text.substring(start, end) + 
@@ -791,7 +790,7 @@ pre_data = '''<html>
                         "<td style='vertical-align:top;text-align:left;' width='5%'>" + 
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
                         "<input id='highlights" + i + "' style='display:none' value=''>" +
-                        "<pre id='text" + i + "' style='display:none'>" + row.text + '</pre>' + 
+                        "<pre id='text" + i + "' style='display:none'>" + row.body + '</pre>' + 
                         "<br>ID:&nbsp" + row.idlabels.id + 
                         "<br><br>File&nbspName:&nbsp" + row.file_name +
                         "<br><br>Codes:&nbsp" + row.codes +
