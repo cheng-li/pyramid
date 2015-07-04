@@ -145,6 +145,7 @@ public class IndexBuilder {
                 String[] splitInfo = line.split("\\t");
                 String code = splitInfo[0];
                 String desc = splitInfo[1];
+                desc = desc.replace(",", ".");
                 result.put(code, desc);
             } catch (Exception e) {
                 System.out.println("exception in line: " + line);
