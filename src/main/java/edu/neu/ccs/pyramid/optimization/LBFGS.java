@@ -71,14 +71,17 @@ public class LBFGS implements Optimizer{
         while(true){
 
             if (checkConvergence){
-                if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<epsilon*valueQueue.getFirst()){
+                logger.debug("difference = "+Math.abs(valueQueue.getFirst()-valueQueue.getLast()));
+                if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<=Math.abs(epsilon*valueQueue.getFirst())){
                     convergenceTraceCounter += 1;
+
                 } else {
                     convergenceTraceCounter =0;
                 }
                 if (convergenceTraceCounter == 5){
                     terminate = true;
                 }
+                logger.debug("convergenceTraceCounter = "+convergenceTraceCounter);
             }
 
 
