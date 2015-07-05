@@ -43,6 +43,32 @@ public class RegressionSynthesizer {
         return dataSet;
     }
 
+    public  RegDataSet gaussianMixture(){
+
+        NormalDistribution leftGaussian = new NormalDistribution(0.2,0.01);
+
+        NormalDistribution rightGaussian = new NormalDistribution(0.7,0.1);
+
+        RegDataSet dataSet = RegDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints)
+                .numFeatures(1)
+                .dense(true)
+                .missingValue(false)
+                .build();
+        for (int i=0;i<numDataPoints;i++){
+            double featureValue = Sampling.doubleUniform(0,1);
+            double label;
+            if (featureValue>0.5){
+                label = leftGaussian.sample();
+            } else {
+                label = rightGaussian.sample();
+            }
+            dataSet.setFeatureValue(i,0,featureValue);
+            dataSet.setLabel(i,label);
+        }
+        return dataSet;
+    }
+
 
     public  RegDataSet univarSine(){
 
