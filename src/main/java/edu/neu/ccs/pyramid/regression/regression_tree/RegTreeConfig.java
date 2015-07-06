@@ -9,19 +9,7 @@ public class RegTreeConfig {
     private int minDataPerLeaf=1;
     private int randomLevel=1;
 
-    /**
-     * featureList to consider in the tree
-     */
-    private int[] activeFeatures;
-    /**
-     * data points to consider in the tree
-     */
-    private int[] activeDataPoints;
 
-    public RegTreeConfig setActiveFeatures(int[] activeFeatures) {
-        this.activeFeatures = activeFeatures;
-        return this;
-    }
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
         this.maxNumLeaves = maxNumLeaves;
@@ -33,10 +21,6 @@ public class RegTreeConfig {
         return this;
     }
 
-    public RegTreeConfig setActiveDataPoints(int[] activeDataPoints) {
-        this.activeDataPoints = activeDataPoints;
-        return this;
-    }
 
     public RegTreeConfig setNumSplitIntervals(int numSplitIntervals) {
         if (numSplitIntervals<=1){
@@ -58,17 +42,12 @@ public class RegTreeConfig {
         return maxNumLeaves;
     }
 
-    int[] getActiveDataPoints() {
-        return activeDataPoints;
-    }
+
 
     int getMinDataPerLeaf() {
         return minDataPerLeaf;
     }
 
-    int[] getActiveFeatures() {
-        return activeFeatures;
-    }
 
     int getNumSplitIntervals() {
         return numSplitIntervals;

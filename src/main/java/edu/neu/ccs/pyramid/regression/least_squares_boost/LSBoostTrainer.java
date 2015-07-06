@@ -29,11 +29,12 @@ public class LSBoostTrainer {
     private double[] gradients;
     private LSBoost boost;
     private LSBConfig lsbConfig;
+    private RegDataSet dataSet;
 
-    public LSBoostTrainer(LSBoost boost, LSBConfig lsbConfig) {
+    public LSBoostTrainer(LSBoost boost, LSBConfig lsbConfig, RegDataSet dataSet) {
         this.boost = boost;
         this.lsbConfig = lsbConfig;
-        RegDataSet dataSet = lsbConfig.getDataSet();
+        this.dataSet = dataSet;
         boost.featureList = dataSet.getFeatureList();
         int numDataPoints = dataSet.getNumDataPoints();
         this.scores = new double[numDataPoints];
@@ -66,14 +67,12 @@ public class LSBoostTrainer {
     }
 
     void updateScores(Regressor regressor, double weight){
-        DataSet dataSet = lsbConfig.getDataSet();
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(
                 i -> scores[i] += weight*regressor.predict(dataSet.getRow(i))
         );
     }
 
     void updateGradients(){
-        RegDataSet dataSet = lsbConfig.getDataSet();
         double[] labels = dataSet.getLabels();
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(
                 i -> gradients[i] = labels[i] - scores[i]
@@ -86,7 +85,6 @@ public class LSBoostTrainer {
     }
 
     Regressor fitPriorRegressor(){
-        RegDataSet dataSet = lsbConfig.getDataSet();
         double[] labels = dataSet.getLabels();
         double ave = Arrays.stream(labels).average().getAsDouble();
         return new ConstantRegressor(ave);
@@ -101,80 +99,7 @@ public class LSBoostTrainer {
     }
     
     private Regressor fitRegressor(){
-        List<Pair<Regressor,Double>> competitors = new ArrayList<>();
-
-        if (lsbConfig.considerHardTree()){
-            LeafOutputCalculator leafOutputCalculator = new AverageOutputCalculator(gradients);
-            
-            RegTreeConfig regTreeConfig = new RegTreeConfig();
-            regTreeConfig.setMaxNumLeaves(this.lsbConfig.getNumLeaves());
-            regTreeConfig.setMinDataPerLeaf(this.lsbConfig.getMinDataPerLeaf());
-            regTreeConfig.setActiveDataPoints(this.lsbConfig.getActiveDataPoints());
-            regTreeConfig.setActiveFeatures(this.lsbConfig.getActiveFeatures());
-            regTreeConfig.setNumSplitIntervals(this.lsbConfig.getNumSplitIntervals());
-            regTreeConfig.setRandomLevel(this.lsbConfig.getRandomLevel());
-
-            RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
-                    this.lsbConfig.getDataSet(),
-                    gradients,
-                    leafOutputCalculator);
-            // use un-shrunk one to calculate mse
-            double mse = MSE.mse(gradients, regressionTree.predict(lsbConfig.getDataSet()));
-            System.out.println("hard tree mse = "+mse);
-            
-            competitors.add(new Pair<>(regressionTree, mse));
-        }
-
-
-        if (lsbConfig.considerExpectationTree()){
-            SoftRegStumpTrainer expectationTrainer = SoftRegStumpTrainer.getBuilder()
-                    .setDataSet(lsbConfig.getDataSet())
-                    .setLabels(gradients)
-                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
-                    //todo
-                    .setOptimizerType(SoftRegStumpTrainer.OptimizerType.LBFGS)
-                    .build();
-
-            Optimizer optimizer = expectationTrainer.getOptimizer();
-            optimizer.setCheckConvergence(lsbConfig.softTreeEarlyStop());
-            optimizer.setMaxIteration(100);
-
-
-
-            SoftRegStump expectationTree = expectationTrainer.train();
-
-            double mse = MSE.mse(gradients, expectationTree.predict(lsbConfig.getDataSet()));
-            System.out.println("expectation tree mse = "+mse);
-            competitors.add(new Pair<>(expectationTree, mse));
-        }
-
-        if (lsbConfig.considerProbabilisticTree()){
-            SoftRegStumpTrainer probabilisticTrainer = SoftRegStumpTrainer.getBuilder()
-                    .setDataSet(lsbConfig.getDataSet())
-                    .setLabels(gradients)
-                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss)
-                    .build();
-
-            SoftRegStump probabilisticTree = probabilisticTrainer.train();
-
-
-            double mse = MSE.mse(gradients,probabilisticTree.predict(lsbConfig.getDataSet()));
-            System.out.println("probabilistic tree mse = "+mse);
-
-            competitors.add(new Pair<>(probabilisticTree, mse));
-        }
-
-        if (competitors.isEmpty()){
-            throw new RuntimeException("no regressor is considered");
-        }
-
-        Comparator<Pair<Regressor,Double>> comparator = Comparator.comparing(Pair::getSecond);
-
-        List<Pair<Regressor,Double>> sorted = competitors.stream().sorted(comparator).collect(Collectors.toList());
-
-        return sorted.get(0).getFirst();
+        return lsbConfig.getRegressorFactory().fit(dataSet);
     }
 
 }

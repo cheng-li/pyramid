@@ -55,17 +55,11 @@ public class Exp122 {
 
         LSBoost boost = new LSBoost();
 
-        LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(config.getDouble("learningRate")).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1)
-                .randomLevel(1)
-                .softTreeEarlyStop(config.getBoolean("softTreeEarlyStop"))
-                .considerHardTree(true)
-                .considerExpectationTree(true)
-                .considerProbabilisticTree(false)
+        LSBConfig trainConfig = new LSBConfig.Builder()
+                .learningRate(config.getDouble("learningRate"))
                 .build();
 
-        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
+        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig,dataSet);
 
         File trainFile = new File(outputFolder,"train_per");
         File testFile = new File(outputFolder,"test_per");
@@ -96,11 +90,11 @@ public class Exp122 {
                     int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
                     int[] activeDataPoints = IntStream.range(0, dataSet.getNumDataPoints()).toArray();
                     RegTreeConfig regTreeConfig = new RegTreeConfig();
-                    regTreeConfig.setActiveFeatures(activeFeatures);
+
 
                     regTreeConfig.setMaxNumLeaves(2);
                     regTreeConfig.setMinDataPerLeaf(1);
-                    regTreeConfig.setActiveDataPoints(activeDataPoints);
+
 
                     regTreeConfig.setNumSplitIntervals(1000);
                     RegressionTree tree = RegTreeTrainer.fit(regTreeConfig, dataSet,gradients);

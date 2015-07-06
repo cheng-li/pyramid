@@ -394,8 +394,6 @@ public class LKTBTrainer {
             RegTreeConfig regTreeConfig = new RegTreeConfig();
             regTreeConfig.setMaxNumLeaves(this.lktbConfig.getNumLeaves());
             regTreeConfig.setMinDataPerLeaf(this.lktbConfig.getMinDataPerLeaf());
-            regTreeConfig.setActiveDataPoints(this.lktbConfig.getActiveDataPoints());
-            regTreeConfig.setActiveFeatures(this.lktbConfig.getActiveFeatures());
             regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
             regTreeConfig.setRandomLevel(this.lktbConfig.getRandomLevel());
 

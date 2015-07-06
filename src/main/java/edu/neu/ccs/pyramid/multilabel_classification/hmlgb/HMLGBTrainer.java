@@ -315,8 +315,7 @@ public class HMLGBTrainer {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         regTreeConfig.setMaxNumLeaves(this.config.getNumLeaves());
         regTreeConfig.setMinDataPerLeaf(this.config.getMinDataPerLeaf());
-        regTreeConfig.setActiveDataPoints(this.config.getActiveDataPoints());
-        regTreeConfig.setActiveFeatures(this.config.getActiveFeatures());
+
         regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
 
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,

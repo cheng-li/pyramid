@@ -83,11 +83,11 @@ public class Exp110 {
         int[] activeFeatures = IntStream.range(0, trainSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0, trainSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+
 
         regTreeConfig.setMaxNumLeaves(2);
         regTreeConfig.setMinDataPerLeaf(1);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+
 
         regTreeConfig.setNumSplitIntervals(1000);
         RegressionTree tree = RegTreeTrainer.fit(regTreeConfig, trainSet);

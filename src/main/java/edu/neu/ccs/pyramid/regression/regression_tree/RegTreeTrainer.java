@@ -40,7 +40,7 @@ public class RegTreeTrainer {
 
         //root gets all active data points
         double[] rootProbs = new double[dataSet.getNumDataPoints()];
-        for (int dataPoint: regTreeConfig.getActiveDataPoints()){
+        for (int dataPoint=0; dataPoint<dataSet.getNumDataPoints();dataPoint++){
             rootProbs[dataPoint]=1;
         }
         tree.root.setProbs(rootProbs);
@@ -70,7 +70,7 @@ public class RegTreeTrainer {
         //parallel
         setLeavesOutputs(tree.leaves,leafOutputCalculator);
         cleanLeaves(tree.leaves);
-        normalizeReductions(tree,regTreeConfig);
+        normalizeReductions(tree,dataSet);
         return tree;
     }
 
@@ -227,8 +227,8 @@ public class RegTreeTrainer {
      * @param tree
      * @param regTreeConfig
      */
-    private static void normalizeReductions(RegressionTree tree, RegTreeConfig regTreeConfig){
-        int numDataPoints = regTreeConfig.getActiveDataPoints().length;
+    private static void normalizeReductions(RegressionTree tree, DataSet dataSet){
+        int numDataPoints = dataSet.getNumDataPoints();
         List<Node> nodes = tree.traverse();
         for (Node node: nodes){
             double oldReduction = node.getReduction();

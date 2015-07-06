@@ -127,10 +127,10 @@ public class SoftRegStumpTrainer {
                 case FOLLOW_HARD_TREE_FEATURE:
                     // train a hard tree first
                     RegTreeConfig regTreeConfig = new RegTreeConfig();
-                    regTreeConfig.setActiveFeatures(IntStream.range(0, dataSet.getNumFeatures()).toArray());
+
                     regTreeConfig.setMaxNumLeaves(2);
                     regTreeConfig.setMinDataPerLeaf(1);
-                    regTreeConfig.setActiveDataPoints(IntStream.range(0, dataSet.getNumDataPoints()).toArray());
+
                     regTreeConfig.setNumSplitIntervals(1000);
                     hardTree = RegTreeTrainer.fit(regTreeConfig, dataSet,labels);
                     int usedFeature = hardTree.getRoot().getFeatureIndex();

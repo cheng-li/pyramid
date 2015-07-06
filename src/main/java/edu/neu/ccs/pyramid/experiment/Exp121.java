@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.List;
 
 /**
+ * todo: broken
  * LS BOOST, soft tree vs hard tree vs hybrid tree, simulation data, local, shrinkage=0.1
  * Created by chengli on 6/3/15.
  */
@@ -35,8 +36,8 @@ public class Exp121 {
             RegDataSet dataSet = sample(name);
             RegDataSet testSet = sample(name);
             train_hard(name, dataSet, testSet);
-            train_expectation(name, dataSet, testSet);
-            train_hybrid(name, dataSet, testSet);
+//            train_expectation(name, dataSet, testSet);
+//            train_hybrid(name, dataSet, testSet);
         }
 
 
@@ -85,17 +86,11 @@ public class Exp121 {
 
         LSBoost boost = new LSBoost();
 
-        LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1)
-                .randomLevel(1)
-                .softTreeEarlyStop(false)
-                .considerHardTree(true)
-                .considerExpectationTree(false)
-                .considerProbabilisticTree(false)
+        LSBConfig trainConfig = new LSBConfig.Builder()
+                .learningRate(0.1)
                 .build();
 
-        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
+        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig, dataSet);
 
         File trainFile = new File(outputFolder,"train_per");
         File testFile = new File(outputFolder,"test_per");
@@ -138,117 +133,117 @@ public class Exp121 {
     }
 
 
-    static void train_hybrid(String name, RegDataSet dataSet, RegDataSet testSet) throws Exception{
-        File outputFolder = new File(new File(TMP,name),"hybrid_tree");
-        outputFolder.mkdirs();
+//    static void train_hybrid(String name, RegDataSet dataSet, RegDataSet testSet) throws Exception{
+//        File outputFolder = new File(new File(TMP,name),"hybrid_tree");
+//        outputFolder.mkdirs();
+//
+//
+//        LSBoost boost = new LSBoost();
+//
+//        LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
+//                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+//                .dataSamplingRate(1).featureSamplingRate(1)
+//                .randomLevel(1)
+//                .softTreeEarlyStop(false)
+//                .considerHardTree(true)
+//                .considerExpectationTree(true)
+//                .considerProbabilisticTree(false)
+//                .build();
+//
+//        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
+//
+//        File trainFile = new File(outputFolder,"train_per");
+//        File testFile = new File(outputFolder,"test_per");
+//        File typeFile = new File(outputFolder,"type");
+//
+//        for (int i=0;i<100;i++){
+//            StopWatch stopWatch = new StopWatch();
+//            stopWatch.start();
+//            System.out.println("iteration "+i);
+//
+//
+//            if (i==0){
+//                trainer.addPriorRegressor();
+//            } else {
+//                trainer.iterate();
+//            }
+//            System.out.println("time spent on one iteration = "+stopWatch);
+//
+//            FileUtils.writeStringToFile(trainFile,""+RMSE.rmse(boost, dataSet)+"\n",true);
+//            FileUtils.writeStringToFile(testFile,""+RMSE.rmse(boost, testSet)+"\n",true);
+//            List<Regressor> regressors = boost.getRegressors();
+//            Regressor regressor = regressors.get(i);
+//            if (regressor instanceof RegressionTree){
+//                FileUtils.writeStringToFile(typeFile,"hard tree"+", ",true);
+//
+//            }
+//            if (regressor instanceof SoftRegStump){
+//                SoftRegStump softRegStump = (SoftRegStump)regressor;
+//                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.SquaredLossOfExpectation){
+//                    FileUtils.writeStringToFile(typeFile,"expectation tree"+", ",true);
+//                }
+//                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
+//                    FileUtils.writeStringToFile(typeFile,"probabilistic tree"+", ",true);
+//                }
+//            }
+//        }
+//
+//    }
 
-
-        LSBoost boost = new LSBoost();
-
-        LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1)
-                .randomLevel(1)
-                .softTreeEarlyStop(false)
-                .considerHardTree(true)
-                .considerExpectationTree(true)
-                .considerProbabilisticTree(false)
-                .build();
-
-        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
-
-        File trainFile = new File(outputFolder,"train_per");
-        File testFile = new File(outputFolder,"test_per");
-        File typeFile = new File(outputFolder,"type");
-
-        for (int i=0;i<100;i++){
-            StopWatch stopWatch = new StopWatch();
-            stopWatch.start();
-            System.out.println("iteration "+i);
-
-
-            if (i==0){
-                trainer.addPriorRegressor();
-            } else {
-                trainer.iterate();
-            }
-            System.out.println("time spent on one iteration = "+stopWatch);
-
-            FileUtils.writeStringToFile(trainFile,""+RMSE.rmse(boost, dataSet)+"\n",true);
-            FileUtils.writeStringToFile(testFile,""+RMSE.rmse(boost, testSet)+"\n",true);
-            List<Regressor> regressors = boost.getRegressors();
-            Regressor regressor = regressors.get(i);
-            if (regressor instanceof RegressionTree){
-                FileUtils.writeStringToFile(typeFile,"hard tree"+", ",true);
-
-            }
-            if (regressor instanceof SoftRegStump){
-                SoftRegStump softRegStump = (SoftRegStump)regressor;
-                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.SquaredLossOfExpectation){
-                    FileUtils.writeStringToFile(typeFile,"expectation tree"+", ",true);
-                }
-                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
-                    FileUtils.writeStringToFile(typeFile,"probabilistic tree"+", ",true);
-                }
-            }
-        }
-
-    }
-
-    static void train_expectation(String name, RegDataSet dataSet, RegDataSet testSet) throws Exception{
-        File outputFolder = new File(new File(TMP,name),"expectation_tree");
-        outputFolder.mkdirs();
-
-        LSBoost boost = new LSBoost();
-
-        LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1)
-                .randomLevel(1)
-                .softTreeEarlyStop(false)
-                .considerHardTree(false)
-                .considerExpectationTree(true)
-                .considerProbabilisticTree(false)
-                .build();
-
-        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
-
-        File trainFile = new File(outputFolder,"train_per");
-        File testFile = new File(outputFolder,"test_per");
-        File typeFile = new File(outputFolder,"type");
-
-        for (int i=0;i<100;i++){
-            StopWatch stopWatch = new StopWatch();
-            stopWatch.start();
-            System.out.println("iteration "+i);
-
-
-            if (i==0){
-                trainer.addPriorRegressor();
-            } else {
-                trainer.iterate();
-            }
-            System.out.println("time spent on one iteration = " + stopWatch);
-
-
-            FileUtils.writeStringToFile(trainFile,""+RMSE.rmse(boost, dataSet)+"\n",true);
-            FileUtils.writeStringToFile(testFile,""+RMSE.rmse(boost, testSet)+"\n",true);
-            List<Regressor> regressors = boost.getRegressors();
-            Regressor regressor = regressors.get(i);
-            if (regressor instanceof RegressionTree){
-                FileUtils.writeStringToFile(typeFile,"hard tree"+"\n",true);
-
-            }
-            if (regressor instanceof SoftRegStump){
-                SoftRegStump softRegStump = (SoftRegStump)regressor;
-                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.SquaredLossOfExpectation){
-                    FileUtils.writeStringToFile(typeFile,"expectation tree"+"\n",true);
-                }
-                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
-                    FileUtils.writeStringToFile(typeFile,"probabilistic tree"+"\n",true);
-                }
-            }
-        }
-
-    }
+//    static void train_expectation(String name, RegDataSet dataSet, RegDataSet testSet) throws Exception{
+//        File outputFolder = new File(new File(TMP,name),"expectation_tree");
+//        outputFolder.mkdirs();
+//
+//        LSBoost boost = new LSBoost();
+//
+//        LSBConfig trainConfig = new LSBConfig.Builder(dataSet)
+//                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+//                .dataSamplingRate(1).featureSamplingRate(1)
+//                .randomLevel(1)
+//                .softTreeEarlyStop(false)
+//                .considerHardTree(false)
+//                .considerExpectationTree(true)
+//                .considerProbabilisticTree(false)
+//                .build();
+//
+//        LSBoostTrainer trainer = new LSBoostTrainer(boost,trainConfig);
+//
+//        File trainFile = new File(outputFolder,"train_per");
+//        File testFile = new File(outputFolder,"test_per");
+//        File typeFile = new File(outputFolder,"type");
+//
+//        for (int i=0;i<100;i++){
+//            StopWatch stopWatch = new StopWatch();
+//            stopWatch.start();
+//            System.out.println("iteration "+i);
+//
+//
+//            if (i==0){
+//                trainer.addPriorRegressor();
+//            } else {
+//                trainer.iterate();
+//            }
+//            System.out.println("time spent on one iteration = " + stopWatch);
+//
+//
+//            FileUtils.writeStringToFile(trainFile,""+RMSE.rmse(boost, dataSet)+"\n",true);
+//            FileUtils.writeStringToFile(testFile,""+RMSE.rmse(boost, testSet)+"\n",true);
+//            List<Regressor> regressors = boost.getRegressors();
+//            Regressor regressor = regressors.get(i);
+//            if (regressor instanceof RegressionTree){
+//                FileUtils.writeStringToFile(typeFile,"hard tree"+"\n",true);
+//
+//            }
+//            if (regressor instanceof SoftRegStump){
+//                SoftRegStump softRegStump = (SoftRegStump)regressor;
+//                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.SquaredLossOfExpectation){
+//                    FileUtils.writeStringToFile(typeFile,"expectation tree"+"\n",true);
+//                }
+//                if (softRegStump.getLossType()== SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss){
+//                    FileUtils.writeStringToFile(typeFile,"probabilistic tree"+"\n",true);
+//                }
+//            }
+//        }
+//
+//    }
 }

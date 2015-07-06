@@ -39,11 +39,11 @@ public class RulesTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+
 
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();

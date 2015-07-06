@@ -184,8 +184,6 @@ public class PhraseSplitExtractor {
 
         int[] activeFeatures = {0};
         RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setActiveDataPoints(IntStream.range(0, validationIndexIds.length).toArray())
-                .setActiveFeatures(activeFeatures)
                 .setMaxNumLeaves(2)
                 .setMinDataPerLeaf(this.minDataPerLeaf);
         RegressionTree tree = RegTreeTrainer.fit(regTreeConfig, dataSet, residuals);

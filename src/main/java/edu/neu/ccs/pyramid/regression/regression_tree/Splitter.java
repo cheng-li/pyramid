@@ -28,11 +28,11 @@ public class Splitter {
                                        double[] labels,
                                        double[] probs){
         GlobalStats globalStats = new GlobalStats(labels,probs);
-        int[] activeFeatures = regTreeConfig.getActiveFeatures();
+
         int randomLevel = regTreeConfig.getRandomLevel();
 
         ForkJoinTask<List<SplitResult>> task = pool.submit(() ->
-                Arrays.stream(activeFeatures).parallel()
+                IntStream.range(0,dataSet.getNumFeatures()).parallel()
                         .mapToObj(featureIndex -> split(regTreeConfig, dataSet, labels,
                                 probs, featureIndex, globalStats))
                         .filter(Optional::isPresent)
@@ -109,8 +109,8 @@ public class Splitter {
                                        double[] labels,
                                        double[] probs){
         GlobalStats globalStats = new GlobalStats(labels,probs);
-        int[] activeFeatures = regTreeConfig.getActiveFeatures();
-        return Arrays.stream(activeFeatures).parallel()
+
+        return IntStream.range(0,dataSet.getNumFeatures()).parallel()
                 .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
                         probs,featureIndex, globalStats))
                 .filter(Optional::isPresent)

@@ -23,10 +23,7 @@ public class SeedExtractor {
         PriorProbClassifier priorProbClassifier = new PriorProbClassifier(dataSet.getNumClasses());
         priorProbClassifier.fit(dataSet);
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
-        int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
-        regTreeConfig.setActiveFeatures(activeFeatures);
+
         Comparator<SplitResult> comparator = Comparator.comparing(SplitResult::getReduction);
         for (int k=0;k<dataSet.getNumClasses();k++){
             double[] gradient = priorProbClassifier.getGradient(dataSet,k);

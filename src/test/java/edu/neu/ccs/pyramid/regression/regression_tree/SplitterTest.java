@@ -33,8 +33,7 @@ public class SplitterTest {
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         int[] activeFeatures = IntStream.range(0,dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
-        regTreeConfig.setActiveFeatures(activeFeatures);
+
         Comparator<SplitResult> comparator = Comparator.comparing(SplitResult::getReduction);
         List<Integer> results = Splitter.getAllSplits(regTreeConfig,dataSet,gradient)
                 .stream().sorted(comparator.reversed()).map(result -> result.getFeatureIndex()).limit(100)

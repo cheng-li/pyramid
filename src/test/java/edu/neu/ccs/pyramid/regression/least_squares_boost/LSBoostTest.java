@@ -39,21 +39,14 @@ public class LSBoostTest {
         int[] activeFeatures = IntStream.range(0, trainSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0, trainSet.getNumDataPoints()).toArray();
 
-        LSBConfig lsbConfig = LSBConfig.getBuilder(trainSet)
-                .considerHardTree(true)
-                .considerExpectationTree(false)
-                .considerProbabilisticTree(false)
-                .dataSamplingRate(1)
-                .featureSamplingRate(1)
+        LSBConfig lsbConfig = LSBConfig.getBuilder()
+
                 .learningRate(1)
-                .minDataPerLeaf(1)
-                .numLeaves(2)
-                .numSplitIntervals(100)
-                .randomLevel(1)
+
                 .build();
 
         LSBoost lsBoost = new LSBoost();
-        LSBoostTrainer trainer = new LSBoostTrainer(lsBoost,lsbConfig);
+        LSBoostTrainer trainer = new LSBoostTrainer(lsBoost,lsbConfig,trainSet);
         trainer.addPriorRegressor();
         for (int i=0;i<100;i++){
             System.out.println("iteration "+i);

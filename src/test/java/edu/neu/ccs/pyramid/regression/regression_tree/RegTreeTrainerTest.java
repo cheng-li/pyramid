@@ -38,11 +38,11 @@ public class RegTreeTrainerTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0, dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+        
 
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        
         regTreeConfig.setRandomLevel(3);
 
         regTreeConfig.setNumSplitIntervals(100);
@@ -80,11 +80,11 @@ public class RegTreeTrainerTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+        
 
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();
@@ -127,11 +127,11 @@ public class RegTreeTrainerTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+        
 
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();
@@ -175,11 +175,11 @@ public class RegTreeTrainerTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+        
 
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();
@@ -209,11 +209,11 @@ public class RegTreeTrainerTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0,dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+        
         int numLeaves = 1000;
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();
@@ -245,11 +245,11 @@ public class RegTreeTrainerTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0, dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+        
 
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();
@@ -293,11 +293,11 @@ public class RegTreeTrainerTest {
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
         int[] activeDataPoints = IntStream.range(0, dataSet.getNumDataPoints()).toArray();
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setActiveFeatures(activeFeatures);
+        
 
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
-        regTreeConfig.setActiveDataPoints(activeDataPoints);
+        
 
         regTreeConfig.setNumSplitIntervals(100);
         StopWatch stopWatch = new StopWatch();
