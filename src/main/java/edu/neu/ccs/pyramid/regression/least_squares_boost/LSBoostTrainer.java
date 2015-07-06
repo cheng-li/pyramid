@@ -99,7 +99,7 @@ public class LSBoostTrainer {
     }
     
     private Regressor fitRegressor(){
-        return lsbConfig.getRegressorFactory().fit(dataSet);
+        return lsbConfig.getRegressorFactory().fit(dataSet,gradients);
     }
 
 }
