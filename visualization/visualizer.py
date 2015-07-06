@@ -286,10 +286,10 @@ pre_tf_data = ''' <html>
                 return JSON.parse($('#raw-data').html())
             }
 
-            function showDistribution(totalCount, occurrence, rowNum) {
+            function showDistribution(totalCount, occurrence) {
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName('tr');
-                var cols = rows[rowNum].children;
+                var cols = rows[1].children;
                 var cell = cols[1];
 
                 str = ""
@@ -316,12 +316,12 @@ pre_tf_data = ''' <html>
             }
 
 
-            function displayFeature(distribution, rowNum) {
+            function displayFeature(distribution) {
                 str = ''
                 feature = distribution.feature
                 //distribution.occurrence.join('&')
                 style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='showDistribution(" + 
-                    distribution.totalCount + ", \\"" + distribution.occurrence.join('&') + "\\", " + (rowNum + 1) + ")'"
+                    distribution.totalCount + ", \\"" + distribution.occurrence.join('&') + "\\")'"
                 if ('ngram' in feature) {
                     str += '<button ' + style + '>' + feature.ngram + '</button>'
                 } else {
@@ -348,17 +348,25 @@ pre_tf_data = ''' <html>
                 return str
             }
 
-            function displayTopFeatures(featureDistributions, rowNum) {
+            function displayTopFeatures(featureDistributions) {
                 str = ''
                 str += serialize(featureDistributions, function (distribution, i) {
                             str = ""
                             if (i != 0) {
                                 str += ","
                             }
-                            str += displayFeature(distribution, rowNum)
+                            str += displayFeature(distribution)
                             return str
                         })
 
+                return str
+            }
+
+            function displayFeatureDistributions(index, len) {
+                str = ''
+                if (index == 0) {
+                    str += "<td style='vertical-align:top;text-align:left;' rowspan='" + len + "'></td>"
+                }
                 return str
             }
 
@@ -373,7 +381,7 @@ pre_tf_data = ''' <html>
                         "<td style='vertical-align:top;text-align:left;'>" + 
                         "<br>" + row.classIndex + "." + row.className +
                         "<br>" + displayTopFeatures(row.featureDistributions, i) + '</td>' +
-                        "<td style='vertical-align:top;text-align:left;'></td>" +
+                        displayFeatureDistributions(i, data.length) +
                         + '</tr>'
 
 
@@ -413,7 +421,7 @@ pre_data = '''<html>
         <script src="jquery.min.js"></script>
     </head>
     <body><br>
-        <table id='optionTable'  style='width:45%'>
+        <table id='optionTable'  style='width:55%'>
             <tr><th><br> Data Viewer Options: 
             </th></tr>
             <tr><td><br>
@@ -448,6 +456,7 @@ pre_data = '''<html>
                 <input id="abs" type="radio" name="sr" value="abs" checked>Abs Descending
                 <input id="ascending" type="radio" name="sr" value="ascending">Ascending
                 <input id="descending" type="radio" name="sr" value="descending">Descending
+                <input id="anti" type="radio" name="sr" value="anti">Anticorrelation
             </td></tr>
             <tr><td>
                 <p style="text-indent: 1em;">Rule display:
@@ -455,7 +464,7 @@ pre_data = '''<html>
             </td></tr>
             <tr><td>
                 <p style="text-indent: 1em;">
-                <a href="top_features.html">Top Features</a>
+                <a href="top_features.html" target="_blank">Top Features</a>
             </td></tr>
             <tr><td>
                 <center><button id="createFile">Create New HTML</button> 
@@ -480,9 +489,8 @@ pre_data = '''<html>
         <table id="mytable" border=1  align="center" style="width:100%">
             <caption> Report </caption>
                 <thead><tr>
-                    <td align="center" width="15%"><b>id & labels</b></td>
-                    <td align="center" width="15%"><b>predictedRanking</b></td>
-                    <td align="center" width="15%"><b>Text</b></td>
+                    <td align="center" width="20%"><b>id & labels</b></td>
+                    <td align="center" width="20%"><b>Text</b></td>
                     <td align="center" width="20%"><b>TP</b></td>
                     <td align="center" width="20%"><b>FP</b></td>
                     <td align="center" width="20%"><b>FN</b></td>
@@ -603,7 +611,7 @@ pre_data = '''<html>
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName('tr');
                 var cols = rows[rowNum].children;
-                var cell = cols[2];
+                var cell = cols[1];
                 var tagName = "highlights" + (rowNum - 1)
                 var highlightsInput = document.getElementById(tagName)
                 highlights = highlightsInput.value
@@ -749,6 +757,7 @@ pre_data = '''<html>
             function displayPredictedRanking(row, displayOptions) {
                 numOfLabels = 0
                 predictedRanking = row.predictedRanking
+                var split = false
 
                 if (displayOptions.numOfLabels == -1) {
                     numOfLabels = predictedRanking.length
@@ -764,13 +773,15 @@ pre_data = '''<html>
 
                 if (numOfLabels > 0) {
                     return serialize(predictedRanking.slice(0, numOfLabels), function (lb) {
-                        //if (lb.type != "") {
+                            var str = ''
                             text = lb.className + '(' + lb.prob.toFixed(2) + ')'
-                            var str = '<li>' + text.fontcolor(getLabelColor(lb.type)) + '</li>'
-                        //} else {
-                            //var str = '<li>' + lb.className + '(' + lb.prob.toFixed(2) + ')</li>'
-                        //}
-                        return str
+                            if (split == false && lb.prob.toFixed(2) < 0.5) {
+                                str += '<hr>'
+                                split = true
+                            }
+                            str += '<li>' + text.fontcolor(getLabelColor(lb.type)) + '</li>'
+
+                            return str
                     }) 
                 } else {
                     return ""
@@ -810,20 +821,11 @@ pre_data = '''<html>
                             }
                             return str
                          }) + 
-                        '<br>Predictions:' +
-                        serialize(row.idlabels.predictions, function (lb) {
-                            var str = ''
-                            for (var k in lb) {
-                                str += '<li>' + lb[k] + '</li>'
-                            }
-                            return str
-                        }) + 
-                        //'<br>probForPredictedLabels: ' + row.probForPredictedLabels.toFixed(2) + 
+                        '<br>PredictedRanking:' +
+                        displayPredictedRanking(row, displayOptions) + 
                         '<br><br>Feedback:' +
                         displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                         '</td>' +
-                        "<td style='vertical-align:top;text-align:left;'> " + 
-                        displayPredictedRanking(row, displayOptions) + '</td>' +
                         "<td style='vertical-align:top;text-align:left;'>" + row.body
                         + '</td>' +
                         displayClass(row.TP, displayOptions, i) +
@@ -949,7 +951,7 @@ pre_data = '''<html>
                 })
             }
 
-            function sortByScoreAscending(a, b) {
+            function sortByScoreAscending(labels) {
                 labels.forEach(function(lb) {
                     lb.rules = lb.rules.sort(function(a, b) {
                         return a.score - b.score
@@ -957,7 +959,7 @@ pre_data = '''<html>
                 })
             }
 
-            function sortByScoreDescending(a, b) {
+            function sortByScoreDescending(labels) {
                 labels.forEach(function(lb) {
                     lb.rules = lb.rules.sort(function(a, b) {
                         return b.score - a.score
@@ -981,10 +983,19 @@ pre_data = '''<html>
                         sortByScoreAscending(row.TN)
                     })
                 } else if (displayOptions.sortRules == 'descending') {
+                    data.forEach(function (row) {
                         sortByScoreDescending(row.TP)
                         sortByScoreDescending(row.FP)
                         sortByScoreDescending(row.FN)
                         sortByScoreDescending(row.TN)
+                    })
+                } else if (displayOptions.sortRules == 'anti') {
+                    data.forEach(function (row) {
+                        sortByScoreAscending(row.TP)
+                        sortByScoreAscending(row.FP)
+                        sortByScoreDescending(row.FN)
+                        sortByScoreDescending(row.TN)
+                    })
                 } else {
                     alert(displayOptions.sortRules)
                 }
@@ -1037,6 +1048,9 @@ pre_data = '''<html>
                 $('#descending').click(function () {
                     refresh()
                 })
+                $('#anti').click(function () {
+                    refresh()
+                })
                 $('#details').click(function () {
                     refresh()
                 })
@@ -1057,6 +1071,7 @@ pre_data = '''<html>
                 colums = ['TP', 'FP', 'FN', 'TN']
                 feedbackColumns = ['failure', 'incomplete', 'bad_rule', 'bad_matching']
                 selections = {'failure':0, 'incomplete':0, 'bad_rule':0, 'bad_matching':0}
+                startIndex = 2
 
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName("tr");
@@ -1073,9 +1088,9 @@ pre_data = '''<html>
 
                     for (var i = 0; i < colums.length; i++) {
                         if (displayOptions.fields.indexOf(colums[i]) == -1) {
-                            cols[i + 3].style.display = 'none';
+                            cols[startIndex + i].style.display = 'none';
                         } else {
-                            cols[i + 3].style.display = 'table-cell';
+                            cols[startIndex + i].style.display = 'table-cell';
                         }
                     }
                 }
