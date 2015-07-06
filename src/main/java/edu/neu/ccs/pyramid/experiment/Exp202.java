@@ -3,8 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.data_formatter.reuters.IndexBuilder;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.util.Serialization;
 
@@ -56,6 +55,12 @@ public class Exp202 {
 
         Map<String, Double> trainAcc = new HashMap<>();
         Map<String, Double> testAcc = new HashMap<>();
+        Map<String, Double> trainPrecision = new HashMap<>();
+        Map<String, Double> testPrecision = new HashMap<>();
+        Map<String, Double> trainRecall = new HashMap<>();
+        Map<String, Double> testRecall = new HashMap<>();
+        Map<String, Double> trainF1 = new HashMap<>();
+        Map<String, Double> testF1 = new HashMap<>();
 
 //        int labelId = 0;
         for (String careLabel : labels) {
@@ -64,43 +69,56 @@ public class Exp202 {
             try {
                 careLabelIndex = labelTranslator.toIntLabel(careLabel);
             } catch (Exception e) {
-//                System.out.println("Missing label: " + careLabel);
-//                labelId--;
                 continue;
             }
 
 
-            int count = 0;
-            // get train acc
+            int[] trueLabelsTrain = new int[trainTrue.length];
+            int[] predictionTrain = new int[trainTrue.length];
+            // get trueLabels and prediction arrays for train
             for (int i=0; i<trainTrue.length; i++) {
                 MultiLabel yHat = trainPredict.get(i);
                 MultiLabel y = trainTrue[i];
 
-                // predict correctly
-                if ( (yHat.matchClass(careLabelIndex) && y.matchClass(careLabelIndex)) ||
-                        (!yHat.matchClass(careLabelIndex) && !y.matchClass(careLabelIndex)) ) {
-                    count++;
+                if (yHat.matchClass(careLabelIndex)) {
+                    predictionTrain[i] = 1;
+                } else {
+                    predictionTrain[i] = 0;
+                }
+                if (y.matchClass(careLabelIndex)) {
+                    trueLabelsTrain[i] = 1;
+                } else {
+                    trueLabelsTrain[i] = 0;
                 }
             }
-            double acc = (double) count / trainTrue.length;
-            trainAcc.put(careLabel, acc);
+            trainAcc.put(careLabel, Accuracy.accuracy(trueLabelsTrain, predictionTrain));
+            trainPrecision.put(careLabel, Precision.precision(trueLabelsTrain, predictionTrain, 1));
+            trainRecall.put(careLabel, Recall.recall(trueLabelsTrain, predictionTrain, 1));
+            trainF1.put(careLabel, FMeasure.f1(trainPrecision.get(careLabel), trainRecall.get(careLabel)));
 
-            count = 0;
-            // get test acc
+            int[] trueLabelsTest = new int[testTrue.length];
+            int[] predictionTest = new int[testTrue.length];
+            // get trueLabels and prediction arrays for train
             for (int i=0; i<testTrue.length; i++) {
                 MultiLabel yHat = testPredict.get(i);
                 MultiLabel y = testTrue[i];
 
-                // predict correctly
-                if ( (yHat.matchClass(careLabelIndex) && y.matchClass(careLabelIndex)) ||
-                        (!yHat.matchClass(careLabelIndex) && !y.matchClass(careLabelIndex)) ) {
-                    count++;
-                } else if (careLabel.startsWith("C41 :")) {
-                    System.out.println(i + ": " + test.getIdTranslator().toExtId(i));
+                if (yHat.matchClass(careLabelIndex)) {
+                    predictionTest[i] = 1;
+                } else {
+                    predictionTest[i] = 0;
+                }
+                if (y.matchClass(careLabelIndex)) {
+                    trueLabelsTest[i] = 1;
+                } else {
+                    trueLabelsTest[i] = 0;
                 }
             }
-            acc = (double) count / testTrue.length;
-            testAcc.put(careLabel, acc);
+            testAcc.put(careLabel, Accuracy.accuracy(trueLabelsTest, predictionTest));
+            testPrecision.put(careLabel, Precision.precision(trueLabelsTest, predictionTest, 1));
+            testRecall.put(careLabel, Recall.recall(trueLabelsTest, predictionTest, 1));
+            testF1.put(careLabel, FMeasure.f1(testPrecision.get(careLabel), testRecall.get(careLabel)));
+
         }
 
         String output = config.getString("output");
@@ -109,18 +127,23 @@ public class Exp202 {
         BufferedWriter bw = new BufferedWriter(new FileWriter(outputTrain));
         bw.write("accuracy on training set = " + Accuracy.accuracy(trainTrue, trainPredict) + "\n");
         bw.write("overlap on training set = " + Overlap.overlap(trainTrue, trainPredict) + "\n");
+        bw.write("Label\tAccuracy\tPrecision\tRecall\tF1\n");
         for (Map.Entry<String, Double> entry : trainAcc.entrySet()) {
-            bw.write(entry.getKey() + "\t" + entry.getValue() + "\n");
+            String keyLabel = entry.getKey();
+            bw.write(keyLabel + "\t" + trainAcc.get(keyLabel) + "\t" + trainPrecision.get(keyLabel) + "\t" +
+            trainRecall.get(keyLabel) + "\t" + trainF1.get(keyLabel) + "\n");
         }
         bw.close();
 
         bw = new BufferedWriter(new FileWriter(outputTest));
         bw.write("accuracy on testing set = " + Accuracy.accuracy(testTrue, testPredict) + "\n");
         bw.write("overlap on testing set = " + Overlap.overlap(testTrue, testPredict) + "\n");
+        bw.write("Label\tAccuracy\tPrecision\tRecall\tF1\n");
         for (Map.Entry<String, Double> entry : testAcc.entrySet()) {
-            bw.write(entry.getKey() + "\t" + entry.getValue() + "\n");
+            String keyLabel = entry.getKey();
+            bw.write(keyLabel + "\t" + testAcc.get(keyLabel) + "\t" + testPrecision.get(keyLabel) + "\t" +
+                    testRecall.get(keyLabel) + "\t" + testF1.get(keyLabel) + "\n");
         }
         bw.close();
-
     }
 }
