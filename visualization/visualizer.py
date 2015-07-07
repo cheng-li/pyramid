@@ -40,25 +40,26 @@ def getPositions(docId, field, keywords, slop, in_order):
     if len(res["hits"]["hits"]) <= 0:
         return []
     positions = []
-    text = res["hits"]["hits"][0]["_source"]["body"]
-    key = res["hits"]["hits"][0]["highlight"].keys()[0]
-    highlights = res["hits"]["hits"][0]["highlight"][key]
-    for HL in highlights:
-        cleanHL = HL.replace("<em>", "")
-        cleanHL = cleanHL.replace("</em>", "")
-        baseindex = text.find(cleanHL)
 
-        # in case the highlight not found in body
-        if baseindex == -1:
-            continue
+    for field in res["hits"]["hits"][0]["highlight"]:
+        text = res["hits"]["hits"][0]["_source"][field]
+        highlights = res["hits"]["hits"][0]["highlight"][field]
+        for HL in highlights:
+            cleanHL = HL.replace("<em>", "")
+            cleanHL = cleanHL.replace("</em>", "")
+            baseindex = text.find(cleanHL)
 
-        while HL.find("<em>") != -1:
-            start = HL.find("<em>") + baseindex
-            HL = HL.replace("<em>", "", 1)
-            end = HL.find("</em>") + baseindex
-            HL = HL.replace("</em>", "", 1)
-            curPos = [start, end]
-            positions.append(curPos)
+            # in case the highlight not found in body
+            if baseindex == -1:
+                continue
+
+            while HL.find("<em>") != -1:
+                start = HL.find("<em>") + baseindex
+                HL = HL.replace("<em>", "", 1)
+                end = HL.find("</em>") + baseindex
+                HL = HL.replace("</em>", "", 1)
+                curPos = [start, end]
+                positions.append(curPos)
     return positions
 
 
@@ -199,8 +200,14 @@ def createTable(data):
         
         # column 3 text
         res = es.get(index=esIndex, doc_type="document", id=row["id"])
-        oneRow.update(res["_source"])
-        oneRow["body"] = oneRow["body"].encode('utf-8').replace("<", "&lt").replace(">", "&gt")
+        keys = {"title", "body"}
+        oneRow["text"] = {}
+        oneRow["others"] = {}
+        for key in res["_source"]:
+            if key in keys and isinstance(res["_source"][key], basestring):
+                oneRow["text"][key] = res["_source"][key].encode('utf-8').replace("<", "&lt").replace(">", "&gt")
+            else:
+                oneRow["others"][key] = res["_source"][key]
         
         # column 4 - 7 TP FP FN TN columns
         createTFPNColumns(row, line_count, oneRow)
@@ -607,41 +614,47 @@ pre_data = '''<html>
                 return -1
             }
 
-            function highlightText(poses, rowNum) {
+            function highlightText(poses, rowNum, field) {
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName('tr');
                 var cols = rows[rowNum].children;
                 var cell = cols[1];
-                var tagName = "highlights" + (rowNum - 1)
-                var highlightsInput = document.getElementById(tagName)
-                highlights = highlightsInput.value
-                
-                highlights = convertStringToArray(highlights)
-                //alert(highlights)
+                var tagName = "#highlights" + (rowNum - 1)
+                var highlights = $(tagName).data('data');
 
-                if ((index = indexOfHighlights(poses, highlights)) != -1) {
-                    highlights.splice(index, 1)
-                } 
-                else {
-                    highlights.push(poses)
+                if (rowNum.length == 0) {
+                    return
                 }
 
-                positions = convertHighlightsIntoPositions(highlights)
-                keys = Object.keys(positions)
-                var text = document.getElementById("text" + (rowNum - 1)).innerHTML;
                 newText = ""
-                start = 0
-                for (var i = 0; i < keys.length; i++) {
-                    index = keys[i]
-                    end = index
-                    newText += text.substring(start, end) + 
-                        text.substring(end, positions[index]['end']).fontcolor(positions[index]['color'])
-                    start = positions[index]['end']
-                }
-                newText += text.substring(start, text.length)
-                cell.innerHTML = newText
+                for (key in highlights) {
+                    hs = highlights[key]
+                    if (key == field) {
+                        if ((index = indexOfHighlights(poses, hs)) != -1) {
+                            hs.splice(index, 1)
+                        } 
+                        else {
+                            hs.push(poses)
+                        }
+                    }
 
-                highlightsInput.value = convertArrayToString(highlights)
+                    positions = convertHighlightsIntoPositions(hs)
+                    keys = Object.keys(positions)
+                    var text = document.getElementById(key + (rowNum - 1)).innerHTML;
+                    newText += key + ":<br>"
+                    start = 0
+                    for (var i = 0; i < keys.length; i++) {
+                        index = keys[i]
+                        end = index
+                        newText += text.substring(start, end) + 
+                            text.substring(end, positions[index]['end']).fontcolor(positions[index]['color'])
+                        start = positions[index]['end']
+                    }
+                    newText += text.substring(start, text.length) + "<br>"
+                }
+
+                cell.innerHTML = newText
+                $(tagName).data('data', highlights);
             }
 
             function createOption(value, isSelected) {
@@ -788,6 +801,50 @@ pre_data = '''<html>
                 }
             }
 
+            function displayText(text) {
+                keys = Object.keys(text)
+                str = ''
+                for (var i = 0; i < keys.length; i++) {
+                    key = keys[i]
+                    str += key + ":<br>" + text[key] + "<br>"
+                }
+
+                return str
+            }
+
+            function storeOrigText(text, index) {
+                str = ""
+                keys = Object.keys(text)
+                for (var i = 0; i < keys.length; i++) {
+                    str += "<pre id=" + keys[i] + index + " style='display:none'>" + text[keys[i]] + '</pre>'
+                }
+
+                return str
+            }
+
+            function displayOthers(others) {
+                str = ''
+
+                keys = Object.keys(others)
+                for (i = 0; i < keys.length; i++) {
+                    key = keys[i]
+                    str += "<br><br>" + key + ": " + others[key]
+                }
+
+                return str
+            }
+
+            function initialHighlights(data) {
+                data.forEach(function (row, i) {
+                    keys = Object.keys(row.text)
+                    highlights = {}
+                    for (j = 0; j < keys.length; j++) {
+                        highlights[keys[j]] = []
+                    }
+                    $("#highlights" + i).data('data', highlights);
+                })
+            }
+
             function render(data, displayOptions) {
                 generateFeedbackDataTable(data)
 
@@ -801,12 +858,10 @@ pre_data = '''<html>
                         "<td style='vertical-align:top;text-align:left;' width='5%'>" + 
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
                         "<input id='highlights" + i + "' style='display:none' value=''>" +
-                        "<pre id='text" + i + "' style='display:none'>" + row.body + '</pre>' + 
+                        storeOrigText(row.text, i) +
+                        displayOthers(row.others) +
                         "<br>ID:&nbsp" + row.idlabels.id + 
-                        "<br><br>File&nbspName:&nbsp" + row.file_name +
-                        "<br><br>Codes:&nbsp" + row.codes +
-                        "<br><br>Split:&nbsp" + row.split +
-                        "<br><br>Real&nbspLabels:&nbsp" +
+                        displayOthers(row.others) + 
                         serialize(row.real_labels, function (lb) {
                             var str = ''
                             str += '<li>' + lb + '</li>'
@@ -826,7 +881,8 @@ pre_data = '''<html>
                         '<br><br>Feedback:' +
                         displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                         '</td>' +
-                        "<td style='vertical-align:top;text-align:left;'>" + row.body
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        displayText(row.text) +
                         + '</td>' +
                         displayClass(row.TP, displayOptions, i) +
                         displayClass(row.FP, displayOptions, i) +
@@ -838,6 +894,7 @@ pre_data = '''<html>
                 })
 
                 $body.append(html)
+                initialHighlights(data)
                 refreshTable(displayOptions)
                 createNewHTML()
             }
@@ -853,7 +910,7 @@ pre_data = '''<html>
                 }
                 str += '<li>' + serialize(rule['checks'], function (check) {
                             style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
-                                (rowNum + 1) + ")'"
+                                (rowNum + 1) + ", \\"" + check.field + "\\")'"
                             // alert(Object.keys(check))
                             if ('ngram' in check) {
                                 str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
