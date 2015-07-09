@@ -859,7 +859,6 @@ pre_data = '''<html>
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
                         "<input id='highlights" + i + "' style='display:none' value=''>" +
                         storeOrigText(row.text, i) +
-                        displayOthers(row.others) +
                         "<br>ID:&nbsp" + row.idlabels.id + 
                         displayOthers(row.others) + 
                         serialize(row.real_labels, function (lb) {
@@ -883,12 +882,12 @@ pre_data = '''<html>
                         '</td>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
                         displayText(row.text) +
-                        + '</td>' +
+                        '</td>' +
                         displayClass(row.TP, displayOptions, i) +
                         displayClass(row.FP, displayOptions, i) +
                         displayClass(row.FN, displayOptions, i) +
-                        displayClass(row.TN, displayOptions, i)
-                        + '</tr>'
+                        displayClass(row.TN, displayOptions, i) +
+                        '</tr>'
 
 
                 })
