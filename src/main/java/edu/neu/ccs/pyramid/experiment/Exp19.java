@@ -94,20 +94,22 @@ public class Exp19 {
         }
 
 
-        if (config.getBoolean("train.useLR")){
-            LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-            ElasticNetLogisticTrainer logisticTrainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
-                    .setEpsilon(0.01).setL1Ratio(config.getDouble("train.lr.l1Ratio"))
-                    .setRegularization(config.getDouble("train.lr.regularization")).build();
-            logisticTrainer.train();
-            System.out.println("lr loss = "+logisticTrainer.getLoss());
-            System.out.println("lr accuracy on training set = "+Accuracy.accuracy(logisticRegression,dataSet));
-            System.out.println("lr accuracy on test set = "+Accuracy.accuracy(logisticRegression,testSet));
+//        if (config.getBoolean("train.useLR")){
+//            LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+//            ElasticNetLogisticTrainer logisticTrainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
+//                    .setEpsilon(0.01).setL1Ratio(config.getDouble("train.lr.l1Ratio"))
+//                    .setRegularization(config.getDouble("train.lr.regularization")).build();
+//            logisticTrainer.train();
+//            System.out.println("lr loss = "+logisticTrainer.getLoss());
+//            System.out.println("lr accuracy on training set = "+Accuracy.accuracy(logisticRegression,dataSet));
+//            System.out.println("lr accuracy on test set = "+Accuracy.accuracy(logisticRegression,testSet));
+//
+//            System.out.println("lr number of used features in all classes = "+
+//                    LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
+//            trainer.addLogisticRegression(logisticRegression);
+//        }
 
-            System.out.println("lr number of used features in all classes = "+
-                    LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
-            trainer.addLogisticRegression(logisticRegression);
-        }
+
 
 
         for (int i=0;i<numIterations;i++){
@@ -117,10 +119,15 @@ public class Exp19 {
             stopWatch1.start();
 
             trainer.iterate();
-            if (i%10==0){
-                System.out.println("accuracy on training set = "+Accuracy.accuracy(lkTreeBoost,dataSet));
-                System.out.println("accuracy on test set = "+Accuracy.accuracy(lkTreeBoost,testSet));
+
+            if (config.getBoolean("train.showProgress")){
+                int interval = config.getInt("train.showProgress.interval");
+                if (i%interval==0){
+                    System.out.println("accuracy on training set = "+Accuracy.accuracy(lkTreeBoost,dataSet));
+                    System.out.println("accuracy on test set = "+Accuracy.accuracy(lkTreeBoost,testSet));
+                }
             }
+
             System.out.println("time spent on one iteration = "+stopWatch1);
             //debug
 //                double[] gradient = lkTreeBoost.getGradient(0);

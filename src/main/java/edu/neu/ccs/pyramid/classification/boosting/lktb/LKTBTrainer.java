@@ -404,7 +404,7 @@ public class LKTBTrainer {
                     leafOutputCalculator);
             // use un-shrunk one to calculate mse
             double mse = MSE.mse(pseudoResponse,regressionTree.predict(lktbConfig.getDataSet()));
-            System.out.println("hard tree mse = "+mse);
+//            System.out.println("hard tree mse = "+mse);
 
             if (lktbConfig.getLeafOutputType()==LeafOutputType.AVERAGE){
                 regressionTree.shrink(learningRate);
