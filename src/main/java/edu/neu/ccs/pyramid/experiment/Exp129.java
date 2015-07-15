@@ -11,17 +11,15 @@ import org.elasticsearch.node.Node;
 import java.io.BufferedReader;
 import java.io.FileReader;
 
-import static edu.neu.ccs.pyramid.data_formatter.yelp.IndexBuilder.createMapping;
 import static edu.neu.ccs.pyramid.data_formatter.yelp.IndexBuilder.createBuilder;
+import static edu.neu.ccs.pyramid.data_formatter.yelp.IndexBuilder.createMapping;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
-
 /**
- * index whole yelp
- * Created by Rainicy on 5/1/15.
+ * index a subset of yelp
+ * Created by chengli on 7/15/15.
  */
-public class Exp95 {
-
+public class Exp129 {
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("please specify the config file.");
@@ -79,6 +77,9 @@ public class Exp95 {
                     .execute()
                     .actionGet();
             ++id;
+            if (id>=10000){
+                break;
+            }
 
         }
         br.close();

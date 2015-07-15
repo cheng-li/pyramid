@@ -10,13 +10,19 @@ import java.io.IOException;
  */
 public class IndexBuilder {
 
-    public static XContentBuilder createBuilder(String reviewId, String body, String label) throws IOException {
+    public static XContentBuilder createBuilder(int id, String reviewId, String body, String label) throws IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder();
 
         builder.startObject();
-        builder.field("reviewId", reviewId);
+        builder.field("review_id", reviewId);
         builder.field("body", body);
         builder.field("label", label);
+        if (id%5==0){
+            builder.field("split","test");
+        } else {
+            builder.field("split","train");
+        }
+
         builder.endObject();
 
         return builder;
@@ -41,6 +47,11 @@ public class IndexBuilder {
                 .field("analyzer", "my_analyzer")
                 .endObject()
                 .startObject("label")
+                .field("type", "string")
+                .field("store", true)
+                .field("index", "not_analyzed")
+                .endObject()
+                .startObject("split")
                 .field("type", "string")
                 .field("store", true)
                 .field("index", "not_analyzed")
