@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.feature.Ngram;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,9 @@ public class Exp100 {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input, "train.trec"),
                 DataSetType.CLF_SPARSE, true);
 
+
+        System.out.println("count per class = ");
+        System.out.println(Arrays.toString(DataSetUtil.getCountPerClass(dataSet)));
 
         System.out.println("density = "+ DataSetUtil.density(dataSet));
 
