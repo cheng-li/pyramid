@@ -13,15 +13,18 @@ import java.util.Set;
 
 /**
  * merge train and test, repartition into folds
- * Created by chengli on 5/5/15.
+ * Created by chengli on numFold/numFold/1numFold.
  */
 public class Exp97 {
+    
+    static int numFold = 5;
+    //todo make number a para
 
     public static void mainFromConfig(Config config) throws Exception{
 
         ClfDataSet all = merge(config);
-        for (int i=1;i<=5;i++){
-            produceFold(config,all,5,i);
+        for (int i=1;i<=numFold;i++){
+            produceFold(config,all,numFold,i);
 
         }
     }
@@ -36,8 +39,8 @@ public class Exp97 {
         System.out.println(config);
 
         ClfDataSet all = merge(config);
-        for (int i=1;i<=5;i++){
-            produceFold(config,all,5,i);
+        for (int i=1;i<=numFold;i++){
+            produceFold(config,all,numFold,i);
 
         }
 
@@ -53,7 +56,7 @@ public class Exp97 {
     }
 
     public static void produceFold(Config config, ClfDataSet all, int numFolds, int fold){
-        Pair<ClfDataSet, ClfDataSet> pair = DataSetUtil.splitToTrainValidation(all,0.8);
+        Pair<ClfDataSet, ClfDataSet> pair = DataSetUtil.splitToTrainValidation(all,1-1.0/numFolds);
         String output = config.getString("output.folder");
         File foldFolder = new File(output,"fold_"+fold);
         foldFolder.mkdirs();
