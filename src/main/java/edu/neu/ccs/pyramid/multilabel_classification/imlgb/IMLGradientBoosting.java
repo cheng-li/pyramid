@@ -26,10 +26,10 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
     /**
      * legal assignments of labels, optional
      */
-    //todo add a boolean for this
     private List<MultiLabel> assignments;
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
+    private PredictFashion predictFashion = PredictFashion.INDEPENDENT;
 
     public IMLGradientBoosting(int numClasses) {
         this.numClasses = numClasses;
@@ -57,20 +57,30 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
     }
 
 
+    public PredictFashion getPredictFashion() {
+        return predictFashion;
+    }
+
+    public void setPredictFashion(PredictFashion predictFashion) {
+        this.predictFashion = predictFashion;
+    }
 
     /**
-     * if legal assignments are not present, do prediction without any constraint;
-     * if legal assignments are present, only consider these assignments
+     * independent do prediction without any constraint;
+     * if crf, only consider these assignments
      * @param vector
      * @return
      */
     @Override
     public MultiLabel predict(Vector vector) {
-        MultiLabel prediction;
-        if (this.assignments!=null){
-            prediction = predictWithConstraints(vector);
-        } else {
-            prediction = predictWithoutConstraints(vector);
+        MultiLabel prediction = null;
+        switch (this.predictFashion){
+            case INDEPENDENT:
+                prediction = predictWithoutConstraints(vector);
+                break;
+            case CRF:
+                prediction = predictWithConstraints(vector);
+                break;
         }
         return prediction;
     }
@@ -97,6 +107,9 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
      * @return
      */
     private MultiLabel predictWithConstraints(Vector vector){
+        if (this.assignments==null){
+            throw new RuntimeException("CRF is used but legal assignments is not specified!");
+        }
         double maxScore = Double.NEGATIVE_INFINITY;
         MultiLabel prediction = null;
         double[] classScores = predictClassScores(vector);
@@ -170,14 +183,22 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         if (assignment.outOfBound(this.numClasses)){
             return 0;
         }
-        if (this.assignments!=null){
-            return predictAssignmentProbWithConstraint(vector,assignment);
-        } else {
-            return predictAssignmentProbWithoutConstraint(vector,assignment);
+        double prob = 0;
+        switch (this.predictFashion){
+            case INDEPENDENT:
+                prob = predictAssignmentProbWithoutConstraint(vector,assignment);
+                break;
+            case CRF:
+                prob = predictAssignmentProbWithConstraint(vector,assignment);
+                break;
         }
+        return prob;
     }
 
     double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
+        if (this.assignments==null){
+            throw new RuntimeException("CRF is used but legal assignments is not specified!");
+        }
         if (!this.assignments.contains(assignment)){
             return 0;
         }
@@ -267,5 +288,10 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
 
     void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
+    }
+
+
+    public static enum PredictFashion {
+        CRF, INDEPENDENT
     }
 }

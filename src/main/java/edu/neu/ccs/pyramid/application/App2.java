@@ -137,11 +137,16 @@ public class App2 {
             boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         } else {
             boosting  = new IMLGradientBoosting(numClasses);
-            String predictionFashion = config.getString("train.prediction.fashion");
-            if (predictionFashion.equalsIgnoreCase("crf")){
-                List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
-                boosting.setAssignments(assignments);
-            }
+        }
+
+        String predictFashion = config.getString("predict.fashion").toLowerCase();
+        switch (predictFashion){
+            case "crf":
+                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
+                break;
+            case "independent":
+                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
+                break;
         }
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
@@ -158,7 +163,6 @@ public class App2 {
                         dataSet));
                 System.out.println("overlap on training set = "+ Overlap.overlap(boosting, dataSet));
             }
-
         }
         File serializedModel =  new File(output,modelName);
 
@@ -177,6 +181,16 @@ public class App2 {
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        String predictFashion = config.getString("predict.fashion").toLowerCase();
+        switch (predictFashion){
+            case "crf":
+                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
+                break;
+            case "independent":
+                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
+                break;
+        }
+
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
         System.out.println("accuracy on data set = "+Accuracy.accuracy(boosting,dataSet));
