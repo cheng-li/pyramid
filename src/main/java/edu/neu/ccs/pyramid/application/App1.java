@@ -83,11 +83,13 @@ public class App1 {
         return index;
     }
 
-    static String[] getDocsForSplit(Config config, ESIndex index, String splitValue) throws Exception{
-        String[] ids = null;
+    static String[] getDocsForSplit(Config config, ESIndex index, List<String> splitValues) throws Exception{
         String splitField = config.getString("index.splitField");
-        List<String> docs = index.termFilter(splitField,splitValue);
-        ids = docs.toArray(new String[docs.size()]);
+        Set<String> docs = new HashSet<>();
+        for (String value: splitValues){
+            docs.addAll(index.termFilter(splitField,value));
+        }
+        String[] ids = docs.toArray(new String[docs.size()]);
         return ids;
     }
 
@@ -378,7 +380,7 @@ public class App1 {
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
         MultiLabelIndex index = loadIndex(config);
-        String[] trainIndexIds = getDocsForSplit(config, index, config.getString("index.splitField.train"));
+        String[] trainIndexIds = getDocsForSplit(config, index, config.getStrings("index.splitField.train"));
 
         LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(config, index, trainIndexIds);
         Serialization.serialize(trainLabelTranslator,new File(metaDataFolder,"label_translator.ser"));
@@ -406,11 +408,14 @@ public class App1 {
         System.out.println("meta data generated");
     }
 
-    static void createDataSet(Config config, String splitValue) throws Exception{
-        System.out.println("creating data set "+splitValue);
+    static void createDataSet(Config config, List<String> splitValues) throws Exception{
+        String splitValueAll = splitListToString(splitValues);
+
+
+        System.out.println("creating data set "+splitValueAll);
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         MultiLabelIndex index = loadIndex(config);
-        String[] indexIds = getDocsForSplit(config, index, splitValue);
+        String[] indexIds = getDocsForSplit(config, index, splitValues);
         IdTranslator idTranslator = loadIdTranslator(indexIds);
         String archive = config.getString("output.folder");
         LabelTranslator trainLabelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
@@ -421,22 +426,33 @@ public class App1 {
         MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator);
         dataSet.setFeatureList(featureList);
 
-        File dataFile = new File(new File(archive,"data_sets"),splitValue);
+        File dataFile = new File(new File(archive,"data_sets"),splitValueAll);
 
         TRECFormat.save(dataSet,dataFile);
         index.close();
-        System.out.println("data set "+splitValue+" created");
+        System.out.println("data set "+splitValueAll+" created");
     }
 
     static void createTrainSet(Config config) throws Exception{
         generateMetaData(config);
-        String splitValue = config.getString("index.splitField.train");
+        List<String> splitValue = config.getStrings("index.splitField.train");
         createDataSet(config,splitValue);
     }
 
     static void createTestSet(Config config) throws Exception{
-        String splitValue = config.getString("index.splitField.test");
+        List<String> splitValue = config.getStrings("index.splitField.test");
         createDataSet(config,splitValue);
+    }
+
+    public static String splitListToString(List<String> splitValues){
+        String splitValueAll = "";
+        for (int i=0;i<splitValues.size();i++){
+            splitValueAll = splitValueAll+splitValues.get(i);
+            if (i<splitValues.size()-1){
+                splitValueAll = splitValueAll+"_";
+            }
+        }
+        return splitValueAll;
     }
 
 

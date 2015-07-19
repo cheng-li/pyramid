@@ -56,8 +56,8 @@ public class App3 {
         Config.copy(config,app2Config,same);
 
         app2Config.setString("input.folder",config.getString("output.folder"));
-        app2Config.setString("input.trainData",config.getString("index.splitField.train"));
-        app2Config.setString("input.testData",config.getString("index.splitField.test"));
+        app2Config.setString("input.trainData",App1.splitListToString(config.getStrings("index.splitField.train")));
+        app2Config.setString("input.testData",App1.splitListToString(config.getStrings("index.splitField.test")));
         return app2Config;
     }
 
