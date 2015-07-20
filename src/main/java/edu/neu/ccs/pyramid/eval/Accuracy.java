@@ -36,7 +36,13 @@ public class Accuracy {
     }
 
 
-
+    /**
+     * From "Mining Multi-label Data by Grigorios Tsoumakas".
+     * Exact match ratio.
+     * @param multiLabels
+     * @param predictions
+     * @return
+     */
     public static double accuracy(MultiLabel[] multiLabels, List<MultiLabel> predictions){
         double numCorrect = IntStream.range(0,multiLabels.length).parallel()
                 .filter(i-> multiLabels[i].equals(predictions.get(i)))
@@ -48,5 +54,21 @@ public class Accuracy {
         return accuracy(dataSet.getMultiLabels(),classifier.predict(dataSet));
     }
 
+    /**
+     * proportion of the predicted correct labels to the total number of labels for that instance.
+     * @param multiLabels
+     * @param predictions
+     * @return
+     */
+    public static double partialAccuracy(MultiLabel[] multiLabels, List<MultiLabel> predictions) {
+        double a = 0.0;
+        for (int i=0; i<multiLabels.length; i++) {
+            MultiLabel label = multiLabels[i];
+            MultiLabel prediction = predictions.get(i);
+            a += MultiLabel.intersection(label, prediction).size() * 1.0 / MultiLabel.union(label, prediction).size();
+        }
+
+        return a / multiLabels.length;
+    }
 
 }
