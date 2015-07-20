@@ -162,16 +162,17 @@ public class App2 {
         //todo make it better
         trainer.setActiveFeatures(activeFeatures);
 
+        int progressInterval = config.getInt("train.showProgress.interval");
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
             trainer.iterate();
-            System.out.println("model size = "+boosting.getRegressors(0).size());
-            if (config.getBoolean("train.showTrainProgress")){
+//            System.out.println("model size = "+boosting.getRegressors(0).size());
+            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0)){
                 System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
                         dataSet));
                 System.out.println("overlap on training set = "+ Overlap.overlap(boosting, dataSet));
             }
-            if (config.getBoolean("train.showTestProgress")){
+            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0)){
                 System.out.println("accuracy on test set = "+ Accuracy.accuracy(boosting,
                         testSet));
                 System.out.println("overlap on test set = "+ Overlap.overlap(boosting, testSet));
