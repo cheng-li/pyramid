@@ -118,6 +118,12 @@ public class App2 {
 
         MultiLabelClfDataSet dataSet = loadData(config,config.getString("input.trainData"));
 
+        MultiLabelClfDataSet testSet = null;
+        if (config.getBoolean("train.showTrainProgress")){
+            testSet = loadData(config,config.getString("input.testData"));
+        }
+
+
         int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
 
         int numClasses = dataSet.getNumClasses();
@@ -147,6 +153,8 @@ public class App2 {
             case "independent":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
                 break;
+            default:
+                throw new IllegalArgumentException("predict.fashion should be independent or crf");
         }
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
@@ -157,11 +165,16 @@ public class App2 {
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
             trainer.iterate();
-            if (config.getBoolean("train.showPerformanceEachRound")){
-                System.out.println("model size = "+boosting.getRegressors(0).size());
+            System.out.println("model size = "+boosting.getRegressors(0).size());
+            if (config.getBoolean("train.showTrainProgress")){
                 System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
                         dataSet));
                 System.out.println("overlap on training set = "+ Overlap.overlap(boosting, dataSet));
+            }
+            if (config.getBoolean("train.showTestProgress")){
+                System.out.println("accuracy on test set = "+ Accuracy.accuracy(boosting,
+                        testSet));
+                System.out.println("overlap on test set = "+ Overlap.overlap(boosting, testSet));
             }
         }
         File serializedModel =  new File(output,modelName);

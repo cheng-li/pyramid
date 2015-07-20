@@ -50,7 +50,8 @@ public class App3 {
         Config app2Config = new Config();
         String[] same = {"output.folder","train","test","predict.fashion","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf","train.featureSamplingRate",
-        "train.dataSamplingRate","train.numSplitIntervals","train.showPerformanceEachRound",
+        "train.dataSamplingRate","train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
+                "train.showProgress.interval",
         "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold"};
 
         Config.copy(config,app2Config,same);
