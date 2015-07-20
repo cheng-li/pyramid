@@ -221,6 +221,49 @@ def createTable(data):
 
     return output
 
+def createNewJsonForTopFeatures(inputData):
+    outputData = []
+    outputData.append([]) #classes
+    outputData.append([]) #details
+    indexes = {}
+
+    for clas in inputData:
+        feature = []
+        feature.append(clas["classIndex"]) #0
+        feature.append(clas["className"]) #1
+        fds = []
+        for fd in clas["featureDistributions"]:
+            distribution = []
+            if fd["feature"].has_key("ngram"):
+                name = fd["feature"]["ngram"]
+            else:
+                name = fd["feature"]["name"]
+            distribution.append(name) #0
+            distribution.append([]) #occurrence
+            distribution.append(fd["totalCount"])
+            for occu in fd["occurrence"]:
+                occurrence = []
+                res = occu.rsplit(":", 1)
+                className = res[0]
+                r = res[1].split("/")
+
+                if not indexes.has_key(className):
+                    c = []
+                    c.append(className) #0
+                    c.append(r[1])  #num
+                    outputData[0].append(c)
+                    indexes[className] = len(outputData[0]) - 1
+                    
+                    
+                occurrence.append(indexes[className])  # classindex
+                occurrence.append(r[0]) #occu
+                distribution[1].append(occurrence)
+            fds.append(distribution)
+        feature.append(fds)
+        outputData[1].append(feature)
+
+    return outputData
+
 
 def parse(input_json_file, outputFileName):
     # read input
@@ -229,7 +272,7 @@ def parse(input_json_file, outputFileName):
     inputData = json.load(inputJson)
     print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
 
-    outputData= createTable(inputData)
+    outputData = createTable(inputData)
     outputJson = json.dumps(outputData)
 
     output = pre_data + outputJson + post_data
@@ -241,7 +284,11 @@ def parse(input_json_file, outputFileName):
 
 def createTopFeatureHTML(input_json_file, outputFileName):
     inputJson = open(input_json_file, "r")
-    outputJson = inputJson.read()
+    inputData = json.load(inputJson)
+
+    outputData = createNewJsonForTopFeatures(inputData)
+    outputJson = json.dumps(outputData)
+
     output = pre_tf_data + outputJson + post_data
 
     outputFile = open(outputFileName, "w")
@@ -293,15 +340,33 @@ pre_tf_data = ''' <html>
                 return JSON.parse($('#raw-data').html())
             }
 
-            function showDistribution(totalCount, occurrence) {
+            function displayOccurrence(data, i, j) {
+                str = ''
+                classes = data[0]
+                occurrence = data[1][i][2][j][1]
+                totalCount = data[1][i][2][j][2]
+
+                str += "<br><br>totalCount: " + totalCount + "<br>"
+
+                for (k = 0; k < occurrence.length; k++) {
+                    occu = occurrence[k]
+                    str += classes[occu[0]][0] + ":" + occu[1] + "/" 
+                        + classes[occu[0]][1] + "<br>"
+                }
+
+                return str
+            }
+
+            function showDistribution(i, j) {
                 var table = document.getElementById("mytable");
                 var rows = table.getElementsByTagName('tr');
                 var cols = rows[1].children;
                 var cell = cols[1];
 
+                data = dataFromJson()
+
                 str = ""
-                str += "<br><br>totalCount: " + totalCount
-                        + "<br>" + displayOccurrence(occurrence.split('&'))
+                str += displayOccurrence(data, i, j)
 
                 cell.innerHTML = str
             }
@@ -323,46 +388,22 @@ pre_tf_data = ''' <html>
             }
 
 
-            function displayFeature(distribution) {
+            function displayFeature(distribution, i, j) {
                 str = ''
-                feature = distribution.feature
-                //distribution.occurrence.join('&')
-                style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='showDistribution(" + 
-                    distribution.totalCount + ", \\"" + distribution.occurrence.join('&') + "\\")'"
-                if ('ngram' in feature) {
-                    str += '<button ' + style + '>' + feature.ngram + '</button>'
-                } else {
-                    str += '<button ' + style + '>' + feature.name + '</button>'
-                }
+                style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='showDistribution(" + i + ", " + j + ")'"
+                str += '<button ' + style + '>' + distribution[0] + '</button>'
 
                 return str
             }
 
-            function displayOccurrence(occurrence) {
+            function displayTopFeatures(fds, i) {
                 str = ''
-                str += serialize(occurrence, function(label, i) {
-                        return "<br>" + label
-                    })
-
-                return str
-            }
-
-            function displayDistribution(distribution) {
-                str = ""
-                str += "<br><br>totalCount: " + distribution.totalCount
-                        + "<br>" + displayOccurrence(distribution.occurrence)
-
-                return str
-            }
-
-            function displayTopFeatures(featureDistributions) {
-                str = ''
-                str += serialize(featureDistributions, function (distribution, i) {
+                str += serialize(fds, function(distribution, j) {
                             str = ""
-                            if (i != 0) {
+                            if (j != 0) {
                                 str += ","
                             }
-                            str += displayFeature(distribution)
+                            str += displayFeature(distribution, i, j)
                             return str
                         })
 
@@ -381,14 +422,16 @@ pre_tf_data = ''' <html>
                 var $body = $('#data-table')
                 $body.empty()
                 var html = ''
-                data.forEach(function (row, i) {
+                classes = data[0]
+                details = data[1]
+                details.forEach(function (row, i) {
                     var labels = ''
 
                     html += '<tr>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
-                        "<br>" + row.classIndex + "." + row.className +
-                        "<br>" + displayTopFeatures(row.featureDistributions, i) + '</td>' +
-                        displayFeatureDistributions(i, data.length) +
+                        "<br>" + row[0] + "." + row[1] +
+                        "<br>" + displayTopFeatures(row[2], i) + '</td>' +
+                        displayFeatureDistributions(i, details.length) +
                         + '</tr>'
 
 
@@ -828,7 +871,7 @@ pre_data = '''<html>
                 keys = Object.keys(others)
                 for (i = 0; i < keys.length; i++) {
                     key = keys[i]
-                    str += "<br><br>" + key + ": " + others[key]
+                    str += "<br><b>" + key + "</b>: " + others[key]
                 }
 
                 return str
@@ -859,15 +902,9 @@ pre_data = '''<html>
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
                         "<input id='highlights" + i + "' style='display:none' value=''>" +
                         storeOrigText(row.text, i) +
-                        "<br>ID:&nbsp" + row.idlabels.id + 
+                        "<b>ID:</b>&nbsp" + row.idlabels.id + 
                         displayOthers(row.others) + 
-                        serialize(row.real_labels, function (lb) {
-                            var str = ''
-                            str += '<li>' + lb + '</li>'
-                            return str
-                         }) + 
-                        //" Iternal_ID: " + row.idlabels.internalId + 
-                        '<br><br>Labels:' +  
+                        '<br><b>Labels</b>:' +  
                         serialize(row.idlabels.internalLabels, function (lb) {
                             var str = ''
                             for (var k in lb) {
@@ -875,9 +912,9 @@ pre_data = '''<html>
                             }
                             return str
                          }) + 
-                        '<br>PredictedRanking:' +
+                        '<br><b>PredictedRanking</b>:' +
                         displayPredictedRanking(row, displayOptions) + 
-                        '<br><br>Feedback:' +
+                        '<br><br><b>Feedback</b>:' +
                         displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                         '</td>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
@@ -1023,6 +1060,33 @@ pre_data = '''<html>
                 })
             }
 
+            function indexOfLabels(labels, label) {
+                for (var i = 0; i < labels.length; i++) {
+                    lb = labels[i]
+                    for (var k in lb) {
+                        if (lb[k] == label) {
+                            return true
+                        }
+                    }
+                }
+
+                return false
+            }
+
+            function sortByAnti(labels, internalLabels) {
+                labels.forEach(function(lb) {
+                    if (indexOfLabels(internalLabels, lb.name) == true) {
+                        lb.rules = lb.rules.sort(function(a, b) {
+                            return a.score - b.score
+                        })
+                    } else {
+                        lb.rules = lb.rules.sort(function(a, b) {
+                            return b.score - a.score
+                        })
+                    }
+                })
+            }
+
             function sortByViewOptions(data, displayOptions) {
                 if (displayOptions.sortRules === 'abs') {
                     data.forEach(function (row) {
@@ -1047,10 +1111,10 @@ pre_data = '''<html>
                     })
                 } else if (displayOptions.sortRules == 'anti') {
                     data.forEach(function (row) {
-                        sortByScoreAscending(row.TP)
-                        sortByScoreAscending(row.FP)
-                        sortByScoreDescending(row.FN)
-                        sortByScoreDescending(row.TN)
+                        sortByAnti(row.TP, row.idlabels.internalLabels)
+                        sortByAnti(row.FP, row.idlabels.internalLabels)
+                        sortByAnti(row.FN, row.idlabels.internalLabels)
+                        sortByAnti(row.TN, row.idlabels.internalLabels)
                     })
                 } else {
                     alert(displayOptions.sortRules)
@@ -1188,6 +1252,9 @@ pre_data = '''<html>
             .mytext {
                 width: 100%;
                 height:200px;
+            }
+            strong{
+                font-weight:bold;
             }
         </style>
 <script id="raw-data" type="application/json">
