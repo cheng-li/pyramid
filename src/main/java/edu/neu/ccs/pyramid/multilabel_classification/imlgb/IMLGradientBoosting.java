@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/8/14.
  */
 public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstimator, MultiLabelClassifier.ClassProbEstimator {
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
     private List<List<Regressor>> regressors;
     private int numClasses;
     /**
