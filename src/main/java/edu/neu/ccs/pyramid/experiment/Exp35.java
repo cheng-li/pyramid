@@ -69,52 +69,69 @@ public class Exp35 {
         return index;
     }
 
-    static String[] sampleTrain(Config config, ESIndex index, Set<String> duplicate){
-        int numDocsInIndex = index.getNumDocs();
-        String[] ids = null;
-//todo fix
-        if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
-            String splitField = config.getString("index.splitField");
-            List<String> train = IntStream.range(0, numDocsInIndex).parallel()
-                    .filter(i -> index.getStringField("" + i, splitField).
-                            equalsIgnoreCase("train")).
-                            mapToObj(i -> "" + i).filter(id -> !duplicate.contains(id)).collect(Collectors.toList());
-            ids = train.toArray(new String[train.size()]);
-        } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
-            int numFolds = config.getInt("split.random.numFolds");
-            ids = IntStream.range(0, numDocsInIndex).parallel()
-                    .filter(i -> i % numFolds != 0).mapToObj(i -> ""+i).toArray(String[]::new);
-        } else if (config.getString("split.fashion").equalsIgnoreCase("small")){
-            ids = IntStream.range(0, numDocsInIndex).parallel()
-                    .filter(i -> i % 10== 0).mapToObj(i -> ""+i).toArray(String[]::new);
-        } else {
-            throw new RuntimeException("illegal split fashion");
+    static String[] getDocsForSplit(Config config, ESIndex index, List<String> splitValues) throws Exception{
+        String splitField = config.getString("index.splitField");
+        Set<String> docs = new HashSet<>();
+        for (String value: splitValues){
+            docs.addAll(index.termFilter(splitField,value));
         }
-
+        String[] ids = docs.toArray(new String[docs.size()]);
         return ids;
     }
 
-    static String[] sampleTest(Config config, ESIndex index) {
-        int numDocsInIndex = index.getNumDocs();
-        String[] ids = null;
+    static String[] sampleTrain(Config config, ESIndex index, Set<String> duplicate) throws Exception{
+//        int numDocsInIndex = index.getNumDocs();
+//        String[] ids = null;
+////todo fix
+//        if (config.getString("split.fashion").equalsIgnoreCase("fixed")){
+//            String splitField = config.getString("index.splitField");
+//            List<String> train = IntStream.range(0, numDocsInIndex).parallel()
+//                    .filter(i -> index.getStringField("" + i, splitField).
+//                            equalsIgnoreCase("train")).
+//                            mapToObj(i -> "" + i).filter(id -> !duplicate.contains(id)).collect(Collectors.toList());
+//            ids = train.toArray(new String[train.size()]);
+//        } else if (config.getString("split.fashion").equalsIgnoreCase("random")){
+//            int numFolds = config.getInt("split.random.numFolds");
+//            ids = IntStream.range(0, numDocsInIndex).parallel()
+//                    .filter(i -> i % numFolds != 0).mapToObj(i -> ""+i).toArray(String[]::new);
+//        } else if (config.getString("split.fashion").equalsIgnoreCase("small")){
+//            ids = IntStream.range(0, numDocsInIndex).parallel()
+//                    .filter(i -> i % 10== 0).mapToObj(i -> ""+i).toArray(String[]::new);
+//        } else {
+//            throw new RuntimeException("illegal split fashion");
+//        }
+//
+//        return ids;
+        List<String> values = new ArrayList<>();
+        values.add("train");
+        return getDocsForSplit(config,index,values);
+    }
 
-        if (config.getString("split.fashion").equalsIgnoreCase("fixed")) {
-            String splitField = config.getString("index.splitField");
-            List<String> list = IntStream.range(0, numDocsInIndex).parallel()
-                    .filter(i -> index.getStringField("" + i, splitField).
-                            equalsIgnoreCase("test")).
-                            mapToObj(i -> "" + i).collect(Collectors.toList());
-            ids = list.toArray(new String[list.size()]);
-        } else if (config.getString("split.fashion").equalsIgnoreCase("random")) {
-            int numFolds = config.getInt("split.random.numFolds");
-            ids = IntStream.range(0, numDocsInIndex).parallel()
-                    //todo make a parameter?
-                    .filter(i -> i % numFolds == 0).mapToObj(i -> "" + i).toArray(String[]::new);
-        } else {
-            throw new RuntimeException("illegal split fashion");
-        }
+    static String[] sampleTest(Config config, ESIndex index) throws Exception{
+//        int numDocsInIndex = index.getNumDocs();
+//        String[] ids = null;
+//
+//        if (config.getString("split.fashion").equalsIgnoreCase("fixed")) {
+//            String splitField = config.getString("index.splitField");
+//            List<String> list = IntStream.range(0, numDocsInIndex).parallel()
+//                    .filter(i -> index.getStringField("" + i, splitField).
+//                            equalsIgnoreCase("test")).
+//                            mapToObj(i -> "" + i).collect(Collectors.toList());
+//            ids = list.toArray(new String[list.size()]);
+//        } else if (config.getString("split.fashion").equalsIgnoreCase("random")) {
+//            int numFolds = config.getInt("split.random.numFolds");
+//            ids = IntStream.range(0, numDocsInIndex).parallel()
+//                    //todo make a parameter?
+//                    .filter(i -> i % numFolds == 0).mapToObj(i -> "" + i).toArray(String[]::new);
+//        } else {
+//            throw new RuntimeException("illegal split fashion");
+//        }
+//
+//        return ids;
 
-        return ids;
+        List<String> values = new ArrayList<>();
+        values.add("test");
+        return getDocsForSplit(config,index,values);
     }
 
 //    static String[] sampleValid(Config config, SingleLabelIndex index){
