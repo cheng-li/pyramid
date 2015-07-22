@@ -2,6 +2,12 @@ package edu.neu.ccs.pyramid.eval;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+
+import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 10/2/14.
@@ -40,5 +46,33 @@ public class Precision {
             }
         }
         return truePositive/predictedPositive;
+    }
+
+    /**
+     * From "Mining Multi-label Data by Grigorios Tsoumakas".
+     * @param multiLabels
+     * @param predictions
+     * @return
+     */
+    public static double precision(MultiLabel[] multiLabels, List<MultiLabel> predictions){
+
+        double p = 0.0;
+        for (int i=0; i<multiLabels.length; i++) {
+            MultiLabel label = multiLabels[i];
+            MultiLabel prediction = predictions.get(i);
+            p += MultiLabel.intersection(label, prediction).size() * 1.0 / prediction.getMatchedLabels().size();
+        }
+
+        return p / multiLabels.length;
+    }
+
+    /**
+     * see function: double precision(MultiLabel[] multiLabels, List<MultiLabel> predictions)
+     * @param classifier
+     * @param dataSet
+     * @return
+     */
+    public static double precision(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
+        return precision(dataSet.getMultiLabels(),classifier.predict(dataSet));
     }
 }
