@@ -217,7 +217,7 @@ def createTable(data):
         # test break after first line
         if(line_count % 100 == 0):
             print "Current parsing ID: ", line_count
-            break
+            #break
 
     return output
 
