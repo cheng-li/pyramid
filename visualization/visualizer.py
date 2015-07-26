@@ -146,12 +146,23 @@ def createTFPNColumns(row, line_count, oneRow):
             oneRow['TN'].append(writeClass(row["id"], line_count, clas))
 
 
+
+def includesLabel(label, labels):
+    for lb in labels:
+        for key in lb:
+            if label == lb[key]:
+                return 1
+
+    return 0
+
+
 def createTable(data):
     line_count = 0
     output = []
     for row in data:
         oneRow = {}
         line_count += 1
+        r = []
 
         # column 1 IDs
         idlabels = {}
@@ -161,21 +172,42 @@ def createTable(data):
         idlabels['feedbackSelect'] = 'none'
         idlabels['feedbackText'] = ''
 
+
         # internal labels
         internalLabels = []
+        releLabels = []
         for i in range(0, len(row["labels"])):
             label = {}
             label[row["internalLabels"][i]] = row["labels"][i]
             internalLabels.append(label)
+            releLabels.append(row["labels"][i])
         idlabels['internalLabels'] = internalLabels
         # predictions
         predictions = []
+        pres = []
         for i in range(0, len(row["prediction"])):
             label = {}
             label[row["internalPrediction"][i]] = row["prediction"][i]
             predictions.append(label)
+            pres.append(row["prediction"][i])
+
         idlabels['predictions'] = predictions
-        oneRow['idlabels'] = idlabels
+
+        intersections = set(releLabels) & set(pres)
+        unions = set(releLabels + pres)
+        if len(unions) == 0:
+            idlabels['overlap'] = "N/A"
+        else:
+            idlabels['overlap'] = "{0:.2f}".format(float(len(intersections)) / len(unions))
+        if len(releLabels) == 0:
+            idlabels['recall'] = "N/A"
+        else:
+            idlabels['recall'] = "{0:.2f}".format(float(len(intersections)) / len(releLabels))
+        if len(pres) == 0:
+            idlabels['precision'] = "N/A"
+        else:
+            idlabels['precision'] = "{0:.2f}".format(float(len(intersections)) / len(pres))
+
         oneRow['probForPredictedLabels'] = row['probForPredictedLabels']
         
         # column 2 predicted Ranking
@@ -196,7 +228,29 @@ def createTable(data):
                 label["type"] = "FN"
             else:
                 label["type"] = ""
+            r.append(includesLabel(label["className"], internalLabels))
             oneRow['predictedRanking'].append(label)
+
+        prec = []
+        sumOfR = 0
+        sumOfPrec = 0
+        last = 0
+        for i in range(len(r)):
+            if r[i] == 1:
+                sumOfR += r[i]
+                prec = sumOfR / (i + 1)
+                sumOfPrec += prec
+                last = i + 1
+
+        if len(releLabels) == 0:
+            idlabels['ap'] = "N/A"
+        else:
+            idlabels['ap'] = "{0:.2f}".format(sumOfPrec * 1 / len(releLabels))
+        if sumOfR < len(releLabels):
+            idlabels['rankoffullrecall'] = "N/A"
+        else:
+            idlabels['rankoffullrecall'] = last
+        oneRow['idlabels'] = idlabels
         
         # column 3 text
         res = es.get(index=esIndex, doc_type="document", id=row["id"])
@@ -914,7 +968,12 @@ pre_data = '''<html>
                          }) + 
                         '<br><b>PredictedRanking</b>:' +
                         displayPredictedRanking(row, displayOptions) + 
-                        '<br><br><b>Feedback</b>:' +
+                        "<br><b>AP:&nbsp</b>" + row.idlabels.ap +
+                        "<br><b>Overlap:&nbsp</b>" + row.idlabels.overlap +
+                        "<br><b>Precision:&nbsp</b>" + row.idlabels.precision +
+                        "<br><b>Recall:&nbsp</b>" + row.idlabels.recall +
+                        "<br><b>RankOfFullRecall:&nbsp</b>" + row.idlabels.rankoffullrecall +
+                        '<br><br><br><b>Feedback</b>:' +
                         displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
                         '</td>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
