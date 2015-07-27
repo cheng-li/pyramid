@@ -17,6 +17,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -269,7 +270,7 @@ public class App2 {
         }
         System.out.println("reports generated");
 
-        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"meta_data.json"), JsonEncoding.UTF8);
+        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"data_info.json"), JsonEncoding.UTF8);
         jsonGenerator.writeStartObject();
         jsonGenerator.writeNumberField("numClassesInModel",boosting.getNumClasses());
         jsonGenerator.writeNumberField("numClassesInDataSet",dataSet.getNumClasses());
@@ -287,6 +288,17 @@ public class App2 {
 
         jsonGenerator.writeEndObject();
         jsonGenerator.close();
+
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
+
+
+        File dataConfigFile = Paths.get(config.getString("input.folder"),
+                "data_sets",dataName,"data_config.json").toFile();
+        if (dataConfigFile.exists()){
+            FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
+        }
 
     }
 

@@ -26,7 +26,6 @@ public class App3 {
 
         App1.main(app1Config);
         App2.main(app2Config);
-        writeConfigToJson(config);
     }
 
     private static Config createApp1Config(Config config){
@@ -65,27 +64,7 @@ public class App3 {
         return app2Config;
     }
 
-    private static void writeConfigToJson(Config config) throws Exception{
-        if (config.getBoolean("train")){
-            File folder = Paths.get(config.getString("output.folder"),
-                    "reports",
-                    App1.splitListToString(config.getStrings("index.splitField.train"))+"_reports").toFile();
-            folder.mkdirs();
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(new File(folder,"app3_config.json"),config);
 
-        }
-
-        if (config.getBoolean("test")){
-            File folder = Paths.get(config.getString("output.folder"),
-                    "reports",
-                    App1.splitListToString(config.getStrings("index.splitField.test"))+"_reports").toFile();
-            folder.mkdirs();
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(new File(folder,"app3_config.json"),config);
-
-        }
-    }
 
 
 }

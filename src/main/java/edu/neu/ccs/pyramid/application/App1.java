@@ -1,5 +1,9 @@
 package edu.neu.ccs.pyramid.application;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -431,6 +435,10 @@ public class App1 {
         TRECFormat.save(dataSet,dataFile);
         index.close();
         System.out.println("data set "+splitValueAll+" created");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writeValue(new File(dataFile,"data_config.json"),config);
+
     }
 
     static void createTrainSet(Config config) throws Exception{
