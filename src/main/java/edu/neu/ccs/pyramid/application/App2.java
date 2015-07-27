@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.application;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
@@ -17,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -264,7 +268,29 @@ public class App2 {
 
         }
         System.out.println("reports generated");
+
+        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"meta_data.json"), JsonEncoding.UTF8);
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeNumberField("numClassesInModel",boosting.getNumClasses());
+        jsonGenerator.writeNumberField("numClassesInDataSet",dataSet.getNumClasses());
+
+        List<String> extra = new ArrayList<>();
+        for (int k=boosting.getNumClasses();k<dataSet.getNumClasses();k++){
+            extra.add(dataSet.getLabelTranslator().toExtLabel(k));
+        }
+        jsonGenerator.writeArrayFieldStart("extraClasses");
+        for (String label: extra){
+            jsonGenerator.writeObject(label);
+        }
+        jsonGenerator.writeEndArray();
+        jsonGenerator.writeNumberField("labelCardinality",dataSet.labelCardinality());
+
+        jsonGenerator.writeEndObject();
+        jsonGenerator.close();
+
     }
+
+
 
 
 

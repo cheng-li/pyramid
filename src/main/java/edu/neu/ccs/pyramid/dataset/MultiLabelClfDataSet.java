@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.dataset;
 
-import edu.stanford.nlp.parser.nndep.Dataset;
-
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -28,7 +26,7 @@ public interface MultiLabelClfDataSet extends DataSet{
      * From "Mining Multi-label Data by Grigorios Tsoumakas".
      * @return
      */
-    default double getCardnality() {
+    default double labelCardinality() {
         MultiLabel[] multiLabels = getMultiLabels();
         return Arrays.stream(multiLabels).parallel().mapToDouble(multiLabel -> multiLabel.getMatchedLabels().size()).average().getAsDouble();
     };
@@ -39,7 +37,7 @@ public interface MultiLabelClfDataSet extends DataSet{
      * From "Mining Multi-label Data by Grigorios Tsoumakas".
      * @return
      */
-    default double getDensity() {
-        return getCardnality() / getNumClasses();
+    default double labelDensity() {
+        return labelCardinality() / getNumClasses();
     }
 }
