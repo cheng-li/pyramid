@@ -119,7 +119,7 @@ public class App2 {
         MultiLabelClfDataSet dataSet = loadData(config,config.getString("input.trainData"));
 
         MultiLabelClfDataSet testSet = null;
-        if (config.getBoolean("train.showTrainProgress")){
+        if (config.getBoolean("train.showTestProgress")){
             testSet = loadData(config,config.getString("input.testData"));
         }
 
