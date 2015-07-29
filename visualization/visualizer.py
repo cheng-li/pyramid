@@ -156,7 +156,7 @@ def includesLabel(label, labels):
     return 0
 
 
-def createTable(data):
+def createTable(data, fields):
     line_count = 0
     output = []
     for row in data:
@@ -254,7 +254,7 @@ def createTable(data):
         
         # column 3 text
         res = es.get(index=esIndex, doc_type="document", id=row["id"])
-        keys = {"title", "body"}
+        keys = fields
         oneRow["text"] = {}
         oneRow["others"] = {}
         for key in res["_source"]:
@@ -271,7 +271,7 @@ def createTable(data):
         # test break after first line
         if(line_count % 100 == 0):
             print "Current parsing ID: ", line_count
-            #break
+            break
 
     return output
 
@@ -319,14 +319,14 @@ def createNewJsonForTopFeatures(inputData):
     return outputData
 
 
-def parse(input_json_file, outputFileName):
+def parse(input_json_file, outputFileName, fields):
     # read input
 
     inputJson = open(input_json_file, "r")
     inputData = json.load(inputJson)
     print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
 
-    outputData = createTable(inputData)
+    outputData = createTable(inputData, fields)
     outputJson = json.dumps(outputData)
 
     output = pre_data + outputJson + post_data
@@ -350,12 +350,51 @@ def createTopFeatureHTML(input_json_file, outputFileName):
     inputJson.close()
     outputFile.close()
 
-def parseAll(inputPath):
-    directoryName = inputPath
+def createMetaDataHTML(inputData, inputModel, inputConfig, outputFileName):
+    outputData = {}
+    f1 = open(inputData, "r")
+    f2 = open(inputModel, "r")
+    f3 = open(inputConfig, "r")
+    inputD = json.load(f1)
+    inputM = json.load(f2)
+    inputC = json.load(f3)
+
+    outputData["data"] = inputD
+    outputData["model"] = inputM
+    outputData["config"] = inputC
+
+    outputJson = json.dumps(outputData)
+
+    output = pre_md_data + outputJson + post_data
+
+    outputFile = open(outputFileName, "w")
+    outputFile.write(output)
+
+    f1.close()
+    f2.close()
+    f3.close()
+    outputFile.close()
+
+
+def parseAll(inputPath, directoryName, fileName, fields):
     outputFileName = "Viewer"
 
+    topName = "top_features"
+    configName = "data_config"
+    dataName = "data_info"
+    modelName = "model_config"
+    inputTop = directoryName + topName + ".json"
+    outputPath = directoryName + topName + ".html"
+    createTopFeatureHTML(inputTop, outputPath)
+
+    inputData = directoryName + dataName + ".json"
+    inputModel = directoryName + modelName + ".json"
+    inputConfig = directoryName + configName + ".json"
+    outputPath = directoryName + "metadata.html"
+    createMetaDataHTML(inputData, inputModel, inputConfig, outputPath)
+
     if os.path.isfile(inputPath):
-        parse(inputPath, outputFileName + ".html")
+        parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields)
     else:
         if not inputPath.endswith('/'):
             directoryName += '/'
@@ -365,15 +404,107 @@ def parseAll(inputPath):
             absf = join(inputPath, f)
             if not (isfile(absf) and f.endswith(".json")):
                 continue
-
-            if f == "top_features.json":
-                outputPath = directoryName + "top_features.html"
-                createTopFeatureHTML(absf, outputPath)
+            elif f == configName + ".json" or f == dataName + ".json" or f == modelName + ".json" or f == topName + ".json":
+                continue
             else:
                 outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
-                parse(absf, outputPath)
+                parse(absf, outputPath, fields)
 
 #constant Strings
+pre_md_data = ''' <html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="jquery.min.js"></script>
+    </head>
+    <body><br>
+        <table id="mytable" border=1  align="center" style="width:100%">
+            <caption> Report </caption>
+                <thead><tr>
+                    <td align="center" width="30%"><b>data</b></td>
+                    <td align="center" width="30%"><b>model</b></td>
+                    <td align="center" width="30%"><b>config</b></td>
+                </tr></thead>
+            <tbody id="data-table"></tbody>
+        </table>
+        <script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+
+            function sortByViewOptions(data, displayOptions) {
+                return data
+            }
+
+            function displayData(data) {
+                str = ''
+                keys = Object.keys(data)
+
+                for (i = 0; i < keys.length; i++) {
+                    str += '<br>' + keys[i] + ": " + data[keys[i]]
+                }
+
+                return str
+            }
+
+            function displayModel(model) {
+                str = ''
+                keys = Object.keys(model)
+
+                for (i = 0; i < keys.length; i++) {
+                    str += '<br>' + keys[i] + ": " + model[keys[i]]
+                }
+
+                return str
+            }
+
+            function displayConfig(config) {
+                str = ''
+                keys = Object.keys(config)
+
+                for (i = 0; i < keys.length; i++) {
+                    str += '<br>' + keys[i] + ": " + config[keys[i]]
+                }
+
+                return str
+            }
+
+            function render(data, displayOptions) {
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+
+                html += '<tr>' +
+                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    displayData(data["data"]) + "</td>" +
+                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    displayModel(data["model"]) + "</td>" +
+                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    displayConfig(data["config"]) + "</td>" +
+                    + '</tr>'
+
+                $body.append(html)
+            }
+
+            function refresh() {
+                var displayOptions = ""
+                render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
+            }
+
+            $(document).ready(function () {
+                refresh()
+            })
+        </script>
+        <style>
+            #mytable{
+                border: 1px solid black;
+                border-collapse: collapse;
+                word-wrap: break-word;
+                table-layout:fixed;
+            }
+        </style>
+    <script id="raw-data" type="application/json">
+'''
+
 pre_tf_data = ''' <html>
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
@@ -392,6 +523,24 @@ pre_tf_data = ''' <html>
         <script>
             function dataFromJson() {
                 return JSON.parse($('#raw-data').html())
+            }
+
+            function render(data, displayOptions) {
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+                classes = data[0]
+                details = data[1]
+                details.forEach(function (row, i) {
+                    var labels = ''
+                    html += '<tr>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + row[0] + "." + row[1] +
+                        "<br>" + displayTopFeatures(row[2], i) + '</td>' +
+                        displayFeatureDistributions(i, details.length) +
+                        + '</tr>'
+                })
+                $body.append(html)
             }
 
             function displayOccurrence(data, i, j) {
@@ -569,6 +718,7 @@ pre_data = '''<html>
             <tr><td>
                 <p style="text-indent: 1em;">
                 <a href="top_features.html" target="_blank">Top Features</a>
+                <a href="metadata.html" target="_blank">Metadata</a>
             </td></tr>
             <tr><td>
                 <center><button id="createFile">Create New HTML</button> 
@@ -729,7 +879,7 @@ pre_data = '''<html>
                     if (key == field) {
                         if ((index = indexOfHighlights(poses, hs)) != -1) {
                             hs.splice(index, 1)
-                        } 
+                        }
                         else {
                             hs.push(poses)
                         }
@@ -848,10 +998,20 @@ pre_data = '''<html>
             }
 
             function getLabelColor(type) {
-                if (type == "FP" || type == "FN") {
-                    return "red"
-                } else {
+                if (type == "TP") {
                     return "green"
+                } 
+                else if (type == "FN") {
+                    return "blue"
+                }
+                else if (type == "TN") {
+                    return "black"
+                }
+                else if (type == "FP") {
+                    return "red"
+                }
+                else {
+                    return ""
                 }
             }
 
@@ -1333,14 +1493,30 @@ def main():
     global classNumber
     # usage: myprog json_file
     if len(sys.argv) >= 3:
-        esIndex = sys.argv[1]
-        classNumber = int(sys.argv[2])
         jsonFile = sys.argv[3]
+
+        splits = jsonFile.rsplit("/", 1)
+        if len(splits) == 1:
+            directoryName = "./"
+            fileName = splits[0]
+        else:
+            directoryName = jsonFile.rsplit("/", 1)[0] + '/'
+            fileName = splits[1]
+        configName = "data_config.json"
+        dataName = "data_info.json"
+        f1 = open(directoryName + configName, 'r')
+        config1 = json.load(f1)
+        f2 = open(directoryName + dataName, 'r')
+        config2 = json.load(f2)
+        esIndex = config1["index.indexName"]
+        classNumber = config2["numClassesInModel"]
+        fields = config1["index.ngramExtractionFields"]
+
     else:
         print "Usage: python Visualizor.py index NumberofClasses json_file"
         return
     start = time.time()
-    parseAll(jsonFile)
+    parseAll(jsonFile, directoryName, fileName, fields)
     end = time.time()
     print "parsing cost time ", end-start, " seconds"
 
