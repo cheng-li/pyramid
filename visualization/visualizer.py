@@ -1492,8 +1492,8 @@ def main():
     global esIndex
     global classNumber
     # usage: myprog json_file
-    if len(sys.argv) >= 3:
-        jsonFile = sys.argv[3]
+    if len(sys.argv) >= 1:
+        jsonFile = sys.argv[1]
 
         splits = jsonFile.rsplit("/", 1)
         if len(splits) == 1:
