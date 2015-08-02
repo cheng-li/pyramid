@@ -204,9 +204,6 @@ public class App1 {
         for (String field: fields){
             for (int n: ns){
                 for (int slop:slops){
-                    if (n==1 && slop>0){
-                        continue;
-                    }
                     System.out.println("gathering "+n+ "-grams from field "+field+" with slop "+slop+" and minDf "+minDf);
                     NgramTemplate template = new NgramTemplate(field,n,slop);
                     Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index, ids, template, minDf);
