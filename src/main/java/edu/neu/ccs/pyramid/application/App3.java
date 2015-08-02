@@ -54,7 +54,7 @@ public class App3 {
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf","train.featureSamplingRate",
         "train.dataSamplingRate","train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
                 "train.showProgress.interval",
-        "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold"};
+        "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit"};
 
         Config.copy(config,app2Config,same);
 

@@ -213,6 +213,26 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return pro;
     }
 
+    public double[] predictAllAssignmentProbsWithConstraint(Vector vector){
+        if (this.assignments==null){
+            throw new RuntimeException("CRF is used but legal assignments is not specified!");
+        }
+
+        double[] classScores = predictClassScores(vector);
+        double[] assignmentScores = new double[this.assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
+        }
+        double logDenominator = MathUtil.logSumExp(assignmentScores);
+        double[] probs = new double[assignments.size()];
+        for (int i=0;i<assignments.size();i++){
+            double logNumerator = calAssignmentScore(assignments.get(i),classScores);
+            double pro = Math.exp(logNumerator-logDenominator);
+            probs[i] = pro;
+        }
+        return probs;
+    }
+
     double predictAssignmentProbWithoutConstraint(Vector vector, MultiLabel assignment){
         double[] classScores = predictClassScores(vector);
         double logProb = 0;

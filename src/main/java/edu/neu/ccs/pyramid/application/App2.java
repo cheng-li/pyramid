@@ -242,11 +242,12 @@ public class App2 {
 //        }
 
         if (true){
-            int limit = config.getInt("report.rule.limit");
+            int ruleLimit = config.getInt("report.rule.limit");
             int numDocsPerFile = config.getInt("report.numDocsPerFile");
             int numFiles = (int)Math.ceil((double)dataSet.getNumDataPoints()/numDocsPerFile);
 
             double probThreshold=config.getDouble("report.classProbThreshold");
+            int labelSetLimit = config.getInt("report.labelSetLimit");
 
             for (int i=0;i<numFiles;i++){
                 int start = i*numDocsPerFile;
@@ -259,7 +260,7 @@ public class App2 {
                             classes.add(k);
                         }
                     }
-                    partition.add(IMLGBInspector.analyzePrediction(boosting, dataSet, a, classes, limit));
+                    partition.add(IMLGBInspector.analyzePrediction(boosting, dataSet, a, classes, ruleLimit,labelSetLimit));
                 }
                 ObjectMapper mapper = new ObjectMapper();
 

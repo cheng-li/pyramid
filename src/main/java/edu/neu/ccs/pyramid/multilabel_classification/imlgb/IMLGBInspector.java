@@ -6,16 +6,15 @@ import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
-import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGradientBoosting;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
-import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 10/13/14.
@@ -209,7 +208,8 @@ public class IMLGBInspector {
 
 
     public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
-                                                                 int dataPointIndex, List<Integer> classes, int limit){
+                                                                 int dataPointIndex, List<Integer> classes, int ruleLimit,
+                                                                 int labelSetLimit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         IdTranslator idTranslator = dataSet.getIdTranslator();
@@ -232,12 +232,12 @@ public class IMLGBInspector {
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){
             ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
-                    dataSet.getRow(dataPointIndex),k,limit);
+                    dataSet.getRow(dataPointIndex),k,ruleLimit);
             classScoreCalculations.add(classScoreCalculation);
         }
         predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
 
-        List<MultiLabelPredictionAnalysis.ClassRankInfo> ranking = classes.stream().map(label -> {
+        List<MultiLabelPredictionAnalysis.ClassRankInfo> labelRanking = classes.stream().map(label -> {
                     MultiLabelPredictionAnalysis.ClassRankInfo rankInfo = new MultiLabelPredictionAnalysis.ClassRankInfo();
                     rankInfo.setClassIndex(label);
                     rankInfo.setClassName(labelTranslator.toExtLabel(label));
@@ -245,8 +245,27 @@ public class IMLGBInspector {
                     return rankInfo;
                 }
             ).collect(Collectors.toList());
-            predictionAnalysis.setPredictedRanking(ranking);
+            predictionAnalysis.setPredictedRanking(labelRanking);
 
-            return predictionAnalysis;
+
+        if (boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF){
+            double[] labelSetProbs = boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex));
+            List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
+            .mapToObj(i -> {
+                MultiLabel multiLabel = boosting.getAssignments().get(i);
+                double setProb = labelSetProbs[i];
+                MultiLabelPredictionAnalysis.LabelSetProbInfo labelSetProbInfo = new MultiLabelPredictionAnalysis.LabelSetProbInfo(multiLabel, setProb, labelTranslator);
+                return labelSetProbInfo;
+            }).sorted(Comparator.comparing(MultiLabelPredictionAnalysis.LabelSetProbInfo::getProbability).reversed())
+                    .limit(labelSetLimit)
+                    .collect(Collectors.toList());
+
+            predictionAnalysis.setPredictedLabelSetRanking(labelSetRanking);
         }
+
+
+        return predictionAnalysis;
     }
+
+
+}

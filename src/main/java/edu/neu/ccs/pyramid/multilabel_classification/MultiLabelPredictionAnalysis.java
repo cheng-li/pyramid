@@ -1,8 +1,11 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.classification.ClassProbability;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +24,7 @@ public class MultiLabelPredictionAnalysis {
     private double probForPredictedLabels;
     private List<ClassRankInfo> predictedRanking;
     private List<ClassScoreCalculation> classScoreCalculations;
+    private List<LabelSetProbInfo> predictedLabelSetRanking;
 
 
     public MultiLabelPredictionAnalysis() {
@@ -108,6 +112,14 @@ public class MultiLabelPredictionAnalysis {
         this.predictedRanking = predictedRanking.stream().sorted(comparator.reversed()).collect(Collectors.toList());
     }
 
+    public List<LabelSetProbInfo> getPredictedLabelSetRanking() {
+        return predictedLabelSetRanking;
+    }
+
+    public void setPredictedLabelSetRanking(List<LabelSetProbInfo> predictedLabelSetRanking) {
+        this.predictedLabelSetRanking = predictedLabelSetRanking;
+    }
+
     public static class ClassRankInfo{
         private int classIndex;
         private String className;
@@ -137,4 +149,45 @@ public class MultiLabelPredictionAnalysis {
             this.prob = prob;
         }
     }
+
+
+    public static class LabelSetProbInfo {
+        private List<Integer> internalLabels;
+        private List<String> labels;
+        private double probability;
+
+        public LabelSetProbInfo(MultiLabel multiLabel, double probability, LabelTranslator labelTranslator) {
+            this.probability = probability;
+            this.internalLabels = multiLabel.getMatchedLabelsOrdered();
+            this.labels = new ArrayList<>();
+            for (int label: internalLabels){
+                labels.add(labelTranslator.toExtLabel(label));
+            }
+        }
+
+        public List<Integer> getInternalLabels() {
+            return internalLabels;
+        }
+
+        public List<String> getLabels() {
+            return labels;
+        }
+
+        public double getProbability() {
+            return probability;
+        }
+
+        public void setInternalLabels(List<Integer> internalLabels) {
+            this.internalLabels = internalLabels;
+        }
+
+        public void setLabels(List<String> labels) {
+            this.labels = labels;
+        }
+
+        public void setProbability(double probability) {
+            this.probability = probability;
+        }
+    }
+
 }
