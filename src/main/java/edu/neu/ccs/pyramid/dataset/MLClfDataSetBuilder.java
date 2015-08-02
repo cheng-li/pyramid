@@ -40,9 +40,18 @@ public class MLClfDataSetBuilder {
     }
 
     public MultiLabelClfDataSet build(){
-        if (!valid()){
-            throw new IllegalArgumentException("Illegal arguments");
+        if (numDataPoints<=0){
+            throw new RuntimeException("numDataPoints<=0");
         }
+
+        if (numFeatures<=0){
+            throw new RuntimeException("numFeatures<=0");
+        }
+
+        if (numClasses<=0){
+            throw new RuntimeException("numClasses<=0");
+        }
+
         MultiLabelClfDataSet dataSet;
         if (dense){
             dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
@@ -51,20 +60,5 @@ public class MLClfDataSetBuilder {
         }
         return dataSet;
     }
-
-    private boolean valid(){
-        if (numDataPoints<=0){
-            return false;
-        }
-
-        if (numFeatures<=0){
-            return false;
-        }
-
-        if (numClasses<=0){
-            return false;
-        }
-
-        return true;
-    }
+    
 }
