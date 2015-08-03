@@ -172,7 +172,6 @@ def createTable(data, fields):
         idlabels['feedbackSelect'] = 'none'
         idlabels['feedbackText'] = ''
 
-
         # internal labels
         internalLabels = []
         releLabels = []
@@ -190,7 +189,6 @@ def createTable(data, fields):
             label[row["internalPrediction"][i]] = row["prediction"][i]
             predictions.append(label)
             pres.append(row["prediction"][i])
-
         idlabels['predictions'] = predictions
 
         intersections = set(releLabels) & set(pres)
@@ -232,7 +230,7 @@ def createTable(data, fields):
             oneRow['predictedRanking'].append(label)
 
         prec = []
-        sumOfR = 0
+        sumOfR = float(0)
         sumOfPrec = 0
         last = 0
         for i in range(len(r)):
@@ -245,7 +243,7 @@ def createTable(data, fields):
         if len(releLabels) == 0:
             idlabels['ap'] = "N/A"
         else:
-            idlabels['ap'] = "{0:.2f}".format(sumOfPrec * 1 / len(releLabels))
+            idlabels['ap'] = "{0:.2f}".format(float(sumOfPrec) / len(releLabels))
         if sumOfR < len(releLabels):
             idlabels['rankoffullrecall'] = "N/A"
         else:
@@ -420,9 +418,9 @@ pre_md_data = ''' <html>
         <table id="mytable" border=1  align="center" style="width:100%">
             <caption> Report </caption>
                 <thead><tr>
-                    <td align="center" width="30%"><b>data</b></td>
-                    <td align="center" width="30%"><b>model</b></td>
-                    <td align="center" width="30%"><b>config</b></td>
+                    <td align="center" width="30%"><b>data&nbspinfo</b></td>
+                    <td align="center" width="30%"><b>data&nbspconfig</b></td>
+                    <td align="center" width="30%"><b>model&nbspconfig</b></td>
                 </tr></thead>
             <tbody id="data-table"></tbody>
         </table>
@@ -437,10 +435,9 @@ pre_md_data = ''' <html>
 
             function displayData(data) {
                 str = ''
-                keys = Object.keys(data)
 
-                for (i = 0; i < keys.length; i++) {
-                    str += '<br>' + keys[i] + ": " + data[keys[i]]
+                for (key in data) {
+                    str += '<br>' + key + ": " + data[key]
                 }
 
                 return str
@@ -448,10 +445,9 @@ pre_md_data = ''' <html>
 
             function displayModel(model) {
                 str = ''
-                keys = Object.keys(model)
 
-                for (i = 0; i < keys.length; i++) {
-                    str += '<br>' + keys[i] + ": " + model[keys[i]]
+                for (key in model) {
+                    str += '<br>' + key + ": " + model[key]
                 }
 
                 return str
@@ -459,10 +455,9 @@ pre_md_data = ''' <html>
 
             function displayConfig(config) {
                 str = ''
-                keys = Object.keys(config)
 
-                for (i = 0; i < keys.length; i++) {
-                    str += '<br>' + keys[i] + ": " + config[keys[i]]
+                for (key in config) {
+                    str += '<br>' + key + ": " + config[key]
                 }
 
                 return str
@@ -477,9 +472,9 @@ pre_md_data = ''' <html>
                     "<td style='vertical-align:top;text-align:left;'>" + 
                     displayData(data["data"]) + "</td>" +
                     "<td style='vertical-align:top;text-align:left;'>" + 
-                    displayModel(data["model"]) + "</td>" +
-                    "<td style='vertical-align:top;text-align:left;'>" + 
                     displayConfig(data["config"]) + "</td>" +
+                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    displayModel(data["model"]) + "</td>" +
                     + '</tr>'
 
                 $body.append(html)
@@ -1002,7 +997,7 @@ pre_data = '''<html>
                     return "green"
                 } 
                 else if (type == "FN") {
-                    return "blue"
+                    return "green"
                 }
                 else if (type == "TN") {
                     return "black"
@@ -1046,10 +1041,14 @@ pre_data = '''<html>
                             var str = ''
                             text = lb.className + '(' + lb.prob.toFixed(2) + ')'
                             if (split == false && lb.prob.toFixed(2) < 0.5) {
-                                str += '<hr>'
+                                str += "<hr style='border-bottom:1px dashed #000;'>"
                                 split = true
                             }
-                            str += '<li>' + text.fontcolor(getLabelColor(lb.type)) + '</li>'
+                            if (lb.type == "TP" || lb.type == "FP") {
+                                str += '<li><span style="background-color:lightGray">' + text.fontcolor(getLabelColor(lb.type)) + '</span></li>'
+                            } else {
+                                str += '<li style="list-style-type:none;">&nbsp&nbsp&nbsp' + text.fontcolor(getLabelColor(lb.type)) + '</li>'
+                            }
 
                             return str
                     }) 
@@ -1419,11 +1418,9 @@ pre_data = '''<html>
                     var selId = 'sel' + row
 
                     sel = document.getElementById(selId)
-                    if (sel == undefined) {
-                        //alert(row)
-                        continue
+                    if (sel != undefined) {
+                        selections[sel.options[sel.selectedIndex].value] += 1
                     }
-                    selections[sel.options[sel.selectedIndex].value] += 1
 
                     for (var i = 0; i < colums.length; i++) {
                         if (displayOptions.fields.indexOf(colums[i]) == -1) {
