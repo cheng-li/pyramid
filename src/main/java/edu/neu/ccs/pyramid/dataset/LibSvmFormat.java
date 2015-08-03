@@ -74,8 +74,7 @@ public class LibSvmFormat {
         File matrixFile = new File(libSvmFile);
         int numDataPoints = dataSet.getNumDataPoints();
         MultiLabel[] multiLabels = dataSet.getMultiLabels();
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(matrixFile));
-        ) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(matrixFile));) {
             for (int i=0;i<numDataPoints;i++){
                 MultiLabel multiLabel = multiLabels[i];
                 List<Integer> labels = multiLabel.getMatchedLabels().stream().sorted().collect(Collectors.toList());

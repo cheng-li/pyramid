@@ -23,7 +23,7 @@ public class Trec2LibSvm {
         for (int i=0; i<trecs.size(); i++) {
             ClfDataSet trecDataset = TRECFormat.loadClfDataSet(new File(trecs.get(i)),
                     DataSetType.CLF_SPARSE, false);
-            System.out.println(i + " -- Trainslating on trecs: " + trecs.get(i));
+            System.out.println(i + " -- Translating on trecs: " + trecs.get(i));
             LibSvmFormat.save(trecDataset, libSVMs.get(i));
         }
     }
