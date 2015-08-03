@@ -34,9 +34,8 @@ public class Exp33 {
             train(config);
         }
 
-        if (config.getBoolean("verify")){
-            verify(config);
-        }
+
+
 
     }
 
@@ -45,19 +44,19 @@ public class Exp33 {
             train(config);
         }
 
-        if (config.getBoolean("verify")){
-            verify(config);
-        }
 
     }
 
     private static void train(Config config) throws Exception{
-        String input = config.getString("input.folder");
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input,"train.trec"),
+        String trainName = config.getString("input.trainData");
+        String testName = config.getString("input.testData");
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(trainName),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(input,"test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(testName),
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
+
+        System.out.println("start training ... ");
 
         RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
                 .setHistory(config.getInt("history"))
@@ -72,12 +71,15 @@ public class Exp33 {
         System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
         ConfusionMatrix trainMatrix = new ConfusionMatrix(logisticRegression,dataSet);
         ConfusionMatrix testMatrix = new ConfusionMatrix(logisticRegression,testSet);
-        System.out.println("on training set:");
+
+        System.out.println("training done");
+
+        System.out.println("accuracy on training set:");
         for (int k=0;k<dataSet.getNumClasses();k++){
             System.out.println(new PerClassMeasures(trainMatrix,k));
         }
 
-        System.out.println("on test set:");
+        System.out.println("accuracy on test set:");
         for (int k=0;k<dataSet.getNumClasses();k++){
             System.out.println(new PerClassMeasures(testMatrix,k));
         }
@@ -85,40 +87,10 @@ public class Exp33 {
         System.out.println(new MacroAveragedMeasures(testMatrix));
         System.out.println(new MicroAveragedMeasures(testMatrix));
 
-        File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
+        File modelFile = new File(config.getString("output.folder"),config.getString("output.model"));
         logisticRegression.serialize(modelFile);
 
     }
 
-    private static void verify(Config config) throws Exception{
-        String input = config.getString("input.folder");
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(input,"train.trec"),
-                DataSetType.CLF_SPARSE, true);
-        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
-        File modelFile = new File(config.getString("archive.folder"),config.getString("archive.model"));
-        LogisticRegression logisticRegression = LogisticRegression.deserialize(modelFile);
-        System.out.println("number of used featureList in each class = "
-                +Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
-
-
-
-        int limit = config.getInt("verify.topFeature.limit");
-//        for (int k=0;k<logisticRegression.getNumClasses();k++){
-//            System.out.println("gradientSelection feature for class "+k+"("+labelTranslator.toExtLabel(k)+")");
-//            System.out.println(LogisticRegressionInspector.topFeatures(logisticRegression, k, limit).stream().map(featureUtility ->((Ngram)featureUtility.getFeature()).getNgram())
-//                    .collect(Collectors.toList()).toString()
-//            );
-//            List<Ngram> longNgrams = LogisticRegressionInspector.topFeatures(logisticRegression, k, 10000).stream()
-//                    .map(FeatureUtility::getFeature)
-//                    .filter(feature -> feature instanceof Ngram)
-//                    .map(feature -> (Ngram)feature)
-//                    .filter(ngram -> ngram.getN() >= 3).collect(Collectors.toList());
-//            System.out.println("long ngrams: ");
-//            System.out.println(longNgrams);
-//        }
-
-
-
-    }
 
 }

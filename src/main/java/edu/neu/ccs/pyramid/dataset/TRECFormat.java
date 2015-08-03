@@ -522,16 +522,19 @@ public class TRECFormat {
 
     private static void loadFeatureList(DataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
         File file = new File(trecFile, TREC_FEATURE_LIST_FILE_NAME);
-        FeatureList featureList;
-        try(
-                FileInputStream fileInputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-        ){
-            featureList = (FeatureList)objectInputStream.readObject();
+        if (file.exists()){
+            FeatureList featureList;
+            try(
+                    FileInputStream fileInputStream = new FileInputStream(file);
+                    BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                    ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+            ){
+                featureList = (FeatureList)objectInputStream.readObject();
 
+            }
+            dataSet.setFeatureList(featureList);
         }
-        dataSet.setFeatureList(featureList);
+
     }
 
     private static void writeIdTranslator(DataSet dataSet, File trecFile) {
@@ -559,16 +562,19 @@ public class TRECFormat {
 
     private static void loadIdTranslator(DataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
         File file = new File(trecFile, TREC_ID_TRANSLATOR_FILE_NAME);
-        IdTranslator idTranslator;
-        try(
-                FileInputStream fileInputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-        ){
-            idTranslator = (IdTranslator)objectInputStream.readObject();
+        if (file.exists()){
+            IdTranslator idTranslator;
+            try(
+                    FileInputStream fileInputStream = new FileInputStream(file);
+                    BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                    ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+            ){
+                idTranslator = (IdTranslator)objectInputStream.readObject();
 
+            }
+            dataSet.setIdTranslator(idTranslator);
         }
-        dataSet.setIdTranslator(idTranslator);
+
     }
 
     private static void writeLabelTranslator(ClfDataSet dataSet, File trecFile) {
@@ -597,16 +603,19 @@ public class TRECFormat {
 
     private static void loadLabelTranslator(ClfDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
         File file = new File(trecFile, TREC_LABEL_TRANSLATOR_FILE_NAME);
-        LabelTranslator labelTranslator;
-        try(
-                FileInputStream fileInputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-        ){
-            labelTranslator = (LabelTranslator)objectInputStream.readObject();
+        if (file.exists()){
+            LabelTranslator labelTranslator;
+            try(
+                    FileInputStream fileInputStream = new FileInputStream(file);
+                    BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                    ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+            ){
+                labelTranslator = (LabelTranslator)objectInputStream.readObject();
 
+            }
+            dataSet.setLabelTranslator(labelTranslator);
         }
-        dataSet.setLabelTranslator(labelTranslator);
+
     }
 
     private static void writeLabelTranslator(MultiLabelClfDataSet dataSet, File trecFile) {
@@ -634,16 +643,19 @@ public class TRECFormat {
 
     private static void loadLabelTranslator(MultiLabelClfDataSet dataSet, File trecFile) throws IOException, ClassNotFoundException {
         File file = new File(trecFile, TREC_LABEL_TRANSLATOR_FILE_NAME);
-        LabelTranslator labelTranslator;
-        try(
-                FileInputStream fileInputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
-        ){
-            labelTranslator = (LabelTranslator)objectInputStream.readObject();
+        if (file.exists()){
+            LabelTranslator labelTranslator;
+            try(
+                    FileInputStream fileInputStream = new FileInputStream(file);
+                    BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                    ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+            ){
+                labelTranslator = (LabelTranslator)objectInputStream.readObject();
 
+            }
+            dataSet.setLabelTranslator(labelTranslator);
         }
-        dataSet.setLabelTranslator(labelTranslator);
+
     }
 
 
