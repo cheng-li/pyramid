@@ -156,7 +156,7 @@ def includesLabel(label, labels):
     return 0
 
 
-def createTable(data, fields):
+def createTable(data, fields, fashion):
     line_count = 0
     output = []
     for row in data:
@@ -217,6 +217,7 @@ def createTable(data, fields):
         #for i in range(0, length):
             #predictedRanking.append(row["predictedRanking"][i])
         oneRow['predictedRanking'] = []
+
         for label in row["predictedRanking"]:
             if label["classIndex"] in row['internalLabels'] and label["classIndex"] in row['internalPrediction']:
                 label["type"] = "TP"
@@ -228,6 +229,8 @@ def createTable(data, fields):
                 label["type"] = ""
             r.append(includesLabel(label["className"], internalLabels))
             oneRow['predictedRanking'].append(label)
+        if fashion == "crf":
+            oneRow["predictedLabelSetRanking"] = row["predictedLabelSetRanking"]
 
         prec = []
         sumOfR = float(0)
@@ -317,14 +320,14 @@ def createNewJsonForTopFeatures(inputData):
     return outputData
 
 
-def parse(input_json_file, outputFileName, fields):
+def parse(input_json_file, outputFileName, fields, fashion):
     # read input
 
     inputJson = open(input_json_file, "r")
     inputData = json.load(inputJson)
     print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
 
-    outputData = createTable(inputData, fields)
+    outputData = createTable(inputData, fields, fashion)
     outputJson = json.dumps(outputData)
 
     output = pre_data + outputJson + post_data
@@ -374,7 +377,7 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, outputFileName):
     outputFile.close()
 
 
-def parseAll(inputPath, directoryName, fileName, fields):
+def parseAll(inputPath, directoryName, fileName, fields, fashion):
     outputFileName = "Viewer"
 
     topName = "top_features"
@@ -392,7 +395,7 @@ def parseAll(inputPath, directoryName, fileName, fields):
     createMetaDataHTML(inputData, inputModel, inputConfig, outputPath)
 
     if os.path.isfile(inputPath):
-        parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields)
+        parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields, fashion)
     else:
         if not inputPath.endswith('/'):
             directoryName += '/'
@@ -406,7 +409,7 @@ def parseAll(inputPath, directoryName, fileName, fields):
                 continue
             else:
                 outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
-                parse(absf, outputPath, fields)
+                parse(absf, outputPath, fields, fashion)
 
 #constant Strings
 pre_md_data = ''' <html>
@@ -1017,7 +1020,7 @@ pre_data = '''<html>
                     }
                 }
                 return false
-            }
+            }  
 
             function displayPredictedRanking(row, displayOptions) {
                 numOfLabels = 0
@@ -1055,6 +1058,25 @@ pre_data = '''<html>
                 } else {
                     return ""
                 }
+            }
+
+            function displayLabelSetRanking(row, displayOptions) {
+                str = ""
+
+                if (row.predictedLabelSetRanking == undefined) {
+                    return ""
+                }
+
+                str += '<br><b>Label&nbspSet&nbspRanking</b>:'
+
+                str += serialize(row.predictedLabelSetRanking, function (lb) {
+                    var str = ''
+
+                    str += '<li>' + lb.labels + '(' + lb.probability.toFixed(2) + ')</li>'
+                    return str
+                })
+
+                return str
             }
 
             function displayText(text) {
@@ -1127,6 +1149,7 @@ pre_data = '''<html>
                          }) + 
                         '<br><b>PredictedRanking</b>:' +
                         displayPredictedRanking(row, displayOptions) + 
+                        displayLabelSetRanking(row, displayOptions) + 
                         "<br><b>AP:&nbsp</b>" + row.idlabels.ap +
                         "<br><b>Overlap:&nbsp</b>" + row.idlabels.overlap +
                         "<br><b>Precision:&nbsp</b>" + row.idlabels.precision +
@@ -1501,19 +1524,24 @@ def main():
             fileName = splits[1]
         configName = "data_config.json"
         dataName = "data_info.json"
+        modelName = "model_config.json"
         f1 = open(directoryName + configName, 'r')
         config1 = json.load(f1)
         f2 = open(directoryName + dataName, 'r')
         config2 = json.load(f2)
+        f3 = open(directoryName + modelName, 'r')
+        config3 = json.load(f3)
+
         esIndex = config1["index.indexName"]
         classNumber = config2["numClassesInModel"]
         fields = config1["index.ngramExtractionFields"]
+        fashion = config3["predict.fashion"]
 
     else:
         print "Usage: python Visualizor.py index NumberofClasses json_file"
         return
     start = time.time()
-    parseAll(jsonFile, directoryName, fileName, fields)
+    parseAll(jsonFile, directoryName, fileName, fields, fashion)
     end = time.time()
     print "parsing cost time ", end-start, " seconds"
 
