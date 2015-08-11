@@ -46,10 +46,10 @@ public class FMeasure {
         for (int i=0; i<multiLabels.length; i++) {
             MultiLabel label = multiLabels[i];
             MultiLabel prediction = predictions.get(i);
-            f += MultiLabel.intersection(label, prediction).size() * 1.0 /
+            f += MultiLabel.intersection(label, prediction).size() * 2.0 /
                     (label.getMatchedLabels().size() + prediction.getMatchedLabels().size());
         }
 
-        return f * 2.0 / multiLabels.length;
+        return f / multiLabels.length;
     }
 }

@@ -77,7 +77,7 @@ public class MekaFormat {
                 int index = entry.getKey();
                 double value = entry.getValue();
 //                System.out.println("old index: " + index);
-                index += (numClasses - 1);
+                index += numClasses;
 //                System.out.println("new index: " + index);
 //                System.in.read();
                 stringBuffer.append("," + index + " " + value);
