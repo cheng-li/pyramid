@@ -15,8 +15,6 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import java.io.File;
 import java.util.List;
 
-import static org.junit.Assert.*;
-
 public class IMLLogisticRegressionTest {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
@@ -34,7 +32,7 @@ public class IMLLogisticRegressionTest {
     static void test1() throws Exception{
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         IMLLogisticTrainer trainer = IMLLogisticTrainer.getBuilder().setEpsilon(0.01).setGaussianPriorVariance(1)
                 .setHistory(5).build();
         StopWatch stopWatch = new StopWatch();

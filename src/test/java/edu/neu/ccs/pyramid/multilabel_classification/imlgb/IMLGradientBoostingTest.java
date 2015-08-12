@@ -273,7 +273,7 @@ public class IMLGradientBoostingTest {
 
 
         IMLGradientBoosting boosting = new IMLGradientBoosting(4);
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         boosting.setAssignments(assignments);
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
@@ -373,7 +373,7 @@ public class IMLGradientBoostingTest {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
         IMLGradientBoosting boosting = new IMLGradientBoosting(dataSet.getNumClasses());
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         boosting.setAssignments(assignments);
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)

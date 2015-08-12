@@ -5,16 +5,13 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
-import edu.neu.ccs.pyramid.eval.PerClassMeasures;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGradientBoosting;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.util.*;
@@ -164,7 +161,7 @@ public class Exp13 {
                 .numSplitIntervals(config.getInt("train.numSplitIntervals"))
                 .build();
 
-        List<MultiLabel> legalAssignments = DataSetUtil.gatherLabels(dataSet).stream()
+        List<MultiLabel> legalAssignments = DataSetUtil.gatherMultiLabels(dataSet).stream()
                 .collect(Collectors.toList());
 
         HMLGradientBoosting boosting;

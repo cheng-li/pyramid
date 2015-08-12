@@ -22,4 +22,18 @@ public class SetUtil {
         return result;
     }
 
+    /**
+     * elements in set1 but not in set2
+     * @param set1
+     * @param set2
+     * @param <E>
+     * @return
+     */
+    public static <E> Set<E> complement(Set<E> set1, Set<E> set2) {
+        Set<E> result = new HashSet<>();
+        result.addAll(set1);
+        result.removeAll(set2);
+        return result;
+    }
+
 }

@@ -660,13 +660,22 @@ public class DataSetUtil {
     }
 
 
-    public static List<MultiLabel> gatherLabels(MultiLabelClfDataSet dataSet){
+    public static List<MultiLabel> gatherMultiLabels(MultiLabelClfDataSet dataSet){
         Set<MultiLabel> multiLabels = new HashSet<>();
         MultiLabel[] multiLabelsArray = dataSet.getMultiLabels();
         for (MultiLabel multiLabel: multiLabelsArray){
             multiLabels.add(multiLabel);
         }
         return multiLabels.stream().collect(Collectors.toList());
+    }
+
+    public static Set<Integer> gatherLabels(MultiLabelClfDataSet dataSet){
+        Set<Integer> labels = new HashSet<>();
+        MultiLabel[] multiLabelsArray = dataSet.getMultiLabels();
+        for (MultiLabel multiLabel: multiLabelsArray){
+            labels.addAll(multiLabel.getMatchedLabels());
+        }
+        return labels;
     }
 
     /**

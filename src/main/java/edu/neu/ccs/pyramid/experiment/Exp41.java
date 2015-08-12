@@ -1,24 +1,17 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
-import edu.neu.ccs.pyramid.eval.PerClassMeasures;
-import edu.neu.ccs.pyramid.feature.FeatureUtility;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticLoss;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegression;
 import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegressionInspector;
-import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticTrainer;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.util.*;
@@ -87,7 +80,7 @@ public class Exp41 {
 
         System.out.println(dataSet.getMetaInfo());
         System.out.println("gathering assignments ");
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet).stream()
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet).stream()
                 .collect(Collectors.toList());
         System.out.println("there are "+assignments.size()+ " assignments");
 

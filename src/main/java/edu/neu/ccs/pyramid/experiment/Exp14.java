@@ -171,7 +171,7 @@
 //            boosting  = new IMLGradientBoosting(numClasses);
 //            String predictionFashion = config.getString("train.prediction.fashion");
 //            if (predictionFashion.equalsIgnoreCase("crf")){
-//                List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+//                List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
 //                boosting.setAssignments(assignments);
 //            }
 //        }

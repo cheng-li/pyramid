@@ -39,7 +39,7 @@ public class MLACPlattScaling implements MultiLabelClassifier.ClassProbEstimator
 
         MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setGaussianPriorVariance(100000)
                 .setHistory(5).setEpsilon(0.1).build();
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(scoreDataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(scoreDataSet);
         this.logisticRegression = trainer.train(scoreDataSet,assignments);
     }
 

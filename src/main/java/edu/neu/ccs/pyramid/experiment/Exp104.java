@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.experiment;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -14,11 +13,9 @@ import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * multi-label logistic regression, trained independently
@@ -83,7 +80,7 @@ public class Exp104 {
         System.out.println(testSet.getMetaInfo());
 
         System.out.println("gathering assignments ");
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet).stream()
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet).stream()
                 .collect(Collectors.toList());
         System.out.println("there are "+assignments.size()+ " assignments");
 

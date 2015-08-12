@@ -210,7 +210,7 @@ public class MLLogisticTrainerTest {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"/ohsumed/unigrams/train.trec")
         ,DataSetType.ML_CLF_SPARSE,true);
         System.out.println(dataSet.getMetaInfo());
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet).stream()
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet).stream()
                 .collect(Collectors.toList());
         MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(1).setGaussianPriorVariance(1)
                 .setHistory(5).build();
@@ -232,7 +232,7 @@ public class MLLogisticTrainerTest {
     static void test6() throws Exception{
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(0.01).setGaussianPriorVariance(1)
                 .setHistory(5).build();
         StopWatch stopWatch = new StopWatch();

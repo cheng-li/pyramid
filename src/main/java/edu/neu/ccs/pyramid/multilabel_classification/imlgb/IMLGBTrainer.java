@@ -60,7 +60,7 @@ public class IMLGBTrainer {
         this.updateProbabilityMatrix();
         this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateClassGradientMatrix();
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         boosting.setAssignments(assignments);
     }
 

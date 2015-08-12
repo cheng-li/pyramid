@@ -99,7 +99,7 @@ public class DataSetUtilTest {
     private static void test5() throws Exception{
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"spam/4labels/train.trec"),
                 DataSetType.ML_CLF_DENSE,true);
-        System.out.println(DataSetUtil.gatherLabels(dataSet));
+        System.out.println(DataSetUtil.gatherMultiLabels(dataSet));
 
     }
 

@@ -9,9 +9,6 @@ import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.MacroAveragedMeasures;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
@@ -472,7 +469,7 @@ public class HMLGradientBoostingTest {
     static void test5() throws Exception{
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         HMLGradientBoosting boosting = new HMLGradientBoosting(dataSet.getNumClasses(),assignments);
 
 

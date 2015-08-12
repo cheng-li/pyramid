@@ -11,8 +11,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
-
 public class MLPlattScalingTest {
     private static final Config config = new Config("configs/local.config");
     private static final String DATASETS = config.getString("input.datasets");
@@ -26,7 +24,7 @@ public class MLPlattScalingTest {
     private static void test1() throws Exception{
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         IMLGradientBoosting boosting = new IMLGradientBoosting(dataSet.getNumClasses());
-        List<MultiLabel> assignments = DataSetUtil.gatherLabels(dataSet);
+        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         boosting.setAssignments(assignments);
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
