@@ -93,7 +93,7 @@ public abstract class LabelBasedMeasures {
         if (labels.length == 0) {
             throw new RuntimeException("Empty given ground truth.");
         }
-        if (labels.length == predictions.length) {
+        if (labels.length != predictions.length) {
             throw new RuntimeException("The lengths of ground truth and predictions should" +
                     "be the same.");
         }

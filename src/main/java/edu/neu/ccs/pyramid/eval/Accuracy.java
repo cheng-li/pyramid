@@ -43,15 +43,24 @@ public class Accuracy {
      * @param predictions
      * @return
      */
-    public static double accuracy(MultiLabel[] multiLabels, List<MultiLabel> predictions){
+    public static double accuracy(MultiLabel[] multiLabels, MultiLabel[] predictions){
+        if (multiLabels.length == 0) {
+            throw new IllegalArgumentException("multi labels length is zero.");
+        }
+        if (multiLabels.length != predictions.length) {
+            throw new IllegalArgumentException("multi labels length is not equal to predictions length.");
+        }
+
         double numCorrect = IntStream.range(0,multiLabels.length).parallel()
-                .filter(i-> multiLabels[i].equals(predictions.get(i)))
+                .filter(i-> multiLabels[i].equals(predictions[i]))
                 .count();
         return numCorrect/multiLabels.length;
     }
 
     public static double accuracy(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
-        return accuracy(dataSet.getMultiLabels(),classifier.predict(dataSet));
+        List<MultiLabel> predictions = classifier.predict(dataSet);
+
+        return accuracy(dataSet.getMultiLabels(), predictions.toArray(new MultiLabel[predictions.size()]));
     }
 
     /**
@@ -60,11 +69,11 @@ public class Accuracy {
      * @param predictions
      * @return
      */
-    public static double partialAccuracy(MultiLabel[] multiLabels, List<MultiLabel> predictions) {
+    public static double partialAccuracy(MultiLabel[] multiLabels, MultiLabel[] predictions) {
         double a = 0.0;
         for (int i=0; i<multiLabels.length; i++) {
             MultiLabel label = multiLabels[i];
-            MultiLabel prediction = predictions.get(i);
+            MultiLabel prediction = predictions[i];
             a += MultiLabel.intersection(label, prediction).size() * 1.0 / MultiLabel.union(label, prediction).size();
         }
 

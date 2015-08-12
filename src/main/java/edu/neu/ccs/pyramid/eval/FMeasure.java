@@ -40,12 +40,12 @@ public class FMeasure {
      * @param predictions
      * @return
      */
-    public static double f1(MultiLabel[] multiLabels, List<MultiLabel> predictions) {
+    public static double f1(MultiLabel[] multiLabels, MultiLabel[] predictions) {
 
         double f = 0.0;
         for (int i=0; i<multiLabels.length; i++) {
             MultiLabel label = multiLabels[i];
-            MultiLabel prediction = predictions.get(i);
+            MultiLabel prediction = predictions[i];
             f += MultiLabel.intersection(label, prediction).size() * 2.0 /
                     (label.getMatchedLabels().size() + prediction.getMatchedLabels().size());
         }

@@ -53,11 +53,11 @@ public class Recall {
      * @param predictions
      * @return
      */
-    public static double recall(MultiLabel[] multiLabels, List<MultiLabel> predictions) {
+    public static double recall(MultiLabel[] multiLabels, MultiLabel[] predictions) {
         double r = 0.0;
         for (int i=0; i<multiLabels.length; i++) {
             MultiLabel label = multiLabels[i];
-            MultiLabel prediction = predictions.get(i);
+            MultiLabel prediction = predictions[i];
             r += MultiLabel.intersection(label, prediction).size() * 1.0 / label.getMatchedLabels().size();
         }
         return r / multiLabels.length;
@@ -70,7 +70,8 @@ public class Recall {
      * @return
      */
     public static double recall(MultiLabelClassifier classifier, MultiLabelClfDataSet dataset) {
-        return recall(dataset.getMultiLabels(), classifier.predict(dataset));
+        List<MultiLabel> predictions = classifier.predict(dataset);
+        return recall(dataset.getMultiLabels(), predictions.toArray(new MultiLabel[predictions.size()]));
     }
 
 }

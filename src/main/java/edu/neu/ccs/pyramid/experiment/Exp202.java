@@ -125,7 +125,7 @@ public class Exp202 {
         String outputTrain = output + ".train.txt";
         String outputTest = output + ".test.txt";
         BufferedWriter bw = new BufferedWriter(new FileWriter(outputTrain));
-        bw.write("accuracy on training set = " + Accuracy.accuracy(trainTrue, trainPredict) + "\n");
+        bw.write("accuracy on training set = " + Accuracy.accuracy(trainTrue, trainPredict.toArray(new MultiLabel[trainPredict.size()])) + "\n");
         bw.write("overlap on training set = " + Overlap.overlap(trainTrue, trainPredict) + "\n");
         bw.write("Label\tAccuracy\tPrecision\tRecall\tF1\n");
         for (Map.Entry<String, Double> entry : trainAcc.entrySet()) {
@@ -136,7 +136,7 @@ public class Exp202 {
         bw.close();
 
         bw = new BufferedWriter(new FileWriter(outputTest));
-        bw.write("accuracy on testing set = " + Accuracy.accuracy(testTrue, testPredict) + "\n");
+        bw.write("accuracy on testing set = " + Accuracy.accuracy(testTrue, testPredict.toArray(new MultiLabel[trainPredict.size()])) + "\n");
         bw.write("overlap on testing set = " + Overlap.overlap(testTrue, testPredict) + "\n");
         bw.write("Label\tAccuracy\tPrecision\tRecall\tF1\n");
         for (Map.Entry<String, Double> entry : testAcc.entrySet()) {
