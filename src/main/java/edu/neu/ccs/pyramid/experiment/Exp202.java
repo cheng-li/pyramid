@@ -47,8 +47,8 @@ public class Exp202 {
 
         MultiLabel[] testTrue = test.getMultiLabels();
         MultiLabel[] trainTrue = train.getMultiLabels();
-        List<MultiLabel> testPredict = imlGradientBoosting.predict(test);
-        List<MultiLabel> trainPredict = imlGradientBoosting.predict(train);
+        MultiLabel[] testPredict = imlGradientBoosting.predict(test);
+        MultiLabel[] trainPredict = imlGradientBoosting.predict(train);
 
         LabelTranslator labelTranslator = test.getLabelTranslator();
 
@@ -77,7 +77,7 @@ public class Exp202 {
             int[] predictionTrain = new int[trainTrue.length];
             // get trueLabels and prediction arrays for train
             for (int i=0; i<trainTrue.length; i++) {
-                MultiLabel yHat = trainPredict.get(i);
+                MultiLabel yHat = trainPredict[i];
                 MultiLabel y = trainTrue[i];
 
                 if (yHat.matchClass(careLabelIndex)) {
@@ -100,7 +100,7 @@ public class Exp202 {
             int[] predictionTest = new int[testTrue.length];
             // get trueLabels and prediction arrays for train
             for (int i=0; i<testTrue.length; i++) {
-                MultiLabel yHat = testPredict.get(i);
+                MultiLabel yHat = testPredict[i];
                 MultiLabel y = testTrue[i];
 
                 if (yHat.matchClass(careLabelIndex)) {
@@ -125,7 +125,7 @@ public class Exp202 {
         String outputTrain = output + ".train.txt";
         String outputTest = output + ".test.txt";
         BufferedWriter bw = new BufferedWriter(new FileWriter(outputTrain));
-        bw.write("accuracy on training set = " + Accuracy.accuracy(trainTrue, trainPredict.toArray(new MultiLabel[trainPredict.size()])) + "\n");
+        bw.write("accuracy on training set = " + Accuracy.accuracy(trainTrue, trainPredict) + "\n");
         bw.write("overlap on training set = " + Overlap.overlap(trainTrue, trainPredict) + "\n");
         bw.write("Label\tAccuracy\tPrecision\tRecall\tF1\n");
         for (Map.Entry<String, Double> entry : trainAcc.entrySet()) {
@@ -136,7 +136,7 @@ public class Exp202 {
         bw.close();
 
         bw = new BufferedWriter(new FileWriter(outputTest));
-        bw.write("accuracy on testing set = " + Accuracy.accuracy(testTrue, testPredict.toArray(new MultiLabel[trainPredict.size()])) + "\n");
+        bw.write("accuracy on testing set = " + Accuracy.accuracy(testTrue, testPredict) + "\n");
         bw.write("overlap on testing set = " + Overlap.overlap(testTrue, testPredict) + "\n");
         bw.write("Label\tAccuracy\tPrecision\tRecall\tF1\n");
         for (Map.Entry<String, Double> entry : testAcc.entrySet()) {

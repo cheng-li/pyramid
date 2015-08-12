@@ -70,8 +70,7 @@ public class Recall {
      * @return
      */
     public static double recall(MultiLabelClassifier classifier, MultiLabelClfDataSet dataset) {
-        List<MultiLabel> predictions = classifier.predict(dataset);
-        return recall(dataset.getMultiLabels(), predictions.toArray(new MultiLabel[predictions.size()]));
+        return recall(dataset.getMultiLabels(), classifier.predict(dataset));
     }
 
 }

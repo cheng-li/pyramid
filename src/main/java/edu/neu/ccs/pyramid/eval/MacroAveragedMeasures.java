@@ -29,7 +29,7 @@ public class MacroAveragedMeasures {
     public MacroAveragedMeasures(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
         int numClasses = dataSet.getNumClasses();
         MultiLabel[] multiLabels = dataSet.getMultiLabels();
-        List<MultiLabel> predictions = classifier.predict(dataSet);
+        MultiLabel[] predictions = classifier.predict(dataSet);
         double sum = 0;
         for (int k=0;k<numClasses;k++){
             PerClassMeasures measures = new PerClassMeasures(multiLabels,predictions,k);

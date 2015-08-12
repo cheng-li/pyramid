@@ -19,9 +19,9 @@ public class Overlap {
         return overlap(dataSet.getMultiLabels(),classifier.predict(dataSet));
     }
 
-    public static double overlap(MultiLabel[] multiLabels, List<MultiLabel> predictions){
+    public static double overlap(MultiLabel[] multiLabels, MultiLabel[] predictions){
         return IntStream.range(0,multiLabels.length).parallel()
-                .mapToDouble(i -> overlap(multiLabels[i],predictions.get(i)))
+                .mapToDouble(i -> overlap(multiLabels[i],predictions[i]))
                 .average().getAsDouble();
     }
 

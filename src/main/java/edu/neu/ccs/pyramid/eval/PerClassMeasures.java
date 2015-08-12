@@ -86,7 +86,7 @@ public class PerClassMeasures {
      * @param predictions
      */
     public PerClassMeasures(MultiLabel[] multiLabels,
-                            List<MultiLabel> predictions,
+                            MultiLabel[] predictions,
                             int classIndex){
         this(getBinaryConfusionMatrix(multiLabels,predictions,classIndex),1);
     }
@@ -99,7 +99,7 @@ public class PerClassMeasures {
      * @param className
      */
     public PerClassMeasures(MultiLabel[] multiLabels,
-                            List<MultiLabel> predictions,
+                            MultiLabel[] predictions,
                             int classIndex,
                             String className){
         this(multiLabels, predictions, classIndex);
@@ -184,7 +184,7 @@ public class PerClassMeasures {
                 '}';
     }
 
-    private static ConfusionMatrix getBinaryConfusionMatrix(MultiLabel[] multiLabels, List<MultiLabel> predictions, int classIndex){
+    private static ConfusionMatrix getBinaryConfusionMatrix(MultiLabel[] multiLabels, MultiLabel[] predictions, int classIndex){
         int numDataPoints = multiLabels.length;
         int[] binaryLabels = new int[numDataPoints];
         int[] binaryPredictions = new int[numDataPoints];
@@ -195,7 +195,7 @@ public class PerClassMeasures {
                 binaryLabels[i]=0;
             }
 
-            if (predictions.get(i).matchClass(classIndex)){
+            if (predictions[i].matchClass(classIndex)){
                 binaryPredictions[i]=1;
             } else {
                 binaryPredictions[i]=0;

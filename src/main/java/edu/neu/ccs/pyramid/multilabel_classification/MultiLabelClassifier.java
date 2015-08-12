@@ -18,10 +18,12 @@ import java.util.stream.IntStream;
 public interface MultiLabelClassifier extends Serializable{
     int  getNumClasses();
     MultiLabel predict(Vector vector);
-    default List<MultiLabel> predict(MultiLabelClfDataSet dataSet){
-        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+    default MultiLabel[] predict(MultiLabelClfDataSet dataSet){
+
+        List<MultiLabel> results = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .mapToObj(i -> predict(dataSet.getRow(i)))
                 .collect(Collectors.toList());
+        return results.toArray(new MultiLabel[results.size()]);
     }
 
     default void serialize(File file) throws Exception{

@@ -54,12 +54,12 @@ public class Precision {
      * @param predictions
      * @return
      */
-    public static double precision(MultiLabel[] multiLabels, List<MultiLabel> predictions){
+    public static double precision(MultiLabel[] multiLabels, MultiLabel[] predictions){
 
         double p = 0.0;
         for (int i=0; i<multiLabels.length; i++) {
             MultiLabel label = multiLabels[i];
-            MultiLabel prediction = predictions.get(i);
+            MultiLabel prediction = predictions[i];
             p += MultiLabel.intersection(label, prediction).size() * 1.0 / prediction.getMatchedLabels().size();
         }
 

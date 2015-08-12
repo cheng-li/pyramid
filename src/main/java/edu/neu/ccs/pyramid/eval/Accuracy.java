@@ -58,9 +58,7 @@ public class Accuracy {
     }
 
     public static double accuracy(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
-        List<MultiLabel> predictions = classifier.predict(dataSet);
-
-        return accuracy(dataSet.getMultiLabels(), predictions.toArray(new MultiLabel[predictions.size()]));
+        return accuracy(dataSet.getMultiLabels(), classifier.predict(dataSet));
     }
 
     /**
