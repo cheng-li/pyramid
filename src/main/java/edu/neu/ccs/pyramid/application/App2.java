@@ -16,6 +16,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.util.Serialization;
+import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -25,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -271,20 +273,46 @@ public class App2 {
         }
         System.out.println("reports generated");
 
+
+        Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
+                .collect(Collectors.toSet());
+
+        Set<String> dataSetLabels = DataSetUtil.gatherLabels(dataSet).stream().map(i -> dataSet.getLabelTranslator().toExtLabel(i))
+                .collect(Collectors.toSet());
+
         JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"data_info.json"), JsonEncoding.UTF8);
         jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField("dataSet",dataName);
         jsonGenerator.writeNumberField("numClassesInModel",boosting.getNumClasses());
-        jsonGenerator.writeNumberField("numClassesInDataSet",dataSet.getNumClasses());
+        jsonGenerator.writeNumberField("numClassesInDataSet",dataSetLabels.size());
+        jsonGenerator.writeNumberField("numClassesInModelDataSetCombined",dataSet.getNumClasses());
 
-        List<String> extra = new ArrayList<>();
-        for (int k=boosting.getNumClasses();k<dataSet.getNumClasses();k++){
-            extra.add(dataSet.getLabelTranslator().toExtLabel(k));
-        }
-        jsonGenerator.writeArrayFieldStart("extraClasses");
-        for (String label: extra){
+
+
+        Set<String> modelNotDataLabels = SetUtil.complement(modelLabels, dataSetLabels);
+
+        Set<String> dataNotModelLabels = SetUtil.complement(dataSetLabels,modelLabels);
+
+        jsonGenerator.writeNumberField("numClassesInDataSetButNotModel",dataNotModelLabels.size());
+
+        jsonGenerator.writeNumberField("numClassesInModelButNotDataSet",modelNotDataLabels.size());
+
+        jsonGenerator.writeArrayFieldStart("classesInDataSetButNotModel");
+        for (String label: dataNotModelLabels){
             jsonGenerator.writeObject(label);
         }
         jsonGenerator.writeEndArray();
+
+        jsonGenerator.writeArrayFieldStart("classesInModelButNotDataSet");
+        for (String label: modelNotDataLabels){
+            jsonGenerator.writeObject(label);
+        }
+        jsonGenerator.writeEndArray();
+
+
+
+
+
         jsonGenerator.writeNumberField("labelCardinality",dataSet.labelCardinality());
 
         jsonGenerator.writeEndObject();
