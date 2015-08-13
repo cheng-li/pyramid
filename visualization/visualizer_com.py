@@ -320,21 +320,27 @@ def createNewJsonForTopFeatures(inputData):
     return outputData
 
 
-def parse(input_json_file, outputFileName, fields, fashion):
+def parse(input_json_file, outputFileName, fields, fashion, input_json_file2):
     # read input
+    outputData = []
 
     inputJson = open(input_json_file, "r")
     inputData = json.load(inputJson)
     print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
+    outputData.append(createTable(inputData, fields, fashion))
+    inputJson.close()
 
-    outputData = createTable(inputData, fields, fashion)
+    inputJson = open(input_json_file2, "r")
+    inputData = json.load(inputJson)
+    print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
+    outputData.append(createTable(inputData, fields, fashion))
+    inputJson.close()
+
     outputJson = json.dumps(outputData)
-
     output = pre_data + outputJson + post_data
 
     outputFile = open(outputFileName, "w")
     outputFile.write(output)
-    inputJson.close()
     outputFile.close()
 
 def createTopFeatureHTML(input_json_file, outputFileName):
@@ -377,7 +383,7 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, outputFileName):
     outputFile.close()
 
 
-def parseAll(inputPath, directoryName, fileName, fields, fashion):
+def parseAll(inputPath, directoryName, fileName, fields, fashion, inputPath2):
     outputFileName = "Viewer"
 
     topName = "top_features"
@@ -395,7 +401,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     createMetaDataHTML(inputData, inputModel, inputConfig, outputPath)
 
     if os.path.isfile(inputPath):
-        parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields, fashion)
+        parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields, fashion, inputPath2)
     else:
         if not inputPath.endswith('/'):
             directoryName += '/'
@@ -1140,15 +1146,28 @@ pre_data = '''<html>
                 })
             }
 
+            function findRowById(data, id) {
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].idlabels.id == id) {
+                        return data[i]
+                    }
+                }
+            }
+
             function render(data, displayOptions) {
-                generateFeedbackDataTable(data)
+                generateFeedbackDataTable(data[0])
 
                 var $body = $('#data-table')
                 $body.empty()
                 var html = ''
-                data.forEach(function (row, i) {
+                data[0].forEach(function (row, i) {
                     var labels = ''
 
+                    row2 = findRowById(data[1], row.idlabels.id)
+                    if (row2 == undefined) {
+                        alert(row.idlabels.id)
+                        return
+                    }
                     html += '<tr>' +
                         "<td style='vertical-align:top;text-align:left;' width='5%'>" + 
                         "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
@@ -1184,11 +1203,45 @@ pre_data = '''<html>
                         displayClass(row.TN, displayOptions, i) +
                         '</tr>'
 
-
+                    row = row2
+                    html += '<tr>' +
+                        "<td style='vertical-align:top;text-align:left;' width='5%'>" + 
+                        "<pre id='labelId" + i + "' style='display:none'>" + row.idlabels.id + '</pre>' +
+                        "<input id='highlights" + i + "' style='display:none' value=''>" +
+                        storeOrigText(row.text, i) +
+                        "<b>ID:</b>&nbsp" + row.idlabels.id + 
+                        displayOthers(row.others) + 
+                        '<br><b>Labels</b>:' +  
+                        serialize(row.idlabels.internalLabels, function (lb) {
+                            var str = ''
+                            for (var k in lb) {
+                                str += '<li>' + lb[k] + '</li>'
+                            }
+                            return str
+                         }) + 
+                        '<br><b>Label&nbspRanking</b>:' +
+                        displayPredictedRanking(row, displayOptions) + 
+                        "<br><b>AP:&nbsp</b>" + row.idlabels.ap +
+                        "<br><b>RankOfFullRecall:&nbsp</b>" + row.idlabels.rankoffullrecall + "<br>" +
+                        displayLabelSetRanking(row, displayOptions) + 
+                        "<br><b>Overlap:&nbsp</b>" + row.idlabels.overlap +
+                        "<br><b>Precision:&nbsp</b>" + row.idlabels.precision +
+                        "<br><b>Recall:&nbsp</b>" + row.idlabels.recall +
+                        '<br><br><br><b>Feedback</b>:' +
+                        displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
+                        '</td>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        displayText(row.text) +
+                        '</td>' +
+                        displayClass(row.TP, displayOptions, i) +
+                        displayClass(row.FP, displayOptions, i) +
+                        displayClass(row.FN, displayOptions, i) +
+                        displayClass(row.TN, displayOptions, i) +
+                        '</tr>'
                 })
 
                 $body.append(html)
-                initialHighlights(data)
+                initialHighlights(data[0])
                 refreshTable(displayOptions)
                 createNewHTML()
             }
@@ -1346,6 +1399,7 @@ pre_data = '''<html>
             }
 
             function sortByViewOptions(data, displayOptions) {
+                return data
                 if (displayOptions.sortRules === 'abs') {
                     data.forEach(function (row) {
                         sortByAbsScoreDescending(row.TP)
@@ -1529,8 +1583,9 @@ def main():
     global esIndex
     global classNumber
     # usage: myprog json_file
-    if len(sys.argv) >= 1:
+    if len(sys.argv) >= 3:
         jsonFile = sys.argv[1]
+        jsonFile2 = sys.argv[2]
 
         splits = jsonFile.rsplit("/", 1)
         if len(splits) == 1:
@@ -1558,7 +1613,7 @@ def main():
         print "Usage: python Visualizor.py index NumberofClasses json_file"
         return
     start = time.time()
-    parseAll(jsonFile, directoryName, fileName, fields, fashion)
+    parseAll(jsonFile, directoryName, fileName, fields, fashion, jsonFile2)
     end = time.time()
     print "parsing cost time ", end-start, " seconds"
 
