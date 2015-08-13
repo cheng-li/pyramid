@@ -6,8 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
@@ -214,8 +213,23 @@ public class App2 {
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
-        System.out.println("accuracy on data set = "+Accuracy.accuracy(boosting,dataSet));
-        System.out.println("overlap on data set = "+ Overlap.overlap(boosting,dataSet));
+        int numClasses = dataSet.getNumClasses();
+        MultiLabel[] multiLabels = dataSet.getMultiLabels();
+        MultiLabel[] predictions = boosting.predict(dataSet);
+        MicroMeasures microMeasures = new MicroMeasures(numClasses);
+        MacroMeasures macroMeasures = new MacroMeasures(numClasses);
+        microMeasures.update(multiLabels,predictions);
+        macroMeasures.update(multiLabels,predictions);
+        System.out.println("hamming loss on data set = " + HammingLoss.hammingLoss(multiLabels,predictions,numClasses));
+        System.out.println("accuracy on data set = " + Accuracy.accuracy(multiLabels,predictions));
+        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions));
+        System.out.println("precision on data set = " + Precision.precision(multiLabels,predictions));
+        System.out.println("recall on data set = " + Recall.recall(multiLabels,predictions));
+        System.out.println("overlap on data set = "+ Overlap.overlap(multiLabels,predictions));
+        System.out.println("macro-measures on data set = " + macroMeasures);
+        System.out.println("micro-measures on data set = " + microMeasures);
+
+
 //        System.out.println("macro-averaged measure on training set:");
 //        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
         if (true){

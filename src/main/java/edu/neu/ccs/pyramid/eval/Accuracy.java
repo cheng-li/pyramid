@@ -52,7 +52,7 @@ public class Accuracy {
         }
 
         double numCorrect = IntStream.range(0,multiLabels.length).parallel()
-                .filter(i-> multiLabels[i].equals(predictions[i]))
+                .filter(i -> multiLabels[i].equals(predictions[i]))
                 .count();
         return numCorrect/multiLabels.length;
     }
@@ -74,8 +74,10 @@ public class Accuracy {
             MultiLabel prediction = predictions[i];
             a += MultiLabel.intersection(label, prediction).size() * 1.0 / MultiLabel.union(label, prediction).size();
         }
-
         return a / multiLabels.length;
     }
 
+    public static double partialAccuracy(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet) {
+        return partialAccuracy(dataSet.getMultiLabels(), classifier.predict(dataSet));
+    }
 }
