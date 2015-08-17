@@ -58,7 +58,11 @@ public class Recall {
         for (int i=0; i<multiLabels.length; i++) {
             MultiLabel label = multiLabels[i];
             MultiLabel prediction = predictions[i];
-            r += MultiLabel.intersection(label, prediction).size() * 1.0 / label.getMatchedLabels().size();
+            if (label.getMatchedLabels().size() == 0){
+                r += 1.0;
+            } else {
+                r += MultiLabel.intersection(label, prediction).size() * 1.0 / label.getMatchedLabels().size();
+            }
         }
         return r / multiLabels.length;
     }

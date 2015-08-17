@@ -60,7 +60,11 @@ public class Precision {
         for (int i=0; i<multiLabels.length; i++) {
             MultiLabel label = multiLabels[i];
             MultiLabel prediction = predictions[i];
-            p += MultiLabel.intersection(label, prediction).size() * 1.0 / prediction.getMatchedLabels().size();
+            if (prediction.getMatchedLabels().size() == 0){
+                p += 1.0;
+            } else {
+                p += MultiLabel.intersection(label, prediction).size() * 1.0 / prediction.getMatchedLabels().size();
+            }
         }
 
         return p / multiLabels.length;
