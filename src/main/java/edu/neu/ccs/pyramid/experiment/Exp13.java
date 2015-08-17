@@ -3,8 +3,7 @@ package edu.neu.ccs.pyramid.experiment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.hmlgb.HMLGBConfig;
@@ -298,6 +297,22 @@ public class Exp13 {
         System.out.println("overlap on test set = "+ Overlap.overlap(boosting,dataSet));
 //        System.out.println("macro-averaged measure on test set:");
 //        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
+        int numClasses = dataSet.getNumClasses();
+        MultiLabel[] multiLabels = dataSet.getMultiLabels();
+        MultiLabel[] predictions = boosting.predict(dataSet);
+        MicroMeasures microMeasures = new MicroMeasures(numClasses);
+        MacroMeasures macroMeasures = new MacroMeasures(numClasses);
+        microMeasures.update(multiLabels,predictions);
+        macroMeasures.update(multiLabels,predictions);
+        System.out.println("hamming loss on data set = " + HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
+        System.out.println("accuracy on data set = " + Accuracy.accuracy(multiLabels,predictions));
+        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions));
+        System.out.println("precision on data set = " + Precision.precision(multiLabels,predictions));
+        System.out.println("recall on data set = " + Recall.recall(multiLabels,predictions));
+        System.out.println("overlap on data set = "+ Overlap.overlap(multiLabels,predictions));
+        System.out.println("macro-measures on data set = " + macroMeasures);
+        System.out.println("micro-measures on data set = " + microMeasures);
+
 
         if (config.getBoolean("test.analyze")){
             int limit = config.getInt("test.analyze.rule.limit");
