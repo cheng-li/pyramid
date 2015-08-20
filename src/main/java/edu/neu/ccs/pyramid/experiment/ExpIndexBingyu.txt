@@ -4,3 +4,4 @@
 203: index reuters_2004 by transforming partial labels into features.
 204: temp experiment for dump yelp data for sentence2vec.
 205: index MEKA orginal raw data. But combine all title, text information into one field, named body.
+206: estimate the count of legal combination of multi-labels, by increasing the number of documents.
