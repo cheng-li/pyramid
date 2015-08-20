@@ -229,7 +229,20 @@ def createTable(data, fields, fashion):
                 label["type"] = ""
             r.append(includesLabel(label["className"], internalLabels))
             oneRow['predictedRanking'].append(label)
+
+
         if fashion == "crf":
+            for labels in row["predictedLabelSetRanking"]:
+                labels["types"] = []
+                for index in labels["internalLabels"]:
+                    if index in row['internalLabels'] and index in row['internalPrediction']:
+                        labels["types"].append("TP")
+                    elif index not in row['internalLabels'] and index in row['internalPrediction']:
+                        labels["types"].append("FP")
+                    elif index in row['internalLabels'] and index not in row['internalPrediction']:
+                        labels["types"].append("FN")
+                    else:
+                        labels["types"].append("")
             oneRow["predictedLabelSetRanking"] = row["predictedLabelSetRanking"]
 
         prec = []
@@ -1044,7 +1057,6 @@ pre_data = '''<html>
                             var str = ''
                             text = lb.className + '(' + lb.prob.toFixed(2) + ')'
                             if (split == false && lb.prob.toFixed(2) < 0.5) {
-                                str += "<hr style='border-bottom:1px dashed #000;'>"
                                 split = true
                             }
                             if (lb.type == "TP" || lb.type == "FP") {
@@ -1076,22 +1088,26 @@ pre_data = '''<html>
                 return str
             }
 
-            function displayLabelSetRanking(row, displayOptions) {
-                str = ""
+            function displayLabelSetRanking(row) {
+                predictedLabelSetRanking = row.predictedLabelSetRanking
+                str = ''
 
-                if (row.predictedLabelSetRanking == undefined) {
-                    return ""
+                for (var i = 0; i < predictedLabelSetRanking.length; i++) {
+                    labels = predictedLabelSetRanking[i]
+                    temp = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
+                    for (var j = 1; j < labels.labels.length; j++) {
+                        temp += " | " + labels.labels[1].fontcolor(getLabelColor(labels.types[1]))
+                    }
+
+                    temp += '(' + labels.probability.toFixed(2)  + ')'
+
+                    if (i == 0) {
+                        temp = '<span style="background-color:lightGray">' + temp + '</span>'
+                    }
+
+                    temp = '<li>' + temp + '</li>'
+                    str += temp
                 }
-
-                str += '<br><b>Label&nbspSet&nbspRanking</b>:'
-
-                str += serialize(row.predictedLabelSetRanking, function (lb) {
-                    var str = ''
-
-                    str += '<li>' + labelsToString(lb.labels) + '(' + lb.probability.toFixed(2) + ')</li>'
-
-                    return str
-                })
 
                 return str
             }
@@ -1168,6 +1184,7 @@ pre_data = '''<html>
                         displayPredictedRanking(row, displayOptions) + 
                         "<br><b>AP:&nbsp</b>" + row.idlabels.ap +
                         "<br><b>RankOfFullRecall:&nbsp</b>" + row.idlabels.rankoffullrecall + "<br>" +
+                        '<br><b>Label&nbspSet&nbspRanking</b>:' +
                         displayLabelSetRanking(row, displayOptions) + 
                         "<br><b>Overlap:&nbsp</b>" + row.idlabels.overlap +
                         "<br><b>Precision:&nbsp</b>" + row.idlabels.precision +
