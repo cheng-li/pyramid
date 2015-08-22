@@ -230,9 +230,9 @@ public class App2 {
         System.out.println("micro-measures on data set = " + microMeasures);
 
 
-//        System.out.println("macro-averaged measure on training set:");
-//        System.out.println(new MacroAveragedMeasures(boosting,dataSet));
-        if (true){
+
+        boolean topFeaturesToJson = true;
+        if (topFeaturesToJson){
             File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
             Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
             int limit = config.getInt("report.topFeatures.limit");
@@ -242,22 +242,11 @@ public class App2 {
             ObjectMapper mapper = new ObjectMapper();
             String file = "top_features.json";
             mapper.writeValue(new File(analysisFolder,file), topFeaturesList);
-
         }
 
-//        if (config.getBoolean("verify.topNgramsFeatures")){
-//            for (int k=0;k<dataSet.getNumClasses();k++) {
-//                List<Feature> featureNames = IMLGBInspector.topFeatures(boosting, k)
-//                        .stream().filter(feature -> feature instanceof Ngram)
-//                        .map(feature -> (Ngram)feature)
-//                        .filter(ngram -> ngram.getN()>1)
-//                        .collect(Collectors.toList());
-//                System.out.println("top ngram features for class " + k + "(" + labelTranslator.toExtLabel(k) + "):");
-//                System.out.println(featureNames);
-//            }
-//        }
 
-        if (true){
+        boolean rulesToJson = true;
+        if (rulesToJson){
             int ruleLimit = config.getInt("report.rule.limit");
             int numDocsPerFile = config.getInt("report.numDocsPerFile");
             int numFiles = (int)Math.ceil((double)dataSet.getNumDataPoints()/numDocsPerFile);
@@ -283,11 +272,11 @@ public class App2 {
                 String file = "report_"+(i+1)+".json";
                 mapper.writeValue(new File(analysisFolder,file), partition);
             }
-
         }
 
 
-        if (true){
+        boolean dataInfoToJson = true;
+        if (dataInfoToJson){
             Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
                     .collect(Collectors.toSet());
 
@@ -320,34 +309,48 @@ public class App2 {
             jsonGenerator.close();
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
 
-        File dataConfigFile = Paths.get(config.getString("input.folder"),
-                "data_sets",dataName,"data_config.json").toFile();
-        if (dataConfigFile.exists()){
-            FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
+        boolean modelConfigToJson = true;
+        if (modelConfigToJson){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
         }
 
-        boolean writeMeasureJson = true;
-        if (writeMeasureJson){
-            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"measures.json"), JsonEncoding.UTF8);
+        boolean dataConfigToJson = true;
+        if (dataConfigToJson){
+            File dataConfigFile = Paths.get(config.getString("input.folder"),
+                    "data_sets",dataName,"data_config.json").toFile();
+            if (dataConfigFile.exists()){
+                FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
+            }
+        }
+
+        boolean performanceToJson = true;
+        if (performanceToJson){
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"performance.json"), JsonEncoding.UTF8);
             jsonGenerator.writeStartObject();
 
             //TODO: to add more measures into json, edit this section
-            jsonGenerator.writeNumberField("hamming loss",HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
+
             jsonGenerator.writeNumberField("accuracy",Accuracy.accuracy(multiLabels, predictions));
             jsonGenerator.writeNumberField("proportion accuracy",Accuracy.partialAccuracy(multiLabels, predictions));
             jsonGenerator.writeNumberField("precision",Precision.precision(multiLabels, predictions));
             jsonGenerator.writeNumberField("recall",Recall.recall(multiLabels, predictions));
             jsonGenerator.writeNumberField("overlap",Overlap.overlap(multiLabels, predictions));
+            jsonGenerator.writeNumberField("hamming loss",HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
+            jsonGenerator.writeNumberField("micro-f1",microMeasures.getF1Score());
+            jsonGenerator.writeNumberField("micro-precision",microMeasures.getPrecision());
+            jsonGenerator.writeNumberField("micro-recall",microMeasures.getRecall());
+            jsonGenerator.writeNumberField("micro-specificity",microMeasures.getSpecificity());
+            jsonGenerator.writeNumberField("macro-f1",macroMeasures.getF1Score());
+            jsonGenerator.writeNumberField("macro-precision",macroMeasures.getPrecision());
+            jsonGenerator.writeNumberField("macro-recall",macroMeasures.getRecall());
+            jsonGenerator.writeNumberField("macro-specificity",macroMeasures.getSpecificity());
             jsonGenerator.writeEndObject();
             jsonGenerator.close();
         }
 
-
         System.out.println("reports generated");
-
     }
 
 
