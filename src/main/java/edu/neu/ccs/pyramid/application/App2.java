@@ -216,18 +216,20 @@ public class App2 {
         int numClasses = dataSet.getNumClasses();
         MultiLabel[] multiLabels = dataSet.getMultiLabels();
         MultiLabel[] predictions = boosting.predict(dataSet);
+
         MicroMeasures microMeasures = new MicroMeasures(numClasses);
         MacroMeasures macroMeasures = new MacroMeasures(numClasses);
         microMeasures.update(multiLabels,predictions);
         macroMeasures.update(multiLabels,predictions);
-        System.out.println("hamming loss on data set = " + HammingLoss.hammingLoss(multiLabels,predictions,numClasses));
-        System.out.println("accuracy on data set = " + Accuracy.accuracy(multiLabels,predictions));
-        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions));
-        System.out.println("precision on data set = " + Precision.precision(multiLabels,predictions));
-        System.out.println("recall on data set = " + Recall.recall(multiLabels,predictions));
-        System.out.println("overlap on data set = "+ Overlap.overlap(multiLabels,predictions));
-        System.out.println("macro-measures on data set = " + macroMeasures);
-        System.out.println("micro-measures on data set = " + microMeasures);
+        System.out.println("data-hamming loss = " + HammingLoss.hammingLoss(multiLabels,predictions,numClasses));
+        System.out.println("data-accuracy = " + Accuracy.accuracy(multiLabels,predictions));
+//        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions)); // same as overlap
+        System.out.println("data-precision = " + Precision.precision(multiLabels,predictions));
+        System.out.println("data-recall = " + Recall.recall(multiLabels,predictions));
+        System.out.println("data-overlap = "+ Overlap.overlap(multiLabels,predictions));
+        System.out.println("data-average precision= " + AveragePrecision.averagePrecision(boosting,dataSet));
+        System.out.println("label-macro-measures = \n" + macroMeasures);
+        System.out.println("label-micro-measures = \n" + microMeasures);
 
 
 
@@ -332,20 +334,21 @@ public class App2 {
 
             //TODO: to add more measures into json, edit this section
 
-            jsonGenerator.writeNumberField("accuracy",Accuracy.accuracy(multiLabels, predictions));
-            jsonGenerator.writeNumberField("proportion accuracy",Accuracy.partialAccuracy(multiLabels, predictions));
-            jsonGenerator.writeNumberField("precision",Precision.precision(multiLabels, predictions));
-            jsonGenerator.writeNumberField("recall",Recall.recall(multiLabels, predictions));
-            jsonGenerator.writeNumberField("overlap",Overlap.overlap(multiLabels, predictions));
+            jsonGenerator.writeNumberField("data-accuracy",Accuracy.accuracy(multiLabels, predictions));
+//            jsonGenerator.writeNumberField("proportion accuracy",Accuracy.partialAccuracy(multiLabels, predictions)); // same as overlap
+            jsonGenerator.writeNumberField("data-precision",Precision.precision(multiLabels, predictions));
+            jsonGenerator.writeNumberField("data-recall",Recall.recall(multiLabels, predictions));
+            jsonGenerator.writeNumberField("data-overlap",Overlap.overlap(multiLabels, predictions));
+            jsonGenerator.writeNumberField("data-average-precision", AveragePrecision.averagePrecision(boosting,dataSet));
             jsonGenerator.writeNumberField("hamming loss",HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
-            jsonGenerator.writeNumberField("micro-f1",microMeasures.getF1Score());
-            jsonGenerator.writeNumberField("micro-precision",microMeasures.getPrecision());
-            jsonGenerator.writeNumberField("micro-recall",microMeasures.getRecall());
-            jsonGenerator.writeNumberField("micro-specificity",microMeasures.getSpecificity());
-            jsonGenerator.writeNumberField("macro-f1",macroMeasures.getF1Score());
-            jsonGenerator.writeNumberField("macro-precision",macroMeasures.getPrecision());
-            jsonGenerator.writeNumberField("macro-recall",macroMeasures.getRecall());
-            jsonGenerator.writeNumberField("macro-specificity",macroMeasures.getSpecificity());
+            jsonGenerator.writeNumberField("label-micro-f1",microMeasures.getF1Score());
+            jsonGenerator.writeNumberField("label-micro-precision",microMeasures.getPrecision());
+            jsonGenerator.writeNumberField("label-micro-recall",microMeasures.getRecall());
+            jsonGenerator.writeNumberField("label-micro-specificity",microMeasures.getSpecificity());
+            jsonGenerator.writeNumberField("label-macro-f1",macroMeasures.getF1Score());
+            jsonGenerator.writeNumberField("label-macro-precision",macroMeasures.getPrecision());
+            jsonGenerator.writeNumberField("label-macro-recall",macroMeasures.getRecall());
+            jsonGenerator.writeNumberField("label-macro-specificity",macroMeasures.getSpecificity());
             jsonGenerator.writeEndObject();
             jsonGenerator.close();
         }
