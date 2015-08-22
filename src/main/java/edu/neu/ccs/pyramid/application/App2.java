@@ -285,63 +285,68 @@ public class App2 {
             }
 
         }
-        System.out.println("reports generated");
 
 
-        Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
-                .collect(Collectors.toSet());
+        if (true){
+            Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
 
-        Set<String> dataSetLabels = DataSetUtil.gatherLabels(dataSet).stream().map(i -> dataSet.getLabelTranslator().toExtLabel(i))
-                .collect(Collectors.toSet());
+            Set<String> dataSetLabels = DataSetUtil.gatherLabels(dataSet).stream().map(i -> dataSet.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
 
-        JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"data_info.json"), JsonEncoding.UTF8);
-        jsonGenerator.writeStartObject();
-        jsonGenerator.writeStringField("dataSet",dataName);
-        jsonGenerator.writeNumberField("numClassesInModel",boosting.getNumClasses());
-        jsonGenerator.writeNumberField("numClassesInDataSet",dataSetLabels.size());
-        jsonGenerator.writeNumberField("numClassesInModelDataSetCombined",dataSet.getNumClasses());
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"data_info.json"), JsonEncoding.UTF8);
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("dataSet",dataName);
+            jsonGenerator.writeNumberField("numClassesInModel",boosting.getNumClasses());
+            jsonGenerator.writeNumberField("numClassesInDataSet",dataSetLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelDataSetCombined",dataSet.getNumClasses());
+            Set<String> modelNotDataLabels = SetUtil.complement(modelLabels, dataSetLabels);
+            Set<String> dataNotModelLabels = SetUtil.complement(dataSetLabels,modelLabels);
+            jsonGenerator.writeNumberField("numClassesInDataSetButNotModel",dataNotModelLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelButNotDataSet",modelNotDataLabels.size());
+            jsonGenerator.writeArrayFieldStart("classesInDataSetButNotModel");
+            for (String label: dataNotModelLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeArrayFieldStart("classesInModelButNotDataSet");
+            for (String label: modelNotDataLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeNumberField("labelCardinality",dataSet.labelCardinality());
 
-
-
-        Set<String> modelNotDataLabels = SetUtil.complement(modelLabels, dataSetLabels);
-
-        Set<String> dataNotModelLabels = SetUtil.complement(dataSetLabels,modelLabels);
-
-        jsonGenerator.writeNumberField("numClassesInDataSetButNotModel",dataNotModelLabels.size());
-
-        jsonGenerator.writeNumberField("numClassesInModelButNotDataSet",modelNotDataLabels.size());
-
-        jsonGenerator.writeArrayFieldStart("classesInDataSetButNotModel");
-        for (String label: dataNotModelLabels){
-            jsonGenerator.writeObject(label);
+            jsonGenerator.writeEndObject();
+            jsonGenerator.close();
         }
-        jsonGenerator.writeEndArray();
-
-        jsonGenerator.writeArrayFieldStart("classesInModelButNotDataSet");
-        for (String label: modelNotDataLabels){
-            jsonGenerator.writeObject(label);
-        }
-        jsonGenerator.writeEndArray();
-
-
-
-
-
-        jsonGenerator.writeNumberField("labelCardinality",dataSet.labelCardinality());
-
-        jsonGenerator.writeEndObject();
-        jsonGenerator.close();
-
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
-
 
         File dataConfigFile = Paths.get(config.getString("input.folder"),
                 "data_sets",dataName,"data_config.json").toFile();
         if (dataConfigFile.exists()){
             FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
         }
+
+        boolean writeMeasureJson = true;
+        if (writeMeasureJson){
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"measures.json"), JsonEncoding.UTF8);
+            jsonGenerator.writeStartObject();
+
+            //TODO: to add more measures into json, edit this section
+            jsonGenerator.writeNumberField("hamming loss",HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
+            jsonGenerator.writeNumberField("accuracy",Accuracy.accuracy(multiLabels, predictions));
+            jsonGenerator.writeNumberField("proportion accuracy",Accuracy.partialAccuracy(multiLabels, predictions));
+            jsonGenerator.writeNumberField("precision",Precision.precision(multiLabels, predictions));
+            jsonGenerator.writeNumberField("recall",Recall.recall(multiLabels, predictions));
+            jsonGenerator.writeNumberField("overlap",Overlap.overlap(multiLabels, predictions));
+            jsonGenerator.writeEndObject();
+            jsonGenerator.close();
+        }
+
+
+        System.out.println("reports generated");
 
     }
 
