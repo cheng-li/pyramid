@@ -6,3 +6,6 @@ configs/local.config
 src/main/java/edu/neu/ccs/pyramid/tmp/
 logs/
 
+target
+pyramid.ipr
+pyramid.iws
