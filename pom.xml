@@ -7,7 +7,7 @@
     <groupId>edu.neu.ccs.pyramid</groupId>
     <artifactId>pyramid</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1</version>
+    <version>0.0.0</version>
     <dependencies>
         <dependency>
             <groupId>org.apache.mahout</groupId>
