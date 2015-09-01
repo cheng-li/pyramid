@@ -145,10 +145,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.5</version>
                 <configuration>
                     <descriptor>src/assembly/bin.xml</descriptor>
                     <finalName>pyramid-${pom.version}</finalName>
                     <outputDirectory>${project.build.directory}/releases/</outputDirectory>
+                    <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
                 <executions>
                     <execution>

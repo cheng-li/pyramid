@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <assembly>
-
+    <id>distribution</id>
     <formats>
         <format>tar.gz</format>
         <format>zip</format>
