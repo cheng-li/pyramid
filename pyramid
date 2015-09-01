@@ -1,0 +1,15 @@
+# set java arguments such as memory allocation
+JAVA_OPTS="-Xms5g -Xmx10g"
+
+# determine pyramid home
+SCRIPT="$0"
+PYRAMID_HOME=`dirname "$SCRIPT"`
+PYRAMID_HOME=`cd "$PYRAMID_HOME"; pwd`
+
+# set class path
+PYRAMID_CLASSPATH="$PYRAMID_HOME/lib/*"
+
+# run
+exec java $JAVA_OPTS  -cp "$PYRAMID_CLASSPATH"  \
+                edu.neu.ccs.pyramid.application.App3 $@
+

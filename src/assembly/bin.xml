@@ -16,7 +16,27 @@
             <directory>target/lib</directory>
             <outputDirectory>lib</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>target/lib</directory>
+            <outputDirectory>lib</outputDirectory>
+        </fileSet>
     </fileSets>
+
+    <files>
+        <file>
+            <source>README.md</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+        <file>
+            <source>LICENSE.txt</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+        <file>
+            <source>pyramid</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+
+    </files>
 
 </assembly>
 
