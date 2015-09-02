@@ -39,8 +39,6 @@
             <source>target/${project.artifactId}-${project.version}.jar</source>
             <outputDirectory>lib</outputDirectory>
         </file>
-
     </files>
-
 </assembly>
 
