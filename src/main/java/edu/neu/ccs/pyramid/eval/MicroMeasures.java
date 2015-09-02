@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.eval;
 
-import com.sun.javafx.Utils;
-
 import java.util.stream.IntStream;
 
 /**
