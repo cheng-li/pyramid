@@ -63,10 +63,12 @@ def getPositions(docId, field, keywords, slop, in_order):
     return positions
 
 
-def writeRule(docId, line_count, num, rule, checks):
+def writeRule(docId, line_count, num, rule, checks, score):
     oneRule = {}
 
     oneRule['score'] = rule['score']
+    if len(checks.keys()) > 0:
+        oneRule['score2'] = score
     oneRule['checks'] = []
     
     for check in rule["checks"]:
@@ -109,6 +111,24 @@ def writeRule(docId, line_count, num, rule, checks):
         
     return oneRule
 
+def compareTwoChecks(checks1, checks2):
+    count = 0
+    for check in checks1:
+        key = check["feature"]["ngram"] + check["feature"]["field"] + str(check["feature"]["slop"])
+        if checks2.has_key(key):
+            count += 1
+
+    return float(count) / len(checks2.keys())
+
+def convertToChecks(cs):
+    checks = {}
+
+    for check in cs:
+        key = check["feature"]["ngram"] + check["feature"]["field"] + str(check["feature"]["slop"])
+        checks[key] = check
+
+    return checks
+
 
 def writeClass(docId, line_count, clas, clas2):
     oneClass = {}
@@ -134,7 +154,23 @@ def writeClass(docId, line_count, clas, clas2):
 
     oneClass['rules'] = []
     for i in range(start, len(clas["rules"])):
-        oneClass['rules'].append(writeRule(docId, line_count, i, clas["rules"][i], checks))
+        mostChecks = {}
+        most = 0
+        score = 0
+        mostIndex = -1
+        for rule in clas2["rules"]:
+            if not rule.has_key("checks"):
+                continue
+            checks = convertToChecks(rule["checks"])
+            temp = compareTwoChecks(clas["rules"][i]["checks"], checks)
+            if  temp > most:
+                most = temp
+                mostChecks = checks
+                score = rule["score"]
+
+        oneClass['rules'].append(writeRule(docId, line_count, i, clas["rules"][i], mostChecks, score))
+        if mostIndex != -1:
+            clas2["rules"].remove(rule)
 
     return oneClass
 
@@ -278,6 +314,30 @@ def createTable(data, fields, fashion, data2):
             r.append(includesLabel(label["className"], internalLabels))
             oneRow['predictedRanking'].append(label)
         if fashion == "crf":
+            for labels in row["predictedLabelSetRanking"]:
+                labels["types"] = []
+                for index in labels["internalLabels"]:
+                    if index in row['internalLabels'] and index in row['internalPrediction']:
+                        labels["types"].append("TP")
+                    elif index not in row['internalLabels'] and index in row['internalPrediction']:
+                        labels["types"].append("FP")
+                    elif index in row['internalLabels'] and index not in row['internalPrediction']:
+                        labels["types"].append("FN")
+                    else:
+                        labels["types"].append("")
+
+            for labels in data2Dict[row['id']]["predictedLabelSetRanking"]:
+                labels["types"] = []
+                for index in labels["internalLabels"]:
+                    if index in row['internalLabels'] and index in row['internalPrediction']:
+                        labels["types"].append("TP")
+                    elif index not in row['internalLabels'] and index in row['internalPrediction']:
+                        labels["types"].append("FP")
+                    elif index in row['internalLabels'] and index not in row['internalPrediction']:
+                        labels["types"].append("FN")
+                    else:
+                        labels["types"].append("")
+
             oneRow["predictedLabelSetRanking"] = row["predictedLabelSetRanking"]
             oneRow["predictedLabelSetRanking2"] = data2Dict[row['id']]["predictedLabelSetRanking"]
 
@@ -376,7 +436,7 @@ def parse(input_json_file, outputFileName, fields, fashion, input_json_file2):
     print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
     inputJson2 = open(input_json_file2, "r")
     inputData2 = json.load(inputJson2)
-    print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
+    print "Json:" + input_json_file2 + " load successfully.\nStart Parsing..."
 
     outputData = createTable(inputData, fields, fashion, inputData2)
     inputJson.close()
@@ -792,11 +852,11 @@ pre_data = '''<html>
             <caption> Report </caption>
                 <thead><tr>
                     <td align="center" width="20%"><b>id & labels</b></td>
-                    <td align="center" width="20%"><b>Text</b></td>
+                    <td align="center" width="20%"><b>Label&nbspSet&nbspRanking</b></td>
                     <td align="center" width="20%"><b>TP</b></td>
                     <td align="center" width="20%"><b>FP</b></td>
                     <td align="center" width="20%"><b>FN</b></td>
-                    <td align="center" width="20%"><b>TN</b></td>
+                    <td align="center" width="20%" style="display:none"><b>TN</b></td>
                 </tr></thead>
             <tbody id="data-table"></tbody>
         </table>
@@ -1125,24 +1185,53 @@ pre_data = '''<html>
                 return str
             }
 
-            function displayLabelSetRanking(predictedLabelSetRanking) {
-                str = ""
+            function displayLabelSetRanking(predictedLabelSetRanking, predictedLabelSetRanking2) {
+                str = "<table style='table-layout: auto'>"
+                temp = ""
 
-                if (predictedLabelSetRanking == undefined) {
-                    return ""
+                length = predictedLabelSetRanking.length > predictedLabelSetRanking2.length ? 
+                    predictedLabelSetRanking.length : predictedLabelSetRanking2.length
+
+                for (var i = 0; i < length; i++) {
+                    col1 = ""
+                    if (predictedLabelSetRanking[i] != undefined) {
+                        labels = predictedLabelSetRanking[i]
+
+                        col1 = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
+                        for (var j = 1; j < labels.labels.length; j++) {
+                            col1 += " | " + labels.labels[1].fontcolor(getLabelColor(labels.types[1]))
+                        }
+
+                        col1 += '(' + labels.probability.toFixed(2)  + ')'
+
+                        if (i == 0) {
+                            col1 = '<span style="background-color:lightGray">' + col1 + '</span>'
+                        }
+                    }
+                    col1 = "<td><li>" + col1 + "</li></td>"
+
+                    col2 = "" 
+                    if (predictedLabelSetRanking2[i] != undefined) {
+                        labels = predictedLabelSetRanking2[i]
+
+                        col2 = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
+                        for (var j = 1; j < labels.labels.length; j++) {
+                            col2 += " | " + labels.labels[1].fontcolor(getLabelColor(labels.types[1]))
+                        }
+
+                        col2 += '(' + labels.probability.toFixed(2)  + ')'
+
+                        if (i == 0) {
+                            col2 = '<span style="background-color:lightGray">' + col2 + '</span>'
+                        }
+                    }
+                    col2 = "<td><li>" + col2 + "</li></td>"
+
+                    temp = '<tr>' + col1 + col2 + '</tr>'
+                    str += temp
                 }
 
-                str += '<br><b>Label&nbspSet&nbspRanking</b>:'
-
-                str += serialize(predictedLabelSetRanking, function (lb) {
-                    var str = ''
-
-                    str += '<li>' + labelsToString(lb.labels) + '(' + lb.probability.toFixed(2) + ')</li>'
-
-                    return str
-                })
-
-                return str
+                return str + "</table>"
             }
 
             function displayText(text, row) {
@@ -1153,7 +1242,7 @@ pre_data = '''<html>
                     str += key + ":<br>" + text[key] + "<br>"
                 }
 
-                str += displayLabelSetRanking(row.predictedLabelSetRanking2)
+                //str += displayLabelSetRanking(row.predictedLabelSetRanking2)
 
                 return str
             }
@@ -1227,26 +1316,27 @@ pre_data = '''<html>
                         displayPredictedRanking(row, displayOptions) + 
                         "<br><b>AP:&nbsp</b>" + row.idlabels.ap +
                         "<br><b>RankOfFullRecall:&nbsp</b>" + row.idlabels.rankoffullrecall + "<br>" +
-                        displayLabelSetRanking(row.predictedLabelSetRanking) + 
+                        '<br><b>Label&nbspSet&nbspRanking</b>:' +
                         "<br><b>Overlap:&nbsp</b>" + row.idlabels.overlap +
                         "<br><b>Precision:&nbsp</b>" + row.idlabels.precision +
                         "<br><b>Recall:&nbsp</b>" + row.idlabels.recall +
                         '<br><br><br><b>Feedback</b>:' +
                         displayFeedback(i, row.idlabels.feedbackSelect, row.idlabels.feedbackText) +
+                        "<br>" + displayText(row.text, row) +
                         '</td>' +
                         "<td style='vertical-align:top;text-align:left;'>" + 
-                        displayText(row.text, row) +
+                        displayLabelSetRanking(row.predictedLabelSetRanking, row.predictedLabelSetRanking2) + 
                         '</td>' +
                         displayClass(row.TP, displayOptions, i) +
                         displayClass(row.FP, displayOptions, i) +
                         displayClass(row.FN, displayOptions, i) +
-                        displayClass(row.TN, displayOptions, i) +
+                        //displayClass(row.TN, displayOptions, i) +
                         '</tr>'
                 })
 
                 $body.append(html)
                 initialHighlights(data)
-                refreshTable(displayOptions)
+                //refreshTable(displayOptions)
                 createNewHTML()
             }
 
@@ -1259,6 +1349,7 @@ pre_data = '''<html>
                 } else {
                     score += ": -" + Math.abs(rule.score.toFixed(2))
                 }
+
                 str += '<li>' + serialize(rule['checks'], function (check) {
                             style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
                                 (rowNum + 1) + ", \\"" + check.field + "\\")'"
@@ -1287,8 +1378,17 @@ pre_data = '''<html>
                             return str
                         }) + '</li>'
 
+                score2 = '<br>'
+                if (rule.score2 != undefined) {
+                    if (rule.score2 >= 0) {
+                        score2 += ": +" + Math.abs(rule.score2.toFixed(2))
+                    } else {
+                        score2 += ": -" + Math.abs(rule.score2.toFixed(2))
+                    }
+                }
 
-                return str + score
+
+                return str + score + score2
             }
 
 

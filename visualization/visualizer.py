@@ -166,7 +166,7 @@ def createTable(data, fields, fashion):
 
         # column 1 IDs
         idlabels = {}
-        idlabels['id'] = row['id']
+        idlabels['id'] = row['id'] 
         idlabels['internalId'] = row["internalId"]
         idlabels['internalLabels'] = row['internalLabels']
         idlabels['feedbackSelect'] = 'none'
@@ -364,18 +364,29 @@ def createTopFeatureHTML(input_json_file, outputFileName):
     inputJson.close()
     outputFile.close()
 
-def createMetaDataHTML(inputData, inputModel, inputConfig, outputFileName):
+def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputFileName):
     outputData = {}
-    f1 = open(inputData, "r")
-    f2 = open(inputModel, "r")
-    f3 = open(inputConfig, "r")
-    inputD = json.load(f1)
-    inputM = json.load(f2)
-    inputC = json.load(f3)
+    inputD = None
+    inputM = None
+    inputC = None
+    inputP = None
+    if os.path.isfile(inputData):
+        f1 = open(inputData, "r")
+        inputD = json.load(f1)
+    if os.path.isfile(inputModel):
+        f2 = open(inputModel, "r")
+        inputM = json.load(f2)
+    if os.path.isfile(inputConfig):
+        f3 = open(inputConfig, "r")
+        inputC = json.load(f3)
+    if os.path.isfile(inputPerformance):
+        f4 = open(inputPerformance, "r")
+        inputP = json.load(f4)
 
     outputData["data"] = inputD
     outputData["model"] = inputM
     outputData["config"] = inputC
+    outputData["performance"] = inputP
 
     outputJson = json.dumps(outputData)
 
@@ -384,9 +395,14 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, outputFileName):
     outputFile = open(outputFileName, "w")
     outputFile.write(output)
 
-    f1.close()
-    f2.close()
-    f3.close()
+    if inputD != None:
+        f1.close()
+    if inputM != None:
+        f2.close()
+    if inputC != None:
+        f3.close()
+    if inputP != None:
+        f4.close()
     outputFile.close()
 
 
@@ -397,6 +413,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     configName = "data_config"
     dataName = "data_info"
     modelName = "model_config"
+    performanceName = "performance"
     inputTop = directoryName + topName + ".json"
     outputPath = directoryName + topName + ".html"
     createTopFeatureHTML(inputTop, outputPath)
@@ -404,8 +421,9 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     inputData = directoryName + dataName + ".json"
     inputModel = directoryName + modelName + ".json"
     inputConfig = directoryName + configName + ".json"
+    inputPerformance = directoryName + performanceName + ".json"
     outputPath = directoryName + "metadata.html"
-    createMetaDataHTML(inputData, inputModel, inputConfig, outputPath)
+    createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputPath)
 
     if os.path.isfile(inputPath):
         parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields, fashion)
@@ -418,7 +436,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
             absf = join(inputPath, f)
             if not (isfile(absf) and f.endswith(".json")):
                 continue
-            elif f == configName + ".json" or f == dataName + ".json" or f == modelName + ".json" or f == topName + ".json":
+            elif f == configName + ".json" or f == dataName + ".json" or f == modelName + ".json" or f == topName + ".json" or f == performanceName + ".json":
                 continue
             else:
                 outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
@@ -479,6 +497,16 @@ pre_md_data = ''' <html>
                 return str
             }
 
+            function displayPerformance(performance) {
+                str = ''
+
+                for (key in performance) {
+                    str += '<br>' + key + ": " + performance[key].toFixed(2)
+                }
+
+                return str
+            }
+
             function render(data, displayOptions) {
                 var $body = $('#data-table')
                 $body.empty()
@@ -487,11 +515,18 @@ pre_md_data = ''' <html>
                 html += '<tr>' +
                     "<td style='vertical-align:top;text-align:left;'>" + 
                     displayData(data["data"]) + "</td>" +
-                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    "<td style='vertical-align:top;text-align:left;' rowspan='3'>" + 
                     displayConfig(data["config"]) + "</td>" +
-                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    "<td style='vertical-align:top;text-align:left;' rowspan='3'>" +
                     displayModel(data["model"]) + "</td>" +
-                    + '</tr>'
+                    '</tr>' +
+                    '<tr>' +
+                    "<td align='center'><b>performance</b></td>" +
+                    '</tr>' +
+                    '<tr>' +
+                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    displayPerformance(data["performance"]) + "</td>" +
+                    '</tr>'
 
                 $body.append(html)
             }
@@ -1398,11 +1433,11 @@ pre_data = '''<html>
                 // Sort data by displayOptions
                 if (displayOptions.sortDocs == 'confide') {
                     data.sort(function (a, b) {
-                        return a.probForPredictedLabels - b.probForPredictedLabels
+                        return a.idlabels.overlap - b.idlabels.overlap
                     })
                 } else if (displayOptions.sortDocs == 'mistake') {
                     data.sort(function (a, b) {
-                        return b.probForPredictedLabels - a.probForPredictedLabels
+                        return b.idlabels.overlap - a.idlabels.overlap
                     })
                 } else {
                 }
@@ -1551,14 +1586,19 @@ def main():
 
         splits = jsonFile.rsplit("/", 1)
         if len(splits) == 1:
-            directoryName = "./"
-            fileName = splits[0]
+            fileName = ""
+            if os.path.isfile(jsonFile):
+                directoryName = "./"
+                fileName = splits[0]
+            else:
+                directoryName = splits[0] + "/"
         else:
             directoryName = jsonFile.rsplit("/", 1)[0] + '/'
             fileName = splits[1]
         configName = "data_config.json"
         dataName = "data_info.json"
         modelName = "model_config.json"
+
         f1 = open(directoryName + configName, 'r')
         config1 = json.load(f1)
         f2 = open(directoryName + dataName, 'r')
