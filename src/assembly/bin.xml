@@ -8,7 +8,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>target/config</directory>
+            <directory>config</directory>
             <outputDirectory>config</outputDirectory>
         </fileSet>
         <fileSet>
@@ -37,6 +37,10 @@
         <file>
             <source>pyramid</source>
             <outputDirectory></outputDirectory>
+        </file>
+        <file>
+            <source>target/pyramid-${project.version}.jar</source>
+            <outputDirectory>lib</outputDirectory>
         </file>
 
     </files>
