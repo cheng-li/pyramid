@@ -8,6 +8,9 @@
     <artifactId>pyramid</artifactId>
     <packaging>jar</packaging>
     <version>0.1.0</version>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.mahout</groupId>
@@ -148,7 +151,7 @@
                 <version>2.5.5</version>
                 <configuration>
                     <descriptor>src/assembly/bin.xml</descriptor>
-                    <finalName>pyramid-${pom.version}</finalName>
+                    <finalName>pyramid-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/releases/</outputDirectory>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
