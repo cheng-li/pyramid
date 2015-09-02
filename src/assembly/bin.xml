@@ -19,6 +19,10 @@
             <directory>target/lib</directory>
             <outputDirectory>lib</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>visualization</directory>
+            <outputDirectory>visualization</outputDirectory>
+        </fileSet>
     </fileSets>
 
     <files>
