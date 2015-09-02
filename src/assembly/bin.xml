@@ -16,10 +16,6 @@
             <outputDirectory>lib</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>target/lib</directory>
-            <outputDirectory>lib</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>visualization</directory>
             <outputDirectory>visualization</outputDirectory>
         </fileSet>
@@ -37,9 +33,10 @@
         <file>
             <source>pyramid</source>
             <outputDirectory></outputDirectory>
+            <filtered>true</filtered>
         </file>
         <file>
-            <source>target/pyramid-${project.version}.jar</source>
+            <source>target/${project.artifactId}-${project.version}.jar</source>
             <outputDirectory>lib</outputDirectory>
         </file>
 
