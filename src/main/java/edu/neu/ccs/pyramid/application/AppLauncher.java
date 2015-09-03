@@ -8,7 +8,9 @@ import java.util.Arrays;
 public class AppLauncher {
     public static void main(String[] args) throws Exception{
         if (args.length!=2){
-            System.err.println("Incorrect command format. Usage: ./pyramid <app_name> <config_file>");
+            System.err.println("Invalid command. Usage: ./pyramid <app_name> <properties_file>\n" +
+                    "The <app_name> is case-insensitive and the <properties_file> can be specified by a relative path.\n"+
+                    "Example: ./pyramid app1 config/app1.properties");
             System.exit(1);
         }
 
@@ -28,7 +30,7 @@ public class AppLauncher {
                 App3.main(appArgs);
                 break;
             default:
-                System.err.println("Unknown app name "+appName+" .");
+                System.err.println("Unknown app name: "+appName);
                 System.exit(1);
         }
 
