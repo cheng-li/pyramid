@@ -20,5 +20,5 @@ PYRAMID_CLASSPATH="$PYRAMID_HOME/lib/*"
 
 # run
 exec java $JAVA_OPTS  -cp "$PYRAMID_CLASSPATH"  \
-                edu.neu.ccs.pyramid.application.App3 $@
+                edu.neu.ccs.pyramid.application.AppLauncher $@
 
