@@ -8,8 +8,10 @@ import java.util.Arrays;
 public class AppLauncher {
     public static void main(String[] args) throws Exception{
         if (args.length!=2){
-            System.err.println("Invalid command. Usage: ./pyramid <app_name> <properties_file>\n" +
-                    "The <app_name> is case-insensitive and the <properties_file> can be specified by a relative path.\n"+
+            System.err.println("Invalid command.\n" +
+                    "Usage: ./pyramid <app_name> <properties_file>\n" +
+                    "The <app_name> is case-insensitive.\n" +
+                    "The <properties_file> can be specified by either an absolute or a relative path.\n"+
                     "Example: ./pyramid app1 config/app1.properties");
             System.exit(1);
         }
