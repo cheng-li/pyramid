@@ -27,6 +27,9 @@ public class AppLauncher {
         String[] appArgs = Arrays.copyOfRange(args,1,2);
 
         switch (appNameLower){
+            case "welcome":
+                Welcome.main(appArgs);
+                break;
             case "app1":
                 App1.main(appArgs);
                 break;
@@ -46,7 +49,7 @@ public class AppLauncher {
         System.out.println("Usage: ./pyramid <app_name> <properties_file>\n" +
                 "The <app_name> is case-insensitive.\n" +
                 "The <properties_file> can be specified by either an absolute or a relative path.\n"+
-                "Example: ./pyramid app1 config/app1.properties");
+                "Example: ./pyramid welcome config/welcome.properties");
         System.exit(0);
     }
 
@@ -55,7 +58,7 @@ public class AppLauncher {
                 "Usage: ./pyramid <app_name> <properties_file>\n" +
                 "The <app_name> is case-insensitive.\n" +
                 "The <properties_file> can be specified by either an absolute or a relative path.\n"+
-                "Example: ./pyramid app1 config/app1.properties");
+                "Example: ./pyramid welcome config/welcome.properties");
         System.exit(1);
     }
 }
