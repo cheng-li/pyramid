@@ -16,7 +16,7 @@ import java.util.List;
 public class Trec2Meka {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         if (args.length != 1) {
-            throw new IllegalArgumentException("please specify the config file");
+            throw new IllegalArgumentException("Please specify a properties file.");
         }
         Config config = new Config(args[0]);
         System.out.println(config);

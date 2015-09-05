@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
 public class Exp61 {
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
-            throw new IllegalArgumentException("please specify the config file");
+            throw new IllegalArgumentException("Please specify a properties file.");
         }
 
         Config config = new Config(args[0]);

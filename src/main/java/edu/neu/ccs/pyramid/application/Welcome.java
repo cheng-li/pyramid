@@ -8,7 +8,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 public class Welcome {
     public static void main(String[] args) {
         if (args.length !=1){
-            throw new IllegalArgumentException("please specify the config file");
+            throw new IllegalArgumentException("Please specify a properties file.");
         }
 
         Config config = new Config(args[0]);

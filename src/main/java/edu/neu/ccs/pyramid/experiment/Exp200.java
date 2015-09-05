@@ -21,7 +21,7 @@ public class Exp200 {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         if (args.length !=1){
-            throw new IllegalArgumentException("please specify the config file");
+            throw new IllegalArgumentException("Please specify a properties file.");
         }
         System.out.println(args[0]);
         Config config = new Config(args[0]);
