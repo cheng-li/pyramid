@@ -13,18 +13,13 @@ public class GradientDescent implements Optimizer{
     private static final Logger logger = LogManager.getLogger();
     private Optimizable.ByGradientValue function;
     private BackTrackingLineSearcher lineSearcher;
-    /**
-     * stop condition, relative threshold
-     */
-    private double epsilon = 0.01;
-    private int maxIteration = 10000;
-    private boolean checkConvergence =true;
-    private boolean terminate = false;
+    private Terminator terminator;
 
 
     public GradientDescent(Optimizable.ByGradientValue function) {
         this.function = function;
         this.lineSearcher = new BackTrackingLineSearcher(function);
+        this.terminator = new Terminator();
     }
 
     public BackTrackingLineSearcher getLineSearcher() {
@@ -32,60 +27,23 @@ public class GradientDescent implements Optimizer{
     }
 
     public void optimize(){
-
-        //size = 2
-        LinkedList<Double> valueQueue = new LinkedList<>();
-        valueQueue.add(function.getValue());
-        if (logger.isDebugEnabled()){
-            logger.debug("initial value = "+ valueQueue.getLast());
-        }
-        int iteration = 0;
-        iterate();
-        iteration += 1;
-        valueQueue.add(function.getValue());
-        if (logger.isDebugEnabled()){
-            logger.debug("iteration "+iteration);
-            logger.debug("value = "+valueQueue.getLast());
-        }
-
-        int convergenceTraceCounter = 0;
         while(true){
-
-            if (checkConvergence){
-                logger.debug("difference = "+Math.abs(valueQueue.getFirst()-valueQueue.getLast()));
-                if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<=Math.abs(epsilon*valueQueue.getFirst())){
-                    convergenceTraceCounter += 1;
-
-                } else {
-                    convergenceTraceCounter =0;
-                }
-                if (convergenceTraceCounter == 5){
-                    terminate = true;
-                }
-                logger.debug("convergenceTraceCounter = "+convergenceTraceCounter);
-            }
-
-
-            if (iteration==maxIteration){
-                terminate = true;
-            }
-
-            if (terminate){
+            iterate();
+            terminator.add(function.getValue());
+            if (terminator.shouldTerminate()){
                 break;
             }
-
-            iterate();
-            iteration += 1;
-            valueQueue.remove();
-            valueQueue.add(function.getValue());
-            if (logger.isDebugEnabled()){
-                logger.debug("iteration "+iteration);
-                logger.debug("value = "+valueQueue.getLast());
-            }
-
         }
+    }
 
+    @Override
+    public double getFinalObjective() {
+        return terminator.getLastValue();
+    }
 
+    @Override
+    public Terminator getTerminator() {
+        return terminator;
     }
 
     public void iterate(){
@@ -95,11 +53,4 @@ public class GradientDescent implements Optimizer{
 
     }
 
-    public void setMaxIteration(int maxIteration) {
-        this.maxIteration = maxIteration;
-    }
-
-    public void setCheckConvergence(boolean checkConvergence) {
-        this.checkConvergence = checkConvergence;
-    }
 }

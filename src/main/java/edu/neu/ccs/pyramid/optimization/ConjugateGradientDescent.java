@@ -7,11 +7,12 @@ import org.apache.mahout.math.Vector;
  * algorithm 5.4
  * Created by chengli on 12/9/14.
  */
-public class ConjugateGradientDescent {
+public class ConjugateGradientDescent implements Optimizer{
     private Optimizable.ByGradientValue function;
     private BackTrackingLineSearcher lineSearcher;
     private Vector oldP;
     private Vector oldGradient;
+    private Terminator terminator;
 
 
     public ConjugateGradientDescent(Optimizable.ByGradientValue function,
@@ -19,17 +20,34 @@ public class ConjugateGradientDescent {
         this.function = function;
         this.lineSearcher = new BackTrackingLineSearcher(function);
         lineSearcher.setInitialStepLength(initialStepLength);
+        this.terminator = new Terminator();
         this.oldGradient = function.getGradient();
         this.oldP = oldGradient.times(-1);
     }
 
-    public void optimize(int numIterations){
 
 
-
+    public void optimize(){
+        while(true){
+            iterate();
+            terminator.add(function.getValue());
+            if (terminator.shouldTerminate()){
+                break;
+            }
+        }
     }
 
-    public void update(){
+    @Override
+    public double getFinalObjective() {
+        return terminator.getLastValue();
+    }
+
+    @Override
+    public Terminator getTerminator() {
+        return terminator;
+    }
+
+    public void iterate(){
         Vector parameters = function.getParameters();
         Vector direction = this.oldP;
         lineSearcher.moveAlongDirection(direction);

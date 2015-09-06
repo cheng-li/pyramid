@@ -27,7 +27,7 @@ public class LogisticRegressionTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test4();
+        test2();
 
     }
 
@@ -44,19 +44,18 @@ public class LogisticRegressionTest {
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,1000);
         GradientDescent gradientDescent = new GradientDescent(function);
         gradientDescent.getLineSearcher().setInitialStepLength(1.0E-4);
-        for (int i=0;i<500;i++){
-            gradientDescent.iterate();
-            System.out.println(Accuracy.accuracy(logisticRegression,dataSet));
-        }
+        gradientDescent.optimize();
+        System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
+        System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
 
     }
 
 
     private static void test2() throws Exception{
 
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
 
@@ -64,14 +63,9 @@ public class LogisticRegressionTest {
         logisticRegression.setFeatureExtraction(true);
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
         ConjugateGradientDescent conjugateGradientDescent = new ConjugateGradientDescent(function,0.001);
-        for (int i=0;i<100;i++){
-            System.out.println("--------");
-            System.out.println("iteration "+i);
-            conjugateGradientDescent.update();
-            System.out.println("loss: " + function.getValue());
-            System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
-            System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
-        }
+        conjugateGradientDescent.optimize();
+        System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
+        System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
 
     }
 

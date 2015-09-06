@@ -5,6 +5,6 @@ package edu.neu.ccs.pyramid.optimization;
  */
 public interface Optimizer {
     void optimize();
-    void setCheckConvergence(boolean checkConvergence);
-    void setMaxIteration(int maxIteration);
+    double getFinalObjective();
+    Terminator getTerminator();
 }

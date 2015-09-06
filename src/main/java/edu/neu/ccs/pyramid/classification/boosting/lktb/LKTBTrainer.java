@@ -4,7 +4,7 @@ import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
@@ -424,8 +424,8 @@ public class LKTBTrainer {
                     .build();
 
             Optimizer optimizer = expectationTrainer.getOptimizer();
-            optimizer.setCheckConvergence(false);
-            optimizer.setMaxIteration(100);
+            optimizer.getTerminator().setMode(Terminator.Mode.FINISH_MAX_ITER);
+            optimizer.getTerminator().setMaxIteration(100);
 
 
 

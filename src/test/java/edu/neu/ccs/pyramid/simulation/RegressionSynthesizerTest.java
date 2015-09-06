@@ -4,7 +4,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
@@ -92,8 +92,8 @@ public class RegressionSynthesizerTest {
                 .build();
 
         Optimizer optimizer = trainer.getOptimizer();
-        optimizer.setCheckConvergence(true);
-        optimizer.setMaxIteration(10000);
+        optimizer.getTerminator().setMode(Terminator.Mode.STANDARD);
+        optimizer.getTerminator().setMaxIteration(10000);
 
         SoftRegStump softRegStump = trainer.train();
         System.out.println("prob rt");

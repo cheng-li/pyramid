@@ -19,7 +19,7 @@ public class Terminator {
     /**
      * relative threshold for big change
      */
-    private double epsilon = 0.05;
+    private double epsilon = 0.01;
     /**
      * if no big change in maxStableIterations, regard as converge
      */
@@ -54,7 +54,8 @@ public class Terminator {
         if (logger.isDebugEnabled()){
             logger.debug("iteration = "+history.size());
             logger.debug("mode = "+getMode());
-            logger.debug("last value = "+getLastValue());
+            logger.debug("value = "+getLastValue());
+            logger.debug("previous value = "+getPreviousValue());
             logger.debug("min value = "+getMinValue());
             logger.debug("max value = "+getMaxValue());
             logger.debug("stable iterations = "+getStableIterations());
@@ -102,6 +103,14 @@ public class Terminator {
 
     public double getLastValue(){
         return history.get(history.size()-1);
+    }
+
+    public double getPreviousValue(){
+        if (history.size()<2){
+            return Double.NaN;
+        } else {
+            return history.get(history.size()-2);
+        }
     }
 
     public void setEpsilon(double epsilon) {

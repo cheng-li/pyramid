@@ -64,6 +64,16 @@ public class LBFGS implements Optimizer{
         }
     }
 
+    @Override
+    public double getFinalObjective() {
+        return this.terminator.getLastValue();
+    }
+
+    @Override
+    public Terminator getTerminator() {
+        return terminator;
+    }
+
     public void iterate(){
         if (logger.isDebugEnabled()){
             logger.debug("start one iteration");
