@@ -27,7 +27,7 @@ public class LogisticRegressionTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test2();
+        test3();
 
     }
 
@@ -62,7 +62,8 @@ public class LogisticRegressionTest {
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         logisticRegression.setFeatureExtraction(true);
         LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
-        ConjugateGradientDescent conjugateGradientDescent = new ConjugateGradientDescent(function,0.001);
+        ConjugateGradientDescent conjugateGradientDescent = new ConjugateGradientDescent(function);
+        conjugateGradientDescent.getLineSearcher().setInitialStepLength(0.01);
         conjugateGradientDescent.optimize();
         System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
@@ -70,30 +71,9 @@ public class LogisticRegressionTest {
     }
 
 
+
+
     private static void test3() throws Exception{
-
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/train.trec"),
-                DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/test.trec"),
-                DataSetType.CLF_SPARSE, true);
-        System.out.println(dataSet.getMetaInfo());
-
-        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        logisticRegression.setFeatureExtraction(false);
-        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
-        LBFGS lbfgs = new LBFGS(function);
-        for (int i=0;i<20;i++){
-            System.out.println("--------");
-            System.out.println("iteration "+i);
-            lbfgs.iterate();
-            System.out.println("loss: " + function.getValue());
-            System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
-            System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
-        }
-
-    }
-
-    private static void test4() throws Exception{
 
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
                 DataSetType.CLF_SPARSE, false);

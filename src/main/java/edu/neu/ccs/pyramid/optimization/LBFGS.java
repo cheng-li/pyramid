@@ -18,9 +18,8 @@ import java.util.LinkedList;
  * Formula 2.7
  * Created by chengli on 12/9/14.
  */
-public class LBFGS implements Optimizer{
+public class LBFGS extends GradientValueOptimizer implements Optimizer{
     private static final Logger logger = LogManager.getLogger();
-    private Optimizable.ByGradientValue function;
     private BackTrackingLineSearcher lineSearcher;
     /**
      * history length;
@@ -29,50 +28,19 @@ public class LBFGS implements Optimizer{
     private LinkedList<Vector> sQueue;
     private LinkedList<Vector> yQueue;
     private LinkedList<Double> rhoQueue;
-    /**
-     * stop condition, relative threshold
-     */
-    private double epsilon = 0.01;
-    private int maxIteration = 10000;
-    private Terminator terminator;
+
 
 
     public LBFGS(Optimizable.ByGradientValue function) {
-        this.function = function;
+        super(function);
         this.lineSearcher = new BackTrackingLineSearcher(function);
         lineSearcher.setInitialStepLength(1);
-        this.terminator = new Terminator();
         this.sQueue = new LinkedList<>();
         this.yQueue = new LinkedList<>();
         this.rhoQueue = new LinkedList<>();
 
     }
 
-    public void optimize(){
-        if (maxIteration==0){
-            return;
-        }
-
-        terminator.setEpsilon(epsilon);
-        terminator.setMaxIteration(maxIteration);
-        while (true){
-            iterate();
-            terminator.add(function.getValue());
-            if (terminator.shouldTerminate()){
-                break;
-            }
-        }
-    }
-
-    @Override
-    public double getFinalObjective() {
-        return this.terminator.getLastValue();
-    }
-
-    @Override
-    public Terminator getTerminator() {
-        return terminator;
-    }
 
     public void iterate(){
         if (logger.isDebugEnabled()){
@@ -183,15 +151,5 @@ public class LBFGS implements Optimizer{
         this.m = m;
     }
 
-    public void setEpsilon(double epsilon) {
-        this.epsilon = epsilon;
-    }
 
-    public void setMaxIteration(int maxIteration) {
-        this.maxIteration = maxIteration;
-    }
-
-    public void setCheckConvergence(boolean checkConvergence) {
-        terminator.setMode(Terminator.Mode.FINISH_MAX_ITER);
-    }
 }

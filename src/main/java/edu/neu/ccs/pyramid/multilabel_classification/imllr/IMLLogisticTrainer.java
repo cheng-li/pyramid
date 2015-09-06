@@ -28,7 +28,7 @@ public class IMLLogisticTrainer {
 
         IMLLogisticLoss function = new IMLLogisticLoss(IMLLogisticRegression,dataset,gaussianPriorVariance);
         LBFGS lbfgs = new LBFGS(function);
-        lbfgs.setEpsilon(epsilon);
+        lbfgs.getTerminator().setEpsilon(epsilon);
         lbfgs.setHistory(history);
         lbfgs.optimize();
         return IMLLogisticRegression;
