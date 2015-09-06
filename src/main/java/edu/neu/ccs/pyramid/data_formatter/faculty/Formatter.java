@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  * Created by Rainicy on 12/6/14.
 */
 public class Formatter {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 

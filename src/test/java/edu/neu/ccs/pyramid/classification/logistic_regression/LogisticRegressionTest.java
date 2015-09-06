@@ -17,7 +17,7 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import java.io.File;
 
 public class LogisticRegressionTest {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 
@@ -27,7 +27,7 @@ public class LogisticRegressionTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test1();
+        test4();
 
     }
 

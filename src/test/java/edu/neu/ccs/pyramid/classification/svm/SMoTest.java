@@ -16,7 +16,7 @@ import java.util.Arrays;
  */
 public class SMoTest {
 
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 

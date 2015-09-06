@@ -15,7 +15,7 @@ import java.lang.reflect.InvocationTargetException;
  * Created by Rainicy on 10/3/14...
  */
 public class HistogramNBTest {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
 
     public static void main(String[] args) throws Exception {
