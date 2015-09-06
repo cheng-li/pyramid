@@ -3,7 +3,6 @@ package edu.neu.ccs.pyramid.optimization;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Iterator;
@@ -35,13 +34,14 @@ public class LBFGS implements Optimizer{
      */
     private double epsilon = 0.01;
     private int maxIteration = 10000;
-    private boolean checkConvergence =true;
-    private boolean terminate = false;
+    private Terminator terminator;
+
 
     public LBFGS(Optimizable.ByGradientValue function) {
         this.function = function;
         this.lineSearcher = new BackTrackingLineSearcher(function);
         lineSearcher.setInitialStepLength(1);
+        this.terminator = new Terminator();
         this.sQueue = new LinkedList<>();
         this.yQueue = new LinkedList<>();
         this.rhoQueue = new LinkedList<>();
@@ -52,58 +52,16 @@ public class LBFGS implements Optimizer{
         if (maxIteration==0){
             return;
         }
-        //size = 2
-        LinkedList<Double> valueQueue = new LinkedList<>();
-        valueQueue.add(function.getValue());
-        if (logger.isDebugEnabled()){
-            logger.debug("initial value = "+ valueQueue.getLast());
-        }
-        int iteration = 0;
-        iterate();
-        iteration += 1;
-        valueQueue.add(function.getValue());
-        if (logger.isDebugEnabled()){
-            logger.debug("iteration "+iteration);
-            logger.debug("value = "+valueQueue.getLast());
-        }
 
-        int convergenceTraceCounter = 0;
-        while(true){
-
-            if (checkConvergence){
-                logger.debug("difference = "+Math.abs(valueQueue.getFirst()-valueQueue.getLast()));
-                if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<=Math.abs(epsilon*valueQueue.getFirst())){
-                    convergenceTraceCounter += 1;
-
-                } else {
-                    convergenceTraceCounter =0;
-                }
-                if (convergenceTraceCounter == 5){
-                    terminate = true;
-                }
-                logger.debug("convergenceTraceCounter = "+convergenceTraceCounter);
-            }
-
-
-            if (iteration==maxIteration){
-               terminate = true;
-            }
-
-            if (terminate){
+        terminator.setEpsilon(epsilon);
+        terminator.setMaxIteration(maxIteration);
+        while (true){
+            iterate();
+            terminator.add(function.getValue());
+            if (terminator.shouldTerminate()){
                 break;
             }
-
-            iterate();
-            iteration += 1;
-            valueQueue.remove();
-            valueQueue.add(function.getValue());
-            if (logger.isDebugEnabled()){
-                logger.debug("iteration "+iteration);
-                logger.debug("value = "+valueQueue.getLast());
-            }
-
         }
-
     }
 
     public void iterate(){
@@ -130,7 +88,7 @@ public class LBFGS implements Optimizer{
             rho = 1/denominator;
         }
         else {
-            terminate = true;
+            terminator.forceTerminate();
             if (logger.isWarnEnabled()){
                 logger.warn("denominator <= 0");
             }
@@ -224,6 +182,6 @@ public class LBFGS implements Optimizer{
     }
 
     public void setCheckConvergence(boolean checkConvergence) {
-        this.checkConvergence = checkConvergence;
+        terminator.setMode(Terminator.Mode.FINISH_MAX_ITER);
     }
 }

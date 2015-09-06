@@ -7,14 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * terminate optimization loops
  * Created by chengli on 9/4/15.
  */
-public class ConvergenceChecker {
+public class Terminator {
     private static final Logger logger = LogManager.getLogger();
     private double min = Double.POSITIVE_INFINITY;
     private double max = Double.NEGATIVE_INFINITY;
     private List<Double> history;
-    private int counter = 0;
+    private int stableCounter = 0;
     /**
      * relative threshold for big change
      */
@@ -23,9 +24,14 @@ public class ConvergenceChecker {
      * if no big change in maxStableIterations, regard as converge
      */
     private int maxStableIterations = 5;
+    /**
+     * terminate if maxStableIterations is reached
+     */
     private int maxIteration = 10000;
+    private boolean forceTerminated = false;
+    private Mode mode = Mode.STANDARD;
 
-    public ConvergenceChecker() {
+    public Terminator() {
         this.history = new ArrayList<>();
     }
 
@@ -40,18 +46,20 @@ public class ConvergenceChecker {
         if (history.size()>=2){
             double previous = history.get(history.size()-2);
             if (Math.abs((value-previous)/previous)<=epsilon){
-                counter += 1;
+                stableCounter += 1;
             } else {
-                counter = 0;
+                stableCounter = 0;
             }
         }
         if (logger.isDebugEnabled()){
             logger.debug("iteration = "+history.size());
+            logger.debug("mode = "+getMode());
             logger.debug("last value = "+getLastValue());
             logger.debug("min value = "+getMinValue());
             logger.debug("max value = "+getMaxValue());
             logger.debug("stable iterations = "+getStableIterations());
             logger.debug("is converged = "+isConverged());
+            logger.debug("should terminate = "+shouldTerminate());
         }
     }
 
@@ -64,11 +72,24 @@ public class ConvergenceChecker {
     }
 
     public int getStableIterations() {
-        return counter;
+        return stableCounter;
+    }
+
+    public boolean shouldTerminate(){
+        boolean ter = false;
+        switch (mode){
+            case STANDARD:
+                ter = isConverged()||(history.size() >= maxIteration)|| forceTerminated;
+                break;
+            case FINISH_MAX_ITER:
+                ter = (history.size() >= maxIteration);
+                break;
+        }
+        return ter;
     }
 
     public boolean isConverged(){
-        return (counter >= maxStableIterations)||(history.size() >= maxIteration);
+        return (stableCounter >= maxStableIterations);
     }
 
     public int getNumIterations(){
@@ -97,5 +118,24 @@ public class ConvergenceChecker {
 
     public void setMaxIteration(int maxIteration) {
         this.maxIteration = maxIteration;
+    }
+
+    /**
+     * user decide to terminate
+     */
+    public void forceTerminate(){
+        this.forceTerminated = true;
+    }
+
+    public Mode getMode() {
+        return mode;
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
+    public enum Mode{
+        STANDARD,FINISH_MAX_ITER
     }
 }
