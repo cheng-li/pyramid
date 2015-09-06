@@ -3,7 +3,6 @@ package edu.neu.ccs.pyramid.optimization;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Iterator;
@@ -19,9 +18,8 @@ import java.util.LinkedList;
  * Formula 2.7
  * Created by chengli on 12/9/14.
  */
-public class LBFGS implements Optimizer{
+public class LBFGS extends GradientValueOptimizer implements Optimizer{
     private static final Logger logger = LogManager.getLogger();
-    private Optimizable.ByGradientValue function;
     private BackTrackingLineSearcher lineSearcher;
     /**
      * history length;
@@ -30,16 +28,11 @@ public class LBFGS implements Optimizer{
     private LinkedList<Vector> sQueue;
     private LinkedList<Vector> yQueue;
     private LinkedList<Double> rhoQueue;
-    /**
-     * stop condition, relative threshold
-     */
-    private double epsilon = 0.01;
-    private int maxIteration = 10000;
-    private boolean checkConvergence =true;
-    private boolean terminate = false;
+
+
 
     public LBFGS(Optimizable.ByGradientValue function) {
-        this.function = function;
+        super(function);
         this.lineSearcher = new BackTrackingLineSearcher(function);
         lineSearcher.setInitialStepLength(1);
         this.sQueue = new LinkedList<>();
@@ -48,63 +41,6 @@ public class LBFGS implements Optimizer{
 
     }
 
-    public void optimize(){
-        if (maxIteration==0){
-            return;
-        }
-        //size = 2
-        LinkedList<Double> valueQueue = new LinkedList<>();
-        valueQueue.add(function.getValue());
-        if (logger.isDebugEnabled()){
-            logger.debug("initial value = "+ valueQueue.getLast());
-        }
-        int iteration = 0;
-        iterate();
-        iteration += 1;
-        valueQueue.add(function.getValue());
-        if (logger.isDebugEnabled()){
-            logger.debug("iteration "+iteration);
-            logger.debug("value = "+valueQueue.getLast());
-        }
-
-        int convergenceTraceCounter = 0;
-        while(true){
-
-            if (checkConvergence){
-                logger.debug("difference = "+Math.abs(valueQueue.getFirst()-valueQueue.getLast()));
-                if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<=Math.abs(epsilon*valueQueue.getFirst())){
-                    convergenceTraceCounter += 1;
-
-                } else {
-                    convergenceTraceCounter =0;
-                }
-                if (convergenceTraceCounter == 5){
-                    terminate = true;
-                }
-                logger.debug("convergenceTraceCounter = "+convergenceTraceCounter);
-            }
-
-
-            if (iteration==maxIteration){
-               terminate = true;
-            }
-
-            if (terminate){
-                break;
-            }
-
-            iterate();
-            iteration += 1;
-            valueQueue.remove();
-            valueQueue.add(function.getValue());
-            if (logger.isDebugEnabled()){
-                logger.debug("iteration "+iteration);
-                logger.debug("value = "+valueQueue.getLast());
-            }
-
-        }
-
-    }
 
     public void iterate(){
         if (logger.isDebugEnabled()){
@@ -130,7 +66,7 @@ public class LBFGS implements Optimizer{
             rho = 1/denominator;
         }
         else {
-            terminate = true;
+            terminator.forceTerminate();
             if (logger.isWarnEnabled()){
                 logger.warn("denominator <= 0");
             }
@@ -215,15 +151,5 @@ public class LBFGS implements Optimizer{
         this.m = m;
     }
 
-    public void setEpsilon(double epsilon) {
-        this.epsilon = epsilon;
-    }
 
-    public void setMaxIteration(int maxIteration) {
-        this.maxIteration = maxIteration;
-    }
-
-    public void setCheckConvergence(boolean checkConvergence) {
-        this.checkConvergence = checkConvergence;
-    }
 }

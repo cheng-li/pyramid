@@ -26,7 +26,7 @@ import java.util.List;
  * Created by chengli on 5/30/15.
  */
 public class Exp114 {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 

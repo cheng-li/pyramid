@@ -6,7 +6,7 @@ import org.apache.mahout.math.Vector;
 import java.io.File;
 
 public class WeightsTest {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 

@@ -15,13 +15,16 @@ public interface Optimizable {
      */
     void setParameters(Vector parameters);
 
+    public interface ByValue extends Optimizable{
+        double getValue();
+    }
+
     public interface ByGradient extends Optimizable {
         Vector getGradient();
     }
 
-    public interface ByGradientValue extends Optimizable{
-        Vector getGradient();
-        double getValue();
+    public interface ByGradientValue extends Optimizable.ByValue, Optimizable.ByGradient{
+
     }
 
 }

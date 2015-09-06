@@ -12,7 +12,7 @@ import java.io.File;
  * Created by chengli on 10/21/14.
  */
 public class MissingValueProducer {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 

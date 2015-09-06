@@ -23,7 +23,7 @@ import java.util.List;
  * Created by chengli on 6/3/15.
  */
 public class Exp120 {
-//    private static final Config config = new Config("configs/local.config");
+//    private static final Config config = new Config("config/local.config");
 //    private static final String DATASETS = config.getString("input.datasets");
 //    private static final String TMP = config.getString("output.tmp");
 //

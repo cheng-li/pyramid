@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class MLLogisticTrainerTest {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 
@@ -54,7 +54,7 @@ public class MLLogisticTrainerTest {
                 assignments);
         MLLogisticLoss function = new MLLogisticLoss(mlLogisticRegression,dataSet,10000);
         LBFGS lbfgs = new LBFGS(function);
-        lbfgs.setEpsilon(0.01);
+        lbfgs.getTerminator().setEpsilon(0.01);
         lbfgs.setHistory(5);
         for (int i=0;i<100;i++){
             System.out.println(function.getValue());
@@ -135,7 +135,7 @@ public class MLLogisticTrainerTest {
                 assignments);
         MLLogisticLoss function = new MLLogisticLoss(mlLogisticRegression,dataSet,10000);
         LBFGS lbfgs = new LBFGS(function);
-        lbfgs.setEpsilon(0.01);
+        lbfgs.getTerminator().setEpsilon(0.01);
         lbfgs.setHistory(5);
         for (int i=0;i<1000;i++){
 //            System.out.println(function.getValue());

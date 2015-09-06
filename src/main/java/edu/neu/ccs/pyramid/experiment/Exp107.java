@@ -5,7 +5,7 @@ import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
@@ -80,8 +80,9 @@ public class Exp107 {
                     .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
                     .build();
             Optimizer optimizer = trainer.getOptimizer();
-            optimizer.setCheckConvergence(false);
-            optimizer.setMaxIteration(100);
+            optimizer.getTerminator().setMode(Terminator.Mode.FINISH_MAX_ITER);
+            optimizer.getTerminator().setMaxIteration(100);
+
 
 
             SoftRegStump softTree = trainer.train();

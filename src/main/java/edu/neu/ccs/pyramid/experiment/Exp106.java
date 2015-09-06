@@ -4,7 +4,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 5/24/15.
  */
 public class Exp106 {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 
@@ -124,8 +124,8 @@ public class Exp106 {
                 .build();
 
         Optimizer optimizer = trainer.getOptimizer();
-        optimizer.setCheckConvergence(false);
-        optimizer.setMaxIteration(iteration);
+        optimizer.getTerminator().setMode(Terminator.Mode.FINISH_MAX_ITER);
+        optimizer.getTerminator().setMaxIteration(iteration);
         SoftRegStump softRegStump = trainer.train();
         System.out.println("prob rt");
         System.out.println("training mse = "+ MSE.mse(softRegStump,trainSet));

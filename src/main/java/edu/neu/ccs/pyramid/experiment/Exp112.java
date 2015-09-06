@@ -21,7 +21,7 @@ import java.util.Arrays;
  * Created by chengli on 5/28/15.
  */
 public class Exp112 {
-    private static final Config config = new Config("configs/local.config");
+    private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 
