@@ -113,20 +113,23 @@ public class Terminator {
         }
     }
 
-    public void setEpsilon(double epsilon) {
+    public Terminator setEpsilon(double epsilon) {
         this.epsilon = epsilon;
+        return this;
     }
 
-    public void setMaxStableIterations(int maxStableIterations) {
+    public Terminator setMaxStableIterations(int maxStableIterations) {
         this.maxStableIterations = maxStableIterations;
+        return this;
     }
 
     public int getMaxIteration() {
         return maxIteration;
     }
 
-    public void setMaxIteration(int maxIteration) {
+    public Terminator setMaxIteration(int maxIteration) {
         this.maxIteration = maxIteration;
+        return this;
     }
 
     /**
@@ -140,8 +143,9 @@ public class Terminator {
         return mode;
     }
 
-    public void setMode(Mode mode) {
+    public Terminator setMode(Mode mode) {
         this.mode = mode;
+        return this;
     }
 
     public enum Mode{
