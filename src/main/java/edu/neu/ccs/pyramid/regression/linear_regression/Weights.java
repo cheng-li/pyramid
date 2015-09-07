@@ -44,6 +44,10 @@ public class Weights implements Serializable{
         return this.weightVector;
     }
 
+    public void setWeightVector(Vector weightVector) {
+        this.weightVector = weightVector;
+    }
+
     /**
      *
      * @return weights , no bias

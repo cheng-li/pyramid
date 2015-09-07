@@ -30,6 +30,11 @@ public class BackTrackingLineSearcher {
     public MoveInfo moveAlongDirection(Vector searchDirection){
         if (logger.isDebugEnabled()){
             logger.debug("start line search");
+            // don't want to show too much; only show it on small problems
+            if (searchDirection.size()<100){
+                logger.debug("direction="+searchDirection);
+            }
+
         }
         MoveInfo moveInfo = new MoveInfo();
 
