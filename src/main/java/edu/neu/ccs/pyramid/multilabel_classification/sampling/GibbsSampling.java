@@ -9,6 +9,10 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.util.*;
 
 /**
@@ -19,17 +23,20 @@ public class GibbsSampling implements MultiLabelClassifier {
     private List<Classifier.ProbabilityEstimator> classifiers;
     private int numClasses;
 
-    // gibbs sampling k times.
+    // gibbs sampling K times.
     private int K;
+    // count the majority starting from the last K;
+    private int lastK;
 
     // feature list and labelTranslator, optional
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
 
 
-    public GibbsSampling(int numClasses, int K) {
+    public GibbsSampling(int numClasses, int K, int lastK) {
         this.numClasses = numClasses;
         this.K = K;
+        this.lastK = lastK;
         for (int i=0; i<numClasses; i++) {
             this.classifiers = new ArrayList<>(numClasses);
         }
@@ -46,6 +53,25 @@ public class GibbsSampling implements MultiLabelClassifier {
     public int getNumClasses() {
         return this.numClasses;
     }
+
+    /**
+     * set the times of gibbs sampling.
+     * @param K
+     */
+    public void setK(int K) {
+        this.K = K;
+    }
+
+    /**
+     * set the lastK times when starting to count
+     * the majority.
+     * @param lastK
+     */
+    public void setLastK(int lastK) {
+        this.lastK = lastK;
+    }
+
+
 
     @Override
     public MultiLabel predict(Vector vector) {
@@ -74,8 +100,8 @@ public class GibbsSampling implements MultiLabelClassifier {
                 updateVector(toVector, labelFeatures, j);
             }
 
-            // record current iteration of prediction at the last 50 itertaions
-            if ((K-i) <= 50) {
+            // record current iteration of prediction at the lastK iterations
+            if ((K-i) <= lastK) {
                 MultiLabel multiLabel = transMultiLabel(labelFeatures);
                 if (!votes.containsKey(multiLabel)) {
                     votes.put(multiLabel, 1);
@@ -129,7 +155,8 @@ public class GibbsSampling implements MultiLabelClassifier {
             if (i == j) {
                 continue;
             }
-            toVector.set(vectorIndex++, labelFeatures[i]);
+            toVector.set(vectorIndex, labelFeatures[i]);
+            vectorIndex += 1;
         }
     }
 
@@ -143,7 +170,7 @@ public class GibbsSampling implements MultiLabelClassifier {
      */
     private int flipCoin(double prob) {
         // if the random probability is smaller than given prob,
-        // return true.
+        // return 1.
         if (Math.random() < prob) {
             return 1;
         }
@@ -199,5 +226,20 @@ public class GibbsSampling implements MultiLabelClassifier {
 
     public void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
+    }
+
+    public static GibbsSampling deserialize(String file) throws Exception {
+        return deserialize(new File(file));
+    }
+
+    public static GibbsSampling deserialize(File file) throws Exception {
+        try(
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+                ){
+            GibbsSampling sampling = (GibbsSampling) objectInputStream.readObject();
+            return sampling;
+        }
     }
 }

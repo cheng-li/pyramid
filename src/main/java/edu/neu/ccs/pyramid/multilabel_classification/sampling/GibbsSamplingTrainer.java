@@ -108,13 +108,7 @@ public class GibbsSamplingTrainer {
                 .dense(dataSet.isDense()).missingValue(dataSet.hasMissingValue())
                 .numClasses(2).build();
 
-        // set original features first
-//        for (int i=0; i<dataSet.getNumFeatures(); i++) {
-//            Vector vector = dataSet.getColumn(i);
-//            for (Vector.Element element : vector.nonZeroes()) {
-//                clfDataSet.setFeatureValue(element.index(), i, element.get());
-//            }
-//        }
+
         // put multilabel into feature matrix and update the label
         MultiLabel[] multiLabels = dataSet.getMultiLabels();
         for (int i=0; i<numDataPoints; i++) {
@@ -125,7 +119,7 @@ public class GibbsSamplingTrainer {
             }
 
             // set the new features from labels second.
-            MultiLabel multiLabel  = multiLabels[i];
+            MultiLabel multiLabel = multiLabels[i];
             for (Integer j : multiLabel.getMatchedLabels()) {
                 if (j < label) { // label is on the left hand of given removing label.
                     clfDataSet.setFeatureValue(i, (origNumFeatures+j), 1.0);
