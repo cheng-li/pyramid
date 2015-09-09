@@ -13,8 +13,29 @@ public class TerminatorTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
+        test2();
+
+    }
+
+    private static void test1(){
         double[] values = {1,2,-1,4,5,5.1,5.11,5.11,3,3.1,3.11,3.09,3.08,3.07,3.08};
         Terminator checker = new Terminator();
+        for (double value: values){
+            checker.add(value);
+//            System.out.println("iteration " + checker.getNumIterations());
+//            System.out.println("his="+checker.getHistory());
+//            System.out.println("min="+checker.getMinValue());
+//            System.out.println("max="+checker.getMaxValue());
+//            System.out.println("stable="+checker.getStableIterations());
+//            System.out.println("converge="+checker.isConverged());
+        }
+    }
+
+
+    private static void test2(){
+        double[] values = {1,2,-1,4,5,5.1,5.11,5.11,3,3.1,3.11,3.09,3.08,3.07,3.08};
+        Terminator checker = new Terminator();
+        checker.setMaxIteration(100).setMode(Terminator.Mode.FINISH_MAX_ITER);
         for (double value: values){
             checker.add(value);
 //            System.out.println("iteration " + checker.getNumIterations());
