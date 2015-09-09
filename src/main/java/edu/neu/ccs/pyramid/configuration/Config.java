@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.Version;
 
 import java.io.*;
 import java.util.*;
@@ -23,7 +24,7 @@ public class Config {
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        System.out.println("config file "+configFile+" loaded.");
+        this.setString("pyramid.version", Version.getVersion());
     }
 
     public Config(File configFile) {
@@ -33,11 +34,12 @@ public class Config {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        this.setString("pyramid.version", Version.getVersion());
     }
 
     public Config(){
         this.properties = new Properties();
+        this.setString("pyramid.version", Version.getVersion());
     }
 
     public void setInt(String key, int value){
