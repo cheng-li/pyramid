@@ -54,14 +54,14 @@ public class GibbsSamplingTrainer {
 
             LKTBTrainer trainer = new LKTBTrainer(trainConfig, lkTreeBoost);
             for (int round=0; round<config.getNumRounds(); round++) {
-                System.out.println("label = " + l + "/" + numClasses +
-                        "; round = " + round + "/" + config.getNumRounds());
+                System.out.println("label = " + (l+1) + "/" + numClasses +
+                        "; round = " + (round+1) + "/" + config.getNumRounds());
                 trainer.iterate();
             }
 
             this.sampling.addClassifier(lkTreeBoost);
 
-            System.out.println("label = " + l +"; accuracy = " + Accuracy.accuracy(lkTreeBoost,dataSet));
+            System.out.println("label = " + (l+1) +"; accuracy = " + Accuracy.accuracy(lkTreeBoost,dataSet));
         }
     }
 

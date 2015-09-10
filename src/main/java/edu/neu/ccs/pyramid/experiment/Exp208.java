@@ -16,15 +16,16 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by Rainicy on 9/7/15.
+ * Created by Rainicy on 9/9/15.
  */
-public class Exp207 {
+public class Exp208 {
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("Please specify a properties file.");
         }
 
         Config config = new Config(args[0]);
+//        Config config = new Config("/Users/Rainicy/Datasets/1.config");
         System.out.println(config);
 
         // loading data

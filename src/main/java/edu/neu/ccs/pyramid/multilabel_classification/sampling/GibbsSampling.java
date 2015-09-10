@@ -3,22 +3,24 @@ package edu.neu.ccs.pyramid.multilabel_classification.sampling;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.SequentialAccessSparseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by Rainicy on 9/7/15.
  */
 public class GibbsSampling implements MultiLabelClassifier {
+    private static final long serialVersionUID = 6757804404524817727L;
 
     private List<Classifier.ProbabilityEstimator> classifiers;
     private int numClasses;
@@ -33,6 +35,13 @@ public class GibbsSampling implements MultiLabelClassifier {
     private LabelTranslator labelTranslator;
 
 
+    /**
+     * Constructor for only giving number of class,
+     * gibbs sampling K times, and counting for the lastK times.
+     * @param numClasses
+     * @param K
+     * @param lastK
+     */
     public GibbsSampling(int numClasses, int K, int lastK) {
         this.numClasses = numClasses;
         this.K = K;
@@ -72,6 +81,174 @@ public class GibbsSampling implements MultiLabelClassifier {
     }
 
 
+    public void savePrediction(MultiLabelClfDataSet dataSet, String outputFolder,
+                               String predFile, String probFile) throws IOException {
+
+        File preds = new File(outputFolder, predFile);
+        File probs = new File(outputFolder, probFile);
+        BufferedWriter bwPreds = new BufferedWriter(new FileWriter(preds));
+        BufferedWriter bwProbs = new BufferedWriter(new FileWriter(probs));
+
+        // go through all data points
+        MultiLabel[] labels = dataSet.getMultiLabels();
+        for (int k=0; k<dataSet.getNumDataPoints(); k++) {
+            System.out.println("#point : " + k + "/" + dataSet.getNumDataPoints());
+            System.out.println("true: " + labels[k].toString());
+            // append string with ","
+            String stringLabels = StringUtils.join(labels[k].getMatchedLabels(), ',');
+
+            bwPreds.write(stringLabels + '\t');
+            bwProbs.write(stringLabels + '\t');
+
+            Vector toVector = extendFeatures(dataSet.getRow(k));
+            int[] labelFeatures = new int[numClasses];
+
+            // starting gibbs sampling
+            for (int i=0; i<K; i++) {
+                // for each gibbs sampling iteration, go through all classifiers
+                int[] arrayPreds = new int[numClasses];
+                double[] arrayProbs = new double[numClasses];
+
+                for (int j=0; j<numClasses; j++) {
+                    // binary classifier.
+                    Classifier.ProbabilityEstimator classifier = classifiers.get(j);
+                    // the probability of predicting 1.
+                    double prob = classifier.predictClassProbs(toVector)[1];
+                    // update if the current label is on or off.
+                    int pred = flipCoin(prob);
+                    labelFeatures[j] = pred;
+                    // update the toVector for next classifier use.
+                    updateVector(toVector, labelFeatures, j);
+
+                    arrayPreds[j] = pred;
+                    arrayProbs[j] = prob;
+                }
+//                System.out.println(StringUtils.join(arrayPreds, ',') + " ");
+                System.out.println(StringUtils.join(arrayProbs, ',') + " ");
+//                System.in.read();
+                bwPreds.write(StringUtils.join(arrayPreds, ',') + " ");
+                bwProbs.write(StringUtils.join(arrayProbs, ',') + " ");
+            }
+            System.out.println();
+            System.in.read();
+
+            bwPreds.newLine();
+            bwProbs.newLine();
+        }
+
+        bwPreds.close();
+        bwProbs.close();
+    }
+
+    public MultiLabel[] predict(MultiLabelClfDataSet dataSet){
+
+        List<MultiLabel> results = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToObj(i -> predict(dataSet.getRow(i), dataSet.getMultiLabels()[i]))
+                .collect(Collectors.toList());
+        return results.toArray(new MultiLabel[results.size()]);
+    }
+
+    /**
+     * Predict with given true label as initialization.
+     * @param vector
+     * @param label
+     * @return
+     */
+    public MultiLabel predict(Vector vector, MultiLabel label) {
+//        System.out.println("with label");
+        // record the votes at the end of each gibbs sampling iteration.
+        // get the count for each combination of labels(MultiLabel).
+        Map<MultiLabel, Integer> votes = new HashMap<>();
+
+        // append the (#labels-1) as features to the original vector
+        Vector toVector = extendFeatures(vector, label);
+        // initial current label features value
+        int[] labelFeatures = new int[numClasses];
+        for (int l : label.getMatchedLabels()) {
+            if (l >= labelFeatures.length) {
+                continue;
+            }
+            labelFeatures[l] = 1;
+        }
+
+
+        // starting gibbs sampling
+        int intervalCount = 1;
+        int interval = 10;
+        for (int i = 0; i < K; i++) {
+            // for each gibbs sampling iteration, go through all classifiers
+            for (int j = 0; j < numClasses; j++) {
+                // binary classifier.
+                Classifier.ProbabilityEstimator classifier = classifiers.get(j);
+                // the probability of predicting 1.
+                double prob = classifier.predictClassProbs(toVector)[1];
+                // update if the current label is on or off.
+                labelFeatures[j] = flipCoin(prob);
+                // update the toVector for next classifier use.
+                updateVector(toVector, labelFeatures, j+1);
+            }
+
+            // record current iteration of prediction at the lastK iterations
+            if ((K - i) <= lastK) {
+                intervalCount++;
+                if ((intervalCount%interval) != 0) {
+                    continue;
+                }
+                MultiLabel multiLabel = transMultiLabel(labelFeatures);
+                if (!votes.containsKey(multiLabel)) {
+                    votes.put(multiLabel, 1);
+                } else {
+                    votes.put(multiLabel, votes.get(multiLabel) + 1);
+                }
+            }
+        }
+
+        // predict the majority of the MultiLabel in votes.
+        MultiLabel predLabel = null;
+        int maxVoteCount = Integer.MIN_VALUE;
+        for (HashMap.Entry<MultiLabel, Integer> vote : votes.entrySet()) {
+            int voteCount = vote.getValue();
+            if (maxVoteCount < voteCount) {
+                maxVoteCount = voteCount;
+                predLabel = vote.getKey();
+            }
+        }
+
+        return predLabel;
+    }
+
+    private Vector extendFeatures(Vector vector, MultiLabel label) {
+        Vector toVector;
+        int newLength = vector.size() + numClasses - 1;
+
+        // initialize the new vector
+        if (vector.isDense()) {
+            toVector = new DenseVector(newLength);
+        } else {
+            toVector = new RandomAccessSparseVector(newLength);
+        }
+
+        // copy the original vector to the new vector
+        for (Vector.Element element : vector.nonZeroes()) {
+            int index = element.index();
+            double value = element.get();
+            toVector.set(index, value);
+        }
+
+        // initialize with true labels
+        int vectorSize = vector.size();
+        for (int l : label.getMatchedLabels()) {
+            if (l == 0) {
+                continue;
+            }
+            int curIndex = vectorSize+l-1;
+            if (curIndex >= toVector.size()){
+                continue;
+            }
+            toVector.set(curIndex, 1);
+        }
+        return toVector;
+    }
 
     @Override
     public MultiLabel predict(Vector vector) {
@@ -97,7 +274,7 @@ public class GibbsSampling implements MultiLabelClassifier {
                 // update if the current label is on or off.
                 labelFeatures[j] = flipCoin(prob);
                 // update the toVector for next classifier use.
-                updateVector(toVector, labelFeatures, j);
+                updateVector(toVector, labelFeatures, j+1);
             }
 
             // record current iteration of prediction at the lastK iterations
@@ -191,7 +368,7 @@ public class GibbsSampling implements MultiLabelClassifier {
         if (vector.isDense()) {
             toVector = new DenseVector(newLength);
         } else {
-            toVector = new SequentialAccessSparseVector(newLength);
+            toVector = new RandomAccessSparseVector(newLength);
         }
 
         // copy the original vector to the new vector
@@ -201,9 +378,9 @@ public class GibbsSampling implements MultiLabelClassifier {
             toVector.set(index, value);
         }
         // append the label value as 0 to the new vector.
-        for (int i=vector.size(); i<newLength; i++) {
-            toVector.set(i, 0);
-        }
+//        for (int i=vector.size(); i<newLength; i++) {
+//            toVector.set(i, 0);
+//        }
 
 
         return toVector;
