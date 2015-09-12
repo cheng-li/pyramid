@@ -271,6 +271,7 @@ public class RegressionTree implements Regressor, Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("RegTree{");
         for (Node node: this.leaves){
             Stack<Node> stack = new Stack<Node>();
             while(true){
@@ -296,6 +297,7 @@ public class RegressionTree implements Regressor, Serializable {
                 }
             }
         }
+        sb.append("}");
         return sb.toString();
     }
 

@@ -43,4 +43,13 @@ public class LSBoost implements Regressor {
     public List<Double> getWeights() {
         return weights;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("LSBoost{");
+        sb.append("regressors=").append(regressors);
+        sb.append(", weights=").append(weights);
+        sb.append('}');
+        return sb.toString();
+    }
 }
