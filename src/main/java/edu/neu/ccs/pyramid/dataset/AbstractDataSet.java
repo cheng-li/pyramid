@@ -72,7 +72,7 @@ abstract class AbstractDataSet implements DataSet{
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("number of data points = ").append(numDataPoints).append("\n");
-        sb.append("number of featureList = ").append(numFeatures).append("\n");
+        sb.append("number of features = ").append(numFeatures).append("\n");
         sb.append("has missing value = ").append(missingValue).append("\n");
         sb.append("row matrix:").append("\n");
         for (int i=0;i<numDataPoints;i++){
