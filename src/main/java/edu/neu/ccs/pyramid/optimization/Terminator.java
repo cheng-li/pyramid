@@ -36,6 +36,12 @@ public class Terminator {
     }
 
     public void add(double value){
+        if (Double.isInfinite(value)){
+            throw new RuntimeException("value is infinite");
+        }
+        if (Double.isNaN(value)){
+            throw new RuntimeException("value is NaN");
+        }
         this.history.add(value);
         if (value>max){
             max = value;
