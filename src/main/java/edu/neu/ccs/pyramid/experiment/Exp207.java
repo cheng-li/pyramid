@@ -14,6 +14,7 @@ import org.elasticsearch.common.StopWatch;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Created by Rainicy on 9/7/15.
@@ -76,7 +77,6 @@ public class Exp207 {
         if (config.getBoolean("train")) {
             int numClasses = trainSet.getNumClasses();
             MultiLabel[] multiLabels = trainSet.getMultiLabels();
-
             stopWatch = new StopWatch();
             stopWatch.start();
             MultiLabel[] predictions = sampling.predict(trainSet);
@@ -108,6 +108,10 @@ public class Exp207 {
             System.out.println("========Test.result======");
             System.out.println("Testing time: " + stopWatch);
 
+//            System.out.println("TRUE: " + Arrays.toString(multiLabels));
+//            System.out.println("PRED: " + Arrays.toString(predictions));
+
+
             MicroMeasures microMeasures = new MicroMeasures(numClasses);
             MacroMeasures macroMeasures = new MacroMeasures(numClasses);
             microMeasures.update(multiLabels,predictions);
@@ -128,8 +132,7 @@ public class Exp207 {
     }
 
     static MultiLabelClfDataSet loadData(Config config, String dataName) throws IOException, ClassNotFoundException {
-        File dataFile = new File(new File(config.getString("input.folder"),
-                "data_sets"),dataName);
+        File dataFile = new File(new File(config.getString("input.folder"),"data_sets"),dataName);
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(dataFile, DataSetType.ML_CLF_SPARSE,
                 true);
         return dataSet;

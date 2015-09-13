@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import org.apache.mahout.math.Vector;
 
+import java.io.IOException;
 
 
 /**
@@ -59,7 +60,7 @@ public class GibbsSamplingTrainer {
                 trainer.iterate();
             }
 
-            this.sampling.addClassifier(lkTreeBoost);
+            this.sampling.addClassifier(lkTreeBoost, l);
 
             System.out.println("label = " + (l+1) +"; accuracy = " + Accuracy.accuracy(lkTreeBoost,dataSet));
         }
