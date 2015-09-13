@@ -173,15 +173,15 @@ public class App2 {
             System.out.println("iteration "+i);
             trainer.iterate();
 //            System.out.println("model size = "+boosting.getRegressors(0).size());
-            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0)){
-                System.out.println("accuracy on training set = "+ Accuracy.accuracy(boosting,
-                        dataSet));
+            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations-1)){
+                MultiLabel[] predictions = boosting.predict(dataSet);
+                System.out.println("accuracy on training set = "+ Accuracy.accuracy(dataSet.getMultiLabels(),predictions));
                 System.out.println("overlap on training set = "+ Overlap.overlap(boosting, dataSet));
             }
-            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0)){
-                System.out.println("accuracy on test set = "+ Accuracy.accuracy(boosting,
-                        testSet));
-                System.out.println("overlap on test set = "+ Overlap.overlap(boosting, testSet));
+            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations-1)){
+                MultiLabel[] predictions = boosting.predict(testSet);
+                System.out.println("accuracy on test set = "+ Accuracy.accuracy(testSet.getMultiLabels(),predictions));
+                System.out.println("overlap on test set = "+ Overlap.overlap(testSet.getMultiLabels(),predictions));
             }
         }
         File serializedModel =  new File(output,modelName);
