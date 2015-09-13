@@ -9,6 +9,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 9/12/15.
@@ -63,15 +64,11 @@ public class BMMTrainer {
     }
 
     private void eStep(){
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            updateGamma(i);
-        }
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(this::updateGamma);
     }
 
     private void mStep(){
-        for (int k=0;k<numClusters;k++){
-            updateCluster(k);
-        }
+        IntStream.range(0,numClusters).parallel().forEach(this::updateCluster);
         double objective = objective();
         terminator.add(objective);
     }
@@ -127,11 +124,8 @@ public class BMMTrainer {
      * @return
      */
     private double objective(){
-        double res = 0;
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            res += objective(i);
-        }
-        return res;
+        return IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(this::objective)
+                .sum();
     }
 
 

@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.clustering.bmm.BMMSelector;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.mahout.math.Vector;
 
@@ -18,6 +19,10 @@ public class MultiLabelSuggester {
     private BMM bmm;
     private MultiLabel[] multiLabels;
     private int numClusters;
+
+    public MultiLabelSuggester(MultiLabelClfDataSet dataSet, int numClusters){
+        this(dataSet.getNumClasses(),dataSet.getMultiLabels(),numClusters);
+    }
 
     public MultiLabelSuggester(int numClasses, MultiLabel[] multiLabels, int numClusters) {
         this.multiLabels = multiLabels;
@@ -49,5 +54,9 @@ public class MultiLabelSuggester {
         }
         Set<MultiLabel> newOnes = SetUtil.complement(found,old);
         return newOnes;
+    }
+
+    public BMM getBmm() {
+        return bmm;
     }
 }

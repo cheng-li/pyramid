@@ -87,17 +87,21 @@ public class BMM {
     public String toString() {
         final StringBuilder sb = new StringBuilder("BMM{");
         sb.append("numClusters=").append(numClusters);
-        sb.append(", dimension=").append(dimension);
-        sb.append(", distributions=").append("\n");
+        sb.append(", dimension=").append(dimension).append("\n");
         for (int k=0;k<numClusters;k++){
-            sb.append("cluster "+k).append("\n");
+            sb.append("cluster ").append(k).append(":\n");
+            sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
+            sb.append("probabilities = ").append("[");
             for (int d=0;d<dimension;d++){
-                sb.append(distributions[k][d].getProbabilityOfSuccess()).append(",");
+                sb.append(distributions[k][d].getProbabilityOfSuccess());
+                if (d!=dimension-1){
+                    sb.append(", ");
+                }
             }
+            sb.append("]");
             sb.append("\n");
         }
 
-        sb.append(", mixtureCoefficients=").append(Arrays.toString(mixtureCoefficients));
         sb.append('}');
         return sb.toString();
     }
