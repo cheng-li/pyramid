@@ -203,6 +203,11 @@ public class App2 {
             augmentLabels(config,boosting);
         }
 
+        if (config.getBoolean("cheatAugment")){
+            cheatAugment(config, boosting);
+        }
+
+
         String predictFashion = config.getString("predict.fashion").toLowerCase();
         switch (predictFashion){
             case "crf":
@@ -371,6 +376,21 @@ public class App2 {
         augmented.addAll(boosting.getAssignments());
         boosting.setAssignments(augmented.stream().collect(Collectors.toList()));
     }
+
+    private static void cheatAugment(Config config, IMLGradientBoosting boosting) throws Exception{
+        MultiLabelClfDataSet dataSet = loadData(config,config.getString("input.testData"));
+
+        List<MultiLabel> suggested = DataSetUtil.gatherMultiLabels(dataSet).stream()
+                .filter(multiLabel->!multiLabel.outOfBound(boosting.getNumClasses()))
+                .collect(Collectors.toList());
+        System.out.println("number of suggested labels = "+suggested);
+        Set<MultiLabel> augmented = new HashSet<>();
+        augmented.addAll(suggested);
+        augmented.addAll(boosting.getAssignments());
+        boosting.setAssignments(augmented.stream().collect(Collectors.toList()));
+    }
+
+
 
 
 

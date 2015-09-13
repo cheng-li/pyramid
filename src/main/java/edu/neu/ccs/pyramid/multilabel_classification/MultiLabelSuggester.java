@@ -59,6 +59,8 @@ public class MultiLabelSuggester {
             MultiLabel multiLabel = new MultiLabel(vector);
             found.add(multiLabel);
         }
+        MultiLabel empty = new MultiLabel();
+        found.remove(empty);
         Set<MultiLabel> newOnes = SetUtil.complement(found,old);
         return newOnes;
     }
