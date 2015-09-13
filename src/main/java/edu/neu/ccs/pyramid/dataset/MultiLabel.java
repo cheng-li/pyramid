@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import org.apache.mahout.math.Vector;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,6 +19,17 @@ public class MultiLabel implements Serializable{
 
     public MultiLabel() {
         this.labels = new HashSet<>();
+    }
+
+    /**
+     *
+     * @param vector a binary label vector
+     */
+    public MultiLabel(Vector vector){
+        this();
+        for (Vector.Element element:vector.nonZeroes()){
+            this.addLabel(element.index());
+        }
     }
 
     public MultiLabel addLabel(int k){

@@ -22,7 +22,7 @@ public class BMMTrainer {
     double[][] gammas;
     private int numClusters;
     BMM bmm;
-    private Terminator terminator;
+    Terminator terminator;
 
     public BMMTrainer(DataSet dataSet,int numClusters) {
         this.numClusters = numClusters;
@@ -42,6 +42,8 @@ public class BMMTrainer {
 
         return this.bmm;
     }
+
+
 
     void iterate(){
         eStep();
@@ -121,6 +123,7 @@ public class BMMTrainer {
 
     /**
      * use Bishop Eq 9.51 as objective; Eq 9.55 is unstable when p=0;
+     * log likelihood, to be maximized
      * @return
      */
     private double objective(){

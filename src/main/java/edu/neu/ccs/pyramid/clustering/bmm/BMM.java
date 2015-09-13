@@ -1,10 +1,13 @@
 package edu.neu.ccs.pyramid.clustering.bmm;
 
 import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Bernoulli mixture model
@@ -45,6 +48,23 @@ public class BMM {
             prob *= distribution.probability((int)vector.get(d));
         }
         return prob;
+    }
+
+    /**
+     * sample a vector from the mixture distribution
+     * @return
+     */
+    public Vector sample(){
+        Vector vector = new DenseVector(dimension);
+        // first sample cluster
+        int[] clusters = IntStream.range(0,numClusters).toArray();
+        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,mixtureCoefficients);
+        int cluster = enumeratedIntegerDistribution.sample();
+        // then sample each dimension
+        for (int d=0;d<dimension;d++){
+            vector.set(d,distributions[cluster][d].sample());
+        }
+        return vector;
     }
 
     public int getNumClusters() {

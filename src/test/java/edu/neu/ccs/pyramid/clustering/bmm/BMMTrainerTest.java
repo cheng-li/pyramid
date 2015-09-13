@@ -159,12 +159,18 @@ public class BMMTrainerTest {
         System.out.println("dataset = "+dataSet);
         BMMTrainer trainer = new BMMTrainer(dataSet,3);
         System.out.println(trainer.bmm);
-        trainer.train();
+        BMM bmm = trainer.train();
 //        for (int iter=0;iter<100;iter++){
 //            trainer.iterate();
 //        }
 
-        System.out.println(trainer.bmm);
+        System.out.println(bmm);
+
+        for (int i=0;i<5;i++){
+            System.out.println("sample "+i);
+            System.out.println(bmm.sample());
+        }
+
     }
 
 }
