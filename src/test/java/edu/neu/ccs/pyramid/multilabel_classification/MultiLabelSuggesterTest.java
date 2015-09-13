@@ -46,7 +46,7 @@ public class MultiLabelSuggesterTest {
     private static void test4()throws Exception{
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
-        MultiLabelSuggester suggester = new MultiLabelSuggester(dataSet,100);
+        MultiLabelSuggester suggester = new MultiLabelSuggester(dataSet,10);
         System.out.println("bmm="+suggester.getBmm());
 
 
@@ -55,7 +55,7 @@ public class MultiLabelSuggesterTest {
         Set<MultiLabel> newintest = SetUtil.complement(testLabels,trainLabels);
         System.out.println("new labels in test set = "+newintest);
 
-        Set<MultiLabel> sampled = suggester.suggestNewOnes(10000);
+        Set<MultiLabel> sampled = suggester.suggestNewOnes(1000);
         System.out.println("sampled:");
         for (MultiLabel multiLabel: sampled){
             System.out.println(multiLabel+"\t"+newintest.contains(multiLabel));

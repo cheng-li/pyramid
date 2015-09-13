@@ -10,7 +10,10 @@ import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.mahout.math.Vector;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 9/12/15.
@@ -22,6 +25,10 @@ public class MultiLabelSuggester {
 
     public MultiLabelSuggester(MultiLabelClfDataSet dataSet, int numClusters){
         this(dataSet.getNumClasses(),dataSet.getMultiLabels(),numClusters);
+        List<String> names = IntStream.range(0,dataSet.getNumClasses())
+                .mapToObj(k->dataSet.getLabelTranslator().toExtLabel(k))
+                .collect(Collectors.toList());
+        this.bmm.setNames(names);
     }
 
     public MultiLabelSuggester(int numClasses, MultiLabel[] multiLabels, int numClusters) {

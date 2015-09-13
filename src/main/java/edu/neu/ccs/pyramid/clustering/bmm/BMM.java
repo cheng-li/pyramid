@@ -6,7 +6,9 @@ import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -23,6 +25,7 @@ public class BMM {
      */
     BinomialDistribution[][] distributions;
     double[] mixtureCoefficients;
+    List<String> names;
 
     public BMM(int numClusters, int dimension) {
         this.numClusters = numClusters;
@@ -37,8 +40,15 @@ public class BMM {
                 distributions[k][d] = new BinomialDistribution(1,p);
             }
         }
+        this.names = new ArrayList<>(dimension);
+        for (int d=0;d<dimension;d++){
+            names.add(""+d);
+        }
     }
 
+    public void setNames(List<String> names) {
+        this.names = names;
+    }
 
     //todo stable?
     double probability(Vector vector, int clusterIndex){
@@ -93,7 +103,7 @@ public class BMM {
             sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
             sb.append("probabilities = ").append("[");
             for (int d=0;d<dimension;d++){
-                sb.append(distributions[k][d].getProbabilityOfSuccess());
+                sb.append(names.get(d)).append(":").append(distributions[k][d].getProbabilityOfSuccess());
                 if (d!=dimension-1){
                     sb.append(", ");
                 }
