@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.clustering.bmm;
 
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
@@ -8,7 +9,9 @@ import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -102,9 +105,22 @@ public class BMM {
             sb.append("cluster ").append(k).append(":\n");
             sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
             sb.append("probabilities = ").append("[");
+            List<Pair<String,Double>> pairs = new ArrayList<>();
             for (int d=0;d<dimension;d++){
-                sb.append(names.get(d)).append(":").append(distributions[k][d].getProbabilityOfSuccess());
-                if (d!=dimension-1){
+                Pair<String,Double> pair = new Pair<>(names.get(d),distributions[k][d].getProbabilityOfSuccess());
+                pairs.add(pair);
+//                sb.append(names.get(d)).append(":").append(distributions[k][d].getProbabilityOfSuccess());
+//                if (d!=dimension-1){
+//                    sb.append(", ");
+//                }
+            }
+            Comparator<Pair<String,Double>> comparator = Comparator.comparing(Pair::getSecond);
+            List<Pair<String,Double>> sorted = pairs.stream().sorted(comparator.reversed())
+                    .collect(Collectors.toList());
+            for (int d=0;d<dimension;d++){
+                Pair<String,Double> pair = sorted.get(d);
+                sb.append(pair.getFirst()).append(":").append(pair.getSecond());
+                    if (d!=dimension-1){
                     sb.append(", ");
                 }
             }
