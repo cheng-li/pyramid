@@ -55,6 +55,13 @@ public class ConfusionMatrixMeasures {
         return tn * 1.0 / (tn + fp);
     }
 
+    public static double fScore(int tp, int fp, int fn, double beta) {
+        double precision = precision(tp, fp);
+        double recall = recall(tp, fn);
+        return FMeasure.fBeta(precision,recall,beta);
+
+    }
+
 
 
 }
