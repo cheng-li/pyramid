@@ -76,15 +76,17 @@ public class LabelBasedMeasures {
     }
 
     public double precision(int classIndex){
-        return ConfusionMatrixMeasures.precision(truePositives[classIndex],falsePositives[classIndex],falseNegatives[classIndex]);
+        return ConfusionMatrixMeasures.precision(truePositives[classIndex],falsePositives[classIndex]);
     }
 
     public double recall(int classIndex){
-        return ConfusionMatrixMeasures.recall(truePositives[classIndex],falsePositives[classIndex],falseNegatives[classIndex]);
+        return ConfusionMatrixMeasures.recall(truePositives[classIndex],falseNegatives[classIndex]);
     }
 
     public double f1(int classIndex){
-        return ConfusionMatrixMeasures.f1Score(truePositives[classIndex], falsePositives[classIndex], falseNegatives[classIndex]);
+        double precision = precision(classIndex);
+        double recall = recall(classIndex);
+        return FMeasure.f1(precision,recall);
     }
 
     public double accuracy(int classIndex){
