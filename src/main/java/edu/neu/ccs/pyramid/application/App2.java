@@ -353,6 +353,13 @@ public class App2 {
             jsonGenerator.close();
         }
 
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            LabelBasedMeasures labelBasedMeasures = new LabelBasedMeasures(dataSet,predictions);
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),labelBasedMeasures);
+        }
+
         System.out.println("reports generated");
     }
 
