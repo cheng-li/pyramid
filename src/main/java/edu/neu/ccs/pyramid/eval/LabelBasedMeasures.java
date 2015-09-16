@@ -1,11 +1,21 @@
 package edu.neu.ccs.pyramid.eval;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+
+import java.io.IOException;
 
 /**
  * Created by Rainicy on 8/11/15.
  */
-public abstract class LabelBasedMeasures {
+@JsonSerialize(using = LabelBasedMeasures.Serializer.class)
+public class LabelBasedMeasures {
 
     /**
      * number of unique labels.
@@ -36,6 +46,16 @@ public abstract class LabelBasedMeasures {
      */
     protected int[] falseNegatives;
 
+    protected int numDataPoitns;
+
+    protected LabelTranslator labelTranslator;
+
+
+    public LabelBasedMeasures(MultiLabelClfDataSet dataSet, MultiLabel[] prediction) {
+        this(dataSet.getNumClasses());
+        this.labelTranslator = dataSet.getLabelTranslator();
+        update(dataSet.getMultiLabels(),prediction);
+    }
 
     /**
      * Construct function: initialize each variables.
@@ -51,6 +71,24 @@ public abstract class LabelBasedMeasures {
         falsePositives = new int[numLabels];
         trueNegatives = new int[numLabels];
         falseNegatives = new int[numLabels];
+        this.numDataPoitns = 0;
+        this.labelTranslator = LabelTranslator.newDefaultLabelTranslator(numLabels);
+    }
+
+    public double getTPRatio(int classIndex){
+        return truePositives[classIndex]/(double)numDataPoitns;
+    }
+
+    public double getTNRatio(int classIndex){
+        return trueNegatives[classIndex]/(double)numDataPoitns;
+    }
+
+    public double getFPRatio(int classIndex){
+        return falsePositives[classIndex]/(double)numDataPoitns;
+    }
+
+    public double getFNRatio(int classIndex){
+        return falseNegatives[classIndex]/(double)numDataPoitns;
     }
 
 
@@ -79,6 +117,7 @@ public abstract class LabelBasedMeasures {
                     trueNegatives[i]++;
                 }
             }
+            numDataPoitns ++;
         }
     }
 
@@ -102,5 +141,30 @@ public abstract class LabelBasedMeasures {
             update(labels[i], predictions[i]);
         }
     }
+
+    public static class Serializer extends JsonSerializer<LabelBasedMeasures> {
+        @Override
+        public void serialize(LabelBasedMeasures labelBasedMeasures, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+
+            LabelTranslator labelTranslator = labelBasedMeasures.labelTranslator;
+            jsonGenerator.writeStartArray();
+            for (int k=0;k<labelBasedMeasures.numLabels;k++){
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeStringField("label", labelTranslator.toExtLabel(k));
+                jsonGenerator.writeNumberField("TP",labelBasedMeasures.truePositives[k]);
+                jsonGenerator.writeNumberField("TN",labelBasedMeasures.trueNegatives[k]);
+                jsonGenerator.writeNumberField("FP",labelBasedMeasures.falsePositives[k]);
+                jsonGenerator.writeNumberField("FN",labelBasedMeasures.falseNegatives[k]);
+                jsonGenerator.writeNumberField("TP_ratio",labelBasedMeasures.getTPRatio(k));
+                jsonGenerator.writeNumberField("TN_ratio",labelBasedMeasures.getTNRatio(k));
+                jsonGenerator.writeNumberField("FP_ratio",labelBasedMeasures.getFPRatio(k));
+                jsonGenerator.writeNumberField("FN_ratio",labelBasedMeasures.getFNRatio(k));
+                jsonGenerator.writeEndObject();
+            }
+            jsonGenerator.writeEndArray();
+        }
+    }
+
+
 
 }
