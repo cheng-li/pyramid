@@ -75,20 +75,20 @@ public class LabelBasedMeasures {
         this.labelTranslator = LabelTranslator.newDefaultLabelTranslator(numLabels);
     }
 
-    public double getTPRatio(int classIndex){
-        return truePositives[classIndex]/(double)numDataPoitns;
+    public double precision(int classIndex){
+        return ConfusionMatrixMeasures.precision(truePositives[classIndex],falsePositives[classIndex],falseNegatives[classIndex]);
     }
 
-    public double getTNRatio(int classIndex){
-        return trueNegatives[classIndex]/(double)numDataPoitns;
+    public double recall(int classIndex){
+        return ConfusionMatrixMeasures.recall(truePositives[classIndex],falsePositives[classIndex],falseNegatives[classIndex]);
     }
 
-    public double getFPRatio(int classIndex){
-        return falsePositives[classIndex]/(double)numDataPoitns;
+    public double f1(int classIndex){
+        return ConfusionMatrixMeasures.f1Score(truePositives[classIndex], falsePositives[classIndex], falseNegatives[classIndex]);
     }
 
-    public double getFNRatio(int classIndex){
-        return falseNegatives[classIndex]/(double)numDataPoitns;
+    public double accuracy(int classIndex){
+        return ConfusionMatrixMeasures.accuracy(truePositives[classIndex], trueNegatives[classIndex], falsePositives[classIndex], falseNegatives[classIndex]);
     }
 
 
@@ -155,10 +155,10 @@ public class LabelBasedMeasures {
                 jsonGenerator.writeNumberField("TN",labelBasedMeasures.trueNegatives[k]);
                 jsonGenerator.writeNumberField("FP",labelBasedMeasures.falsePositives[k]);
                 jsonGenerator.writeNumberField("FN",labelBasedMeasures.falseNegatives[k]);
-                jsonGenerator.writeNumberField("TP_ratio",labelBasedMeasures.getTPRatio(k));
-                jsonGenerator.writeNumberField("TN_ratio",labelBasedMeasures.getTNRatio(k));
-                jsonGenerator.writeNumberField("FP_ratio",labelBasedMeasures.getFPRatio(k));
-                jsonGenerator.writeNumberField("FN_ratio",labelBasedMeasures.getFNRatio(k));
+                jsonGenerator.writeNumberField("precision",labelBasedMeasures.precision(k));
+                jsonGenerator.writeNumberField("recall",labelBasedMeasures.recall(k));
+                jsonGenerator.writeNumberField("f1",labelBasedMeasures.f1(k));
+                jsonGenerator.writeNumberField("accuracy",labelBasedMeasures.accuracy(k));
                 jsonGenerator.writeEndObject();
             }
             jsonGenerator.writeEndArray();

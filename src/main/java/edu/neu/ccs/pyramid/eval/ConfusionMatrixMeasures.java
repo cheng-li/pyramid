@@ -5,6 +5,10 @@ package edu.neu.ccs.pyramid.eval;
  */
 public class ConfusionMatrixMeasures {
 
+    public static double accuracy(int tp, int tn, int fp, int fn){
+        return (tp+tn)*1.0/(tp+tn+fp+fn);
+    }
+
     /**
      * Returns the precision.
      * @param tp true positives
