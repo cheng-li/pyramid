@@ -21,7 +21,7 @@ public class MacroMeasures extends LabelBasedMeasures{
     public double getPrecision() {
         double sum = 0.0;
         for (int i=0; i<numLabels; i++) {
-            sum += ConfusionMatrixMeasures.precision(truePositives[i],falsePositives[i]);
+            sum += Precision.precision(truePositives[i],falsePositives[i]);
         }
         return sum / numLabels;
     }
@@ -32,7 +32,7 @@ public class MacroMeasures extends LabelBasedMeasures{
      * @return precision of given label index
      */
     public double getPrecision(int labelIndex) {
-        return ConfusionMatrixMeasures.precision(truePositives[labelIndex],
+        return Precision.precision(truePositives[labelIndex],
                 falsePositives[labelIndex]);
     }
 
@@ -45,7 +45,7 @@ public class MacroMeasures extends LabelBasedMeasures{
         double sum = 0.0;
 
         for (int i=0; i<numLabels; i++) {
-            sum += ConfusionMatrixMeasures.recall(truePositives[i], falseNegatives[i]);
+            sum += Recall.recall(truePositives[i], falseNegatives[i]);
         }
 
         return sum / numLabels;
@@ -57,7 +57,7 @@ public class MacroMeasures extends LabelBasedMeasures{
      * @return recall of given label index
      */
     public double getRecall(int labelIndex) {
-        return ConfusionMatrixMeasures.recall(truePositives[labelIndex],falseNegatives[labelIndex]);
+        return Recall.recall(truePositives[labelIndex],falseNegatives[labelIndex]);
     }
 
 

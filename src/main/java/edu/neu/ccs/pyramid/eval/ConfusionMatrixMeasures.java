@@ -5,24 +5,8 @@ package edu.neu.ccs.pyramid.eval;
  */
 public class ConfusionMatrixMeasures {
 
-    public static double accuracy(int tp, int tn, int fp, int fn){
-        return (tp+tn)*1.0/(tp+tn+fp+fn);
-    }
 
-    /**
-     * Returns the precision.
-     * @param tp true positives
-     * @param fp false positives
-     * @return precision
-     */
-    public static double precision(int tp, int fp) {
 
-        if (tp + fp == 0) {
-            return 1;
-        }
-
-        return tp * 1.0 / (tp + fp);
-    }
 
 
     /**
@@ -55,12 +39,7 @@ public class ConfusionMatrixMeasures {
         return tn * 1.0 / (tn + fp);
     }
 
-    public static double fScore(int tp, int fp, int fn, double beta) {
-        double precision = precision(tp, fp);
-        double recall = recall(tp, fn);
-        return FMeasure.fBeta(precision,recall,beta);
 
-    }
 
 
 

@@ -14,6 +14,10 @@ import java.util.stream.IntStream;
  */
 public class Accuracy {
 
+    public static double accuracy(int tp, int tn, int fp, int fn){
+        return (tp+tn)*1.0/(tp+tn+fp+fn);
+    }
+
     /**
      * multi-threaded
      */

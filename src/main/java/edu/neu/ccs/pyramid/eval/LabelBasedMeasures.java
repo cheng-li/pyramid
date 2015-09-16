@@ -76,11 +76,11 @@ public class LabelBasedMeasures {
     }
 
     public double precision(int classIndex){
-        return ConfusionMatrixMeasures.precision(truePositives[classIndex],falsePositives[classIndex]);
+        return Precision.precision(truePositives[classIndex], falsePositives[classIndex]);
     }
 
     public double recall(int classIndex){
-        return ConfusionMatrixMeasures.recall(truePositives[classIndex],falseNegatives[classIndex]);
+        return Recall.recall(truePositives[classIndex],falseNegatives[classIndex]);
     }
 
     public double f1(int classIndex){
@@ -90,7 +90,7 @@ public class LabelBasedMeasures {
     }
 
     public double accuracy(int classIndex){
-        return ConfusionMatrixMeasures.accuracy(truePositives[classIndex], trueNegatives[classIndex], falsePositives[classIndex], falseNegatives[classIndex]);
+        return Accuracy.accuracy(truePositives[classIndex], trueNegatives[classIndex], falsePositives[classIndex], falseNegatives[classIndex]);
     }
 
 
