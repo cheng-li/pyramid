@@ -248,7 +248,8 @@ public class IMLGBInspector {
             predictionAnalysis.setPredictedRanking(labelRanking);
 
 
-        if (boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF){
+        if (boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF
+                || boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF_PLUS_HIGH_PROB){
             double[] labelSetProbs = boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex));
             List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
             .mapToObj(i -> {

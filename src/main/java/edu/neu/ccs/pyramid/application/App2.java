@@ -157,6 +157,9 @@ public class App2 {
             case "independent":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
                 break;
+            case "crf_plus_high_prob":
+                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF_PLUS_HIGH_PROB);
+                break;
             default:
                 throw new IllegalArgumentException("predict.fashion should be independent or crf");
         }
@@ -215,6 +218,9 @@ public class App2 {
                 break;
             case "independent":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
+                break;
+            case "crf_plus_high_prob":
+                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF_PLUS_HIGH_PROB);
                 break;
         }
 
