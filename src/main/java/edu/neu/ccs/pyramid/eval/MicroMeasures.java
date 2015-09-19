@@ -74,10 +74,10 @@ public class MicroMeasures extends LabelBasedMeasures {
 
     @Override
     public String toString() {
-        return "Micro-Precision: \t" + getPrecision() +
-                "\nMicro-Recall: \t" + getRecall() +
-                "\nMicro-Specificity: \t" + getSpecificity() +
-                "\nMicro-F1Score: \t" + getF1Score();
+        return "Micro-Precision:\t" + getPrecision() +
+                "\nMicro-Recall:\t" + getRecall() +
+                "\nMicro-Specificity:\t" + getSpecificity() +
+                "\nMicro-F1Score:\t" + getF1Score();
     }
 
 }

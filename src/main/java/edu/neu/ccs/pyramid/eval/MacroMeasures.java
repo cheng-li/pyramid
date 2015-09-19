@@ -133,10 +133,10 @@ public class MacroMeasures extends LabelBasedMeasures{
 
     @Override
     public String toString() {
-        return "Macro-Precision: \t" + getPrecision() +
-                "\nMacro-Recall: \t" + getRecall() +
-                "\nMacro-Specificity: \t" + getSpecificity() +
-                "\nMacro-F1Score: \t" + getF1Score();
+        return "Macro-Precision:\t" + getPrecision() +
+                "\nMacro-Recall:\t" + getRecall() +
+                "\nMacro-Specificity:\t" + getSpecificity() +
+                "\nMacro-F1Score:\t" + getF1Score();
     }
 }
 

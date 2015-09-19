@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.multilabel_classification.sampling.GibbsSampling;
 import edu.neu.ccs.pyramid.multilabel_classification.sampling.GibbsSamplingConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.sampling.GibbsSamplingTrainer;
@@ -72,27 +73,44 @@ public class Exp207 {
         sampling.setK(config.getInt("K"));
         sampling.setLastK(config.getInt("lastK"));
 
+        System.out.println("Training is done...");
 
         // if report the results on train or test
         if (config.getBoolean("train")) {
             int numClasses = trainSet.getNumClasses();
             MultiLabel[] multiLabels = trainSet.getMultiLabels();
+
+            MultiLabel[] predictions;
             stopWatch = new StopWatch();
             stopWatch.start();
-            MultiLabel[] predictions = sampling.predict(trainSet);
+            if (config.getBoolean("sampling.warmStart")) {
+                IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(
+                        config.getString("warmStart.model")));
+                MultiLabel[] predMultiLabel = boosting.predict(trainSet);
+
+                if (config.getBoolean("tuning.sampling")) {
+                    predictions = sampling.tuningPredict(trainSet, predMultiLabel);
+                } else {
+                    predictions = sampling.predict(trainSet, predMultiLabel);
+                }
+
+            } else {
+                predictions = sampling.predict(trainSet);
+            }
             stopWatch.stop();
             System.out.println("========Train.result======");
             System.out.println("Testing time: " + stopWatch);
+
 
             MicroMeasures microMeasures = new MicroMeasures(numClasses);
             MacroMeasures macroMeasures = new MacroMeasures(numClasses);
             microMeasures.update(multiLabels,predictions);
             macroMeasures.update(multiLabels,predictions);
-            System.out.println("data-hamming loss = " + HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
-            System.out.println("data-accuracy = " + Accuracy.accuracy(multiLabels, predictions));
-            System.out.println("data-precision = " + Precision.precision(multiLabels, predictions));
-            System.out.println("data-recall = " + Recall.recall(multiLabels,predictions));
-            System.out.println("data-overlap = "+ Overlap.overlap(multiLabels,predictions));
+            System.out.println("data-hamming loss:\t" + HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
+            System.out.println("data-accuracy:\t" + Accuracy.accuracy(multiLabels, predictions));
+            System.out.println("data-overlap\t"+ Overlap.overlap(multiLabels,predictions));
+            System.out.println("data-precision:\t" + Precision.precision(multiLabels, predictions));
+            System.out.println("data-recall:\t" + Recall.recall(multiLabels,predictions));
             System.out.println("label-macro-measures = \n" + macroMeasures);
             System.out.println("label-micro-measures = \n" + microMeasures);
         }
@@ -103,7 +121,21 @@ public class Exp207 {
 
             stopWatch = new StopWatch();
             stopWatch.start();
-            MultiLabel[] predictions = sampling.predict(testSet);
+            MultiLabel[] predictions;
+            if (config.getBoolean("sampling.warmStart")) {
+                IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(
+                        config.getString("warmStart.model")));
+                MultiLabel[] predMultiLabel = boosting.predict(testSet);
+
+                if (config.getBoolean("tuning.sampling")) {
+                    System.out.println("prediction by tuning prediction...");
+                    predictions = sampling.tuningPredict(testSet, predMultiLabel);
+                } else {
+                    predictions = sampling.predict(testSet, predMultiLabel);
+                }
+            } else {
+                predictions = sampling.predict(testSet);
+            }
             stopWatch.stop();
             System.out.println("========Test.result======");
             System.out.println("Testing time: " + stopWatch);
@@ -116,11 +148,11 @@ public class Exp207 {
             MacroMeasures macroMeasures = new MacroMeasures(numClasses);
             microMeasures.update(multiLabels,predictions);
             macroMeasures.update(multiLabels,predictions);
-            System.out.println("data-hamming loss = " + HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
-            System.out.println("data-accuracy = " + Accuracy.accuracy(multiLabels, predictions));
-            System.out.println("data-precision = " + Precision.precision(multiLabels, predictions));
-            System.out.println("data-recall = " + Recall.recall(multiLabels,predictions));
-            System.out.println("data-overlap = "+ Overlap.overlap(multiLabels,predictions));
+            System.out.println("data-hamming loss:\t" + HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
+            System.out.println("data-accuracy:\t" + Accuracy.accuracy(multiLabels, predictions));
+            System.out.println("data-overlap:\t"+ Overlap.overlap(multiLabels,predictions));
+            System.out.println("data-precision:\t" + Precision.precision(multiLabels, predictions));
+            System.out.println("data-recall:\t " + Recall.recall(multiLabels,predictions));
             System.out.println("label-macro-measures = \n" + macroMeasures);
             System.out.println("label-micro-measures = \n" + microMeasures);
         }

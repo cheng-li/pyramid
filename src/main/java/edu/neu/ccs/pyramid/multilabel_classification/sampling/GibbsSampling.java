@@ -141,8 +141,79 @@ public class GibbsSampling implements MultiLabelClassifier {
         return results.toArray(new MultiLabel[results.size()]);
     }
 
+    public MultiLabel[] predict(MultiLabelClfDataSet dataSet, MultiLabel[] labels){
+        List<MultiLabel> results = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToObj(i -> predict(dataSet.getRow(i), labels[i]))
+                .collect(Collectors.toList());
+        return results.toArray(new MultiLabel[results.size()]);
+    }
+
+    public MultiLabel[] tuningPredict(MultiLabelClfDataSet dataSet, MultiLabel[] labels){
+        List<MultiLabel> results = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToObj(i -> tuningPredict(dataSet.getRow(i), labels[i]))
+                .collect(Collectors.toList());
+        return results.toArray(new MultiLabel[results.size()]);
+    }
+
+
     /**
-     * Predict with given true label as initialization.
+     * Predict with given label, and regard the gibbs sampling as a tuning
+     * methods.
+     * @param vector
+     * @param label
+     * @return
+     */
+    public MultiLabel tuningPredict(Vector vector, MultiLabel label) {
+        // record the votes at the end of each gibbs sampling iteration.
+        // get the count for each combination of labels(MultiLabel).
+        Map<MultiLabel, Integer> votes = new LinkedHashMap<>();
+
+        // append the (#labels-1) as features to the original vector
+        Vector toVector = extendFeatures(vector);
+        // initial current label features value with given label
+        int[] consistLabelFeatures = new int[numClasses];
+        for (int i : label.getMatchedLabels()) {
+            if (i >= numClasses) {
+                continue;
+            }
+            consistLabelFeatures[i] = 1;
+        }
+        // starting gibbs sampling
+        for (int i=0; i<K; i++) {
+            int[] labelFeatures = consistLabelFeatures.clone();
+            // for each gibbs sampling iteration, go through all classifiers
+            for (int j=0; j<numClasses; j++) {
+                updateVector(toVector, labelFeatures, j);
+                // binary classifier.
+                Classifier.ProbabilityEstimator classifier = classifiers.get(j);
+                // the probability of predicting 1.
+                double prob = classifier.predictClassProbs(toVector)[1];
+                // update if the current label is on or off.
+                labelFeatures[j] = flipCoin(prob);
+            }
+            // record current iteration of prediction at the lastK iterations
+            MultiLabel multiLabel = transMultiLabel(labelFeatures);
+            if (!votes.containsKey(multiLabel)) {
+                votes.put(multiLabel, 1);
+            } else {
+                votes.put(multiLabel, votes.get(multiLabel)+1);
+            }
+        }
+        // predict the majority of the MultiLabel in votes.
+        MultiLabel predLabel = new MultiLabel();
+        int maxVoteCount = Integer.MIN_VALUE;
+        for (HashMap.Entry<MultiLabel, Integer> vote : votes.entrySet()) {
+            int voteCount = vote.getValue();
+            if (maxVoteCount <= voteCount) {
+                maxVoteCount = voteCount;
+                predLabel = vote.getKey();
+            }
+        }
+        return predLabel;
+    }
+
+    /**
+     * Prediction by initializing sampling with the given label.
      * @param vector
      * @param label
      * @return
@@ -150,7 +221,7 @@ public class GibbsSampling implements MultiLabelClassifier {
     public MultiLabel predict(Vector vector, MultiLabel label) {
         // record the votes at the end of each gibbs sampling iteration.
         // get the count for each combination of labels(MultiLabel).
-        Map<MultiLabel, Integer> votes = new HashMap<>();
+        Map<MultiLabel, Integer> votes = new LinkedHashMap<>();
 
         // append the (#labels-1) as features to the original vector
         Vector toVector = extendFeatures(vector);
@@ -160,13 +231,8 @@ public class GibbsSampling implements MultiLabelClassifier {
             if (i >= numClasses) {
                 continue;
             }
-//            System.out.println(+ i + " out of " + labelFeatures.length);
             labelFeatures[i] = 1;
         }
-
-//        if (true) {
-//            return transMultiLabel(labelFeatures);
-//        }
 
         // starting gibbs sampling
         for (int i=0; i<K; i++) {
@@ -195,7 +261,7 @@ public class GibbsSampling implements MultiLabelClassifier {
         int maxVoteCount = Integer.MIN_VALUE;
         for (HashMap.Entry<MultiLabel, Integer> vote : votes.entrySet()) {
             int voteCount = vote.getValue();
-            if (maxVoteCount < voteCount) {
+            if (maxVoteCount <= voteCount) {
                 maxVoteCount = voteCount;
                 predLabel = vote.getKey();
             }
@@ -210,7 +276,7 @@ public class GibbsSampling implements MultiLabelClassifier {
 
         // record the votes at the end of each gibbs sampling iteration.
         // get the count for each combination of labels(MultiLabel).
-        Map<MultiLabel, Integer> votes = new HashMap<>();
+        Map<MultiLabel, Integer> votes = new LinkedHashMap<>();
 
         // append the (#labels-1) as features to the original vector
         Vector toVector = extendFeatures(vector);
@@ -250,7 +316,7 @@ public class GibbsSampling implements MultiLabelClassifier {
         int maxVoteCount = Integer.MIN_VALUE;
         for (HashMap.Entry<MultiLabel, Integer> vote : votes.entrySet()) {
             int voteCount = vote.getValue();
-            if (maxVoteCount < voteCount) {
+            if (maxVoteCount <= voteCount) {
                 maxVoteCount = voteCount;
                 predLabel = vote.getKey();
             }
