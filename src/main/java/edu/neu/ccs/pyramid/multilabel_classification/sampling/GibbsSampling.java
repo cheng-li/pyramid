@@ -61,6 +61,8 @@ public class GibbsSampling implements MultiLabelClassifier {
 //        List<MultiLabel> results = new ArrayList<>(dataSet.getNumDataPoints());
 //        for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
 //            results.add(predict(dataSet.getRow(i)));
+//            System.out.print("true: " + dataSet.getMultiLabels()[i]);
+//            System.out.println("\tpred: " + results.get(i));
 //        }
 ////        List<MultiLabel> results = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
 ////                .mapToObj(i -> predict(dataSet.getRow(i)))
@@ -163,13 +165,11 @@ public class GibbsSampling implements MultiLabelClassifier {
 
         // initialize the reorders
         int[] reorder = MathUtil.randomRange(0, numClasses);
-        System.out.printf("random4 ...");
+        System.out.printf("random5 ...");
         // K is number of instances to pick also burn-in iteration number.
-//        Map<Integer, Double> S = new HashMap<>();
         double[] S = new double[lastK*numClasses];
         MultiLabel[] B = new MultiLabel[lastK*numClasses];
 
-//        System.out.println("length of S: " + S.length);
         Map<Integer, HashMap<MultiLabel, Double>> cache = new HashMap<>();
         for (int i=0; i<numClasses; i++) {
             cache.put(i, new HashMap<>());
@@ -189,14 +189,14 @@ public class GibbsSampling implements MultiLabelClassifier {
                 labelFeatures[j] = flipCoin(prob);
 
                 if (i >= K) {
-                    double s = 1;
+                    double s = 1.0;
                     MultiLabel multiLabel = transMultiLabel(labelFeatures);
                     if (cache.get(j).containsKey(multiLabel)) {
                         s = cache.get(j).get(multiLabel);
                     } else {
                         for (int kk=0; kk<numClasses; kk++) {
                             updateVector(toVector, labelFeatures, kk);
-                            s *= classifiers.get(kk).predictClassProbs(toVector)[1];
+                            s *= classifiers.get(kk).predictClassProbs(toVector)[labelFeatures[kk]];
                         }
                         cache.get(j).put(multiLabel, s);
                     }
@@ -207,26 +207,22 @@ public class GibbsSampling implements MultiLabelClassifier {
                 }
             }
         }
-
-
         // get top index
         int[] topIndex = indexesOfTopElements(S, K);
+        int[] labelVotes = new int[numClasses];
+
         for (int i=0; i<topIndex.length; i++) {
             MultiLabel multiLabel = B[topIndex[i]];
-            if (!votes.containsKey(multiLabel)) {
-                votes.put(multiLabel, 1);
-            } else {
-                votes.put(multiLabel, votes.get(multiLabel)+1);
+            for (int lab : multiLabel.getMatchedLabels()) {
+                labelVotes[lab] = labelVotes[lab] + 1;
             }
         }
-        // predict the majority of the MultiLabel in votes.
+
         MultiLabel predLabel = new MultiLabel();
-        int maxVoteCount = Integer.MIN_VALUE;
-        for (HashMap.Entry<MultiLabel, Integer> vote : votes.entrySet()) {
-            int voteCount = vote.getValue();
-            if (maxVoteCount <= voteCount) {
-                maxVoteCount = voteCount;
-                predLabel = vote.getKey();
+        int halfK = K/2;
+        for (int i=0; i<labelVotes.length; i++) {
+            if (labelVotes[i] > halfK) {
+                predLabel.addLabel(i);
             }
         }
 
@@ -249,13 +245,11 @@ public class GibbsSampling implements MultiLabelClassifier {
 
         // initialize the reorders
         int[] reorder = MathUtil.randomRange(0, numClasses);
-        System.out.printf("random4 ...");
+        System.out.printf("random5 ...");
         // K is number of instances to pick also burn-in iteration number.
-//        Map<Integer, Double> S = new HashMap<>();
         double[] S = new double[lastK*numClasses];
         MultiLabel[] B = new MultiLabel[lastK*numClasses];
 
-//        System.out.println("length of S: " + S.length);
         Map<Integer, HashMap<MultiLabel, Double>> cache = new HashMap<>();
         for (int i=0; i<numClasses; i++) {
             cache.put(i, new HashMap<>());
@@ -271,26 +265,18 @@ public class GibbsSampling implements MultiLabelClassifier {
                 updateVector(toVector, labelFeatures, j);
                 // the probability of predicting 1.
                 double prob = classifiers.get(j).predictClassProbs(toVector)[1];
-//                System.out.println("class: " + j);
-//                System.out.println("label: " + Arrays.toString(labelFeatures));
-//                System.out.println("prob : " + prob);
-//                try {
-//                    System.in.read();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
                 // update if the current label is on or off.
                 labelFeatures[j] = flipCoin(prob);
 
                 if (i >= K) {
-                    double s = 1;
+                    double s = 1.0;
                     MultiLabel multiLabel = transMultiLabel(labelFeatures);
                     if (cache.get(j).containsKey(multiLabel)) {
                         s = cache.get(j).get(multiLabel);
                     } else {
                         for (int kk=0; kk<numClasses; kk++) {
                             updateVector(toVector, labelFeatures, kk);
-                            s *= classifiers.get(kk).predictClassProbs(toVector)[1];
+                            s *= classifiers.get(kk).predictClassProbs(toVector)[labelFeatures[kk]];
                         }
                         cache.get(j).put(multiLabel, s);
                     }
@@ -303,24 +289,49 @@ public class GibbsSampling implements MultiLabelClassifier {
         }
         // get top index
         int[] topIndex = indexesOfTopElements(S, K);
+        int[] labelVotes = new int[numClasses];
+
         for (int i=0; i<topIndex.length; i++) {
             MultiLabel multiLabel = B[topIndex[i]];
-            if (!votes.containsKey(multiLabel)) {
-                votes.put(multiLabel, 1);
-            } else {
-                votes.put(multiLabel, votes.get(multiLabel)+1);
+            for (int lab : multiLabel.getMatchedLabels()) {
+                labelVotes[lab] = labelVotes[lab] + 1;
             }
         }
-        // predict the majority of the MultiLabel in votes.
+
         MultiLabel predLabel = new MultiLabel();
-        int maxVoteCount = Integer.MIN_VALUE;
-        for (HashMap.Entry<MultiLabel, Integer> vote : votes.entrySet()) {
-            int voteCount = vote.getValue();
-            if (maxVoteCount <= voteCount) {
-                maxVoteCount = voteCount;
-                predLabel = vote.getKey();
+        int halfK = K/2;
+        for (int i=0; i<labelVotes.length; i++) {
+            if (labelVotes[i] > halfK) {
+                predLabel.addLabel(i);
             }
         }
+
+
+
+//        for (int i=0; i<topIndex.length; i++) {
+//            System.out.print("i: " + i);
+//            System.out.print("\tindex: " + topIndex[i]);
+//            System.out.print("\tvalue: " + S[topIndex[i]]);
+//            System.out.println("\tlabel: " + B[topIndex[i]]);
+//            MultiLabel multiLabel = B[topIndex[i]];
+//            if (!votes.containsKey(multiLabel)) {
+//                votes.put(multiLabel, 1);
+//            } else {
+//                votes.put(multiLabel, votes.get(multiLabel)+1);
+//            }
+//        }
+//        System.out.println("votes: " + votes);
+//        // predict the majority of the MultiLabel in votes.
+//        MultiLabel predLabel = new MultiLabel();
+//        int maxVoteCount = Integer.MIN_VALUE;
+//        for (HashMap.Entry<MultiLabel, Integer> vote : votes.entrySet()) {
+//            int voteCount = vote.getValue();
+//            if (maxVoteCount <= voteCount) {
+//                maxVoteCount = voteCount;
+//                predLabel = vote.getKey();
+//            }
+//        }
+
 
         return predLabel;
     }

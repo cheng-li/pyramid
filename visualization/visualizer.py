@@ -7,6 +7,7 @@ import re
 import os
 from os import listdir
 from os.path import isfile, join
+from sets import Set
 
 
 # This program read in a json file data and output to a html file.
@@ -364,6 +365,30 @@ def createTopFeatureHTML(input_json_file, outputFileName):
     inputJson.close()
     outputFile.close()
 
+def createIndPerHTML(inputIndPer, inputAllPer, outputPath):
+    inputData = None
+    if os.path.isfile(inputIndPer):
+        inputJson = open(inputIndPer, "r")
+        inputData = json.load(inputJson)
+
+        inputAllJson = open(inputAllPer, "r")
+        inputAllData = json.load(inputAllJson)
+
+
+        outputJson = json.dumps(inputData)
+        outputAllJson = json.dumps(inputAllData)
+
+        output = pre_ind_data_part1 +"[" + outputAllJson + "]" + pre_ind_data_part2 + outputJson + post_data
+
+        outputFile = open(outputPath, "w")
+        outputFile.write(output)
+        inputJson.close()
+        inputAllJson.close()
+        outputFile.close()
+
+
+
+
 def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputFileName):
     outputData = {}
     inputD = None
@@ -409,6 +434,7 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, out
 def parseAll(inputPath, directoryName, fileName, fields, fashion):
     outputFileName = "Viewer"
 
+    indPerformanceName = "individual_performance"
     topName = "top_features"
     configName = "data_config"
     dataName = "data_info"
@@ -418,6 +444,12 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     outputPath = directoryName + topName + ".html"
     createTopFeatureHTML(inputTop, outputPath)
 
+    ## create individual performance html
+    inputIndPer = directoryName + indPerformanceName + ".json"
+    inputAllPer = directoryName + performanceName + ".json"
+    outputPath = directoryName + indPerformanceName + ".html"
+    createIndPerHTML(inputIndPer, inputAllPer, outputPath)
+
     inputData = directoryName + dataName + ".json"
     inputModel = directoryName + modelName + ".json"
     inputConfig = directoryName + configName + ".json"
@@ -425,6 +457,9 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     outputPath = directoryName + "metadata.html"
     createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputPath)
 
+    ## skipJsonFiles are not default files: reports.json
+    skipJsonFiles = Set([configName+".json", dataName + ".json", modelName + ".json", topName + ".json",
+        performanceName + ".json", indPerformanceName + ".json"])
     if os.path.isfile(inputPath):
         parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields, fashion)
     else:
@@ -436,7 +471,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
             absf = join(inputPath, f)
             if not (isfile(absf) and f.endswith(".json")):
                 continue
-            elif f == configName + ".json" or f == dataName + ".json" or f == modelName + ".json" or f == topName + ".json" or f == performanceName + ".json":
+            elif f in skipJsonFiles:
                 continue
             else:
                 outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
@@ -446,7 +481,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
 pre_md_data = ''' <html>
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-        <script src="jquery.min.js"></script>
+        <script src="./js/jquery.min.js"></script>
     </head>
     <body><br>
         <table id="mytable" border=1  align="center" style="width:100%">
@@ -554,7 +589,7 @@ pre_md_data = ''' <html>
 pre_tf_data = ''' <html>
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-        <script src="jquery.min.js"></script>
+        <script src="./js/jquery.min.js"></script>
     </head>
     <body><br>
         <table id="mytable" border=1  align="center" style="width:100%">
@@ -717,7 +752,7 @@ pre_tf_data = ''' <html>
 pre_data = '''<html>
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-        <script src="jquery.min.js"></script>
+        <script src="./js/jquery.min.js"></script>
     </head>
     <body><br>
         <table id='optionTable'  style='width:55%'>
@@ -765,6 +800,7 @@ pre_data = '''<html>
                 <p style="text-indent: 1em;">
                 <a href="top_features.html" target="_blank">Top Features</a>
                 <a href="metadata.html" target="_blank">Metadata</a>
+                <a href="individual_performance.html" target="_blank">Indvidual Performance</a>
             </td></tr>
             <tr><td>
                 <center><button id="createFile">Create New HTML</button> 
@@ -1567,11 +1603,143 @@ pre_data = '''<html>
         </style>
 <script id="raw-data" type="application/json">
 '''
+
 post_data = '''
 </script>
 </body></html>
 '''
+pre_ind_data_part1 = '''
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+        <script src="./js/jquery.min.js"></script>
+        <script src="./js/jquery.dataTables.min.js"></script>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        
+        <title>DataTables Editor - error</title>
 
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/r/dt/jqc-1.11.3,dt-1.10.9,b-1.0.3,se-1.0.1/datatables.min.css">
+        <link rel="stylesheet" type="text/css" href="css/generator-base.css">
+        <link rel="stylesheet" type="text/css" href="css/editor.dataTables.min.css">
+
+        <script type="text/javascript" charset="utf-8" src="https://cdn.datatables.net/r/dt/jqc-1.11.3,dt-1.10.9,b-1.0.3,se-1.0.1/datatables.min.js"></script>
+        <script type="text/javascript" charset="utf-8" src="js/dataTables.editor.min.js"></script>
+        <script type="text/javascript" charset="utf-8" src="js/table.error.js"></script>
+        <script type="text/javascript" class="init">
+$(document).ready(function() {
+    data = dataFromJson()
+    allData = alldataFromJson()
+    $('#overall').DataTable( {
+        "aaData": allData,
+        "iDisplayLength": 10,
+        "aoColumns": [
+            { "mDataProp": "data-accuracy" },
+            { "mDataProp": "data-precision" },
+            { "mDataProp": "data-recall" },
+            { "mDataProp": "data-average-precision" },
+            { "mDataProp": "data-overlap" },
+            { "mDataProp": "hamming loss" },
+            { "mDataProp": "label-micro-precision" },
+            { "mDataProp": "label-micro-recall" },
+            { "mDataProp": "label-micro-specificity" },
+            { "mDataProp": "label-micro-f1" },
+            { "mDataProp": "label-macro-precision" },
+            { "mDataProp": "label-macro-recall" },
+            { "mDataProp": "label-macro-specificity" },
+            { "mDataProp": "label-macro-f1" }
+        ]
+    } );
+    $('#indvidual').DataTable( {
+        "aaData": data,
+        "iDisplayLength": 50,
+        "aoColumns": [
+            { "mDataProp": "label" },
+            { "mDataProp": "TP" },
+            { "mDataProp": "FP" },
+            { "mDataProp": "TN" },
+            { "mDataProp": "FN" },
+            { "mDataProp": "accuracy" },
+            { "mDataProp": "precision" },
+            { "mDataProp": "recall" },
+            { "mDataProp": "f1" }
+        ]
+    } );
+} );
+    </script>
+    </head>
+    <body><br>
+        <h1>
+            <span>Overall Performance</span>
+        </h1>
+        <table id="overall" class="display" width="100%">
+            <thead>
+        <tr>
+            <th>data-accuracy</th>
+            <th>data-precision</th>
+            <th>data-recall</th>
+            <th>data-average-precision</th>
+            <th>data-overlap</th>
+            <th>hamming loss</th>
+            <th>label-micro-precision</th>
+            <th>label-micro-recall</th>
+            <th>label-micro-specificity</th>
+            <th>label-micro-f1</th>
+            <th>label-macro-precision</th>
+            <th>label-macro-recall</th>
+            <th>label-macro-specificity</th>
+            <th>label-macro-f1</th>
+        </tr>
+            </thead>
+        </table>
+
+        <h1>
+            <span>Indvidual Label Performance</span>
+        </h1>
+        <table id="indvidual" class="display" width="100%">
+            <thead>
+        <tr>
+            <th>label</th>
+            <th>TP</th>
+            <th>FP</th>
+            <th>TN</th>
+            <th>FN</th>
+            <th>accuracy</th>
+            <th>precision</th>
+            <th>recall</th>
+            <th>f1</th>
+        </tr>
+    </thead>
+ 
+    <tfoot>
+        <tr>
+            <th>label</th>
+            <th>TP</th>
+            <th>FP</th>
+            <th>TN</th>
+            <th>FN</th>
+            <th>accuracy</th>
+            <th>precision</th>
+            <th>recall</th>
+            <th>f1</th>
+        </tr>
+    </tfoot>
+        </table>
+    <script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+            function alldataFromJson() {
+                return JSON.parse($('#all-data').html())
+            }
+    </script>
+
+    <script id="all-data" type="application/json">
+'''
+pre_ind_data_part2 = '''
+    </script>
+    <script id="raw-data" type="application/json">
+'''
 
 es = Elasticsearch("localhost:9200", timeout=600, max_retries=10, revival_delay=0)
 esIndex = "ohsumed_20000"
