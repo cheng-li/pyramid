@@ -532,16 +532,6 @@ pre_md_data = ''' <html>
                 return str
             }
 
-            function displayPerformance(performance) {
-                str = ''
-
-                for (key in performance) {
-                    str += '<br>' + key + ": " + performance[key].toFixed(2)
-                }
-
-                return str
-            }
-
             function render(data, displayOptions) {
                 var $body = $('#data-table')
                 $body.empty()
@@ -554,13 +544,6 @@ pre_md_data = ''' <html>
                     displayConfig(data["config"]) + "</td>" +
                     "<td style='vertical-align:top;text-align:left;' rowspan='3'>" +
                     displayModel(data["model"]) + "</td>" +
-                    '</tr>' +
-                    '<tr>' +
-                    "<td align='center'><b>performance</b></td>" +
-                    '</tr>' +
-                    '<tr>' +
-                    "<td style='vertical-align:top;text-align:left;'>" + 
-                    displayPerformance(data["performance"]) + "</td>" +
                     '</tr>'
 
                 $body.append(html)
@@ -800,7 +783,7 @@ pre_data = '''<html>
                 <p style="text-indent: 1em;">
                 <a href="top_features.html" target="_blank">Top Features</a>
                 <a href="metadata.html" target="_blank">Metadata</a>
-                <a href="individual_performance.html" target="_blank">Indvidual Performance</a>
+                <a href="individual_performance.html" target="_blank">Performance</a>
             </td></tr>
             <tr><td>
                 <center><button id="createFile">Create New HTML</button> 
@@ -1763,6 +1746,18 @@ def main():
         else:
             directoryName = jsonFile.rsplit("/", 1)[0] + '/'
             fileName = splits[1]
+        # fileName = ""
+        # if os.path.isfile(jsonFile):
+        #     fileName = jsonFile
+
+        # directoryName = ""
+        # if not jsonFile.endswith("/"):
+        #     directoryName = jsonFile + '/'
+        # else:
+        #     directoryName = jsonFile
+        # print directoryName
+        # raw_input()
+
         configName = "data_config.json"
         dataName = "data_info.json"
         modelName = "model_config.json"
