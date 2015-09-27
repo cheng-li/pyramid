@@ -20,7 +20,7 @@ public class MultiLabelSuggesterTest {
     }
 
     private static void test1()throws Exception{
-         MultiLabelClfDataSet dataSet  = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+        MultiLabelClfDataSet dataSet  = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                  DataSetType.ML_CLF_DENSE, true);
         MultiLabelSuggester suggester = new MultiLabelSuggester(dataSet,2);
         System.out.println("bmm="+suggester.getBmm());
