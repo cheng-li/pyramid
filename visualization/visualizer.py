@@ -1150,7 +1150,7 @@ pre_data = '''<html>
                     labels = predictedLabelSetRanking[i]
                     temp = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
                     for (var j = 1; j < labels.labels.length; j++) {
-                        temp += " | " + labels.labels[1].fontcolor(getLabelColor(labels.types[1]))
+                        temp += " | " + labels.labels[j].fontcolor(getLabelColor(labels.types[j]))
                     }
 
                     temp += '(' + labels.probability.toFixed(2)  + ')'
