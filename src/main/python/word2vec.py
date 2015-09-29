@@ -779,7 +779,7 @@ class Word2Vec(utils.SaveLoad):
 
 class Sent2Vec(utils.SaveLoad):
     def __init__(self, sentences, model_file=None, alpha=0.025, window=5, sample=0, seed=1,
-        workers=1, min_alpha=0.0001, sg=1, hs=1, negative=0, cbow_mean=0, iteration=1):
+        workers=1, min_alpha=0.0001, sg=1, hs=1, negative=0, cbow_mean=0, iteration=1, ngrams=None):
         self.sg = int(sg)
         self.table = None # for negative sampling --> this needs a lot of RAM! consider setting back to None before saving
         self.alpha = float(alpha)
@@ -792,12 +792,23 @@ class Sent2Vec(utils.SaveLoad):
         self.negative = negative
         self.cbow_mean = int(cbow_mean)
         self.iteration = iteration
+        self.ngrams = None
+
+        def prepare_ngrams(ngrams):
+            """ Transfer the words in ngrams to vocabulary objects """
+            self.ngrams = []
+            for ngram in ngrams:
+                ngram_vocab = [self.vocab.get(word, None) for word in ngram.split()]
+                self.ngrams.append(ngram_vocab)
 
         if model_file and sentences:
             self.w2v = Word2Vec.load(model_file)
             self.vocab = self.w2v.vocab
             self.layer1_size = self.w2v.layer1_size
             self.reset_sent_vec(sentences)
+
+            if ngrams is not None:
+                prepare_ngrams(ngrams)
             for i in range(iteration):
                 self.train_sent(sentences)
 
@@ -890,6 +901,15 @@ class Sent2Vec(utils.SaveLoad):
 
         return word_count[0]
 
+    def ngrams_filter(self, sentence_window):
+        """ Check if the current window of a sentence includes the given top ngrams """
+        items = set(sentence_window)
+        for ngram in self.ngrams:
+            if items.issuperset(set(ngram)):
+                return True
+
+        return False
+
     def train_sent_vec_cbow(self, model, sent_no, sentence, alpha, work=None, neu1=None):
         """
         Update CBOW model by training on a single sentence.
@@ -913,6 +933,10 @@ class Sent2Vec(utils.SaveLoad):
             reduced_window = random.randint(self.window) # `b` in the original word2vec code
             start = max(0, pos - self.window + reduced_window)
             window_pos = enumerate(sentence[start : pos + self.window + 1 - reduced_window], start)
+
+            if self.ngrams_filter(sentence[start : pos + self.window + 1 - reduced_window]) == False:
+                continue
+
             word2_indices = [word2.index for pos2, word2 in window_pos if (word2 is not None and pos2 != pos)]
             l1 = np_sum(model.syn0[word2_indices], axis=0) # 1 x layer1_size
             l1 += sent_vec
@@ -968,6 +992,10 @@ class Sent2Vec(utils.SaveLoad):
 
             # now go over all words from the (reduced) window, predicting each one in turn
             start = max(0, pos - model.window + reduced_window)
+
+            if self.ngrams_filter(sentence[start : pos + self.window + 1 - reduced_window]) == False:
+                continue
+
             for pos2, word2 in enumerate(sentence[start : pos + model.window + 1 - reduced_window], start):
                 # don't train on OOV words and on the `word` itself
                 if word2:
