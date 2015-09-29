@@ -68,6 +68,8 @@ if config.has_section('SentenceToVector'):
     # Get the top N-Grams from the top features file
     if top_ngrams_on:
         top_ngrams = get_ngrams(config.get('SentenceToVector', 'sent2vec.top_ngrams_file_path'))
+    else:
+        top_ngrams = None
 
 
     # Train sentence vectors on training and testing sets
