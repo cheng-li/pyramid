@@ -47,8 +47,6 @@ class Document {
 public class Exp300 {
 
     static Config config = null;
-    static int numberOfTrainingPoints = 0;
-    static int numberOfTestingPoints = 0;
 
     public static void main(String[] args) throws Exception {
         if (args.length !=1){
@@ -79,10 +77,9 @@ public class Exp300 {
         }
 
         // Populate the vectors and labels into trec files
-        // TODO: numberOfTrainPoints and numberOfTestPoints
         System.out.println("Writing vectors and labels into Trec files...");
-        writeTrec(numberOfTrainingPoints, "/sentence.vector/train.vectors", "/documents/train.labels", "/trec/train.trec");
-        writeTrec(numberOfTestingPoints, "/sentence.vector/test.vectors", "/documents/test.labels", "/trec/test.trec");
+        writeTrec("/sentence.vector/train.vectors", "/documents/train.labels", "/trec/train.trec");
+        writeTrec("/sentence.vector/test.vectors", "/documents/test.labels", "/trec/test.trec");
         System.out.println("Finished!");
     }
 
@@ -164,8 +161,7 @@ public class Exp300 {
         if (config.getBoolean("es.shuffle")) {
             Collections.shuffle(documents);
             int totalNumber = documents.size();
-            numberOfTrainingPoints = (int)(totalNumber * config.getDouble("es.trainPercentage"));
-            numberOfTestingPoints = totalNumber - numberOfTrainingPoints;
+            int numberOfTrainingPoints = (int)(totalNumber * config.getDouble("es.trainPercentage"));
             for (int i = 0; i < numberOfTrainingPoints; i++) {
                 trainSentencesWriter.write(documents.get(i).body + "\n");
                 trainLabelsWriter.write(documents.get(i).label + "\n");
@@ -179,11 +175,9 @@ public class Exp300 {
                 if (doc.split.equals("train")) {
                     trainSentencesWriter.write(doc.body + "\n");
                     trainLabelsWriter.write(doc.label + "\n");
-                    numberOfTrainingPoints++;
                 } else {
                     testSentencesWriter.write(doc.body + "\n");
                     testLabelsWriter.write(doc.label + "\n");
-                    numberOfTestingPoints++;
                 }
             }
         }
@@ -237,23 +231,29 @@ public class Exp300 {
     /**
      *  Populate the given vectors and labels into trec files
      */
-    static void writeTrec(int numberOfPoints, String vectorsFilePath,
+    static void writeTrec(String vectorsFilePath,
                           String labelsFilePath, String trecFilePath) throws Exception {
         String outputFolder = config.getString("output.folder");
         int numberOfFeatures = config.getInt("word2vec.size");
         int numberOfClasses = config.getInt("es.numberOfClasses");
 
+        BufferedReader trainReader = getBufferedReader(outputFolder, vectorsFilePath);
+        BufferedReader labelReader = getBufferedReader(outputFolder, labelsFilePath);
+        ArrayList<Integer> labels = new ArrayList<>();
+        String labelLine = null;
+        while ((labelLine = labelReader.readLine()) != null) {
+            labels.add(Integer.valueOf(labelLine));
+        }
+
         ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
-                .numDataPoints(numberOfPoints)
+                .numDataPoints(labels.size())
                 .numFeatures(numberOfFeatures)
                 .numClasses(numberOfClasses)
                 .dense(true)
                 .missingValue(false)
                 .build();
 
-        BufferedReader trainReader = getBufferedReader(outputFolder, vectorsFilePath);
-        BufferedReader labelReader = getBufferedReader(outputFolder, labelsFilePath);
-        for (int i = 0; i < numberOfPoints; i++) {
+        for (int i = 0; i < labels.size(); i++) {
             String line = trainReader.readLine();
             String[] features = line.split(" ");
             if (features.length != numberOfFeatures) {
@@ -264,7 +264,7 @@ public class Exp300 {
                 dataSet.setFeatureValue(i, j, Double.valueOf(features[j]));
             }
 
-            int label = Integer.valueOf(labelReader.readLine());
+            int label = labels.get(i);
             dataSet.setLabel(i, label);
         }
 
