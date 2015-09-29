@@ -34,3 +34,6 @@ eclipse-build
 ## netbeans
 nb-configuration.xml
 nbactions.xml
+
+## python
+*.pyc
