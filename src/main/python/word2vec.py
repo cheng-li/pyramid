@@ -934,7 +934,7 @@ class Sent2Vec(utils.SaveLoad):
             start = max(0, pos - self.window + reduced_window)
             window_pos = enumerate(sentence[start : pos + self.window + 1 - reduced_window], start)
 
-            if self.ngrams_filter(sentence[start : pos + self.window + 1 - reduced_window]) == False:
+            if self.ngrams is not None and self.ngrams_filter(sentence[start : pos + self.window + 1 - reduced_window]) == False:
                 continue
 
             word2_indices = [word2.index for pos2, word2 in window_pos if (word2 is not None and pos2 != pos)]
@@ -993,7 +993,7 @@ class Sent2Vec(utils.SaveLoad):
             # now go over all words from the (reduced) window, predicting each one in turn
             start = max(0, pos - model.window + reduced_window)
 
-            if self.ngrams_filter(sentence[start : pos + self.window + 1 - reduced_window]) == False:
+            if self.ngrams is not None and self.ngrams_filter(sentence[start : pos + self.window + 1 - reduced_window]) == False:
                 continue
 
             for pos2, word2 in enumerate(sentence[start : pos + model.window + 1 - reduced_window], start):
