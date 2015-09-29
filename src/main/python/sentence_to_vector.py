@@ -1,5 +1,21 @@
-import logging, sys, os, numpy, ConfigParser
+import logging, sys, os, numpy, ConfigParser, json
 from word2vec import Word2Vec, Sent2Vec, LineSentence
+
+""" Get the most useful N-Grams from the top features file """
+def get_ngrams(file_path):
+    # load the json content from the given file
+    json_file = file(file_path)
+    content = json.load(json_file)
+    # parse the json data to get the grams
+    ngrams = []
+    for element in content:
+        top_features = element.get('topFeatures')
+        for feature in top_features:
+            ngram = feature.get('ngram')
+            ngrams.append(ngram)
+
+    return ngrams
+
 
 logging.basicConfig(format='%(asctime)s : %(threadName)s : %(levelname)s : %(message)s',
                     level=logging.INFO,
@@ -47,14 +63,20 @@ if config.has_section('SentenceToVector'):
     negative = config.getint('SentenceToVector', 'sent2vec.negative')
     cbow_mean = config.getint('SentenceToVector', 'sent2vec.cbow_mean')
     iteration = config.getint('SentenceToVector', 'sent2vec.iteration')
+    top_ngrams_on = config.getboolean('SentenceToVector', 'sent2vec.top_ngrams_on')
+
+    # Get the top N-Grams from the top features file
+    if top_ngrams_on:
+        top_ngrams = get_ngrams(config.get('SentenceToVector', 'sent2vec.top_ngrams_file_path'))
+
 
     # Train sentence vectors on training and testing sets
-    train_model = Sent2Vec(LineSentence(train_sentences_path), model_file=word_vectors_model_path,
-                           alpha=alpha, window=window, sample=sample, seed=seed, workers=workers,min_alpha=min_alpha,
-                           sg=sg, hs=hs, negative=negative, cbow_mean=cbow_mean, iteration=iteration)
-    test_model = Sent2Vec(LineSentence(test_sentences_path), model_file=word_vectors_model_path,
-                          alpha=alpha, window=window, sample=sample, seed=seed, workers=workers,min_alpha=min_alpha,
-                          sg=sg, hs=hs, negative=negative, cbow_mean=cbow_mean, iteration=iteration)
+    train_model = Sent2Vec(LineSentence(train_sentences_path), model_file=word_vectors_model_path, alpha=alpha,
+                           window=window, sample=sample, seed=seed, workers=workers,min_alpha=min_alpha, sg=sg, hs=hs,
+                           negative=negative, cbow_mean=cbow_mean, iteration=iteration, top_ngrams=top_ngrams)
+    test_model = Sent2Vec(LineSentence(test_sentences_path), model_file=word_vectors_model_path, alpha=alpha,
+                          window=window, sample=sample, seed=seed, workers=workers,min_alpha=min_alpha, sg=sg, hs=hs,
+                          negative=negative, cbow_mean=cbow_mean, iteration=iteration, top_ngrams=top_ngrams)
 else:
     # Train sentence vectors on training and testing sets
     train_model = Sent2Vec(LineSentence(train_sentences_path), model_file=word_vectors_model_path)
