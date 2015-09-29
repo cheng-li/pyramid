@@ -73,10 +73,10 @@ if config.has_section('SentenceToVector'):
     # Train sentence vectors on training and testing sets
     train_model = Sent2Vec(LineSentence(train_sentences_path), model_file=word_vectors_model_path, alpha=alpha,
                            window=window, sample=sample, seed=seed, workers=workers,min_alpha=min_alpha, sg=sg, hs=hs,
-                           negative=negative, cbow_mean=cbow_mean, iteration=iteration, top_ngrams=top_ngrams)
+                           negative=negative, cbow_mean=cbow_mean, iteration=iteration, ngrams=top_ngrams)
     test_model = Sent2Vec(LineSentence(test_sentences_path), model_file=word_vectors_model_path, alpha=alpha,
                           window=window, sample=sample, seed=seed, workers=workers,min_alpha=min_alpha, sg=sg, hs=hs,
-                          negative=negative, cbow_mean=cbow_mean, iteration=iteration, top_ngrams=top_ngrams)
+                          negative=negative, cbow_mean=cbow_mean, iteration=iteration, ngrams=top_ngrams)
 else:
     # Train sentence vectors on training and testing sets
     train_model = Sent2Vec(LineSentence(train_sentences_path), model_file=word_vectors_model_path)

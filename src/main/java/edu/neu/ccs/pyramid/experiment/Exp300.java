@@ -81,6 +81,9 @@ public class Exp300 {
         writeTrec("/sentence.vector/train.vectors", "/documents/train.labels", "/trec/train.trec");
         writeTrec("/sentence.vector/test.vectors", "/documents/test.labels", "/trec/test.trec");
         System.out.println("Finished!");
+
+        similarity(Paths.get(args[0]).toAbsolutePath().normalize().toString(), "good", "great");
+        mostSimilar(Paths.get(args[0]).toAbsolutePath().normalize().toString(), "great", 10);
     }
 
     /**
@@ -269,5 +272,23 @@ public class Exp300 {
         }
 
         TRECFormat.save(dataSet, new File(outputFolder, trecFilePath));
+    }
+
+    /**
+     * Compute cosine similarity between two words
+     */
+    static void similarity(String configFilePath, String w1, String w2) throws IOException {
+        String pythonFolder = config.getString("python.folder");
+        String command = String.format("python %s/similarity.py %s %s %s", pythonFolder, configFilePath, w1, w2);
+        exec(command);
+    }
+
+    /**
+     * Find the top-N most similar words
+     */
+    static void mostSimilar(String configFilePath, String w, int topn) throws IOException {
+        String pythonFolder = config.getString("python.folder");
+        String command = String.format("python %s/most_similar.py %s %s %d", pythonFolder, configFilePath, w, topn);
+        exec(command);
     }
 }
