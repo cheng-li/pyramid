@@ -1,0 +1,69 @@
+package edu.neu.ccs.pyramid.classification.l2boost;
+
+import edu.neu.ccs.pyramid.classification.Classifier;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
+import edu.neu.ccs.pyramid.optimization.gradient_boosting.GradientBoosting;
+import edu.neu.ccs.pyramid.util.MathUtil;
+import org.apache.mahout.math.Vector;
+
+/**
+ * Created by chengli on 10/1/15.
+ */
+public class L2Boost extends GradientBoosting implements Classifier.ScoreEstimator, Classifier.ProbabilityEstimator{
+
+    private FeatureList featureList;
+    private LabelTranslator labelTranslator;
+
+    /**
+     * 1 ensemble; used for scoring positive class
+     */
+    public L2Boost() {
+        super();
+    }
+
+    @Override
+    public double[] predictClassProbs(Vector vector) {
+        double[] scoreVector = this.predictClassScores(vector);
+        double[] probVector = new double[2];
+        double logDenominator = MathUtil.logSumExp(scoreVector);
+        for (int k=0;k<2;k++){
+            double logNumerator = scoreVector[k];
+            double pro = Math.exp(logNumerator-logDenominator);
+            probVector[k]=pro;
+        }
+        return probVector;
+    }
+
+    @Override
+    public double predictClassScore(Vector vector, int k) {
+        if (k==0){
+            return 0;
+        } else {
+            return getEnsemble(0).score(vector);
+        }
+    }
+
+    @Override
+    public int getNumClasses() {
+        return 2;
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return featureList;
+    }
+
+    void setFeatureList(FeatureList featureList) {
+        this.featureList = featureList;
+    }
+
+    @Override
+    public LabelTranslator getLabelTranslator() {
+        return labelTranslator;
+    }
+
+    void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
+    }
+}

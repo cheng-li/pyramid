@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * each ensemble is a scorning function
+ * An ensemble is a scorning function
  * Created by chengli on 10/1/15.
  */
 public class Ensemble implements Serializable{
@@ -38,4 +38,11 @@ public class Ensemble implements Serializable{
         return res;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Ensemble{");
+        sb.append("regressors=").append(regressors);
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -51,6 +51,14 @@ public interface Classifier extends Serializable{
 
     interface ScoreEstimator extends Classifier{
         public double predictClassScore(Vector vector, int k);
+
+        default double[] predictClassScores(Vector vector){
+            double[] scores = new double[getNumClasses()];
+            for (int k=0;k<getNumClasses();k++){
+                scores[k] = predictClassScore(vector,k);
+            }
+            return scores;
+        }
     }
 
 
