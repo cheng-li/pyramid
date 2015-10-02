@@ -44,7 +44,10 @@ public class L2BoostOptimizer extends GBOptimizer {
      * @param i data index
      */
     private void updateProbability(int i){
-        double[] scores = scoreMatrix.getScoresForData(i);
+        // this is just a number at the moment
+        double positiveScore = scoreMatrix.getScoresForData(i)[0];
+        double[] scores = new double[2];
+        scores[1] = positiveScore;
         double[] probs = boosting.predictClassProbs(scores);
         for (int k=0;k<2;k++){
             this.probabilityMatrix.setProbability(i,k,probs[k]);

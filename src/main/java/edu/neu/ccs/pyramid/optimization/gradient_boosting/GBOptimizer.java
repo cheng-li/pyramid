@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.ScoreMatrix;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.mahout.math.Vector;
 
 import java.util.stream.IntStream;
@@ -22,6 +23,7 @@ public abstract class GBOptimizer {
     protected RegressorFactory factory;
     protected DataSet dataSet;
     protected boolean isInitialized;
+    protected double shrinkage = 1;
 
 
     protected GBOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory) {
@@ -34,7 +36,7 @@ public abstract class GBOptimizer {
      * model specific initialization
      * should be called after constructor
      */
-    protected void initialize(){
+    public void initialize(){
         this.scoreMatrix = new ScoreMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles());
         this.initStagedScores();
         initializeOthers();
@@ -55,6 +57,13 @@ public abstract class GBOptimizer {
         return regressor;
     }
 
+    //todo make it more general
+    protected void shrink(Regressor regressor){
+        if (regressor instanceof RegressionTree){
+            ((RegressionTree)regressor).shrink(shrinkage);
+        }
+    }
+
     protected void updateStagedScore(Regressor regressor, int ensembleIndex,
                                    int dataIndex){
         Vector vector = dataSet.getRow(dataIndex);
@@ -68,12 +77,13 @@ public abstract class GBOptimizer {
                 .forEach(dataIndex -> this.updateStagedScore(regressor,ensembleIndex,dataIndex));
     }
 
-    protected void iterate(){
+    public void iterate(){
         if (!isInitialized){
             throw new RuntimeException("GBOptimizer is not initialized");
         }
         for (int k=0;k<boosting.getNumEnsembles();k++){
             Regressor regressor = fitRegressor(k);
+            shrink(regressor);
             boosting.getEnsemble(k).add(regressor);
             updateStagedScores(regressor,k);
         }
@@ -95,4 +105,8 @@ public abstract class GBOptimizer {
     protected abstract void updateOthers();
 
     protected abstract void updateGradientMatrix();
+
+    public void setShrinkage(double shrinkage) {
+        this.shrinkage = shrinkage;
+    }
 }

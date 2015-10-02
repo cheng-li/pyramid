@@ -71,7 +71,6 @@ public class RegTreeTrainer {
         setLeavesOutputs(tree.leaves,leafOutputCalculator, labels);
         cleanLeaves(tree.leaves);
         normalizeReductions(tree,dataSet);
-        tree.shrink(regTreeConfig.getShrinkage());
         return tree;
     }
 
