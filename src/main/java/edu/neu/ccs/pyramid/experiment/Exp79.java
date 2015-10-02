@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.experiment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -10,11 +9,9 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.mahout.math.Vector;
 
@@ -22,11 +19,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 /**

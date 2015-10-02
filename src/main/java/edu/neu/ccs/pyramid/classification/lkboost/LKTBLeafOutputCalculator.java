@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.classification.boosting.lktb;
+package edu.neu.ccs.pyramid.classification.lkboost;
 
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 

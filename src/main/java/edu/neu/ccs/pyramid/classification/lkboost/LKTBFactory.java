@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.classification.boosting.lktb;
+package edu.neu.ccs.pyramid.classification.lkboost;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.ClassifierFactory;

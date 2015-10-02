@@ -3,24 +3,19 @@ package edu.neu.ccs.pyramid.experiment;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.ProbabilityVoting;
 import edu.neu.ccs.pyramid.classification.Voting;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBInspector;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBConfig;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBInspector;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBTrainer;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
-import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import org.apache.commons.lang3.time.StopWatch;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * single label feature sampling gradient boosting

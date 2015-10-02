@@ -2,8 +2,8 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.classification.ClassifierFactory;
 import edu.neu.ccs.pyramid.classification.TrainConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBFactory;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainConfig;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBFactory;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBTrainConfig;
 import edu.neu.ccs.pyramid.classification.ecoc.CodeMatrix;
 import edu.neu.ccs.pyramid.classification.ecoc.ECOC;
 import edu.neu.ccs.pyramid.classification.ecoc.ECOCConfig;

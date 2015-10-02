@@ -1,23 +1,16 @@
 package edu.neu.ccs.pyramid.classification.l2boost;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class L2BoostTest {
     private static final Config config = new Config("config/local.config");

@@ -1,11 +1,10 @@
 package edu.neu.ccs.pyramid.classification;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBConfig;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBTrainer;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTreeBoost;
 import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrainer;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
@@ -15,8 +14,6 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.Arrays;
-
-import static org.junit.Assert.*;
 
 public class PlattScalingTest {
     private static final Config config = new Config("config/local.config");
