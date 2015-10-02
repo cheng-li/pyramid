@@ -29,6 +29,9 @@ public class Ensemble implements Serializable{
         return this.regressors.get(index);
     }
 
+    public List<Regressor> getRegressors() {
+        return regressors;
+    }
 
     public double score(Vector vector) {
         double res = 0;

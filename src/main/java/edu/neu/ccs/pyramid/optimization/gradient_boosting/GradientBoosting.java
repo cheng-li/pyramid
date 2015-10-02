@@ -12,10 +12,7 @@ public class GradientBoosting {
     protected int numEnsembles;
     protected List<Ensemble> ensembles;
 
-    public GradientBoosting(){
-        this(1);
-    }
-
+    
     public GradientBoosting(int numEnsembles) {
         this.numEnsembles = numEnsembles;
         this.ensembles = new ArrayList<>();

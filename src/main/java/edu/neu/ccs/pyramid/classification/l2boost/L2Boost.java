@@ -19,7 +19,7 @@ public class L2Boost extends GradientBoosting implements Classifier.ScoreEstimat
      * 1 ensemble; used for scoring positive class
      */
     public L2Boost() {
-        super();
+        super(1);
     }
 
     @Override
