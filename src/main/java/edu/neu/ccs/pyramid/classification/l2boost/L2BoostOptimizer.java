@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GBOptimizer;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GradientBoosting;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 
 import java.util.stream.IntStream;
 
@@ -19,6 +21,12 @@ public class L2BoostOptimizer extends GBOptimizer {
 
     public L2BoostOptimizer(L2Boost boosting, ClfDataSet dataSet, RegressorFactory factory) {
         super(boosting, dataSet, factory);
+        this.boosting = boosting;
+        this.dataSet = dataSet;
+    }
+
+    public L2BoostOptimizer(L2Boost boosting, ClfDataSet dataSet) {
+        super(boosting, dataSet, defaultFactory());
         this.boosting = boosting;
         this.dataSet = dataSet;
     }
@@ -75,5 +83,12 @@ public class L2BoostOptimizer extends GBOptimizer {
             gradient = 0-probs[1];
         }
         this.gradientMatrix.setGradient(dataPoint,0,gradient);
+    }
+
+    private static RegressorFactory defaultFactory(){
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        regTreeFactory.setLeafOutputCalculator(new L2BLeafOutputCalculator());
+        return regTreeFactory;
     }
 }

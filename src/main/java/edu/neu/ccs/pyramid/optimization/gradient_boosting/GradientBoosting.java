@@ -2,13 +2,15 @@ package edu.neu.ccs.pyramid.optimization.gradient_boosting;
 
 import org.apache.mahout.math.Vector;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by chengli on 10/1/15.
  */
-public class GradientBoosting {
+public class GradientBoosting implements Serializable{
+    private static final long serialVersionUID = 1L;
     protected int numEnsembles;
     protected List<Ensemble> ensembles;
 

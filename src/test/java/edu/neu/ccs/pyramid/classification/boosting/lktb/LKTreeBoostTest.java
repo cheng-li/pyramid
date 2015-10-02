@@ -175,13 +175,13 @@ public class LKTreeBoostTest {
 
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(1).numSplitIntervals(100).minDataPerLeaf(1)
                         .dataSamplingRate(1).featureSamplingRate(1)
                         .randomLevel(1)
                         .considerHardTree(true)
                         .considerExpectationTree(false)
                         .considerProbabilisticTree(false)
-                        .setLeafOutputType(LeafOutputType.AVERAGE)
+                        .setLeafOutputType(LeafOutputType.NEWTON)
                         .build();
 
         LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);

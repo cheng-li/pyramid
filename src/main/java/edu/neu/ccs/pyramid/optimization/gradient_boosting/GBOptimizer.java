@@ -109,4 +109,8 @@ public abstract class GBOptimizer {
     public void setShrinkage(double shrinkage) {
         this.shrinkage = shrinkage;
     }
+
+    public RegressorFactory getRegressorFactory() {
+        return factory;
+    }
 }
