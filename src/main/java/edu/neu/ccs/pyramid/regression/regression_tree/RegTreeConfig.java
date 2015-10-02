@@ -8,6 +8,7 @@ public class RegTreeConfig {
     private int maxNumLeaves=2;
     private int minDataPerLeaf=1;
     private int randomLevel=1;
+    private double shrinkage=1;
 
 
 
@@ -55,5 +56,14 @@ public class RegTreeConfig {
 
     int getRandomLevel() {
         return randomLevel;
+    }
+
+    double getShrinkage() {
+        return shrinkage;
+    }
+
+    RegTreeConfig setShrinkage(double shrinkage) {
+        this.shrinkage = shrinkage;
+        return this;
     }
 }

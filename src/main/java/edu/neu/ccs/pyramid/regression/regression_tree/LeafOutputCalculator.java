@@ -13,5 +13,5 @@ public interface LeafOutputCalculator {
      * @param probabilities: the probability of each data point at the leaf node
      * @return output of the leaf node
      */
-    double getLeafOutput(double[] probabilities);
+    double getLeafOutput(double[] probabilities, double[] labels);
 }
