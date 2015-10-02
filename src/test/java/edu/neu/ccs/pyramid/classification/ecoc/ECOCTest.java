@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.classification.ecoc;
 
 import edu.neu.ccs.pyramid.classification.ClassifierFactory;
 import edu.neu.ccs.pyramid.classification.TrainConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.*;
 import edu.neu.ccs.pyramid.classification.lkboost.LKTBFactory;
 import edu.neu.ccs.pyramid.classification.lkboost.LKTBTrainConfig;
 import edu.neu.ccs.pyramid.classification.lkboost.LKTreeBoost;
