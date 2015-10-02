@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.optimization.gradient_boosting;
 
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.ScoreMatrix;
@@ -23,13 +22,29 @@ public abstract class GBOptimizer {
     protected RegressorFactory factory;
     protected DataSet dataSet;
 
-    public GBOptimizer(GradientBoosting boosting,  DataSet dataSet,RegressorFactory factory) {
+
+    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory) {
         this.boosting = boosting;
         this.factory = factory;
         this.dataSet = dataSet;
+    }
+
+    /**
+     * model specific initialization
+     */
+    protected void initialize(){
         this.scoreMatrix = new ScoreMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles());
         this.initStagedScores();
+        initializeOthers();
+        updateOthers();
+        this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles(), GradientMatrix.Objective.MAXIMIZE);
+        updateGradientMatrix();
     }
+
+    /**
+     * e.g. probability matrix
+     */
+    protected abstract void initializeOthers();
 
     protected Regressor fitRegressor(int ensembleIndex){
         double[] gradients = this.gradientMatrix.getGradientsForClass(ensembleIndex);
@@ -56,6 +71,8 @@ public abstract class GBOptimizer {
             boosting.getEnsemble(k).add(regressor);
             updateStagedScores(regressor,k);
         }
+        updateOthers();
+        updateGradientMatrix();
     }
 
     protected void initStagedScores(){
@@ -65,4 +82,11 @@ public abstract class GBOptimizer {
             }
         }
     }
+
+    /**
+     * e.g. probability matrix
+     */
+    protected abstract void updateOthers();
+
+    protected abstract void updateGradientMatrix();
 }
