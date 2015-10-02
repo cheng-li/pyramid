@@ -21,6 +21,7 @@ public abstract class GBOptimizer {
     protected GradientBoosting boosting;
     protected RegressorFactory factory;
     protected DataSet dataSet;
+    protected boolean isInitialized;
 
 
     protected GBOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory) {
@@ -31,6 +32,7 @@ public abstract class GBOptimizer {
 
     /**
      * model specific initialization
+     * should be called after constructor
      */
     protected void initialize(){
         this.scoreMatrix = new ScoreMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles());
@@ -39,6 +41,7 @@ public abstract class GBOptimizer {
         updateOthers();
         this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles(), GradientMatrix.Objective.MAXIMIZE);
         updateGradientMatrix();
+        this.isInitialized = true;
     }
 
     /**
@@ -66,6 +69,9 @@ public abstract class GBOptimizer {
     }
 
     protected void iterate(){
+        if (!isInitialized){
+            throw new RuntimeException("GBOptimizer is not initialized");
+        }
         for (int k=0;k<boosting.getNumEnsembles();k++){
             Regressor regressor = fitRegressor(k);
             boosting.getEnsemble(k).add(regressor);

@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 /**
+ * binary logistic gradient boosting
  * Created by chengli on 10/1/15.
  */
 public class L2Boost extends GradientBoosting implements Classifier.ScoreEstimator, Classifier.ProbabilityEstimator{
@@ -24,11 +25,15 @@ public class L2Boost extends GradientBoosting implements Classifier.ScoreEstimat
 
     @Override
     public double[] predictClassProbs(Vector vector) {
-        double[] scoreVector = this.predictClassScores(vector);
+        double[] scores = this.predictClassScores(vector);
+        return predictClassProbs(scores);
+    }
+
+    double[] predictClassProbs(double[] scores){
         double[] probVector = new double[2];
-        double logDenominator = MathUtil.logSumExp(scoreVector);
+        double logDenominator = MathUtil.logSumExp(scores);
         for (int k=0;k<2;k++){
-            double logNumerator = scoreVector[k];
+            double logNumerator = scores[k];
             double pro = Math.exp(logNumerator-logDenominator);
             probVector[k]=pro;
         }
