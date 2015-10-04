@@ -1,8 +1,8 @@
 //package edu.neu.ccs.pyramid.experiment;
 //
 //import edu.neu.ccs.pyramid.active_learning.BestVsSecond;
-//import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
-//import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
+//import LKTBConfig;
+//import LKTreeBoost;
 //import edu.neu.ccs.pyramid.configuration.Config;
 //import edu.neu.ccs.pyramid.dataset.*;
 //import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;

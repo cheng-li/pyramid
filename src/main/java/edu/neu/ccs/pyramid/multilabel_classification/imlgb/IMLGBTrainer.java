@@ -234,36 +234,8 @@ public class IMLGBTrainer {
         int numClasses = this.config.getDataSet().getNumClasses();
         double learningRate = this.config.getLearningRate();
 
-        LeafOutputCalculator leafOutputCalculator = probabilities -> {
-            double numerator = 0;
-            double denominator = 0;
-            for (int i=0;i<probabilities.length;i++) {
-                double label = gradients[i];
-                numerator += label*probabilities[i];
-                denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
-            }
-            double out;
-            if (denominator == 0) {
-                out = 0;
-            } else {
-                out = ((numClasses - 1) * numerator) / (numClasses * denominator);
-            }
-            //protection from numerically unstable issue
-            if (out>2){
-                out=2;
-            }
-            if (out<-2){
-                out=-2;
-            }
-            if (Double.isNaN(out)) {
-                throw new RuntimeException("leaf value is NaN");
-            }
-            if (Double.isInfinite(out)){
-                throw new RuntimeException("leaf value is Infinite");
-            }
-            out *= learningRate;
-            return out;
-        };
+
+        LeafOutputCalculator leafOutputCalculator = new IMLGBLeafOutputCalculator(numClasses);
 
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         regTreeConfig.setMaxNumLeaves(this.config.getNumLeaves());
@@ -275,6 +247,7 @@ public class IMLGBTrainer {
                 this.config.getDataSet(),
                 gradients,
                 leafOutputCalculator);
+        regressionTree.shrink(learningRate);
         return regressionTree;
     }
 

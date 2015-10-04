@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.sampling;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
@@ -16,7 +15,6 @@ import org.apache.mahout.math.Vector;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 /**

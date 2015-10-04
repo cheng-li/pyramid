@@ -1,27 +1,20 @@
-package edu.neu.ccs.pyramid.classification.boosting.lktb;
+package edu.neu.ccs.pyramid.classification.lkboost;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.MSE;
-import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -336,136 +329,38 @@ public class LKTBTrainer {
 
 
 
-    /**
-     * hybrid, pick best one
-     */
     private Regressor fitClassK(int k){
         double[] pseudoResponse = this.gradientMatrix.getGradientsForClass(k);
         int numClasses = this.lkTreeBoost.getNumClasses();
         double learningRate = this.lktbConfig.getLearningRate();
 
-        List<Pair<Regressor,Double>> competitors = new ArrayList<>();
+        LeafOutputCalculator leafOutputCalculator = null;
 
-        if (lktbConfig.considerHardTree()){
-            LeafOutputCalculator leafOutputCalculator = null;
-
-            switch (lktbConfig.getLeafOutputType()){
-                //todo make newton step better
-                case NEWTON:
-                    leafOutputCalculator = probabilities -> {
-                        double numerator = 0;
-                        double denominator = 0;
-                        for (int i=0;i<probabilities.length;i++) {
-                            double label = pseudoResponse[i];
-                            numerator += label*probabilities[i];
-                            denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
-                        }
-                        double out;
-                        if (denominator == 0) {
-                            out = 0;
-                        } else {
-                            out = ((numClasses - 1) * numerator) / (numClasses * denominator);
-                        }
-                        //protection from numerically unstable issue
-                        //todo does the threshold matter?
-                        if (out>1){
-                            out=1;
-                        }
-                        if (out<-1){
-                            out=-1;
-                        }
-                        if (Double.isNaN(out)) {
-                            throw new RuntimeException("leaf value is NaN");
-                        }
-                        if (Double.isInfinite(out)){
-                            throw new RuntimeException("leaf value is Infinite");
-                        }
-                        //todo move this outside
-                        out *= learningRate;
-                        return out;
-                    };
-                    break;
-                case AVERAGE:
-                    leafOutputCalculator = new AverageOutputCalculator(pseudoResponse);
-                    break;
-            }
-
-
-            RegTreeConfig regTreeConfig = new RegTreeConfig();
-            regTreeConfig.setMaxNumLeaves(this.lktbConfig.getNumLeaves());
-            regTreeConfig.setMinDataPerLeaf(this.lktbConfig.getMinDataPerLeaf());
-            regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
-            regTreeConfig.setRandomLevel(this.lktbConfig.getRandomLevel());
-
-
-            RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
-                    this.lktbConfig.getDataSet(),
-                    pseudoResponse,
-                    leafOutputCalculator);
-            // use un-shrunk one to calculate mse
-            double mse = MSE.mse(pseudoResponse,regressionTree.predict(lktbConfig.getDataSet()));
-//            System.out.println("hard tree mse = "+mse);
-
-            if (lktbConfig.getLeafOutputType()==LeafOutputType.AVERAGE){
-                regressionTree.shrink(learningRate);
-            }
-
-
-            competitors.add(new Pair<>(regressionTree, mse));
+        switch (lktbConfig.getLeafOutputType()){
+            //todo make newton step better
+            case NEWTON:
+                leafOutputCalculator = new LKTBLeafOutputCalculator(numClasses);
+                break;
+            case AVERAGE:
+                leafOutputCalculator = new AverageOutputCalculator();
+                break;
         }
 
-
-        if (lktbConfig.considerExpectationTree()){
-            SoftRegStumpTrainer expectationTrainer = SoftRegStumpTrainer.getBuilder()
-                    .setDataSet(lktbConfig.getDataSet())
-                    .setLabels(pseudoResponse)
-                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
-                    .build();
-
-            Optimizer optimizer = expectationTrainer.getOptimizer();
-            optimizer.getTerminator().setMode(Terminator.Mode.FINISH_MAX_ITER);
-            optimizer.getTerminator().setMaxIteration(100);
+        RegTreeConfig regTreeConfig = new RegTreeConfig();
+        regTreeConfig.setMaxNumLeaves(this.lktbConfig.getNumLeaves());
+        regTreeConfig.setMinDataPerLeaf(this.lktbConfig.getMinDataPerLeaf());
+        regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
+        regTreeConfig.setRandomLevel(this.lktbConfig.getRandomLevel());
 
 
+        RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
+                this.lktbConfig.getDataSet(),
+                pseudoResponse,
+                leafOutputCalculator);
 
-            SoftRegStump expectationTree = expectationTrainer.train();
+        regressionTree.shrink(learningRate);
 
-            double mse = MSE.mse(pseudoResponse, expectationTree.predict(lktbConfig.getDataSet()));
-            System.out.println("expectation tree mse = "+mse);
-            expectationTree.shrink(learningRate);
-            competitors.add(new Pair<>(expectationTree, mse));
-        }
-
-        if (lktbConfig.considerProbabilisticTree()){
-            SoftRegStumpTrainer probabilisticTrainer = SoftRegStumpTrainer.getBuilder()
-                    .setDataSet(lktbConfig.getDataSet())
-                    .setLabels(pseudoResponse)
-                    .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                    .setLossType(SoftRegStumpTrainer.LossType.ExpectationOfSquaredLoss)
-                    .build();
-
-            SoftRegStump probabilisticTree = probabilisticTrainer.train();
-
-
-            double mse = MSE.mse(pseudoResponse,probabilisticTree.predict(lktbConfig.getDataSet()));
-            System.out.println("probabilistic tree mse = "+mse);
-
-            probabilisticTree.shrink(learningRate);
-            competitors.add(new Pair<>(probabilisticTree, mse));
-        }
-
-        if (competitors.isEmpty()){
-            throw new RuntimeException("no regressor is considered");
-        }
-
-
-        Comparator<Pair<Regressor,Double>> comparator = Comparator.comparing(Pair::getSecond);
-
-        List<Pair<Regressor,Double>> sorted = competitors.stream().sorted(comparator).collect(Collectors.toList());
-
-        return sorted.get(0).getFirst();
-
+        return regressionTree;
     }
 
 
