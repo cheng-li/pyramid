@@ -7,7 +7,7 @@ import re
 import os
 from os import listdir
 from os.path import isfile, join
-from sets import Set
+# from sets import Set
 
 
 # This program read in a json file data and output to a html file.
@@ -458,8 +458,8 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputPath)
 
     ## skipJsonFiles are not default files: reports.json
-    skipJsonFiles = Set([configName+".json", dataName + ".json", modelName + ".json", topName + ".json",
-        performanceName + ".json", indPerformanceName + ".json"])
+    skipJsonFiles = [configName+".json", dataName + ".json", modelName + ".json", topName + ".json",
+        performanceName + ".json", indPerformanceName + ".json"]
     if os.path.isfile(inputPath):
         parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields, fashion)
     else:
@@ -1150,7 +1150,7 @@ pre_data = '''<html>
                     labels = predictedLabelSetRanking[i]
                     temp = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
                     for (var j = 1; j < labels.labels.length; j++) {
-                        temp += " | " + labels.labels[1].fontcolor(getLabelColor(labels.types[1]))
+                        temp += " | " + labels.labels[j].fontcolor(getLabelColor(labels.types[j]))
                     }
 
                     temp += '(' + labels.probability.toFixed(2)  + ')'
