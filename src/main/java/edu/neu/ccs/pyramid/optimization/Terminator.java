@@ -30,6 +30,7 @@ public class Terminator {
     private int maxIteration = 10000;
     private boolean forceTerminated = false;
     private Mode mode = Mode.STANDARD;
+    private Goal goal = Goal.UNDEFINED;
 
     public Terminator() {
         this.history = new ArrayList<>();
@@ -42,6 +43,13 @@ public class Terminator {
         if (Double.isNaN(value)){
             throw new RuntimeException("value is NaN");
         }
+        if (!isMoveValid(value)){
+            if (logger.isErrorEnabled()){
+                logger.error("goal = "+goal+", min = "+min+",max = "+max+",current value = "+value);
+            }
+            throw new RuntimeException("move is not valid");
+        }
+
         this.history.add(value);
         if (value>max){
             max = value;
@@ -60,6 +68,7 @@ public class Terminator {
         if (logger.isDebugEnabled()){
             logger.debug("iteration = "+history.size());
             logger.debug("mode = "+getMode());
+            logger.debug("goal = "+getGoal());
             logger.debug("value = "+getLastValue());
             logger.debug("previous value = "+getPreviousValue());
             logger.debug("min value = "+getMinValue());
@@ -154,7 +163,40 @@ public class Terminator {
         return this;
     }
 
+    public Goal getGoal() {
+        return goal;
+    }
+
+    public Terminator setGoal(Goal goal) {
+        this.goal = goal;
+        return this;
+    }
+
+
+    private boolean isMoveValid(double value){
+        boolean valid;
+        switch (goal){
+            case MINIMIZE:
+                valid = (value<=min);
+                break;
+            case MAXIMIZE:
+                valid = (value>=max);
+                break;
+            case UNDEFINED:
+                valid = true;
+                break;
+            default:
+                valid = true;
+                break;
+        }
+        return valid;
+    }
+
     public enum Mode{
         STANDARD,FINISH_MAX_ITER
+    }
+
+    public enum Goal{
+        MINIMIZE, MAXIMIZE,UNDEFINED
     }
 }
