@@ -19,11 +19,18 @@ public class Terminator {
     /**
      * relative threshold for big change
      */
-    private double epsilon = 0.01;
+    private double relativeEpsilon = 0.001;
+    /**
+     * absolute threshold for big change;
+     * both have to apply in order to terminate
+     * for small values, relativeEpsilon is more picky
+     * for big values, absoluteEpsilon is moe picky
+     */
+    private double absoluteEpsilon = 1;
     /**
      * if no big change in maxStableIterations, regard as converge
      */
-    private int maxStableIterations = 5;
+    private int maxStableIterations = 3;
     /**
      * terminate if maxStableIterations is reached
      */
@@ -45,9 +52,8 @@ public class Terminator {
         }
         if (!isMoveValid(value)){
             if (logger.isErrorEnabled()){
-                logger.error("goal = "+goal+", min = "+min+",max = "+max+",current value = "+value);
+                logger.error("goal = "+goal+", min = "+min+", max = "+max+", current value = "+value);
             }
-            throw new RuntimeException("move is not valid");
         }
 
         this.history.add(value);
@@ -59,7 +65,9 @@ public class Terminator {
         }
         if (history.size()>=2){
             double previous = history.get(history.size()-2);
-            if (Math.abs((value-previous)/previous)<=epsilon){
+            boolean condition1 = Math.abs((value-previous)/previous) <= relativeEpsilon;
+            boolean condition2 = Math.abs(value-previous) <= absoluteEpsilon;
+            if (condition1&&condition2){
                 stableCounter += 1;
             } else {
                 stableCounter = 0;
@@ -128,9 +136,21 @@ public class Terminator {
         }
     }
 
-    public Terminator setEpsilon(double epsilon) {
-        this.epsilon = epsilon;
+    public Terminator setRelativeEpsilon(double relativeEpsilon) {
+        this.relativeEpsilon = relativeEpsilon;
         return this;
+    }
+
+    public double getRelativeEpsilon() {
+        return relativeEpsilon;
+    }
+
+    public double getAbsoluteEpsilon() {
+        return absoluteEpsilon;
+    }
+
+    public void setAbsoluteEpsilon(double absoluteEpsilon) {
+        this.absoluteEpsilon = absoluteEpsilon;
     }
 
     public Terminator setMaxStableIterations(int maxStableIterations) {
