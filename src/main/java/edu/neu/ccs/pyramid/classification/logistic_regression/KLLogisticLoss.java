@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
@@ -16,6 +15,7 @@ import java.util.stream.IntStream;
 public class KLLogisticLoss implements Optimizable.ByGradientValue{
     private LogisticRegression logisticRegression;
     private DataSet dataSet;
+    private double[][] targetDistributions;
     private double gaussianPriorVariance;
     private Vector empiricalCounts;
     private Vector predictedCounts;
@@ -43,19 +43,20 @@ public class KLLogisticLoss implements Optimizable.ByGradientValue{
      *
      * @param logisticRegression
      * @param dataSet
-     * @param targetDistribution format: [data point][class]
+     * @param targetDistributions format: [data point][class]
      * @param gaussianPriorVariance
      */
     public KLLogisticLoss(LogisticRegression logisticRegression,
-                        DataSet dataSet, double[][] targetDistribution,
+                        DataSet dataSet, double[][] targetDistributions,
                         double gaussianPriorVariance) {
         this.logisticRegression = logisticRegression;
+        this.targetDistributions = targetDistributions;
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
-        this.numClasses = targetDistribution[0].length;
+        this.numClasses = targetDistributions[0].length;
         this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numClasses);
         this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateEmpricalCounts();
@@ -85,7 +86,8 @@ public class KLLogisticLoss implements Optimizable.ByGradientValue{
             return this.value;
         }
         Vector parameters = getParameters();
-        this.value =  -1*logisticRegression.dataSetLogLikelihood(dataSet) + parameters.dot(parameters)/(2*gaussianPriorVariance);
+        this.value =  logisticRegression.dataSetKLDivergence(dataSet, targetDistributions)
+                + parameters.dot(parameters)/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }

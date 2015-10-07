@@ -2,7 +2,9 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
@@ -107,6 +109,18 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         double logDenominator = MathUtil.logSumExp(scoreVector);
         double logNumerator = scoreVector[k];
         return logNumerator-logDenominator;
+    }
+
+    double klDivergence(Vector vector, double[] targetDistribution){
+        double[] estimation = predictClassProbs(vector);
+        return KLDivergence.kl(targetDistribution,estimation);
+
+    }
+
+    double dataSetKLDivergence(DataSet dataSet, double[][] targetDistributions){
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> klDivergence(dataSet.getRow(i),targetDistributions[i]))
+                .sum();
     }
 
     double dataSetLogLikelihood(ClfDataSet dataSet){
