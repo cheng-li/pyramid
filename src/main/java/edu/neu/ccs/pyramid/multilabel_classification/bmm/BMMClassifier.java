@@ -11,7 +11,7 @@ import org.apache.mahout.math.Vector;
 /**
  * Created by chengli on 10/7/15.
  */
-public class BMM implements MultiLabelClassifier {
+public class BMMClassifier implements MultiLabelClassifier {
     int numClasses;
     int numClusters;
     /**
@@ -39,5 +39,15 @@ public class BMM implements MultiLabelClassifier {
     @Override
     public LabelTranslator getLabelTranslator() {
         return null;
+    }
+
+
+    public double clusterConditionalProb(Vector vector, int clusterIndex){
+        double prob = 1;
+        for (int d=0;d<numClasses;d++){
+            BinomialDistribution distribution = distributions[clusterIndex][d];
+            prob *= distribution.probability((int)vector.get(d));
+        }
+        return prob;
     }
 }
