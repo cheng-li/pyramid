@@ -53,8 +53,12 @@ public class BMM {
         this.names = names;
     }
 
+    public List<String> getNames() {
+        return this.names;
+    }
+
     //todo stable?
-    double probability(Vector vector, int clusterIndex){
+    public double probability(Vector vector, int clusterIndex){
         double prob = 1;
         for (int d=0;d<dimension;d++){
             BinomialDistribution distribution = distributions[clusterIndex][d];
@@ -76,6 +80,21 @@ public class BMM {
         // then sample each dimension
         for (int d=0;d<dimension;d++){
             vector.set(d,distributions[cluster][d].sample());
+        }
+        return vector;
+    }
+
+    /**
+     * sample a vector by the k-th single distribution.
+     * @return Vector
+     */
+    public Vector sample(int kCluster) {
+        if ((kCluster<0) || (kCluster>=numClusters)) {
+            throw new RuntimeException("Please given a legal k-th cluster");
+        }
+        Vector vector = new DenseVector(dimension);
+        for (int d=0;d<dimension;d++){
+            vector.set(d,distributions[kCluster][d].sample());
         }
         return vector;
     }
