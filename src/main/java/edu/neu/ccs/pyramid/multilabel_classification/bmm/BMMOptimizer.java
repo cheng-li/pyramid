@@ -15,6 +15,15 @@ public class BMMOptimizer {
     // big variance means small regularization
     private double gaussianPriorVariance;
 
+    public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
+                        double gaussianPriorVariance) {
+        this.bmmClassifier = bmmClassifier;
+        this.dataSet = dataSet;
+        this.gaussianPriorVariance = gaussianPriorVariance;
+        this.terminator = new Terminator();
+        this.gammas = new double[dataSet.getNumDataPoints()][bmmClassifier.numClusters];
+    }
+
     public void optimize(){
         while (true){
             iterate();
