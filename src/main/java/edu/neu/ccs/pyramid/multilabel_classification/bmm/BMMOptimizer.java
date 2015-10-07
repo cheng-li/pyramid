@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
+import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.optimization.*;
 
@@ -11,6 +12,8 @@ public class BMMOptimizer {
     private MultiLabelClfDataSet dataSet;
     private Terminator terminator;
     double[][] gammas;
+    // big variance means small regularization
+    private double gaussianPriorVariance;
 
     public void optimize(){
         while (true){
@@ -34,10 +37,21 @@ public class BMMOptimizer {
 
 
     private void mStep(){
-
+        updateBernoullis();
+        updateLogisticRegression();
     }
+
 
     private double getObjective(){
         return 0;
+    }
+
+    private void updateBernoullis(){
+
+    }
+
+    private void updateLogisticRegression(){
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(this.gaussianPriorVariance);
+        ridgeLogisticOptimizer.optimize(bmmClassifier.logisticRegression,dataSet,gammas);
     }
 }
