@@ -10,6 +10,7 @@ public class BMMOptimizer {
     private BMMClassifier bmmClassifier;
     private MultiLabelClfDataSet dataSet;
     private Terminator terminator;
+    double[][] gammas;
 
     public void optimize(){
         while (true){
