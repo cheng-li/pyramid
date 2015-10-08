@@ -52,7 +52,7 @@ public class BMMOptimizer {
     }
 
 
-    private void iterate(){
+    public void iterate(){
         eStep();
         mStep();
         this.terminator.add(getObjective());
@@ -105,7 +105,7 @@ public class BMMOptimizer {
             average = average.plus(labels[n].times(gammas[n][k]));
         }
         average = average.divide(nk);
-        for (int l=0; l<dataSet.getNumFeatures(); l++){
+        for (int l=0; l<bmmClassifier.numLabels; l++){
             bmmClassifier.distributions[k][l] = new BinomialDistribution(1,average.get(l));
         }
 
