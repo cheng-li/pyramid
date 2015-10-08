@@ -33,7 +33,7 @@ public class Exp210 {
         int numClusters = config.getInt("numClusters");
         double variance = config.getDouble("variance");
         int numIterations = config.getInt("numIterations");
-        
+
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet,variance);
 

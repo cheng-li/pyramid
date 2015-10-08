@@ -61,10 +61,10 @@ public class BMMClassifier implements MultiLabelClassifier {
     }
 
     @Override
-    // todo bingyu 
+    // todo bingyu
     public MultiLabel predict(Vector vector) {
 
-        double maxProb = Double.MIN_VALUE;
+        double maxProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
         for (int s=0; s<numSample; s++) {
@@ -87,6 +87,7 @@ public class BMMClassifier implements MultiLabelClassifier {
 
             if (prob >= maxProb) {
                 predVector = candidateVector;
+                maxProb = prob;
             }
         }
 

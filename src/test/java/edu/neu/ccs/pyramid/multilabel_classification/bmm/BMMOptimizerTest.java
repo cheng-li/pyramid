@@ -28,7 +28,7 @@ public class BMMOptimizerTest {
                 DataSetType.ML_CLF_SPARSE, true);
         BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),2,dataSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000);
-        bmmClassifier.setNumSample(1000);
+        bmmClassifier.setNumSample(100);
 
         System.out.println("after initialization");
         System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
