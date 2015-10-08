@@ -23,6 +23,20 @@ public class RidgeLogisticOptimizer {
         lbfgs.optimize();
     }
 
+    public void optimize(LogisticRegression logisticRegression, ClfDataSet dataSet){
+        double[][] targetDistributions = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        int[] labels = dataSet.getLabels();
+        for (int i=0;i<labels.length;i++){
+            int label = labels[i];
+            targetDistributions[i][label]=1;
+        }
+        logisticRegression.setFeatureExtraction(false);
+        KLLogisticLoss function = new KLLogisticLoss(logisticRegression,dataSet,
+                targetDistributions,gaussianPriorVariance);
+        LBFGS lbfgs = new LBFGS(function);
+        lbfgs.optimize();
+    }
+
 
 
 }
