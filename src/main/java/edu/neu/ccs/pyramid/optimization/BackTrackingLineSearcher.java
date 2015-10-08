@@ -28,6 +28,7 @@ public class BackTrackingLineSearcher {
      * move to a new position along the direction
      */
     public MoveInfo moveAlongDirection(Vector searchDirection){
+        Vector localSearchDir;
         if (logger.isDebugEnabled()){
             logger.debug("start line search");
             // don't want to show too much; only show it on small problems
@@ -43,6 +44,16 @@ public class BackTrackingLineSearcher {
         moveInfo.setOldValue(value);
         Vector gradient = function.getGradient();
         double product = gradient.dot(searchDirection);
+        if (product < 0){
+            localSearchDir = searchDirection;
+        } else {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Bad search direction! Use negative gradient instead. Product of gradient and search direction = " + product);
+            }
+
+            localSearchDir = gradient.times(-1);
+        }
+
         Vector initialPosition;
         // keep a copy of initial parameters
         if (function.getParameters().isDense()){
@@ -52,14 +63,16 @@ public class BackTrackingLineSearcher {
         }
         while(true){
 
-            Vector step = searchDirection.times(stepLength);
+            Vector step = localSearchDir.times(stepLength);
             Vector target = initialPosition.plus(step);
             function.setParameters(target);
 
             double targetValue = function.getValue();
             if (logger.isDebugEnabled()){
                 logger.debug("step length = "+stepLength+", target value = "+targetValue);
+//                logger.debug("requirement = "+(value + c*stepLength*product));
             }
+            // todo: if equal ok?
             if (targetValue <= value + c*stepLength*product || stepLength==0){
                 moveInfo.setStep(step);
                 moveInfo.setStepLength(stepLength);
