@@ -6,12 +6,18 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -26,6 +32,8 @@ public class BMMClassifier implements MultiLabelClassifier {
      */
     BinomialDistribution[][] distributions;
     LogisticRegression logisticRegression;
+    Mode mode = Mode.SAMPLING;
+
 
     public BMMClassifier(int numLabels, int numClusters, int numFeatures) {
         this.numLabels = numLabels;
@@ -53,7 +61,7 @@ public class BMMClassifier implements MultiLabelClassifier {
     }
 
     @Override
-    // todo bingyu
+    // todo bingyu 
     public MultiLabel predict(Vector vector) {
 
         double maxProb = Double.MIN_VALUE;
@@ -97,6 +105,9 @@ public class BMMClassifier implements MultiLabelClassifier {
         return numSample;
     }
 
+    public void setNumSample(int numSample) {
+        this.numSample = numSample;
+    }
 
     @Override
     public FeatureList getFeatureList() {
@@ -130,5 +141,31 @@ public class BMMClassifier implements MultiLabelClassifier {
             probArr[clusterIndex] = clusterConditionalProb(vector, clusterIndex);
         }
         return probArr;
+    }
+
+    public String toString() {
+        Vector vector = new RandomAccessSparseVector(logisticRegression.getNumFeatures());
+        double[] mixtureCoefficients = logisticRegression.predictClassProbs(vector);
+        final StringBuilder sb = new StringBuilder("BMM{\n");
+        sb.append("numLabels=").append(numLabels).append("\n");
+        sb.append("numClusters=").append(numClusters).append("\n");
+        for (int k=0;k<numClusters;k++){
+            sb.append("cluster ").append(k).append(":\n");
+            sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
+            sb.append("probabilities = ").append("[");
+            for (int d= 0; d < numLabels;d++){
+                sb.append(d).append(":").append(distributions[k][d].getProbabilityOfSuccess());
+                if (d!=numLabels-1){
+                    sb.append(", ");
+                }
+            }
+            sb.append("]\n");
+        }
+        sb.append('}');
+        return sb.toString();
+    }
+
+    public enum Mode{
+        SAMPLING, CRF
     }
 }

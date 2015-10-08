@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 
 import java.io.File;
 
@@ -26,20 +28,52 @@ public class BMMOptimizerTest {
                 DataSetType.ML_CLF_SPARSE, true);
         BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),2,dataSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000);
+        bmmClassifier.setNumSample(1000);
 
         System.out.println("after initialization");
         System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
         System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
 
-        for (int i=0;i<100;i++){
+        for (int i=1;i<=10;i++){
             optimizer.iterate();
+            System.out.println("after iteration "+i);
+            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+            System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, dataSet));
+            System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+            System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
         }
 
-        System.out.println("after training");
-        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
-        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
 
         System.out.println("history = "+optimizer.getTerminator().getHistory());
+        System.out.println(bmmClassifier);
+    }
+
+    private static void test2() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
+
+        int numClusters = 10;
+        double variance = 10000;
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,variance);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+        System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, dataSet));
+        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+        System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
+
+        for (int i=1;i<=100;i++){
+            optimizer.iterate();
+            System.out.println("after iteration "+i);
+            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+            System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, dataSet));
+            System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+            System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
+        }
+
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
+        System.out.println(bmmClassifier);
     }
 
 }
