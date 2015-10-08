@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.regression;
 
 
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;

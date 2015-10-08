@@ -22,7 +22,7 @@ public class RegTreeTrainer {
     public static RegressionTree fit(RegTreeConfig regTreeConfig,
                                      DataSet dataSet,
                                      double[] labels){
-        LeafOutputCalculator leafOutputCalculator = new AverageOutputCalculator(labels);
+        LeafOutputCalculator leafOutputCalculator = new AverageOutputCalculator();
         return fit(regTreeConfig,dataSet,labels,leafOutputCalculator);
     }
 
@@ -68,7 +68,7 @@ public class RegTreeTrainer {
         }
 
         //parallel
-        setLeavesOutputs(tree.leaves,leafOutputCalculator);
+        setLeavesOutputs(tree.leaves,leafOutputCalculator, labels);
         cleanLeaves(tree.leaves);
         normalizeReductions(tree,dataSet);
         return tree;
@@ -204,14 +204,14 @@ public class RegTreeTrainer {
     /**
      * parallel
      */
-    private static void setLeavesOutputs(List<Node> leaves, LeafOutputCalculator calculator){
+    private static void setLeavesOutputs(List<Node> leaves, LeafOutputCalculator calculator, double[] labels){
         leaves.parallelStream()
-                .forEach(leaf -> setLeafOutput(leaf, calculator));
+                .forEach(leaf -> setLeafOutput(leaf, calculator, labels));
     }
 
-    private static void setLeafOutput(Node leaf, LeafOutputCalculator calculator){
+    private static void setLeafOutput(Node leaf, LeafOutputCalculator calculator, double[] labels){
         double[] probs = leaf.getProbs();
-        double output = calculator.getLeafOutput(probs);
+        double output = calculator.getLeafOutput(probs, labels);
         leaf.setValue(output);
     }
 
@@ -225,7 +225,6 @@ public class RegTreeTrainer {
      * just make the numbers smaller,
      * and make trees trained with different number of data comparable
      * @param tree
-     * @param regTreeConfig
      */
     private static void normalizeReductions(RegressionTree tree, DataSet dataSet){
         int numDataPoints = dataSet.getNumDataPoints();

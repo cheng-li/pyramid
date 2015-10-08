@@ -19,7 +19,14 @@ public class Terminator {
     /**
      * relative threshold for big change
      */
-    private double epsilon = 0.01;
+    private double relativeEpsilon = 0.001;
+    /**
+     * absolute threshold for big change;
+     * both have to apply in order to terminate
+     * for small values, relativeEpsilon is more picky
+     * for big values, absoluteEpsilon is moe picky
+     */
+    private double absoluteEpsilon = 0.001;
     /**
      * if no big change in maxStableIterations, regard as converge
      */
@@ -30,6 +37,7 @@ public class Terminator {
     private int maxIteration = 10000;
     private boolean forceTerminated = false;
     private Mode mode = Mode.STANDARD;
+    private Goal goal = Goal.UNDEFINED;
 
     public Terminator() {
         this.history = new ArrayList<>();
@@ -42,6 +50,12 @@ public class Terminator {
         if (Double.isNaN(value)){
             throw new RuntimeException("value is NaN");
         }
+        if (!isMoveValid(value)){
+            if (logger.isErrorEnabled()){
+                logger.error("goal = "+goal+", min = "+min+", max = "+max+", current value = "+value);
+            }
+        }
+
         this.history.add(value);
         if (value>max){
             max = value;
@@ -51,7 +65,9 @@ public class Terminator {
         }
         if (history.size()>=2){
             double previous = history.get(history.size()-2);
-            if (Math.abs((value-previous)/previous)<=epsilon){
+            boolean condition1 = Math.abs((value-previous)/previous) <= relativeEpsilon;
+            boolean condition2 = Math.abs(value-previous) <= absoluteEpsilon;
+            if (condition1&&condition2){
                 stableCounter += 1;
             } else {
                 stableCounter = 0;
@@ -60,6 +76,7 @@ public class Terminator {
         if (logger.isDebugEnabled()){
             logger.debug("iteration = "+history.size());
             logger.debug("mode = "+getMode());
+            logger.debug("goal = "+getGoal());
             logger.debug("value = "+getLastValue());
             logger.debug("previous value = "+getPreviousValue());
             logger.debug("min value = "+getMinValue());
@@ -119,9 +136,21 @@ public class Terminator {
         }
     }
 
-    public Terminator setEpsilon(double epsilon) {
-        this.epsilon = epsilon;
+    public Terminator setRelativeEpsilon(double relativeEpsilon) {
+        this.relativeEpsilon = relativeEpsilon;
         return this;
+    }
+
+    public double getRelativeEpsilon() {
+        return relativeEpsilon;
+    }
+
+    public double getAbsoluteEpsilon() {
+        return absoluteEpsilon;
+    }
+
+    public void setAbsoluteEpsilon(double absoluteEpsilon) {
+        this.absoluteEpsilon = absoluteEpsilon;
     }
 
     public Terminator setMaxStableIterations(int maxStableIterations) {
@@ -154,7 +183,40 @@ public class Terminator {
         return this;
     }
 
+    public Goal getGoal() {
+        return goal;
+    }
+
+    public Terminator setGoal(Goal goal) {
+        this.goal = goal;
+        return this;
+    }
+
+
+    private boolean isMoveValid(double value){
+        boolean valid;
+        switch (goal){
+            case MINIMIZE:
+                valid = (value<=min);
+                break;
+            case MAXIMIZE:
+                valid = (value>=max);
+                break;
+            case UNDEFINED:
+                valid = true;
+                break;
+            default:
+                valid = true;
+                break;
+        }
+        return valid;
+    }
+
     public enum Mode{
         STANDARD,FINISH_MAX_ITER
+    }
+
+    public enum Goal{
+        MINIMIZE, MAXIMIZE,UNDEFINED
     }
 }

@@ -97,7 +97,7 @@ public class Exp104 {
         System.out.println("done");
         System.out.println("initializing lbfgs");
         LBFGS lbfgs = new LBFGS(function);
-        lbfgs.getTerminator().setEpsilon(config.getDouble("train.epsilon"));
+        lbfgs.getTerminator().setRelativeEpsilon(config.getDouble("train.epsilon"));
         lbfgs.setHistory(5);
         LinkedList<Double> valueQueue = new LinkedList<>();
         valueQueue.add(function.getValue());

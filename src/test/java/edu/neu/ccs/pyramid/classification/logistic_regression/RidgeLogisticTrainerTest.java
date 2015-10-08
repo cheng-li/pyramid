@@ -27,13 +27,13 @@ public class RidgeLogisticTrainerTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test3();
+        test1();
     }
 
     private static void test1() throws Exception{
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
@@ -55,10 +55,11 @@ public class RidgeLogisticTrainerTest {
                 DataSetType.CLF_SPARSE, true);
         System.out.println(dataSet.getMetaInfo());
         RidgeLogisticTrainer trainer = RidgeLogisticTrainer.getBuilder()
-                .setEpsilon(0.01)
+                .setEpsilon(0.001)
                 .setGaussianPriorVariance(10000)
                 .setHistory(5)
                 .build();
+
 
         LogisticRegression logisticRegression = trainer.train(dataSet);
         System.out.println("train: "+ Accuracy.accuracy(logisticRegression, dataSet));

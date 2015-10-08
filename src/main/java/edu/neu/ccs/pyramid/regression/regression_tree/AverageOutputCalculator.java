@@ -5,15 +5,11 @@ package edu.neu.ccs.pyramid.regression.regression_tree;
  * Created by chengli on 8/5/14.
  */
 public class AverageOutputCalculator implements LeafOutputCalculator{
-    private double[] labels;
 
-    public AverageOutputCalculator(double[] labels) {
-        this.labels = labels;
-    }
 
     //todo: parallelize?
     @Override
-    public double getLeafOutput(double[] probabilities) {
+    public double getLeafOutput(double[] probabilities, double[] labels) {
         double sum = 0;
         double count = 0;
         for (int i=0;i<probabilities.length;i++){

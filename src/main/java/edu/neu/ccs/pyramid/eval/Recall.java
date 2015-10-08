@@ -13,6 +13,16 @@ import java.util.List;
  */
 public class Recall {
 
+    public static double recall(int tp, int fn) {
+
+        if (tp + fn == 0) {
+            return 1;
+        }
+
+        return tp * 1.0 / (tp + fn);
+    }
+
+
     /**
      *
      * @param classifier
@@ -34,17 +44,18 @@ public class Recall {
      * @return
      */
     public static double recall(int[] labels, int[] predictions, int k){
-        double positives = 0;
-        double truePositives = 0;
+        int falseNegative = 0;
+        int truePositives = 0;
         for (int i=0;i<labels.length;i++){
             if (labels[i]==k){
-                positives += 1;
                 if (predictions[i]==k){
                     truePositives += 1;
+                } else {
+                    falseNegative += 1;
                 }
             }
         }
-        return truePositives/positives;
+        return recall(truePositives,falseNegative);
     }
 
     /**

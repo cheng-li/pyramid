@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.classification.boosting.lktb;
+package edu.neu.ccs.pyramid.classification.lkboost;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.TrainConfig;
@@ -8,12 +8,8 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
-import edu.neu.ccs.pyramid.eval.PerClassMeasures;
-import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
-
-import static org.junit.Assert.*;
 
 public class LKTBFactoryTest {
     private static final Config config = new Config("config/local.config");

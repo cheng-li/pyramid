@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.classification.boosting.lktb;
+package edu.neu.ccs.pyramid.classification.lkboost;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
@@ -8,7 +8,6 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
-import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import org.apache.commons.lang3.time.StopWatch;
@@ -175,13 +174,13 @@ public class LKTreeBoostTest {
 
 
         LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
+                .numLeaves(2).learningRate(1).numSplitIntervals(100).minDataPerLeaf(1)
                         .dataSamplingRate(1).featureSamplingRate(1)
                         .randomLevel(1)
                         .considerHardTree(true)
                         .considerExpectationTree(false)
                         .considerProbabilisticTree(false)
-                        .setLeafOutputType(LeafOutputType.AVERAGE)
+                        .setLeafOutputType(LeafOutputType.NEWTON)
                         .build();
 
         LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);

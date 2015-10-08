@@ -1,8 +1,8 @@
 package edu.neu.ccs.pyramid.experiment;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBConfig;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBTrainer;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTreeBoost;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;

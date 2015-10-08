@@ -123,25 +123,19 @@ public class KLLogisticLoss implements Optimizable.ByGradientValue{
 
     private double calEmpricalCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
-        int[] labels = dataSet.getLabels();
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                if (labels[i]==classIndex){
-                    count +=1;
-                }
+                count += targetDistributions[i][classIndex];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                int label = labels[dataPointIndex];
-                if (label==classIndex){
-                    count += featureValue;
-                }
+                count += featureValue*targetDistributions[dataPointIndex][classIndex];
             }
         }
         return count;
@@ -182,13 +176,8 @@ public class KLLogisticLoss implements Optimizable.ByGradientValue{
 
     private void updataDataGradient(int dataPointIndex){
         double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPointIndex);
-        int label = dataSet.getLabels()[dataPointIndex];
         for (int k=0;k<numClasses;k++){
-            if (k==label){
-                this.gradientMatrix.setGradient(dataPointIndex,k,1 - classProbs[k]);
-            } else {
-                this.gradientMatrix.setGradient(dataPointIndex,k,0 - classProbs[k]);
-            }
+            this.gradientMatrix.setGradient(dataPointIndex,k,targetDistributions[dataPointIndex][k] - classProbs[k]);
         }
     }
 
