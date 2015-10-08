@@ -24,17 +24,18 @@ public class RidgeLogisticOptimizerTest {
 //                DataSetType.CLF_SPARSE, true);
 //        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
 //                DataSetType.CLF_SPARSE, true);
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
-                DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
-                DataSetType.CLF_SPARSE, true);
-//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
 //                DataSetType.CLF_SPARSE, true);
-//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
 //                DataSetType.CLF_SPARSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        double variance =1000;
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,0.5);
-        optimizer.getOptimizer().getTerminator().setMaxIteration(1000).setMode(Terminator.Mode.STANDARD);
+        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,variance);
+        optimizer.getOptimizer().getTerminator().setMaxIteration(10000).setMode(Terminator.Mode.STANDARD);
         System.out.println("after initialization");
         System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
         System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
