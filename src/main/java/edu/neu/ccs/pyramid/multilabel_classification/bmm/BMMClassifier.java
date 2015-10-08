@@ -16,6 +16,7 @@ import org.apache.mahout.math.Vector;
 public class BMMClassifier implements MultiLabelClassifier {
     int numLabels;
     int numClusters;
+    int numSample;
     /**
      * format:[cluster][label]
      */
@@ -50,8 +51,13 @@ public class BMMClassifier implements MultiLabelClassifier {
     @Override
     // todo bingyu
     public MultiLabel predict(Vector vector) {
-        return null;
+
     }
+
+    public int getNumSample() {
+        return numSample;
+    }
+
 
     @Override
     public FeatureList getFeatureList() {
@@ -71,5 +77,19 @@ public class BMMClassifier implements MultiLabelClassifier {
             prob *= distribution.probability((int)vector.get(l));
         }
         return prob;
+    }
+
+    /**
+     * return the clusterConditionalProb for each cluster.
+     * @param vector
+     * @return
+     */
+    public double[] clusterConditionalProbArr(Vector vector){
+        double[] probArr = new double[numClusters];
+
+        for (int clusterIndex=0; clusterIndex<numClusters; clusterIndex++) {
+            probArr[clusterIndex] = clusterConditionalProb(vector, clusterIndex);
+        }
+        return probArr;
     }
 }
