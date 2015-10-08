@@ -12,7 +12,7 @@ public class KLDivergence {
             if (trueDistribution[i]==0){
                 r += 0;
             } else {
-                r += trueDistribution[i]* FastMath.log(2, trueDistribution[i] / estimatedDistribution[i]);
+                r += trueDistribution[i]* Math.log(trueDistribution[i] / estimatedDistribution[i]);
             }
         }
         return r;
