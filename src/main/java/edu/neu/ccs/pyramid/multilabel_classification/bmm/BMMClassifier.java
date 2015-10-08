@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 public class BMMClassifier implements MultiLabelClassifier {
     int numLabels;
     int numClusters;
-    int numSample;
+    int numSample = 100;
     /**
      * format:[cluster][label]
      */
