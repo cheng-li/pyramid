@@ -7,8 +7,12 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 10/7/15.
@@ -52,6 +56,41 @@ public class BMMClassifier implements MultiLabelClassifier {
     // todo bingyu
     public MultiLabel predict(Vector vector) {
 
+        double maxProb = Double.MIN_VALUE;
+        Vector predVector = new DenseVector(numLabels);
+
+        for (int s=0; s<numSample; s++) {
+            int[] clusters = IntStream.range(0, numClusters).toArray();
+            double[] logisticProb = logisticRegression.predictClassProbs(vector);
+            EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
+            int cluster = enumeratedIntegerDistribution.sample();
+
+            Vector candidateVector = new DenseVector(numLabels);
+
+            for (int l=0; l<numLabels; l++) {
+                candidateVector.set(l, distributions[cluster][l].sample());
+            }
+
+            double prob = 0.0;
+            double[] pYnk = clusterConditionalProbArr(candidateVector);
+            for (int k=0; k<numClusters; k++) {
+                prob += logisticProb[k] * pYnk[k];
+            }
+
+            if (prob >= maxProb) {
+                predVector = candidateVector;
+            }
+        }
+
+
+        MultiLabel predLabel = new MultiLabel();
+        for (int l=0; l<numLabels; l++) {
+            if (predVector.get(l) == 1.0) {
+                predLabel.addLabel(l);
+            }
+        }
+
+        return predLabel;
     }
 
     public int getNumSample() {
