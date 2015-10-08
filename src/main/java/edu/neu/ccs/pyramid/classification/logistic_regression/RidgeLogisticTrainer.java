@@ -26,7 +26,7 @@ public class RidgeLogisticTrainer {
         logisticRegression.setFeatureExtraction(false);
         LogisticLoss function = new LogisticLoss(logisticRegression,clfDataSet,gaussianPriorVariance);
         LBFGS lbfgs = new LBFGS(function);
-        lbfgs.getTerminator().setEpsilon(epsilon);
+        lbfgs.getTerminator().setRelativeEpsilon(epsilon);
         lbfgs.setHistory(history);
         lbfgs.optimize();
         return logisticRegression;

@@ -10,6 +10,12 @@ import java.util.List;
  */
 public class FMeasure {
 
+    public static double fBeta(int tp, int fp, int fn, double beta){
+        double precision = Precision.precision(tp,fp);
+        double recall = Recall.recall(tp,fn);
+        return fBeta(precision,recall,beta);
+    }
+
     /**
      *
      * @param precision

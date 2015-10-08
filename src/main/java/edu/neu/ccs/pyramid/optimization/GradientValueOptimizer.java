@@ -12,6 +12,7 @@ public abstract class GradientValueOptimizer implements Optimizer{
 
     public GradientValueOptimizer(Optimizable.ByGradientValue function) {
         this.terminator = new Terminator();
+        this.terminator.setGoal(Terminator.Goal.MINIMIZE);
         this.function = function;
     }
 

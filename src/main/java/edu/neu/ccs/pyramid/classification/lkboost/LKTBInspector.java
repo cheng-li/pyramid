@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.classification.boosting.lktb;
+package edu.neu.ccs.pyramid.classification.lkboost;
 
 
 import edu.neu.ccs.pyramid.classification.ClassProbability;
@@ -12,7 +12,6 @@ import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
-import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 

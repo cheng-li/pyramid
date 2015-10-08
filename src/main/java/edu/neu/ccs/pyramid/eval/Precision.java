@@ -14,6 +14,15 @@ import java.util.stream.IntStream;
  */
 public class Precision {
 
+    public static double precision(int tp, int fp) {
+
+        if (tp + fp == 0) {
+            return 1;
+        }
+
+        return tp * 1.0 / (tp + fp);
+    }
+
     /**
      *
      * @param classifier
@@ -35,17 +44,19 @@ public class Precision {
      * @return
      */
     public static double precision(int[] labels, int[] predictions, int k){
-        double predictedPositive = 0;
-        double truePositive = 0;
+        int falsePositive = 0;
+        int truePositive = 0;
         for (int i=0;i<labels.length;i++){
             if (predictions[i]==k){
-                predictedPositive += 1;
+
                 if (labels[i]==k){
                     truePositive += 1;
+                } else {
+                    falsePositive += 1;
                 }
             }
         }
-        return truePositive/predictedPositive;
+        return precision(truePositive,falsePositive);
     }
 
     /**

@@ -23,8 +23,7 @@ public class MicroMeasures extends LabelBasedMeasures {
     public double getPrecision() {
         int tp = IntStream.of(truePositives).sum();
         int fp = IntStream.of(falsePositives).sum();
-        int fn = IntStream.of(falseNegatives).sum();
-        return ConfusionMatrixMeasures.precision(tp,fp,fn);
+        return Precision.precision(tp,fp);
     }
 
     /**
@@ -33,9 +32,8 @@ public class MicroMeasures extends LabelBasedMeasures {
      */
     public double getRecall() {
         int tp = IntStream.of(truePositives).sum();
-        int fp = IntStream.of(falsePositives).sum();
         int fn = IntStream.of(falseNegatives).sum();
-        return ConfusionMatrixMeasures.recall(tp,fp,fn);
+        return Recall.recall(tp,fn);
     }
 
 
@@ -46,9 +44,8 @@ public class MicroMeasures extends LabelBasedMeasures {
     public double getSpecificity() {
         int tn = IntStream.of(trueNegatives).sum();
         int fp = IntStream.of(falsePositives).sum();
-        int fn = IntStream.of(falseNegatives).sum();
 
-        return ConfusionMatrixMeasures.specificity(tn,fp,fn);
+        return ConfusionMatrixMeasures.specificity(tn,fp);
     }
 
 
@@ -61,7 +58,7 @@ public class MicroMeasures extends LabelBasedMeasures {
         int tp = IntStream.of(truePositives).sum();
         int fp = IntStream.of(falsePositives).sum();
         int fn = IntStream.of(falseNegatives).sum();
-        return ConfusionMatrixMeasures.fScore(tp,fp,fn,beta);
+        return FMeasure.fBeta(tp,fp,fn,beta);
     }
 
     /**

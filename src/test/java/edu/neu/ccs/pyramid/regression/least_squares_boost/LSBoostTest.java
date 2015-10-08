@@ -1,13 +1,10 @@
 package edu.neu.ccs.pyramid.regression.least_squares_boost;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.simulation.RegressionSynthesizer;
 
 import java.util.stream.IntStream;
-
-import static org.junit.Assert.*;
 
 public class LSBoostTest {
 

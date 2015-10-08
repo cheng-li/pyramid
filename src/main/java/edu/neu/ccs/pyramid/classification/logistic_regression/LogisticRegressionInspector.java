@@ -2,14 +2,11 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.ClassProbability;
 import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.regression.*;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
-import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;

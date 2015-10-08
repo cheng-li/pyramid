@@ -78,7 +78,7 @@ public class AveragePrecision {
         fp = positivePredict.size() - tp;
         fn = label.size() - tp;
 
-        return ConfusionMatrixMeasures.precision(tp,fp,fn);
+        return Precision.precision(tp,fp);
     }
 
 

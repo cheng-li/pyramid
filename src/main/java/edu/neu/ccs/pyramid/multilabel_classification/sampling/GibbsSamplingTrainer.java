@@ -1,12 +1,11 @@
 package edu.neu.ccs.pyramid.multilabel_classification.sampling;
 
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBConfig;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTBTrainer;
-import edu.neu.ccs.pyramid.classification.boosting.lktb.LKTreeBoost;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBConfig;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBTrainer;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTreeBoost;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import org.apache.mahout.math.Vector;
-
 
 
 /**
@@ -54,14 +53,14 @@ public class GibbsSamplingTrainer {
 
             LKTBTrainer trainer = new LKTBTrainer(trainConfig, lkTreeBoost);
             for (int round=0; round<config.getNumRounds(); round++) {
-                System.out.println("label = " + l + "/" + numClasses +
-                        "; round = " + round + "/" + config.getNumRounds());
+                System.out.println("label = " + (l+1) + "/" + numClasses +
+                        "; round = " + (round+1) + "/" + config.getNumRounds());
                 trainer.iterate();
             }
 
-            this.sampling.addClassifier(lkTreeBoost);
+            this.sampling.addClassifier(lkTreeBoost, l);
 
-            System.out.println("label = " + l +"; accuracy = " + Accuracy.accuracy(lkTreeBoost,dataSet));
+            System.out.println("label = " + (l+1) +"; accuracy = " + Accuracy.accuracy(lkTreeBoost,dataSet));
         }
     }
 
@@ -108,13 +107,7 @@ public class GibbsSamplingTrainer {
                 .dense(dataSet.isDense()).missingValue(dataSet.hasMissingValue())
                 .numClasses(2).build();
 
-        // set original features first
-//        for (int i=0; i<dataSet.getNumFeatures(); i++) {
-//            Vector vector = dataSet.getColumn(i);
-//            for (Vector.Element element : vector.nonZeroes()) {
-//                clfDataSet.setFeatureValue(element.index(), i, element.get());
-//            }
-//        }
+
         // put multilabel into feature matrix and update the label
         MultiLabel[] multiLabels = dataSet.getMultiLabels();
         for (int i=0; i<numDataPoints; i++) {
@@ -125,7 +118,7 @@ public class GibbsSamplingTrainer {
             }
 
             // set the new features from labels second.
-            MultiLabel multiLabel  = multiLabels[i];
+            MultiLabel multiLabel = multiLabels[i];
             for (Integer j : multiLabel.getMatchedLabels()) {
                 if (j < label) { // label is on the left hand of given removing label.
                     clfDataSet.setFeatureValue(i, (origNumFeatures+j), 1.0);

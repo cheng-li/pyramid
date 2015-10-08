@@ -9,8 +9,6 @@ public class RegTreeConfig {
     private int minDataPerLeaf=1;
     private int randomLevel=1;
 
-
-
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
         this.maxNumLeaves = maxNumLeaves;
         return this;
@@ -56,4 +54,5 @@ public class RegTreeConfig {
     int getRandomLevel() {
         return randomLevel;
     }
+
 }

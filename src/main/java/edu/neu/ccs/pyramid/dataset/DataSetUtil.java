@@ -50,7 +50,7 @@ public class DataSetUtil {
     }
 
     /**
-     * only keep the selected featureList
+     * only keep the selected features
      * @param dataSet
      * @return
      */
@@ -82,6 +82,41 @@ public class DataSetUtil {
         }
 
         trimmed.setLabelTranslator(dataSet.getLabelTranslator());
+        trimmed.setIdTranslator(dataSet.getIdTranslator());
+        List<Feature> oldFeatures = dataSet.getFeatureList().getAll();
+        List<Feature> newFeatures = columnsToKeep.stream().map(oldFeatures::get).collect(Collectors.toList());
+        for (int i=0;i<newFeatures.size();i++){
+            newFeatures.get(i).setIndex(i);
+        }
+        trimmed.setFeatureList(new FeatureList(newFeatures));
+        return trimmed;
+    }
+
+
+    public static RegDataSet sampleFeatures(RegDataSet dataSet, List<Integer> columnsToKeep){
+        RegDataSet trimmed ;
+
+        trimmed = RegDataSetBuilder.getBuilder().numDataPoints(dataSet.getNumDataPoints())
+                .numFeatures(columnsToKeep.size())
+                .missingValue(dataSet.hasMissingValue())
+                .dense(dataSet.isDense())
+                .build();
+
+        for (int j=0;j<trimmed.getNumFeatures();j++){
+            int oldColumnIndex = columnsToKeep.get(j);
+            Vector vector = dataSet.getColumn(oldColumnIndex);
+            for (Vector.Element element: vector.nonZeroes()){
+                int dataPointIndex = element.index();
+                double value = element.get();
+                trimmed.setFeatureValue(dataPointIndex,j,value);
+            }
+        }
+        //copy labels
+        double[] labels = dataSet.getLabels();
+        for (int i=0;i<trimmed.getNumDataPoints();i++){
+            trimmed.setLabel(i,labels[i]);
+        }
+
         trimmed.setIdTranslator(dataSet.getIdTranslator());
         List<Feature> oldFeatures = dataSet.getFeatureList().getAll();
         List<Feature> newFeatures = columnsToKeep.stream().map(oldFeatures::get).collect(Collectors.toList());
