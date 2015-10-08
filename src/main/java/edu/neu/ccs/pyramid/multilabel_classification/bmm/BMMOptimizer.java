@@ -1,8 +1,10 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
+import edu.neu.ccs.pyramid.classification.logistic_regression.KLLogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.mahout.math.DenseVector;
@@ -24,12 +26,15 @@ public class BMMOptimizer {
 
     private Vector[] labels;
 
+
     public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
                         double gaussianPriorVariance) {
         this.bmmClassifier = bmmClassifier;
         this.dataSet = dataSet;
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.terminator = new Terminator();
+        this.terminator.setGoal(Terminator.Goal.MINIMIZE);
+
         this.gammas = new double[dataSet.getNumDataPoints()][bmmClassifier.numClusters];
 
         this.labels = new DenseVector[dataSet.getNumDataPoints()];
@@ -80,6 +85,22 @@ public class BMMOptimizer {
         }
     }
 
+    private double getEntropy(){
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(this::getEntropy).sum();
+    }
+
+    private double getEntropy(int i){
+        double[] distribution = bmmClassifier.logisticRegression.predictClassProbs(dataSet.getRow(i));
+        return Entropy.entropy(distribution);
+    }
+
+    private double getMStepObjective(){
+        KLLogisticLoss logisticLoss = new KLLogisticLoss(bmmClassifier.logisticRegression,dataSet,
+                gammas,gaussianPriorVariance);
+        return logisticLoss.getValue();
+    }
+
 
     private void mStep(){
         updateBernoullis();
@@ -88,7 +109,7 @@ public class BMMOptimizer {
 
 
     private double getObjective(){
-        return 0;
+        return getMStepObjective() - getEntropy();
     }
 
     private void updateBernoullis(){
