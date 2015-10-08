@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
+import com.sun.tools.corba.se.idl.constExpr.Negative;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
@@ -60,16 +61,32 @@ public class BMMClassifier implements MultiLabelClassifier {
         return this.numLabels;
     }
 
+
+
+    public double probYnGivenXnYn(Vector vectorX, Vector vectorY) {
+        double[] logisticProb = logisticRegression.predictClassProbs(vectorX);
+        return probYnGivenXnLogisticProb(logisticProb, vectorY);
+    }
+
+    public double probYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
+        double prob = 0.0;
+        double[] pYnk = clusterConditionalProbArr(labelVector);
+        for (int k=0; k<numClusters; k++) {
+            prob += logisticProb[k] * pYnk[k];
+        }
+
+        return prob;
+    }
+
     @Override
-    // todo bingyu 
     public MultiLabel predict(Vector vector) {
 
-        double maxProb = Double.MIN_VALUE;
+        double maxProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
         for (int s=0; s<numSample; s++) {
-            int[] clusters = IntStream.range(0, numClusters).toArray();
             double[] logisticProb = logisticRegression.predictClassProbs(vector);
+            int[] clusters = IntStream.range(0, numClusters).toArray();
             EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
             int cluster = enumeratedIntegerDistribution.sample();
 
@@ -79,25 +96,19 @@ public class BMMClassifier implements MultiLabelClassifier {
                 candidateVector.set(l, distributions[cluster][l].sample());
             }
 
-            double prob = 0.0;
-            double[] pYnk = clusterConditionalProbArr(candidateVector);
-            for (int k=0; k<numClusters; k++) {
-                prob += logisticProb[k] * pYnk[k];
-            }
+            double prob = probYnGivenXnLogisticProb(logisticProb, candidateVector);
 
             if (prob >= maxProb) {
                 predVector = candidateVector;
+                maxProb = prob;
             }
         }
-
-
         MultiLabel predLabel = new MultiLabel();
         for (int l=0; l<numLabels; l++) {
             if (predVector.get(l) == 1.0) {
                 predLabel.addLabel(l);
             }
         }
-
         return predLabel;
     }
 
