@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
-import com.sun.tools.corba.se.idl.constExpr.Negative;
+
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
@@ -15,10 +15,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
+
 import java.util.stream.IntStream;
 
 /**
