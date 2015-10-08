@@ -112,7 +112,7 @@ public class BMMOptimizer {
     }
 
     private void updateLogisticRegression(){
-        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(this.gaussianPriorVariance);
-        ridgeLogisticOptimizer.optimize(bmmClassifier.logisticRegression,dataSet,gammas);
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(bmmClassifier.logisticRegression, dataSet, gammas, gaussianPriorVariance);
+        ridgeLogisticOptimizer.optimize();
     }
 }
