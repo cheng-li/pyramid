@@ -7,6 +7,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
 import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -17,9 +19,11 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/7/15.
  */
 public class BMMOptimizer {
+    private static final Logger logger = LogManager.getLogger();
     private BMMClassifier bmmClassifier;
     private MultiLabelClfDataSet dataSet;
     private Terminator terminator;
+    // format [data][cluster]
     double[][] gammas;
     // big variance means small regularization
     private double gaussianPriorVariance;
@@ -63,7 +67,15 @@ public class BMMOptimizer {
         this.terminator.add(getObjective());
     }
 
+
+    public Terminator getTerminator() {
+        return terminator;
+    }
+
     private void eStep(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start E step");
+        }
         int K = bmmClassifier.numClusters;
 
         for (int n=0; n<gammas.length; n++) {
@@ -83,6 +95,10 @@ public class BMMOptimizer {
                 gammas[n][k] = pZnkYnkArr[k] / denominator;
             }
         }
+        if (logger.isDebugEnabled()){
+            logger.debug("finish E step");
+            logger.debug("objective = "+getObjective());
+        }
     }
 
     private double getEntropy(){
@@ -91,25 +107,88 @@ public class BMMOptimizer {
     }
 
     private double getEntropy(int i){
-        double[] distribution = bmmClassifier.logisticRegression.predictClassProbs(dataSet.getRow(i));
-        return Entropy.entropy(distribution);
+        return Entropy.entropy(gammas[i]);
     }
 
     private double getMStepObjective(){
+        //todo add constant
         KLLogisticLoss logisticLoss = new KLLogisticLoss(bmmClassifier.logisticRegression,dataSet,
                 gammas,gaussianPriorVariance);
-        return logisticLoss.getValue();
+        return logisticLoss.getValue() + getEntropy() + bernoulliObj();
+    }
+
+
+    //todo parallel
+    private double bernoulliObj(){
+        double res =  IntStream.range(0, dataSet.getNumDataPoints())
+                .mapToDouble(this::bernoulliObj).sum();
+        if (logger.isDebugEnabled()){
+            logger.debug("bernoulli objective = "+res);
+        }
+        return res;
+    }
+
+    private double bernoulliObj(int dataPoint){
+        double res = 0;
+        for (int k=0;k<bmmClassifier.numClusters;k++){
+            res += bernoulliObj(dataPoint,k);
+        }
+        return res;
+    }
+
+    private double bernoulliObj(int dataPoint, int cluster){
+        if (gammas[dataPoint][cluster]<1E-10){
+            return 0;
+        }
+        double sum = 0;
+        BinomialDistribution[][] distributions = bmmClassifier.distributions;
+        int numLabels = dataSet.getNumClasses();
+        for (int l=0;l<numLabels;l++){
+            double mu = distributions[cluster][l].getProbabilityOfSuccess();
+            double label = labels[dataPoint].get(l);
+            // unstable if compute directly
+            if (label==1){
+                if (mu==0){
+                    throw new RuntimeException("label=1 and mu=0, gamma nk = "+gammas[dataPoint][cluster]);
+                }
+                sum += Math.log(mu);
+
+            } else {
+                // label == 0
+                if (mu==1){
+                    throw new RuntimeException("label=0 and mu=1, gamma nk"+gammas[dataPoint][cluster]);
+                }
+                sum += Math.log(1-mu);
+            }
+        }
+        return -1*gammas[dataPoint][cluster]*sum;
     }
 
 
     private void mStep(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start M step");
+        }
         updateBernoullis();
         updateLogisticRegression();
+        if (logger.isDebugEnabled()){
+            logger.debug("finish M step");
+            logger.debug("objective = "+getObjective());
+        }
     }
 
 
     private double getObjective(){
-        return getMStepObjective() - getEntropy();
+
+        double mObj = getMStepObjective();
+        double entropy = getEntropy();
+        double emObj = mObj - entropy;
+        if (logger.isDebugEnabled()){
+            logger.debug("M step objective = "+mObj);
+            logger.debug("entropy = "+entropy);
+            logger.debug("EM objective = "+emObj);
+        }
+        return emObj;
     }
 
     private void updateBernoullis(){
@@ -136,4 +215,6 @@ public class BMMOptimizer {
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(bmmClassifier.logisticRegression, dataSet, gammas, gaussianPriorVariance);
         ridgeLogisticOptimizer.optimize();
     }
+
+
 }

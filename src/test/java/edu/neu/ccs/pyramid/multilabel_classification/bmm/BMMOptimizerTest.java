@@ -38,6 +38,8 @@ public class BMMOptimizerTest {
         System.out.println("after training");
         System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
         System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
     }
 
 }
