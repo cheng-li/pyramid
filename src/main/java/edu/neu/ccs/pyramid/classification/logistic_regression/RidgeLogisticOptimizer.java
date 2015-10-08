@@ -2,25 +2,21 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.optimization.ConjugateGradientDescent;
-import edu.neu.ccs.pyramid.optimization.GradientDescent;
-import edu.neu.ccs.pyramid.optimization.LBFGS;
-import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.optimization.*;
 
 /**
  * Created by chengli on 10/7/15.
  */
 public class RidgeLogisticOptimizer {
     private Optimizer optimizer;
+    private Optimizable.ByGradientValue function;
 
-    public Optimizer getOptimizer() {
-        return optimizer;
-    }
+
 
     public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
                                   double[][] targetDistributions, double gaussianPriorVariance) {
         logisticRegression.setFeatureExtraction(false);
-        KLLogisticLoss function = new KLLogisticLoss(logisticRegression,dataSet,
+        this.function = new KLLogisticLoss(logisticRegression,dataSet,
                 targetDistributions,gaussianPriorVariance);
         this.optimizer = new LBFGS(function);
     }
@@ -33,7 +29,7 @@ public class RidgeLogisticOptimizer {
             targetDistributions[i][label]=1;
         }
         logisticRegression.setFeatureExtraction(false);
-        KLLogisticLoss function = new KLLogisticLoss(logisticRegression,dataSet,
+        this.function = new KLLogisticLoss(logisticRegression,dataSet,
                 targetDistributions,gaussianPriorVariance);
         this.optimizer = new LBFGS(function);
     }
@@ -42,7 +38,13 @@ public class RidgeLogisticOptimizer {
         this.optimizer.optimize();
     }
 
+    public Optimizer getOptimizer() {
+        return optimizer;
+    }
 
+    public Optimizable.ByGradientValue getFunction() {
+        return function;
+    }
 
 
 }
