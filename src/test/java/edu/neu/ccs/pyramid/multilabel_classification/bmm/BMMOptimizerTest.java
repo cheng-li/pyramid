@@ -18,7 +18,7 @@ public class BMMOptimizerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+        test3();
     }
 
     private static void test1() throws Exception{
@@ -71,6 +71,35 @@ public class BMMOptimizerTest {
             System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
             System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
         }
+
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
+        System.out.println(bmmClassifier);
+    }
+
+
+    private static void test3() throws Exception{
+        int numCluster = 20;
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numCluster,dataSet.getNumFeatures());
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000);
+        bmmClassifier.setNumSample(100);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+
+        for (int i=1;i<=10;i++){
+            optimizer.iterate();
+            System.out.println("after iteration "+i);
+            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+            System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, dataSet));
+            System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+            System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
+        }
+
 
         System.out.println("history = "+optimizer.getTerminator().getHistory());
         System.out.println(bmmClassifier);
