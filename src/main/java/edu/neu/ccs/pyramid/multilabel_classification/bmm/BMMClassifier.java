@@ -53,6 +53,10 @@ public class BMMClassifier implements MultiLabelClassifier {
         this(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
     }
 
+    public void initialize(){
+
+    }
+
     @Override
     public int getNumClasses() {
         return this.numLabels;

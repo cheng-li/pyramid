@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm.BMMClassifier;
+import edu.neu.ccs.pyramid.multilabel_classification.bmm.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm.BMMOptimizer;
 
 import java.io.IOException;
@@ -37,15 +38,28 @@ public class Exp210 {
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet,variance);
 
-        System.out.println("after initialization");
+        System.out.println("after random initialization");
         System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, trainSet));
         System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, trainSet));
         System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
         System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
 
+        if (config.getBoolean("initialize")){
+            BMMInitializer bmmInitializer = new BMMInitializer();
+            bmmInitializer.initialize(bmmClassifier,trainSet);
+            System.out.println("after pure-label clustering initialization");
+            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, trainSet));
+            System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, trainSet));
+            System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+            System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
+        }
+
+
+
         for (int i=1;i<=numIterations;i++){
             optimizer.iterate();
             System.out.println("after iteration "+i);
+            System.out.println("objective = "+optimizer.getTerminator().getLastValue());
             System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,trainSet));
             System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, trainSet));
             System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
