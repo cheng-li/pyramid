@@ -94,6 +94,7 @@ public class BMMOptimizerTest {
         for (int i=1;i<=10;i++){
             optimizer.iterate();
             System.out.println("after iteration "+i);
+            System.out.println("objective = "+optimizer.getTerminator().getLastValue());
             System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
             System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, dataSet));
             System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
