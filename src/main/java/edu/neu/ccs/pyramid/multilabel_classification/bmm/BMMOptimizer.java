@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,28 +77,38 @@ public class BMMOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
-        int K = bmmClassifier.numClusters;
-
-        for (int n=0; n<gammas.length; n++) {
-            Vector Xn = dataSet.getRow(n);
-            Vector Yn = this.labels[n];
-
-            double[] pZnKArr = bmmClassifier.logisticRegression.predictClassProbs(Xn);
-            double[] pYnKArr = bmmClassifier.clusterConditionalProbArr(Yn);
-            double[] pZnkYnkArr = new double[K];
-            double denominator = 0.0;
-            for (int k=0; k<K; k++) {
-                pZnkYnkArr[k] = pZnKArr[k] * pYnKArr[k];
-                denominator += pZnkYnkArr[k];
-            }
-
-            for (int k=0; k<K; k++) {
-                gammas[n][k] = pZnkYnkArr[k] / denominator;
-            }
-        }
+        updateGamma();
         if (logger.isDebugEnabled()){
             logger.debug("finish E step");
             logger.debug("objective = "+getObjective());
+        }
+    }
+
+    /**
+     * update all gammas
+     */
+    private void updateGamma(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(this::updateGamma);
+    }
+
+    /**
+     *
+     * @param n data point index
+     */
+    private void updateGamma(int n){
+        Vector feature = dataSet.getRow(n);
+        Vector label = this.labels[n];
+        int numClusters = bmmClassifier.numClusters;
+        double[] logLogisticProbs = bmmClassifier.logisticRegression.predictClassLogProbs(feature);
+        double[] logClusterConditionalProbs = bmmClassifier.clusterConditionalLogProbArr(label);
+        double[] logNumerators = new double[logLogisticProbs.length];
+        for (int k=0;k<numClusters;k++){
+            logNumerators[k] = logLogisticProbs[k] + logClusterConditionalProbs[k];
+        }
+        double logDenominator = MathUtil.logSumExp(logNumerators);
+        for (int k=0;k<numClusters;k++){
+            gammas[n][k] = Math.exp(logNumerators[k] - logDenominator);
         }
     }
 

@@ -18,7 +18,7 @@ public class BMMOptimizerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test3();
+        test1();
     }
 
     private static void test1() throws Exception{
@@ -26,7 +26,8 @@ public class BMMOptimizerTest {
                 DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "spam/trec_data/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),2,dataSet.getNumFeatures());
+        int numClusters = 2;
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000);
         bmmClassifier.setNumSample(100);
 

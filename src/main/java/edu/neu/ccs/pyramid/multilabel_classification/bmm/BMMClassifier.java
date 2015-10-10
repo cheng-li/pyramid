@@ -64,21 +64,21 @@ public class BMMClassifier implements MultiLabelClassifier {
     }
 
 
-
-    public double probYnGivenXnYn(Vector vectorX, Vector vectorY) {
-        double[] logisticProb = logisticRegression.predictClassProbs(vectorX);
-        return probYnGivenXnLogisticProb(logisticProb, vectorY);
-    }
-
-    public double probYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
-        double prob = 0.0;
-        double[] pYnk = clusterConditionalProbArr(labelVector);
-        for (int k=0; k<numClusters; k++) {
-            prob += logisticProb[k] * pYnk[k];
-        }
-
-        return prob;
-    }
+//
+//    public double probYnGivenXnYn(Vector vectorX, Vector vectorY) {
+//        double[] logisticProb = logisticRegression.predictClassProbs(vectorX);
+//        return probYnGivenXnLogisticProb(logisticProb, vectorY);
+//    }
+//
+//    public double probYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
+//        double prob = 0.0;
+//        double[] pYnk = clusterConditionalProbArr(labelVector);
+//        for (int k=0; k<numClusters; k++) {
+//            prob += logisticProb[k] * pYnk[k];
+//        }
+//
+//        return prob;
+//    }
 
     public double logProbYnGivenXnLogisticProb(double[] logisticLogProb, Vector labelVector) {
         double[] logPYnk = clusterConditionalLogProbArr(labelVector);
@@ -144,14 +144,6 @@ public class BMMClassifier implements MultiLabelClassifier {
     }
 
 
-    public double clusterConditionalProb(Vector vector, int clusterIndex){
-        double prob = 1.0;
-        for (int l=0;l< numLabels;l++){
-            BinomialDistribution distribution = distributions[clusterIndex][l];
-            prob *= distribution.probability((int)vector.get(l));
-        }
-        return prob;
-    }
 
     public double clusterConditionalLogProb(Vector vector, int clusterIndex){
         double prob = 0.0;
@@ -176,19 +168,6 @@ public class BMMClassifier implements MultiLabelClassifier {
         return probArr;
     }
 
-    /**
-     * return the clusterConditionalProb for each cluster.
-     * @param vector
-     * @return
-     */
-    public double[] clusterConditionalProbArr(Vector vector){
-        double[] probArr = new double[numClusters];
-
-        for (int clusterIndex=0; clusterIndex<numClusters; clusterIndex++) {
-            probArr[clusterIndex] = clusterConditionalProb(vector, clusterIndex);
-        }
-        return probArr;
-    }
 
     public String toString() {
         Vector vector = new RandomAccessSparseVector(logisticRegression.getNumFeatures());
