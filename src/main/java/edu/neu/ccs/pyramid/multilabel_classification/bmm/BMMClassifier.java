@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
@@ -70,64 +71,29 @@ public class BMMClassifier implements MultiLabelClassifier {
     }
 
     public double probYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
-        double prob = 1.0;
+        double prob = 0.0;
         double[] pYnk = clusterConditionalProbArr(labelVector);
         for (int k=0; k<numClusters; k++) {
-            prob *= logisticProb[k] * pYnk[k];
+            prob += logisticProb[k] * pYnk[k];
         }
 
         return prob;
     }
 
-    public double logProbYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
-        double logProb = 0.0;
-        double[] pYnk = clusterConditionalProbArr(labelVector);
+    public double logProbYnGivenXnLogisticProb(double[] logisticLogProb, Vector labelVector) {
+        double[] logPYnk = clusterConditionalLogProbArr(labelVector);
+        double[] sumLog = new double[logisticLogProb.length];
         for (int k=0; k<numClusters; k++) {
-            logProb += Math.log(logisticProb[k]) + Math.log(pYnk[k]);
+            sumLog[k] = logisticLogProb[k] + logPYnk[k];
         }
 
-        return logProb;
+        return MathUtil.logSumExp(sumLog);
     }
-
-//    @Override
-//    public MultiLabel predict(Vector vector) {
-//        // using logProb
-//
-//        double maxProb = Double.NEGATIVE_INFINITY;
-//        Vector predVector = new DenseVector(numLabels);
-//
-//        int[] clusters = IntStream.range(0, numClusters).toArray();
-//        for (int s=0; s<numSample; s++) {
-//            double[] logisticProb = logisticRegression.predictClassProbs(vector);
-//            EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
-//            int cluster = enumeratedIntegerDistribution.sample();
-//
-//            Vector candidateVector = new DenseVector(numLabels);
-//
-//            for (int l=0; l<numLabels; l++) {
-//                candidateVector.set(l, distributions[cluster][l].sample());
-//            }
-//
-//            double prob = probYnGivenXnLogisticProb(logisticProb, candidateVector);
-//
-//            if (prob >= maxProb) {
-//                predVector = candidateVector;
-//                maxProb = prob;
-//            }
-//        }
-//        MultiLabel predLabel = new MultiLabel();
-//        for (int l=0; l<numLabels; l++) {
-//            if (predVector.get(l) == 1.0) {
-//                predLabel.addLabel(l);
-//            }
-//        }
-//        return predLabel;
-//    }
 
     @Override
     public MultiLabel predict(Vector vector) {
 
-        double maxProb = Double.NEGATIVE_INFINITY;
+        double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
         int[] clusters = IntStream.range(0, numClusters).toArray();
@@ -142,11 +108,12 @@ public class BMMClassifier implements MultiLabelClassifier {
                 candidateVector.set(l, distributions[cluster][l].sample());
             }
 
-            double prob = logProbYnGivenXnLogisticProb(logisticProb, candidateVector);
+            double[] logisticLogProb = logisticRegression.predictClassLogProbs(vector);
+            double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateVector);
 
-            if (prob >= maxProb) {
+            if (logProb >= maxLogProb) {
                 predVector = candidateVector;
-                maxProb = prob;
+                maxLogProb = logProb;
             }
         }
         MultiLabel predLabel = new MultiLabel();
@@ -178,12 +145,35 @@ public class BMMClassifier implements MultiLabelClassifier {
 
 
     public double clusterConditionalProb(Vector vector, int clusterIndex){
+        double prob = 1.0;
+        for (int l=0;l< numLabels;l++){
+            BinomialDistribution distribution = distributions[clusterIndex][l];
+            prob *= distribution.probability((int)vector.get(l));
+        }
+        return prob;
+    }
+
+    public double clusterConditionalLogProb(Vector vector, int clusterIndex){
         double prob = 0.0;
         for (int l=0;l< numLabels;l++){
             BinomialDistribution distribution = distributions[clusterIndex][l];
-            prob + = distribution.probability((int)vector.get(l));
+            prob += Math.log(distribution.probability((int)vector.get(l)));
         }
         return prob;
+    }
+
+    /**
+     * return the clusterConditionalLogProb for each cluster.
+     * @param vector
+     * @return
+     */
+    public double[] clusterConditionalLogProbArr(Vector vector){
+        double[] probArr = new double[numClusters];
+
+        for (int clusterIndex=0; clusterIndex<numClusters; clusterIndex++) {
+            probArr[clusterIndex] = clusterConditionalLogProb(vector, clusterIndex);
+        }
+        return probArr;
     }
 
     /**
