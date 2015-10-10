@@ -73,7 +73,7 @@ public class Exp209 {
             for (Vector vector : sampleVectors) {
                 double prob = 0.0;
                 for (int k=0; k<suggester.getBmm().getNumClusters(); k++) {
-                    prob += suggester.getBmm().getMixtureCoefficients()[k] * suggester.getBmm().probability(vector, k);
+                    prob += suggester.getBmm().getMixtureCoefficients()[k] * Math.exp(suggester.getBmm().clusterConditionalLogProb(vector, k));
                 }
                 System.out.print("prob: " + prob + "\t");
                 for (Vector.Element e : vector.nonZeroes()) {

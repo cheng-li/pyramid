@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.*;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -120,23 +121,34 @@ public class BMMTrainer {
     }
 
 
-    private void updateGamma(int dataPointIndex){
-//        if (logger.isDebugEnabled()){
-//            logger.debug("before update gamma, gamma = "+Arrays.toString(gammas[dataPointIndex]));
-//        }
+    /**
+     * update all gammas
+     */
+    private void updateGamma(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(this::updateGamma);
+    }
+
+    /**
+     *
+     * @param n data point index
+     */
+    private void updateGamma(int n){
+        Vector feature = dataSet.getRow(n);
+        int numClusters = bmm.getNumClusters();
+        double[] logPis = new double[numClusters];
         for (int k=0;k<numClusters;k++){
-            gammas[dataPointIndex][k] = bmm.mixtureCoefficients[k]*bmm.probability(dataSet.getRow(dataPointIndex),k);
+            logPis[k] = Math.log(bmm.mixtureCoefficients[k]);
         }
-        double denominator = 0;
+        double[] logClusterConditionalProbs = bmm.clusterConditionalLogProbArr(feature);
+        double[] logNumerators = new double[numClusters];
         for (int k=0;k<numClusters;k++){
-            denominator += gammas[dataPointIndex][k];
+            logNumerators[k] = logPis[k] + logClusterConditionalProbs[k];
         }
+        double logDenominator = MathUtil.logSumExp(logNumerators);
         for (int k=0;k<numClusters;k++){
-            gammas[dataPointIndex][k] = gammas[dataPointIndex][k]/denominator;
+            gammas[n][k] = Math.exp(logNumerators[k] - logDenominator);
         }
-//        if (logger.isDebugEnabled()){
-//            logger.debug("after update gamma, gamma = "+Arrays.toString(gammas[dataPointIndex]));
-//        }
     }
 
 
@@ -158,11 +170,18 @@ public class BMMTrainer {
      * @return
      */
     private double exactObjective(int i){
-        double res = 0;
+        Vector feature = dataSet.getRow(i);
+        double[] logPis = new double[numClusters];
         for (int k=0;k<numClusters;k++){
-            res += bmm.mixtureCoefficients[k]*bmm.probability(dataSet.getRow(i),k);
+            logPis[k] = Math.log(bmm.mixtureCoefficients[k]);
         }
-        return -1*Math.log(res);
+        double[] logClusterConditionalProbs = bmm.clusterConditionalLogProbArr(feature);
+        double[] scores = new double[numClusters];
+        for (int k=0;k<numClusters;k++){
+            scores[k] = logPis[k] + logClusterConditionalProbs[k];
+        }
+
+        return -1*MathUtil.logSumExp(scores);
     }
 
     private double bernoulliObj(){

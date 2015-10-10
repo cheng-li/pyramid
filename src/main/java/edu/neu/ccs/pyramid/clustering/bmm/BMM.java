@@ -59,14 +59,28 @@ public class BMM {
         return this.names;
     }
 
-    //todo stable?
-    public double probability(Vector vector, int clusterIndex){
-        double prob = 1;
-        for (int d=0;d<dimension;d++){
-            BinomialDistribution distribution = distributions[clusterIndex][d];
-            prob *= distribution.probability((int)vector.get(d));
+
+    public double clusterConditionalLogProb(Vector vector, int clusterIndex){
+        double prob = 0.0;
+        for (int l=0;l< dimension;l++){
+            BinomialDistribution distribution = distributions[clusterIndex][l];
+            prob += Math.log(distribution.probability((int)vector.get(l)));
         }
         return prob;
+    }
+
+    /**
+     * return the clusterConditionalLogProb for each cluster.
+     * @param vector
+     * @return
+     */
+    public double[] clusterConditionalLogProbArr(Vector vector){
+        double[] probArr = new double[numClusters];
+
+        for (int clusterIndex=0; clusterIndex<numClusters; clusterIndex++) {
+            probArr[clusterIndex] = clusterConditionalLogProb(vector, clusterIndex);
+        }
+        return probArr;
     }
 
     /**
@@ -116,6 +130,7 @@ public class BMM {
     public double[] getMixtureCoefficients() {
         return mixtureCoefficients;
     }
+
 
     @Override
     public String toString() {
