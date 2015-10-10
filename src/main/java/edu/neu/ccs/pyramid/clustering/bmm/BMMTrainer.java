@@ -1,6 +1,9 @@
 package edu.neu.ccs.pyramid.clustering.bmm;
 
+import edu.neu.ccs.pyramid.classification.logistic_regression.KLLogisticLoss;
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.eval.Entropy;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.*;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.logging.log4j.LogManager;
@@ -69,8 +72,17 @@ public class BMMTrainer {
 
     private void mStep(){
         IntStream.range(0,numClusters).parallel().forEach(this::updateCluster);
-        double objective = objective();
+        double objective = exactObjective();
         terminator.add(objective);
+    }
+
+    private double getEntropy(){
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(this::getEntropy).sum();
+    }
+
+    private double getEntropy(int i){
+        return Entropy.entropy(gammas[i]);
     }
 
     /**
@@ -119,12 +131,13 @@ public class BMMTrainer {
 
 
     /**
-     * use Bishop Eq 9.51 as objective; Eq 9.55 is unstable when p=0;
-     * log likelihood, to be maximized
+     * interestingly, the exact objective (not bound) is easy to evaluate
+     * use Bishop Eq 9.51 as objective;
+     * negative log likelihood, to be minimized
      * @return
      */
-    private double objective(){
-        return IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(this::objective)
+    private double exactObjective(){
+        return IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(this::exactObjective)
                 .sum();
     }
 
@@ -134,14 +147,75 @@ public class BMMTrainer {
      * @param i data point
      * @return
      */
-    private double objective(int i){
+    private double exactObjective(int i){
         double res = 0;
         for (int k=0;k<numClusters;k++){
             res += bmm.mixtureCoefficients[k]*bmm.probability(dataSet.getRow(i),k);
         }
-        return Math.log(res);
+        return -1*Math.log(res);
+    }
+
+    private double bernoulliObj(){
+        double res =  IntStream.range(0, dataSet.getNumDataPoints())
+                .mapToDouble(this::bernoulliObj).sum();
+        if (logger.isDebugEnabled()){
+            logger.debug("bernoulli objective = "+res);
+        }
+        return res;
+    }
+
+    private double bernoulliObj(int dataPoint){
+        double res = 0;
+        for (int k=0;k<bmm.getNumClusters();k++){
+            res += bernoulliObj(dataPoint,k);
+        }
+        return res;
+    }
+
+    private double bernoulliObj(int dataPoint, int cluster){
+        if (gammas[dataPoint][cluster]<1E-10){
+            return 0;
+        }
+        double sum = 0;
+        BinomialDistribution[][] distributions = bmm.distributions;
+        int dim = dataSet.getNumFeatures();
+        for (int l=0;l<dim;l++){
+            double mu = distributions[cluster][l].getProbabilityOfSuccess();
+            double value = dataSet.getRow(dataPoint).get(l);
+            // unstable if compute directly
+            if (value==1){
+                if (mu==0){
+                    throw new RuntimeException("value=1 and mu=0, gamma nk = "+gammas[dataPoint][cluster]);
+                }
+                sum += Math.log(mu);
+
+            } else {
+                // label == 0
+                if (mu==1){
+                    throw new RuntimeException("value=0 and mu=1, gamma nk"+gammas[dataPoint][cluster]);
+                }
+                sum += Math.log(1-mu);
+            }
+        }
+        return -1*gammas[dataPoint][cluster]*sum;
     }
 
 
+    private double klDivergence(){
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(this::klDivergence).sum();
+    }
+
+    private double klDivergence(int i){
+        return KLDivergence.kl(gammas[i],bmm.mixtureCoefficients);
+    }
+
+    private double getMStepObjective(){
+        return klDivergence() + getEntropy() + bernoulliObj();
+    }
+
+    private double getObjective(){
+        return klDivergence() + bernoulliObj();
+    }
 
 }
