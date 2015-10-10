@@ -70,14 +70,59 @@ public class BMMClassifier implements MultiLabelClassifier {
     }
 
     public double probYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
-        double prob = 0.0;
+        double prob = 1.0;
         double[] pYnk = clusterConditionalProbArr(labelVector);
         for (int k=0; k<numClusters; k++) {
-            prob += logisticProb[k] * pYnk[k];
+            prob *= logisticProb[k] * pYnk[k];
         }
 
         return prob;
     }
+
+    public double logProbYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
+        double logProb = 0.0;
+        double[] pYnk = clusterConditionalProbArr(labelVector);
+        for (int k=0; k<numClusters; k++) {
+            logProb += Math.log(logisticProb[k]) + Math.log(pYnk[k]);
+        }
+
+        return logProb;
+    }
+
+//    @Override
+//    public MultiLabel predict(Vector vector) {
+//        // using logProb
+//
+//        double maxProb = Double.NEGATIVE_INFINITY;
+//        Vector predVector = new DenseVector(numLabels);
+//
+//        int[] clusters = IntStream.range(0, numClusters).toArray();
+//        for (int s=0; s<numSample; s++) {
+//            double[] logisticProb = logisticRegression.predictClassProbs(vector);
+//            EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
+//            int cluster = enumeratedIntegerDistribution.sample();
+//
+//            Vector candidateVector = new DenseVector(numLabels);
+//
+//            for (int l=0; l<numLabels; l++) {
+//                candidateVector.set(l, distributions[cluster][l].sample());
+//            }
+//
+//            double prob = probYnGivenXnLogisticProb(logisticProb, candidateVector);
+//
+//            if (prob >= maxProb) {
+//                predVector = candidateVector;
+//                maxProb = prob;
+//            }
+//        }
+//        MultiLabel predLabel = new MultiLabel();
+//        for (int l=0; l<numLabels; l++) {
+//            if (predVector.get(l) == 1.0) {
+//                predLabel.addLabel(l);
+//            }
+//        }
+//        return predLabel;
+//    }
 
     @Override
     public MultiLabel predict(Vector vector) {
@@ -85,9 +130,9 @@ public class BMMClassifier implements MultiLabelClassifier {
         double maxProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
+        int[] clusters = IntStream.range(0, numClusters).toArray();
         for (int s=0; s<numSample; s++) {
             double[] logisticProb = logisticRegression.predictClassProbs(vector);
-            int[] clusters = IntStream.range(0, numClusters).toArray();
             EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
             int cluster = enumeratedIntegerDistribution.sample();
 
@@ -97,7 +142,7 @@ public class BMMClassifier implements MultiLabelClassifier {
                 candidateVector.set(l, distributions[cluster][l].sample());
             }
 
-            double prob = probYnGivenXnLogisticProb(logisticProb, candidateVector);
+            double prob = logProbYnGivenXnLogisticProb(logisticProb, candidateVector);
 
             if (prob >= maxProb) {
                 predVector = candidateVector;
@@ -133,10 +178,10 @@ public class BMMClassifier implements MultiLabelClassifier {
 
 
     public double clusterConditionalProb(Vector vector, int clusterIndex){
-        double prob = 1;
+        double prob = 0.0;
         for (int l=0;l< numLabels;l++){
             BinomialDistribution distribution = distributions[clusterIndex][l];
-            prob *= distribution.probability((int)vector.get(l));
+            prob + = distribution.probability((int)vector.get(l));
         }
         return prob;
     }
