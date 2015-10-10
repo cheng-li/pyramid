@@ -34,36 +34,38 @@ public class Exp210 {
         int numClusters = config.getInt("numClusters");
         double variance = config.getDouble("variance");
         int numIterations = config.getInt("numIterations");
+        int numSamples = config.getInt("numSamples");
 
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet,variance);
 
-        System.out.println("after random initialization");
-        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, trainSet));
-        System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, trainSet));
-        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
-        System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
+        bmmClassifier.setNumSample(numSamples);
+        System.out.print("random init" + "\t" );
+        System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier, trainSet) + "\t");
+        System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet) + "\t");
+        System.out.print("testACC  : "+ Accuracy.accuracy(bmmClassifier,testSet) + "\t");
+        System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet) + "\t");
 
         if (config.getBoolean("initialize")){
             BMMInitializer bmmInitializer = new BMMInitializer();
             bmmInitializer.initialize(bmmClassifier,trainSet);
-            System.out.println("after pure-label clustering initialization");
-            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, trainSet));
-            System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, trainSet));
-            System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
-            System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
+            System.out.print("pure-label" + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier,trainSet)+ "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet)+ "\t");
+            System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
+            System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
         }
 
 
 
         for (int i=1;i<=numIterations;i++){
             optimizer.iterate();
-            System.out.println("after iteration "+i);
-            System.out.println("objective = "+optimizer.getTerminator().getLastValue());
-            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,trainSet));
-            System.out.println("train overlap = "+ Overlap.overlap(bmmClassifier, trainSet));
-            System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
-            System.out.println("test overlap = "+ Overlap.overlap(bmmClassifier, testSet));
+            System.out.print("iter : "+i + "\t");
+            System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier,trainSet)+ "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet)+ "\t");
+            System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
+            System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
         }
 
         System.out.println("history = "+optimizer.getTerminator().getHistory());
