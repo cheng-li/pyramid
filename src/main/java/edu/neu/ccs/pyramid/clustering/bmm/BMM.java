@@ -15,7 +15,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Bernoulli mixture model
+ * Bernoulli mixture model for binary feature valued dataset clustering
+ * no label is considered
+ * fixed mixture coefficients are used
  * dimension has to be big enough in order to identify several clusters
  * when dimension = 1; we can only identify 1 cluster
  * Created by chengli on 9/12/15.

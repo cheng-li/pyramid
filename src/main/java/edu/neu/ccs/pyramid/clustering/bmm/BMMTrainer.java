@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.clustering.bmm;
 
-import edu.neu.ccs.pyramid.classification.logistic_regression.KLLogisticLoss;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
@@ -24,7 +23,7 @@ public class BMMTrainer {
      * gammas[i][k] = probability of data i in cluster k
      */
     double[][] gammas;
-    private int numClusters;
+    int numClusters;
     BMM bmm;
     Terminator terminator;
 
@@ -50,30 +49,41 @@ public class BMMTrainer {
 
 
     void iterate(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start one EM iteration");
+        }
         eStep();
-        if (logger.isDebugEnabled()){
-            logger.debug("E step is done ");
-        }
-        if (logger.isDebugEnabled()){
-            logger.debug("gammas = "+ Arrays.deepToString(gammas));
-        }
         mStep();
+        double objective = getObjective();
+        double exactObjective = exactObjective();
         if (logger.isDebugEnabled()){
-            logger.debug("M step is done ");
+            logger.debug("finish one EM iteration");
+            logger.debug("objective = "+ objective);
+            logger.debug("exact objective = "+ exactObjective);
         }
-        if (logger.isDebugEnabled()){
-            logger.debug("bmm = "+ bmm);
-        }
+        terminator.add(getObjective());
     }
 
     private void eStep(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start E step");
+        }
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(this::updateGamma);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish E step");
+            logger.debug("objective = "+ getObjective());
+        }
     }
 
     private void mStep(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start M step");
+        }
         IntStream.range(0,numClusters).parallel().forEach(this::updateCluster);
-        double objective = exactObjective();
-        terminator.add(objective);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish M step");
+            logger.debug("objective = "+ getObjective());
+        }
     }
 
     private double getEntropy(){
@@ -99,9 +109,9 @@ public class BMMTrainer {
             average = average.plus(dataSet.getRow(i).times(gammas[i][k]));
         }
         average = average.divide(nk);
-        if (logger.isDebugEnabled()){
-            logger.debug("average vector = "+average);
-        }
+//        if (logger.isDebugEnabled()){
+//            logger.debug("average vector = "+average);
+//        }
         for (int d=0;d<dataSet.getNumFeatures();d++){
             bmm.distributions[k][d] = new BinomialDistribution(1,average.get(d));
         }
@@ -111,9 +121,9 @@ public class BMMTrainer {
 
 
     private void updateGamma(int dataPointIndex){
-        if (logger.isDebugEnabled()){
-            logger.debug("before update gamma, gamma = "+Arrays.toString(gammas[dataPointIndex]));
-        }
+//        if (logger.isDebugEnabled()){
+//            logger.debug("before update gamma, gamma = "+Arrays.toString(gammas[dataPointIndex]));
+//        }
         for (int k=0;k<numClusters;k++){
             gammas[dataPointIndex][k] = bmm.mixtureCoefficients[k]*bmm.probability(dataSet.getRow(dataPointIndex),k);
         }
@@ -124,9 +134,9 @@ public class BMMTrainer {
         for (int k=0;k<numClusters;k++){
             gammas[dataPointIndex][k] = gammas[dataPointIndex][k]/denominator;
         }
-        if (logger.isDebugEnabled()){
-            logger.debug("after update gamma, gamma = "+Arrays.toString(gammas[dataPointIndex]));
-        }
+//        if (logger.isDebugEnabled()){
+//            logger.debug("after update gamma, gamma = "+Arrays.toString(gammas[dataPointIndex]));
+//        }
     }
 
 
@@ -137,7 +147,7 @@ public class BMMTrainer {
      * @return
      */
     private double exactObjective(){
-        return IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(this::exactObjective)
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(this::exactObjective)
                 .sum();
     }
 
@@ -156,11 +166,11 @@ public class BMMTrainer {
     }
 
     private double bernoulliObj(){
-        double res =  IntStream.range(0, dataSet.getNumDataPoints())
+        double res =  IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(this::bernoulliObj).sum();
-        if (logger.isDebugEnabled()){
-            logger.debug("bernoulli objective = "+res);
-        }
+//        if (logger.isDebugEnabled()){
+//            logger.debug("bernoulli objective = "+res);
+//        }
         return res;
     }
 
@@ -214,6 +224,10 @@ public class BMMTrainer {
         return klDivergence() + getEntropy() + bernoulliObj();
     }
 
+    /**
+     * the entropy term gets canceled
+     * @return
+     */
     private double getObjective(){
         return klDivergence() + bernoulliObj();
     }

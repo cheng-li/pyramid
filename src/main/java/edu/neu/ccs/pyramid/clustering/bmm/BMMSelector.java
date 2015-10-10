@@ -11,12 +11,12 @@ public class BMMSelector {
 
     public static BMM select(DataSet dataSet,int numClusters, int numRuns) {
         BMM best = null;
-        double bestObjective = Double.NEGATIVE_INFINITY;
+        double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
             BMMTrainer trainer = new BMMTrainer(dataSet,numClusters);
             BMM bmm = trainer.train();
             double objective = trainer.terminator.getLastValue();
-            if (objective>bestObjective){
+            if (objective < bestObjective){
                 bestObjective = objective;
                 best = bmm;
             }
