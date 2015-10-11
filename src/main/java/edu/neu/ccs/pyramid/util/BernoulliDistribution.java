@@ -34,7 +34,7 @@ public class BernoulliDistribution implements Serializable{
         }
     }
 
-    public double logProbability(double value){
+    public double logProbability(int value){
         boolean condition = value==0|| value==1;
         if (!condition){
             throw new IllegalArgumentException("value should be 1 or 0");

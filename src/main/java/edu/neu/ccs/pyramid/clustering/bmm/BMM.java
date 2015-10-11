@@ -1,12 +1,13 @@
 package edu.neu.ccs.pyramid.clustering.bmm;
 
+import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.Pair;
-import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -22,27 +23,27 @@ import java.util.stream.IntStream;
  * when dimension = 1; we can only identify 1 cluster
  * Created by chengli on 9/12/15.
  */
-public class BMM {
+public class BMM implements Serializable{
     private int numClusters;
     private int dimension;
     /**
      * format:[cluster][dimension]
      */
-    BinomialDistribution[][] distributions;
+    BernoulliDistribution[][] distributions;
     double[] mixtureCoefficients;
     List<String> names;
 
     public BMM(int numClusters, int dimension) {
         this.numClusters = numClusters;
         this.dimension = dimension;
-        this.distributions = new BinomialDistribution[numClusters][dimension];
+        this.distributions = new BernoulliDistribution[numClusters][dimension];
         this.mixtureCoefficients = new double[numClusters];
         Arrays.fill(mixtureCoefficients,1.0/numClusters);
         UniformRealDistribution uniform = new UniformRealDistribution(0.25,0.75);
         for (int k=0;k<numClusters;k++){
             for (int d=0;d<dimension;d++){
                 double p = uniform.sample();
-                distributions[k][d] = new BinomialDistribution(1,p);
+                distributions[k][d] = new BernoulliDistribution(p);
             }
         }
         this.names = new ArrayList<>(dimension);
@@ -61,12 +62,12 @@ public class BMM {
 
 
     public double clusterConditionalLogProb(Vector vector, int clusterIndex){
-        double prob = 0.0;
+        double logProb = 0.0;
         for (int l=0;l< dimension;l++){
-            BinomialDistribution distribution = distributions[clusterIndex][l];
-            prob += Math.log(distribution.probability((int)vector.get(l)));
+            BernoulliDistribution distribution = distributions[clusterIndex][l];
+            logProb += distribution.logProbability(((int)vector.get(l)));
         }
-        return prob;
+        return logProb;
     }
 
     /**
@@ -123,7 +124,7 @@ public class BMM {
         return dimension;
     }
 
-    public BinomialDistribution[][] getDistributions() {
+    public BernoulliDistribution[][] getDistributions() {
         return distributions;
     }
 
@@ -143,7 +144,7 @@ public class BMM {
             sb.append("probabilities = ").append("[");
             List<Pair<String,Double>> pairs = new ArrayList<>();
             for (int d=0;d<dimension;d++){
-                Pair<String,Double> pair = new Pair<>(names.get(d),distributions[k][d].getProbabilityOfSuccess());
+                Pair<String,Double> pair = new Pair<>(names.get(d),distributions[k][d].getP());
                 pairs.add(pair);
 //                sb.append(names.get(d)).append(":").append(distributions[k][d].getProbabilityOfSuccess());
 //                if (d!=dimension-1){

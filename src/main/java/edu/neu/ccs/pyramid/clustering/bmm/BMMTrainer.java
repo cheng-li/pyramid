@@ -4,8 +4,8 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.*;
+import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -114,7 +114,7 @@ public class BMMTrainer {
 //            logger.debug("average vector = "+average);
 //        }
         for (int d=0;d<dataSet.getNumFeatures();d++){
-            bmm.distributions[k][d] = new BinomialDistribution(1,average.get(d));
+            bmm.distributions[k][d] = new BernoulliDistribution(average.get(d));
         }
 
         bmm.mixtureCoefficients[k] = nk/dataSet.getNumDataPoints();
@@ -206,10 +206,10 @@ public class BMMTrainer {
             return 0;
         }
         double sum = 0;
-        BinomialDistribution[][] distributions = bmm.distributions;
+        BernoulliDistribution[][] distributions = bmm.distributions;
         int dim = dataSet.getNumFeatures();
         for (int l=0;l<dim;l++){
-            double mu = distributions[cluster][l].getProbabilityOfSuccess();
+            double mu = distributions[cluster][l].getP();
             double value = dataSet.getRow(dataPoint).get(l);
             // unstable if compute directly
             if (value==1){
