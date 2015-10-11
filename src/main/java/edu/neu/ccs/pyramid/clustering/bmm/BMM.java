@@ -24,6 +24,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 9/12/15.
  */
 public class BMM implements Serializable{
+    private static final long serialVersionUID = 1L;
     private int numClusters;
     private int dimension;
     /**

@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
+import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.logging.log4j.LogManager;
@@ -13,13 +14,14 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 10/7/15.
  */
-public class BMMOptimizer {
+public class BMMOptimizer implements Serializable{
     private static final Logger logger = LogManager.getLogger();
     private BMMClassifier bmmClassifier;
     private MultiLabelClfDataSet dataSet;
@@ -152,10 +154,10 @@ public class BMMOptimizer {
             return 0;
         }
         double sum = 0;
-        BinomialDistribution[][] distributions = bmmClassifier.distributions;
+        BernoulliDistribution[][] distributions = bmmClassifier.distributions;
         int numLabels = dataSet.getNumClasses();
         for (int l=0;l<numLabels;l++){
-            double mu = distributions[cluster][l].getProbabilityOfSuccess();
+            double mu = distributions[cluster][l].getP();
             double label = labels[dataPoint].get(l);
             // unstable if compute directly
             if (label==1){
@@ -217,7 +219,7 @@ public class BMMOptimizer {
         }
         average = average.divide(nk);
         for (int l=0; l<bmmClassifier.numLabels; l++){
-            bmmClassifier.distributions[k][l] = new BinomialDistribution(1,average.get(l));
+            bmmClassifier.distributions[k][l] = new BernoulliDistribution(average.get(l));
         }
 
     }

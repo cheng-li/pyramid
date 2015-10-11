@@ -7,9 +7,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import edu.neu.ccs.pyramid.util.Pair;
-import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
@@ -23,13 +22,14 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/7/15.
  */
 public class BMMClassifier implements MultiLabelClassifier {
+    private static final long serialVersionUID = 1L;
     int numLabels;
     int numClusters;
     int numSample = 100;
     /**
      * format:[cluster][label]
      */
-    BinomialDistribution[][] distributions;
+    BernoulliDistribution[][] distributions;
     LogisticRegression logisticRegression;
     Mode mode = Mode.SAMPLING;
 
@@ -37,13 +37,13 @@ public class BMMClassifier implements MultiLabelClassifier {
     public BMMClassifier(int numLabels, int numClusters, int numFeatures) {
         this.numLabels = numLabels;
         this.numClusters = numClusters;
-        this.distributions = new BinomialDistribution[numClusters][numLabels];
+        this.distributions = new BernoulliDistribution[numClusters][numLabels];
         // random initialization
         UniformRealDistribution uniform = new UniformRealDistribution(0.25,0.75);
         for (int k=0;k<numClusters;k++){
             for (int l=0;l<numLabels;l++){
                 double p = uniform.sample();
-                distributions[k][l] = new BinomialDistribution(1,p);
+                distributions[k][l] = new BernoulliDistribution(p);
             }
         }
         // num classes in logistic regression = num clusters
@@ -146,12 +146,12 @@ public class BMMClassifier implements MultiLabelClassifier {
 
 
     public double clusterConditionalLogProb(Vector vector, int clusterIndex){
-        double prob = 0.0;
+        double logProb = 0.0;
         for (int l=0;l< numLabels;l++){
-            BinomialDistribution distribution = distributions[clusterIndex][l];
-            prob += Math.log(distribution.probability((int)vector.get(l)));
+            BernoulliDistribution distribution = distributions[clusterIndex][l];
+            logProb += distribution.logProbability((int)vector.get(l));
         }
-        return prob;
+        return logProb;
     }
 
     /**
@@ -180,7 +180,7 @@ public class BMMClassifier implements MultiLabelClassifier {
             sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
             sb.append("probabilities = ").append("[");
             for (int d= 0; d < numLabels;d++){
-                sb.append(d).append(":").append(distributions[k][d].getProbabilityOfSuccess());
+                sb.append(d).append(":").append(distributions[k][d].getP());
                 if (d!=numLabels-1){
                     sb.append(", ");
                 }
