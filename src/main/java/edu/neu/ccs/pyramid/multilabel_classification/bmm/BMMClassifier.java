@@ -97,18 +97,17 @@ public class BMMClassifier implements MultiLabelClassifier {
         Vector predVector = new DenseVector(numLabels);
 
         int[] clusters = IntStream.range(0, numClusters).toArray();
+        double[] logisticLogProb = logisticRegression.predictClassLogProbs(vector);
+        double[] logisticProb = logisticRegression.predictClassProbs(vector);
         for (int s=0; s<numSample; s++) {
-            double[] logisticProb = logisticRegression.predictClassProbs(vector);
             EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
             int cluster = enumeratedIntegerDistribution.sample();
-
             Vector candidateVector = new DenseVector(numLabels);
 
             for (int l=0; l<numLabels; l++) {
                 candidateVector.set(l, distributions[cluster][l].sample());
             }
 
-            double[] logisticLogProb = logisticRegression.predictClassLogProbs(vector);
             double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateVector);
 
             if (logProb >= maxLogProb) {
