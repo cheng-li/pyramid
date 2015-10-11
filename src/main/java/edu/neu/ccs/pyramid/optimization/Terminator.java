@@ -26,11 +26,11 @@ public class Terminator {
      * for small values, relativeEpsilon is more picky
      * for big values, absoluteEpsilon is moe picky
      */
-    private double absoluteEpsilon = 1;
+    private double absoluteEpsilon = 0.001;
     /**
      * if no big change in maxStableIterations, regard as converge
      */
-    private int maxStableIterations = 3;
+    private int maxStableIterations = 5;
     /**
      * terminate if maxStableIterations is reached
      */
