@@ -283,10 +283,10 @@ def createTable(data, fields, fashion):
         
         # finish row
         output.append(oneRow)
-        # test break after first line
+
         if(line_count % 100 == 0):
             print "Current parsing ID: ", line_count
-            break
+
 
     return output
 
