@@ -153,7 +153,7 @@ public class BMM implements Serializable{
 //                }
             }
             Comparator<Pair<String,Double>> comparator = Comparator.comparing(Pair::getSecond);
-            List<Pair<String,Double>> sorted = pairs.stream().sorted(comparator.reversed())
+            List<Pair<String,Double>> sorted = pairs.stream()
                     .collect(Collectors.toList());
             for (int d=0;d<dimension;d++){
                 Pair<String,Double> pair = sorted.get(d);

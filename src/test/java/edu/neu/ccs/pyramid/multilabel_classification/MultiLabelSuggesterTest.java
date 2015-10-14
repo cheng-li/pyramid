@@ -19,7 +19,7 @@ public class MultiLabelSuggesterTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test5();
+        test6();
     }
 
     private static void test1()throws Exception{
@@ -82,6 +82,28 @@ public class MultiLabelSuggesterTest {
             }
         }
         MultiLabelSuggester suggester = new MultiLabelSuggester(dataSet,32);
+        System.out.println(suggester.getBmm());
+
+    }
+
+    private static void test6(){
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(40).numFeatures(1)
+                .numClasses(3).build();
+
+        for (int i=0;i<10;i++){
+            dataSet.addLabel(i,0);
+            dataSet.addLabel(i,1);
+        }
+        for (int i=10;i<20;i++){
+            dataSet.addLabel(i,0);
+            dataSet.addLabel(i,2);
+        }
+        for (int i=20;i<30;i++){
+            dataSet.addLabel(i,1);
+            dataSet.addLabel(i,2);
+        }
+        MultiLabelSuggester suggester = new MultiLabelSuggester(dataSet,4);
         System.out.println(suggester.getBmm());
 
     }
