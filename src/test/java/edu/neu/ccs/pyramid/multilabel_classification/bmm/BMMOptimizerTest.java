@@ -1,13 +1,12 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
+import edu.neu.ccs.pyramid.classification.naive_bayes.Bernoulli;
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
+import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 
 import java.io.File;
 
@@ -18,7 +17,7 @@ public class BMMOptimizerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+        test4();
     }
 
     private static void test1() throws Exception{
@@ -105,6 +104,46 @@ public class BMMOptimizerTest {
 
         System.out.println("history = "+optimizer.getTerminator().getHistory());
         System.out.println(bmmClassifier);
+    }
+
+    private static void test4(){
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numFeatures(10).numClasses(10).numDataPoints(1000)
+                .build();
+        BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(0.5);
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            for (int j=0;j<dataSet.getNumFeatures();j++){
+                int bit = bernoulliDistribution.sample();
+
+                if (bit==1){
+                    dataSet.setFeatureValue(i,j,bit);
+                    dataSet.addLabel(i,j);
+                }
+            }
+        }
+
+        int numClusters = 100;
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        bmmClassifier.setNumSample(100);
+        BMMInitializer bmmInitializer = new BMMInitializer();
+        bmmInitializer.initialize(bmmClassifier,dataSet);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000);
+        for (int i=1;i<=10;i++){
+            optimizer.iterate();
+            System.out.println("after iteration "+i);
+            System.out.println("objective = "+optimizer.getTerminator().getLastValue());
+            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+        }
+        System.out.println(bmmClassifier.toString());
+        for (int k=0;k<numClusters;k++){
+            System.out.println("cluster "+k);
+            System.out.println(bmmClassifier.logisticRegression.getWeights().getWeightsWithoutBiasForClass(k));
+        }
+
     }
 
 }
