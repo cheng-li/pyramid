@@ -2,13 +2,11 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.KLLogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;

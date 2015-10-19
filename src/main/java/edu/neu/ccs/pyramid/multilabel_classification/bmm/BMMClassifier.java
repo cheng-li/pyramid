@@ -17,8 +17,6 @@ import org.apache.mahout.math.Vector;
 
 
 import java.io.*;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**

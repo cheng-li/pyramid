@@ -1,16 +1,13 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
-import edu.neu.ccs.pyramid.classification.naive_bayes.Bernoulli;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
 
 public class BMMOptimizerTest {
     private static final Config config = new Config("config/local.config");

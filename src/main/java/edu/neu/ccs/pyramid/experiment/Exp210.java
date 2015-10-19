@@ -19,13 +19,12 @@ import java.io.File;
  */
 public class Exp210 {
     public static void main(String[] args) throws Exception {
-//        if (args.length != 1) {
-//            throw new IllegalArgumentException("Please specify a properties file.");
-//        }
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Please specify a properties file.");
+        }
 
-//        Config config = new Config(args[0]);
+        Config config = new Config(args[0]);
 
-        Config config = new Config("/Users/Rainicy/Datasets/exp210.config");
         System.out.println(config);
 
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), 
