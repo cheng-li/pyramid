@@ -16,12 +16,15 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 
+import java.io.*;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 10/7/15.
  */
-public class BMMClassifier implements MultiLabelClassifier {
+public class BMMClassifier implements MultiLabelClassifier, Serializable {
     private static final long serialVersionUID = 1L;
     int numLabels;
     int numClusters;
@@ -39,7 +42,7 @@ public class BMMClassifier implements MultiLabelClassifier {
         this.numClusters = numClusters;
         this.distributions = new BernoulliDistribution[numClusters][numLabels];
         // random initialization
-        UniformRealDistribution uniform = new UniformRealDistribution(0.25,0.75);
+        UniformRealDistribution uniform = new UniformRealDistribution(0,1.0);
         for (int k=0;k<numClusters;k++){
             for (int l=0;l<numLabels;l++){
                 double p = uniform.sample();
@@ -64,22 +67,6 @@ public class BMMClassifier implements MultiLabelClassifier {
     }
 
 
-//
-//    public double probYnGivenXnYn(Vector vectorX, Vector vectorY) {
-//        double[] logisticProb = logisticRegression.predictClassProbs(vectorX);
-//        return probYnGivenXnLogisticProb(logisticProb, vectorY);
-//    }
-//
-//    public double probYnGivenXnLogisticProb(double[] logisticProb, Vector labelVector) {
-//        double prob = 0.0;
-//        double[] pYnk = clusterConditionalProbArr(labelVector);
-//        for (int k=0; k<numClusters; k++) {
-//            prob += logisticProb[k] * pYnk[k];
-//        }
-//
-//        return prob;
-//    }
-
     public double logProbYnGivenXnLogisticProb(double[] logisticLogProb, Vector labelVector) {
         double[] logPYnk = clusterConditionalLogProbArr(labelVector);
         double[] sumLog = new double[logisticLogProb.length];
@@ -90,6 +77,7 @@ public class BMMClassifier implements MultiLabelClassifier {
         return MathUtil.logSumExp(sumLog);
     }
 
+
     @Override
     public MultiLabel predict(Vector vector) {
 
@@ -99,8 +87,8 @@ public class BMMClassifier implements MultiLabelClassifier {
         int[] clusters = IntStream.range(0, numClusters).toArray();
         double[] logisticLogProb = logisticRegression.predictClassLogProbs(vector);
         double[] logisticProb = logisticRegression.predictClassProbs(vector);
+        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
         for (int s=0; s<numSample; s++) {
-            EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
             int cluster = enumeratedIntegerDistribution.sample();
             Vector candidateVector = new DenseVector(numLabels);
 
@@ -123,6 +111,8 @@ public class BMMClassifier implements MultiLabelClassifier {
         }
         return predLabel;
     }
+
+
 
     public int getNumSample() {
         return numSample;
@@ -192,5 +182,42 @@ public class BMMClassifier implements MultiLabelClassifier {
 
     public enum Mode{
         SAMPLING, CRF
+    }
+
+    @Override
+    public void serialize(File file) throws Exception {
+        File parent = file.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdir();
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+                ){
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    @Override
+    public void serialize(String file) throws Exception {
+        File file1 = new File(file);
+        serialize(file1);
+    }
+
+    public static BMMClassifier deserialize(File file) throws Exception {
+        try (
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+                ){
+            BMMClassifier bmmClassifier = (BMMClassifier) objectInputStream.readObject();
+            return bmmClassifier;
+        }
+    }
+
+    public static BMMClassifier deserialize(String file) throws Exception {
+        File file1 = new File(file);
+        return deserialize(file1);
     }
 }

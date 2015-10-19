@@ -32,7 +32,7 @@ public class MekaFormat {
         bw.write("@relation " + "'" + dataName + ": -C " + numClasses + "'\n\n");
         for (int i=0; i<numClasses; i++) {
             String labelName = labelTranslator.toExtLabel(i);
-            bw.write("@attribute " + labelName + " {0,1}\n");
+            bw.write("@attribute " + labelName.replace(" ", "_") + " {0,1}\n");
         }
 
         // starting writing features
