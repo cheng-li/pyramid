@@ -32,9 +32,15 @@ public class MultiLabel implements Serializable{
         }
     }
 
-    public MultiLabel addLabel(int k){
+    public MultiLabel addLabel(int k) {
         this.labels.add(k);
         return this;
+    }
+
+    public void removeLabel(int k) {
+        if (labels.contains(k)) {
+            labels.remove(k);
+        }
     }
 
     public boolean matchClass(int k){

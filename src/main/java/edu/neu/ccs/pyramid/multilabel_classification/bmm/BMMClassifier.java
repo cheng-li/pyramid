@@ -17,6 +17,10 @@ import org.apache.mahout.math.Vector;
 
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
@@ -110,6 +114,69 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return predLabel;
     }
 
+
+    public Set<MultiLabel> sampleFromSingles() throws IOException {
+        int top = 10;
+        Set<MultiLabel> samples = new HashSet<>();
+        for (int k=0; k<distributions.length; k++) {
+            Set<MultiLabel> sample = sampleFromSingle(distributions[k], top);
+            for (MultiLabel multiLabel : sample) {
+                if (!samples.contains(multiLabel)) {
+                    samples.add(multiLabel);
+                }
+            }
+        }
+        return samples;
+    }
+
+    private Set<MultiLabel> sampleFromSingle(BernoulliDistribution[] distribution, int top) throws IOException {
+
+        Set<MultiLabel> sample = new HashSet<>();
+
+        MultiLabel label = new MultiLabel();
+        Map<Integer, Double> labelAbsProbMap = new HashMap<>();
+        for (int l=0; l<distribution.length; l++) {
+            BernoulliDistribution bd = distribution[l];
+            double prob = bd.getP();
+            if (prob > 0.5) {
+                label.addLabel(l);
+            }
+            double absProb = Math.abs(prob - 0.5);
+            labelAbsProbMap.put(l, absProb);
+        }
+        MultiLabel copyLabel1 = new MultiLabel();
+        for (int l : label.getMatchedLabels()) {
+            copyLabel1.addLabel(l);
+        }
+        sample.add(copyLabel1);
+
+        for (int i=1; i<top; i++) {
+            // find min abs prob among all labels
+            int minL = 0;
+            double minProb = 100.0;
+            for (Map.Entry<Integer, Double> entry : labelAbsProbMap.entrySet()) {
+                if (entry.getValue() < minProb) {
+                    minL = entry.getKey();
+                    minProb = entry.getValue();
+                }
+            }
+            // flip the label
+            if (label.matchClass(minL)) {
+                label.removeLabel(minL);
+            } else {
+                label.addLabel(minL);
+            }
+            labelAbsProbMap.remove(minL);
+
+            MultiLabel copyLabel = new MultiLabel();
+            for (int l : label.getMatchedLabels()) {
+                copyLabel.addLabel(l);
+            }
+            sample.add(copyLabel);
+        }
+
+        return sample;
+    }
 
 
     public int getNumSample() {

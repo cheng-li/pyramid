@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -11,6 +12,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.bmm.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm.BMMOptimizer;
 
 import java.io.File;
+import java.util.Set;
 
 
 /**
@@ -86,6 +88,28 @@ public class Exp210 {
         System.out.println();
         System.out.println();
         System.out.println(bmmClassifier);
+
+        if (config.getBoolean("generateNewRate")) {
+            Set<MultiLabel> samples = bmmClassifier.sampleFromSingles();
+
+            MultiLabel[] predictions = bmmClassifier.predict(trainSet);
+            int cover = 0;
+            for (MultiLabel l : predictions) {
+                if (samples.contains(l)) {
+                    cover += 1;
+                }
+            }
+            System.out.println("Training cover rate: "  + (float)cover/ (float)predictions.length);
+
+            predictions = bmmClassifier.predict(testSet);
+            cover = 0;
+            for (MultiLabel l : predictions) {
+                if (samples.contains(l)) {
+                    cover += 1;
+                }
+            }
+            System.out.println("Testing cover rate: "  + (float)cover/ (float)predictions.length);
+        }
 
         if (config.getBoolean("saveModel")) {
             File serializeModel = new File(output,modelName);
