@@ -90,7 +90,7 @@ public class Exp210 {
         System.out.println(bmmClassifier);
 
         if (config.getBoolean("generateNewRate")) {
-            Set<MultiLabel> samples = bmmClassifier.sampleFromSingles();
+            Set<MultiLabel> samples = bmmClassifier.sampleFromSingles(config.getInt("topSample"));
 
             MultiLabel[] predictions = bmmClassifier.predict(trainSet);
             int cover = 0;

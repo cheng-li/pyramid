@@ -115,8 +115,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     }
 
 
-    public Set<MultiLabel> sampleFromSingles() throws IOException {
-        int top = 10;
+    public Set<MultiLabel> sampleFromSingles(int top) throws IOException {
         Set<MultiLabel> samples = new HashSet<>();
         for (int k=0; k<distributions.length; k++) {
             Set<MultiLabel> sample = sampleFromSingle(distributions[k], top);
