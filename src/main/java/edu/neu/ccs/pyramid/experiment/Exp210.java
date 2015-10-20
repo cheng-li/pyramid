@@ -12,6 +12,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.bmm.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm.BMMOptimizer;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.Set;
 
 
@@ -91,23 +92,49 @@ public class Exp210 {
 
         if (config.getBoolean("generateNewRate")) {
             Set<MultiLabel> samples = bmmClassifier.sampleFromSingles(config.getInt("topSample"));
+            System.out.println("total samples: " + samples.size());
 
             MultiLabel[] predictions = bmmClassifier.predict(trainSet);
             int cover = 0;
+            Set<MultiLabel> uniqueTrainPred = new HashSet<>();
             for (MultiLabel l : predictions) {
                 if (samples.contains(l)) {
                     cover += 1;
                 }
+                if (!uniqueTrainPred.contains(l)) {
+                    uniqueTrainPred.add(l);
+                }
             }
+            Set<MultiLabel> uniqueTrainY = new HashSet<>();
+            for (MultiLabel l : trainSet.getMultiLabels()) {
+                if (!uniqueTrainY.contains(l)) {
+                    uniqueTrainY.add(l);
+                }
+            }
+            System.out.println("Training unique prediction combinations: " + uniqueTrainPred.size());
+            System.out.println("Training unique label combinations: " + uniqueTrainY.size());
             System.out.println("Training cover rate: "  + (float)cover/ (float)predictions.length);
 
             predictions = bmmClassifier.predict(testSet);
             cover = 0;
+            Set<MultiLabel> uniqueTestPred = new HashSet<>();
             for (MultiLabel l : predictions) {
                 if (samples.contains(l)) {
                     cover += 1;
                 }
+                if (!uniqueTestPred.contains(l)) {
+                    uniqueTestPred.add(l);
+                }
             }
+            Set<MultiLabel> uniqueTestY = new HashSet<>();
+            for (MultiLabel l : testSet.getMultiLabels()) {
+                if (!uniqueTestY.contains(l)) {
+                    uniqueTestY.add(l);
+                }
+            }
+
+            System.out.println("Testing unique prediction combinations: " + uniqueTestPred.size());
+            System.out.println("Testing unique label combinations: " + uniqueTestY.size());
             System.out.println("Testing cover rate: "  + (float)cover/ (float)predictions.length);
         }
 
