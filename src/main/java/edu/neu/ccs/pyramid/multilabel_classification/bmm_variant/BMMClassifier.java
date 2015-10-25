@@ -51,7 +51,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 this.binaryLogitRegressions[k][l] = new LogisticRegression(2,numFeatures);
             }
         }
-        this.softMaxRegression = new LogisticRegression(numClusters, numFeatures);
+        this.softMaxRegression = new LogisticRegression(numClusters, numFeatures,true);
     }
 
     @Override
