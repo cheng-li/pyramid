@@ -51,7 +51,7 @@ public class BMMOptimizer implements Serializable {
         this.gaussianPriorforLogit = gaussianPriorforLogit;
 
         this.terminator = new Terminator();
-        this.terminator.setGoal(Terminator.Goal.MAXIMIZE);
+        this.terminator.setGoal(Terminator.Goal.MINIMIZE);
 
         this.gammas = new double[dataSet.getNumDataPoints()][bmmClassifier.numClusters];
         this.gammasT = new double[bmmClassifier.numClusters][dataSet.getNumDataPoints()];

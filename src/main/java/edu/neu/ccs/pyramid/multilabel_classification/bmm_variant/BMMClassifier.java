@@ -14,7 +14,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.stream.IntStream;
 
 /**
@@ -51,7 +51,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 this.binaryLogitRegressions[k][l] = new LogisticRegression(2,numFeatures);
             }
         }
-        this.softMaxRegression = new LogisticRegression(numClusters, numFeatures, true);
+        this.softMaxRegression = new LogisticRegression(numClusters, numFeatures);
     }
 
     @Override
@@ -170,5 +170,42 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     public void setNumSample(int numSample) {
         this.numSample = numSample;
+    }
+
+    public static BMMClassifier deserialize(File file) throws Exception {
+        try (
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            BMMClassifier bmmClassifier = (BMMClassifier) objectInputStream.readObject();
+            return bmmClassifier;
+        }
+    }
+
+    public static BMMClassifier deserialize(String file) throws Exception {
+        File file1 = new File(file);
+        return deserialize(file1);
+    }
+
+    @Override
+    public void serialize(File file) throws Exception {
+        File parent = file.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdir();
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    @Override
+    public void serialize(String file) throws Exception {
+        File file1 = new File(file);
+        serialize(file1);
     }
 }
