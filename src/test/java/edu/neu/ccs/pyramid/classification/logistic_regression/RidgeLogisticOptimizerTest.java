@@ -48,9 +48,9 @@ public class RidgeLogisticOptimizerTest {
     }
 
     private static void test2() throws Exception{
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File("/Users/Rainicy/Datasets/spam", "data_sets/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File("/Users/Rainicy/Datasets/spam", "data_sets/test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.CLF_SPARSE, true);
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
 

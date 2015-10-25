@@ -144,7 +144,7 @@ public class BMMOptimizer implements Serializable {
 
     private void updateBinaryLogisticRegressions() {
         //TODO no parallel
-        IntStream.range(0, bmmClassifier.numClusters).parallel().forEach(this::updateBinaryLogisticRegression);
+        IntStream.range(0, bmmClassifier.numClusters).forEach(this::updateBinaryLogisticRegression);
     }
 
     private void updateBinaryLogisticRegression(int k) {
@@ -153,6 +153,7 @@ public class BMMOptimizer implements Serializable {
         for (int l=0; l<bmmClassifier.getNumClasses(); l++) {
             RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegressions[l],
                     dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
+            ridgeLogisticOptimizer.optimize();
         }
     }
 
