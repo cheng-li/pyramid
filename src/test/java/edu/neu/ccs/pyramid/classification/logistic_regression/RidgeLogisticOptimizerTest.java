@@ -57,7 +57,7 @@ public class RidgeLogisticOptimizerTest {
         // generate equal weights
         double[] gammas = new double[dataSet.getNumDataPoints()];
         for (int n=0; n<dataSet.getNumDataPoints(); n++) {
-            gammas[n] = 1.0;
+            gammas[n] =1.0;
         }
 
         // generate the targets distributions.

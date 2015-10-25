@@ -26,6 +26,11 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
 
 
 
+    public LogisticRegression(int numClasses, int numFeatures, boolean random) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        this.weights = new Weights(numClasses, numFeatures, random);
+    }
 
     public LogisticRegression(int numClasses, int numFeatures) {
         this.numClasses = numClasses;
