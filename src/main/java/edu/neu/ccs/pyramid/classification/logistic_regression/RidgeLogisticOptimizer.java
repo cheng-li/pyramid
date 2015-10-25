@@ -2,7 +2,9 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.optimization.*;
+import org.apache.mahout.math.Vector;
 
 /**
  * Created by chengli on 10/7/15.
@@ -33,6 +35,14 @@ public class RidgeLogisticOptimizer {
                 targetDistributions,gaussianPriorVariance);
         this.optimizer = new LBFGS(function);
     }
+
+    public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
+                                  double[] gammas, double[][] targetsDistribution, double gaussianPriorforLogit) {
+        logisticRegression.setFeatureExtraction(false);
+        this.function = new WeightedLogisticLoss(logisticRegression, dataSet, gammas, targetsDistribution, gaussianPriorforLogit);
+        this.optimizer = new LBFGS(function);
+    }
+
 
     public void optimize(){
         this.optimizer.optimize();

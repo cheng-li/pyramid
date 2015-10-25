@@ -104,11 +104,12 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return probVector;
     }
 
+
     public double[] predictClassLogProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
         double[] logProbVector = new double[this.numClasses];
         double logDenominator = MathUtil.logSumExp(scoreVector);
-        for (int k=0;k<this.numClasses;k++){
+        for (int k=0;k<this.numClasses;k++) {
             double logNumerator = scoreVector[k];
             logProbVector[k]=logNumerator-logDenominator;
         }
@@ -132,6 +133,14 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i -> klDivergence(dataSet.getRow(i),targetDistributions[i]))
                 .sum();
+    }
+
+    public double dataSetKLWeightedDivergence(DataSet dataSet, double[][] targetDistributions, double[] gammas) {
+        double sum = 0.0;
+        for(int n=0; n<dataSet.getNumDataPoints(); n++) {
+            sum += gammas[n] * klDivergence(dataSet.getRow(n), targetDistributions[n]);
+        }
+        return sum;
     }
 
     double dataSetLogLikelihood(ClfDataSet dataSet){
@@ -170,4 +179,6 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
     }
+
+
 }
