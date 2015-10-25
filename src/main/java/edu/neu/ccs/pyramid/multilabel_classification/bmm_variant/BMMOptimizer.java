@@ -54,8 +54,14 @@ public class BMMOptimizer implements Serializable {
         this.terminator.setGoal(Terminator.Goal.MINIMIZE);
 
         this.gammas = new double[dataSet.getNumDataPoints()][bmmClassifier.numClusters];
-        this.gammasT = new double[bmmClassifier.numClusters][dataSet.getNumDataPoints()];
 
+        this.gammasT = new double[bmmClassifier.numClusters][dataSet.getNumDataPoints()];
+        for (int n=0;n<dataSet.getNumDataPoints();n++){
+            for (int k=0;k<bmmClassifier.numClusters;k++){
+                gammas[n][k] = 1.0/bmmClassifier.numClusters;
+                gammasT[k][n] = 1.0/bmmClassifier.numClusters;
+            }
+        }
         this.labels = new DenseVector[dataSet.getNumDataPoints()];
         for (int n=0; n<labels.length; n++) {
             Set<Integer> label = dataSet.getMultiLabels()[n].getMatchedLabels();
@@ -172,32 +178,29 @@ public class BMMOptimizer implements Serializable {
     }
 
 
-    private double getObjective() {
-        double mObj = getMStepObjective();
-
-
-        if (logger.isDebugEnabled()){
-            logger.debug("M step objective = "+mObj);
-        }
-        return mObj;
-    }
-
-    private double getMStepObjective() {
+    public double getObjective() {
         KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.softMaxRegression,
                 dataSet, gammas, gaussianPriorforSoftMax);
         // Q function for \Thata + gamma.entropy and Q function for Weights
         return logisticLoss.getValue() + binaryLogitsObj();
     }
 
-    private double getEntropy() {
+//    private double getMStepObjective() {
+//        KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.softMaxRegression,
+//                dataSet, gammas, gaussianPriorforSoftMax);
+//        // Q function for \Thata + gamma.entropy and Q function for Weights
+//        return logisticLoss.getValue() + binaryLogitsObj();
+//    }
+//
+//    private double getEntropy() {
+//
+//        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+//                .mapToDouble(this::getEntropy).sum();
+//    }
 
-        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(this::getEntropy).sum();
-    }
-
-    private double getEntropy(int i) {
-        return Entropy.entropy(gammas[i]);
-    }
+//    private double getEntropy(int i) {
+//        return Entropy.entropy(gammas[i]);
+//    }
 
     private double binaryLogitsObj() {
         double res = IntStream.range(0,bmmClassifier.numClusters)

@@ -48,6 +48,7 @@ public class Exp211 {
             bmmClassifier.setNumSample(numSamples);
 
             System.out.print("random init" + "\t" );
+            System.out.print("objective: "+optimizer.getObjective()+ "\t");
             System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier, trainSet) + "\t");
             System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet) + "\t");
             System.out.print("testACC  : "+ Accuracy.accuracy(bmmClassifier,testSet) + "\t");
