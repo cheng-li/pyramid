@@ -149,18 +149,23 @@ public class BMMOptimizer implements Serializable {
     }
 
     private void updateBinaryLogisticRegressions() {
-        //TODO no parallel
         IntStream.range(0, bmmClassifier.numClusters).forEach(this::updateBinaryLogisticRegression);
     }
 
     private void updateBinaryLogisticRegression(int k) {
         LogisticRegression[] logisticRegressions = bmmClassifier.binaryLogitRegressions[k];
 
-        for (int l=0; l<bmmClassifier.getNumClasses(); l++) {
+        IntStream.range(0,bmmClassifier.getNumClasses()).parallel().forEach(l->{
             RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegressions[l],
                     dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
             ridgeLogisticOptimizer.optimize();
-        }
+        });
+
+//        for (int l=0; l<bmmClassifier.getNumClasses(); l++) {
+//            RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegressions[l],
+//                    dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
+//            ridgeLogisticOptimizer.optimize();
+//        }
     }
 
     private void updateSoftMaxRegression() {

@@ -39,6 +39,7 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
+    private boolean parallel = false;
 
 
     public WeightedLogisticLoss(LogisticRegression logisticRegression,
@@ -118,14 +119,26 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
         this.gradient = this.predictedCounts.minus(empiricalCounts).plus(penalty);
     }
 
+    //todo removed parallel
     private void updateEmpricalCounts(){
-        IntStream.range(0, numParameters).parallel()
-                .forEach(i -> this.empiricalCounts.set(i, calEmpricalCount(i)));
+        IntStream intStream;
+        if (parallel){
+            intStream = IntStream.range(0, numParameters).parallel();
+        } else {
+            intStream = IntStream.range(0, numParameters);
+        }
+        intStream.forEach(i -> this.empiricalCounts.set(i, calEmpricalCount(i)));
     }
 
     private void updatePredictedCounts(){
-        IntStream.range(0,numParameters).parallel()
-                .forEach(i -> this.predictedCounts.set(i, calPredictedCount(i)));
+        IntStream intStream;
+        if (parallel){
+            intStream = IntStream.range(0,numParameters).parallel();
+        } else {
+            intStream = IntStream.range(0,numParameters);
+        }
+
+        intStream.forEach(i -> this.predictedCounts.set(i, calPredictedCount(i)));
     }
 
     private double calEmpricalCount(int parameterIndex){
@@ -179,21 +192,17 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
     }
 
     private void updateClassProbMatrix(){
-        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .forEach(this::updateClassProbs);
-    }
-
-    private void updataDataGradient(int dataPointIndex){
-        double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPointIndex);
-        for (int k=0;k<numClasses;k++){
-            this.gradientMatrix.setGradient(dataPointIndex,k,targetDistributions[dataPointIndex][k] - classProbs[k]);
+        IntStream intStream;
+        if (parallel){
+            intStream = IntStream.range(0,dataSet.getNumDataPoints()).parallel();
+        } else {
+            intStream = IntStream.range(0,dataSet.getNumDataPoints());
         }
+        intStream.forEach(this::updateClassProbs);
     }
 
-    private void updateDataGradientMatrix(){
-        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .forEach(this::updataDataGradient);
-    }
+
+
 
 
     public ProbabilityMatrix getProbabilityMatrix() {
