@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -47,21 +48,26 @@ public class Exp211 {
             BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
             bmmClassifier.setNumSample(numSamples);
 
+            MultiLabel[] trainPredict = bmmClassifier.predict(trainSet);
+            MultiLabel[] testPredict = bmmClassifier.predict(testSet);
+
             System.out.print("random init" + "\t" );
             System.out.print("objective: "+optimizer.getObjective()+ "\t");
-            System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier, trainSet) + "\t");
-            System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet) + "\t");
-            System.out.print("testACC  : "+ Accuracy.accuracy(bmmClassifier,testSet) + "\t");
-            System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet) + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
+            System.out.print("testACC  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict) + "\t");
+            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
 
             for (int i=1;i<=numIterations;i++){
                 optimizer.iterate();
+                trainPredict = bmmClassifier.predict(trainSet);
+                testPredict = bmmClassifier.predict(testSet);
                 System.out.print("iter : "+i + "\t");
                 System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
-                System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier,trainSet)+ "\t");
-                System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet)+ "\t");
-                System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
-                System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
+                System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(),trainPredict)+ "\t");
+                System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
+                System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
+                System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
             }
             System.out.println("history = "+optimizer.getTerminator().getHistory());
         }
