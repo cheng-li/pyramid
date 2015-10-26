@@ -324,6 +324,23 @@ public class ESIndex {
     }
 
     /**
+     * return all documents within ids that miss the field
+     * @param field
+     * @param ids
+     * @return
+     */
+    public List<String> docsWithFieldMissing(String field, String[] ids){
+        List<String> docs = new ArrayList<>();
+        for (String id: ids){
+            Object object = getField(id,field);
+            if (object==null){
+                docs.add(id);
+            }
+        }
+        return docs;
+    }
+
+    /**
      * df is from one shard!!!
      * @param id
      * @return term statistics from one doc
