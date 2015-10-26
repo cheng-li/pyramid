@@ -67,8 +67,6 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
     }
 
 
-
-
     public void setParameters(Vector parameters) {
         this.logisticRegression.getWeights().setWeightVector(parameters);
         this.isValueCacheValid=false;
@@ -81,9 +79,13 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
         if (isValueCacheValid){
             return this.value;
         }
-        Vector parameters = getParameters();
+        double weightSquare = 0;
+        for (int k=0;k<numClasses;k++){
+            Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+            weightSquare += weightVector.dot(weightVector);
+        }
         this.value =  logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, gammas)
-                + parameters.dot(parameters)/(2*gaussianPriorVariance);
+                + weightSquare/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }
@@ -103,8 +105,17 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
 
 
     private void updateGradient(){
-        Vector weights = this.logisticRegression.getWeights().getAllWeights();
-        this.gradient = this.predictedCounts.minus(empiricalCounts).plus(weights.divide(gaussianPriorVariance));
+        Vector weightsVector = this.logisticRegression.getWeights().getAllWeights();
+        Vector penalty = new DenseVector(weightsVector.size());
+        for (int j=0;j<penalty.size();j++){
+            int featureIndex = logisticRegression.getWeights().getFeatureIndex(j);
+            if (featureIndex==-1){
+                penalty.set(j,0);
+            } else {
+                penalty.set(j,weightsVector.get(j)/gaussianPriorVariance);
+            }
+        }
+        this.gradient = this.predictedCounts.minus(empiricalCounts).plus(penalty);
     }
 
     private void updateEmpricalCounts(){
