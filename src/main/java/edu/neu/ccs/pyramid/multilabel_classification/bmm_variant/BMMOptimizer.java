@@ -42,7 +42,7 @@ public class BMMOptimizer implements Serializable {
 
     // format [#labels][#data][2]
     private double[][][] targetsDistributions;
-    private boolean parallel = false;
+    private boolean parallel = true;
 
     public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
                         double gaussianPriorforSoftMax, double gaussianPriorforLogit) {
