@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
+import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
 
 import java.io.File;
@@ -50,8 +51,19 @@ public class Exp211 {
 
             MultiLabel[] trainPredict = bmmClassifier.predict(trainSet);
             MultiLabel[] testPredict = bmmClassifier.predict(testSet);
-
             System.out.print("random init" + "\t" );
+            System.out.print("objective: "+optimizer.getObjective()+ "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
+            System.out.print("testACC  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict) + "\t");
+            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
+
+
+            BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance);
+            System.out.println("after initialization");
+            trainPredict = bmmClassifier.predict(trainSet);
+            testPredict = bmmClassifier.predict(testSet);
+
             System.out.print("objective: "+optimizer.getObjective()+ "\t");
             System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
             System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");

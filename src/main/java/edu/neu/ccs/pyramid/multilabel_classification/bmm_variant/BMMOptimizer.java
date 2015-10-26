@@ -136,7 +136,7 @@ public class BMMOptimizer implements Serializable {
         }
     }
 
-    private void mStep() {
+    void mStep() {
         if (logger.isDebugEnabled()){
             logger.debug("start M step");
         }
