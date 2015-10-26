@@ -42,6 +42,7 @@ public class BMMOptimizer implements Serializable {
 
     // format [#labels][#data][2]
     private double[][][] targetsDistributions;
+    private boolean parallel = false;
 
     public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
                         double gaussianPriorforSoftMax, double gaussianPriorforLogit) {
@@ -155,10 +156,17 @@ public class BMMOptimizer implements Serializable {
     private void updateBinaryLogisticRegression(int k) {
         LogisticRegression[] logisticRegressions = bmmClassifier.binaryLogitRegressions[k];
 
-        IntStream.range(0,bmmClassifier.getNumClasses()).parallel().forEach(l->{
+        IntStream intStream = IntStream.range(0, bmmClassifier.getNumClasses());
+        if (parallel){
+            intStream = intStream.parallel();
+        }
+        intStream.forEach(l -> {
             RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegressions[l],
                     dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
             ridgeLogisticOptimizer.optimize();
+            if (logger.isDebugEnabled()){
+                logger.debug("for cluster "+k+" label "+l+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
+            }
         });
 
 //        for (int l=0; l<bmmClassifier.getNumClasses(); l++) {
