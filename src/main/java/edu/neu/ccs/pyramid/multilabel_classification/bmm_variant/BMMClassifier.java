@@ -15,6 +15,8 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -31,6 +33,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     LogisticRegression[][] binaryLogitRegressions;
 
     LogisticRegression softMaxRegression;
+
 
     /**
      * Default constructor by given a MultiLabelClfDataSet
@@ -58,7 +61,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     public int getNumClasses() {
         return this.numLabels;
     }
-
 
     /**
      * return the log[p(y_n | z_n=k, x_n; w_k)] by all k from 1 to K.
@@ -98,6 +100,44 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return logProbResult;
     }
 
+
+    /**
+     * return the log[p(y_n | z_n=k, x_n; w_k)] by all k from 1 to K.
+     * @param logProbsForX
+     * @param Y
+     * @return
+     */
+    public double[] clusterConditionalLogProbArr(double[][][] logProbsForX, Vector Y) {
+        double[] probArr = new double[numClusters];
+
+        for (int k=0; k<numClusters; k++) {
+            probArr[k] = clusterConditionalLogProb(logProbsForX, Y, k);
+        }
+
+        return probArr;
+    }
+
+    /**
+     * return one value for log [p(y_n | z_n=k, x_n; w_k)] by given k;
+     * @param logProbsForX
+     * @param Y
+     * @param k
+     * @return
+     */
+    private double clusterConditionalLogProb(double[][][] logProbsForX, Vector Y, int k) {
+        LogisticRegression[] logisticRegressionsK = binaryLogitRegressions[k];
+
+        double logProbResult = 0.0;
+        for (int l=0; l<logisticRegressionsK.length; l++) {
+            if (Y.get(l) == 1.0) {
+                logProbResult += logProbsForX[k][l][1];
+            } else {
+                logProbResult += logProbsForX[k][l][0];
+            }
+        }
+        return logProbResult;
+    }
+
     @Override
     public MultiLabel predict(Vector vector) {
         double maxLogProb = Double.NEGATIVE_INFINITY;
@@ -107,6 +147,15 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         double[] logisticLogProb = softMaxRegression.predictClassLogProbs(vector);
         double[] logisticProb = softMaxRegression.predictClassProbs(vector);
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
+
+        // cache the prediction for binaryLogitRegressions[numClusters][numLabels]
+        double[][][] logProbsForX = new double[numClusters][numLabels][2];
+        for (int k=0; k<logProbsForX.length; k++) {
+            for (int l=0; l<logProbsForX[k].length; l++) {
+                logProbsForX[k][l] = binaryLogitRegressions[k][l].predictClassLogProbs(vector);
+            }
+        }
+
         for (int s=0; s<numSample; s++) {
             int cluster = enumeratedIntegerDistribution.sample();
             Vector candidateY = new DenseVector(numLabels);
@@ -118,7 +167,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 candidateY.set(l, bernoulliDistribution.sample());
             }
 
-            double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, vector);
+            double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
 
             if (logProb >= maxLogProb) {
                 predVector = candidateY;
@@ -134,8 +183,8 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return predLabel;
     }
 
-    private double logProbYnGivenXnLogisticProb(double[] logisticLogProb, Vector Y, Vector X) {
-        double[] logPYnk = clusterConditionalLogProbArr(X,Y);
+    private double logProbYnGivenXnLogisticProb(double[] logisticLogProb, Vector Y, double[][][] logProbsForX) {
+        double[] logPYnk = clusterConditionalLogProbArr(logProbsForX,Y);
         double[] sumLog = new double[logisticLogProb.length];
         for (int k=0; k<numClusters; k++) {
             sumLog[k] = logisticLogProb[k] + logPYnk[k];

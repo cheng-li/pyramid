@@ -29,7 +29,7 @@ public class Weights implements Serializable {
             this.numFeatures = numFeatures;
             this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
             this.serializableWeights = new double[(numFeatures + 1)*numClasses];
-            UniformRealDistribution uniform = new UniformRealDistribution(0,0.5);
+            UniformRealDistribution uniform = new UniformRealDistribution(-0.5,0.5);
             for (int i=0; i<weightVector.size(); i++) {
                 double p = uniform.sample();
                 weightVector.set(i,p);

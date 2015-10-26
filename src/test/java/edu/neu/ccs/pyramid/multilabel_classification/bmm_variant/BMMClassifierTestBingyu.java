@@ -36,7 +36,7 @@ public class BMMClassifierTestBingyu {
         System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, dataSet));
         System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
 
-        for (int i=1;i<=30;i++){
+        for (int i=1;i<=10;i++){
             optimizer.iterate();
             System.out.print("iter : "+i + "\t");
             System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
@@ -66,7 +66,7 @@ public class BMMClassifierTestBingyu {
                 }
             }
         }
-        int numClusters = 100;
+        int numClusters = 10;
         BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, dataSet, 1, 1);
         bmmClassifier.setNumSample(100);
