@@ -29,7 +29,7 @@ public class BMMClassifierTest {
                 DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),2,dataSet.getNumFeatures());
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),4,dataSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
         bmmClassifier.setNumSample(100);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
