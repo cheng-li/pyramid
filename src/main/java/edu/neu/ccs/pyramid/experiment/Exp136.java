@@ -43,20 +43,21 @@ public class Exp136 {
     private static void selectTrain(Config config, List<Integer> features) throws Exception{
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.train"), DataSetType.ML_CLF_SPARSE,true);
         MultiLabelClfDataSet selected = DataSetUtil.sampleFeatures(train,features);
-        TRECFormat.save(selected,new File(config.getString("output.folder"),"train.trec"));
+        TRECFormat.save(selected,new File(config.getString("output.folder"),"train"));
     }
 
     private static void selectTest(Config config, List<Integer> features) throws Exception{
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.test"), DataSetType.ML_CLF_SPARSE,true);
         MultiLabelClfDataSet selected = DataSetUtil.sampleFeatures(test,features);
-        TRECFormat.save(selected,new File(config.getString("output.folder"),"test.trec"));
+        TRECFormat.save(selected,new File(config.getString("output.folder"),"test"));
     }
 
     private static List<Integer> loadList(Config config) throws Exception{
+        int top = config.getInt("top");
         Set<Integer> set = new HashSet<>();
         IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(config.getString("input.model"));
         for (int k=0;k<boosting.getNumClasses();k++){
-            TopFeatures topFeatures = IMLGBInspector.topFeatures(boosting, k, 100);
+            TopFeatures topFeatures = IMLGBInspector.topFeatures(boosting, k, top);
             topFeatures.getTopFeatures().stream().map(Feature::getIndex).forEach(set::add);
         }
         List<Integer> list =  set.stream().sorted().collect(Collectors.toList());
