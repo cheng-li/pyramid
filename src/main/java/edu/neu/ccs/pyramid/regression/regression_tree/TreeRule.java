@@ -44,6 +44,10 @@ public class TreeRule implements Rule {
             Feature feature = featureList.get(node.getFeatureIndex());
             double threshold = node.getThreshold();
             double featureValue = vector.get(featureIndex);
+            if (Double.isNaN(featureValue)){
+                // todo this is a poor man's solution
+                featureValue = -9999;
+            }
             boolean direction = featureValue<=threshold;
             this.checks.featureIndices.add(featureIndex);
             this.checks.features.add(feature);
