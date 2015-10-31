@@ -14,7 +14,7 @@ public class BMMOptimizerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test4();
+        test5();
     }
 
     private static void test1() throws Exception{
@@ -120,6 +120,54 @@ public class BMMOptimizerTest {
         }
 
         int numClusters = 100;
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        bmmClassifier.setNumSample(100);
+        BMMInitializer bmmInitializer = new BMMInitializer();
+        bmmInitializer.initialize(bmmClassifier,dataSet);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000);
+        for (int i=1;i<=10;i++){
+            optimizer.iterate();
+            System.out.println("after iteration "+i);
+            System.out.println("objective = "+optimizer.getTerminator().getLastValue());
+            System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier,dataSet));
+        }
+        System.out.println(bmmClassifier.toString());
+        for (int k=0;k<numClusters;k++){
+            System.out.println("cluster "+k);
+            System.out.println(bmmClassifier.logisticRegression.getWeights().getWeightsWithoutBiasForClass(k));
+        }
+
+    }
+    private static void test5(){
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numFeatures(2).numClasses(4).numDataPoints(1000).build();
+
+        BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(0.5);
+        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
+            for (int m=0; m<dataSet.getNumFeatures(); m++) {
+                int bit = bernoulliDistribution.sample();
+                dataSet.setFeatureValue(n,m,bit);
+                if (m == 0) {
+                    if (bit == 0) {
+                        dataSet.addLabel(n,0);
+                    } else {
+                        dataSet.addLabel(n,1);
+                    }
+                } else {
+                    if (bit == 0) {
+                        dataSet.addLabel(n,2);
+                    } else {
+                        dataSet.addLabel(n,3);
+                    }
+                }
+            }
+        }
+
+        int numClusters = 5;
         BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
         bmmClassifier.setNumSample(100);
         BMMInitializer bmmInitializer = new BMMInitializer();

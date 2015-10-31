@@ -43,11 +43,13 @@ public class Exp210 {
         String modelName = config.getString("modelName");
 
         BMMClassifier bmmClassifier;
+        BMMOptimizer optimizer;
         if (config.getBoolean("train.warmStart")) {
             bmmClassifier = BMMClassifier.deserialize(new File(output, modelName));
+            optimizer = BMMOptimizer.deserialize(new File(output, modelName+".optimizer"));
         } else {
             bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
-            BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet,variance);
+            optimizer = new BMMOptimizer(bmmClassifier,trainSet,variance);
             bmmClassifier.setNumSample(numSamples);
 
             System.out.print("random init" + "\t" );
@@ -141,6 +143,7 @@ public class Exp210 {
         if (config.getBoolean("saveModel")) {
             File serializeModel = new File(output,modelName);
             bmmClassifier.serialize(serializeModel);
+            optimizer.serialize(new File(output, modelName+".optimizer"));
         }
     }
 }

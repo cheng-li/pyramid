@@ -15,7 +15,11 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -106,10 +110,60 @@ public class BMMOptimizer implements Serializable {
             logger.debug("start E step");
         }
         updateGamma();
+        reweightedGammas();
         if (logger.isDebugEnabled()){
             logger.debug("finish E step");
             logger.debug("objective = "+getObjective());
         }
+    }
+
+    private void reweightedGammas() {
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(this::reweightedGammas);
+    }
+
+    private void reweightedGammas(int n) {
+        // find top 3 index
+        int[] indexes = maxKIndex(gammas[n],3);
+        Set<Integer> indexSet = new HashSet<>();
+        for (int topK : indexes) {
+            indexSet.add(topK);
+        }
+
+        //reweighted
+        double restValues = 0.0;
+        for (int k=0; k<gammas[n].length; k++) {
+            if (!indexSet.contains(k)) {
+                restValues += gammas[n][k];
+                gammas[n][k] = 0.0;
+                gammasT[k][n] = 0.0;
+            }
+        }
+        double averageValue = restValues / 3.0;
+        for (int topK : indexSet) {
+            gammas[n][topK] += averageValue;
+            gammasT[topK][n] += averageValue;
+        }
+    }
+
+    public static int[] maxKIndex(double[] array, int top_k) {
+        double[] max = new double[top_k];
+        int[] maxIndex = new int[top_k];
+        Arrays.fill(max, Double.NEGATIVE_INFINITY);
+        Arrays.fill(maxIndex, -1);
+
+        top: for(int i = 0; i < array.length; i++) {
+            for(int j = 0; j < top_k; j++) {
+                if(array[i] > max[j]) {
+                    for(int x = top_k - 1; x > j; x--) {
+                        maxIndex[x] = maxIndex[x-1]; max[x] = max[x-1];
+                    }
+                    maxIndex[j] = i; max[j] = array[i];
+                    continue top;
+                }
+            }
+        }
+        return maxIndex;
     }
 
     private void updateGamma() {

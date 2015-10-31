@@ -6,13 +6,8 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import org.apache.mahout.math.Vector;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
+import java.io.*;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -20,6 +15,105 @@ import java.util.regex.Pattern;
  */
 public class MekaFormat {
 
+    public static MultiLabelClfDataSet loadMLClfDataset(String fileName, int numClasses) throws IOException {
+        return loadMLClfDataset(new File(fileName), numClasses);
+    }
+
+    private static MultiLabelClfDataSet loadMLClfDataset(File file, int numClasses) throws IOException {
+
+        int numFeatures = 0;
+        int numData = 0;
+        Map<String, String> labelMap = new HashMap<>();
+        Map<String, String> featureMap = new HashMap<>();
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        int labelCount = 0;
+        while((line=br.readLine())!=null) {
+            if (labelCount < numClasses) {
+                if (line.startsWith("@attribute")) {
+                    String[] splitLine = line.split(" ");
+                    String labelName = splitLine[1];
+                    String labelIndex = Integer.toString(labelCount);
+                    labelMap.put(labelIndex, labelName);
+                    labelCount++;
+                }
+            }
+            else {
+                if (line.startsWith("@attribute")) {
+                    String[] splitLine = line.split(" ");
+                    String featureName = splitLine[1];
+                    String featureIndex = Integer.toString(labelCount);
+                    featureMap.put(featureIndex, featureName);
+                    labelCount++;
+                    numFeatures++;
+                } else if ((line.startsWith("{")) && (line.endsWith("}"))) {
+                    numData++;
+                }
+            }
+        }
+        br.close();
+
+        return loadMLClfDataset(file, numClasses, numFeatures, numData, labelMap, featureMap);
+
+    }
+
+    private static MultiLabelClfDataSet loadMLClfDataset(File file, int numClasses, int numFeatures, int numData, Map<String, String> labelMap, Map<String, String> featureMap) throws IOException {
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numData).numClasses(numClasses).numFeatures(numFeatures)
+                .build();
+
+        // set features
+        List<Feature> featureList = new LinkedList<>();
+        for (int m=0; m<numFeatures; m++) {
+            String featureIndex = Integer.toString(m+numClasses);
+            String featureName = featureMap.get(featureIndex);
+            Feature feature = new Feature();
+            feature.setIndex(m);
+            feature.setName(featureName);
+            featureList.add(feature);
+        }
+        dataSet.setFeatureList(new FeatureList(featureList));
+        // set Label
+        Map<Integer, String> labelIndexMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : labelMap.entrySet()) {
+            String labelString = entry.getKey();
+            String labelName = entry.getValue();
+            labelIndexMap.put(Integer.parseInt(labelString), labelName);
+        }
+        LabelTranslator labelTranslator = new LabelTranslator(labelIndexMap);
+        dataSet.setLabelTranslator(labelTranslator);
+
+        // create feature matrix
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        int dataCount = 0;
+        while((line=br.readLine()) != null) {
+            if ((line.startsWith("{")) && (line.endsWith("}"))) {
+                line = line.substring(1,line.length()-1);
+                String[] indexValues = line.split(",");
+                for (String indexValue : indexValues) {
+                    String[] indexValuePair = indexValue.split(" ");
+                    String index = indexValuePair[0];
+                    String value = indexValuePair[1];
+                    if (labelMap.containsKey(index)) {
+                        double valueDouble = Double.parseDouble(value);
+                        if (valueDouble == 1.0) {
+                            dataSet.addLabel(dataCount, Integer.parseInt(index));
+                        }
+                    } else if (featureMap.containsKey(index)) {
+                        double valueDouble = Double.parseDouble(value);
+                        int indexInt = Integer.parseInt(index);
+                        dataSet.setFeatureValue(dataCount,indexInt-numClasses,valueDouble);
+                    } else {
+                        throw new RuntimeException("Index not found in the line: " + line);
+                    }
+                }
+                dataCount++;
+            }
+        }
+        br.close();
+        return dataSet;
+    }
 
     public static void save(MultiLabelClfDataSet dataSet, String mekaFile, Config config) throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter(mekaFile));

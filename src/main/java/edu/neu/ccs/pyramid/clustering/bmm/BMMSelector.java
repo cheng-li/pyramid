@@ -56,8 +56,8 @@ public class BMMSelector {
             }
         }
         BMMTrainer trainer = BMMSelector.selectTrainer(dataSet, numClusters, 10);
-        System.out.println("bmm = "+trainer.bmm);
-        System.out.println("gamma = "+ Arrays.deepToString(trainer.gammas));
+//        System.out.println("bmm = "+trainer.bmm);
+//        System.out.println("gamma = "+ Arrays.deepToString(trainer.gammas));
         return trainer.gammas;
     }
 

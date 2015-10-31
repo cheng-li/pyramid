@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -21,15 +21,15 @@ import java.util.stream.IntStream;
  */
 public class BMMOptimizer implements Serializable{
     private static final Logger logger = LogManager.getLogger();
-    private BMMClassifier bmmClassifier;
-    private MultiLabelClfDataSet dataSet;
-    private Terminator terminator;
+    private transient BMMClassifier bmmClassifier;
+    private transient MultiLabelClfDataSet dataSet;
+    private transient Terminator terminator;
     // format [data][cluster]
-    double[][] gammas;
+    public double[][] gammas;
     // big variance means small regularization
     private double gaussianPriorVariance;
 
-    private Vector[] labels;
+    private transient Vector[] labels;
 
 
     public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
@@ -227,5 +227,40 @@ public class BMMOptimizer implements Serializable{
         ridgeLogisticOptimizer.optimize();
     }
 
+    public static BMMOptimizer deserialize(File file) throws Exception {
+        try (
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            BMMOptimizer bmmOptimizer = (BMMOptimizer) objectInputStream.readObject();
+            return bmmOptimizer;
+        }
+    }
+
+    public static BMMOptimizer deserialize(String file) throws Exception {
+        File file1 = new File(file);
+        return deserialize(file1);
+    }
+
+
+    public void serialize(File file) throws Exception {
+        File parent = file.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdir();
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    public void serialize(String file) throws Exception {
+        File file1 = new File(file);
+        serialize(file1);
+    }
 
 }

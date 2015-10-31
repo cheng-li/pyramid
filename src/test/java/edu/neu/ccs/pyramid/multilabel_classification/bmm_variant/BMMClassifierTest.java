@@ -21,7 +21,7 @@ public class BMMClassifierTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+        test2();
     }
 
     private static void test1() throws Exception{
@@ -52,5 +52,71 @@ public class BMMClassifierTest {
 
         System.out.println("history = "+optimizer.getTerminator().getHistory());
         System.out.println(bmmClassifier);
+    }
+
+    private static void test2() throws Exception {
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numFeatures(2).numClasses(4).numDataPoints(1000).build();
+
+        BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(0.5);
+        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
+            for (int m=0; m<dataSet.getNumFeatures(); m++) {
+                int bit = bernoulliDistribution.sample();
+                dataSet.setFeatureValue(n,m,bit);
+                if (m == 0) {
+                    if (bit == 0) {
+                        dataSet.addLabel(n,0);
+                    } else {
+                        dataSet.addLabel(n,1);
+                    }
+                } else {
+                    if (bit == 0) {
+                        dataSet.addLabel(n,2);
+                    } else {
+                        dataSet.addLabel(n,3);
+                    }
+                }
+            }
+        }
+
+        MultiLabelClfDataSet testSet = MLClfDataSetBuilder.getBuilder()
+                .numFeatures(2).numClasses(4).numDataPoints(200).build();
+
+        for (int n=0; n<testSet.getNumDataPoints(); n++) {
+            for (int m=0; m<testSet.getNumFeatures(); m++) {
+                int bit = bernoulliDistribution.sample();
+                testSet.setFeatureValue(n,m,bit);
+                if (m == 0) {
+                    if (bit == 0) {
+                        testSet.addLabel(n,0);
+                    } else {
+                        testSet.addLabel(n,1);
+                    }
+                } else {
+                    if (bit == 0) {
+                        testSet.addLabel(n,2);
+                    } else {
+                        testSet.addLabel(n,3);
+                    }
+                }
+            }
+        }
+
+        int numClusters = 1;
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet,numClusters);
+
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000,10000);
+        for (int i=0; i<10; i++) {
+            optimizer.iterate();
+            System.out.print("i: " + i + "\t");
+            System.out.print("objective: " + optimizer.getTerminator().getLastValue() + "\t");
+            System.out.print("trainAcc: " + Accuracy.accuracy(bmmClassifier,dataSet) + "\t");
+            System.out.println("testAcc: " + Accuracy.accuracy(bmmClassifier,testSet));
+        }
+        System.out.println(bmmClassifier.toString());
+        for (int k=0;k<numClusters;k++){
+            System.out.println("cluster "+k);
+            System.out.println(bmmClassifier.softMaxRegression.getWeights().getWeightsWithoutBiasForClass(k));
+        }
     }
 }
