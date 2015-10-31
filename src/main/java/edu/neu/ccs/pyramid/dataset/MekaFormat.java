@@ -15,37 +15,35 @@ import java.util.regex.Pattern;
  */
 public class MekaFormat {
 
-    public static MultiLabelClfDataSet loadMLClfDataset(String fileName, int numClasses) throws IOException {
-        return loadMLClfDataset(new File(fileName), numClasses);
+    public static MultiLabelClfDataSet loadMLClfDataset(String fileName, int numFeatures, int numClasses) throws IOException {
+        return loadMLClfDataset(new File(fileName), numFeatures, numClasses);
     }
 
-    private static MultiLabelClfDataSet loadMLClfDataset(File file, int numClasses) throws IOException {
+    private static MultiLabelClfDataSet loadMLClfDataset(File file, int numFeatures, int numClasses) throws IOException {
 
-        int numFeatures = 0;
         int numData = 0;
         Map<String, String> labelMap = new HashMap<>();
         Map<String, String> featureMap = new HashMap<>();
         BufferedReader br = new BufferedReader(new FileReader(file));
         String line;
-        int labelCount = 0;
+        int featureCount = 0;
         while((line=br.readLine())!=null) {
-            if (labelCount < numClasses) {
+            if (featureCount < numFeatures) {
                 if (line.startsWith("@attribute")) {
                     String[] splitLine = line.split(" ");
-                    String labelName = splitLine[1];
-                    String labelIndex = Integer.toString(labelCount);
-                    labelMap.put(labelIndex, labelName);
-                    labelCount++;
+                    String featureName = splitLine[1];
+                    String featureIndex = Integer.toString(featureCount);
+                    featureMap.put(featureIndex, featureName);
+                    featureCount++;
                 }
             }
             else {
                 if (line.startsWith("@attribute")) {
                     String[] splitLine = line.split(" ");
-                    String featureName = splitLine[1];
-                    String featureIndex = Integer.toString(labelCount);
-                    featureMap.put(featureIndex, featureName);
-                    labelCount++;
-                    numFeatures++;
+                    String labelName = splitLine[1];
+                    String labelIndex = Integer.toString(featureCount);
+                    labelMap.put(labelIndex, labelName);
+                    featureCount++;
                 } else if ((line.startsWith("{")) && (line.endsWith("}"))) {
                     numData++;
                 }
@@ -65,7 +63,7 @@ public class MekaFormat {
         // set features
         List<Feature> featureList = new LinkedList<>();
         for (int m=0; m<numFeatures; m++) {
-            String featureIndex = Integer.toString(m+numClasses);
+            String featureIndex = Integer.toString(m);
             String featureName = featureMap.get(featureIndex);
             Feature feature = new Feature();
             feature.setIndex(m);
@@ -78,7 +76,7 @@ public class MekaFormat {
         for (Map.Entry<String, String> entry : labelMap.entrySet()) {
             String labelString = entry.getKey();
             String labelName = entry.getValue();
-            labelIndexMap.put(Integer.parseInt(labelString), labelName);
+            labelIndexMap.put(Integer.parseInt(labelString)-numFeatures, labelName);
         }
         LabelTranslator labelTranslator = new LabelTranslator(labelIndexMap);
         dataSet.setLabelTranslator(labelTranslator);
@@ -98,12 +96,12 @@ public class MekaFormat {
                     if (labelMap.containsKey(index)) {
                         double valueDouble = Double.parseDouble(value);
                         if (valueDouble == 1.0) {
-                            dataSet.addLabel(dataCount, Integer.parseInt(index));
+                            dataSet.addLabel(dataCount, Integer.parseInt(index)-numFeatures);
                         }
                     } else if (featureMap.containsKey(index)) {
                         double valueDouble = Double.parseDouble(value);
                         int indexInt = Integer.parseInt(index);
-                        dataSet.setFeatureValue(dataCount,indexInt-numClasses,valueDouble);
+                        dataSet.setFeatureValue(dataCount,indexInt,valueDouble);
                     } else {
                         throw new RuntimeException("Index not found in the line: " + line);
                     }
