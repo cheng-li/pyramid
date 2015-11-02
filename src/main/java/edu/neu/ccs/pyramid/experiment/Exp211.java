@@ -48,6 +48,7 @@ public class Exp211 {
             bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
             BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
             bmmClassifier.setNumSample(numSamples);
+            bmmClassifier.setPredictMode(config.getString("predictMode"));
 
             MultiLabel[] trainPredict = bmmClassifier.predict(trainSet);
             MultiLabel[] testPredict = bmmClassifier.predict(testSet);

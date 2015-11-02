@@ -110,7 +110,8 @@ public class BMMOptimizer implements Serializable {
             logger.debug("start E step");
         }
         updateGamma();
-        reweightedGammas();
+        // reweightedGammas
+        // reweightedGammas();
         if (logger.isDebugEnabled()){
             logger.debug("finish E step");
             logger.debug("objective = "+getObjective());

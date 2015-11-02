@@ -15,8 +15,8 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -28,12 +28,19 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     int numClusters;
     int numSample = 100;
 
+    String predictMode;
+
     // parameters
     // format: [numClusters][numLabels]
     LogisticRegression[][] binaryLogitRegressions;
 
     LogisticRegression softMaxRegression;
 
+
+    // for predictions from single cluster sampling
+    Set<MultiLabel> samplesForCluster;
+
+    BufferedWriter bw = null;
 
     /**
      * Default constructor by given a MultiLabelClfDataSet
@@ -55,6 +62,11 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             }
         }
         this.softMaxRegression = new LogisticRegression(numClusters, numFeatures,true);
+        this.samplesForCluster = null;
+        this.predictMode = "mixtureMax";
+    }
+
+    public BMMClassifier() {
     }
 
     @Override
@@ -138,8 +150,38 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return logProbResult;
     }
 
-    @Override
+    //TODO: remove
+    public MultiLabel[] predict(MultiLabelClfDataSet dataSet) {
+        List<MultiLabel> results = new ArrayList<>(dataSet.getNumDataPoints());
+        File file = new File("/home/wang.bin/exps/pyramid/experiments/exp211Log/slashdot.log");
+
+        try {
+            bw = new BufferedWriter(new FileWriter(file));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
+            try {
+                bw.write("data point: " + n + "\t" + "y: " + dataSet.getMultiLabels()[n].toString() + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            results.add(n, predict(dataSet.getRow(n)));
+        }
+        try {
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return results.toArray(new MultiLabel[results.size()]);
+
+    }
+
     public MultiLabel predict(Vector vector) {
+        MultiLabel predLabel = new MultiLabel();
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
@@ -147,6 +189,37 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         double[] logisticLogProb = softMaxRegression.predictClassLogProbs(vector);
         double[] logisticProb = softMaxRegression.predictClassProbs(vector);
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
+
+        //TODO: remove
+//        File file = new File("/home/wang.bin/exps/pyramid/experiments/exp211Log/slashdot.log");
+//        BufferedWriter bw = null;
+//        try {
+//            bw = new BufferedWriter(new FileWriter(file, true));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+        try {
+            bw.write("PIs: \t");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        for (double piK : logisticProb) {
+            try {
+                bw.write(piK + "\t");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            bw.write("\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        try {
+//            bw.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
         // cache the prediction for binaryLogitRegressions[numClusters][numLabels]
         double[][][] logProbsForX = new double[numClusters][numLabels][2];
@@ -156,25 +229,49 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             }
         }
 
-        for (int s=0; s<numSample; s++) {
-            int cluster = enumeratedIntegerDistribution.sample();
-            Vector candidateY = new DenseVector(numLabels);
+        // samples methods
+        if (predictMode.equals("mixtureMax")) {
+            for (int s=0; s<numSample; s++) {
+                int cluster = enumeratedIntegerDistribution.sample();
+                Vector candidateY = new DenseVector(numLabels);
 
-            for (int l=0; l<numLabels; l++) {
-                LogisticRegression regression = binaryLogitRegressions[cluster][l];
-                double prob = regression.predictClassProb(vector, 1);
-                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(prob);
-                candidateY.set(l, bernoulliDistribution.sample());
+                for (int l=0; l<numLabels; l++) {
+                    LogisticRegression regression = binaryLogitRegressions[cluster][l];
+                    double prob = regression.predictClassProb(vector, 1);
+                    BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(prob);
+                    candidateY.set(l, bernoulliDistribution.sample());
+                }
+
+                double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
+
+                if (logProb >= maxLogProb) {
+                    predVector = candidateY;
+                    maxLogProb = logProb;
+                }
             }
-
-            double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
-
-            if (logProb >= maxLogProb) {
-                predVector = candidateY;
-                maxLogProb = logProb;
+        } else if (predictMode.equals("singleTop")) {
+            try {
+                this.samplesForCluster = sampleFromSingles(vector, logisticProb);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            for (MultiLabel label : this.samplesForCluster) {
+                Vector candidateY = new DenseVector(numLabels);
+                for(int labelIndex : label.getMatchedLabels()) {
+                    candidateY.set(labelIndex, 1.0);
+                }
+
+                double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
+
+                if (logProb >= maxLogProb) {
+                    predVector = candidateY;
+                    maxLogProb = logProb;
+                }
+            }
+        } else {
+            throw new RuntimeException("Unknown predictMode: " + predictMode);
         }
-        MultiLabel predLabel = new MultiLabel();
+
         for (int l=0; l<numLabels; l++) {
             if (predVector.get(l) == 1.0) {
                 predLabel.addLabel(l);
@@ -183,12 +280,116 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return predLabel;
     }
 
+    private Set<MultiLabel> sampleFromSingles(Vector vector, double[] logisticProb) throws IOException {
+        int top = 20;
+        Set<MultiLabel> samples = new HashSet<>();
+        for (int k=0; k<binaryLogitRegressions.length; k++) {
+            Set<MultiLabel> sample = sampleFromSingle(vector, top, k, logisticProb[k]);
+            for (MultiLabel multiLabel : sample) {
+                if (!samples.contains(multiLabel)) {
+                    samples.add(multiLabel);
+                }
+            }
+        }
+        return samples;
+    }
+
+    private Set<MultiLabel> sampleFromSingle(Vector vector, int top, int k, double probK) throws IOException {
+        Set<MultiLabel> sample = new HashSet<>();
+        double maxProb = 1.0;
+
+        MultiLabel label = new MultiLabel();
+        Map<Integer, Double> labelAbsProbMap = new HashMap<>();
+        Map<Integer, Double> labelProbMap = new HashMap<>();
+        for (int l=0; l<binaryLogitRegressions[k].length; l++) {
+            LogisticRegression logisticRegression = binaryLogitRegressions[k][l];
+            double prob = logisticRegression.predictClassProbs(vector)[1];
+            if (prob > 0.5) {
+                label.addLabel(l);
+                maxProb *= prob;
+            } else {
+                maxProb *= (1-prob);
+            }
+            double absProb = Math.abs(prob - 0.5);
+            labelAbsProbMap.put(l, absProb);
+            labelProbMap.put(l, prob);
+        }
+        MultiLabel copyLabel1 = new MultiLabel();
+        for (int l : label.getMatchedLabels()) {
+            copyLabel1.addLabel(l);
+        }
+        sample.add(copyLabel1);
+
+        double prevProb = maxProb;
+        for (int i=1; i<top; i++) {
+            // find min abs prob among all labels
+            int minL = 0;
+            double minProb = 100.0;
+            for (Map.Entry<Integer, Double> entry : labelAbsProbMap.entrySet()) {
+                if (entry.getValue() < minProb) {
+                    minL = entry.getKey();
+                    minProb = entry.getValue();
+                }
+            }
+            double targetProb = labelProbMap.get(minL);
+            // flip the label
+            if (label.matchClass(minL)) {
+                label.removeLabel(minL);
+                prevProb = prevProb / targetProb * (1-targetProb);
+            } else {
+                label.addLabel(minL);
+                prevProb = prevProb * targetProb / (1-targetProb);
+            }
+            labelAbsProbMap.remove(minL);
+
+            // check if we need to stop sampling.
+            if (prevProb < maxProb + 1 - 1.0/probK) {
+                break;
+            }
+
+            MultiLabel copyLabel = new MultiLabel();
+            for (int l : label.getMatchedLabels()) {
+                copyLabel.addLabel(l);
+            }
+            sample.add(copyLabel);
+        }
+
+        return sample;
+    }
+
     private double logProbYnGivenXnLogisticProb(double[] logisticLogProb, Vector Y, double[][][] logProbsForX) {
         double[] logPYnk = clusterConditionalLogProbArr(logProbsForX,Y);
         double[] sumLog = new double[logisticLogProb.length];
         for (int k=0; k<numClusters; k++) {
             sumLog[k] = logisticLogProb[k] + logPYnk[k];
         }
+
+
+        // TODO: remove
+        MultiLabel multiLabel = new MultiLabel();
+        for (Vector.Element nonzero : Y.nonZeroes()) {
+            multiLabel.addLabel(nonzero.index());
+        }
+        try {
+            bw.write("predict: " + multiLabel.toString() + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //TODO: remove
+        for (int k=0; k<numClusters; k++) {
+            try {
+                bw.write(Math.exp(logPYnk[k]) + "\t");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            bw.write(Math.exp(MathUtil.logSumExp(sumLog)) + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
         return MathUtil.logSumExp(sumLog);
     }
 
@@ -206,6 +407,11 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         sb.append('}');
         return sb.toString();
     }
+
+    public void setPredictMode(String mode) {
+        this.predictMode = mode;
+    }
+
 
     @Override
     public FeatureList getFeatureList() {
