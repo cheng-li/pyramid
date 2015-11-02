@@ -40,7 +40,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     // for predictions from single cluster sampling
     Set<MultiLabel> samplesForCluster;
 
-    BufferedWriter bw = null;
 
     /**
      * Default constructor by given a MultiLabelClfDataSet
@@ -150,35 +149,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return logProbResult;
     }
 
-    //TODO: remove
-    public MultiLabel[] predict(MultiLabelClfDataSet dataSet) {
-        List<MultiLabel> results = new ArrayList<>(dataSet.getNumDataPoints());
-        File file = new File("/home/wang.bin/exps/pyramid/experiments/exp211Log/slashdot.log");
 
-        try {
-            bw = new BufferedWriter(new FileWriter(file));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
-            try {
-                bw.write("data point: " + n + "\t" + "y: " + dataSet.getMultiLabels()[n].toString() + "\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            results.add(n, predict(dataSet.getRow(n)));
-        }
-        try {
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return results.toArray(new MultiLabel[results.size()]);
-
-    }
 
     public MultiLabel predict(Vector vector) {
         MultiLabel predLabel = new MultiLabel();
@@ -189,37 +160,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         double[] logisticLogProb = softMaxRegression.predictClassLogProbs(vector);
         double[] logisticProb = softMaxRegression.predictClassProbs(vector);
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
-
-        //TODO: remove
-//        File file = new File("/home/wang.bin/exps/pyramid/experiments/exp211Log/slashdot.log");
-//        BufferedWriter bw = null;
-//        try {
-//            bw = new BufferedWriter(new FileWriter(file, true));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        try {
-            bw.write("PIs: \t");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        for (double piK : logisticProb) {
-            try {
-                bw.write(piK + "\t");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        try {
-            bw.write("\n");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-//        try {
-//            bw.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
         // cache the prediction for binaryLogitRegressions[numClusters][numLabels]
         double[][][] logProbsForX = new double[numClusters][numLabels][2];
@@ -363,32 +303,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         for (int k=0; k<numClusters; k++) {
             sumLog[k] = logisticLogProb[k] + logPYnk[k];
         }
-
-
-        // TODO: remove
-        MultiLabel multiLabel = new MultiLabel();
-        for (Vector.Element nonzero : Y.nonZeroes()) {
-            multiLabel.addLabel(nonzero.index());
-        }
-        try {
-            bw.write("predict: " + multiLabel.toString() + "\n");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //TODO: remove
-        for (int k=0; k<numClusters; k++) {
-            try {
-                bw.write(Math.exp(logPYnk[k]) + "\t");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        try {
-            bw.write(Math.exp(MathUtil.logSumExp(sumLog)) + "\n");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
 
         return MathUtil.logSumExp(sumLog);
     }
