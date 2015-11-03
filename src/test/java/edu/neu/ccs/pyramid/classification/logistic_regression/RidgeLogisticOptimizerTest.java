@@ -16,8 +16,8 @@ public class RidgeLogisticOptimizerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-//        test1();
-        test2();
+        test1();
+//        test2();
     }
 
     private static void test1() throws Exception{
@@ -36,6 +36,7 @@ public class RidgeLogisticOptimizerTest {
         double variance =1000;
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,variance);
+        optimizer.setParallelism(true);
         optimizer.getOptimizer().getTerminator().setMaxIteration(10000).setMode(Terminator.Mode.STANDARD);
         System.out.println("after initialization");
         System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));

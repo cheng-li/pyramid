@@ -9,30 +9,22 @@ import org.apache.mahout.math.Vector;
 /**
  * Created by chengli on 10/7/15.
  */
-public class RidgeLogisticOptimizer {
+public class RidgeLogisticOptimizer implements Parallelizable{
     private Optimizer optimizer;
     private Optimizable.ByGradientValue function;
-
+    private boolean isParallel = false;
 
 
     public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
                                   double[][] targetDistributions, double gaussianPriorVariance) {
-        logisticRegression.setFeatureExtraction(false);
-        this.function = new KLLogisticLoss(logisticRegression,dataSet,
+        this.function = new WeightedLogisticLoss(logisticRegression,dataSet,
                 targetDistributions,gaussianPriorVariance);
         this.optimizer = new LBFGS(function);
     }
 
     public RidgeLogisticOptimizer(LogisticRegression logisticRegression, ClfDataSet dataSet, double gaussianPriorVariance) {
-        double[][] targetDistributions = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
-        int[] labels = dataSet.getLabels();
-        for (int i=0;i<labels.length;i++){
-            int label = labels[i];
-            targetDistributions[i][label]=1;
-        }
-        logisticRegression.setFeatureExtraction(false);
-        this.function = new KLLogisticLoss(logisticRegression,dataSet,
-                targetDistributions,gaussianPriorVariance);
+
+        this.function = new WeightedLogisticLoss(logisticRegression,dataSet, gaussianPriorVariance);
         this.optimizer = new LBFGS(function);
     }
 
@@ -43,6 +35,16 @@ public class RidgeLogisticOptimizer {
         this.optimizer = new LBFGS(function);
     }
 
+    @Override
+    public void setParallelism(boolean isParallel) {
+        this.isParallel = isParallel;
+        function.setParallelism(this.isParallel());
+    }
+
+    @Override
+    public boolean isParallel() {
+        return this.isParallel;
+    }
 
     public void optimize(){
         this.optimizer.optimize();
@@ -55,6 +57,5 @@ public class RidgeLogisticOptimizer {
     public Optimizable.ByGradientValue getFunction() {
         return function;
     }
-
 
 }

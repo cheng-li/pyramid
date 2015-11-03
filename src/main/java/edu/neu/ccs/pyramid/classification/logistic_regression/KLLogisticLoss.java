@@ -65,6 +65,15 @@ public class KLLogisticLoss implements Optimizable.ByGradientValue{
     }
 
 
+    @Override
+    public void setParallelism(boolean isParallel) {
+
+    }
+
+    @Override
+    public boolean isParallel() {
+        return false;
+    }
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();

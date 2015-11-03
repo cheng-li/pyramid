@@ -70,6 +70,16 @@ public class SquaredLossOfExpectation implements Optimizable.ByGradientValue {
 
     }
 
+    @Override
+    public void setParallelism(boolean isParallel) {
+
+    }
+
+    @Override
+    public boolean isParallel() {
+        return false;
+    }
+
     public static Vector findSharpness(DataSet dataSet, double[] labels, int[] activeFeatures, RegressionTree regressionTree){
 
         double leftValue = regressionTree.getRoot().getLeftChild().getValue();

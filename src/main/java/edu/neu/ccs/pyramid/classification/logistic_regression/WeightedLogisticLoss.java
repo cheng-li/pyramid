@@ -41,7 +41,7 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
-    private boolean parallel = false;
+    private boolean isParallel = false;
 
 
     public WeightedLogisticLoss(LogisticRegression logisticRegression,
@@ -77,6 +77,15 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
         this(logisticRegression,dataSet,defaultTargetDistribution(dataSet),gaussianPriorVariance);
     }
 
+    @Override
+    public void setParallelism(boolean isParallel) {
+        this.isParallel = isParallel;
+    }
+
+    @Override
+    public boolean isParallel() {
+        return this.isParallel;
+    }
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();
@@ -134,10 +143,10 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
         this.gradient = this.predictedCounts.minus(empiricalCounts).plus(penalty);
     }
 
-    //todo removed parallel
+    //todo removed isParallel
     private void updateEmpricalCounts(){
         IntStream intStream;
-        if (parallel){
+        if (isParallel){
             intStream = IntStream.range(0, numParameters).parallel();
         } else {
             intStream = IntStream.range(0, numParameters);
@@ -147,7 +156,7 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
 
     private void updatePredictedCounts(){
         IntStream intStream;
-        if (parallel){
+        if (isParallel){
             intStream = IntStream.range(0,numParameters).parallel();
         } else {
             intStream = IntStream.range(0,numParameters);
@@ -208,7 +217,7 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
 
     private void updateClassProbMatrix(){
         IntStream intStream;
-        if (parallel){
+        if (isParallel){
             intStream = IntStream.range(0,dataSet.getNumDataPoints()).parallel();
         } else {
             intStream = IntStream.range(0,dataSet.getNumDataPoints());
