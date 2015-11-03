@@ -37,9 +37,9 @@ public class RidgeLogisticOptimizer {
     }
 
     public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
-                                  double[] gammas, double[][] targetsDistribution, double gaussianPriorforLogit) {
+                                  double[] weights, double[][] targetsDistribution, double gaussianPriorVar) {
         logisticRegression.setFeatureExtraction(false);
-        this.function = new WeightedLogisticLoss(logisticRegression, dataSet, gammas, targetsDistribution, gaussianPriorforLogit);
+        this.function = new WeightedLogisticLoss(logisticRegression, dataSet, weights, targetsDistribution, gaussianPriorVar);
         this.optimizer = new LBFGS(function);
     }
 

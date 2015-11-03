@@ -43,13 +43,13 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
 
 
     public WeightedLogisticLoss(LogisticRegression logisticRegression,
-                          DataSet dataSet, double[] gammas ,double[][] targetDistributions,
+                          DataSet dataSet, double[] weights ,double[][] targetDistributions,
                           double gaussianPriorVariance) {
         this.logisticRegression = logisticRegression;
         this.targetDistributions = targetDistributions;
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
-        this.gammas = gammas;
+        this.gammas = weights;
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
