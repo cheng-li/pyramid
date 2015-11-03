@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
@@ -7,6 +8,7 @@ import edu.neu.ccs.pyramid.optimization.Optimizable;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -61,6 +63,19 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
         this.isGradientCacheValid=false;
     }
 
+
+    public WeightedLogisticLoss(LogisticRegression logisticRegression,
+                                DataSet dataSet, double[][] targetDistributions,
+                                double gaussianPriorVariance) {
+        this(logisticRegression,dataSet,defaultWeights(dataSet.getNumDataPoints()),targetDistributions,gaussianPriorVariance);
+    }
+
+
+    public WeightedLogisticLoss(LogisticRegression logisticRegression,
+                                ClfDataSet dataSet,
+                                double gaussianPriorVariance){
+        this(logisticRegression,dataSet,defaultTargetDistribution(dataSet),gaussianPriorVariance);
+    }
 
 
     public Vector getParameters(){
@@ -211,6 +226,23 @@ public class WeightedLogisticLoss implements Optimizable.ByGradientValue {
 
     public GradientMatrix getGradientMatrix() {
         return gradientMatrix;
+    }
+
+    private static double[] defaultWeights(int numDataPoints){
+        double[] weights = new double[numDataPoints];
+        Arrays.fill(weights,1.0);
+        return weights;
+    }
+
+
+    private static double[][] defaultTargetDistribution(ClfDataSet dataSet){
+        double[][] targetDistributions = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        int[] labels = dataSet.getLabels();
+        for (int i=0;i<labels.length;i++){
+            int label = labels[i];
+            targetDistributions[i][label]=1;
+        }
+        return targetDistributions;
     }
 
 
