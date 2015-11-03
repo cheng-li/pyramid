@@ -1,14 +1,11 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
-import edu.neu.ccs.pyramid.classification.logistic_regression.KLLogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
-import edu.neu.ccs.pyramid.classification.logistic_regression.WeightedLogisticLoss;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -16,10 +13,8 @@ import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -247,7 +242,7 @@ public class BMMOptimizer implements Serializable {
 
 
     public double getObjective() {
-        KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.softMaxRegression,
+        LogisticLoss logisticLoss =  new LogisticLoss(bmmClassifier.softMaxRegression,
                 dataSet, gammas, gaussianPriorforSoftMax);
         // Q function for \Thata + gamma.entropy and Q function for Weights
         return logisticLoss.getValue() + binaryLogitsObj();
@@ -283,7 +278,7 @@ public class BMMOptimizer implements Serializable {
         int L = dataSet.getNumClasses();
         LogisticRegression[] logisticRegressions = bmmClassifier.binaryLogitRegressions[k];
         for (int l=0; l<L; l++) {
-            WeightedLogisticLoss logisticLoss = new WeightedLogisticLoss(logisticRegressions[l],
+            LogisticLoss logisticLoss = new LogisticLoss(logisticRegressions[l],
                     dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
             sum += logisticLoss.getValue();
         }
