@@ -100,7 +100,7 @@ public class BMMOptimizer implements Serializable {
         this.terminator.add(getObjective());
     }
 
-    private void eStep(){
+    public void eStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }

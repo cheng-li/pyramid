@@ -9,3 +9,4 @@
 209: mixture bernoulli model experiments
 210: mixture models for BMM1
 211: mixture models for BMM variant.
+212: generate BMM reports for BMM Variant results.
