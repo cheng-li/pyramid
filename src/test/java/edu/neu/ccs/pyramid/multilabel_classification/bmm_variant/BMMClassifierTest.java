@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
 
 
 import java.io.File;
@@ -55,22 +56,30 @@ public class BMMClassifierTest {
     }
 
     private static void test2() throws Exception {
+
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numFeatures(2).numClasses(4).numDataPoints(1000).build();
+
+
 
         BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(0.5);
         for (int n=0; n<dataSet.getNumDataPoints(); n++) {
             for (int m=0; m<dataSet.getNumFeatures(); m++) {
                 int bit = bernoulliDistribution.sample();
+                int flip = bit;
+                if (Math.random()<0.1) {
+                    flip = 1 - bit;
+                }
                 dataSet.setFeatureValue(n,m,bit);
                 if (m == 0) {
-                    if (bit == 0) {
+                    if (flip == 0) {
                         dataSet.addLabel(n,0);
+
                     } else {
                         dataSet.addLabel(n,1);
                     }
                 } else {
-                    if (bit == 0) {
+                    if (flip == 0) {
                         dataSet.addLabel(n,2);
                     } else {
                         dataSet.addLabel(n,3);
@@ -80,20 +89,24 @@ public class BMMClassifierTest {
         }
 
         MultiLabelClfDataSet testSet = MLClfDataSetBuilder.getBuilder()
-                .numFeatures(2).numClasses(4).numDataPoints(200).build();
+                .numFeatures(2).numClasses(4).numDataPoints(100).build();
 
         for (int n=0; n<testSet.getNumDataPoints(); n++) {
             for (int m=0; m<testSet.getNumFeatures(); m++) {
                 int bit = bernoulliDistribution.sample();
                 testSet.setFeatureValue(n,m,bit);
+                int flip = bit;
+                if (Math.random()<0.1) {
+                    flip = 1 - bit;
+                }
                 if (m == 0) {
-                    if (bit == 0) {
+                    if (flip == 0) {
                         testSet.addLabel(n,0);
                     } else {
                         testSet.addLabel(n,1);
                     }
                 } else {
-                    if (bit == 0) {
+                    if (flip == 0) {
                         testSet.addLabel(n,2);
                     } else {
                         testSet.addLabel(n,3);
@@ -102,11 +115,12 @@ public class BMMClassifierTest {
             }
         }
 
-        int numClusters = 1;
+        int numClusters = 50;
         BMMClassifier bmmClassifier = new BMMClassifier(dataSet,numClusters);
+        BMMInitializer.initialize(bmmClassifier,dataSet,1.0,1.0);
 
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000,10000);
-        for (int i=0; i<10; i++) {
+        for (int i=0; i<3; i++) {
             optimizer.iterate();
             System.out.print("i: " + i + "\t");
             System.out.print("objective: " + optimizer.getTerminator().getLastValue() + "\t");
