@@ -51,7 +51,15 @@ public class ExpectationOfSquaredLoss implements Optimizable.ByGradientValue{
         this.activeFeatures = activeFeatures;
     }
 
+    @Override
+    public void setParallelism(boolean isParallel) {
 
+    }
+
+    @Override
+    public boolean isParallel() {
+        return false;
+    }
 
     Vector getWeightsWithoutBias(){
         return vector.viewPart(1,vector.size()-3);

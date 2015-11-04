@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm;
 
-import edu.neu.ccs.pyramid.classification.logistic_regression.KLLogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
@@ -123,7 +123,7 @@ public class BMMOptimizer implements Serializable{
 
     private double getMStepObjective(){
         //todo add constant
-        KLLogisticLoss logisticLoss = new KLLogisticLoss(bmmClassifier.logisticRegression,dataSet,
+        LogisticLoss logisticLoss = new LogisticLoss(bmmClassifier.logisticRegression,dataSet,
                 gammas,gaussianPriorVariance);
         return logisticLoss.getValue() + getEntropy() + bernoulliObj();
     }
