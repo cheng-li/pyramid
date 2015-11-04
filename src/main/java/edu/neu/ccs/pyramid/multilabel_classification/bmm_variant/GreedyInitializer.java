@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -15,9 +16,9 @@ import java.util.stream.IntStream;
  */
 public class GreedyInitializer {
     int numClusters;
-    // format [#data][#cluster]
+    // format [#data][#cluster+1]
     double[][] gammasAllClusters;
-    // format [#cluster][#data]
+    // format [#cluster+1][#data]
     double[][] gammasAllClustersT;
     MultiLabelClfDataSet dataSet;
     // format [#labels][#data][2]
@@ -57,14 +58,19 @@ public class GreedyInitializer {
                 }
             }
         }
+
+        this.gammasAllClusters = new double[dataSet.getNumDataPoints()][numClusters+1];
+        this.gammasAllClustersT = new double[numClusters+1][dataSet.getNumDataPoints()];
+        for (int n=0;n<dataSet.getNumDataPoints();n++){
+            gammasAllClusters[n][0] = 1;
+            gammasAllClustersT[0][n] = 1;
+        }
     }
 
     void train(){
         for (int k=0;k<numClusters;k++){
             train(k);
-            if (k<numClusters-1){
-                updateGammas(k);
-            }
+            updateGammas(k);
         }
     }
 
@@ -103,7 +109,7 @@ public class GreedyInitializer {
         double currentGamma = gammasAllClustersT[currentCluster][dataPoint];
         if (currentGamma==1){
             double logProb = clusterConditionalLogProb(dataSet.getRow(dataPoint),dataSet.getMultiLabels()[dataPoint],currentCluster);
-            if (logProb<Math.log(0.8)){
+            if (logProb<Math.log(0.6)){
                 gammasAllClusters[dataPoint][currentCluster] = 0;
                 gammasAllClustersT[currentCluster][dataPoint] = 0;
                 gammasAllClusters[dataPoint][currentCluster+1] = 1;
@@ -117,5 +123,20 @@ public class GreedyInitializer {
                 .forEach(n -> updateGammas(n,currentCluster));
     }
 
+    private void updateGammasLeft(){
 
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("GreedyInitializer{").append("\n");
+        for (int k=0;k<numClusters;k++){
+            sb.append("cluster ").append(k).append(", sum of gammas = ").append(MathUtil.arraySum(gammasAllClustersT[k]))
+            .append("\n");
+        }
+        sb.append("gammas left ").append(MathUtil.arraySum(gammasAllClustersT[numClusters]))
+                .append("\n");
+        sb.append('}');
+        return sb.toString();
+    }
 }
