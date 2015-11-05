@@ -183,6 +183,10 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                     BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(prob);
                     candidateY.set(l, bernoulliDistribution.sample());
                 }
+                // will not consider empty prediction
+                if (candidateY.maxValue() == 0) {
+                    continue;
+                }
 
                 double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
 
@@ -198,6 +202,10 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 e.printStackTrace();
             }
             for (MultiLabel label : this.samplesForCluster) {
+                // will not consider the empty prediction
+                if (label.getMatchedLabels().size() == 0) {
+                    continue;
+                }
                 Vector candidateY = new DenseVector(numLabels);
                 for(int labelIndex : label.getMatchedLabels()) {
                     candidateY.set(labelIndex, 1.0);
@@ -236,7 +244,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return samples;
     }
 
-    private double getTopM(Vector vector, int m) throws IOException {
+    private double getTopM(Vector vector, double[] logisticProb, int m) throws IOException {
         Map<Integer, Double> map = new HashMap<>();
         for (int k=0; k<numClusters; k++) {
             double maxProb = 1.0;
@@ -249,6 +257,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                     maxProb *= (1-prob);
                 }
             }
+            maxProb *= logisticProb[k];
             map.put(k, maxProb);
         }
 
@@ -435,7 +444,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         for (int n=0; n<dataSet.getNumDataPoints(); n++) {
             bw.write("data point: " + n + "\t" + "true label: " + dataSet.getMultiLabels()[n].toString() + "\n");
 
-            generateReportsForN(dataSet.getRow(n), gammas[n], bw, config.getInt("topM"));
+            generateReportsForN(dataSet.getRow(n), dataSet.getMultiLabels()[n],gammas[n], bw, config.getInt("topM"));
             bw.write("===============================================================\n");
             bw.write("\n");
             bw.write("===============================================================\n");
@@ -444,7 +453,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         bw.close();
     }
 
-    private void generateReportsForN(Vector vector, double[] gamma, BufferedWriter bw, int top) throws IOException {
+    private void generateReportsForN(Vector vector, MultiLabel multiLabel, double[] gamma, BufferedWriter bw, int top) throws IOException {
         double[] logisticProb = softMaxRegression.predictClassProbs(vector);
         bw.write("PIs: \t");
         for (double piK : logisticProb) {
@@ -470,7 +479,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         if (top >= numClusters) {
             topM = 0.0;
         } else {
-            topM = getTopM(vector, top);
+            topM = getTopM(vector,logisticProb, top);
         }
 
         this.samplesForCluster = sampleFromSingles(vector, logisticProb, topM);
@@ -505,6 +514,32 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
         for (Map.Entry<MultiLabel, Double> entry : sortedMap.entrySet()) {
             bw.write(mapString.get(entry.getKey()));
+        }
+
+        bw.write("------------------------------------\n");
+        Set<MultiLabel> trueSamples = new LinkedHashSet<>();
+        trueSamples.add(multiLabel);
+        for (int l : multiLabel.getMatchedLabels()) {
+            MultiLabel label = new MultiLabel();
+            label.addLabel(l);
+            trueSamples.add(label);
+        }
+        for (MultiLabel label : trueSamples) {
+            Vector candidateY = new DenseVector(numLabels);
+            for(int labelIndex : label.getMatchedLabels()) {
+                candidateY.set(labelIndex, 1.0);
+            }
+            double[] logPYnk = clusterConditionalLogProbArr(logProbsForX,candidateY);
+            double[] sumLog = new double[logisticLogProb.length];
+            for (int k=0; k<numClusters; k++) {
+                sumLog[k] = logisticLogProb[k] + logPYnk[k];
+            }
+            double logProb = MathUtil.logSumExp(sumLog);
+            bw.write(label.toString() + "\t");
+            for (int k=0; k<numClusters; k++) {
+                bw.write(String.format( "%.4f", Math.exp(logPYnk[k])) + "\t");
+            }
+            bw.write(String.format( "%.4f", Math.exp(logProb)) + "\n");
         }
     }
 
