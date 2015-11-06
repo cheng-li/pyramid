@@ -35,6 +35,9 @@ public class Overlap {
         Set<Integer> itersection = new HashSet<>();
         itersection.addAll(set1);
         itersection.retainAll(set2);
+        if (union.size()==0){
+            return 1;
+        }
         return ((double)itersection.size())/union.size();
     }
 }
