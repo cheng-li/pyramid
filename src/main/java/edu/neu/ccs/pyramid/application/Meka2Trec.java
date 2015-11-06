@@ -28,9 +28,10 @@ public class Meka2Trec {
         List<String> mekas = config.getStrings("meka");
         int numLabels = config.getInt("numLabels");
         int numFeatures = config.getInt("numFeatures");
+        String dataMode = config.getString("dataMode");
         for (int i=0; i<mekas.size(); i++) {
             System.out.println("processing on: " + trecs.get(i));
-            MultiLabelClfDataSet dataSet = MekaFormat.loadMLClfDataset(mekas.get(i), numFeatures, numLabels);
+            MultiLabelClfDataSet dataSet = MekaFormat.loadMLClfDataset(mekas.get(i), numFeatures, numLabels, dataMode);
             TRECFormat.save(dataSet, trecs.get(i));
         }
 

@@ -7,7 +7,7 @@ import java.io.IOException;
  */
 public class MekaFormatTest {
     public static void main(String[] args) throws IOException {
-        MultiLabelClfDataSet dataSet = MekaFormat.loadMLClfDataset("/Users/Rainicy/Downloads/corel5k-sparse/Corel5k-sparse.arff", 499, 374);
+        MultiLabelClfDataSet dataSet = MekaFormat.loadMLClfDataset("/Users/Rainicy/Downloads/corel5k-sparse/Corel5k-sparse.arff", 499, 374, "sparse");
         TRECFormat.save(dataSet, "/Users/Rainicy/Downloads/corel5k-sparse/sparse_trec");
     }
 }
