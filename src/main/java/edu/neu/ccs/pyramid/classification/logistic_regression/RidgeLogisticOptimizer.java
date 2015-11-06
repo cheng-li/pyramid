@@ -18,12 +18,14 @@ public class RidgeLogisticOptimizer implements Parallelizable{
         this.function = new LogisticLoss(logisticRegression,dataSet,
                 targetDistributions,gaussianPriorVariance);
         this.optimizer = new LBFGS(function);
+        this.optimizer.getTerminator().setAbsoluteEpsilon(0.1);
     }
 
     public RidgeLogisticOptimizer(LogisticRegression logisticRegression, ClfDataSet dataSet, double gaussianPriorVariance) {
 
         this.function = new LogisticLoss(logisticRegression,dataSet, gaussianPriorVariance);
         this.optimizer = new LBFGS(function);
+        this.optimizer.getTerminator().setAbsoluteEpsilon(0.1);
     }
 
     public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
@@ -31,6 +33,7 @@ public class RidgeLogisticOptimizer implements Parallelizable{
         logisticRegression.setFeatureExtraction(false);
         this.function = new LogisticLoss(logisticRegression, dataSet, weights, targetsDistribution, gaussianPriorVar);
         this.optimizer = new LBFGS(function);
+        this.optimizer.getTerminator().setAbsoluteEpsilon(0.1);
     }
 
     @Override

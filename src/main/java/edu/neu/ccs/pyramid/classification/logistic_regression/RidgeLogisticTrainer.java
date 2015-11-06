@@ -8,10 +8,10 @@ import edu.neu.ccs.pyramid.optimization.LBFGS;
 /**
  * Created by chengli on 11/28/14.
  */
+@Deprecated
 public class RidgeLogisticTrainer {
     private double gaussianPriorVariance = 1;
-    private double epsilon = 1;
-    private int history = 5;
+
 
 
     public static Builder getBuilder(){
@@ -24,11 +24,8 @@ public class RidgeLogisticTrainer {
         logisticRegression.setFeatureList(clfDataSet.getFeatureList());
         logisticRegression.setLabelTranslator(clfDataSet.getLabelTranslator());
         logisticRegression.setFeatureExtraction(false);
-        LogisticLoss function = new LogisticLoss(logisticRegression,clfDataSet,gaussianPriorVariance);
-        LBFGS lbfgs = new LBFGS(function);
-        lbfgs.getTerminator().setRelativeEpsilon(epsilon);
-        lbfgs.setHistory(history);
-        lbfgs.optimize();
+        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,clfDataSet,gaussianPriorVariance);
+        optimizer.optimize();
         return logisticRegression;
     }
 
@@ -55,8 +52,6 @@ public class RidgeLogisticTrainer {
         public RidgeLogisticTrainer build(){
             RidgeLogisticTrainer trainer = new RidgeLogisticTrainer();
             trainer.gaussianPriorVariance = this.gaussianPriorVariance;
-            trainer.epsilon = this.epsilon;
-            trainer.history = this.history;
             return trainer;
         }
     }

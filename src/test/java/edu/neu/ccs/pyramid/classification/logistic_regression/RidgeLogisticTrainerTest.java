@@ -27,7 +27,7 @@ public class RidgeLogisticTrainerTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test2();
+        test1();
     }
 
     private static void test1() throws Exception{

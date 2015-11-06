@@ -16,7 +16,7 @@ public class GreedyInitializerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test2();
+        test4();
     }
 
     private static void test1() throws Exception{
@@ -36,6 +36,27 @@ public class GreedyInitializerTest {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         int numClusters = 10;
         double variance = 1000;
+        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters,variance);
+        greedyInitializer.train();
+        System.out.println(greedyInitializer);
+    }
+
+
+    private static void test3() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/polluted/train.trec"),
+                DataSetType.ML_CLF_DENSE, true);
+        int numClusters = 5;
+        double variance = 1000;
+        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters,variance);
+        greedyInitializer.train();
+        System.out.println(greedyInitializer);
+    }
+
+    private static void test4() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        int numClusters = 3;
+        double variance = 0.1;
         GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters,variance);
         greedyInitializer.train();
         System.out.println(greedyInitializer);
