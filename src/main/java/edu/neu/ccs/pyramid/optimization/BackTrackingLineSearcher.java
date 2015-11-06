@@ -73,7 +73,7 @@ public class BackTrackingLineSearcher {
 //                logger.debug("requirement = "+(value + c*stepLength*product));
             }
             // todo: if equal ok?
-            if (targetValue <= value + c*stepLength*product || stepLength==0){
+            if ((targetValue <= value + c*stepLength*product && value<Double.POSITIVE_INFINITY )|| stepLength==0){
                 moveInfo.setStep(step);
                 moveInfo.setStepLength(stepLength);
                 moveInfo.setNewValue(targetValue);

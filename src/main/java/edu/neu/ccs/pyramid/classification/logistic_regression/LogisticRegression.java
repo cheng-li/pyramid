@@ -129,8 +129,9 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     }
 
     double klDivergence(Vector vector, double[] targetDistribution){
-        double[] estimation = predictClassProbs(vector);
-        return KLDivergence.kl(targetDistribution,estimation);
+        double[] logEstimation = predictClassLogProbs(vector);
+
+        return KLDivergence.klGivenPLogQ(targetDistribution,logEstimation);
 
     }
 

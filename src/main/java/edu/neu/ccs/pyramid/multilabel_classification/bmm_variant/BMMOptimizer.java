@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 /**
  * Created by Rainicy on 10/23/15.
  */
-public class BMMOptimizer implements Serializable {
+public class BMMOptimizer implements Serializable, Parallelizable {
     private static final Logger logger = LogManager.getLogger();
     private BMMClassifier bmmClassifier;
     private MultiLabelClfDataSet dataSet;
@@ -41,7 +41,7 @@ public class BMMOptimizer implements Serializable {
 
     // format [#labels][#data][2]
     private double[][][] targetsDistributions;
-    private boolean parallel = true;
+    private boolean isParallel = true;
 
     public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
                         double gaussianPriorforSoftMax, double gaussianPriorforLogit) {
@@ -111,6 +111,16 @@ public class BMMOptimizer implements Serializable {
             logger.debug("finish E step");
             logger.debug("objective = "+getObjective());
         }
+    }
+
+    @Override
+    public void setParallelism(boolean isParallel) {
+        this.isParallel = isParallel;
+    }
+
+    @Override
+    public boolean isParallel() {
+        return this.isParallel;
     }
 
     private void reweightedGammas() {
@@ -207,7 +217,7 @@ public class BMMOptimizer implements Serializable {
         LogisticRegression[] logisticRegressions = bmmClassifier.binaryLogitRegressions[k];
 
         IntStream intStream = IntStream.range(0, bmmClassifier.getNumClasses());
-        if (parallel){
+        if (isParallel){
             intStream = intStream.parallel();
         }
         intStream.forEach(l -> {

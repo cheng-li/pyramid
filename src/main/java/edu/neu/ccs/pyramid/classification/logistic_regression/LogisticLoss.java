@@ -5,6 +5,8 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -15,6 +17,7 @@ import java.util.stream.IntStream;
  * Created by Rainicy on 10/24/15.
  */
 public class LogisticLoss implements Optimizable.ByGradientValue {
+    private static final Logger logger = LogManager.getLogger();
     private LogisticRegression logisticRegression;
     private DataSet dataSet;
     private double[] gammas;
@@ -109,8 +112,11 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
             weightSquare += weightVector.dot(weightVector);
         }
-        this.value =  logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, gammas)
-                + weightSquare/(2*gaussianPriorVariance);
+        double kl = logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, gammas);
+        if (logger.isDebugEnabled()){
+            logger.debug("kl divergence = "+kl);
+        }
+        this.value =  kl + weightSquare/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }
