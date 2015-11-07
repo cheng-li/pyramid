@@ -1,13 +1,22 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
+import edu.neu.ccs.pyramid.classification.Classifier;
+import edu.neu.ccs.pyramid.classification.TrainConfig;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBFactory;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTBTrainConfig;
+import edu.neu.ccs.pyramid.classification.lkboost.LKTreeBoost;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -25,7 +34,7 @@ public class GreedyInitializer {
     private double[][][] targetsDistributions;
     private double priorVariance;
     // format [#cluster][#label]
-    private LogisticRegression[][] logisticRegressions;
+    private Classifier.ProbabilityEstimator[][] probabilityEstimators;
     // format [#data]
     private Vector[] labels;
 
@@ -36,7 +45,7 @@ public class GreedyInitializer {
 
         this.numClusters = numClusters;
         // initialize distributions
-        this.logisticRegressions = new LogisticRegression[numClusters][numClasses];
+        this.probabilityEstimators = new LKTreeBoost[numClusters][numClasses];
 
         this.labels = new DenseVector[dataSet.getNumDataPoints()];
         for (int n=0; n<labels.length; n++) {
@@ -76,12 +85,28 @@ public class GreedyInitializer {
 
 
     void train(int clusterIndex, int classIndex){
+        ClfDataSet transformed = prepareData(clusterIndex,classIndex);
+        TrainConfig trainConfig = new LKTBTrainConfig()
+                .setLearningRate(0.1)
+                .setNumLeaves(2)
+                .setNumIterations(20);
+        LKTreeBoost classifier = (LKTreeBoost)new LKTBFactory().train(transformed,trainConfig);
+
+        probabilityEstimators[clusterIndex][classIndex] = classifier;
+    }
+
+    ClfDataSet prepareData(int clusterIndex, int classIndex){
+        ClfDataSet full = DataSetUtil.toBinary(this.dataSet,classIndex);
         double[] gammas = gammasAllClustersT[clusterIndex];
-        LogisticRegression logisticRegression = new LogisticRegression(2,dataSet.getNumFeatures());
-        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegression,
-                dataSet, gammas, targetsDistributions[classIndex], priorVariance);
-        ridgeLogisticOptimizer.optimize();
-        logisticRegressions[clusterIndex][classIndex] = logisticRegression;
+        List<Integer> list = new ArrayList<>();
+        for (int i=0;i<gammas.length;i++){
+            if (gammas[i]==1){
+                list.add(i);
+            }
+        }
+
+        ClfDataSet selected = DataSetUtil.sampleData(full,list);
+        return selected;
     }
 
 
@@ -91,11 +116,11 @@ public class GreedyInitializer {
     }
 
     private double clusterConditionalLogProb(Vector X, MultiLabel Y, int k) {
-        LogisticRegression[] logisticRegressionsK = logisticRegressions[k];
+        Classifier.ProbabilityEstimator[] estimators = probabilityEstimators[k];
 
         double logProbResult = 0.0;
-        for (int l=0; l<logisticRegressionsK.length; l++) {
-            double[] logProbs = logisticRegressionsK[l].predictClassLogProbs(X);
+        for (int l=0; l<estimators.length; l++) {
+            double[] logProbs = estimators[l].predictLogClassProbs(X);
             if (Y.matchClass(l)) {
                 logProbResult += logProbs[1];
             } else {

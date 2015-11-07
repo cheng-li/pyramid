@@ -402,6 +402,39 @@ public class DataSetUtil {
         return sample;
     }
 
+    /**
+     * create a subset with the indices
+     * it's fine to have duplicate indices
+     * idTranslator is not saved in sampleData as we may have duplicate extIds
+     * @param dataSet
+     * @param indices
+     * @return
+     */
+    public static MultiLabelClfDataSet sampleData(MultiLabelClfDataSet dataSet, List<Integer> indices){
+        MultiLabelClfDataSet sample;
+        sample = MLClfDataSetBuilder.getBuilder().numDataPoints(indices.size())
+                .numFeatures(dataSet.getNumFeatures())
+                .missingValue(dataSet.hasMissingValue())
+                .dense(dataSet.isDense())
+                .build();
+        MultiLabel[] labels = dataSet.getMultiLabels();
+        for (int i=0;i<indices.size();i++){
+            int indexInOld = indices.get(i);
+            Vector oldVector = dataSet.getRow(indexInOld);
+            Set<Integer> label = labels[indexInOld].getMatchedLabels();
+            //copy label
+            sample.addLabels(i,label);
+            //copy row feature values, optimized for sparse vector
+            for (Vector.Element element: oldVector.nonZeroes()){
+                sample.setFeatureValue(i,element.index(),element.get());
+            }
+        }
+        sample.setFeatureList(dataSet.getFeatureList());
+
+        //ignore idTranslator as we may have duplicate extIds
+        return sample;
+    }
+
 
     /**
      * assuming they have different feature sets
