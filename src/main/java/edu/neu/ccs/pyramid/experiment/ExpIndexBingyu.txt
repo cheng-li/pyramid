@@ -6,3 +6,7 @@
 205: index MEKA orginal raw data. But combine all title, text information into one field, named body.
 206: estimate the count of legal combination of multi-labels, by increasing the number of documents.
 207: GibbsSampling for MultiLabel Classification.
+209: mixture bernoulli model experiments
+210: mixture models for BMM1
+211: mixture models for BMM variant.
+212: generate BMM reports for BMM Variant results.

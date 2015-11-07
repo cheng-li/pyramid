@@ -59,6 +59,16 @@ public class MLLogisticLoss implements Optimizable.ByGradient, Optimizable.ByGra
         this.isGradientCacheValid=false;
     }
 
+    @Override
+    public void setParallelism(boolean isParallel) {
+
+    }
+
+    @Override
+    public boolean isParallel() {
+        return false;
+    }
+
     public Vector getParameters(){
         return mlLogisticRegression.getWeights().getAllWeights();
     }

@@ -2,7 +2,9 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
@@ -24,6 +26,11 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
 
 
 
+    public LogisticRegression(int numClasses, int numFeatures, boolean random) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        this.weights = new Weights(numClasses, numFeatures, random);
+    }
 
     public LogisticRegression(int numClasses, int numFeatures) {
         this.numClasses = numClasses;
@@ -102,11 +109,44 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return probVector;
     }
 
+
+    public double[] predictClassLogProbs(Vector vector){
+        double[] scoreVector = this.predictClassScores(vector);
+        double[] logProbVector = new double[this.numClasses];
+        double logDenominator = MathUtil.logSumExp(scoreVector);
+        for (int k=0;k<this.numClasses;k++) {
+            double logNumerator = scoreVector[k];
+            logProbVector[k]=logNumerator-logDenominator;
+        }
+        return logProbVector;
+    }
+
     double logLikelihood(Vector vector, int k){
         double[] scoreVector = this.predictClassScores(vector);
         double logDenominator = MathUtil.logSumExp(scoreVector);
         double logNumerator = scoreVector[k];
         return logNumerator-logDenominator;
+    }
+
+    double klDivergence(Vector vector, double[] targetDistribution){
+        double[] logEstimation = predictClassLogProbs(vector);
+
+        return KLDivergence.klGivenPLogQ(targetDistribution,logEstimation);
+
+    }
+
+    double dataSetKLDivergence(DataSet dataSet, double[][] targetDistributions){
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> klDivergence(dataSet.getRow(i),targetDistributions[i]))
+                .sum();
+    }
+
+    public double dataSetKLWeightedDivergence(DataSet dataSet, double[][] targetDistributions, double[] gammas) {
+        double sum = 0.0;
+        for(int n=0; n<dataSet.getNumDataPoints(); n++) {
+            sum += gammas[n] * klDivergence(dataSet.getRow(n), targetDistributions[n]);
+        }
+        return sum;
     }
 
     double dataSetLogLikelihood(ClfDataSet dataSet){
@@ -145,4 +185,6 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
     }
+
+
 }

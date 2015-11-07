@@ -14,7 +14,8 @@ import java.util.List;
  */
 public class Trec2LibSvm {
     public static void main(String[] args) throws Exception {
-        Config config = new Config(args[0]);
+//        Config config = new Config(args[0]);
+        Config config = new Config("/Users/Rainicy/Datasets/spam2Matlab.config");
         System.out.println(config);
         List<String> trecs = config.getStrings("trec");
         List<String> libSVMs = config.getStrings("libSVM");

@@ -81,6 +81,13 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
             case CRF:
                 prediction = predictWithConstraints(vector);
                 break;
+            case CRF_PLUS_HIGH_PROB:
+                prediction = predictWithConstraints(vector);
+                MultiLabel independentPred = predictWithoutConstraints(vector);
+                for (int label:independentPred.getMatchedLabels()){
+                    prediction.addLabel(label);
+                }
+                break;
         }
         return prediction;
     }
@@ -191,6 +198,10 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
             case CRF:
                 prob = predictAssignmentProbWithConstraint(vector,assignment);
                 break;
+            case CRF_PLUS_HIGH_PROB:
+                prob = predictAssignmentProbWithConstraint(vector,assignment);
+                break;
+
         }
         return prob;
     }
@@ -312,6 +323,6 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
 
 
     public static enum PredictFashion {
-        CRF, INDEPENDENT
+        CRF, INDEPENDENT, CRF_PLUS_HIGH_PROB
     }
 }

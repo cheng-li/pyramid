@@ -466,10 +466,9 @@ public class TRECFormat {
                     bw.write(labels.get(l).toString());
                     if (l!=labels.size()-1){
                         bw.write(",");
-                    } else {
-                        bw.write(" ");
                     }
                 }
+                bw.write(" ");
                 Vector vector = dataSet.getRow(i);
                 // only write non-zeros
                 List<Pair<Integer,Double>> pairs = new ArrayList<>();

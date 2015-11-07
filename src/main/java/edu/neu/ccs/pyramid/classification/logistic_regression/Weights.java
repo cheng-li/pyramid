@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
+import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorView;
@@ -21,6 +22,27 @@ public class Weights implements Serializable {
      * serialize this array instead
      */
     private double[] serializableWeights;
+
+    public Weights(int numClasses, int numFeatures, boolean random) {
+        if (random) {
+            this.numClasses = numClasses;
+            this.numFeatures = numFeatures;
+            this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
+            this.serializableWeights = new double[(numFeatures + 1)*numClasses];
+            UniformRealDistribution uniform = new UniformRealDistribution(-0.5,0.5);
+            for (int i=0; i<weightVector.size(); i++) {
+                double p = uniform.sample();
+                weightVector.set(i,p);
+                serializableWeights[i] = p;
+            }
+        } else {
+            this.numClasses = numClasses;
+            this.numFeatures = numFeatures;
+            this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
+            this.serializableWeights = new double[(numFeatures + 1)*numClasses];
+        }
+
+    }
 
     public Weights(int numClasses, int numFeatures) {
         this.numClasses = numClasses;
