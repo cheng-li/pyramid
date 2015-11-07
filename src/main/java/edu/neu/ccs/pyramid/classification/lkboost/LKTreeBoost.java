@@ -106,7 +106,20 @@ public class LKTreeBoost implements Classifier.ProbabilityEstimator, Classifier.
         return probVector;
     }
 
-//    /**
+    @Override
+    public double[] predictLogClassProbs(Vector vector) {
+        double[] scoreVector = this.predictClassScores(vector);
+        double[] logProbVector = new double[this.numClasses];
+        double logDenominator = MathUtil.logSumExp(scoreVector);
+        for (int k=0;k<this.numClasses;k++){
+            double logNumerator = scoreVector[k];
+            double logPro = logNumerator-logDenominator;
+            logProbVector[k]= logPro;
+        }
+        return logProbVector;
+    }
+
+    //    /**
 //     *
 //     * @param norm "L1" or "L2"
 //     * @return

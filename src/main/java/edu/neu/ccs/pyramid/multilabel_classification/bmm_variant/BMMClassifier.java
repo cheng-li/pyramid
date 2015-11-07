@@ -103,7 +103,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
         double logProbResult = 0.0;
         for (int l=0; l<logisticRegressionsK.length; l++) {
-            double[] logProbs = logisticRegressionsK[l].predictClassLogProbs(X);
+            double[] logProbs = logisticRegressionsK[l].predictLogClassProbs(X);
             if (Y.get(l) == 1.0) {
                 logProbResult += logProbs[1];
             } else {
@@ -159,7 +159,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         Vector predVector = new DenseVector(numLabels);
 
         int[] clusters = IntStream.range(0, numClusters).toArray();
-        double[] logisticLogProb = softMaxRegression.predictClassLogProbs(vector);
+        double[] logisticLogProb = softMaxRegression.predictLogClassProbs(vector);
         double[] logisticProb = softMaxRegression.predictClassProbs(vector);
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
 
@@ -167,7 +167,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         double[][][] logProbsForX = new double[numClusters][numLabels][2];
         for (int k=0; k<logProbsForX.length; k++) {
             for (int l=0; l<logProbsForX[k].length; l++) {
-                logProbsForX[k][l] = binaryLogitRegressions[k][l].predictClassLogProbs(vector);
+                logProbsForX[k][l] = binaryLogitRegressions[k][l].predictLogClassProbs(vector);
             }
         }
 
@@ -470,11 +470,11 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         double[][][] logProbsForX = new double[numClusters][numLabels][2];
         for (int k=0; k<logProbsForX.length; k++) {
             for (int l=0; l<logProbsForX[k].length; l++) {
-                logProbsForX[k][l] = binaryLogitRegressions[k][l].predictClassLogProbs(vector);
+                logProbsForX[k][l] = binaryLogitRegressions[k][l].predictLogClassProbs(vector);
             }
         }
 
-        double[] logisticLogProb = softMaxRegression.predictClassLogProbs(vector);
+        double[] logisticLogProb = softMaxRegression.predictLogClassProbs(vector);
         double topM;
         if (top >= numClusters) {
             topM = 0.0;

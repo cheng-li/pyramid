@@ -182,7 +182,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         Vector Y = this.labels[n];
         int K = bmmClassifier.numClusters;
         // log[p(z_n=k | x_n)] array
-        double[] logLogisticProbs = bmmClassifier.softMaxRegression.predictClassLogProbs(X);
+        double[] logLogisticProbs = bmmClassifier.softMaxRegression.predictLogClassProbs(X);
         // log[p(y_n | z_n=k, x_n)] for all k from 1 to K;
         double[] logClusterConditionalProbs = bmmClassifier.clusterConditionalLogProbArr(X, Y);
         double[] logNumerators = new double[logLogisticProbs.length];

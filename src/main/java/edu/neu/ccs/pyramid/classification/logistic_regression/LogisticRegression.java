@@ -110,7 +110,7 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     }
 
 
-    public double[] predictClassLogProbs(Vector vector){
+    public double[] predictLogClassProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
         double[] logProbVector = new double[this.numClasses];
         double logDenominator = MathUtil.logSumExp(scoreVector);
@@ -129,7 +129,7 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     }
 
     double klDivergence(Vector vector, double[] targetDistribution){
-        double[] logEstimation = predictClassLogProbs(vector);
+        double[] logEstimation = predictLogClassProbs(vector);
 
         return KLDivergence.klGivenPLogQ(targetDistribution,logEstimation);
 

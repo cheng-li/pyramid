@@ -69,6 +69,20 @@ public interface Classifier extends Serializable{
         double[] predictClassProbs(Vector vector);
 
         /**
+         * should be overridden if this calculation is unstable
+         * @param vector
+         * @return
+         */
+        default double[] predictLogClassProbs(Vector vector){
+            double[] probs = predictClassProbs(vector);
+            double[] logs = new double[probs.length];
+            for (int k=0;k<logs.length;k++){
+                logs[k] = Math.log(probs[k]);
+            }
+            return logs;
+        }
+
+        /**
          * in some cases, this can be implemented more efficiently
          * @param vector
          * @param classIndex
@@ -77,6 +91,8 @@ public interface Classifier extends Serializable{
         default double predictClassProb(Vector vector, int classIndex){
             return predictClassProbs(vector)[classIndex];
         }
+
+
 
         default List<double[]> predictClassProbs(DataSet dataSet){
             return IntStream.range(0,dataSet.getNumDataPoints())

@@ -87,7 +87,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         Vector predVector = new DenseVector(numLabels);
 
         int[] clusters = IntStream.range(0, numClusters).toArray();
-        double[] logisticLogProb = logisticRegression.predictClassLogProbs(vector);
+        double[] logisticLogProb = logisticRegression.predictLogClassProbs(vector);
         double[] logisticProb = logisticRegression.predictClassProbs(vector);
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
         for (int s=0; s<numSample; s++) {

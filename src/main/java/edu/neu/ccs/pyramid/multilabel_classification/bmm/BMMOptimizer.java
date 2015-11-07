@@ -100,7 +100,7 @@ public class BMMOptimizer implements Serializable{
         Vector feature = dataSet.getRow(n);
         Vector label = this.labels[n];
         int numClusters = bmmClassifier.numClusters;
-        double[] logLogisticProbs = bmmClassifier.logisticRegression.predictClassLogProbs(feature);
+        double[] logLogisticProbs = bmmClassifier.logisticRegression.predictLogClassProbs(feature);
         double[] logClusterConditionalProbs = bmmClassifier.clusterConditionalLogProbArr(label);
         double[] logNumerators = new double[logLogisticProbs.length];
         for (int k=0;k<numClusters;k++){
