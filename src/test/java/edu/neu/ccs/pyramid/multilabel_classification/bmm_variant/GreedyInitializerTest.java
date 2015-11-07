@@ -16,7 +16,7 @@ public class GreedyInitializerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test4();
+        test1();
     }
 
     private static void test1() throws Exception{
@@ -26,17 +26,17 @@ public class GreedyInitializerTest {
                 DataSetType.ML_CLF_SPARSE, true);
         int numClusters = 10;
         double variance = 1000;
-        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters,variance);
+        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters);
         greedyInitializer.train();
         System.out.println(greedyInitializer);
     }
 
 
     private static void test2() throws Exception{
-        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
-        int numClusters = 10;
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "medical/train"), DataSetType.ML_CLF_SPARSE, true);
+        int numClusters = 3;
         double variance = 1000;
-        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters,variance);
+        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters);
         greedyInitializer.train();
         System.out.println(greedyInitializer);
     }
@@ -47,7 +47,7 @@ public class GreedyInitializerTest {
                 DataSetType.ML_CLF_DENSE, true);
         int numClusters = 5;
         double variance = 1000;
-        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters,variance);
+        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters);
         greedyInitializer.train();
         System.out.println(greedyInitializer);
     }
@@ -57,7 +57,7 @@ public class GreedyInitializerTest {
                 DataSetType.ML_CLF_SPARSE, true);
         int numClusters = 3;
         double variance = 0.1;
-        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters,variance);
+        GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters);
         greedyInitializer.train();
         System.out.println(greedyInitializer);
     }

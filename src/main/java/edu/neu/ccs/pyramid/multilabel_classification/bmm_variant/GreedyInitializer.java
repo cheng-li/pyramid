@@ -31,42 +31,20 @@ public class GreedyInitializer {
     double[][] gammasAllClustersT;
     MultiLabelClfDataSet dataSet;
     // format [#labels][#data][2]
-    private double[][][] targetsDistributions;
-    private double priorVariance;
+
     // format [#cluster][#label]
     private Classifier.ProbabilityEstimator[][] probabilityEstimators;
-    // format [#data]
-    private Vector[] labels;
 
-    public GreedyInitializer(MultiLabelClfDataSet dataSet, int numClusters, double variance) {
+
+    public GreedyInitializer(MultiLabelClfDataSet dataSet, int numClusters) {
         this.dataSet = dataSet;
-        this.priorVariance = variance;
+
         int numClasses = dataSet.getNumClasses();
 
         this.numClusters = numClusters;
         // initialize distributions
         this.probabilityEstimators = new LKTreeBoost[numClusters][numClasses];
 
-        this.labels = new DenseVector[dataSet.getNumDataPoints()];
-        for (int n=0; n<labels.length; n++) {
-            Set<Integer> label = dataSet.getMultiLabels()[n].getMatchedLabels();
-            labels[n] = new DenseVector(dataSet.getNumClasses());
-            for (int l : label) {
-                labels[n].set(l, 1);
-            }
-        }
-
-        this.targetsDistributions = new double[numClasses][dataSet.getNumDataPoints()][2];
-        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
-            Vector label = labels[n];
-            for (int l=0; l<label.size(); l++) {
-                if (label.get(l) == 0.0) {
-                    this.targetsDistributions[l][n][0] = 1;
-                } else {
-                    this.targetsDistributions[l][n][1] = 1;
-                }
-            }
-        }
 
         this.gammasAllClusters = new double[dataSet.getNumDataPoints()][numClusters+1];
         this.gammasAllClustersT = new double[numClusters+1][dataSet.getNumDataPoints()];
@@ -85,11 +63,12 @@ public class GreedyInitializer {
 
 
     void train(int clusterIndex, int classIndex){
+        System.out.println("training cluster "+clusterIndex+", class "+classIndex+"\n");
         ClfDataSet transformed = prepareData(clusterIndex,classIndex);
         TrainConfig trainConfig = new LKTBTrainConfig()
                 .setLearningRate(0.1)
                 .setNumLeaves(2)
-                .setNumIterations(20);
+                .setNumIterations(200);
         LKTreeBoost classifier = (LKTreeBoost)new LKTBFactory().train(transformed,trainConfig);
 
         probabilityEstimators[clusterIndex][classIndex] = classifier;
@@ -111,7 +90,7 @@ public class GreedyInitializer {
 
 
     void train(int clusterIndex){
-        IntStream.range(0,dataSet.getNumClasses()).parallel()
+        IntStream.range(0,dataSet.getNumClasses())
                 .forEach(l -> train(clusterIndex,l));
     }
 
@@ -148,9 +127,6 @@ public class GreedyInitializer {
                 .forEach(n -> updateGammas(n,currentCluster));
     }
 
-    private void updateGammasLeft(){
-
-    }
 
     @Override
     public String toString() {
