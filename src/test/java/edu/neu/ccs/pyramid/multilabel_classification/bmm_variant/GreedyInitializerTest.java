@@ -24,7 +24,7 @@ public class GreedyInitializerTest {
                 DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        int numClusters = 10;
+        int numClusters = 20;
         double variance = 1000;
         GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters);
         greedyInitializer.train();
@@ -33,7 +33,7 @@ public class GreedyInitializerTest {
 
 
     private static void test2() throws Exception{
-        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "medical/train"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         int numClusters = 3;
         double variance = 1000;
         GreedyInitializer greedyInitializer = new GreedyInitializer(dataSet,numClusters);

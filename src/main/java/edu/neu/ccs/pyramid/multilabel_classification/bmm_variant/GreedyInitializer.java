@@ -58,6 +58,7 @@ public class GreedyInitializer {
         for (int k=0;k<numClusters;k++){
             train(k);
             updateGammas(k);
+            System.out.println(this);
         }
     }
 
@@ -67,8 +68,8 @@ public class GreedyInitializer {
         ClfDataSet transformed = prepareData(clusterIndex,classIndex);
         TrainConfig trainConfig = new LKTBTrainConfig()
                 .setLearningRate(0.1)
-                .setNumLeaves(2)
-                .setNumIterations(200);
+                .setNumLeaves(20)
+                .setNumIterations(35);
         LKTreeBoost classifier = (LKTreeBoost)new LKTBFactory().train(transformed,trainConfig);
 
         probabilityEstimators[clusterIndex][classIndex] = classifier;
@@ -113,7 +114,7 @@ public class GreedyInitializer {
         double currentGamma = gammasAllClustersT[currentCluster][dataPoint];
         if (currentGamma==1){
             double logProb = clusterConditionalLogProb(dataSet.getRow(dataPoint),dataSet.getMultiLabels()[dataPoint],currentCluster);
-            if (logProb<Math.log(0.6)){
+            if (logProb<Math.log(0.5)){
                 gammasAllClusters[dataPoint][currentCluster] = 0;
                 gammasAllClustersT[currentCluster][dataPoint] = 0;
                 gammasAllClusters[dataPoint][currentCluster+1] = 1;
