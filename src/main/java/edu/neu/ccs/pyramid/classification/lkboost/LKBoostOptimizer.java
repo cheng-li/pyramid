@@ -30,6 +30,10 @@ public class LKBoostOptimizer extends GBOptimizer {
         this.numClasses = boosting.getNumClasses();
     }
 
+    public LKBoostOptimizer(LKBoost boosting, DataSet dataSet, RegressorFactory factory, double[][] targetDistribution) {
+        this(boosting,dataSet,factory,defaultWeights(dataSet.getNumDataPoints()),targetDistribution);
+    }
+
     public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, RegressorFactory factory, double[] weights) {
         this(boosting,dataSet, factory, weights,DataSetUtil.labelDistribution(dataSet));
     }
