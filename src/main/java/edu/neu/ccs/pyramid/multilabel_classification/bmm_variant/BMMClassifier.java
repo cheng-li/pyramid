@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
-import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -18,9 +17,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * Created by Rainicy on 10/23/15.
@@ -36,9 +33,9 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     // parameters
     // format: [numClusters][numLabels]
-    ProbabilityEstimator[][] binaryLogitRegressions;
+    ProbabilityEstimator[][] binaryClassifiers;
 
-    ProbabilityEstimator softMaxRegression;
+    ProbabilityEstimator multiNomialClassifiers;
 
 
     // for predictions from single cluster sampling
@@ -59,13 +56,13 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         this.numClusters = numClusters;
         this.numFeatures = numFeatures;
         // initialize distributions
-        this.binaryLogitRegressions = new LogisticRegression[numClusters][numClasses];
+        this.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
         for (int k=0; k<numClusters; k++) {
             for (int l=0; l<numClasses; l++) {
-                this.binaryLogitRegressions[k][l] = new LogisticRegression(2,numFeatures);
+                this.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
             }
         }
-        this.softMaxRegression = new LogisticRegression(numClusters, numFeatures,true);
+        this.multiNomialClassifiers = new LogisticRegression(numClusters, numFeatures,true);
         this.samplesForCluster = null;
         this.predictMode = "mixtureMax";
     }
@@ -103,8 +100,8 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
      */
     private double clusterConditionalLogProb(Vector X, Vector Y, int k) {
         double logProbResult = 0.0;
-        for (int l=0; l<binaryLogitRegressions[k].length; l++) {
-            double[] logProbs = binaryLogitRegressions[k][l].predictLogClassProbs(X);
+        for (int l=0; l< binaryClassifiers[k].length; l++) {
+            double[] logProbs = binaryClassifiers[k][l].predictLogClassProbs(X);
             if (Y.get(l) == 1.0) {
                 logProbResult += logProbs[1];
             } else {
@@ -141,7 +138,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     private double clusterConditionalLogProb(double[][][] logProbsForX, Vector Y, int k) {
 
         double logProbResult = 0.0;
-        for (int l=0; l<binaryLogitRegressions[k].length; l++) {
+        for (int l=0; l< binaryClassifiers[k].length; l++) {
             if (Y.get(l) == 1.0) {
                 logProbResult += logProbsForX[k][l][1];
             } else {
@@ -159,15 +156,15 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         Vector predVector = new DenseVector(numLabels);
 
         int[] clusters = IntStream.range(0, numClusters).toArray();
-        double[] logisticLogProb = softMaxRegression.predictLogClassProbs(vector);
-        double[] logisticProb = softMaxRegression.predictClassProbs(vector);
+        double[] logisticLogProb = multiNomialClassifiers.predictLogClassProbs(vector);
+        double[] logisticProb = multiNomialClassifiers.predictClassProbs(vector);
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
 
-        // cache the prediction for binaryLogitRegressions[numClusters][numLabels]
+        // cache the prediction for binaryClassifiers[numClusters][numLabels]
         double[][][] logProbsForX = new double[numClusters][numLabels][2];
         for (int k=0; k<logProbsForX.length; k++) {
             for (int l=0; l<logProbsForX[k].length; l++) {
-                logProbsForX[k][l] = binaryLogitRegressions[k][l].predictLogClassProbs(vector);
+                logProbsForX[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
             }
         }
 
@@ -178,7 +175,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 Vector candidateY = new DenseVector(numLabels);
 
                 for (int l=0; l<numLabels; l++) {
-                    double prob = binaryLogitRegressions[cluster][l].predictClassProb(vector, 1);
+                    double prob = binaryClassifiers[cluster][l].predictClassProb(vector, 1);
                     BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(prob);
                     candidateY.set(l, bernoulliDistribution.sample());
                 }
@@ -234,7 +231,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     private Set<MultiLabel> sampleFromSingles(Vector vector, double[] logisticProb, double topM) throws IOException {
         int top = 20;
         Set<MultiLabel> samples = new HashSet<>();
-        for (int k=0; k<binaryLogitRegressions.length; k++) {
+        for (int k=0; k< binaryClassifiers.length; k++) {
             Set<MultiLabel> sample = sampleFromSingle(vector, top, k, logisticProb[k], topM);
             for (MultiLabel multiLabel : sample) {
                 if (!samples.contains(multiLabel)) {
@@ -250,7 +247,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         for (int k=0; k<numClusters; k++) {
             double maxProb = 1.0;
             for (int l=0; l<numLabels; l++) {
-                double prob = binaryLogitRegressions[k][l].predictClassProbs(vector)[1];
+                double prob = binaryClassifiers[k][l].predictClassProbs(vector)[1];
                 if (prob > 0.5) {
                     maxProb *= prob;
                 } else {
@@ -284,8 +281,8 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         MultiLabel label = new MultiLabel();
         Map<Integer, Double> labelAbsProbMap = new HashMap<>();
         Map<Integer, Double> labelProbMap = new HashMap<>();
-        for (int l=0; l<binaryLogitRegressions[k].length; l++) {
-            double prob = binaryLogitRegressions[k][l].predictClassProbs(vector)[1];
+        for (int l=0; l< binaryClassifiers[k].length; l++) {
+            double prob = binaryClassifiers[k][l].predictClassProbs(vector)[1];
             if (prob > 0.5) {
                 label.addLabel(l);
                 maxProb *= prob;
@@ -355,7 +352,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     public String toString() {
         Vector vector = new RandomAccessSparseVector(numFeatures);
-        double[] mixtureCoefficients = softMaxRegression.predictClassProbs(vector);
+        double[] mixtureCoefficients = multiNomialClassifiers.predictClassProbs(vector);
         final StringBuilder sb = new StringBuilder("BMM{\n");
         sb.append("numLabels=").append(numLabels).append("\n");
         sb.append("numClusters=").append(numClusters).append("\n");
@@ -453,7 +450,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     }
 
     private void generateReportsForN(Vector vector, MultiLabel multiLabel, double[] gamma, BufferedWriter bw, int top) throws IOException {
-        double[] logisticProb = softMaxRegression.predictClassProbs(vector);
+        double[] logisticProb = multiNomialClassifiers.predictClassProbs(vector);
         bw.write("PIs: \t");
         for (double piK : logisticProb) {
             bw.write( String.format( "%.4f", piK) + "\t");
@@ -465,15 +462,15 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         }
         bw.write("\n");
 
-        // cache the prediction for binaryLogitRegressions[numClusters][numLabels]
+        // cache the prediction for binaryClassifiers[numClusters][numLabels]
         double[][][] logProbsForX = new double[numClusters][numLabels][2];
         for (int k=0; k<logProbsForX.length; k++) {
             for (int l=0; l<logProbsForX[k].length; l++) {
-                logProbsForX[k][l] = binaryLogitRegressions[k][l].predictLogClassProbs(vector);
+                logProbsForX[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
             }
         }
 
-        double[] logisticLogProb = softMaxRegression.predictLogClassProbs(vector);
+        double[] logisticLogProb = multiNomialClassifiers.predictLogClassProbs(vector);
         double topM;
         if (top >= numClusters) {
             topM = 0.0;
