@@ -141,10 +141,10 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
                 .sum();
     }
 
-    public double dataSetKLWeightedDivergence(DataSet dataSet, double[][] targetDistributions, double[] gammas) {
+    public double dataSetKLWeightedDivergence(DataSet dataSet, double[][] targetDistributions, double[] weights) {
         double sum = 0.0;
         for(int n=0; n<dataSet.getNumDataPoints(); n++) {
-            sum += gammas[n] * klDivergence(dataSet.getRow(n), targetDistributions[n]);
+            sum += weights[n] * klDivergence(dataSet.getRow(n), targetDistributions[n]);
         }
         return sum;
     }
