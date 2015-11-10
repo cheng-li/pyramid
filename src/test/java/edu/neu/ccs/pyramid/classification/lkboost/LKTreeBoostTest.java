@@ -10,11 +10,14 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
 import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class LKTreeBoostTest {
     private static final Config config = new Config("config/local.config");
@@ -22,13 +25,14 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
+        weightTest();
 //        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
 //        spam_resume_train();
-        spam_polluted_build();
-        spam_polluted_load();
+//        spam_polluted_build();
+//        spam_polluted_load();
 //        spam_fake_build();
 //        spam_missing_all();
 //        mnist_all();
@@ -758,6 +762,48 @@ public class LKTreeBoostTest {
             trainer.iterate();
             System.out.println("iteration "+i);
             System.out.println("boosting accuracy = "+Accuracy.accuracy(lkBoost,testSet));
+        }
+    }
+
+    static void weightTest() throws Exception{
+        ClfDataSet trainSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/train.trec"),
+                DataSetType.CLF_SPARSE,true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
+                DataSetType.CLF_SPARSE,true);
+        System.out.println(trainSet.getMetaInfo());
+
+        int[] selected = Sampling.sampleByPercentage(trainSet.getNumDataPoints(),0.5);
+        double[] weights = new double[trainSet.getNumDataPoints()];
+        for (int i: selected){
+            weights[i]=1.0;
+        }
+
+        List<Integer> list = Arrays.stream(selected).mapToObj(i->i).collect(Collectors.toList());
+
+        ClfDataSet subset = DataSetUtil.sampleData(trainSet, list);
+
+        LKBoost lkBoost = new LKBoost(2);
+
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,trainSet,weights);
+        trainer.initialize();
+        for (int i=0;i<100;i++){
+            trainer.iterate();
+            System.out.println("iteration "+i);
+            System.out.println("training accuracy = "+Accuracy.accuracy(lkBoost,trainSet));
+            System.out.println("test accuracy = "+Accuracy.accuracy(lkBoost,testSet));
+        }
+
+
+        LKBoost lkBoost2 = new LKBoost(2);
+
+        LKBoostOptimizer trainer2 = new LKBoostOptimizer(lkBoost2,subset);
+        trainer2.initialize();
+
+        for (int i=0;i<100;i++){
+            trainer2.iterate();
+            System.out.println("iteration "+i);
+            System.out.println("training accuracy = "+Accuracy.accuracy(lkBoost2,trainSet));
+            System.out.println("test accuracy = "+Accuracy.accuracy(lkBoost2,testSet));
         }
     }
 
