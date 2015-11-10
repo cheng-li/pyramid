@@ -33,7 +33,7 @@ public class LKTBInspector {
      */
     public static TopFeatures topFeatures(LKTreeBoost boosting, int classIndex){
         Map<Feature,Double> totalContributions = new HashMap<>();
-        List<Regressor> regressors = boosting.getRegressors(classIndex);
+        List<Regressor> regressors = boosting.getEnsemble(classIndex).getRegressors();
         List<RegressionTree> trees = regressors.stream().filter(regressor ->
                 regressor instanceof RegressionTree)
                 .map(regressor -> (RegressionTree) regressor)
@@ -61,7 +61,7 @@ public class LKTBInspector {
 
     public static TopFeatures topFeatures(LKTreeBoost boosting, int classIndex, int limit){
         Map<Feature,Double> totalContributions = new HashMap<>();
-        List<Regressor> regressors = boosting.getRegressors(classIndex);
+        List<Regressor> regressors = boosting.getEnsemble(classIndex).getRegressors();
         List<RegressionTree> trees = regressors.stream().filter(regressor ->
                 regressor instanceof RegressionTree)
                 .map(regressor -> (RegressionTree) regressor)
@@ -98,7 +98,7 @@ public class LKTBInspector {
     public static TopFeatures topFeatures(List<LKTreeBoost> lkTreeBoosts, int classIndex){
         Map<Feature,Double> totalContributions = new HashMap<>();
         for (LKTreeBoost lkTreeBoost: lkTreeBoosts){
-            List<Regressor> regressors = lkTreeBoost.getRegressors(classIndex);
+            List<Regressor> regressors = lkTreeBoost.getEnsemble(classIndex).getRegressors();
             List<RegressionTree> trees = regressors.stream().filter(regressor ->
                     regressor instanceof RegressionTree)
                     .map(regressor -> (RegressionTree) regressor)
@@ -129,7 +129,7 @@ public class LKTBInspector {
 
     public static Set<Integer> recentlyUsedFeatures(LKTreeBoost boosting, int k){
         Set<Integer> features = new HashSet<>();
-        List<Regressor> regressors = boosting.getRegressors(k);
+        List<Regressor> regressors = boosting.getEnsemble(k).getRegressors();
         int size = regressors.size();
         Regressor lastOne = regressors.get(size-1);
         if (lastOne instanceof RegressionTree){
@@ -170,7 +170,7 @@ public class LKTBInspector {
     public static ClassScoreCalculation decisionProcess(LKTreeBoost boosting, LabelTranslator labelTranslator, Vector vector, int classIndex, int limit){
         ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
                 boosting.predictClassScore(vector,classIndex));
-        List<Regressor> regressors = boosting.getRegressors(classIndex);
+        List<Regressor> regressors = boosting.getEnsemble(classIndex).getRegressors();
         List<TreeRule> treeRules = new ArrayList<>();
         for (Regressor regressor : regressors) {
             if (regressor instanceof ConstantRegressor) {
