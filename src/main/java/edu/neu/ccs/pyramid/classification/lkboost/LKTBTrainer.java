@@ -1,10 +1,14 @@
 package edu.neu.ccs.pyramid.classification.lkboost;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
+import edu.neu.ccs.pyramid.classification.l2boost.L2BLeafOutputCalculator;
+import edu.neu.ccs.pyramid.classification.l2boost.L2Boost;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.optimization.gradient_boosting.GBOptimizer;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.regression.RegressorFactory;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
 import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
@@ -20,121 +24,55 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 8/14/14.
  */
-public class LKTBTrainer {
+public class LKTBTrainer extends GBOptimizer {
     private static final Logger logger = LogManager.getLogger();
-    /**
-     * F_k(x), used to speed up training.
-     */
-    private ScoreMatrix scoreMatrix;
-
-    /**
-     * p_k(x)
-     */
     private ProbabilityMatrix probabilityMatrix;
-
-    private LKTBConfig lktbConfig;
-
-    /**
-     * actually negative gradients, to be fit by the tree
-     */
-    private GradientMatrix gradientMatrix;
-    private LKTreeBoost lkTreeBoost;
+    private double[][] targetDistribution;
+    private LKTreeBoost boosting;
+    private int numClasses;
 
 
-    public LKTBTrainer(LKTBConfig lktbConfig, LKTreeBoost lkTreeBoost){
-        if (lktbConfig.getDataSet().getNumClasses()!=lkTreeBoost.getNumClasses()){
-            throw new IllegalArgumentException("lktbConfig.getDataSet().getNumClasses()!=lkTreeBoost.getNumClasses()");
-        }
-        this.lktbConfig = lktbConfig;
-        this.lkTreeBoost = lkTreeBoost;
-        int numClasses = lkTreeBoost.getNumClasses();
-        ClfDataSet dataSet= lktbConfig.getDataSet();
-        lkTreeBoost.setFeatureList(dataSet.getFeatureList());
-        lkTreeBoost.setLabelTranslator(dataSet.getLabelTranslator());
-        int numDataPoints = dataSet.getNumDataPoints();
-        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
-        this.initStagedScores();
-        this.probabilityMatrix = new ProbabilityMatrix(numDataPoints,numClasses);
-        this.updateProbabilityMatrix();
-        this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
-        this.updateGradientMatrix();
+    public LKTBTrainer(LKTreeBoost boosting, DataSet dataSet, double[][] targetDistribution, RegressorFactory factory) {
+        super(boosting, dataSet, factory);
+        this.boosting = boosting;
+        this.targetDistribution = targetDistribution;
+        this.numClasses = boosting.getNumClasses();
     }
 
-    public void addRegressors(List<Regressor> regressors){
-        int numClasses = lkTreeBoost.getNumClasses();
-        if (regressors.size()!=numClasses){
-            throw new IllegalArgumentException("regressors.size()!=numClasses");
-        }
-        for (int k=0;k<numClasses;k++){
-            Regressor regressor = regressors.get(k);
-            lkTreeBoost.addRegressor(regressor, k);
-            /**
-             * parallel by data
-             */
-            updateStagedScores(regressor, k);
-        }
+    public LKTBTrainer(LKTreeBoost boosting, ClfDataSet dataSet, RegressorFactory factory) {
+        this(boosting,dataSet, DataSetUtil.labelDistribution(dataSet),factory);
+    }
 
-        /**
-         * parallel by data
-         */
+
+    public LKTBTrainer(LKTreeBoost boosting, ClfDataSet dataSet) {
+        this(boosting,dataSet,defaultFactory(dataSet.getNumClasses()));
+    }
+
+    @Override
+    protected void initializeOthers() {
+        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numClasses);
+    }
+
+    @Override
+    protected void updateOthers() {
         updateProbabilityMatrix();
-        updateGradientMatrix();
-    }
-
-    public void addPriorRegressors(){
-        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.lkTreeBoost.getNumClasses());
-        priorProbClassifier.fit(this.lktbConfig.getDataSet());
-        double[] probs = priorProbClassifier.getClassProbs();
-        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
-        List<Regressor> regressors = new ArrayList<>();
-        for (int k=0;k<this.lkTreeBoost.getNumClasses();k++){
-            double score = Math.log(probs[k] - average);
-            Regressor constant = new ConstantRegressor(score);
-            regressors.add(constant);
-        }
-        addRegressors(regressors);
-    }
-
-    public void addLogisticRegression(LogisticRegression logisticRegression){
-        if (!lkTreeBoost.getRegressors(0).isEmpty()){
-            throw new RuntimeException("adding logistic regression to non-empty model");
-        }
-
-        List<Regressor> regressors = new ArrayList<>();
-        int numClasses = lkTreeBoost.getNumClasses();
-        for (int k=0;k<numClasses;k++){
-            //todo decide ratio
-            Vector weightVector = logisticRegression.getWeights().getWeightsForClass(k).times(1);
-            LinearRegression linearRegression = new LinearRegression(logisticRegression.getNumFeatures(),weightVector);
-            regressors.add(linearRegression);
-        }
-        addRegressors(regressors);
     }
 
 
-    /**
-     * by default, add trees in each iteration
-     */
-    public void iterate(){
-        int numClasses = lkTreeBoost.getNumClasses();
-        List<Regressor> regressors = new ArrayList<>();
-        for (int k=0;k<numClasses;k++){
-            /**
-             * parallel by feature
-             */
-            Regressor regressor = fitClassK(k);
-            regressors.add(regressor);
-        }
-        addRegressors(regressors);
-    }
-
-    public void setActiveFeatures(int[] activeFeatures) {
-        this.lktbConfig.setActiveFeatures(activeFeatures);
-    }
-
-    public void setActiveDataPoints(int[] activeDataPoints) {
-        this.lktbConfig.setActiveDataPoints(activeDataPoints);
-    }
+//todo
+//    public void addPriorRegressors(){
+//        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.lkTreeBoost.getNumClasses());
+//        priorProbClassifier.fit(this.lktbConfig.getDataSet());
+//        double[] probs = priorProbClassifier.getClassProbs();
+//        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+//        List<Regressor> regressors = new ArrayList<>();
+//        for (int k=0;k<this.lkTreeBoost.getNumClasses();k++){
+//            double score = Math.log(probs[k] - average);
+//            Regressor constant = new ConstantRegressor(score);
+//            regressors.add(constant);
+//        }
+//        addRegressors(regressors);
+//    }
 
     public GradientMatrix getGradientMatrix() {
         return gradientMatrix;
@@ -145,7 +83,6 @@ public class LKTBTrainer {
     }
 
 
-
     //======================== PRIVATE ===============================================
 
 
@@ -153,37 +90,21 @@ public class LKTBTrainer {
      * parallel by classes
      * calculate gradient vectors for all classes, store them
      */
-    private void updateGradientMatrix(){
-        int numDataPoints = this.lktbConfig.getDataSet().getNumDataPoints();
+    protected void updateGradientMatrix(){
+        int numDataPoints = this.dataSet.getNumDataPoints();
         IntStream.range(0, numDataPoints).parallel()
                 .forEach(this::updateClassGradients);
     }
 
-
-    private void initStagedScores(){
-        int numClasses = this.lkTreeBoost.getNumClasses();
-        for (int k=0;k<numClasses;k++){
-            for (Regressor regressor: lkTreeBoost.getRegressors(k)){
-                this.updateStagedScores(regressor,k);
-            }
-        }
-    }
-
     private void updateClassGradients(int dataPoint){
-        int numClasses = this.lkTreeBoost.getNumClasses();
-        int label = this.lktbConfig.getDataSet().getLabels()[dataPoint];
+        int numClasses = this.boosting.getNumClasses();
         double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
         for (int k=0;k<numClasses;k++){
             double gradient;
-            if (label==k){
-                gradient = 1-probs[k];
-            } else {
-                gradient = 0-probs[k];
-            }
+            gradient = targetDistribution[dataPoint][k] - probs[k];
             this.gradientMatrix.setGradient(dataPoint,k,gradient);
         }
     }
-
 
     /**
      * use scoreMatrix to update probabilities
@@ -191,7 +112,7 @@ public class LKTBTrainer {
      * probability = exp(log(numerator)-log(denominator))
      */
     private void updateClassProb(int i){
-        int numClasses = this.lkTreeBoost.getNumClasses();
+        int numClasses = this.boosting.getNumClasses();
         double[] scores = scoreMatrix.getScoresForData(i);
 
         double logDenominator = MathUtil.logSumExp(scores);
@@ -213,156 +134,20 @@ public class LKTBTrainer {
     }
 
     /**
-     * parallel by data points
-     * update scoreMatrix of class k
-     * @param regressor
-     * @param k
-     */
-    private void updateStagedScores(Regressor regressor, int k){
-        ClfDataSet dataSet= this.lktbConfig.getDataSet();
-        int numDataPoints = dataSet.getNumDataPoints();
-        IntStream.range(0, numDataPoints).parallel()
-                .forEach(dataIndex -> this.updateStagedScore(regressor,k,dataIndex));
-    }
-
-    /**
-     * update one score
-     * @param regressor
-     * @param k class index
-     * @param dataIndex
-     */
-    private void updateStagedScore(Regressor regressor, int k,
-                                   int dataIndex){
-        DataSet dataSet= this.lktbConfig.getDataSet();
-        Vector vector = dataSet.getRow(dataIndex);
-        double prediction = regressor.predict(vector);
-        this.scoreMatrix.increment(dataIndex,k,prediction);
-    }
-
-    /**
      * use scoreMatrix to update probabilities
      * parallel by data
      */
     private void updateProbabilityMatrix(){
-        ClfDataSet dataSet= this.lktbConfig.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
         IntStream.range(0,numDataPoints).parallel()
                 .forEach(this::updateClassProb);
     }
 
-    /**
-     * parallel
-     * find the best regression tree for class k
-     * apply newton step and learning rate
-     * @param k class index
-     * @return regressionTreeLk, shrunk
-     * @throws Exception
-     */
-//    private Regressor fitClassK(int k){
-//        double[] pseudoResponse = this.gradientMatrix.getGradientsForClass(k);
-//        int numClasses = this.lkTreeBoost.getNumClasses();
-//        double learningRate = this.lktbConfig.getLearningRate();
-//
-//        LeafOutputCalculator leafOutputCalculator = null;
-//
-//        switch (lktbConfig.getLeafOutputType()){
-//            case NEWTON:
-//                leafOutputCalculator = probabilities -> {
-//                    double numerator = 0;
-//                    double denominator = 0;
-//                    for (int i=0;i<probabilities.length;i++) {
-//                        double label = pseudoResponse[i];
-//                        numerator += label*probabilities[i];
-//                        denominator += Math.abs(label) * (1 - Math.abs(label))*probabilities[i];
-//                    }
-//                    double out;
-//                    if (denominator == 0) {
-//                        out = 0;
-//                    } else {
-//                        out = ((numClasses - 1) * numerator) / (numClasses * denominator);
-//                    }
-//                    //protection from numerically unstable issue
-//                    //todo does the threshold matter?
-//                    if (out>1){
-//                        out=1;
-//                    }
-//                    if (out<-1){
-//                        out=-1;
-//                    }
-//                    if (Double.isNaN(out)) {
-//                        throw new RuntimeException("leaf value is NaN");
-//                    }
-//                    if (Double.isInfinite(out)){
-//                        throw new RuntimeException("leaf value is Infinite");
-//                    }
-//                    out *= learningRate;
-//                    return out;
-//                };
-//                break;
-//            case AVERAGE:
-//                leafOutputCalculator = new AverageOutputCalculator(pseudoResponse);
-//                break;
-//        }
-//
-//
-//        RegTreeConfig regTreeConfig = new RegTreeConfig();
-//        regTreeConfig.setMaxNumLeaves(this.lktbConfig.getNumLeaves());
-//        regTreeConfig.setMinDataPerLeaf(this.lktbConfig.getMinDataPerLeaf());
-//        regTreeConfig.setActiveDataPoints(this.lktbConfig.getActiveDataPoints());
-//        regTreeConfig.setActiveFeatures(this.lktbConfig.getActiveFeatures());
-//        regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
-//        regTreeConfig.setRandomLevel(this.lktbConfig.getRandomLevel());
-//
-//
-//        RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
-//                this.lktbConfig.getDataSet(),
-//                pseudoResponse,
-//                leafOutputCalculator);
-//        if (lktbConfig.getLeafOutputType()==LeafOutputType.AVERAGE){
-//            regressionTree.shrink(learningRate);
-//        }
-//
-//        return regressionTree;
-//    }
-
-
-
-
-
-    private Regressor fitClassK(int k){
-        double[] pseudoResponse = this.gradientMatrix.getGradientsForClass(k);
-        int numClasses = this.lkTreeBoost.getNumClasses();
-        double learningRate = this.lktbConfig.getLearningRate();
-
-        LeafOutputCalculator leafOutputCalculator = null;
-
-        switch (lktbConfig.getLeafOutputType()){
-            //todo make newton step better
-            case NEWTON:
-                leafOutputCalculator = new LKTBLeafOutputCalculator(numClasses);
-                break;
-            case AVERAGE:
-                leafOutputCalculator = new AverageOutputCalculator();
-                break;
-        }
-
+    private static RegressorFactory defaultFactory(int numClasses){
         RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setMaxNumLeaves(this.lktbConfig.getNumLeaves());
-        regTreeConfig.setMinDataPerLeaf(this.lktbConfig.getMinDataPerLeaf());
-        regTreeConfig.setNumSplitIntervals(this.lktbConfig.getNumSplitIntervals());
-        regTreeConfig.setRandomLevel(this.lktbConfig.getRandomLevel());
-
-
-        RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
-                this.lktbConfig.getDataSet(),
-                pseudoResponse,
-                leafOutputCalculator);
-
-        regressionTree.shrink(learningRate);
-
-        return regressionTree;
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        regTreeFactory.setLeafOutputCalculator(new LKTBLeafOutputCalculator(numClasses));
+        return regTreeFactory;
     }
-
-
 
 }
