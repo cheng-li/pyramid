@@ -21,10 +21,14 @@ public class L2BoostOptimizer extends GBOptimizer {
     private double[][] targetDistribution;
 
 
-    public L2BoostOptimizer(L2Boost boosting, DataSet dataSet, double[][] targetDistribution, RegressorFactory factory) {
-        super(boosting, dataSet, factory);
+    public L2BoostOptimizer(L2Boost boosting, DataSet dataSet, RegressorFactory factory, double[] weights, double[][] targetDistribution) {
+        super(boosting, dataSet, factory ,weights);
         this.boosting = boosting;
         this.targetDistribution = targetDistribution;
+    }
+
+    public L2BoostOptimizer(L2Boost boosting, DataSet dataSet, double[][] targetDistribution, RegressorFactory factory) {
+        this(boosting,dataSet,factory,defaultWeights(dataSet.getNumDataPoints()),targetDistribution);
     }
 
     public L2BoostOptimizer(L2Boost boosting, ClfDataSet dataSet, RegressorFactory factory) {
@@ -43,6 +47,11 @@ public class L2BoostOptimizer extends GBOptimizer {
     @Override
     protected void updateOthers() {
         updateProbMatrix();
+    }
+
+    @Override
+    protected void addPriors() {
+
     }
 
     private void updateProbMatrix(){

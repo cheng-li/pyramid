@@ -28,22 +28,22 @@ public abstract class GBOptimizer {
     protected double shrinkage = 1;
 
 
-    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet, double[] weights, RegressorFactory factory) {
+    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet,  RegressorFactory factory, double[] weights) {
         this.boosting = boosting;
         this.factory = factory;
         this.dataSet = dataSet;
         this.weights = weights;
     }
 
-    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory) {
-        this(boosting,dataSet,defaultWeights(dataSet.getNumDataPoints()),factory);
-    }
 
     /**
      * model specific initialization
      * should be called after constructor
      */
     public void initialize(){
+        if (boosting.getEnsemble(0).getRegressors().size()==0){
+            addPriors();
+        }
         this.scoreMatrix = new ScoreMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles());
         this.initStagedScores();
         initializeOthers();
@@ -52,6 +52,8 @@ public abstract class GBOptimizer {
         updateGradientMatrix();
         this.isInitialized = true;
     }
+
+    protected abstract void addPriors();
 
     /**
      * e.g. probability matrix

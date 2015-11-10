@@ -5,10 +5,10 @@ import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
 /**
  * Created by chengli on 10/1/15.
  */
-public class LKTBLeafOutputCalculator implements LeafOutputCalculator{
+public class LKBOutputCalculator implements LeafOutputCalculator{
     private int numClasses;
 
-    public LKTBLeafOutputCalculator(int numClasses) {
+    public LKBOutputCalculator(int numClasses) {
         this.numClasses = numClasses;
     }
 

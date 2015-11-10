@@ -22,13 +22,13 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        spam_test();
+//        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
 //        spam_resume_train();
-//        spam_polluted_build();
-//        spam_polluted_load();
+        spam_polluted_build();
+        spam_polluted_load();
 //        spam_fake_build();
 //        spam_missing_all();
 //        mnist_all();
@@ -114,7 +114,7 @@ public class LKTreeBoostTest {
     }
     static void spam_load() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE,true);
         System.out.println("test data:");
@@ -122,14 +122,14 @@ public class LKTreeBoostTest {
         System.out.println(dataSet.getLabelTranslator());
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost, dataSet);
         System.out.println(accuracy);
-        System.out.println("auc = "+ AUC.auc(lkTreeBoost,dataSet));
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        System.out.println("auc = "+ AUC.auc(lkBoost,dataSet));
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkBoost,dataSet);
         System.out.println("confusion matrix:");
         System.out.println(confusionMatrix.printWithExtLabels());
         System.out.println("top featureList for class 0");
-        System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
+        System.out.println(LKBInspector.topFeatures(lkBoost, 0));
 
         System.out.println(new PerClassMeasures(confusionMatrix,0));
         System.out.println(new PerClassMeasures(confusionMatrix,1));
@@ -139,7 +139,7 @@ public class LKTreeBoostTest {
 
 
         int[] labels = dataSet.getLabels();
-        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        List<double[]> classProbs = lkBoost.predictClassProbs(dataSet);
         for (int k=0;k<dataSet.getNumClasses();k++){
             int numMatches = 0;
             double sumProbs = 0;
@@ -155,10 +155,10 @@ public class LKTreeBoostTest {
         }
 
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
-        ClassScoreCalculation classScoreCalculation = LKTBInspector.decisionProcess(lkTreeBoost,labelTranslator,dataSet.getRow(0),0,10);
+        ClassScoreCalculation classScoreCalculation = LKBInspector.decisionProcess(lkBoost, labelTranslator, dataSet.getRow(0), 0, 10);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(new File(TMP,"score_calculation.json"), classScoreCalculation);
-        PredictionAnalysis predictionAnalysis = LKTBInspector.analyzePrediction(lkTreeBoost,dataSet,0,10);
+        PredictionAnalysis predictionAnalysis = LKBInspector.analyzePrediction(lkBoost, dataSet, 0, 10);
         ObjectMapper mapper1 = new ObjectMapper();
         mapper1.writeValue(new File(TMP,"prediction_analysis.json"), predictionAnalysis);
     }
@@ -170,24 +170,18 @@ public class LKTreeBoostTest {
                 DataSetType.CLF_SPARSE,true);
         System.out.println(dataSet.getMetaInfo());
 
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+        LKBoost lkBoost = new LKBoost(2);
+        lkBoost.setLabelTranslator(dataSet.getLabelTranslator());
 
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(2).learningRate(1).numSplitIntervals(100).minDataPerLeaf(1)
-                        .dataSamplingRate(1).featureSamplingRate(1)
-                        .randomLevel(1)
-                        .considerHardTree(true)
-                        .considerExpectationTree(false)
-                        .considerProbabilisticTree(false)
-                        .setLeafOutputType(LeafOutputType.NEWTON)
-                        .build();
 
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        trainer.addPriorRegressors();
+
         for (int round =0;round<200;round++){
             System.out.println("round="+round);
             trainer.iterate();
@@ -196,11 +190,11 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println("accuracy="+accuracy);
 
         int[] labels = dataSet.getLabels();
-        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        List<double[]> classProbs = lkBoost.predictClassProbs(dataSet);
         for (int k=0;k<dataSet.getNumClasses();k++){
             int numMatches = 0;
             double sumProbs = 0;
@@ -217,7 +211,7 @@ public class LKTreeBoostTest {
 
 
 
-        lkTreeBoost.serialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
     }
 
     /**
@@ -230,11 +224,10 @@ public class LKTreeBoostTest {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE,true);
 
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).
-                        dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoost lkBoost = new LKBoost(2);
+
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -246,9 +239,9 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println(accuracy);
-        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
 
     }
 
@@ -258,15 +251,13 @@ public class LKTreeBoostTest {
      */
     static void spam_resume_train_2() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
 
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"spam/trec_data/train.trec"),
                 DataSetType.CLF_DENSE,true);
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).
-                        dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -278,9 +269,9 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println(accuracy);
-        System.out.println(lkTreeBoost.getRegressors(0).size());
+
     }
 
     /**
@@ -289,13 +280,13 @@ public class LKTreeBoostTest {
      */
     static void spam_polluted_load() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
         File featureFile = new File(DATASETS,"/spam/polluted/test_feature.txt");
         File labelFile = new File(DATASETS,"spam/polluted/test_label.txt");
         ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE,false);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost, dataSet);
         System.out.println(accuracy);
 //        TRECDataSet.save(dataSet,new File("/Users/chengli/tmp/test.trec"));
     }
@@ -309,11 +300,9 @@ public class LKTreeBoostTest {
         File labelFile = new File(DATASETS,"spam/polluted/train_label.txt");
         ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, " ", DataSetType.CLF_DENSE,false);
 
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).
-                        dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoost lkBoost = new LKBoost(2);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -325,48 +314,14 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println(accuracy);
 
-        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
 //        TRECDataSet.save(dataSet,new File("/Users/chengli/tmp/train.trec"));
     }
 
 
-    static void spam_fake_build() throws Exception{
-        double ratio=0.001;
-        File featureFile = new File(DATASETS,"/spam/train_data.txt");
-        File labelFile = new File(DATASETS,"/spam/train_label.txt");
-//        ClfDataSet dataSet = DenseClfDataSet.loadStandard(featureFile, labelFile, ",");
-        ClfDataSet dataSet = StandardFormat.loadClfDataSet(2,featureFile, labelFile, ",", DataSetType.CLF_DENSE,false);
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            boolean set = Math.random()<ratio;
-            if (set){
-                dataSet.setLabel(i,1);
-            }
-        }
-
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).
-                        dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
-
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        for (int round =0;round<10000;round++){
-            System.out.println("round="+round);
-            trainer.iterate();
-        }
-        stopWatch.stop();
-        System.out.println(stopWatch);
-
-
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
-        System.out.println(accuracy);
-
-//        LKTreeBoost.serialize(lkTreeBoost,new File("/Users/chengli/tmp/LKTreeBoostTest/ensemble.ser"));
-    }
 
 
     /**
@@ -379,7 +334,7 @@ public class LKTreeBoostTest {
     }
     static void spam_missing_load() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/missing_value/0.5_missing/test.trec"),
                 DataSetType.CLF_DENSE,true);
 
@@ -387,14 +342,14 @@ public class LKTreeBoostTest {
         System.out.println(dataSet.getMetaInfo());
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost, dataSet);
         System.out.println(accuracy);
-        System.out.println("auc = "+ AUC.auc(lkTreeBoost,dataSet));
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        System.out.println("auc = "+ AUC.auc(lkBoost,dataSet));
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkBoost,dataSet);
         System.out.println("confusion matrix:");
         System.out.println(confusionMatrix.printWithExtLabels());
         System.out.println("top featureList for class 0");
-        System.out.println(LKTBInspector.topFeatures(lkTreeBoost,0));
+        System.out.println(LKBInspector.topFeatures(lkBoost, 0));
 
         System.out.println(new PerClassMeasures(confusionMatrix,0));
         System.out.println(new PerClassMeasures(confusionMatrix,1));
@@ -404,7 +359,7 @@ public class LKTreeBoostTest {
 
 
         int[] labels = dataSet.getLabels();
-        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        List<double[]> classProbs = lkBoost.predictClassProbs(dataSet);
         for (int k=0;k<dataSet.getNumClasses();k++){
             int numMatches = 0;
             double sumProbs = 0;
@@ -429,13 +384,11 @@ public class LKTreeBoostTest {
 
         System.out.println(dataSet.getMetaInfo());
 
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+        LKBoost lkBoost = new LKBoost(2);
 
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -447,11 +400,11 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println("accuracy="+accuracy);
 
         int[] labels = dataSet.getLabels();
-        List<double[]> classProbs = lkTreeBoost.predictClassProbs(dataSet);
+        List<double[]> classProbs = lkBoost.predictClassProbs(dataSet);
         for (int k=0;k<dataSet.getNumClasses();k++){
             int numMatches = 0;
             double sumProbs = 0;
@@ -468,7 +421,7 @@ public class LKTreeBoostTest {
 
 
 
-        lkTreeBoost.serialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
     }
 
     private static void mnist_all() throws Exception{
@@ -478,14 +431,14 @@ public class LKTreeBoostTest {
 
     static void mnist_harr_load() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
 
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"mnist/trec/test.trec"),DataSetType.CLF_DENSE,true);
         System.out.println(dataSet.getMetaInfo());
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost, dataSet);
         System.out.println("accuracy="+accuracy);
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkBoost,dataSet);
         System.out.println(confusionMatrix.printWithExtLabels());
         for (int k=0;k<dataSet.getNumClasses();k++){
             System.out.println("for class "+k);
@@ -504,11 +457,9 @@ public class LKTreeBoostTest {
 
         ClfDataSet dataSet  = TRECFormat.loadClfDataSet(new File(DATASETS,"mnist/trec/train.trec"),DataSetType.CLF_DENSE,true);
         System.out.println(dataSet.getMetaInfo());
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(10);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).
-                        dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoost lkBoost = new LKBoost(10);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -520,10 +471,10 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println(accuracy);
 
-        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
 //        TRECDataSet.save(dataSet,new File("/Users/chengli/tmp/train.trec"));
     }
 
@@ -534,14 +485,14 @@ public class LKTreeBoostTest {
     }
     static void classic3_test() throws Exception{
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
 
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"classic3/classic3_exp11/test.trec"),DataSetType.CLF_DENSE,true);
         System.out.println(dataSet.getMetaInfo());
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost, dataSet);
         System.out.println("accuracy="+accuracy);
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkBoost,dataSet);
         System.out.println(confusionMatrix.printWithExtLabels());
         for (int k=0;k<dataSet.getNumClasses();k++){
             System.out.println("for class "+k);
@@ -560,11 +511,9 @@ public class LKTreeBoostTest {
 
         ClfDataSet dataSet  = TRECFormat.loadClfDataSet(new File(DATASETS,"classic3/classic3_exp11/train.trec"),DataSetType.CLF_DENSE,true);
         System.out.println(dataSet.getMetaInfo());
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(3);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(5).learningRate(0.1).
-                        dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoost lkBoost = new LKBoost(3);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -576,10 +525,10 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println(accuracy);
 
-        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
     }
 
     static void bingyu_all() throws Exception{
@@ -596,15 +545,15 @@ public class LKTreeBoostTest {
         ArrayList<String> arrayList = new ArrayList<>();
 
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
 
         System.out.println("--------------------------------");
         ClfDataSet dataSet1 = TRECFormat.loadClfDataSet(new File(DATASETS, "faculty/train.trec"), DataSetType.CLF_DENSE, false);
         System.out.println(dataSet1.getMetaInfo());
-        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet1);
-        double auc = AUC.auc(lkTreeBoost, dataSet1);
-        double precision = Precision.precision(lkTreeBoost, dataSet1,1);
-        double recall = Recall.recall(lkTreeBoost, dataSet1, 0);
+        double accuracy = Accuracy.accuracy(lkBoost, dataSet1);
+        double auc = AUC.auc(lkBoost, dataSet1);
+        double precision = Precision.precision(lkBoost, dataSet1,1);
+        double recall = Recall.recall(lkBoost, dataSet1, 0);
         double f1 = FMeasure.f1(precision,recall);
         System.out.println("auc="+auc);
         System.out.println("accuracy="+accuracy);
@@ -616,17 +565,17 @@ public class LKTreeBoostTest {
         ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS,"faculty/test.trec"),DataSetType.CLF_DENSE,false);
 
         System.out.println(dataSet.getMetaInfo());
-        accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
-        auc = AUC.auc(lkTreeBoost, dataSet);
-        precision = Precision.precision(lkTreeBoost, dataSet,1);
-        recall = Recall.recall(lkTreeBoost, dataSet, 1);
+        accuracy = Accuracy.accuracy(lkBoost, dataSet);
+        auc = AUC.auc(lkBoost, dataSet);
+        precision = Precision.precision(lkBoost, dataSet,1);
+        recall = Recall.recall(lkBoost, dataSet, 1);
         f1 = FMeasure.f1(precision,recall);
         System.out.println("auc="+auc);
         System.out.println("accuracy="+accuracy);
         System.out.println("precision="+precision);
         System.out.println("recall="+recall);
         System.out.println("f1="+f1);
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkBoost,dataSet);
         System.out.println(confusionMatrix.printWithIntLabels());
 
 //        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost,0);
@@ -647,11 +596,9 @@ public class LKTreeBoostTest {
 
         ClfDataSet dataSet  = TRECFormat.loadClfDataSet(new File(DATASETS,"faculty/train.trec"),DataSetType.CLF_DENSE,false);
         System.out.println(dataSet.getMetaInfo());
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(3).learningRate(0.5).numSplitIntervals(1000)
-                .dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoost lkBoost = new LKBoost(2);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -663,10 +610,10 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println(accuracy);
 
-        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
 
     }
 
@@ -677,15 +624,15 @@ public class LKTreeBoostTest {
         LabelTranslator labelTranslator = new LabelTranslator(arrayList);
 
         System.out.println("loading ensemble");
-        LKTreeBoost lkTreeBoost = LKTreeBoost.deserialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        LKBoost lkBoost = LKBoost.deserialize(new File(TMP, "/LKTreeBoostTest/ensemble.ser"));
 
         System.out.println("--------------------------------");
         ClfDataSet dataSet1 = TRECFormat.loadClfDataSet(new File(DATASETS, "bingyu/train.trec"), DataSetType.CLF_DENSE, false);
         System.out.println(dataSet1.getMetaInfo());
-        double accuracy = Accuracy.accuracy(lkTreeBoost, dataSet1);
-        double auc = AUC.auc(lkTreeBoost, dataSet1);
-        double precision = Precision.precision(lkTreeBoost, dataSet1,1);
-        double recall = Recall.recall(lkTreeBoost, dataSet1, 0);
+        double accuracy = Accuracy.accuracy(lkBoost, dataSet1);
+        double auc = AUC.auc(lkBoost, dataSet1);
+        double precision = Precision.precision(lkBoost, dataSet1,1);
+        double recall = Recall.recall(lkBoost, dataSet1, 0);
         double f1 = FMeasure.f1(precision,recall);
         System.out.println("auc="+auc);
         System.out.println("accuracy="+accuracy);
@@ -704,17 +651,17 @@ public class LKTreeBoostTest {
         dataSet.getFeatureList().get(6).setName("PPR for CiteAuthor");
 
         System.out.println(dataSet.getMetaInfo());
-        accuracy = Accuracy.accuracy(lkTreeBoost, dataSet);
-        auc = AUC.auc(lkTreeBoost, dataSet);
-        precision = Precision.precision(lkTreeBoost, dataSet,1);
-        recall = Recall.recall(lkTreeBoost, dataSet, 1);
+        accuracy = Accuracy.accuracy(lkBoost, dataSet);
+        auc = AUC.auc(lkBoost, dataSet);
+        precision = Precision.precision(lkBoost, dataSet,1);
+        recall = Recall.recall(lkBoost, dataSet, 1);
         f1 = FMeasure.f1(precision,recall);
         System.out.println("auc="+auc);
         System.out.println("accuracy="+accuracy);
         System.out.println("precision="+precision);
         System.out.println("recall="+recall);
         System.out.println("f1="+f1);
-        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkTreeBoost,dataSet);
+        ConfusionMatrix confusionMatrix = new ConfusionMatrix(lkBoost,dataSet);
         System.out.println(confusionMatrix.printWithIntLabels());
 
 //        List<Feature> topFeatureIndex = LKTBInspector.topFeatures(lkTreeBoost, 0);
@@ -722,7 +669,7 @@ public class LKTreeBoostTest {
 //        List<String> topFeatureNames = LKTBInspector.topFeatureNames(lkTreeBoost,0);
 //        System.out.println("Top influence featureList name:"+topFeatureNames);
 
-        int[] predicts = lkTreeBoost.predict(dataSet);
+        int[] predicts = lkBoost.predict(dataSet);
         int[] labels = dataSet.getLabels();
         for (int i=0; i<predicts.length; i++) {
             if (predicts[i] != labels[i]) {
@@ -738,11 +685,9 @@ public class LKTreeBoostTest {
     static void bingyu_train() throws Exception{
         ClfDataSet dataSet  = TRECFormat.loadClfDataSet(new File(DATASETS,"bingyu/train.trec"),DataSetType.CLF_DENSE,false);
         System.out.println(dataSet.getMetaInfo());
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(4).learningRate(0.1).numSplitIntervals(1000)
-                        .dataSamplingRate(1).featureSamplingRate(1).build();
-        LKTBTrainer trainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoost lkBoost = new LKBoost(2);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -754,10 +699,10 @@ public class LKTreeBoostTest {
         System.out.println(stopWatch);
 
 
-        double accuracy = Accuracy.accuracy(lkTreeBoost,dataSet);
+        double accuracy = Accuracy.accuracy(lkBoost,dataSet);
         System.out.println(accuracy);
 
-        lkTreeBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
+        lkBoost.serialize(new File(TMP,"/LKTreeBoostTest/ensemble.ser"));
     }
 
     static void logisticTest() throws Exception{
@@ -768,14 +713,11 @@ public class LKTreeBoostTest {
         ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE,true);
 
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+        LKBoost lkBoost = new LKBoost(2);
 
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1)
-                .randomLevel(1)
-                .build();
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         ElasticNetLogisticTrainer logisticTrainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
@@ -785,16 +727,15 @@ public class LKTreeBoostTest {
 
         System.out.println("num feature used = "+ LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));
 
-        LKTBTrainer lktbTrainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+
 //        lktbTrainer.addLogisticRegression(logisticRegression);
-        System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+        System.out.println("boosting accuracy = "+Accuracy.accuracy(lkBoost,testSet));
         for (int i=0;i<100;i++){
-            lktbTrainer.iterate();
+            trainer.iterate();
             System.out.println("iteration "+i);
-            System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+            System.out.println("boosting accuracy = "+Accuracy.accuracy(lkBoost,testSet));
         }
-        System.out.println(lkTreeBoost.getRegressors(0).get(0).predict(testSet.getRow(0)));
-        System.out.println(lkTreeBoost.getRegressors(0).get(1).predict(testSet.getRow(0)));
+
     }
 
 
@@ -806,22 +747,17 @@ public class LKTreeBoostTest {
         ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS,"/spam/trec_data/test.trec"),
                 DataSetType.CLF_DENSE,true);
 
-        LKTreeBoost lkTreeBoost = new LKTreeBoost(2);
+        LKBoost lkBoost = new LKBoost(2);
 
 
-        LKTBConfig trainConfig = new LKTBConfig.Builder(dataSet)
-                .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(1)
-                .dataSamplingRate(1).featureSamplingRate(1)
-                .randomLevel(1)
-                .build();
-
-        LKTBTrainer lktbTrainer = new LKTBTrainer(trainConfig,lkTreeBoost);
+        LKBoostOptimizer trainer = new LKBoostOptimizer(lkBoost,dataSet);
+        trainer.initialize();
 //        lktbTrainer.addLogisticRegression(logisticRegression);
-        System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+        System.out.println("boosting accuracy = "+Accuracy.accuracy(lkBoost,testSet));
         for (int i=0;i<100;i++){
-            lktbTrainer.iterate();
+            trainer.iterate();
             System.out.println("iteration "+i);
-            System.out.println("boosting accuracy = "+Accuracy.accuracy(lkTreeBoost,testSet));
+            System.out.println("boosting accuracy = "+Accuracy.accuracy(lkBoost,testSet));
         }
     }
 

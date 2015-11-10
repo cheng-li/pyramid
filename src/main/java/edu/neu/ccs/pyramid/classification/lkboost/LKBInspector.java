@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 /**
  * Created by chengli on 9/4/14.
  */
-public class LKTBInspector {
+public class LKBInspector {
 
     //todo: consider newton step and learning rate
 
@@ -31,7 +31,7 @@ public class LKTBInspector {
      * @param classIndex
      * @return list of feature index and feature name pairs
      */
-    public static TopFeatures topFeatures(LKTreeBoost boosting, int classIndex){
+    public static TopFeatures topFeatures(LKBoost boosting, int classIndex){
         Map<Feature,Double> totalContributions = new HashMap<>();
         List<Regressor> regressors = boosting.getEnsemble(classIndex).getRegressors();
         List<RegressionTree> trees = regressors.stream().filter(regressor ->
@@ -59,7 +59,7 @@ public class LKTBInspector {
         return topFeatures;
     }
 
-    public static TopFeatures topFeatures(LKTreeBoost boosting, int classIndex, int limit){
+    public static TopFeatures topFeatures(LKBoost boosting, int classIndex, int limit){
         Map<Feature,Double> totalContributions = new HashMap<>();
         List<Regressor> regressors = boosting.getEnsemble(classIndex).getRegressors();
         List<RegressionTree> trees = regressors.stream().filter(regressor ->
@@ -91,14 +91,14 @@ public class LKTBInspector {
 
     /**
      *
-     * @param lkTreeBoosts ensemble of lktbs
+     * @param lkBoosts ensemble of lktbs
      * @param classIndex
      * @return
      */
-    public static TopFeatures topFeatures(List<LKTreeBoost> lkTreeBoosts, int classIndex){
+    public static TopFeatures topFeatures(List<LKBoost> lkBoosts, int classIndex){
         Map<Feature,Double> totalContributions = new HashMap<>();
-        for (LKTreeBoost lkTreeBoost: lkTreeBoosts){
-            List<Regressor> regressors = lkTreeBoost.getEnsemble(classIndex).getRegressors();
+        for (LKBoost lkBoost : lkBoosts){
+            List<Regressor> regressors = lkBoost.getEnsemble(classIndex).getRegressors();
             List<RegressionTree> trees = regressors.stream().filter(regressor ->
                     regressor instanceof RegressionTree)
                     .map(regressor -> (RegressionTree) regressor)
@@ -121,13 +121,13 @@ public class LKTBInspector {
         TopFeatures topFeatures = new TopFeatures();
         topFeatures.setTopFeatures(list);
         topFeatures.setClassIndex(classIndex);
-        LabelTranslator labelTranslator = lkTreeBoosts.get(0).getLabelTranslator();
+        LabelTranslator labelTranslator = lkBoosts.get(0).getLabelTranslator();
         topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
         return topFeatures;
     }
 
 
-    public static Set<Integer> recentlyUsedFeatures(LKTreeBoost boosting, int k){
+    public static Set<Integer> recentlyUsedFeatures(LKBoost boosting, int k){
         Set<Integer> features = new HashSet<>();
         List<Regressor> regressors = boosting.getEnsemble(k).getRegressors();
         int size = regressors.size();
@@ -139,7 +139,7 @@ public class LKTBInspector {
     }
 
     //todo  speed up
-    public static PredictionAnalysis analyzePrediction(LKTreeBoost boosting, ClfDataSet dataSet, int dataPointIndex, int limit){
+    public static PredictionAnalysis analyzePrediction(LKBoost boosting, ClfDataSet dataSet, int dataPointIndex, int limit){
         PredictionAnalysis predictionAnalysis = new PredictionAnalysis();
         IdTranslator idTranslator = dataSet.getIdTranslator();
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
@@ -167,7 +167,7 @@ public class LKTBInspector {
         return predictionAnalysis;
     }
 
-    public static ClassScoreCalculation decisionProcess(LKTreeBoost boosting, LabelTranslator labelTranslator, Vector vector, int classIndex, int limit){
+    public static ClassScoreCalculation decisionProcess(LKBoost boosting, LabelTranslator labelTranslator, Vector vector, int classIndex, int limit){
         ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
                 boosting.predictClassScore(vector,classIndex));
         List<Regressor> regressors = boosting.getEnsemble(classIndex).getRegressors();

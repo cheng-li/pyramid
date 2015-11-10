@@ -5,26 +5,23 @@ import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.Ensemble;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GradientBoosting;
-import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
  * Created by chengli on 8/14/14.
  */
-public class LKTreeBoost extends GradientBoosting implements Classifier.ProbabilityEstimator, Classifier.ScoreEstimator{
+public class LKBoost extends GradientBoosting implements Classifier.ProbabilityEstimator, Classifier.ScoreEstimator{
     private static final long serialVersionUID = 4L;
     private int numClasses;
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
 
 
-    public LKTreeBoost(int numClasses) {
+    public LKBoost(int numClasses) {
         super(numClasses);
         this.numClasses = numClasses;
     }
@@ -117,14 +114,14 @@ public class LKTreeBoost extends GradientBoosting implements Classifier.Probabil
      * @return
      * @throws Exception
      */
-    public static LKTreeBoost deserialize(File file) throws Exception{
+    public static LKBoost deserialize(File file) throws Exception{
         try(
                 FileInputStream fileInputStream = new FileInputStream(file);
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
                 ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
         ){
-            LKTreeBoost lkTreeBoost = (LKTreeBoost)objectInputStream.readObject();
-            return lkTreeBoost;
+            LKBoost lkBoost = (LKBoost)objectInputStream.readObject();
+            return lkBoost;
         }
     }
 

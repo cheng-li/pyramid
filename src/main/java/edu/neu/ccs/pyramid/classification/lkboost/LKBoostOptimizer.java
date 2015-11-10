@@ -1,50 +1,41 @@
 package edu.neu.ccs.pyramid.classification.lkboost;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
-import edu.neu.ccs.pyramid.classification.l2boost.L2BLeafOutputCalculator;
-import edu.neu.ccs.pyramid.classification.l2boost.L2Boost;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GBOptimizer;
-import edu.neu.ccs.pyramid.regression.ConstantRegressor;
-import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
-import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
 import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 8/14/14.
  */
-public class LKTBTrainer extends GBOptimizer {
+public class LKBoostOptimizer extends GBOptimizer {
     private static final Logger logger = LogManager.getLogger();
     private ProbabilityMatrix probabilityMatrix;
     private double[][] targetDistribution;
-    private LKTreeBoost boosting;
+    private LKBoost boosting;
     private int numClasses;
 
 
-    public LKTBTrainer(LKTreeBoost boosting, DataSet dataSet, double[][] targetDistribution, RegressorFactory factory) {
-        super(boosting, dataSet, factory);
+    public LKBoostOptimizer(LKBoost boosting, DataSet dataSet, RegressorFactory factory, double[] weights, double[][] targetDistribution) {
+        super(boosting, dataSet, factory ,weights);
         this.boosting = boosting;
         this.targetDistribution = targetDistribution;
         this.numClasses = boosting.getNumClasses();
     }
 
-    public LKTBTrainer(LKTreeBoost boosting, ClfDataSet dataSet, RegressorFactory factory) {
-        this(boosting,dataSet, DataSetUtil.labelDistribution(dataSet),factory);
+    public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, RegressorFactory factory) {
+        this(boosting,dataSet, factory, defaultWeights(dataSet.getNumDataPoints()),DataSetUtil.labelDistribution(dataSet));
     }
 
 
-    public LKTBTrainer(LKTreeBoost boosting, ClfDataSet dataSet) {
+    public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet) {
         this(boosting,dataSet,defaultFactory(dataSet.getNumClasses()));
     }
 
@@ -58,8 +49,11 @@ public class LKTBTrainer extends GBOptimizer {
         updateProbabilityMatrix();
     }
 
+    @Override
+    protected void addPriors() {
+        //todo
+    }
 
-//todo
 //    public void addPriorRegressors(){
 //        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.lkTreeBoost.getNumClasses());
 //        priorProbClassifier.fit(this.lktbConfig.getDataSet());
@@ -146,7 +140,7 @@ public class LKTBTrainer extends GBOptimizer {
     private static RegressorFactory defaultFactory(int numClasses){
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        regTreeFactory.setLeafOutputCalculator(new LKTBLeafOutputCalculator(numClasses));
+        regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numClasses));
         return regTreeFactory;
     }
 
