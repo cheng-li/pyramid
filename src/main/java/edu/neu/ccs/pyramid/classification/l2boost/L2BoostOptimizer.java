@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.classification.l2boost;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GBOptimizer;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GradientBoosting;
@@ -16,19 +17,22 @@ import java.util.stream.IntStream;
  */
 public class L2BoostOptimizer extends GBOptimizer {
     private L2Boost boosting;
-    private ClfDataSet dataSet;
     private ProbabilityMatrix probabilityMatrix;
+    private double[][] targetDistribution;
 
-    public L2BoostOptimizer(L2Boost boosting, ClfDataSet dataSet, RegressorFactory factory) {
+
+    public L2BoostOptimizer(L2Boost boosting, DataSet dataSet, double[][] targetDistribution, RegressorFactory factory) {
         super(boosting, dataSet, factory);
         this.boosting = boosting;
-        this.dataSet = dataSet;
+        this.targetDistribution = targetDistribution;
+    }
+
+    public L2BoostOptimizer(L2Boost boosting, ClfDataSet dataSet, RegressorFactory factory) {
+        this(boosting,dataSet, DataSetUtil.labelDistribution(dataSet),factory);
     }
 
     public L2BoostOptimizer(L2Boost boosting, ClfDataSet dataSet) {
-        super(boosting, dataSet, defaultFactory());
-        this.boosting = boosting;
-        this.dataSet = dataSet;
+        this(boosting,dataSet,defaultFactory());
     }
 
     @Override
@@ -74,14 +78,8 @@ public class L2BoostOptimizer extends GBOptimizer {
      * @param dataPoint
      */
     private void updateGradients(int dataPoint){
-        int label = dataSet.getLabels()[dataPoint];
         double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
-        double gradient;
-        if (label==1){
-            gradient = 1-probs[1];
-        } else {
-            gradient = 0-probs[1];
-        }
+        double gradient = targetDistribution[dataPoint][1]-probs[1];
         this.gradientMatrix.setGradient(dataPoint,0,gradient);
     }
 
