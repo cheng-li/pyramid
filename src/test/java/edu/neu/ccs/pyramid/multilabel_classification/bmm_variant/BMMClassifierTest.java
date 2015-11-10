@@ -128,9 +128,5 @@ public class BMMClassifierTest {
             System.out.println("testAcc: " + Accuracy.accuracy(bmmClassifier,testSet));
         }
         System.out.println(bmmClassifier.toString());
-        for (int k=0;k<numClusters;k++){
-            System.out.println("cluster "+k);
-            System.out.println(bmmClassifier.softMaxRegression.getWeights().getWeightsWithoutBiasForClass(k));
-        }
     }
 }

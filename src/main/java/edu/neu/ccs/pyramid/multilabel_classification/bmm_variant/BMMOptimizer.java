@@ -214,14 +214,13 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     }
 
     private void updateBinaryLogisticRegression(int k) {
-        LogisticRegression[] logisticRegressions = bmmClassifier.binaryLogitRegressions[k];
 
         IntStream intStream = IntStream.range(0, bmmClassifier.getNumClasses());
         if (isParallel){
             intStream = intStream.parallel();
         }
         intStream.forEach(l -> {
-            RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegressions[l],
+            RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.binaryLogitRegressions[k][l],
                     dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
             ridgeLogisticOptimizer.optimize();
             if (logger.isDebugEnabled()){
@@ -237,7 +236,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     }
 
     private void updateSoftMaxRegression() {
-        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(bmmClassifier.softMaxRegression,
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.softMaxRegression,
                 dataSet, gammas, gaussianPriorforSoftMax);
         ridgeLogisticOptimizer.optimize();
     }
@@ -252,7 +251,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 
 
     public double getObjective() {
-        LogisticLoss logisticLoss =  new LogisticLoss(bmmClassifier.softMaxRegression,
+        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression)bmmClassifier.softMaxRegression,
                 dataSet, gammas, gaussianPriorforSoftMax);
         // Q function for \Thata + gamma.entropy and Q function for Weights
         return logisticLoss.getValue() + binaryLogitsObj();
@@ -286,9 +285,8 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     private double binaryLogitsObj(int k) {
         double sum = 0;
         int L = dataSet.getNumClasses();
-        LogisticRegression[] logisticRegressions = bmmClassifier.binaryLogitRegressions[k];
         for (int l=0; l<L; l++) {
-            LogisticLoss logisticLoss = new LogisticLoss(logisticRegressions[l],
+            LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) bmmClassifier.binaryLogitRegressions[k][l],
                     dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
             sum += logisticLoss.getValue();
         }
