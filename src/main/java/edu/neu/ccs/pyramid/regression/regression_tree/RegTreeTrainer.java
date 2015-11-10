@@ -30,6 +30,17 @@ public class RegTreeTrainer {
                                      DataSet dataSet,
                                      double[] labels,
                                      LeafOutputCalculator leafOutputCalculator){
+        double[] weights = new double[labels.length];
+        Arrays.fill(weights,1.0);
+        return fit(regTreeConfig,dataSet,labels,weights,leafOutputCalculator);
+    }
+
+
+    public static RegressionTree fit(RegTreeConfig regTreeConfig,
+                                     DataSet dataSet,
+                                     double[] labels,
+                                     double[] weights,
+                                     LeafOutputCalculator leafOutputCalculator){
         RegressionTree tree = new RegressionTree();
         tree.setFeatureList(dataSet.getFeatureList());
 
@@ -41,7 +52,7 @@ public class RegTreeTrainer {
         //root gets all active data points
         double[] rootProbs = new double[dataSet.getNumDataPoints()];
         for (int dataPoint=0; dataPoint<dataSet.getNumDataPoints();dataPoint++){
-            rootProbs[dataPoint]=1;
+            rootProbs[dataPoint]=weights[dataPoint];
         }
         tree.root.setProbs(rootProbs);
         //parallel

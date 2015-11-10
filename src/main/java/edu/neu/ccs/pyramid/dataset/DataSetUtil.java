@@ -888,5 +888,17 @@ public class DataSetUtil {
         }
     }
 
+    public static double[][] labelDistribution(ClfDataSet dataSet){
+        int numData = dataSet.getNumDataPoints();
+        int numClass = dataSet.getNumClasses();
+        double[][] dis = new double[numData][numClass];
+        int[] labels = dataSet.getLabels();
+        for (int i=0;i<numData;i++){
+            int label = labels[i];
+            dis[i][label] = 1.0;
+        }
+        return dis;
+    }
+
 
 }

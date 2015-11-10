@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.regression.RegressorFactory;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -22,21 +23,27 @@ public abstract class GBOptimizer {
     protected GradientBoosting boosting;
     protected RegressorFactory factory;
     protected DataSet dataSet;
+    protected double[] weights;
     protected boolean isInitialized;
     protected double shrinkage = 1;
 
 
-    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory) {
+    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet,  RegressorFactory factory, double[] weights) {
         this.boosting = boosting;
         this.factory = factory;
         this.dataSet = dataSet;
+        this.weights = weights;
     }
+
 
     /**
      * model specific initialization
      * should be called after constructor
      */
     public void initialize(){
+        if (boosting.getEnsemble(0).getRegressors().size()==0){
+            addPriors();
+        }
         this.scoreMatrix = new ScoreMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles());
         this.initStagedScores();
         initializeOthers();
@@ -46,6 +53,8 @@ public abstract class GBOptimizer {
         this.isInitialized = true;
     }
 
+    protected abstract void addPriors();
+
     /**
      * e.g. probability matrix
      */
@@ -53,7 +62,7 @@ public abstract class GBOptimizer {
 
     protected Regressor fitRegressor(int ensembleIndex){
         double[] gradients = this.gradientMatrix.getGradientsForClass(ensembleIndex);
-        Regressor regressor = factory.fit(dataSet,gradients);
+        Regressor regressor = factory.fit(dataSet,gradients, weights);
         return regressor;
     }
 
@@ -112,5 +121,11 @@ public abstract class GBOptimizer {
 
     public RegressorFactory getRegressorFactory() {
         return factory;
+    }
+
+    protected static double[] defaultWeights(int numData){
+        double[] weights = new double[numData];
+        Arrays.fill(weights,1.0);
+        return weights;
     }
 }
