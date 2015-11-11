@@ -39,9 +39,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     ProbabilityEstimator multiNomialClassifiers;
 
 
-    // for predictions from single cluster sampling
-    Set<MultiLabel> samplesForCluster;
-
 
     /**
      * Default constructor by given a MultiLabelClfDataSet
@@ -64,7 +61,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             }
         }
         this.multiNomialClassifiers = new LogisticRegression(numClusters, numFeatures,true);
-        this.samplesForCluster = null;
         this.predictMode = "mixtureMax";
     }
 
@@ -91,7 +87,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             }
         }
         bmm.multiNomialClassifiers = new LKBoost(numClusters);
-        bmm.samplesForCluster = null;
         bmm.predictMode = "singleTop";
         return bmm;
     }
@@ -219,12 +214,13 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 }
             }
         } else if (predictMode.equals("singleTop")) {
+            Set<MultiLabel> samplesForCluster = null;
             try {
-                this.samplesForCluster = sampleFromSingles(vector, logisticProb, 0);
+                samplesForCluster = sampleFromSingles(vector, logisticProb, 0);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            for (MultiLabel label : this.samplesForCluster) {
+            for (MultiLabel label : samplesForCluster) {
                 // will not consider the empty prediction
                 //TODO if consider empty prediction
 //                if (label.getMatchedLabels().size() == 0) {
@@ -514,7 +510,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 candidateY.set(labelIndex, 1.0);
             }
 
-            double[] logPYnk = clusterConditionalLogProbArr(logProbsForX,candidateY);
+            double[] logPYnk = clusterConditionalLogProbArr(logProbsForX,candidateY);this.samplesForCluster
             double[] sumLog = new double[logisticLogProb.length];
             for (int k=0; k<numClusters; k++) {
                 sumLog[k] = logisticLogProb[k] + logPYnk[k];
