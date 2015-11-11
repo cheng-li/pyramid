@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
+import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -68,6 +69,31 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     }
 
     public BMMClassifier() {
+    }
+
+    /**
+     * factory
+     * @param numClasses
+     * @param numClusters
+     * @param numFeatures
+     * @return
+     */
+    public static BMMClassifier newMixBoost(int numClasses, int numClusters, int numFeatures){
+        BMMClassifier bmm = new BMMClassifier();
+        bmm.numLabels = numClasses;
+        bmm.numClusters = numClusters;
+        bmm.numFeatures = numFeatures;
+        // initialize distributions
+        bmm.binaryClassifiers = new LKBoost[numClusters][numClasses];
+        for (int k=0; k<numClusters; k++) {
+            for (int l=0; l<numClasses; l++) {
+                bmm.binaryClassifiers[k][l] = new LKBoost(2);
+            }
+        }
+        bmm.multiNomialClassifiers = new LKBoost(numClusters);
+        bmm.samplesForCluster = null;
+        bmm.predictMode = "mixtureMax";
+        return bmm;
     }
 
     @Override

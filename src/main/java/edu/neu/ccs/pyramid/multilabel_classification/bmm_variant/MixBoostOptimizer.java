@@ -42,6 +42,14 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
     private double[][][] targetsDistributions;
     private boolean isParallel = false;
 
+    private int numLeavesBinary = 2;
+    private int numLeavesMultiNomial = 2;
+    private double shrinkageBinary = 0.1;
+    private double shrinkageMultiNomial = 0.1;
+    private int numIterationsBinary = 20;
+    private int numIterationsMultiNomial = 20;
+
+
     public MixBoostOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet) {
         this.bmmClassifier = bmmClassifier;
         this.dataSet = dataSet;
@@ -79,6 +87,30 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
                 }
             }
         }
+    }
+
+    public void setNumLeavesBinary(int numLeavesBinary) {
+        this.numLeavesBinary = numLeavesBinary;
+    }
+
+    public void setNumLeavesMultiNomial(int numLeavesMultiNomial) {
+        this.numLeavesMultiNomial = numLeavesMultiNomial;
+    }
+
+    public void setShrinkageBinary(double shrinkageBinary) {
+        this.shrinkageBinary = shrinkageBinary;
+    }
+
+    public void setShrinkageMultiNomial(double shrinkageMultiNomial) {
+        this.shrinkageMultiNomial = shrinkageMultiNomial;
+    }
+
+    public void setNumIterationsBinary(int numIterationsBinary) {
+        this.numIterationsBinary = numIterationsBinary;
+    }
+
+    public void setNumIterationsMultiNomial(int numIterationsMultiNomial) {
+        this.numIterationsMultiNomial = numIterationsMultiNomial;
     }
 
     public void optimize() {
@@ -227,11 +259,11 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
     }
 
     private void updateBinaryClassifier(int clusterIndex, int classIndex){
-        int numIterations = 50;
-        double shrinkage = 1;
+        int numIterations = numIterationsBinary;
+        double shrinkage = shrinkageBinary;
         LKBoost boost = (LKBoost)this.bmmClassifier.binaryClassifiers[clusterIndex][classIndex];
         RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setMaxNumLeaves(2);
+                .setMaxNumLeaves(numLeavesBinary);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(2));
 
@@ -245,11 +277,11 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
 
     private void updateSoftMaxRegression() {
         int numClusters = bmmClassifier.numClusters;
-        int numIterations = 100;
-        double shrinkage = 1;
+        int numIterations = numIterationsMultiNomial;
+        double shrinkage = shrinkageMultiNomial;
         LKBoost boost = (LKBoost)this.bmmClassifier.multiNomialClassifiers;
         RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setMaxNumLeaves(2);
+                .setMaxNumLeaves(numLeavesMultiNomial);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numClusters));
 
