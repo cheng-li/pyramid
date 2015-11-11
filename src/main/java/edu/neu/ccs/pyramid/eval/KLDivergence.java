@@ -47,7 +47,7 @@ public class KLDivergence {
         return KLDivergence.klGivenPLogQ(targetDistribution,logEstimation);
     }
 
-    public double kl(Classifier.ProbabilityEstimator estimator, DataSet dataSet,
+    public static double kl(Classifier.ProbabilityEstimator estimator, DataSet dataSet,
                      double[][] targetDistributions, double[] weights) {
         double sum = 0.0;
         for(int n=0; n<dataSet.getNumDataPoints(); n++) {
@@ -56,7 +56,7 @@ public class KLDivergence {
         return sum;
     }
 
-    public double kl(Classifier.ProbabilityEstimator estimator, DataSet dataSet,
+    public static double kl(Classifier.ProbabilityEstimator estimator, DataSet dataSet,
                      double[][] targetDistributions) {
         double[] weights = new double[dataSet.getNumDataPoints()];
         Arrays.fill(weights,1.0);

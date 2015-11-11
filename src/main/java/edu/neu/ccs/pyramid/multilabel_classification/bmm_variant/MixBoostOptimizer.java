@@ -1,11 +1,11 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBOutputCalculator;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
@@ -34,8 +34,6 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
     double[][] gammas;
     // format [#cluster][#data]
     double[][] gammasT;
-
-
 
     // format [#data]
     private Vector[] labels;
@@ -273,10 +271,7 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
 
 
     public double getObjective() {
-        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression)bmmClassifier.multiNomialClassifiers,
-                dataSet, gammas, gaussianPriorforSoftMax);
-        // Q function for \Thata + gamma.entropy and Q function for Weights
-        return logisticLoss.getValue() + binaryLogitsObj();
+        return multiNomialObj() + binaryLogitsObj();
     }
 
 //    private double getMStepObjective() {
@@ -296,6 +291,12 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
 //        return Entropy.entropy(gammas[i]);
 //    }
 
+    private double multiNomialObj(){
+        Classifier.ProbabilityEstimator estimator = bmmClassifier.multiNomialClassifiers;
+        double[][] targets = gammas;
+        return KLDivergence.kl(estimator,dataSet,targets);
+    }
+
     private double binaryLogitsObj() {
         double res = IntStream.range(0,bmmClassifier.numClusters)
                 .mapToDouble(this::binaryLogitsObj).sum();
@@ -308,11 +309,16 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
         double sum = 0;
         int L = dataSet.getNumClasses();
         for (int l=0; l<L; l++) {
-            LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) bmmClassifier.binaryClassifiers[k][l],
-                    dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
-            sum += logisticLoss.getValue();
+            sum += binaryClassfierObj(k,l);
         }
         return sum;
+    }
+
+    private double binaryClassfierObj(int clusterIndex, int classIndex){
+        Classifier.ProbabilityEstimator estimator = bmmClassifier.binaryClassifiers[clusterIndex][classIndex];
+        double[][] targets = targetsDistributions[classIndex];
+        double[] weights = gammasT[clusterIndex];
+        return KLDivergence.kl(estimator,dataSet,targets,weights);
     }
 
 
