@@ -36,6 +36,6 @@ public class Exp212 {
         double logitVariance = config.getDouble("logitVariance");
 
         String reportsPath = config.getString("reportPath");
-        bmmClassifier.generateReports(dataSet, reportsPath, softmaxVariance, logitVariance, config);
+//        bmmClassifier.generateReports(dataSet, reportsPath, softmaxVariance, logitVariance, config);
     }
 }
