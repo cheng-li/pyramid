@@ -92,7 +92,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         }
         bmm.multiNomialClassifiers = new LKBoost(numClusters);
         bmm.samplesForCluster = null;
-        bmm.predictMode = "mixtureMax";
+        bmm.predictMode = "singleTop";
         return bmm;
     }
 
