@@ -43,6 +43,12 @@ public class Exp213 {
         } else {
             bmmClassifier = BMMClassifier.newMixBoost(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
             MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,trainSet);
+            optimizer.setNumLeavesBinary(config.getInt("numLeavesBinary"));
+            optimizer.setNumLeavesMultiNomial(config.getInt("numLeavesMultiNomial"));
+            optimizer.setNumIterationsBinary(config.getInt("numIterationsBinary"));
+            optimizer.setNumIterationsMultiNomial(config.getInt("numIterationsMultiNomial"));
+            optimizer.setShrinkageBinary(config.getDouble("shrinkageBinary"));
+            optimizer.setShrinkageMultiNomial(config.getDouble("shrinkageMultiNomial"));
             bmmClassifier.setPredictMode(config.getString("predictMode"));
 
             MultiLabel[] trainPredict = bmmClassifier.predict(trainSet);
