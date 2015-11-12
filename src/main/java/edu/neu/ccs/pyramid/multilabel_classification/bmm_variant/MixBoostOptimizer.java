@@ -242,6 +242,9 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
     }
 
     private void updateBinaryLogisticRegression(int k) {
+        if (logger.isDebugEnabled()){
+            logger.debug("update classifiers in cluster "+k);
+        }
 
         IntStream intStream = IntStream.range(0, bmmClassifier.getNumClasses());
         if (isParallel){

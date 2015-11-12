@@ -2,6 +2,9 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
 import edu.neu.ccs.pyramid.clustering.bmm.BMMSelector;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.util.MathUtil;
+
+import java.util.Arrays;
 
 /**
  * Created by chengli on 11/10/15.
