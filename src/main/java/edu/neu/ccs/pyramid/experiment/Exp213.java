@@ -40,8 +40,10 @@ public class Exp213 {
         BMMClassifier bmmClassifier;
         if (config.getBoolean("train.warmStart")) {
             bmmClassifier = BMMClassifier.deserialize(new File(output, modelName));
+            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
         } else {
             bmmClassifier = BMMClassifier.newMixBoost(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
             MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,trainSet);
             optimizer.setNumLeavesBinary(config.getInt("numLeavesBinary"));
             optimizer.setNumLeavesMultiNomial(config.getInt("numLeavesMultiNomial"));

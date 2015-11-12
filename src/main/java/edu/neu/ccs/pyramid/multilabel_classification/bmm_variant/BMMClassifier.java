@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
@@ -29,6 +28,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     int numClusters;
     int numFeatures;
     int numSample = 100;
+    boolean allowEmpty = false;
 
     String predictMode;
 
@@ -201,10 +201,9 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                     candidateY.set(l, bernoulliDistribution.sample());
                 }
                 // will not consider empty prediction
-                //TODO if consider empty prediction
-//                if (candidateY.maxValue() == 0) {
-//                    continue;
-//                }
+                if ((candidateY.maxValue() == 0) && !allowEmpty) {
+                    continue;
+                }
 
                 double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
 
@@ -223,9 +222,10 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             for (MultiLabel label : samplesForCluster) {
                 // will not consider the empty prediction
                 //TODO if consider empty prediction
-//                if (label.getMatchedLabels().size() == 0) {
-//                    continue;
-//                }
+                if ((label.getMatchedLabels().size() == 0) && !allowEmpty) {
+                    continue;
+                }
+
                 Vector candidateY = new DenseVector(numLabels);
                 for(int labelIndex : label.getMatchedLabels()) {
                     candidateY.set(labelIndex, 1.0);
@@ -356,6 +356,9 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     public void setPredictMode(String mode) {
         this.predictMode = mode;
+    }
+    public void setAllowEmpty(boolean allowEmpty) {
+        this.allowEmpty = allowEmpty;
     }
 
 
