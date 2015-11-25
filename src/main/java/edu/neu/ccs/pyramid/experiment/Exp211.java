@@ -102,6 +102,7 @@ public class Exp211 {
         System.out.println(bmmClassifier);
 
         if (config.getBoolean("saveModel")) {
+            (new File(output)).mkdirs();
             File serializeModel = new File(output, modelName);
             bmmClassifier.serialize(serializeModel);
         }

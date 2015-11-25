@@ -51,8 +51,8 @@ public class Terminator {
             throw new RuntimeException("value is NaN");
         }
         if (!isMoveValid(value)){
-            if (logger.isErrorEnabled()){
-                logger.error("goal = "+goal+", min = "+min+", max = "+max+", current value = "+value);
+            if (logger.isWarnEnabled()){
+                logger.warn("goal = "+goal+", min = "+min+", max = "+max+", current value = "+value);
             }
         }
 

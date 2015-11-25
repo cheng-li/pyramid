@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
+import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -413,6 +414,15 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         serialize(file1);
     }
 
+    public ProbabilityEstimator[][] getBinaryClassifiers() {
+        return binaryClassifiers;
+    }
 
+    public ProbabilityEstimator getMultiNomialClassifiers() {
+        return multiNomialClassifiers;
+    }
 
+    public int getNumClusters() {
+        return numClusters;
+    }
 }
