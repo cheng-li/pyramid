@@ -11,7 +11,17 @@ import edu.neu.ccs.pyramid.util.Serialization;
  * Created by chengli on 11/24/15.
  */
 public class Exp214 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Please specify a properties file.");
+        }
+
+        Config config = new Config(args[0]);
+
+        System.out.println(config);
+
+        BMMClassifier bmm = loadModel(config);
+        show(bmm);
 
     }
 
@@ -19,7 +29,10 @@ public class Exp214 {
         int numClusters = bmmClassifier.getNumClusters();
         int numClasses = bmmClassifier.getNumClasses();
         Classifier.ProbabilityEstimator[][] classifiers = bmmClassifier.getBinaryClassifiers();
-        LogisticRegression logisticRegression1 = classifiers[0][0];
+        LogisticRegression logisticRegression1 = (LogisticRegression)classifiers[0][0];
+        LogisticRegression logisticRegression2 = (LogisticRegression)classifiers[1][0];
+        System.out.println("lr in cluster"+0+" ="+logisticRegression1.getWeights().getWeightsForClass(1));
+        System.out.println("lr in cluster"+1+" ="+logisticRegression2.getWeights().getWeightsForClass(1));
 
     }
 
