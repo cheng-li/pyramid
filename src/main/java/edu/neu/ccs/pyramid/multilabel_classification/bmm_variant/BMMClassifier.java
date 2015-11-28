@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
-import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -36,8 +35,9 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     // parameters
     // format: [numClusters][numLabels]
     ProbabilityEstimator[][] binaryClassifiers;
-
     ProbabilityEstimator multiNomialClassifiers;
+
+
 
 
 
@@ -134,89 +134,24 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     }
 
 
-    /**
-     * return the log[p(y_n | z_n=k, x_n; w_k)] by all k from 1 to K.
-     * @param logProbsForX
-     * @param Y
-     * @return
-     */
-    public double[] clusterConditionalLogProbArr(double[][][] logProbsForX, Vector Y) {
-        double[] probArr = new double[numClusters];
-
-        for (int k=0; k<numClusters; k++) {
-            probArr[k] = clusterConditionalLogProb(logProbsForX, Y, k);
-        }
-
-        return probArr;
-    }
-
-    /**
-     * return one value for log [p(y_n | z_n=k, x_n; w_k)] by given k;
-     * @param logProbsForX
-     * @param Y
-     * @param k
-     * @return
-     */
-    private double clusterConditionalLogProb(double[][][] logProbsForX, Vector Y, int k) {
-
-        double logProbResult = 0.0;
-        for (int l=0; l< binaryClassifiers[k].length; l++) {
-            if (Y.get(l) == 1.0) {
-                logProbResult += logProbsForX[k][l][1];
-            } else {
-                logProbResult += logProbsForX[k][l][0];
-            }
-        }
-        return logProbResult;
-    }
-
 
 
     public MultiLabel predict(Vector vector) {
-        MultiLabel predLabel = new MultiLabel();
-        double maxLogProb = Double.NEGATIVE_INFINITY;
-        Vector predVector = new DenseVector(numLabels);
 
-        int[] clusters = IntStream.range(0, numClusters).toArray();
-        double[] logisticLogProb = multiNomialClassifiers.predictLogClassProbs(vector);
-        double[] logisticProb = multiNomialClassifiers.predictClassProbs(vector);
-        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters,logisticProb);
+        // new a BMMPredictor
+        BMMPredictor bmmPredictor = new BMMPredictor(vector, multiNomialClassifiers, binaryClassifiers, numClusters, numLabels);
 
-        // cache the prediction for binaryClassifiers[numClusters][numLabels]
-        double[][][] logProbsForX = new double[numClusters][numLabels][2];
-        for (int k=0; k<logProbsForX.length; k++) {
-            for (int l=0; l<logProbsForX[k].length; l++) {
-                logProbsForX[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
-            }
-        }
+
 
         // samples methods
-        if (predictMode.equals("mixtureMax")) {
-            for (int s=0; s<numSample; s++) {
-                int cluster = enumeratedIntegerDistribution.sample();
-                Vector candidateY = new DenseVector(numLabels);
+        if (predictMode.equals("sampling")) {
+            bmmPredictor.setNumSamples(numSample);
+            return bmmPredictor.predictBySampling();
 
-                for (int l=0; l<numLabels; l++) {
-                    double prob = binaryClassifiers[cluster][l].predictClassProb(vector, 1);
-                    BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(prob);
-                    candidateY.set(l, bernoulliDistribution.sample());
-                }
-                // will not consider empty prediction
-                if ((candidateY.maxValue() == 0) && !allowEmpty) {
-                    continue;
-                }
-
-                double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
-
-                if (logProb >= maxLogProb) {
-                    predVector = candidateY;
-                    maxLogProb = logProb;
-                }
-            }
-        } else if (predictMode.equals("singleTop")) {
+        } else if (predictMode.equals("dynamic")) {
             Set<MultiLabel> samplesForCluster = null;
             try {
-                samplesForCluster = sampleFromSingles(vector, logisticProb, 0);
+                samplesForCluster = sampleFromSingles(vector, bmmPredictor.logisticProb, 0);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -232,7 +167,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                     candidateY.set(labelIndex, 1.0);
                 }
 
-                double logProb = logProbYnGivenXnLogisticProb(logisticLogProb, candidateY, logProbsForX);
+                double logProb = logProbYnGivenXnLogisticProb(bmmPredictor.logisticLogProb, candidateY, bmmPredictor.logProbs);
 
                 if (logProb >= maxLogProb) {
                     predVector = candidateY;
