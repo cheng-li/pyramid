@@ -2,9 +2,14 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.util.Serialization;
+import org.apache.commons.io.FileUtils;
+import org.apache.mahout.math.Vector;
+
+import java.io.File;
 
 /**
  * check bmm classifier
@@ -21,19 +26,30 @@ public class Exp214 {
         System.out.println(config);
 
         BMMClassifier bmm = loadModel(config);
-        show(bmm);
+        show(config,bmm);
 
     }
 
-    private static void show(BMMClassifier bmmClassifier){
+    private static void show(Config config, BMMClassifier bmmClassifier) throws Exception{
         int numClusters = bmmClassifier.getNumClusters();
         int numClasses = bmmClassifier.getNumClasses();
+        String output = config.getString("output.folder");
+        new File(output).mkdirs();
         Classifier.ProbabilityEstimator[][] classifiers = bmmClassifier.getBinaryClassifiers();
-        LogisticRegression logisticRegression1 = (LogisticRegression)classifiers[0][0];
-        LogisticRegression logisticRegression2 = (LogisticRegression)classifiers[1][0];
-        System.out.println("lr in cluster"+0+" ="+logisticRegression1.getWeights().getWeightsForClass(1));
-        System.out.println("lr in cluster"+1+" ="+logisticRegression2.getWeights().getWeightsForClass(1));
-
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numClasses;l++){
+                LogisticRegression logisticRegression = (LogisticRegression)classifiers[k][l];
+                Vector vector = logisticRegression.getWeights().getWeightsForClass(1);
+                StringBuilder sb = new StringBuilder();
+                for (Vector.Element element: vector.all()){
+                    sb.append(element.index()).append(": ").append(element.get()).append("\n");
+                }
+                double bias = vector.get(0);
+                boolean interesting = (bias>-10)&&(bias<10);
+                File file = new File(output,interesting+""+k+"_"+l);
+                FileUtils.writeStringToFile(file,sb.toString());
+            }
+        }
     }
 
     private static BMMClassifier loadModel(Config config) throws Exception{

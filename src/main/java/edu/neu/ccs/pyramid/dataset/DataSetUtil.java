@@ -900,5 +900,28 @@ public class DataSetUtil {
         return dis;
     }
 
+    public static String multiLabelToBinaryString(MultiLabelClfDataSet dataSet){
+        int numData = dataSet.getNumDataPoints();
+        int numClasses = dataSet.getNumClasses();
+        StringBuilder sb = new StringBuilder();
+        for (int i=0;i<numData;i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l=0;l<numClasses;l++){
+                String bit;
+                if (multiLabel.matchClass(l)){
+                    bit = "1";
+                } else {
+                    bit = "0";
+                }
+                sb.append(bit);
+                if (l<numClasses-1){
+                    sb.append(" ");
+                }
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
 
 }
