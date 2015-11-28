@@ -7,17 +7,11 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
-import edu.neu.ccs.pyramid.util.BernoulliDistribution;
-import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.classification.Classifier.ProbabilityEstimator;
-import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
-import java.util.*;
-import java.util.stream.IntStream;
 
 /**
  * Created by Rainicy on 10/23/15.
@@ -62,7 +56,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             }
         }
         this.multiNomialClassifiers = new LogisticRegression(numClusters, numFeatures,true);
-        this.predictMode = "mixtureMax";
+        this.predictMode = "sampling";
     }
 
     public BMMClassifier() {
@@ -88,7 +82,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             }
         }
         bmm.multiNomialClassifiers = new LKBoost(numClusters);
-        bmm.predictMode = "singleTop";
+        bmm.predictMode = "sampling";
         return bmm;
     }
 
@@ -140,139 +134,18 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
         // new a BMMPredictor
         BMMPredictor bmmPredictor = new BMMPredictor(vector, multiNomialClassifiers, binaryClassifiers, numClusters, numLabels);
-
-
-
+        bmmPredictor.setNumSamples(numSample);
+        bmmPredictor.setAllowEmpty(allowEmpty);
         // samples methods
         if (predictMode.equals("sampling")) {
-            bmmPredictor.setNumSamples(numSample);
             return bmmPredictor.predictBySampling();
 
         } else if (predictMode.equals("dynamic")) {
-            Set<MultiLabel> samplesForCluster = null;
-            try {
-                samplesForCluster = sampleFromSingles(vector, bmmPredictor.logisticProb, 0);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            for (MultiLabel label : samplesForCluster) {
-                // will not consider the empty prediction
-                //TODO if consider empty prediction
-                if ((label.getMatchedLabels().size() == 0) && !allowEmpty) {
-                    continue;
-                }
-
-                Vector candidateY = new DenseVector(numLabels);
-                for(int labelIndex : label.getMatchedLabels()) {
-                    candidateY.set(labelIndex, 1.0);
-                }
-
-                double logProb = logProbYnGivenXnLogisticProb(bmmPredictor.logisticLogProb, candidateY, bmmPredictor.logProbs);
-
-                if (logProb >= maxLogProb) {
-                    predVector = candidateY;
-                    maxLogProb = logProb;
-                }
-            }
+            return bmmPredictor.predictByDynamic();
         } else {
             throw new RuntimeException("Unknown predictMode: " + predictMode);
         }
 
-        for (int l=0; l<numLabels; l++) {
-            if (predVector.get(l) == 1.0) {
-                predLabel.addLabel(l);
-            }
-        }
-        return predLabel;
-    }
-
-    private Set<MultiLabel> sampleFromSingles(Vector vector, double[] logisticProb, double topM) throws IOException {
-        int top = 20;
-        Set<MultiLabel> samples = new HashSet<>();
-        for (int k=0; k< binaryClassifiers.length; k++) {
-            Set<MultiLabel> sample = sampleFromSingle(vector, top, k, logisticProb[k], topM);
-            for (MultiLabel multiLabel : sample) {
-                if (!samples.contains(multiLabel)) {
-                    samples.add(multiLabel);
-                }
-            }
-        }
-        return samples;
-    }
-
-    private Set<MultiLabel> sampleFromSingle(Vector vector, int top, int k, double probK, double topM) throws IOException {
-        Set<MultiLabel> sample = new HashSet<>();
-        double maxProb = 1.0;
-
-        MultiLabel label = new MultiLabel();
-        Map<Integer, Double> labelAbsProbMap = new HashMap<>();
-        Map<Integer, Double> labelProbMap = new HashMap<>();
-        for (int l=0; l< binaryClassifiers[k].length; l++) {
-            double prob = binaryClassifiers[k][l].predictClassProbs(vector)[1];
-            if (prob > 0.5) {
-                label.addLabel(l);
-                maxProb *= prob;
-            } else {
-                maxProb *= (1-prob);
-            }
-            double absProb = Math.abs(prob - 0.5);
-            labelAbsProbMap.put(l, absProb);
-            labelProbMap.put(l, prob);
-        }
-        MultiLabel copyLabel1 = new MultiLabel();
-        for (int l : label.getMatchedLabels()) {
-            copyLabel1.addLabel(l);
-        }
-        sample.add(copyLabel1);
-
-        double prevProb = maxProb;
-        for (int i=1; i<top; i++) {
-            // find min abs prob among all labels
-            int minL = 0;
-            double minProb = 100.0;
-            for (Map.Entry<Integer, Double> entry : labelAbsProbMap.entrySet()) {
-                if (entry.getValue() < minProb) {
-                    minL = entry.getKey();
-                    minProb = entry.getValue();
-                }
-            }
-            double targetProb = labelProbMap.get(minL);
-            // flip the label
-            if (label.matchClass(minL)) {
-                label.removeLabel(minL);
-                prevProb = prevProb / targetProb * (1-targetProb);
-            } else {
-                label.addLabel(minL);
-                prevProb = prevProb * targetProb / (1-targetProb);
-            }
-            labelAbsProbMap.remove(minL);
-
-            // check if we need to stop sampling.
-            if (prevProb < maxProb + 1 - 1.0/probK) {
-                break;
-            }
-            if (prevProb <= topM / numClusters / probK) {
-                break;
-            }
-
-            MultiLabel copyLabel = new MultiLabel();
-            for (int l : label.getMatchedLabels()) {
-                copyLabel.addLabel(l);
-            }
-            sample.add(copyLabel);
-        }
-
-        return sample;
-    }
-
-    private double logProbYnGivenXnLogisticProb(double[] logisticLogProb, Vector Y, double[][][] logProbsForX) {
-        double[] logPYnk = clusterConditionalLogProbArr(logProbsForX,Y);
-        double[] sumLog = new double[logisticLogProb.length];
-        for (int k=0; k<numClusters; k++) {
-            sumLog[k] = logisticLogProb[k] + logPYnk[k];
-        }
-
-        return MathUtil.logSumExp(sumLog);
     }
 
 

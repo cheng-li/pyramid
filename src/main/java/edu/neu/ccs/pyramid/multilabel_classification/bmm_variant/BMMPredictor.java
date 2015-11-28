@@ -8,6 +8,7 @@ import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.*;
 import java.util.stream.IntStream;
 
 /**
@@ -60,7 +61,7 @@ public class BMMPredictor {
     /**
      * prediction allows empty or not.
      */
-    boolean allowEmpty;
+    boolean allowEmpty = false;
 
     /**
      * default
@@ -90,9 +91,67 @@ public class BMMPredictor {
         }
     }
 
-    public MultiLabel predictBySampling() {
-        MultiLabel predLabel = new MultiLabel();
+    public MultiLabel predictByDynamic() {
+        double maxLogProb = Double.NEGATIVE_INFINITY;
+        Vector predVector = new DenseVector(numLabels);
 
+
+        // initialization
+        double[] maxClusterProbs = new double[numClusters];
+        Map<Integer, DynamicProgramming> DPs = new HashMap<>();
+        for (int k=0; k<numClusters; k++) {
+            DPs.put(k,new DynamicProgramming(probs[k], logProbs[k]));
+            maxClusterProbs[k] = DPs.get(k).highestProb();
+        }
+
+        int iter = 0;
+        while (!DPs.isEmpty() && (iter++ < numSample)) {
+            List<Integer> removeList = new LinkedList<>();
+            for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
+                int k = entry.getKey();
+                DynamicProgramming dp = entry.getValue();
+                double prob = dp.highestProb();
+                Vector candidateY = dp.nextHighest();
+
+                // whether consider empty prediction
+                if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
+                    continue;
+                }
+
+                double logProb = logProbYnGivenXnLogisticProb(candidateY);
+
+                if (logProb >= maxLogProb) {
+                    predVector = candidateY;
+                    maxLogProb = logProb;
+                }
+
+                // check if need to remove cluster k from the candidates
+                double piK = logisticProb[k];
+                if ((piK*(maxClusterProbs[k] - prob) >= (1 - piK))
+                        || (piK * prob <= Math.exp(maxLogProb)/numClusters)) {
+                    removeList.add(k);
+                }
+            }
+
+            for (int k : removeList) {
+                DPs.remove(k);
+            }
+        }
+
+        MultiLabel predLabel = new MultiLabel();
+        for (int l=0; l<numLabels; l++) {
+            if (predVector.get(l) == 1.0) {
+                predLabel.addLabel(l);
+            }
+        }
+        return predLabel;
+    }
+
+    /**
+     * predict by sampling.
+     * @return
+     */
+    public MultiLabel predictBySampling() {
 
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
@@ -109,7 +168,7 @@ public class BMMPredictor {
                 candidateY.set(l, bernoulliDistribution.sample());
             }
             // whether consider empty prediction
-            if ((candidateY.maxValue() == 0) && !allowEmpty) {
+            if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
                 continue;
             }
 
@@ -121,6 +180,7 @@ public class BMMPredictor {
             }
         }
 
+        MultiLabel predLabel = new MultiLabel();
         for (int l=0; l<numLabels; l++) {
             if (predVector.get(l) == 1.0) {
                 predLabel.addLabel(l);
@@ -167,5 +227,9 @@ public class BMMPredictor {
 
     public void setNumSamples(int numSample) {
         this.numSample = numSample;
+    }
+
+    public void setAllowEmpty(boolean allowEmpty) {
+        this.allowEmpty = allowEmpty;
     }
 }
