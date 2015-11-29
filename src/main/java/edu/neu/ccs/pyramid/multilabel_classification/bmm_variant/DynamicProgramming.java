@@ -71,6 +71,18 @@ public class DynamicProgramming {
     }
 
     /**
+     * calculate the current the highest log probability of the
+     * first element in the queue.
+     * @return
+     */
+    public double highestLogProb() {
+        if (dp.size() > 0) {
+            return dp.peek().logProb;
+        }
+        return Double.NEGATIVE_INFINITY;
+    }
+
+    /**
      * find the next vector with highest probability.
      * And update the queue with flipping every label.
      * @return

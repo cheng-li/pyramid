@@ -103,18 +103,20 @@ public class BMMPredictor {
             DPs.put(k,new DynamicProgramming(probs[k], logProbs[k]));
         }
 
-        int iter = 0;
-        while (!DPs.isEmpty() && (iter++ < numSample)) {
+        while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
             for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
                 int k = entry.getKey();
                 DynamicProgramming dp = entry.getValue();
-                double prob = dp.highestProb();
+                double prob = dp.highestLogProb();
 
                 Vector candidateY = dp.nextHighest();
 
                 // whether consider empty prediction
                 if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
+                    if (dp.dp.size() == 0) {
+                        removeList.add(k);
+                    }
                     continue;
                 }
 
@@ -126,7 +128,7 @@ public class BMMPredictor {
                 }
 
                 // check if need to remove cluster k from the candidates
-                if (checkStop(prob, maxLogProb, k)) {
+                if (checkStop(prob, maxLogProb, k) || dp.dp.size() == 0) {
                     removeList.add(k);
                 }
             }
@@ -145,7 +147,7 @@ public class BMMPredictor {
     }
 
     private boolean checkStop(double prob, double maxLogProb, int k) {
-        if (logisticProb[k] * prob <= Math.exp(maxLogProb)/numClusters) {
+        if (logisticLogProb[k] + prob <= maxLogProb - Math.log(numClusters)) {
             return true;
         }
         return false;

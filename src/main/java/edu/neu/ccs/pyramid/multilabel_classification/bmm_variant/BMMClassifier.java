@@ -12,10 +12,7 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
 
 /**
  * Created by Rainicy on 10/23/15.
@@ -130,7 +127,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         }
         return logProbResult;
     }
-    
+
 
 
     public MultiLabel predict(Vector vector) {
