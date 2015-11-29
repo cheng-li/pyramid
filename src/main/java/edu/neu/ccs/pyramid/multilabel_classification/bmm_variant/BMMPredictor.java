@@ -99,8 +99,10 @@ public class BMMPredictor {
 
         // initialization
         Map<Integer, DynamicProgramming> DPs = new HashMap<>();
+        double[] maxClusterProb = new double[numClusters];
         for (int k=0; k<numClusters; k++) {
             DPs.put(k,new DynamicProgramming(probs[k], logProbs[k]));
+            maxClusterProb[k] = DPs.get(k).highestProb();
         }
 
         while (DPs.size() > 0) {
@@ -128,7 +130,7 @@ public class BMMPredictor {
                 }
 
                 // check if need to remove cluster k from the candidates
-                if (checkStop(prob, maxLogProb, k) || dp.dp.size() == 0) {
+                if (checkStop(maxClusterProb, prob, maxLogProb, k) || dp.dp.size() == 0) {
                     removeList.add(k);
                 }
             }
@@ -146,10 +148,26 @@ public class BMMPredictor {
         return predLabel;
     }
 
-    private boolean checkStop(double prob, double maxLogProb, int k) {
+    private boolean checkStop(double[] maxClusterProb, double prob, double maxLogProb, int k) {
+        if (logisticProb[k] * (maxClusterProb[k] - prob) >= 1 - logisticProb[k]) {
+            return true;
+        }
+
         if (logisticLogProb[k] + prob <= maxLogProb - Math.log(numClusters)) {
             return true;
         }
+
+        double sum = 0.0;
+        for (int r=0; r<numClusters; r++) {
+            if (r == k) {
+                continue;
+            }
+            sum += logisticProb[r] * maxClusterProb[r];
+        }
+        if (logisticProb[k] * prob + sum <= Math.exp(maxLogProb)) {
+            return true;
+        }
+
         return false;
     }
 
