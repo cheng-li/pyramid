@@ -8,6 +8,7 @@ import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -97,11 +98,9 @@ public class BMMPredictor {
 
 
         // initialization
-        double[] maxClusterProbs = new double[numClusters];
         Map<Integer, DynamicProgramming> DPs = new HashMap<>();
         for (int k=0; k<numClusters; k++) {
             DPs.put(k,new DynamicProgramming(probs[k], logProbs[k]));
-            maxClusterProbs[k] = DPs.get(k).highestProb();
         }
 
         int iter = 0;
@@ -111,6 +110,7 @@ public class BMMPredictor {
                 int k = entry.getKey();
                 DynamicProgramming dp = entry.getValue();
                 double prob = dp.highestProb();
+
                 Vector candidateY = dp.nextHighest();
 
                 // whether consider empty prediction
@@ -126,13 +126,10 @@ public class BMMPredictor {
                 }
 
                 // check if need to remove cluster k from the candidates
-                double piK = logisticProb[k];
-                if ((piK*(maxClusterProbs[k] - prob) >= (1 - piK))
-                        || (piK * prob <= Math.exp(maxLogProb)/numClusters)) {
+                if (checkStop(prob, maxLogProb, k)) {
                     removeList.add(k);
                 }
             }
-
             for (int k : removeList) {
                 DPs.remove(k);
             }
@@ -145,6 +142,13 @@ public class BMMPredictor {
             }
         }
         return predLabel;
+    }
+
+    private boolean checkStop(double prob, double maxLogProb, int k) {
+        if (logisticProb[k] * prob <= Math.exp(maxLogProb)/numClusters) {
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -40,8 +40,8 @@ public class DynamicProgramming {
         this.probs = probs;
         this.logProbs = logProbs;
 
-        dp = new PriorityQueue<>();
 
+        dp = new PriorityQueue<>();
         Vector vector = new DenseVector(numLabels);
 
         double logProb = 0.0;
@@ -64,7 +64,10 @@ public class DynamicProgramming {
      * @return
      */
     public double highestProb() {
-        return Math.exp(dp.peek().logProb);
+        if (dp.size() > 0) {
+            return Math.exp(dp.peek().logProb);
+        }
+        return 0;
     }
 
     /**
@@ -73,11 +76,15 @@ public class DynamicProgramming {
      * @return
      */
     public Vector nextHighest() {
-        Vector vector = dp.poll().vector;
+        Vector vector;
+        if (dp.size() > 0) {
+            vector = dp.poll().vector;
+            flipLabels(vector);
+            return vector;
+        }
 
-        flipLabels(vector);
 
-        return vector;
+        return new DenseVector(numLabels);
     }
 
     /**
