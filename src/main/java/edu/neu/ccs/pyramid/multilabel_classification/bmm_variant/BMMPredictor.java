@@ -10,6 +10,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -92,85 +93,47 @@ public class BMMPredictor {
         }
     }
 
+    public MultiLabel predictByGreedy() {
+        Vector predVector = new DenseVector(numLabels);
+        double prevLogProb;
+        if (allowEmpty) {
+            prevLogProb = logProbYnGivenXnLogisticProb(predVector);
+        } else {
+            prevLogProb = Double.NEGATIVE_INFINITY;
+        }
 
-//    public MultiLabel predictByDynamic() {
-//        double maxLogProb = Double.NEGATIVE_INFINITY;
-//        Vector predVector = new DenseVector(numLabels);
-//
-//
-//        // initialization
-//        Map<Integer, DynamicProgramming> DPs = new HashMap<>();
-//        double[] maxClusterProb = new double[numClusters];
-//        for (int k=0; k<numClusters; k++) {
-//            DPs.put(k,new DynamicProgramming(probs[k], logProbs[k]));
-//            maxClusterProb[k] = DPs.get(k).highestProb();
-//        }
-//
-//        while (DPs.size() > 0) {
-//            List<Integer> removeList = new LinkedList<>();
-//            for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
-//                int k = entry.getKey();
-//                DynamicProgramming dp = entry.getValue();
-//                double prob = dp.highestLogProb();
-//
-//                Vector candidateY = dp.nextHighest();
-//
-//                // whether consider empty prediction
-//                if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
-//                    if (dp.dp.size() == 0) {
-//                        removeList.add(k);
-//                    }
-//                    continue;
-//                }
-//
-//                double logProb = logProbYnGivenXnLogisticProb(candidateY);
-//
-//                if (logProb >= maxLogProb) {
-//                    predVector = candidateY;
-//                    maxLogProb = logProb;
-//                }
-//
-//                // check if need to remove cluster k from the candidates
-//                if (checkStop(maxClusterProb, prob, maxLogProb, k) || dp.dp.size() == 0) {
-//                    removeList.add(k);
-//                }
-//            }
-//            for (int k : removeList) {
-//                DPs.remove(k);
-//            }
-//        }
-//
-//        MultiLabel predLabel = new MultiLabel();
-//        for (int l=0; l<numLabels; l++) {
-//            if (predVector.get(l) == 1.0) {
-//                predLabel.addLabel(l);
-//            }
-//        }
-//        return predLabel;
-//    }
-//
-//    private boolean checkStop(double[] maxClusterProb, double prob, double maxLogProb, int k) {
-//        if (logisticProb[k] * (maxClusterProb[k] - prob) >= 1 - logisticProb[k]) {
-//            return true;
-//        }
-//
-//        if (logisticLogProb[k] + prob <= maxLogProb - Math.log(numClusters)) {
-//            return true;
-//        }
-//
-//        double sum = 0.0;
-//        for (int r=0; r<numClusters; r++) {
-//            if (r == k) {
-//                continue;
-//            }
-//            sum += logisticProb[r] * maxClusterProb[r];
-//        }
-//        if (logisticProb[k] * prob + sum <= Math.exp(maxLogProb)) {
-//            return true;
-//        }
-//
-//        return false;
-//    }
+        Set<Integer> labelSet = IntStream.range(0, numLabels).boxed().collect(Collectors.toSet());
+        while (!labelSet.isEmpty()) {
+            double curLogProb = Double.NEGATIVE_INFINITY;
+            int curLebel=-1;
+            // find the maximum one
+            for (int k : labelSet) {
+                Vector curVector = new DenseVector((DenseVector) predVector, false);
+                curVector.set(k, 1.0);
+                double logProb = logProbYnGivenXnLogisticProb(curVector);
+                if (logProb > curLogProb) {
+                    curLebel = k;
+                    curLogProb = logProb;
+                }
+            }
+
+            if (curLogProb > prevLogProb) {
+                predVector.set(curLebel, 1.0);
+                prevLogProb = curLogProb;
+                labelSet.remove(curLebel);
+            } else {
+                break;
+            }
+        }
+
+        MultiLabel predLabel = new MultiLabel();
+        for (int l=0; l<numLabels; l++) {
+            if (predVector.get(l) == 1.0) {
+                predLabel.addLabel(l);
+            }
+        }
+        return predLabel;
+    }
 
     public MultiLabel predictByDynamic() {
         // initialization
@@ -202,6 +165,8 @@ public class BMMPredictor {
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
+//        int iter = 0;
+//        int maxIter = 0;
         while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
             for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
@@ -224,6 +189,7 @@ public class BMMPredictor {
                 if (logProb >= maxLogProb) {
                     predVector = candidateY;
                     maxLogProb = logProb;
+//                    maxIter = iter;
                 }
 
                 // check if need to remove cluster k from the candidates
@@ -234,8 +200,10 @@ public class BMMPredictor {
             for (int k : removeList) {
                 DPs.remove(k);
             }
-        }
 
+//            iter++;
+        }
+//        System.out.println("maxIter: " + maxIter);
         MultiLabel predLabel = new MultiLabel();
         for (int l=0; l<numLabels; l++) {
             if (predVector.get(l) == 1.0) {

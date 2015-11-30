@@ -12,6 +12,10 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 /**
@@ -128,6 +132,16 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return logProbResult;
     }
 
+//    public MultiLabel[] predict(MultiLabelClfDataSet dataSet){
+//
+//        List<MultiLabel> results = new LinkedList<>();
+//
+//        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
+//            results.add(predict(dataSet.getRow(n)));
+//        }
+//        return results.toArray(new MultiLabel[results.size()]);
+//    }
+
 
 
     public MultiLabel predict(Vector vector) {
@@ -142,6 +156,8 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
         } else if (predictMode.equals("dynamic")) {
             return bmmPredictor.predictByDynamic();
+        } else if (predictMode.equals("greedy")) {
+            return bmmPredictor.predictByGreedy();
         } else {
             throw new RuntimeException("Unknown predictMode: " + predictMode);
         }
