@@ -186,5 +186,13 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         this.labelTranslator = labelTranslator;
     }
 
-
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("LogisticRegression{");
+        sb.append("numClasses=").append(numClasses);
+        sb.append(", numFeatures=").append(numFeatures);
+        sb.append(", weights=").append(weights);
+        sb.append('}');
+        return sb.toString();
+    }
 }

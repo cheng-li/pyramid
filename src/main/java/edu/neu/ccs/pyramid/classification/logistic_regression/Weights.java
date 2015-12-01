@@ -179,10 +179,13 @@ public class Weights implements Serializable {
 
     @Override
     public String toString() {
-        return "Weights{" +
-                "numClasses=" + numClasses +
-                ", numFeatures=" + numFeatures +
-                ", weightVector=" + weightVector +
-                '}';
+        final StringBuilder sb = new StringBuilder("Weights{");
+        for (int k=0;k<numClasses;k++){
+            sb.append("for class ").append(k).append(":").append("\n");
+            sb.append("bias = "+getBiasForClass(k)).append(",");
+            sb.append("weights = "+getWeightsWithoutBiasForClass(k)).append("\n");
+        }
+        sb.append('}');
+        return sb.toString();
     }
 }
