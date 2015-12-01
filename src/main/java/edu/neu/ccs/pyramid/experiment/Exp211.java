@@ -55,14 +55,14 @@ public class Exp211 {
             MultiLabel[] trainPredict;
             MultiLabel[] testPredict;
 
-            trainPredict = bmmClassifier.predict(trainSet);
-            testPredict = bmmClassifier.predict(testSet);
+//            trainPredict = bmmClassifier.predict(trainSet);
+//            testPredict = bmmClassifier.predict(testSet);
             System.out.print("random init" + "\t" );
-            System.out.print("objective: "+optimizer.getObjective()+ "\t");
-            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
-            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
-            System.out.print("testACC  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict) + "\t");
-            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
+//            System.out.print("objective: "+optimizer.getObjective()+ "\t");
+//            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
+//            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
+//            System.out.print("testACC  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict) + "\t");
+//            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
 
             if (config.getBoolean("initialize")) {
                 BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance, new File(config.getString("initializeBy")));

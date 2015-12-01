@@ -42,7 +42,7 @@ public class BMMClassifierTestBingyu {
         BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),4,dataSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
         bmmClassifier.setNumSample(100);
-        bmmClassifier.setPredictMode("dynamic");
+        bmmClassifier.setPredictMode("greedy");
         bmmClassifier.setAllowEmpty(false);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 

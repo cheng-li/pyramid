@@ -88,13 +88,10 @@ public class DynamicProgramming {
      * @return
      */
     public Vector nextHighest() {
-        Vector vector;
         if (dp.size() > 0) {
-            vector = dp.poll().vector;
-            flipLabels(vector);
-            return vector;
+            flipLabels(dp.peek());
+            return dp.poll().vector;
         }
-
 
         return new DenseVector(numLabels);
     }
@@ -103,23 +100,30 @@ public class DynamicProgramming {
      * flip each bit in given vector, and calculate its
      * log probability, if it is not cached yet, put it into
      * the max queue.
-     * @param vector
+     * @param data
      */
-    private void flipLabels(Vector vector) {
+    private void flipLabels(Data data) {
+
+        double prevlogProb = data.logProb;
+        Vector vector = data.vector;
 
         for (int l=0; l<numLabels; l++) {
             DenseVector flipVector = new DenseVector((DenseVector) vector,false);
+            double logProb;
             if (flipVector.get(l) == 0.0) {
                 flipVector.set(l, 1.0);
+                if (cache.contains(flipVector)) {
+                    continue;
+                }
+                logProb = prevlogProb - this.logProbs[l][0] + this.logProbs[l][1];
             } else {
                 flipVector.set(l, 0.0);
+                if (cache.contains(flipVector)) {
+                    continue;
+                }
+                logProb = prevlogProb - this.logProbs[l][1] + this.logProbs[l][0];
             }
 
-            if (cache.contains(flipVector)) {
-                continue;
-            }
-
-            double logProb = calculateProb(flipVector);
             dp.add(new Data(flipVector, logProb));
             cache.add(flipVector);
         }
