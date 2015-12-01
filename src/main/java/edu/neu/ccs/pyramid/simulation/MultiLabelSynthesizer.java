@@ -57,4 +57,30 @@ public class MultiLabelSynthesizer {
 
         return dataSet;
     }
+
+    /**
+     * 30: 1,0,0
+     * 40: 0,1,0
+     * 30: 0,0,1
+     * @return
+     */
+    public static MultiLabelClfDataSet randomMultiClass(){
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(1)
+                .numClasses(3)
+                .numDataPoints(100)
+                .build();
+
+        for (int i=0;i<30;i++){
+            dataSet.addLabel(i,0);
+        }
+        for (int i=30;i<70;i++){
+            dataSet.addLabel(i,1);
+        }
+
+        for (int i=70;i<100;i++){
+            dataSet.addLabel(i,2);
+        }
+
+        return dataSet;
+    }
 }
