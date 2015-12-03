@@ -26,7 +26,7 @@ public class SMoTest {
     }
 
     private static void smoTest() throws IOException, ClassNotFoundException {
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File("/home/bingyu/spame/trec_data/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File("/Users/Rainicy/Datasets/spam/data_sets/train.trec"),
                 DataSetType.CLF_DENSE, true);
 
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
@@ -35,7 +35,7 @@ public class SMoTest {
             }
         }
 
-        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File("/home/bingyu/spame/trec_data/test.trec"),
+        ClfDataSet testDataset = TRECFormat.loadClfDataSet(new File("/Users/Rainicy/Datasets/spam/data_sets/test.trec"),
                 DataSetType.CLF_DENSE, true);
         for (int i=0; i<testDataset.getNumDataPoints(); i++) {
             if (testDataset.getLabels()[i] == 0) {
@@ -45,7 +45,7 @@ public class SMoTest {
 //        System.out.println(Arrays.toString(testDataset.getLabels()));
 
         System.out.println(dataSet.getMetaInfo());
-        SMO smo = new SMO(0.05, 0.0001, 0.0001, 50, "linear");
+        SMO smo = new SMO(0.5, 0.001, 0.001, 1000, "linear");
         smo.train(dataSet);
         int[] resulst = smo.predict(dataSet);
         System.out.println(Arrays.toString(resulst));
