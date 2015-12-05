@@ -76,14 +76,17 @@ public class Exp300 {
             System.out.println("Finish to train sentence vectors!");
         }
 
-        // Populate the vectors and labels into trec files
-        System.out.println("Writing vectors and labels into Trec files...");
-        writeTrec("/sentence.vector/train.vectors", "/documents/train.labels", "/trec/train.trec");
-        writeTrec("/sentence.vector/test.vectors", "/documents/test.labels", "/trec/test.trec");
-        System.out.println("Finished!");
-
-        similarity(Paths.get(args[0]).toAbsolutePath().normalize().toString(), "good", "great");
-        mostSimilar(Paths.get(args[0]).toAbsolutePath().normalize().toString(), "great", 10);
+        // Populate the vectors and labels into trec files only when sent2vec.on = true
+        // to avoid FileNotFoundException.
+        if (config.getBoolean("sent2vec.on")) {
+            System.out.println("Writing vectors and labels into Trec files...");
+            writeTrec("/sentence.vector/train.vectors", "/documents/train.labels", "/trec/train.trec");
+            writeTrec("/sentence.vector/test.vectors", "/documents/test.labels", "/trec/test.trec");
+            System.out.println("Finished!");
+    
+            similarity(Paths.get(args[0]).toAbsolutePath().normalize().toString(), "good", "great");
+            mostSimilar(Paths.get(args[0]).toAbsolutePath().normalize().toString(), "great", 10);
+        }
     }
 
     /**
