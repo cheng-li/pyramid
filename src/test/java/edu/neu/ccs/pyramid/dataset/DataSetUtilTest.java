@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 
@@ -13,7 +14,7 @@ public class DataSetUtilTest {
 
     public static void main(String[] args) throws Exception{
 
-        test7();
+        test8();
     }
 
     static void test1(){
@@ -138,6 +139,15 @@ public class DataSetUtilTest {
         System.out.println(trainValidation.getFirst());
         System.out.println("validation set");
         System.out.println(trainValidation.getSecond());
+    }
+
+    private static void test8() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"20newsgroup/1/train.trec"),
+                DataSetType.ML_CLF_SPARSE,true);
+        System.out.println(dataSet.getMetaInfo());
+        System.out.println(dataSet.getLabelTranslator());
+        String str = DataSetUtil.multiLabelToBinaryString(dataSet);
+        FileUtils.writeStringToFile(new File(TMP,"labels.txt"),str);
     }
 
 

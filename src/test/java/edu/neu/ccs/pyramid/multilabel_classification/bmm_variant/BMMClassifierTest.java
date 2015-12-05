@@ -31,6 +31,7 @@ public class BMMClassifierTest {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
         BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),4,dataSet.getNumFeatures());
+        bmmClassifier.setPredictMode("dynamic");
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
         bmmClassifier.setNumSample(100);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
@@ -128,9 +129,5 @@ public class BMMClassifierTest {
             System.out.println("testAcc: " + Accuracy.accuracy(bmmClassifier,testSet));
         }
         System.out.println(bmmClassifier.toString());
-        for (int k=0;k<numClusters;k++){
-            System.out.println("cluster "+k);
-            System.out.println(bmmClassifier.softMaxRegression.getWeights().getWeightsWithoutBiasForClass(k));
-        }
     }
 }

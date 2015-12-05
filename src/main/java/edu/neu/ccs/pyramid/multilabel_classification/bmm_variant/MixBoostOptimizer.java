@@ -1,10 +1,14 @@
 package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
+import edu.neu.ccs.pyramid.classification.Classifier;
+import edu.neu.ccs.pyramid.classification.lkboost.LKBOutputCalculator;
+import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
+import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.*;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,9 +22,9 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
- * Created by Rainicy on 10/23/15.
+ * Created by chengli on 11/10/15.
  */
-public class BMMOptimizer implements Serializable, Parallelizable {
+public class MixBoostOptimizer implements Serializable, Parallelizable {
     private static final Logger logger = LogManager.getLogger();
     private BMMClassifier bmmClassifier;
     private MultiLabelClfDataSet dataSet;
@@ -31,24 +35,24 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     // format [#cluster][#data]
     double[][] gammasT;
 
-    // regularization for multiNomialClassifiers
-    private double gaussianPriorforSoftMax;
-    // regularization for binary logisticRegression
-    private double gaussianPriorforLogit;
-
     // format [#data]
     private Vector[] labels;
 
     // format [#labels][#data][2]
     private double[][][] targetsDistributions;
-    private boolean isParallel = true;
+    private boolean isParallel = false;
 
-    public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
-                        double gaussianPriorforSoftMax, double gaussianPriorforLogit) {
+    private int numLeavesBinary = 2;
+    private int numLeavesMultiNomial = 2;
+    private double shrinkageBinary = 0.1;
+    private double shrinkageMultiNomial = 0.1;
+    private int numIterationsBinary = 20;
+    private int numIterationsMultiNomial = 20;
+
+
+    public MixBoostOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet) {
         this.bmmClassifier = bmmClassifier;
         this.dataSet = dataSet;
-        this.gaussianPriorforSoftMax = gaussianPriorforSoftMax;
-        this.gaussianPriorforLogit = gaussianPriorforLogit;
 
         this.terminator = new Terminator();
         this.terminator.setGoal(Terminator.Goal.MINIMIZE);
@@ -83,6 +87,30 @@ public class BMMOptimizer implements Serializable, Parallelizable {
                 }
             }
         }
+    }
+
+    public void setNumLeavesBinary(int numLeavesBinary) {
+        this.numLeavesBinary = numLeavesBinary;
+    }
+
+    public void setNumLeavesMultiNomial(int numLeavesMultiNomial) {
+        this.numLeavesMultiNomial = numLeavesMultiNomial;
+    }
+
+    public void setShrinkageBinary(double shrinkageBinary) {
+        this.shrinkageBinary = shrinkageBinary;
+    }
+
+    public void setShrinkageMultiNomial(double shrinkageMultiNomial) {
+        this.shrinkageMultiNomial = shrinkageMultiNomial;
+    }
+
+    public void setNumIterationsBinary(int numIterationsBinary) {
+        this.numIterationsBinary = numIterationsBinary;
+    }
+
+    public void setNumIterationsMultiNomial(int numIterationsMultiNomial) {
+        this.numIterationsMultiNomial = numIterationsMultiNomial;
     }
 
     public void optimize() {
@@ -214,18 +242,16 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     }
 
     private void updateBinaryLogisticRegression(int k) {
+        if (logger.isDebugEnabled()){
+            logger.debug("update classifiers in cluster "+k);
+        }
 
         IntStream intStream = IntStream.range(0, bmmClassifier.getNumClasses());
         if (isParallel){
             intStream = intStream.parallel();
         }
         intStream.forEach(l -> {
-            RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
-                    dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
-            ridgeLogisticOptimizer.optimize();
-            if (logger.isDebugEnabled()){
-                logger.debug("for cluster "+k+" label "+l+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
-            }
+            updateBinaryClassifier(k,l);
         });
 
 //        for (int l=0; l<bmmClassifier.getNumClasses(); l++) {
@@ -235,10 +261,39 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 //        }
     }
 
+    private void updateBinaryClassifier(int clusterIndex, int classIndex){
+        int numIterations = numIterationsBinary;
+        double shrinkage = shrinkageBinary;
+        LKBoost boost = (LKBoost)this.bmmClassifier.binaryClassifiers[clusterIndex][classIndex];
+        RegTreeConfig regTreeConfig = new RegTreeConfig()
+                .setMaxNumLeaves(numLeavesBinary);
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(2));
+
+        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,dataSet, regTreeFactory,gammasT[clusterIndex],targetsDistributions[classIndex]);
+        optimizer.setShrinkage(shrinkage);
+        optimizer.initialize();
+        for (int i=0;i<numIterations;i++){
+            optimizer.iterate();
+        }
+    }
+
     private void updateSoftMaxRegression() {
-        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.multiNomialClassifiers,
-                dataSet, gammas, gaussianPriorforSoftMax);
-        ridgeLogisticOptimizer.optimize();
+        int numClusters = bmmClassifier.numClusters;
+        int numIterations = numIterationsMultiNomial;
+        double shrinkage = shrinkageMultiNomial;
+        LKBoost boost = (LKBoost)this.bmmClassifier.multiNomialClassifiers;
+        RegTreeConfig regTreeConfig = new RegTreeConfig()
+                .setMaxNumLeaves(numLeavesMultiNomial);
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numClusters));
+
+        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,dataSet, regTreeFactory,gammas);
+        optimizer.setShrinkage(shrinkage);
+        optimizer.initialize();
+        for (int i=0;i<numIterations;i++){
+            optimizer.iterate();
+        }
     }
 
     public static Object[] getColumn(Object[][] array, int index){
@@ -251,10 +306,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 
 
     public double getObjective() {
-        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression)bmmClassifier.multiNomialClassifiers,
-                dataSet, gammas, gaussianPriorforSoftMax);
-        // Q function for \Thata + gamma.entropy and Q function for Weights
-        return logisticLoss.getValue() + binaryLogitsObj();
+        return multiNomialObj() + binaryLogitsObj();
     }
 
 //    private double getMStepObjective() {
@@ -274,6 +326,12 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 //        return Entropy.entropy(gammas[i]);
 //    }
 
+    private double multiNomialObj(){
+        Classifier.ProbabilityEstimator estimator = bmmClassifier.multiNomialClassifiers;
+        double[][] targets = gammas;
+        return KLDivergence.kl(estimator,dataSet,targets);
+    }
+
     private double binaryLogitsObj() {
         double res = IntStream.range(0,bmmClassifier.numClusters)
                 .mapToDouble(this::binaryLogitsObj).sum();
@@ -286,11 +344,16 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         double sum = 0;
         int L = dataSet.getNumClasses();
         for (int l=0; l<L; l++) {
-            LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) bmmClassifier.binaryClassifiers[k][l],
-                    dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
-            sum += logisticLoss.getValue();
+            sum += binaryClassfierObj(k,l);
         }
         return sum;
+    }
+
+    private double binaryClassfierObj(int clusterIndex, int classIndex){
+        Classifier.ProbabilityEstimator estimator = bmmClassifier.binaryClassifiers[clusterIndex][classIndex];
+        double[][] targets = targetsDistributions[classIndex];
+        double[] weights = gammasT[clusterIndex];
+        return KLDivergence.kl(estimator,dataSet,targets,weights);
     }
 
 

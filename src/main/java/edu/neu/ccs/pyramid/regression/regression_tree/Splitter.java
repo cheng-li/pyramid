@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.regression.regression_tree;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 import java.util.*;
@@ -14,6 +16,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 8/6/14.
  */
 public class Splitter {
+    private static final Logger logger = LogManager.getLogger();
     private static ForkJoinPool pool = new ForkJoinPool();
 
 
@@ -28,11 +31,15 @@ public class Splitter {
                                        double[] labels,
                                        double[] probs){
         GlobalStats globalStats = new GlobalStats(labels,probs);
+        if (logger.isDebugEnabled()){
+            logger.debug("global statistics = "+globalStats);
+        }
 
         int randomLevel = regTreeConfig.getRandomLevel();
 
         ForkJoinTask<List<SplitResult>> task = pool.submit(() ->
-                IntStream.range(0,dataSet.getNumFeatures()).parallel()
+                IntStream.range(0, dataSet.getNumFeatures())
+                        .parallel()
                         .mapToObj(featureIndex -> split(regTreeConfig, dataSet, labels,
                                 probs, featureIndex, globalStats))
                         .filter(Optional::isPresent)
@@ -189,6 +196,16 @@ public class Splitter {
 
         public int getBinaryCount() {
             return binaryCount;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("GlobalStats{");
+            sb.append("WeightedLabelSum=").append(WeightedLabelSum);
+            sb.append(", probabilisticCount=").append(probabilisticCount);
+            sb.append(", binaryCount=").append(binaryCount);
+            sb.append('}');
+            return sb.toString();
         }
     }
 }

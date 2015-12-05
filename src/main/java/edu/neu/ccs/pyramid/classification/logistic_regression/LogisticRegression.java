@@ -110,7 +110,7 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     }
 
 
-    public double[] predictClassLogProbs(Vector vector){
+    public double[] predictLogClassProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
         double[] logProbVector = new double[this.numClasses];
         double logDenominator = MathUtil.logSumExp(scoreVector);
@@ -129,7 +129,7 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     }
 
     double klDivergence(Vector vector, double[] targetDistribution){
-        double[] logEstimation = predictClassLogProbs(vector);
+        double[] logEstimation = predictLogClassProbs(vector);
 
         return KLDivergence.klGivenPLogQ(targetDistribution,logEstimation);
 
@@ -141,10 +141,10 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
                 .sum();
     }
 
-    public double dataSetKLWeightedDivergence(DataSet dataSet, double[][] targetDistributions, double[] gammas) {
+    public double dataSetKLWeightedDivergence(DataSet dataSet, double[][] targetDistributions, double[] weights) {
         double sum = 0.0;
         for(int n=0; n<dataSet.getNumDataPoints(); n++) {
-            sum += gammas[n] * klDivergence(dataSet.getRow(n), targetDistributions[n]);
+            sum += weights[n] * klDivergence(dataSet.getRow(n), targetDistributions[n]);
         }
         return sum;
     }
@@ -186,5 +186,13 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         this.labelTranslator = labelTranslator;
     }
 
-
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("LogisticRegression{");
+        sb.append("numClasses=").append(numClasses);
+        sb.append(", numFeatures=").append(numFeatures);
+        sb.append(", weights=").append(weights);
+        sb.append('}');
+        return sb.toString();
+    }
 }

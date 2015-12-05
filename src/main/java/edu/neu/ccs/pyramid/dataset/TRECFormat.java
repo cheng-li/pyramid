@@ -304,6 +304,9 @@ public class TRECFormat {
                 String multiLabelString = lineSplit[0];
                 String[] multiLabelSplit = multiLabelString.split(Pattern.quote(","));
                 for (String label: multiLabelSplit){
+                    if (label.equals("")) {
+                        continue;
+                    }
                     dataSet.addLabel(dataIndex,Integer.parseInt(label));
                 }
                 for (int i=1;i<lineSplit.length;i++){

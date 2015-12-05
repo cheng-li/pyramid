@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
@@ -12,7 +14,7 @@ import java.util.Optional;
  * Created by chengli on 8/6/14.
  */
 class IntervalSplitter {
-
+    private static final Logger logger = LogManager.getLogger();
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
@@ -31,6 +33,9 @@ class IntervalSplitter {
                                             double[] labels,
                                             Splitter.GlobalStats globalStats){
         FeatureStats featureStats = new FeatureStats(featureValues,probs,labels, globalStats);
+        if (logger.isDebugEnabled()){
+            logger.debug("feature statistics = "+featureStats);
+        }
         int numIntervals = regTreeConfig.getNumSplitIntervals();
         List<Interval> intervals = new ArrayList<>(numIntervals);
         double maxFeature = featureStats.getMax();
@@ -48,11 +53,18 @@ class IntervalSplitter {
         // now max and min should be finite
         //if no range, do nothing
         if (minFeature == maxFeature){
+            if (logger.isDebugEnabled()){
+                logger.debug("num generated intervals = "+intervals.size());
+            }
             return intervals;
         }
 
         //at this time, max and min should be finite numbers, and max > min
         // should generate intervals
+        if (logger.isDebugEnabled()){
+            logger.debug("min = "+minFeature);
+            logger.debug("max = "+maxFeature);
+        }
 
         double intervalLength = (maxFeature-minFeature)/numIntervals;
 
@@ -120,6 +132,10 @@ class IntervalSplitter {
             }
         }
 
+        if (logger.isDebugEnabled()){
+            logger.debug("num generated intervals = "+intervals.size());
+        }
+
         return intervals;
     }
 
@@ -135,9 +151,22 @@ class IntervalSplitter {
         boolean inBlock = false;
         int start = 0;
         int end = 0;
+        if (logger.isDebugEnabled()){
+            logger.debug("number of intervals to compress = "+intervals.size());
+            logger.debug("intervals = "+intervals);
+            if (intervals.size()>0){
+                logger.debug("first interval prob count="+intervals.get(0));
+            }
+
+        }
+
+
 
         for (int i=0;i<intervals.size();i++){
-            if (intervals.get(i).getProbabilisticCount()==0){
+            // when i=0, probabilistic count should be > 0 in principle;
+            // however, it may happen to be 0 due to underflow issue, and this causes bugs
+            // so we skip it directly
+            if (i>1&&intervals.get(i).getProbabilisticCount()==0){
                 // enter block
                 if (!inBlock){
                     inBlock=true;
@@ -155,6 +184,10 @@ class IntervalSplitter {
                             +intervals.get(end).getUpper())/2;
                     //the first and last intervals should contain min and max
                     //so they shouldn't be zero intervals
+
+                    if (logger.isDebugEnabled()){
+                        logger.debug("in block and start = "+start);
+                    }
                     intervals.get(start-1).setUpper(mid);
                     intervals.get(end+1).setLower(mid);
                 }
@@ -337,6 +370,24 @@ class IntervalSplitter {
 
         public double getNanWeightedLabelSum() {
             return nanWeightedLabelSum;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("FeatureStats{");
+            sb.append("zeroBinaryCount=").append(zeroBinaryCount);
+            sb.append(", nonZeroBinaryCount=").append(nonZeroBinaryCount);
+            sb.append(", nanBinaryCount=").append(nanBinaryCount);
+            sb.append(", zeroProbCount=").append(zeroProbCount);
+            sb.append(", nonZeroProbCount=").append(nonZeroProbCount);
+            sb.append(", nanProbCount=").append(nanProbCount);
+            sb.append(", zeroWeightedLabelSum=").append(zeroWeightedLabelSum);
+            sb.append(", nonZeroWeightedLabelSum=").append(nonZeroWeightedLabelSum);
+            sb.append(", nanWeightedLabelSum=").append(nanWeightedLabelSum);
+            sb.append(", min=").append(min);
+            sb.append(", max=").append(max);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
