@@ -165,8 +165,9 @@ public class BMMPredictor {
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
-//        int iter = 0;
-//        int maxIter = 0;
+        int iter = 0;
+        int maxIter = 0;
+
         while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
             for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
@@ -189,7 +190,7 @@ public class BMMPredictor {
                 if (logProb >= maxLogProb) {
                     predVector = candidateY;
                     maxLogProb = logProb;
-//                    maxIter = iter;
+                    maxIter = iter;
                 }
 
                 // check if need to remove cluster k from the candidates
@@ -201,9 +202,9 @@ public class BMMPredictor {
                 DPs.remove(k);
             }
 
-//            iter++;
+            iter++;
         }
-//        System.out.println("maxIter: " + maxIter);
+        System.out.println("maxIter: " + maxIter);
         MultiLabel predLabel = new MultiLabel();
         for (int l=0; l<numLabels; l++) {
             if (predVector.get(l) == 1.0) {
