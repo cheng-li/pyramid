@@ -76,13 +76,10 @@ public class LPOptimizer {
         } else if (classifier.equals("logistic")) {
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
             ElasticNetLogisticTrainer optimizer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
-                    .setEpsilon(config.getDouble("epsilon")).setL1Ratio(config.getDouble("l1Ratio"))
+                    .setL1Ratio(config.getDouble("l1Ratio"))
                     .setRegularization(config.getDouble("regularization")).build();
 
-            for (int round=0; round<config.getInt("numIters"); round++) {
-                System.out.println("round: " + round);
-                optimizer.iterate();
-            }
+            optimizer.train();
             this.classifier.estimator = logisticRegression;
         } else {
             throw new RuntimeException("Unknown classifier");
