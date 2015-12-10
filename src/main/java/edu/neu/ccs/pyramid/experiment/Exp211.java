@@ -45,6 +45,7 @@ public class Exp211 {
         if (config.getBoolean("train.warmStart")) {
             bmmClassifier = BMMClassifier.deserialize(new File(output, modelName));
             bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
+            bmmClassifier.setPredictMode(config.getString("predictMode"));
         } else {
             bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
             BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
