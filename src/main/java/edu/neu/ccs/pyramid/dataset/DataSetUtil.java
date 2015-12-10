@@ -412,7 +412,9 @@ public class DataSetUtil {
      */
     public static MultiLabelClfDataSet sampleData(MultiLabelClfDataSet dataSet, List<Integer> indices){
         MultiLabelClfDataSet sample;
-        sample = MLClfDataSetBuilder.getBuilder().numDataPoints(indices.size())
+        sample = MLClfDataSetBuilder.getBuilder()
+                .numClasses(dataSet.getNumClasses())
+                .numDataPoints(indices.size())
                 .numFeatures(dataSet.getNumFeatures())
                 .missingValue(dataSet.hasMissingValue())
                 .dense(dataSet.isDense())
