@@ -1,7 +1,11 @@
 package edu.neu.ccs.pyramid.simulation;
 
 import edu.neu.ccs.pyramid.dataset.MLClfDataSetBuilder;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.util.Sampling;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
 
 /**
  * Created by chengli on 12/1/15.
@@ -83,4 +87,56 @@ public class MultiLabelSynthesizer {
 
         return dataSet;
     }
+
+
+    public static MultiLabelClfDataSet flipOne(int numData, int numFeature, int numClass){
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        // generate weights
+        Vector[] weights = new Vector[numClass];
+        for (int k=0;k<numClass;k++){
+            Vector vector = new DenseVector(numFeature);
+            for (int j=0;j<numFeature;j++){
+                vector.set(j,Math.random());
+            }
+            weights[k] = vector;
+        }
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Math.random());
+            }
+        }
+
+        // assign labels
+        for (int i=0;i<numData;i++){
+            for (int k=0;k<numClass;k++){
+                double dot = weights[k].dot(dataSet.getRow(i));
+                if (dot>=0){
+                    dataSet.addLabel(i,k);
+                }
+            }
+        }
+
+
+        // flip
+        for (int i=0;i<numData;i++){
+            int toChange = Sampling.intUniform(0,numClass-1);
+            MultiLabel label = dataSet.getMultiLabels()[i];
+            if (label.matchClass(toChange)){
+                label.removeLabel(toChange);
+            } else {
+                label.addLabel(toChange);
+            }
+
+        }
+        
+
+        return dataSet;
+    }
+
 }
