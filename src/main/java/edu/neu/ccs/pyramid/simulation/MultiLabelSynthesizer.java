@@ -100,7 +100,7 @@ public class MultiLabelSynthesizer {
         for (int k=0;k<numClass;k++){
             Vector vector = new DenseVector(numFeature);
             for (int j=0;j<numFeature;j++){
-                vector.set(j,Math.random());
+                vector.set(j,Sampling.doubleUniform(-1,1));
             }
             weights[k] = vector;
         }
@@ -108,7 +108,7 @@ public class MultiLabelSynthesizer {
         // generate features
         for (int i=0;i<numData;i++){
             for (int j=0;j<numFeature;j++){
-                dataSet.setFeatureValue(i,j,Math.random());
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
             }
         }
 
@@ -134,7 +134,7 @@ public class MultiLabelSynthesizer {
             }
 
         }
-        
+
 
         return dataSet;
     }
