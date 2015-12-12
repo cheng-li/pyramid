@@ -204,6 +204,8 @@ public class BMMPredictor {
 
             iter++;
         }
+
+//        System.out.print("maxIter: " + maxIter + "\t" + Math.exp(maxLogProb) + "\t");
 //        System.out.println("maxIter: " + maxIter);
         MultiLabel predLabel = new MultiLabel();
         for (int l=0; l<numLabels; l++) {
