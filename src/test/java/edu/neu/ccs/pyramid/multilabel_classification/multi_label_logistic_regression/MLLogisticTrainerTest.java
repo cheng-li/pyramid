@@ -89,8 +89,8 @@ public class MLLogisticTrainerTest {
         assignments.add(new MultiLabel().addLabel(1));
 
 
-        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(0.01).setGaussianPriorVariance(10000)
-                .setHistory(5).build();
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setGaussianPriorVariance(10000)
+                .build();
         MLLogisticRegression mlLogisticRegression =trainer.train(dataSet,assignments);
 
 
@@ -180,8 +180,8 @@ public class MLLogisticTrainerTest {
         assignments.add(new MultiLabel().addLabel(0).addLabel(2));
 
 
-        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(0.01).setGaussianPriorVariance(10000)
-                .setHistory(5).build();
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setGaussianPriorVariance(10000)
+                .build();
         MLLogisticRegression mlLogisticRegression =trainer.train(dataSet,assignments);
 
         for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -212,8 +212,8 @@ public class MLLogisticTrainerTest {
         System.out.println(dataSet.getMetaInfo());
         List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet).stream()
                 .collect(Collectors.toList());
-        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(1).setGaussianPriorVariance(1)
-                .setHistory(5).build();
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setGaussianPriorVariance(1)
+                .build();
         MLLogisticRegression mlLogisticRegression =trainer.train(dataSet,assignments);
         System.out.println("training accuracy = " +Accuracy.accuracy(mlLogisticRegression,dataSet));
         mlLogisticRegression.serialize(new File(TMP,"model"));
@@ -233,8 +233,8 @@ public class MLLogisticTrainerTest {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"), DataSetType.ML_CLF_SPARSE, true);
         List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
-        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setEpsilon(0.01).setGaussianPriorVariance(1)
-                .setHistory(5).build();
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setGaussianPriorVariance(1)
+                .build();
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         MLLogisticRegression mlLogisticRegression =trainer.train(dataSet,assignments);
