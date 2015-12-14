@@ -57,7 +57,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             }
         }
         this.multiNomialClassifiers = new LogisticRegression(numClusters, numFeatures,true);
-        this.predictMode = "sampling";
+        this.predictMode = "dynamic";
     }
 
     public BMMClassifier() {
@@ -170,6 +170,16 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         for (int k=0;k<numClusters;k++){
             sb.append("cluster ").append(k).append(":\n");
             sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
+        }
+
+        sb.append("clustering component = \n");
+        sb.append(multiNomialClassifiers);
+        sb.append("prediction components = \n");
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                sb.append("cluster ").append(k).append(" class ").append(l).append("\n");
+                sb.append(binaryClassifiers[k][l]).append("\n");
+            }
         }
         sb.append('}');
         return sb.toString();
