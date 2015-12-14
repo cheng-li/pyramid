@@ -10,6 +10,8 @@ import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
+import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticRegression;
+import edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regression.MLLogisticTrainer;
 import edu.neu.ccs.pyramid.multilabel_classification.powerset.LPClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.powerset.LPOptimizer;
 
@@ -33,12 +35,13 @@ public class MultiLabelSynthesizerTest {
 //        test3_mix();
 //        test4Dump();
 //        test4_br();
+        test4_crf();
 //        test4_powerset();
 //        test4_mix();
 //        test5Dump();
 //                test5_br();
 //        test5_powerset();
-        test5_mix();
+//        test5_mix();
     }
 
     private static void test1_br(){
@@ -243,8 +246,8 @@ public class MultiLabelSynthesizerTest {
 
     private static void test4_br() throws Exception{
         System.out.println("binary");
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"train.trec"), DataSetType.ML_CLF_DENSE,true);
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP, "test.trec"), DataSetType.ML_CLF_DENSE, true);
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"simulation/multi-label/flip_one/2_labels/train.trec"), DataSetType.ML_CLF_DENSE,true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/2_labels/test.trec"), DataSetType.ML_CLF_DENSE, true);
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
@@ -326,6 +329,26 @@ public class MultiLabelSynthesizerTest {
             System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
 
         }
+    }
+
+    private static void test4_crf() throws Exception{
+        System.out.println("crf");
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/5_labels/train.trec"), DataSetType.ML_CLF_DENSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/5_labels/test.trec"), DataSetType.ML_CLF_DENSE, true);
+
+        MLLogisticTrainer trainer = MLLogisticTrainer.getBuilder().setGaussianPriorVariance(100).build();
+        MLLogisticRegression classifier = trainer.train(trainSet);
+
+        MultiLabel[] trainPredict;
+        MultiLabel[] testPredict;
+        trainPredict = classifier.predict(trainSet);
+        testPredict = classifier.predict(testSet);
+        System.out.print("train Hamming loss : " + HammingLoss.hammingLoss(classifier, trainSet) + "\t");
+        System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict)+ "\t");
+        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
+        System.out.print("test Hamming loss : " + HammingLoss.hammingLoss(classifier, testSet) + "\t");
+        System.out.print("testAcc  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
+        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
     }
 
 
