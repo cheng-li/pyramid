@@ -275,4 +275,62 @@ public class MultiLabelSynthesizer {
         return dataSet;
     }
 
+
+    /**
+     * C0, y0: w=(0,1)
+     * C0, y1: w=(1,1)
+     * C1, y0: w=(1,0)
+     * C1, y1: w=(1,-1)
+     * @return
+     */
+    public static MultiLabelClfDataSet sampleFromMix(){
+        int numData = 10000;
+        int numClass = 2;
+        int numFeature = 2;
+        int numClusters = 2;
+        double[] proportions = {0.4,0.6};
+        int[] indices = {0,1};
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        // generate weights
+        Vector[][] weights = new Vector[numClusters][numClass];
+        for (int c=0;c<numClusters;c++){
+            for (int l=0;l<numClass;l++){
+                Vector vector = new DenseVector(numFeature);
+                weights[c][l] = vector;
+            }
+        }
+
+
+        weights[0][0].set(0, 0);
+        weights[0][1].set(1, 1);
+
+        weights[1][0].set(1, 0);
+        weights[1][1].set(1,-1);
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
+            }
+        }
+        IntegerDistribution distribution = new EnumeratedIntegerDistribution(indices,proportions);
+        // assign labels
+        for (int i=0;i<numData;i++){
+            int cluster = distribution.sample();
+            for (int l=0;l<numClass;l++){
+                double dot = weights[cluster][l].dot(dataSet.getRow(i));
+                if (dot>=0){
+                    dataSet.addLabel(i,l);
+                }
+            }
+        }
+
+        return dataSet;
+    }
 }
