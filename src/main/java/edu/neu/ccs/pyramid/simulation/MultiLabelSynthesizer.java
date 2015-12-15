@@ -308,9 +308,16 @@ public class MultiLabelSynthesizer {
 
 
         weights[0][0].set(0, 0);
+        weights[0][0].set(1, 1);
+
+        weights[0][1].set(0, 1);
         weights[0][1].set(1, 1);
 
+
+        weights[1][0].set(0, 1);
         weights[1][0].set(1, 0);
+
+        weights[1][1].set(0, 1);
         weights[1][1].set(1,-1);
 
         // generate features
@@ -323,8 +330,12 @@ public class MultiLabelSynthesizer {
         // assign labels
         for (int i=0;i<numData;i++){
             int cluster = distribution.sample();
+            System.out.println("cluster "+cluster);
             for (int l=0;l<numClass;l++){
+                System.out.println("row = "+dataSet.getRow(i));
+                System.out.println("weight = "+ weights[cluster][l]);
                 double dot = weights[cluster][l].dot(dataSet.getRow(i));
+                System.out.println("dot = "+dot);
                 if (dot>=0){
                     dataSet.addLabel(i,l);
                 }
