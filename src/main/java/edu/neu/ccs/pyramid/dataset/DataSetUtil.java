@@ -795,9 +795,9 @@ public class DataSetUtil {
     }
 
 
-    public static ClfDataSet toMultiClass(MultiLabelClfDataSet dataSet){
+    public static Pair<ClfDataSet,Translator<MultiLabel>> toMultiClass(MultiLabelClfDataSet dataSet){
         int numDataPoints = dataSet.getNumDataPoints();
-        int numFeatures = dataSet.getNumFeatures();;
+        int numFeatures = dataSet.getNumFeatures();
         List<MultiLabel> multiLabels = DataSetUtil.gatherMultiLabels(dataSet);
         Translator<MultiLabel> translator = new Translator<>();
         translator.addAll(multiLabels);
@@ -825,7 +825,7 @@ public class DataSetUtil {
         LabelTranslator labelTranslator = new LabelTranslator(extLabels);
         clfDataSet.setLabelTranslator(labelTranslator);
         clfDataSet.setFeatureList(dataSet.getFeatureList());
-        return clfDataSet;
+        return new Pair<>(clfDataSet,translator);
     }
 
 
