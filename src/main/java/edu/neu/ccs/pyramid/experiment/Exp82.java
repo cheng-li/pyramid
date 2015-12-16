@@ -39,7 +39,7 @@ public class Exp82 {
         LogisticRegression logisticRegression = new LogisticRegression(2,2);
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
                 .setRegularization(1.0E-2).setL1Ratio(0).build();
-        trainer.train();
+        trainer.optimize();
         System.out.println(logisticRegression.getWeights().getBiasForClass(0));
         System.out.println(logisticRegression.getWeights().getBiasForClass(1));
         System.out.println(logisticRegression.getWeights().getWeightsWithoutBiasForClass(0));
@@ -68,7 +68,7 @@ public class Exp82 {
         LogisticRegression logisticRegression = new LogisticRegression(2,2);
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
                 .setRegularization(1.0E-2).setL1Ratio(0).build();
-        trainer.train();
+        trainer.optimize();
         System.out.println(logisticRegression.getWeights().getBiasForClass(0));
         System.out.println(logisticRegression.getWeights().getBiasForClass(1));
         System.out.println(logisticRegression.getWeights().getWeightsWithoutBiasForClass(0));

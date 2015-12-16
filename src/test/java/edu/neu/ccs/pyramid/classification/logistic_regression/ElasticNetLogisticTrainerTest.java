@@ -19,8 +19,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
-
 public class ElasticNetLogisticTrainerTest {
     private static final Config config = new Config("config/local.config");
     private static final String DATASETS = config.getString("input.datasets");
@@ -62,7 +60,7 @@ public class ElasticNetLogisticTrainerTest {
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
                 .setEpsilon(0.01).setL1Ratio(0.5).setRegularization(0.0001).build();
 
-        trainer.train();
+        trainer.optimize();
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
 
@@ -101,7 +99,7 @@ public class ElasticNetLogisticTrainerTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        trainer.train();
+        trainer.optimize();
         System.out.println(stopWatch);
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
@@ -129,7 +127,7 @@ public class ElasticNetLogisticTrainerTest {
             System.out.println("lambda = "+lambda);
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
-            trainer.train();
+            trainer.optimize();
             System.out.println(stopWatch);
             System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
             System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
@@ -152,7 +150,7 @@ public class ElasticNetLogisticTrainerTest {
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        trainer.train();
+        trainer.optimize();
         System.out.println(stopWatch);
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
@@ -171,7 +169,7 @@ public class ElasticNetLogisticTrainerTest {
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
                 .setEpsilon(0.01).setL1Ratio(0.1111111111111111).setRegularization(1.1233240329780266E-6).build();
 
-        trainer.train();
+        trainer.optimize();
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
 

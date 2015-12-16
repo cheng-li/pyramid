@@ -7,7 +7,6 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.util.Pair;
-import edu.stanford.nlp.parser.nndep.Dataset;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
@@ -80,7 +79,7 @@ public class Exp81 {
         int iteration = 0;
         while(true){
             System.out.println("iteration = "+iteration);
-            trainer.train();
+            trainer.optimize();
             System.out.println("number of features = "+usedFeatures.size());
             System.out.println("accuracy on training set = "+ Accuracy.accuracy(logisticRegression,trainData));
             System.out.println("accuracy on test set = "+ Accuracy.accuracy(logisticRegression,testData));

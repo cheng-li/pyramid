@@ -9,7 +9,6 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
-import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputType;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.lang3.time.StopWatch;
 
@@ -726,7 +725,7 @@ public class LKTreeBoostTest {
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         ElasticNetLogisticTrainer logisticTrainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
                 .setEpsilon(0.01).setL1Ratio(0.9).setRegularization(0.001).build();
-        logisticTrainer.train();
+        logisticTrainer.optimize();
         System.out.println("logistic regression accuracy = "+Accuracy.accuracy(logisticRegression,testSet));
 
         System.out.println("num feature used = "+ LogisticRegressionInspector.numOfUsedFeaturesCombined(logisticRegression));

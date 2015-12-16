@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.classification;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrainer;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ClfDataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -59,7 +58,7 @@ public class PlattScaling implements Classifier.ProbabilityEstimator{
         LogisticRegression logisticRegression = new LogisticRegression(2,dataSet.getNumFeatures());
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
                 .setRegularization(1.0E-9).setL1Ratio(0).build();
-        trainer.train();
+        trainer.optimize();
         return logisticRegression;
     }
 
