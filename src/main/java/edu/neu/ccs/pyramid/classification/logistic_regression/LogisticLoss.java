@@ -20,7 +20,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private static final Logger logger = LogManager.getLogger();
     private LogisticRegression logisticRegression;
     private DataSet dataSet;
-    private double[] gammas;
+    // instance weights
+    private double[] weights;
     private double[][] targetDistributions;
     private double gaussianPriorVariance;
     private Vector empiricalCounts;
@@ -54,7 +55,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.targetDistributions = targetDistributions;
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
-        this.gammas = weights;
+        this.weights = weights;
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
@@ -112,7 +113,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
             weightSquare += weightVector.dot(weightVector);
         }
-        double kl = logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, gammas);
+        double kl = logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, weights);
         if (logger.isDebugEnabled()){
             logger.debug("kl divergence = "+kl);
         }
@@ -178,15 +179,14 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += targetDistributions[i][classIndex]*gammas[i];
+                count += targetDistributions[i][classIndex]* weights[i];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                //TODO added weighted
-                count += featureValue*targetDistributions[dataPointIndex][classIndex]*gammas[dataPointIndex];
+                count += featureValue*targetDistributions[dataPointIndex][classIndex]* weights[dataPointIndex];
             }
         }
         return count;
@@ -200,15 +200,14 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += probs[i]*gammas[i];
+                count += probs[i]* weights[i];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                //TODO added weighted
-                count += probs[dataPointIndex]*featureValue*gammas[dataPointIndex];
+                count += probs[dataPointIndex]*featureValue* weights[dataPointIndex];
             }
         }
         return count;
