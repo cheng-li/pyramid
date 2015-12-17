@@ -17,6 +17,7 @@ import edu.neu.ccs.pyramid.simulation.MultiLabelSynthesizer;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.Translator;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -41,9 +42,9 @@ public class Exp137 {
 //        dump();
 //        lr_lasso();
 
-//        lr();
+        lr();
 //        boost();
-         checkIdeal();
+//         checkIdeal();
     }
 
 
@@ -79,6 +80,15 @@ public class Exp137 {
         System.out.println("test acc = "+ Accuracy.accuracy(logisticRegression,testSet));
         System.out.println("train log likelihood = "+logisticRegression.dataSetLogLikelihood(trainSet));
         System.out.println(logisticRegression);
+
+        int[] predictions = logisticRegression.predict(testSet);
+        StringBuilder sb = new StringBuilder();
+        for (int p: predictions){
+            sb.append(p).append("\n");
+        }
+
+        FileUtils.writeStringToFile(new File(TMP,"lr_pred"),sb.toString());
+
     }
 
     private static void lr_lasso() throws Exception{
@@ -116,12 +126,20 @@ public class Exp137 {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        for (int round =0;round<200;round++){
+        for (int round =0;round<20;round++){
             System.out.println("round="+round);
             trainer.iterate();
             System.out.println("train acc = "+ Accuracy.accuracy(lkBoost,trainSet));
             System.out.println("test acc = "+ Accuracy.accuracy(lkBoost,testSet));
         }
+
+        int[] predictions = lkBoost.predict(testSet);
+        StringBuilder sb = new StringBuilder();
+        for (int p: predictions){
+            sb.append(p).append("\n");
+        }
+
+        FileUtils.writeStringToFile(new File(TMP,"boost_pred"),sb.toString());
 
     }
 
@@ -189,6 +207,15 @@ public class Exp137 {
         System.out.println("train acc = "+ Accuracy.accuracy(logisticRegression,trainSet));
         System.out.println("test acc = "+ Accuracy.accuracy(logisticRegression,testSet));
         System.out.println("train log likelihood = "+logisticRegression.dataSetLogLikelihood(trainSet));
+
+
+        int[] predictions = logisticRegression.predict(testSet);
+        StringBuilder sb = new StringBuilder();
+        for (int p: predictions){
+            sb.append(p).append("\n");
+        }
+
+        FileUtils.writeStringToFile(new File(TMP,"ideal_pred"),sb.toString());
 
 
         RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,trainSet,100);
