@@ -40,9 +40,9 @@ public class MultiLabelSynthesizerTest {
 //                test5_br();
 //        test5_powerset();
 //        test5_mix();
-//                test6Dump();
+                test6Dump();
 //                test6_br();
-        test6_powerset();
+//        test6_powerset();
 //        test6_mix();
 //        test6_mix_boost();
 //        test7Dump();

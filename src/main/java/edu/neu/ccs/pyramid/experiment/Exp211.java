@@ -124,7 +124,7 @@ public class Exp211 {
         System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
         System.out.println();
         System.out.println();
-        System.out.println(bmmClassifier);
+//        System.out.println(bmmClassifier);
 
         if (config.getBoolean("saveModel")) {
             (new File(output)).mkdirs();

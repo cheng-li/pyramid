@@ -9,11 +9,17 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptim
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.HammingLoss;
+import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
+import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
+import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.simulation.MultiLabelSynthesizer;
+import edu.neu.ccs.pyramid.util.Grid;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.Translator;
@@ -42,9 +48,10 @@ public class Exp137 {
 //        dump();
 //        lr_lasso();
 
-        lr();
+//        lr();
 //        boost();
 //         checkIdeal();
+        mix_da();
     }
 
 
@@ -227,6 +234,46 @@ public class Exp137 {
         System.out.println("test acc = "+ Accuracy.accuracy(logisticRegression,testSet));
         System.out.println("train log likelihood = "+logisticRegression.dataSetLogLikelihood(trainSet));
 
+    }
+
+    private static void mix_da() throws Exception{
+        System.out.println("mix deterministic annealing");
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"simulation/multi-label/flip_one/4_labels_nonuniform/train.trec"), DataSetType.ML_CLF_DENSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"simulation/multi-label/flip_one/4_labels_nonuniform/test.trec"), DataSetType.ML_CLF_DENSE, true);
+        int numClusters = 3;
+        double softmaxVariance = 100;
+        double logitVariance = 100;
+
+        List<Double> grid = Grid.uniform(0.7,1,10);
+        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+
+        bmmClassifier.setAllowEmpty(true);
+        bmmClassifier.setPredictMode("dynamic");
+        BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance);
+
+        for (double it: grid){
+            BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
+            optimizer.setInverseTemperature(it);
+            System.out.println("inverse temperature = "+it);
+            for (int i=1;i<=10;i++){
+                optimizer.iterate();
+                MultiLabel[] trainPredict;
+                MultiLabel[] testPredict;
+                trainPredict = bmmClassifier.predict(trainSet);
+                testPredict = bmmClassifier.predict(testSet);
+                System.out.print("iter : "+i + "\t");
+                System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+                System.out.print("train Hamming loss : " + HammingLoss.hammingLoss(bmmClassifier, trainSet) + "\t");
+                System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict)+ "\t");
+                System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
+                System.out.print("test Hamming loss : " + HammingLoss.hammingLoss(bmmClassifier, testSet) + "\t");
+                System.out.print("testAcc  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
+                System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
+
+            }
+        }
+
+//        System.out.println(bmmClassifier);
     }
 
 
