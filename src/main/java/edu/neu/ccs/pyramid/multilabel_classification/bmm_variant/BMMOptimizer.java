@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
@@ -18,6 +19,12 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
+ * References
+ * Deterministic annealing:
+ * Katahira, Kentaro, Kazuho Watanabe, and Masato Okada.
+ * "Deterministic annealing variant of variational Bayes method."
+ * Journal of Physics: Conference Series. Vol. 95. No. 1. IOP Publishing, 2008.
+ *
  * Created by Rainicy on 10/23/15.
  */
 public class BMMOptimizer implements Serializable, Parallelizable {
@@ -42,6 +49,9 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     // format [#labels][#data][2]
     private double[][][] targetsDistributions;
     private boolean isParallel = true;
+
+    // for deterministic annealing
+    private double inverseTemperature = 1;
 
     public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
                         double gaussianPriorforSoftMax, double gaussianPriorforLogit) {
@@ -83,6 +93,14 @@ public class BMMOptimizer implements Serializable, Parallelizable {
                 }
             }
         }
+    }
+
+    public double getInverseTemperature() {
+        return inverseTemperature;
+    }
+
+    public void setInverseTemperature(double inverseTemperature) {
+        this.inverseTemperature = inverseTemperature;
     }
 
     public void optimize() {
@@ -187,7 +205,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         double[] logClusterConditionalProbs = bmmClassifier.clusterConditionalLogProbArr(X, Y);
         double[] logNumerators = new double[logLogisticProbs.length];
         for (int k=0; k<K; k++) {
-            logNumerators[k] = logLogisticProbs[k] + logClusterConditionalProbs[k];
+            logNumerators[k] = (logLogisticProbs[k] + logClusterConditionalProbs[k])*inverseTemperature;
         }
         double logDenominator = MathUtil.logSumExp(logNumerators);
         for (int k=0; k<K; k++) {
@@ -254,7 +272,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression)bmmClassifier.multiNomialClassifiers,
                 dataSet, gammas, gaussianPriorforSoftMax);
         // Q function for \Thata + gamma.entropy and Q function for Weights
-        return logisticLoss.getValue() + binaryLogitsObj();
+        return logisticLoss.getValue() + binaryLogitsObj() +(1-1.0/inverseTemperature)*getEntropy();
     }
 
 //    private double getMStepObjective() {
@@ -264,15 +282,15 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 //        return logisticLoss.getValue() + binaryLogitsObj();
 //    }
 //
-//    private double getEntropy() {
-//
-//        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-//                .mapToDouble(this::getEntropy).sum();
-//    }
+    private double getEntropy() {
 
-//    private double getEntropy(int i) {
-//        return Entropy.entropy(gammas[i]);
-//    }
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(this::getEntropy).sum();
+    }
+
+    private double getEntropy(int i) {
+        return Entropy.entropy(gammas[i]);
+    }
 
     private double binaryLogitsObj() {
         double res = IntStream.range(0,bmmClassifier.numClusters)
