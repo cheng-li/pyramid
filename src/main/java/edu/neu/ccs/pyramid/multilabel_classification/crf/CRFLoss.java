@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -61,6 +62,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
 
     /**
+     * TODO: is it the negative log likelihood?
      * gradient of log likelihood?
      * @return
      */
@@ -124,8 +126,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                 double sumValue = 0.0;
                 double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
                 if (featureIndex == -1) {
-                    for (int num=0; num<probs.length; num++) {
-                        sumValue += probs[num];
+                    for (double p : probs) {
+                        sumValue += p;
                     }
                 } else {
                     for (int num=0; num<probs.length; num++) {
@@ -142,6 +144,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                 count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
             }
         } else { // for label pair feature
+            // TODO: some bugs here!!!
             int start = parameterIndex - numWeightsForFeatures;
             int l1 = cacheToL1[start];
             int l2 = cacheToL2[start];
@@ -171,16 +174,16 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                     MultiLabel label1 = supportedCombinations.get(num);
                     switch (featureCase) {
                         // both l1, l2 equal 0;
-                        case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         // l1 = 1; l2 = 0;
-                        case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         // l1 = 0; l2 = 1;
-                        case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         // l1 = 1; l2 = 1;
-                        case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         default: throw new RuntimeException("feature case :" + featureCase + " failed.");
                     }
@@ -224,7 +227,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
     /**
-     * TODO: log-likelihood?
+     * TODO: negative log-likelihood?
      * @return
      */
     @Override
@@ -243,6 +246,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         double sum = 0.0;
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
             MultiLabel label = dataSet.getMultiLabels()[i];
+            Vector vector = dataSet.getRow(i);
+            // sum logZ(x_n)
+            sum -= MathUtil.logSumExp(cmlcrf.predictClassScores(vector));
             for (int l=0; l<numClasses; l++) {
                 //TODO cache the bias
                 sum += cmlcrf.getWeights().getBiasForClass(l);
@@ -268,6 +274,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         }
         this.value = -sum + weightSquare/2*gaussianPriorVariance;
         this.isValueCacheValid = true;
+        System.out.println("negative log likelihood: " + this.value);
         return this.value;
     }
 

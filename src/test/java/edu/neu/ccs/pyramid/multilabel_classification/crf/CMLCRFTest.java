@@ -29,21 +29,26 @@ public class CMLCRFTest {
                 DataSetType.ML_CLF_SPARSE, true);
 
         CMLCRF cmlcrf = new CMLCRF(dataSet);
-        CRFLoss crfLoss = new CRFLoss(cmlcrf,dataSet,1);
+        CRFLoss crfLoss = new CRFLoss(cmlcrf,dataSet,100000);
         Optimizer optimizer = new LBFGS(crfLoss);
         optimizer.getTerminator().setAbsoluteEpsilon(0.1);
+        optimizer.optimize();
 
+        System.out.println("ending objective: " + optimizer.getFinalObjective());
         MultiLabel[] predTrain;
         MultiLabel[] predTest;
-        for (int i=0; i<100; i++) {
-            System.out.println("iters: " + i);
-            optimizer.optimize();
-            predTrain = cmlcrf.predict(dataSet);
-            predTest = cmlcrf.predict(testSet);
-            System.out.println("Train acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
-            System.out.println("Train overlap " + Overlap.overlap(dataSet.getMultiLabels(), predTrain));
-            System.out.println("Test acc: " + Accuracy.accuracy(testSet.getMultiLabels(), predTest));
-            System.out.println("Test overlap " + Overlap.overlap(testSet.getMultiLabels(), predTest));
-        }
+        predTrain = cmlcrf.predict(dataSet);
+        predTest = cmlcrf.predict(testSet);
+        System.out.println("Train acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
+        System.out.println("Train overlap " + Overlap.overlap(dataSet.getMultiLabels(), predTrain));
+        System.out.println("Test acc: " + Accuracy.accuracy(testSet.getMultiLabels(), predTest));
+        System.out.println("Test overlap " + Overlap.overlap(testSet.getMultiLabels(), predTest));
+//        for (int i=0; i<predTrain.length; i++) {
+//            System.out.println(dataSet.getMultiLabels()[i] + ": " + predTrain[i]);
+//        }
+//        for (int i=0; i<predTest.length; i++) {
+//            System.out.println(testSet.getMultiLabels()[i] + ": " + predTest[i]);
+//        }
+        System.out.println(cmlcrf.getWeights());
     }
 }
