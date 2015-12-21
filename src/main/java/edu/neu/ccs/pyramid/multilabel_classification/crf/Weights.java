@@ -36,6 +36,13 @@ public class Weights  implements Serializable {
         this.numWeightsForLabels = (numClasses * (numClasses-1)/2) * 4;
         this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
         this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels];
+//        for (int i=0; i<weightVector.size(); i++) {
+//            double randWeight = Math.random()*2 - 1.0;
+//            weightVector.set(i, randWeight);
+//            serializableWeights[i] = randWeight;
+//        }
+        System.out.println("numWeightsForFeature: " + numWeightsForFeatures);
+        System.out.println("numWeightsForLabels: " + numWeightsForLabels);
     }
 
     public Weights deepCopy(){
@@ -67,6 +74,7 @@ public class Weights  implements Serializable {
 
 
     public void setWeightVector(Vector weightVector) {
+//        System.out.println("given weightVector size: " + weightVector.size());
         if (weightVector.size() != (numWeightsForFeatures + numWeightsForLabels)) {
             throw new IllegalArgumentException("given vector size is wrong: " + weightVector.size());
         }
@@ -80,6 +88,10 @@ public class Weights  implements Serializable {
         return weightVector;
     }
 
+    /**
+     *
+     * @return weights for all label pairs.
+     */
     public Vector getAllLabelPairWeights() {
         return new VectorView(this.weightVector, numWeightsForFeatures, numWeightsForLabels);
     }
@@ -136,6 +148,15 @@ public class Weights  implements Serializable {
             sb.append("for class ").append(k).append(":").append("\n");
             sb.append("bias = "+getBiasForClass(k)).append(",");
             sb.append("weights = "+getWeightsWithoutBiasForClass(k)).append("\n");
+        }
+        int start = numWeightsForFeatures;
+        for (int l1=0; l1<numClasses; l1++) {
+            for (int l2=l1+1; l2<numClasses; l2++) {
+                sb.append("label pair weights: (" +l1 +", " + l2  +")\n");
+                sb.append("W(0,0): " + weightVector.get(start) + "\tW(1,0): " + weightVector.get(start+1)+
+                "\tW(0,1): " + weightVector.get(start+2) + "\tW(1,1): "+weightVector.get(start+3));
+                start += 4;
+            }
         }
         sb.append('}');
         return sb.toString();

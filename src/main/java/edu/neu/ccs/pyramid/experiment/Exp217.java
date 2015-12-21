@@ -85,12 +85,17 @@ public class Exp217 {
             System.out.println("history = "+optimizer.getTerminator().getHistory());
         }
 
-        System.out.println("--------------------------------Results-----------------------------\n");
+        System.out.println("--------------------------------Train Results-----------------------------\n");
         System.out.println();
-//        System.out.print("trainAcc : " + Accuracy.accuracy(bmmClassifier, trainSet) + "\t");
-//        System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet)+ "\t");
-//        System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
-//        System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
+        for (int n=0; n<trainSet.getNumDataPoints(); n++) {
+            MultiLabel pred = bmmClassifier.predict(trainSet.getRow(n));
+            System.out.println(trainSet.getMultiLabels()[n] + "\t" + pred);
+        }
+        System.out.println();
+        System.out.println();
+
+        System.out.println("--------------------------------Test Results-----------------------------\n");
+        System.out.println();
         for (int n=0; n<testSet.getNumDataPoints(); n++) {
             MultiLabel pred = bmmClassifier.predict(testSet.getRow(n));
             System.out.println(testSet.getMultiLabels()[n] + "\t" + pred);

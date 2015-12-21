@@ -5,9 +5,11 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +63,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
 
     /**
+     * TODO: is it the negative log likelihood?
      * gradient of log likelihood?
      * @return
      */
@@ -114,25 +117,17 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             int classIndex = cacheToClass[parameterIndex];
             int featureIndex = cacheToFeature[parameterIndex];
             for (int i=0; i< dataSet.getNumDataPoints(); i++) {
+                double featureValue = (featureIndex==-1) ? 1.0 : dataSet.getRow(i).get(featureIndex);
                 double fValue = 0.0;
-                if (featureIndex == -1) {
-                    fValue = 1.0;
-                } else if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
-                    fValue = dataSet.getRow(i).get(featureIndex);
+                if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
+                    fValue = featureValue;
                 }
 
                 double sumValue = 0.0;
                 double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
-                if (featureIndex == -1) {
-                    for (int num=0; num<probs.length; num++) {
-                        sumValue += probs[num];
-                    }
-                } else {
-                    for (int num=0; num<probs.length; num++) {
-                        MultiLabel label = supportedCombinations.get(num);
-                        if (label.matchClass(classIndex)) {
-                            sumValue += probs[num] * dataSet.getRow(i).get(featureIndex);
-                        }
+                for (int num=0; num<probs.length; num++) {
+                    if (supportedCombinations.get(num).matchClass(classIndex)) {
+                        sumValue += probs[num] * featureValue;
                     }
                 }
                 count += (sumValue - fValue);
@@ -171,16 +166,16 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                     MultiLabel label1 = supportedCombinations.get(num);
                     switch (featureCase) {
                         // both l1, l2 equal 0;
-                        case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         // l1 = 1; l2 = 0;
-                        case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         // l1 = 0; l2 = 1;
-                        case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         // l1 = 1; l2 = 1;
-                        case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num] * 1;
+                        case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
                             break;
                         default: throw new RuntimeException("feature case :" + featureCase + " failed.");
                     }
@@ -224,7 +219,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
     /**
-     * TODO: log-likelihood?
+     * TODO: negative log-likelihood?
      * @return
      */
     @Override
@@ -243,31 +238,35 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         double sum = 0.0;
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
             MultiLabel label = dataSet.getMultiLabels()[i];
+            Vector vector = dataSet.getRow(i);
+            // sum logZ(x_n)
+            sum += MathUtil.logSumExp(cmlcrf.predictClassScores(vector));
             for (int l=0; l<numClasses; l++) {
                 //TODO cache the bias
-                sum += cmlcrf.getWeights().getBiasForClass(l);
                 if (label.matchClass(l)) {
-                    sum += dataSet.getRow(i).dot(cmlcrf.getWeights().getWeightsWithoutBiasForClass(l));
+                    sum -= cmlcrf.getWeights().getBiasForClass(l);
+                    sum -= dataSet.getRow(i).dot(cmlcrf.getWeights().getWeightsWithoutBiasForClass(l));
                 }
             }
             int start = numWeightsForFeatures;
             for (int l1=0; l1<numClasses; l1++) {
                 for (int l2=l1+1; l2<numClasses; l2++) {
                     if (!label.matchClass(l1) && !label.matchClass(l2)) {
-                        sum += this.cmlcrf.getWeights().getWeightForIndex(start);
+                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start);
                     } else if (label.matchClass(l1) && !label.matchClass(l2)) {
-                        sum += this.cmlcrf.getWeights().getWeightForIndex(start + 1);
+                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start + 1);
                     } else if (!label.matchClass(l1) && label.matchClass(l2)) {
-                        sum += this.cmlcrf.getWeights().getWeightForIndex(start + 2);
+                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start + 2);
                     } else {
-                        sum += this.cmlcrf.getWeights().getWeightForIndex(start + 3);
+                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start + 3);
                     }
                     start += 4;
                 }
             }
         }
-        this.value = -sum + weightSquare/2*gaussianPriorVariance;
+        this.value = sum + weightSquare/2*gaussianPriorVariance;
         this.isValueCacheValid = true;
+//        System.out.println("negative log likelihood: " + this.value);
         return this.value;
     }
 

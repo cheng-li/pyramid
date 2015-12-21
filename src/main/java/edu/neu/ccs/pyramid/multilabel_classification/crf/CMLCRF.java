@@ -36,6 +36,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     public CMLCRF(MultiLabelClfDataSet dataSet) {
         this(dataSet.getNumClasses(), dataSet.getNumFeatures());
         this.setSupportedCombinations(gatherMultiLabels(dataSet));
+        System.out.println("supported vector: " + supportedCombinations);
         this.numSupported = supportedCombinations.size();
     }
 
@@ -51,9 +52,46 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         this.numSupported = multiLabels.size();
     }
 
+//    /**
+//     * returns the exp of scores given the feature x.
+//     * @param vector
+//     * @return
+//     */
+//    public double[] predictClassExpScores(Vector vector) {
+//        double[] scores = predictClassScores(vector);
+//        double[] expScores = new double[this.numSupported];
+//        for (int i=0; i<expScores.length; i++) {
+//            expScores[i] = Math.exp(scores[i]);
+//        }
+//        return expScores;
+//    }
+
+    /**
+     * get the scores for all possible label combination
+     * y and a given feature x.
+     * @param vector
+     * @return
+     */
+    public double[] predictClassScores(Vector vector){
+        double[] scores = new double[this.numSupported];
+        for (int k=0;k<scores.length;k++){
+            scores[k] = predictClassScore(vector, k);
+        }
+        return scores;
+    }
+
+
+    /**
+     *
+     * get the score of a given feature x and given label
+     * combination y_k.
+     * @param vector
+     * @param k
+     * @return
+     */
     public double predictClassScore(Vector vector, int k){
         MultiLabel label = supportedCombinations.get(k);
-        double score = 0;
+        double score = 0.0;
         for (int l=0; l<numClasses; l++) {
             score += this.weights.getBiasForClass(k);
             if (label.matchClass(l)) {
@@ -77,15 +115,6 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         }
         return score;
     }
-
-    public double[] predictClassScores(Vector vector){
-        double[] scores = new double[this.numSupported];
-        for (int k=0;k<scores.length;k++){
-            scores[k] = predictClassScore(vector, k);
-        }
-        return scores;
-    }
-
 
     public double[] predictClassProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
@@ -144,6 +173,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
                 predictedClass = k;
             }
         }
+//        System.out.println(this.supportedCombinations.get(predictedClass));
         return this.supportedCombinations.get(predictedClass);
     }
 
