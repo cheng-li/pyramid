@@ -26,10 +26,10 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private Vector gradient;
     private double value;
 
-    private int[] cacheToL1;
-    private int[] cacheToL2;
-    private int[] cacheToClass;
-    private int[] cacheToFeature;
+    private int[] parameterToL1;
+    private int[] parameterToL2;
+    private int[] parameterToClass;
+    private int[] parameterToFeature;
 
     private boolean isParallel = false;
     private boolean isGradientCacheValid = false;
@@ -110,8 +110,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         double count = 0;
         // feature index
         if (parameterIndex < numWeightsForFeatures) {
-            int classIndex = cacheToClass[parameterIndex];
-            int featureIndex = cacheToFeature[parameterIndex];
+            int classIndex = parameterToClass[parameterIndex];
+            int featureIndex = parameterToFeature[parameterIndex];
             for (int i=0; i< dataSet.getNumDataPoints(); i++) {
                 double featureValue = (featureIndex==-1) ? 1.0 : dataSet.getRow(i).get(featureIndex);
                 double fValue = 0.0;
@@ -134,8 +134,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             }
         } else { // for label pair feature
             int start = parameterIndex - numWeightsForFeatures;
-            int l1 = cacheToL1[start];
-            int l2 = cacheToL2[start];
+            int l1 = parameterToL1[start];
+            int l2 = parameterToL2[start];
             int featureCase = start % 4;
             for (int i=0; i<dataSet.getNumDataPoints(); i++) {
                 MultiLabel label = dataSet.getMultiLabels()[i];
@@ -208,10 +208,10 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             mapFeature[i] = cmlcrf.getWeights().getFeatureIndex(i);
         }
 
-        cacheToL1 = mapL1;
-        cacheToL2 = mapL2;
-        cacheToClass = mapClass;
-        cacheToFeature = mapFeature;
+        parameterToL1 = mapL1;
+        parameterToL2 = mapL2;
+        parameterToClass = mapClass;
+        parameterToFeature = mapFeature;
     }
 
     /**
@@ -232,6 +232,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         weightSquare += labelPairVector.dot(labelPairVector);
 
         double sum = 0.0;
+        //todo another function
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
             MultiLabel label = dataSet.getMultiLabels()[i];
             Vector vector = dataSet.getRow(i);
