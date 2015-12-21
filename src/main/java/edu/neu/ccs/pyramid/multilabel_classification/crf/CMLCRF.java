@@ -8,9 +8,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
 
 import static edu.neu.ccs.pyramid.dataset.DataSetUtil.gatherMultiLabels;
@@ -38,6 +36,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     public CMLCRF(MultiLabelClfDataSet dataSet) {
         this(dataSet.getNumClasses(), dataSet.getNumFeatures());
         this.setSupportedCombinations(gatherMultiLabels(dataSet));
+        System.out.println("supported vector: " + supportedCombinations);
         this.numSupported = supportedCombinations.size();
     }
 
@@ -174,6 +173,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
                 predictedClass = k;
             }
         }
+//        System.out.println(this.supportedCombinations.get(predictedClass));
         return this.supportedCombinations.get(predictedClass);
     }
 
