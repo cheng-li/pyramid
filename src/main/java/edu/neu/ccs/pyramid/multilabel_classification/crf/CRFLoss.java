@@ -238,28 +238,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             Vector vector = dataSet.getRow(i);
             // sum logZ(x_n)
             sum += MathUtil.logSumExp(cmlcrf.predictCombinationScores(vector));
-            for (int l=0; l<numClasses; l++) {
-                //TODO cache the bias
-                if (label.matchClass(l)) {
-                    sum -= cmlcrf.getWeights().getBiasForClass(l);
-                    sum -= dataSet.getRow(i).dot(cmlcrf.getWeights().getWeightsWithoutBiasForClass(l));
-                }
-            }
-            int start = numWeightsForFeatures;
-            for (int l1=0; l1<numClasses; l1++) {
-                for (int l2=l1+1; l2<numClasses; l2++) {
-                    if (!label.matchClass(l1) && !label.matchClass(l2)) {
-                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start);
-                    } else if (label.matchClass(l1) && !label.matchClass(l2)) {
-                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start + 1);
-                    } else if (!label.matchClass(l1) && label.matchClass(l2)) {
-                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start + 2);
-                    } else {
-                        sum -= this.cmlcrf.getWeights().getWeightForIndex(start + 3);
-                    }
-                    start += 4;
-                }
-            }
+            sum -= cmlcrf.predictCombinationScore(vector, label);
         }
         this.value = sum + weightSquare/2*gaussianPriorVariance;
         this.isValueCacheValid = true;
