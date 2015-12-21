@@ -1,6 +1,5 @@
 package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
-import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
@@ -9,10 +8,7 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -89,7 +85,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
     private void updateSupportedProbs(int dataPointIndex){
-        double[] probs = cmlcrf.predictClassProbs(dataSet.getRow(dataPointIndex));
+        double[] probs = cmlcrf.predictCombinationProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<probs.length;k++){
             this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
         }
@@ -240,7 +236,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             MultiLabel label = dataSet.getMultiLabels()[i];
             Vector vector = dataSet.getRow(i);
             // sum logZ(x_n)
-            sum += MathUtil.logSumExp(cmlcrf.predictClassScores(vector));
+            sum += MathUtil.logSumExp(cmlcrf.predictCombinationScores(vector));
             for (int l=0; l<numClasses; l++) {
                 //TODO cache the bias
                 if (label.matchClass(l)) {

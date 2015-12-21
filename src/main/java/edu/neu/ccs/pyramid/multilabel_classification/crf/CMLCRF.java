@@ -72,10 +72,10 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
      * @param vector
      * @return
      */
-    public double[] predictClassScores(Vector vector){
+    public double[] predictCombinationScores(Vector vector){
         double[] scores = new double[this.numSupported];
         for (int k=0;k<scores.length;k++){
-            scores[k] = predictClassScore(vector, k);
+            scores[k] = predictCombinationScore(vector, k);
         }
         return scores;
     }
@@ -89,13 +89,13 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
      * @param k
      * @return
      */
-    public double predictClassScore(Vector vector, int k){
+    public double predictCombinationScore(Vector vector, int k){
         MultiLabel label = supportedCombinations.get(k);
         double score = 0.0;
         for (int l=0; l<numClasses; l++) {
-            score += this.weights.getBiasForClass(k);
             if (label.matchClass(l)) {
                 score += this.weights.getWeightsWithoutBiasForClass(k).dot(vector);
+                score += this.weights.getBiasForClass(k);
             }
         }
         int start = this.weights.getNumWeightsForFeatures();
@@ -116,8 +116,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return score;
     }
 
-    public double[] predictClassProbs(Vector vector){
-        double[] scoreVector = this.predictClassScores(vector);
+    public double[] predictCombinationProbs(Vector vector){
+        double[] scoreVector = this.predictCombinationScores(vector);
         double[] probVector = new double[this.numSupported];
         double logDenominator = MathUtil.logSumExp(scoreVector);
         for (int k=0;k<this.numSupported;k++){
@@ -128,8 +128,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return probVector;
     }
 
-    public double[] predictLogClassProbs(Vector vector){
-        double[] scoreVector = this.predictClassScores(vector);
+    public double[] predictLogCombinationProbs(Vector vector){
+        double[] scoreVector = this.predictCombinationScores(vector);
         double[] logProbVector = new double[this.numSupported];
         double logDenominator = MathUtil.logSumExp(scoreVector);
         for (int k=0;k<this.numSupported;k++) {
@@ -163,18 +163,18 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     @Override
     public MultiLabel predict(Vector vector) {
-        double[] scores = predictClassScores(vector);
+        double[] scores = predictCombinationScores(vector);
         double maxScore = Double.NEGATIVE_INFINITY;
-        int predictedClass = 0;
+        int predictedCombination = 0;
         for (int k=0;k<scores.length;k++){
-            double scoreClassK = scores[k];
-            if (scoreClassK > maxScore){
-                maxScore = scoreClassK;
-                predictedClass = k;
+            double scoreCombinationK = scores[k];
+            if (scoreCombinationK > maxScore){
+                maxScore = scoreCombinationK;
+                predictedCombination = k;
             }
         }
 //        System.out.println(this.supportedCombinations.get(predictedClass));
-        return this.supportedCombinations.get(predictedClass);
+        return this.supportedCombinations.get(predictedCombination);
     }
 
     @Override
