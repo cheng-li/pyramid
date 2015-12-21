@@ -315,4 +315,8 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     public Terminator getTerminator() {
         return terminator;
     }
+
+    public double[][] getGammas() {
+        return gammas;
+    }
 }

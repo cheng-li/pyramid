@@ -9,6 +9,7 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptim
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.HammingLoss;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
@@ -52,6 +53,7 @@ public class Exp137 {
 //        boost();
 //         checkIdeal();
         mix_da();
+//        check_mix_da();
     }
 
 
@@ -240,7 +242,7 @@ public class Exp137 {
         System.out.println("mix deterministic annealing");
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"simulation/multi-label/flip_one/4_labels_nonuniform/train.trec"), DataSetType.ML_CLF_DENSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS,"simulation/multi-label/flip_one/4_labels_nonuniform/test.trec"), DataSetType.ML_CLF_DENSE, true);
-        int numClusters = 3;
+        int numClusters = 2;
         double softmaxVariance = 100;
         double logitVariance = 100;
 
@@ -269,11 +271,49 @@ public class Exp137 {
                 System.out.print("test Hamming loss : " + HammingLoss.hammingLoss(bmmClassifier, testSet) + "\t");
                 System.out.print("testAcc  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
                 System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
-
+                if (optimizer.getTerminator().shouldTerminate()){
+                    break;
+                }
             }
+            double[][] gammas = optimizer.getGammas();
+            double perplexity=    IntStream.range(0,gammas.length).mapToDouble(i->Math.exp(Entropy.entropy(gammas[i]))).average().getAsDouble();
+            System.out.println("perplexity of gammas = "+perplexity);
+
+
+            List<double[]> list = bmmClassifier.getMultiNomialClassifiers().predictClassProbs(trainSet);
+            double perplexitypi=    IntStream.range(0,list.size()).mapToDouble(i->Math.exp(Entropy.entropy(list.get(i)))).average().getAsDouble();
+            System.out.println("perplexity of pi= "+perplexitypi);
+
+            for (int k=0;k<numClusters;k++){
+                System.out.println("cluster = "+k);
+                for (int i=0;i<trainSet.getNumDataPoints();i++){
+                    if (gammas[i][k]>0.7){
+                        System.out.println(trainSet.getMultiLabels()[i]);
+                    }
+                }
+            }
+
+
         }
 
+        Serialization.serialize(bmmClassifier,new File(TMP,"mix"));
+
+
 //        System.out.println(bmmClassifier);
+    }
+
+    private static void check_mix_da() throws Exception {
+        System.out.println("mix deterministic annealing");
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/4_labels_nonuniform/train.trec"), DataSetType.ML_CLF_DENSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/4_labels_nonuniform/test.trec"), DataSetType.ML_CLF_DENSE, true);
+
+        BMMClassifier bmmClassifier = (BMMClassifier)Serialization.deserialize(new File(TMP, "mix"));
+        List<double[]> list = bmmClassifier.getMultiNomialClassifiers().predictClassProbs(trainSet);
+        double perplexity=    IntStream.range(0,list.size()).mapToDouble(i->Math.exp(Entropy.entropy(list.get(i)))).average().getAsDouble();
+        System.out.println("perplexity of pi= "+perplexity);
+
+
+
     }
 
 
