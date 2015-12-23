@@ -30,40 +30,40 @@ public class CMLCRFTest {
                 DataSetType.ML_CLF_SPARSE, true);
 
         CMLCRF cmlcrf = new CMLCRF(dataSet);
-        CRFLoss crfLoss = new CRFLoss(cmlcrf,dataSet,1);
-//        Optimizer optimizer = new LBFGS(crfLoss);
-        GradientDescent optimizer = new GradientDescent(crfLoss);
-//        optimizer.getTerminator().setAbsoluteEpsilon(0.1);
+        CRFLoss crfLoss = new CRFLoss(cmlcrf,dataSet,10000);
+
+
         MultiLabel[] predTrain;
         MultiLabel[] predTest;
 
-        for (int i=0; i<500; i++) {
+        GradientDescent optimizer = new GradientDescent(crfLoss);
+        for (int i=0; i<5000; i++) {
             optimizer.iterate();
             predTrain = cmlcrf.predict(dataSet);
             predTest = cmlcrf.predict(testSet);
-            System.out.print("Obj: " + optimizer.getTerminator().getLastValue());
+//            System.out.print("Obj: " + optimizer.getTerminator().getLastValue());
+            System.out.print("iter: "+ i);
             System.out.print("\tTrain acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
             System.out.print("\tTrain overlap " + Overlap.overlap(dataSet.getMultiLabels(), predTrain));
             System.out.print("\tTest acc: " + Accuracy.accuracy(testSet.getMultiLabels(), predTest));
             System.out.println("\tTest overlap " + Overlap.overlap(testSet.getMultiLabels(), predTest));
-
         }
 
-//        System.out.println("ending objective: " + optimizer.getFinalObjective());
-//        MultiLabel[] predTrain;
-//        MultiLabel[] predTest;
-//        predTrain = cmlcrf.predict(dataSet);
-//        predTest = cmlcrf.predict(testSet);
-//        System.out.println("Train acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
-//        System.out.println("Train overlap " + Overlap.overlap(dataSet.getMultiLabels(), predTrain));
-//        System.out.println("Test acc: " + Accuracy.accuracy(testSet.getMultiLabels(), predTest));
-//        System.out.println("Test overlap " + Overlap.overlap(testSet.getMultiLabels(), predTest));
-//        for (int i=0; i<predTrain.length; i++) {
-//            System.out.println(dataSet.getMultiLabels()[i] + ": " + predTrain[i]);
+
+
+//        LBFGS optimizer = new LBFGS(crfLoss);
+//        optimizer.getTerminator().setAbsoluteEpsilon(0.1);
+//        for (int i=0; i<5000; i++) {
+//            optimizer.iterate();
+//            predTrain = cmlcrf.predict(dataSet);
+//            predTest = cmlcrf.predict(testSet);
+//            System.out.print("iter: "+ i);
+//            System.out.print("\tTrain acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
+//            System.out.print("\tTrain overlap " + Overlap.overlap(dataSet.getMultiLabels(), predTrain));
+//            System.out.print("\tTest acc: " + Accuracy.accuracy(testSet.getMultiLabels(), predTest));
+//            System.out.println("\tTest overlap " + Overlap.overlap(testSet.getMultiLabels(), predTest));
 //        }
-//        for (int i=0; i<predTest.length; i++) {
-//            System.out.println(testSet.getMultiLabels()[i] + ": " + predTest[i]);
-//        }
+
         System.out.println(cmlcrf.getWeights());
     }
 }

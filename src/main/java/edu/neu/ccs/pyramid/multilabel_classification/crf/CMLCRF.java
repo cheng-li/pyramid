@@ -52,19 +52,6 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         this.numSupported = multiLabels.size();
     }
 
-//    /**
-//     * returns the exp of scores given the feature x.
-//     * @param vector
-//     * @return
-//     */
-//    public double[] predictClassExpScores(Vector vector) {
-//        double[] scores = predictClassScores(vector);
-//        double[] expScores = new double[this.numSupported];
-//        for (int i=0; i<expScores.length; i++) {
-//            expScores[i] = Math.exp(scores[i]);
-//        }
-//        return expScores;
-//    }
 
     /**
      * get the scores for all possible label combination
@@ -81,7 +68,12 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     }
 
 
-    // todo
+    /**
+     * get the score by a given feature x and given label combination.
+     * @param vector
+     * @param label
+     * @return
+     */
     public double predictCombinationScore(Vector vector, MultiLabel label){
         double score = 0.0;
         for (int l=0; l<numClasses; l++) {

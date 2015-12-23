@@ -59,7 +59,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
 
     /**
-     * TODO: is it the negative log likelihood?
      * gradient of log likelihood?
      * @return
      */
@@ -102,86 +101,106 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
     /**
-     * TODO: better version.
+     * return the gradient.
      * @param parameterIndex
-     * @return
+     * @return the gradient.
      */
     private double calGradient(int parameterIndex) {
-        double count = 0;
-        // feature index
+        // get gradient for feature label pair.
         if (parameterIndex < numWeightsForFeatures) {
-            int classIndex = parameterToClass[parameterIndex];
-            int featureIndex = parameterToFeature[parameterIndex];
-            for (int i=0; i< dataSet.getNumDataPoints(); i++) {
-                double featureValue = (featureIndex==-1) ? 1.0 : dataSet.getRow(i).get(featureIndex);
-                double fValue = 0.0;
-                if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
-                    fValue = featureValue;
-                }
+            return calGradientForFeature(parameterIndex);
+        }
+        // get gradient for label pair;
+        return calGradientForLabelPair(parameterIndex);
 
-                double sumValue = 0.0;
-                double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
-                for (int num=0; num<probs.length; num++) {
-                    if (supportedCombinations.get(num).matchClass(classIndex)) {
-                        sumValue += probs[num] * featureValue;
-                    }
-                }
-                count += (sumValue - fValue);
+    }
+
+    /**
+     * return the gradient by given parameterIndex, which is label and label pair weight.
+     * @param parameterIndex
+     * @return gradient for label pair weight.
+     */
+    private double calGradientForLabelPair(int parameterIndex) {
+        double count = 0.0;
+        int start = parameterIndex - numWeightsForFeatures;
+        int l1 = parameterToL1[start];
+        int l2 = parameterToL2[start];
+        int featureCase = start % 4;
+        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+            MultiLabel label = dataSet.getMultiLabels()[i];
+            double fValue = 0.0;
+            switch (featureCase) {
+                // both l1, l2 equal 0;
+                case 0: if (!label.matchClass(l1) && !label.matchClass(l2)) fValue = 1.0;
+                    break;
+                // l1 = 1; l2 = 0;
+                case 1: if (label.matchClass(l1) && !label.matchClass(l2)) fValue = 1.0;
+                    break;
+                // l1 = 0; l2 = 1;
+                case 2: if (!label.matchClass(l1) && label.matchClass(l2)) fValue = 1.0;
+                    break;
+                // l1 = 1; l2 = 1;
+                case 3: if (label.matchClass(l1) && label.matchClass(l2)) fValue = 1.0;
+                    break;
+                default: throw new RuntimeException("feature case :" + featureCase + " failed.");
             }
-            // normalize
-            if (featureIndex != -1) {
-                count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
-            }
-        } else { // for label pair feature
-            int start = parameterIndex - numWeightsForFeatures;
-            int l1 = parameterToL1[start];
-            int l2 = parameterToL2[start];
-            int featureCase = start % 4;
-            for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-                MultiLabel label = dataSet.getMultiLabels()[i];
-                double fValue = 0.0;
+
+            double sumValue = 0.0;
+            double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
+            for (int num=0; num<probs.length; num++) {
+                MultiLabel label1 = supportedCombinations.get(num);
                 switch (featureCase) {
                     // both l1, l2 equal 0;
-                    case 0: if (!label.matchClass(l1) && !label.matchClass(l2)) fValue = 1.0;
+                    case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
                         break;
                     // l1 = 1; l2 = 0;
-                    case 1: if (label.matchClass(l1) && !label.matchClass(l2)) fValue = 1.0;
+                    case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
                         break;
                     // l1 = 0; l2 = 1;
-                    case 2: if (!label.matchClass(l1) && label.matchClass(l2)) fValue = 1.0;
+                    case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
                         break;
                     // l1 = 1; l2 = 1;
-                    case 3: if (label.matchClass(l1) && label.matchClass(l2)) fValue = 1.0;
+                    case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
                         break;
                     default: throw new RuntimeException("feature case :" + featureCase + " failed.");
                 }
-
-                double sumValue = 0.0;
-                double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
-                for (int num=0; num<probs.length; num++) {
-                    MultiLabel label1 = supportedCombinations.get(num);
-                    switch (featureCase) {
-                        // both l1, l2 equal 0;
-                        case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
-                            break;
-                        // l1 = 1; l2 = 0;
-                        case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
-                            break;
-                        // l1 = 0; l2 = 1;
-                        case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
-                            break;
-                        // l1 = 1; l2 = 1;
-                        case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
-                            break;
-                        default: throw new RuntimeException("feature case :" + featureCase + " failed.");
-                    }
-                }
-                count += (sumValue - fValue);
             }
+            count += (sumValue - fValue);
+        }
+        count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+        return count;
+    }
+
+    /**
+     * return the gradient by given parameterIndex, which is feature and label pair weight.
+     * @param parameterIndex
+     * @return gradient for feature and label pair weight.
+     */
+    private double calGradientForFeature(int parameterIndex) {
+        double count = 0.0;
+        int classIndex = parameterToClass[parameterIndex];
+        int featureIndex = parameterToFeature[parameterIndex];
+        for (int i=0; i< dataSet.getNumDataPoints(); i++) {
+            double featureValue = (featureIndex==-1) ? 1.0 : dataSet.getRow(i).get(featureIndex);
+            double fValue = 0.0;
+            if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
+                fValue = featureValue;
+            }
+
+            double sumValue = 0.0;
+            double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
+            for (int num=0; num<probs.length; num++) {
+                if (supportedCombinations.get(num).matchClass(classIndex)) {
+                    sumValue += probs[num] * featureValue;
+                }
+            }
+            count += (sumValue - fValue);
+        }
+        // normalize
+        if (featureIndex != -1) {
             count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
         }
         return count;
-
     }
 
     public void initCache() {
@@ -231,8 +250,13 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
         weightSquare += labelPairVector.dot(labelPairVector);
 
+        this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
+        this.isValueCacheValid = true;
+        return this.value;
+    }
+
+    private double getValueForAllData() {
         double sum = 0.0;
-        //todo another function
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
             MultiLabel label = dataSet.getMultiLabels()[i];
             Vector vector = dataSet.getRow(i);
@@ -240,11 +264,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             sum += MathUtil.logSumExp(cmlcrf.predictCombinationScores(vector));
             sum -= cmlcrf.predictCombinationScore(vector, label);
         }
-        this.value = sum + weightSquare/2*gaussianPriorVariance;
-        this.isValueCacheValid = true;
-//        System.out.println("negative log likelihood: " + this.value);
-        return this.value;
+        return sum;
     }
+
 
     @Override
     public Vector getParameters() {
