@@ -47,7 +47,8 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
             logger.debug("start one iteration");
         }
 
-        Vector oldGradient = function.getGradient();
+        // we need to make a copy of the gradient; should not use pointer
+        Vector oldGradient = new DenseVector(function.getGradient());
         Vector direction = findDirection();
         if (logger.isDebugEnabled()){
             logger.debug("norm of direction = "+direction.norm(2));
@@ -66,7 +67,7 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
             rho = 1/denominator;
         }
         else {
-            terminator.forceTerminate();
+//            terminator.forceTerminate();
             if (logger.isWarnEnabled()){
                 logger.warn("denominator <= 0");
             }
@@ -74,6 +75,8 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
 
 
         if (logger.isDebugEnabled()){
+            logger.debug("y= "+y);
+            logger.debug("s= "+s);
             logger.debug("denominator = "+denominator);
             logger.debug("rho = "+rho);
         }

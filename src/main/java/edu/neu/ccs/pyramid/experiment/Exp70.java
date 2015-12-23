@@ -6,11 +6,8 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.*;
-import edu.neu.ccs.pyramid.feature.FeatureList;
-import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -209,7 +206,7 @@ public class Exp70 {
                 System.out.println("regularization = "+regularization);
                 StopWatch stopWatch = new StopWatch();
                 stopWatch.start();
-                trainer.train();
+                trainer.optimize();
                 System.out.println("time spent = " + stopWatch);
                 System.out.println("loss = "+trainer.getLoss());
                 System.out.println("number of used features in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));

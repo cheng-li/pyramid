@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticTrainer;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.DenseVector;
@@ -57,7 +56,7 @@ public class MLPlattScaling implements MultiLabelClassifier.ClassProbEstimator{
         LogisticRegression logisticRegression = new LogisticRegression(2,dataSet.getNumFeatures());
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression,dataSet)
                 .setRegularization(1.0E-9).setL1Ratio(0).build();
-        trainer.train();
+        trainer.optimize();
         return logisticRegression;
     }
 

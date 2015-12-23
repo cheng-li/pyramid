@@ -18,6 +18,60 @@ import java.io.File;
  * Created by Rainicy on 10/24/15.
  */
 public class Exp211 {
+
+    public static BMMClassifier loadBMM(Config config, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet testSet) throws Exception{
+        int numClusters = config.getInt("numClusters");
+        double softmaxVariance = config.getDouble("softmaxVariance");
+        double logitVariance = config.getDouble("logitVariance");
+        int numSamples = config.getInt("numSamples");
+
+        String output = config.getString("output");
+        String modelName = config.getString("modelName");
+
+
+        BMMClassifier bmmClassifier;
+        if (config.getBoolean("train.warmStart")) {
+            bmmClassifier = BMMClassifier.deserialize(new File(output, modelName));
+            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
+            bmmClassifier.setPredictMode(config.getString("predictMode"));
+        } else {
+            bmmClassifier = new BMMClassifier(trainSet.getNumClasses(), numClusters, trainSet.getNumFeatures());
+
+            bmmClassifier.setNumSample(numSamples);
+            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
+            bmmClassifier.setPredictMode(config.getString("predictMode"));
+
+            MultiLabel[] trainPredict;
+            MultiLabel[] testPredict;
+
+//            trainPredict = bmmClassifier.predict(trainSet);
+//            testPredict = bmmClassifier.predict(testSet);
+            System.out.print("random init" + "\t");
+//            System.out.print("objective: "+optimizer.getObjective()+ "\t");
+//            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
+//            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
+//            System.out.print("testACC  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict) + "\t");
+//            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
+
+            if (config.getBoolean("initialize")) {
+                BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance, new File(config.getString("initializeBy")));
+            } else {
+                BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance);
+            }
+            System.out.println("after initialization");
+            trainPredict = bmmClassifier.predict(trainSet);
+            testPredict = bmmClassifier.predict(testSet);
+
+            System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
+            System.out.print("trainOver: " + Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
+            System.out.print("testACC  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
+            System.out.println("testOver : " + Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
+
+        }
+
+        return bmmClassifier;
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("Please specify a properties file.");
@@ -32,67 +86,35 @@ public class Exp211 {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
                 DataSetType.ML_CLF_SPARSE, true);
 
-        int numClusters = config.getInt("numClusters");
         double softmaxVariance = config.getDouble("softmaxVariance");
         double logitVariance = config.getDouble("logitVariance");
         int numIterations = config.getInt("numIterations");
-        int numSamples = config.getInt("numSamples");
+
 
         String output = config.getString("output");
         String modelName = config.getString("modelName");
 
-        BMMClassifier bmmClassifier;
-        if (config.getBoolean("train.warmStart")) {
-            bmmClassifier = BMMClassifier.deserialize(new File(output, modelName));
-            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
-        } else {
-            bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
-            BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
-            bmmClassifier.setNumSample(numSamples);
-            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
-            bmmClassifier.setPredictMode(config.getString("predictMode"));
+        BMMClassifier bmmClassifier = loadBMM(config,trainSet,testSet);
 
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet, softmaxVariance, logitVariance);
+        optimizer.setInverseTemperature(config.getDouble("inverseTemperature"));
+
+
+        for (int i=1;i<=numIterations;i++){
+            optimizer.iterate();
             MultiLabel[] trainPredict;
             MultiLabel[] testPredict;
-
-//            trainPredict = bmmClassifier.predict(trainSet);
-//            testPredict = bmmClassifier.predict(testSet);
-            System.out.print("random init" + "\t" );
-//            System.out.print("objective: "+optimizer.getObjective()+ "\t");
-//            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
-//            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
-//            System.out.print("testACC  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict) + "\t");
-//            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
-
-            if (config.getBoolean("initialize")) {
-                BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance, new File(config.getString("initializeBy")));
-            }
-            else {
-                BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance);
-            }
-            System.out.println("after initialization");
             trainPredict = bmmClassifier.predict(trainSet);
             testPredict = bmmClassifier.predict(testSet);
-
-            System.out.print("objective: "+optimizer.getObjective()+ "\t");
-            System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
-            System.out.print("trainOver: " + Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
-            System.out.print("testACC  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
-            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
-
-            for (int i=1;i<=numIterations;i++){
-                optimizer.iterate();
-                trainPredict = bmmClassifier.predict(trainSet);
-                testPredict = bmmClassifier.predict(testSet);
-                System.out.print("iter : "+i + "\t");
-                System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
-                System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(),trainPredict)+ "\t");
-                System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
-                System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
-                System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
-            }
-            System.out.println("history = "+optimizer.getTerminator().getHistory());
+            System.out.print("iter : "+i + "\t");
+            System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(),trainPredict)+ "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
+            System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
+            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
         }
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
+
 
         System.out.println("--------------------------------Results-----------------------------\n");
         System.out.println();
@@ -102,7 +124,7 @@ public class Exp211 {
         System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
         System.out.println();
         System.out.println();
-        System.out.println(bmmClassifier);
+//        System.out.println(bmmClassifier);
 
         if (config.getBoolean("saveModel")) {
             (new File(output)).mkdirs();

@@ -4,11 +4,13 @@ import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ClfDataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.optimization.*;
 import org.apache.mahout.math.Vector;
 
 import java.util.HashMap;
@@ -44,8 +46,10 @@ public class LPOptimizer {
                 .missingValue(dataSet.hasMissingValue()).numClasses(IDToML.size()).build();
 
         this.dataSet.setFeatureList(dataSet.getFeatureList());
+        // todo buggy
         this.dataSet.setLabelTranslator(dataSet.getLabelTranslator());
         this.classifier.setFeatureList(this.dataSet.getFeatureList());
+        //todo buggy
         this.classifier.setLabelTranslator(this.dataSet.getLabelTranslator());
 
         for (int n=0; n<dataSet.getNumDataPoints(); n++) {
@@ -76,13 +80,10 @@ public class LPOptimizer {
         } else if (classifier.equals("logistic")) {
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
             ElasticNetLogisticTrainer optimizer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
-                    .setEpsilon(config.getDouble("epsilon")).setL1Ratio(config.getDouble("l1Ratio"))
+                    .setL1Ratio(config.getDouble("l1Ratio"))
                     .setRegularization(config.getDouble("regularization")).build();
 
-            for (int round=0; round<config.getInt("numIters"); round++) {
-                System.out.println("round: " + round);
-                optimizer.iterate();
-            }
+            optimizer.optimize();
             this.classifier.estimator = logisticRegression;
         } else {
             throw new RuntimeException("Unknown classifier");

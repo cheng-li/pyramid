@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
+import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.linear_regression.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,34 +39,21 @@ public class ElasticNetLogisticTrainer {
     private Vector predictedCounts;
     private int numParameters;
     private ProbabilityMatrix probabilityMatrix;
+    private Terminator terminator;
 
     public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet){
         return new Builder(logisticRegression, dataSet);
     }
 
-    public void train(){
+    public void optimize(){
         logisticRegression.setFeatureList(dataSet.getFeatureList());
         logisticRegression.setLabelTranslator(dataSet.getLabelTranslator());
 
-        double lastLoss = loss();
-        if (logger.isDebugEnabled()){
-            logger.debug("initial loss = "+lastLoss);
-        }
-        double threshold = lastLoss*epsilon;
         while(true){
             iterate();
-            double loss = loss();
-            if (logger.isDebugEnabled()){
-                logger.debug("loss = "+loss);
-            }
-
-//            if (loss > lastLoss){
-//                throw new RuntimeException("loss > lastLoss");
-//            }
-            if (Math.abs(lastLoss-loss)<=threshold){
+            if (terminator.shouldTerminate()){
                 break;
             }
-            lastLoss = loss;
         }
     }
 
@@ -73,6 +61,7 @@ public class ElasticNetLogisticTrainer {
         for (int k=0;k<dataSet.getNumClasses();k++){
             optimizeOneClass(k);
         }
+        terminator.add(getLoss());
     }
 
     public double getLoss(){
@@ -341,6 +330,7 @@ public class ElasticNetLogisticTrainer {
             trainer.updateEmpricalCounts();
             trainer.updateClassProbMatrix();
             trainer.updatePredictedCounts();
+            trainer.terminator = new Terminator();
             return trainer;
         }
     }

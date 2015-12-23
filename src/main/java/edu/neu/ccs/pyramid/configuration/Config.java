@@ -191,6 +191,7 @@ public class Config {
         return sb.toString();
     }
 
+
     public static class Serializer extends JsonSerializer<Config>{
         @Override
         public void serialize(Config config, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {

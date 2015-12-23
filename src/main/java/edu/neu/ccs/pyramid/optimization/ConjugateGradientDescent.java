@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.optimization;
 
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 /**
@@ -16,7 +17,8 @@ public class ConjugateGradientDescent extends GradientValueOptimizer implements 
     public ConjugateGradientDescent(Optimizable.ByGradientValue function) {
         super(function);
         this.lineSearcher = new BackTrackingLineSearcher(function);
-        this.oldGradient = function.getGradient();
+        // we need to make a copy of the gradient; should not use pointer
+        this.oldGradient = new DenseVector(function.getGradient());
         this.oldP = oldGradient.times(-1);
     }
 

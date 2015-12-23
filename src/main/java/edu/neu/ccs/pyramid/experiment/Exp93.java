@@ -206,7 +206,7 @@ public class Exp93 {
                 System.out.println("regularization = "+regularization);
                 StopWatch stopWatch = new StopWatch();
                 stopWatch.start();
-                trainer.train();
+                trainer.optimize();
                 System.out.println("time spent = " + stopWatch);
                 System.out.println("number of used features in each class = "+ Arrays.toString(LogisticRegressionInspector.numOfUsedFeaturesEachClass(logisticRegression)));
 

@@ -43,6 +43,14 @@ public class MultiLabel implements Serializable{
         }
     }
 
+    public void flipLabel(int k){
+        if (labels.contains(k)){
+            labels.remove(k);
+        } else {
+            labels.add(k);
+        }
+    }
+
     public boolean matchClass(int k){
         return labels.contains(k);
     }
