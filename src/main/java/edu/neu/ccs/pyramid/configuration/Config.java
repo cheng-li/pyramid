@@ -90,7 +90,7 @@ public class Config {
         return list;
     }
 
-    public List<Double> getIntegersgetDoubles(String key){
+    public List<Double> getDoubles(String key){
         List<String> strings = getStrings(key);
         List<Double> list = new ArrayList<>();
         for (String valueString: strings){
@@ -191,9 +191,6 @@ public class Config {
         return sb.toString();
     }
 
-    public List<Double> getDoubles(String softmaxVariances) {
-        return null;
-    }
 
     public static class Serializer extends JsonSerializer<Config>{
         @Override

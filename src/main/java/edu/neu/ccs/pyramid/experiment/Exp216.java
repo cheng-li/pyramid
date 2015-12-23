@@ -39,8 +39,8 @@ public class Exp216 {
         int numSamples = config.getInt("numSamples");
         String output = config.getString("output");
         List<Integer> clusters = config.getIntegers("numClusters");
-        List<Double> softmaxVariances = config.getIntegersgetDoubles("softmaxVariances");
-        List<Double> logitVariances = config.getIntegersgetDoubles("logitVariances");
+        List<Double> softmaxVariances = config.getDoubles("softmaxVariances");
+        List<Double> logitVariances = config.getDoubles("logitVariances");
 
         System.out.println(softmaxVariances);
         System.out.println(logitVariances);
