@@ -18,6 +18,7 @@ public class RidgeLogisticOptimizerTest {
     public static void main(String[] args) throws Exception{
         test1();
 //        test2();
+//        test3();
     }
 
     private static void test1() throws Exception{
@@ -46,6 +47,7 @@ public class RidgeLogisticOptimizerTest {
         System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
         System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
         System.out.println(optimizer.getOptimizer().getTerminator().getHistory());
+        System.out.println(logisticRegression);
     }
 
     private static void test2() throws Exception{
@@ -83,5 +85,40 @@ public class RidgeLogisticOptimizerTest {
         System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
         System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
         System.out.println(optimizer.getOptimizer().getTerminator().getHistory());
+    }
+
+
+    private static void test3() throws Exception{
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
+//                DataSetType.CLF_SPARSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+        double variance =1000;
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        Optimizable.ByGradientValue loss = new LogisticLoss(logisticRegression,dataSet, variance);
+        loss.setParallelism(true);
+//        GradientDescent optimizer = new GradientDescent(loss);
+        LBFGS optimizer = new LBFGS(loss);
+        System.out.println("after initialization");
+        System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
+        System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
+        for (int i=0;i<200;i++){
+            optimizer.iterate();
+            System.out.println("after iteration "+i);
+            System.out.println("loss = "+loss.getValue());
+
+            System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
+            System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
+            System.out.println(logisticRegression);
+        }
+
     }
 }
