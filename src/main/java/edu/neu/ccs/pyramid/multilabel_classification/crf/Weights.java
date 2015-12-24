@@ -4,7 +4,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorView;
 
-import java.io.Serializable;
+import java.io.*;
 
 /**
  * Created by Rainicy on 12/12/15.
@@ -160,5 +160,54 @@ public class Weights  implements Serializable {
         }
         sb.append('}');
         return sb.toString();
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        for (int i=0;i<serializableWeights.length;i++){
+            serializableWeights[i] = weightVector.get(i);
+        }
+        out.writeInt(numClasses);
+        out.writeInt(numFeatures);
+        out.writeInt(numWeightsForFeatures);
+        out.writeInt(numWeightsForLabels);
+        out.writeObject(serializableWeights);
+
+    }
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        numClasses = in.readInt();
+        numFeatures = in.readInt();
+        numWeightsForFeatures = in.readInt();
+        numWeightsForLabels = in.readInt();
+        serializableWeights = (double[])in.readObject();
+        weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
+        for (int i=0;i<serializableWeights.length;i++){
+            weightVector.set(i,serializableWeights[i]);
+        }
+    }
+
+    void serialize(File file) throws Exception{
+        File parent = file.getParentFile();
+        if (!parent.exists()){
+            parent.mkdirs();
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    public static Weights deserialize(File file) throws Exception{
+        try(
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            return (Weights)objectInputStream.readObject();
+        }
     }
 }

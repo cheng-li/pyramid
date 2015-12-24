@@ -8,7 +8,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.List;
 
 import static edu.neu.ccs.pyramid.dataset.DataSetUtil.gatherMultiLabels;
@@ -36,8 +36,9 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     public CMLCRF(MultiLabelClfDataSet dataSet) {
         this(dataSet.getNumClasses(), dataSet.getNumFeatures());
         this.setSupportedCombinations(gatherMultiLabels(dataSet));
-        System.out.println("supported vector: " + supportedCombinations);
         this.numSupported = supportedCombinations.size();
+        System.out.println("supported vector: " + supportedCombinations);
+        System.out.println("length of supported: " + this.numSupported);
     }
 
     public CMLCRF(int numClasses, int numFeatures) {
@@ -191,4 +192,42 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         sb.append('}');
         return sb.toString();
     }
+
+    public static CMLCRF deserialize(File file) throws Exception {
+        try (
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            CMLCRF cmlcrf = (CMLCRF) objectInputStream.readObject();
+            return cmlcrf;
+        }
+    }
+
+    public static CMLCRF deserialize(String file) throws Exception {
+        File file1 = new File(file);
+        return deserialize(file1);
+    }
+
+    @Override
+    public void serialize(File file) throws Exception {
+        File parent = file.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdir();
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    @Override
+    public void serialize(String file) throws Exception {
+        File file1 = new File(file);
+        serialize(file1);
+    }
+
 }
