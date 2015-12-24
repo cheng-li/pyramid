@@ -36,11 +36,6 @@ public class Weights  implements Serializable {
         this.numWeightsForLabels = (numClasses * (numClasses-1)/2) * 4;
         this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
         this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels];
-//        for (int i=0; i<weightVector.size(); i++) {
-//            double randWeight = Math.random()*2 - 1.0;
-//            weightVector.set(i, randWeight);
-//            serializableWeights[i] = randWeight;
-//        }
         System.out.println("numWeightsForFeature: " + numWeightsForFeatures);
         System.out.println("numWeightsForLabels: " + numWeightsForLabels);
     }
@@ -74,7 +69,6 @@ public class Weights  implements Serializable {
 
 
     public void setWeightVector(Vector weightVector) {
-//        System.out.println("given weightVector size: " + weightVector.size());
         if (weightVector.size() != (numWeightsForFeatures + numWeightsForLabels)) {
             throw new IllegalArgumentException("given vector size is wrong: " + weightVector.size());
         }

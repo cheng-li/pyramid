@@ -26,6 +26,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private Vector gradient;
     private double value;
 
+    private double[] empiricalCounts;
+
     private int[] parameterToL1;
     private int[] parameterToL2;
     private int[] parameterToClass;
@@ -52,7 +54,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),cmlcrf.getNumSupported());
         this.isGradientCacheValid = false;
         this.isValueCacheValid = false;
+        this.empiricalCounts = new double[numParameters];
         this.initCache();
+        this.updateEmpricalCounts();
         this.gradient = new DenseVector(numParameters);
     }
 
@@ -127,46 +131,27 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         int l2 = parameterToL2[start];
         int featureCase = start % 4;
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            MultiLabel label = dataSet.getMultiLabels()[i];
-            double fValue = 0.0;
-            switch (featureCase) {
-                // both l1, l2 equal 0;
-                case 0: if (!label.matchClass(l1) && !label.matchClass(l2)) fValue = 1.0;
-                    break;
-                // l1 = 1; l2 = 0;
-                case 1: if (label.matchClass(l1) && !label.matchClass(l2)) fValue = 1.0;
-                    break;
-                // l1 = 0; l2 = 1;
-                case 2: if (!label.matchClass(l1) && label.matchClass(l2)) fValue = 1.0;
-                    break;
-                // l1 = 1; l2 = 1;
-                case 3: if (label.matchClass(l1) && label.matchClass(l2)) fValue = 1.0;
-                    break;
-                default: throw new RuntimeException("feature case :" + featureCase + " failed.");
-            }
-
-            double sumValue = 0.0;
             double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
             for (int num=0; num<probs.length; num++) {
                 MultiLabel label1 = supportedCombinations.get(num);
                 switch (featureCase) {
                     // both l1, l2 equal 0;
-                    case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
+                    case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) count+=probs[num];
                         break;
                     // l1 = 1; l2 = 0;
-                    case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) sumValue+=probs[num];
+                    case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) count+=probs[num];
                         break;
                     // l1 = 0; l2 = 1;
-                    case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
+                    case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) count+=probs[num];
                         break;
                     // l1 = 1; l2 = 1;
-                    case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) sumValue+=probs[num];
+                    case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) count+=probs[num];
                         break;
                     default: throw new RuntimeException("feature case :" + featureCase + " failed.");
                 }
             }
-            count += (sumValue - fValue);
         }
+        count += this.empiricalCounts[parameterIndex];
         count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
         return count;
     }
@@ -180,27 +165,95 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         double count = 0.0;
         int classIndex = parameterToClass[parameterIndex];
         int featureIndex = parameterToFeature[parameterIndex];
-        for (int i=0; i< dataSet.getNumDataPoints(); i++) {
-            double featureValue = (featureIndex==-1) ? 1.0 : dataSet.getRow(i).get(featureIndex);
-            double fValue = 0.0;
-            if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
-                fValue = featureValue;
-            }
 
-            double sumValue = 0.0;
-            double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
-            for (int num=0; num<probs.length; num++) {
-                if (supportedCombinations.get(num).matchClass(classIndex)) {
-                    sumValue += probs[num] * featureValue;
+        if (featureIndex == -1) {
+            for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+                double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
+                for (int num=0; num<probs.length; num++) {
+                    if (supportedCombinations.get(num).matchClass(classIndex)) {
+                        count += probs[num];
+                    }
                 }
             }
-            count += (sumValue - fValue);
+        } else {
+            Vector featureColumn = dataSet.getColumn(featureIndex);
+            for (Vector.Element element: featureColumn.nonZeroes()) {
+                int dataPointIndex = element.index();
+                double featureValue = element.get();
+                double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPointIndex);
+                for (int num=0; num<probs.length; num++) {
+                    if (supportedCombinations.get(num).matchClass(classIndex)) {
+                        count += probs[num] * featureValue;
+                    }
+                }
+            }
         }
+
+        count += this.empiricalCounts[parameterIndex];
         // normalize
         if (featureIndex != -1) {
             count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
         }
         return count;
+    }
+
+    private void updateEmpricalCounts(){
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, numParameters).parallel();
+        } else {
+            intStream = IntStream.range(0, numParameters);
+        }
+        intStream.forEach(i -> calEmpricalCount(i));
+    }
+
+    private void calEmpricalCount(int parameterIndex) {
+        if (parameterIndex < numWeightsForFeatures) {
+            this.empiricalCounts[parameterIndex] = calEmpricalCountForFeature(parameterIndex);
+        } else {
+            this.empiricalCounts[parameterIndex] = calEmpricalCountForLabelPair(parameterIndex);
+        }
+    }
+
+    private double calEmpricalCountForLabelPair(int parameterIndex) {
+        double empricalCount = 0.0;
+        int start = parameterIndex - numWeightsForFeatures;
+        int l1 = parameterToL1[start];
+        int l2 = parameterToL2[start];
+        int featureCase = start % 4;
+        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+            MultiLabel label = dataSet.getMultiLabels()[i];
+            switch (featureCase) {
+                // both l1, l2 equal 0;
+                case 0: if (!label.matchClass(l1) && !label.matchClass(l2)) empricalCount -= 1.0;
+                    break;
+                // l1 = 1; l2 = 0;
+                case 1: if (label.matchClass(l1) && !label.matchClass(l2)) empricalCount -= 1.0;
+                    break;
+                // l1 = 0; l2 = 1;
+                case 2: if (!label.matchClass(l1) && label.matchClass(l2)) empricalCount -= 1.0;
+                    break;
+                // l1 = 1; l2 = 1;
+                case 3: if (label.matchClass(l1) && label.matchClass(l2)) empricalCount -= 1.0;
+                    break;
+                default: throw new RuntimeException("feature case :" + featureCase + " failed.");
+            }
+        }
+        return empricalCount;
+    }
+
+
+    private double calEmpricalCountForFeature(int parameterIndex) {
+        double empricalCount = 0.0;
+        int classIndex = parameterToClass[parameterIndex];
+        int featureIndex = parameterToFeature[parameterIndex];
+        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+            double featureValue = (featureIndex==-1) ? 1.0 : dataSet.getRow(i).get(featureIndex);
+            if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
+                empricalCount -= featureValue;
+            }
+        }
+        return empricalCount;
     }
 
     public void initCache() {
@@ -234,8 +287,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
     /**
-     * TODO: negative log-likelihood?
-     * @return
+     * @return negative log-likelihood
      */
     @Override
     public double getValue() {

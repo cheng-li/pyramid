@@ -63,7 +63,7 @@ public class CMLCRFTest {
         optimizer.optimize();
         predTrain = cmlcrf.predict(dataSet);
         predTest = cmlcrf.predict(testSet);
-        System.out.print("\tTrain acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
+        System.out.print("Train acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
         System.out.print("\tTrain overlap " + Overlap.overlap(dataSet.getMultiLabels(), predTrain));
         System.out.print("\tTest acc: " + Accuracy.accuracy(testSet.getMultiLabels(), predTest));
         System.out.println("\tTest overlap " + Overlap.overlap(testSet.getMultiLabels(), predTest));

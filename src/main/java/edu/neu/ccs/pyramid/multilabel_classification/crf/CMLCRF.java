@@ -170,7 +170,6 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
                 predictedCombination = k;
             }
         }
-//        System.out.println(this.supportedCombinations.get(predictedClass));
         return this.supportedCombinations.get(predictedCombination);
     }
 
