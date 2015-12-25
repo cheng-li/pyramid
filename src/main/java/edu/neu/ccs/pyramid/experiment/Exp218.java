@@ -50,6 +50,7 @@ public class Exp218 {
         } else{
             cmlcrf = new CMLCRF(trainSet);
             CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
+            crfLoss.setParallelism(true);
 
             if (config.getBoolean("isLBFGS")) {
                 LBFGS optimizer = new LBFGS(crfLoss);
