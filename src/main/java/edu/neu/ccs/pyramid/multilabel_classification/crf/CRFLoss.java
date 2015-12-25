@@ -17,6 +17,7 @@ import java.util.stream.IntStream;
 public class CRFLoss implements Optimizable.ByGradientValue {
     private CMLCRF cmlcrf;
     private List<MultiLabel> supportedCombinations;
+    private int numSupported;
     private MultiLabelClfDataSet dataSet;
     private double gaussianPriorVariance;
     private int numClasses;
@@ -32,6 +33,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private int[] parameterToL2;
     private int[] parameterToClass;
     private int[] parameterToFeature;
+    // if the supported conbination contains the label;
+    private boolean[][] labelInSupported;
 
     private boolean isParallel = false;
     private boolean isGradientCacheValid = false;
@@ -45,13 +48,14 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
         this.cmlcrf = cmlcrf;
         this.supportedCombinations = cmlcrf.getSupportedCombinations();
+        this.numSupported = cmlcrf.getNumSupported();
         this.dataSet = dataSet;
         this.numClasses = dataSet.getNumClasses();
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.numParameters = cmlcrf.getWeights().totalSize();
         this.numWeightsForFeatures = cmlcrf.getWeights().getNumWeightsForFeatures();
         this.numWeightsForLabels = cmlcrf.getWeights().getNumWeightsForLabels();
-        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),cmlcrf.getNumSupported());
+        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numSupported);
         this.isGradientCacheValid = false;
         this.isValueCacheValid = false;
         this.empiricalCounts = new double[numParameters];
@@ -63,7 +67,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
 
     /**
-     * gradient of log likelihood?
+     * gradient of log likelihood
      * @return
      */
     @Override
@@ -133,19 +137,18 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
             double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
             for (int num=0; num<probs.length; num++) {
-                MultiLabel label1 = supportedCombinations.get(num);
                 switch (featureCase) {
                     // both l1, l2 equal 0;
-                    case 0: if (!label1.matchClass(l1) && !label1.matchClass(l2)) count+=probs[num];
+                    case 0: if (!labelInSupported[num][l1] && !labelInSupported[num][l2]) count+=probs[num];
                         break;
                     // l1 = 1; l2 = 0;
-                    case 1: if (label1.matchClass(l1) && !label1.matchClass(l2)) count+=probs[num];
+                    case 1: if (labelInSupported[num][l1] && !labelInSupported[num][l2]) count+=probs[num];
                         break;
                     // l1 = 0; l2 = 1;
-                    case 2: if (!label1.matchClass(l1) && label1.matchClass(l2)) count+=probs[num];
+                    case 2: if (!labelInSupported[num][l1] && labelInSupported[num][l2]) count+=probs[num];
                         break;
                     // l1 = 1; l2 = 1;
-                    case 3: if (label1.matchClass(l1) && label1.matchClass(l2)) count+=probs[num];
+                    case 3: if (labelInSupported[num][l1] && labelInSupported[num][l2]) count+=probs[num];
                         break;
                     default: throw new RuntimeException("feature case :" + featureCase + " failed.");
                 }
@@ -170,7 +173,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             for (int i=0; i<dataSet.getNumDataPoints(); i++) {
                 double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
                 for (int num=0; num<probs.length; num++) {
-                    if (supportedCombinations.get(num).matchClass(classIndex)) {
+                    if (labelInSupported[num][classIndex]) {
                         count += probs[num];
                     }
                 }
@@ -182,7 +185,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                 double featureValue = element.get();
                 double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPointIndex);
                 for (int num=0; num<probs.length; num++) {
-                    if (supportedCombinations.get(num).matchClass(classIndex)) {
+                    if (labelInSupported[num][classIndex]) {
                         count += probs[num] * featureValue;
                     }
                 }
@@ -257,33 +260,40 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
     public void initCache() {
-        int[] mapL1 = new int[numWeightsForLabels];
-        int[] mapL2 = new int[numWeightsForLabels];
+        parameterToL1 = new int[numWeightsForLabels];
+        parameterToL2 = new int[numWeightsForLabels];
         int start = 0;
         for (int l1=0; l1<numClasses; l1++) {
             for (int l2=l1+1; l2<numClasses; l2++) {
-                mapL1[start] = l1;
-                mapL1[start+1] = l1;
-                mapL1[start+2] = l1;
-                mapL1[start+3] = l1;
-                mapL2[start] = l2;
-                mapL2[start+1] = l2;
-                mapL2[start+2] = l2;
-                mapL2[start+3] = l2;
+                parameterToL1[start] = l1;
+                parameterToL1[start+1] = l1;
+                parameterToL1[start+2] = l1;
+                parameterToL1[start+3] = l1;
+                parameterToL2[start] = l2;
+                parameterToL2[start+1] = l2;
+                parameterToL2[start+2] = l2;
+                parameterToL2[start+3] = l2;
                 start += 4;
             }
         }
-        int[] mapClass = new int[numWeightsForFeatures];
-        int[] mapFeature = new int[numWeightsForFeatures];
+        parameterToClass = new int[numWeightsForFeatures];
+        parameterToFeature = new int[numWeightsForFeatures];
         for (int i=0; i<numWeightsForFeatures; i++) {
-            mapClass[i] = cmlcrf.getWeights().getClassIndex(i);
-            mapFeature[i] = cmlcrf.getWeights().getFeatureIndex(i);
+            parameterToClass[i] = cmlcrf.getWeights().getClassIndex(i);
+            parameterToFeature[i] = cmlcrf.getWeights().getFeatureIndex(i);
         }
 
-        parameterToL1 = mapL1;
-        parameterToL2 = mapL2;
-        parameterToClass = mapClass;
-        parameterToFeature = mapFeature;
+        labelInSupported = new boolean[numSupported][numClasses];
+        for (int num=0; num<numSupported; num++) {
+            for (int l=0; l<numClasses; l++) {
+                if (supportedCombinations.get(num).matchClass(l)) {
+                    labelInSupported[num][l] = true;
+                }
+            }
+        }
+
+
+
     }
 
     /**
