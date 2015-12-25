@@ -5,7 +5,7 @@ out/
 *.ipr
 *.iws
 .DS_Store
-configs/local.config
+config/local.config
 src/main/java/edu/neu/ccs/pyramid/tmp/
 logs/
 build/
