@@ -317,15 +317,26 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         return this.value;
     }
 
+
+
     private double getValueForAllData() {
-        double sum = 0.0;
-        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            MultiLabel label = dataSet.getMultiLabels()[i];
-            Vector vector = dataSet.getRow(i);
-            // sum logZ(x_n)
-            sum += MathUtil.logSumExp(cmlcrf.predictCombinationScores(vector));
-            sum -= cmlcrf.predictCombinationScore(vector, label);
+        IntStream intStream;
+        if (isParallel) {
+            intStream = IntStream.range(0,dataSet.getNumDataPoints()).parallel();
+        } else {
+            intStream = IntStream.range(0,dataSet.getNumDataPoints());
         }
+
+        return intStream.mapToDouble(i -> this.getValueForOneData(i)).sum();
+    }
+
+    private double getValueForOneData(int i) {
+        double sum = 0.0;
+        MultiLabel label = dataSet.getMultiLabels()[i];
+        Vector vector = dataSet.getRow(i);
+        // sum logZ(x_n)
+        sum += MathUtil.logSumExp(cmlcrf.predictCombinationScores(vector));
+        sum -= cmlcrf.predictCombinationScore(vector, label);
         return sum;
     }
 
