@@ -10,7 +10,6 @@ import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
-import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelSuggester;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
@@ -23,7 +22,10 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -157,9 +159,6 @@ public class App2 {
             case "independent":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
                 break;
-            case "crf_plus_high_prob":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF_PLUS_HIGH_PROB);
-                break;
             default:
                 throw new IllegalArgumentException("predict.fashion should be independent or crf");
         }
@@ -202,15 +201,6 @@ public class App2 {
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        if (config.getBoolean("labelAugment")){
-            augmentLabels(config,boosting);
-        }
-
-        if (config.getBoolean("cheatAugment")){
-            cheatAugment(config, boosting);
-        }
-
-
         String predictFashion = config.getString("predict.fashion").toLowerCase();
         switch (predictFashion){
             case "crf":
@@ -218,9 +208,6 @@ public class App2 {
                 break;
             case "independent":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
-                break;
-            case "crf_plus_high_prob":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF_PLUS_HIGH_PROB);
                 break;
         }
 
@@ -376,32 +363,6 @@ public class App2 {
         System.out.println("reports generated");
     }
 
-
-    private static void augmentLabels(Config config, IMLGradientBoosting boosting) throws Exception{
-        MultiLabelClfDataSet dataSet = loadData(config,config.getString("input.trainData"));
-        int numClusters = config.getInt("labelAugment.numClusters");
-        int numSamples = config.getInt("labelAugment.numSamples");
-        MultiLabelSuggester suggester = new MultiLabelSuggester(dataSet,numClusters);
-        Set<MultiLabel> suggested = suggester.suggestNewOnes(numSamples);
-        System.out.println("number of suggested labels = "+suggested);
-        Set<MultiLabel> augmented = new HashSet<>();
-        augmented.addAll(suggested);
-        augmented.addAll(boosting.getAssignments());
-        boosting.setAssignments(augmented.stream().collect(Collectors.toList()));
-    }
-
-    private static void cheatAugment(Config config, IMLGradientBoosting boosting) throws Exception{
-        MultiLabelClfDataSet dataSet = loadData(config,config.getString("input.testData"));
-
-        List<MultiLabel> suggested = DataSetUtil.gatherMultiLabels(dataSet).stream()
-                .filter(multiLabel->!multiLabel.outOfBound(boosting.getNumClasses()))
-                .collect(Collectors.toList());
-        System.out.println("number of suggested labels = "+suggested);
-        Set<MultiLabel> augmented = new HashSet<>();
-        augmented.addAll(suggested);
-        augmented.addAll(boosting.getAssignments());
-        boosting.setAssignments(augmented.stream().collect(Collectors.toList()));
-    }
 
 
 

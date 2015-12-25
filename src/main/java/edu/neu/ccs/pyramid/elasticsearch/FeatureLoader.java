@@ -16,17 +16,14 @@ import java.util.stream.IntStream;
  */
 public class FeatureLoader {
 
-    // assume categorical featureList are stored contiguously
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator){
         loadFeatures(index, dataSet, features, idTranslator, MatchScoreType.ES_ORIGINAL);
 
     }
 
-    @Deprecated
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator, MatchScoreType matchScoreType){
-
 
 
         IntStream.range(0,features.size()).parallel()
@@ -63,6 +60,14 @@ public class FeatureLoader {
             int algorithmId = idTranslator.toIntId(matchedId);
             dataSet.setFeatureValue(algorithmId,featureIndex,1);
         }
+
+        List<String> docMissingField = index.docsWithFieldMissing(variableName,dataIndexIds);
+        for (String extId: docMissingField){
+            int algorithmId = idTranslator.toIntId(extId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,Double.NaN);
+        }
+
+
     }
 
     public static void loadNgramFeature(ESIndex index, DataSet dataSet, Ngram feature,
@@ -165,6 +170,7 @@ public class FeatureLoader {
         if (source.equals("field")){
             Arrays.stream(dataIndexIds).forEach(id -> {
                 int algorithmId = idTranslator.toIntId(id);
+                //may return NaN
                 double value = index.getFloatField(id,variableName);
                 dataSet.setFeatureValue(algorithmId, featureIndex, value);
             });

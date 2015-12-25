@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.StandardFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
+import edu.neu.ccs.pyramid.eval.RMSE;
 import edu.neu.ccs.pyramid.util.Grid;
 
 import java.io.File;
@@ -38,10 +39,10 @@ public class ElasticNetLinearRegTrainerTest {
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             instanceWeights[i] = weight;
         }
-        System.out.println("mse before training = "+ MSE.mse(linearRegression,dataSet));
+        System.out.println("rmse before training = "+ RMSE.rmse(linearRegression, dataSet));
         trainer.train(linearRegression,dataSet,labels,instanceWeights);
-        System.out.println("mse after training = "+ MSE.mse(linearRegression,dataSet));
-        System.out.println("test mse after training = "+ MSE.mse(linearRegression,testDataSet));
+        System.out.println("rmse after training = "+ RMSE.rmse(linearRegression, dataSet));
+        System.out.println("test rmse after training = "+ RMSE.rmse(linearRegression, testDataSet));
         System.out.println("non-zeros = "+linearRegression.getWeights().getWeightsWithoutBias().getNumNonZeroElements());
     }
 
@@ -73,7 +74,7 @@ public class ElasticNetLinearRegTrainerTest {
         for (int i=0;i<grid.size();i++){
             System.out.println("regularization = "+grid.get(i));
             System.out.println("non-zeros = " + regressions.get(i).getWeights().getWeightsWithoutBias().getNumNonZeroElements());
-            System.out.println("test mse  = "+ MSE.mse(regressions.get(i),testDataSet));
+            System.out.println("test rmse  = "+ RMSE.rmse(regressions.get(i), testDataSet));
         }
 
     }
