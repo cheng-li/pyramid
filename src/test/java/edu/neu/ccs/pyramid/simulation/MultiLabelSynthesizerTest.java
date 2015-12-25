@@ -53,6 +53,7 @@ public class MultiLabelSynthesizerTest {
 //        test8Dump();
 //        test8_powerset();
         test8_mix();
+//        test9Dump();
     }
 
     private static void test1_br(){
@@ -751,7 +752,7 @@ public class MultiLabelSynthesizerTest {
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"train.trec"), DataSetType.ML_CLF_DENSE,true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP, "test.trec"), DataSetType.ML_CLF_DENSE, true);
 
-        int numClusters = 5;
+        int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
@@ -776,6 +777,17 @@ public class MultiLabelSynthesizerTest {
 
         }
         System.out.println(bmmClassifier);
+    }
+
+    private static void test9Dump() {
+        MultiLabelClfDataSet all = MultiLabelSynthesizer.gaussianNoise();
+        List<Integer> trainIndices = IntStream.range(0,5000).mapToObj(i -> i).collect(Collectors.toList());
+        List<Integer> testIndices = IntStream.range(5000,10000).mapToObj(i->i).collect(Collectors.toList());
+        DataSetUtil.sampleData(all,trainIndices);
+        MultiLabelClfDataSet trainSet = DataSetUtil.sampleData(all, trainIndices);
+        MultiLabelClfDataSet testSet =  DataSetUtil.sampleData(all, testIndices);
+        TRECFormat.save(trainSet, new File(TMP,"train.trec"));
+        TRECFormat.save(testSet, new File(TMP,"test.trec"));
     }
 
 
