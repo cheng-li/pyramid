@@ -47,15 +47,18 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private boolean isValueCacheValid;
     private boolean isParallel = false;
 
+    private Weights priorGaussianMean;
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[] weights, double[][] targetDistributions,
+                        Weights priorGaussianMean,
                         double gaussianPriorVariance) {
         this.logisticRegression = logisticRegression;
         this.targetDistributions = targetDistributions;
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
         this.weights = weights;
+        this.priorGaussianMean = priorGaussianMean;
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
@@ -65,6 +68,14 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
+    }
+
+    public LogisticLoss(LogisticRegression logisticRegression,
+                        DataSet dataSet, double[] weights, double[][] targetDistributions,
+                        double gaussianPriorVariance) {
+        this(logisticRegression,dataSet,weights,targetDistributions,
+                new Weights(logisticRegression.getNumClasses(),logisticRegression.getNumFeatures()),gaussianPriorVariance);
+
     }
 
 
@@ -108,16 +119,17 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         if (isValueCacheValid){
             return this.value;
         }
-        double weightSquare = 0;
+        double square = 0;
         for (int k=0;k<numClasses;k++){
             Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
-            weightSquare += weightVector.dot(weightVector);
+            Vector diff = weightVector.minus(priorGaussianMean.getWeightsWithoutBiasForClass(k));
+            square += diff.dot(diff);
         }
         double kl = logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, weights);
         if (logger.isDebugEnabled()){
             logger.debug("kl divergence = "+kl);
         }
-        this.value =  kl + weightSquare/(2*gaussianPriorVariance);
+        this.value =  kl + square/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }
@@ -138,13 +150,14 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
     private void updateGradient(){
         Vector weightsVector = this.logisticRegression.getWeights().getAllWeights();
+        Vector mean = this.priorGaussianMean.getAllWeights();
         Vector penalty = new DenseVector(weightsVector.size());
         for (int j=0;j<penalty.size();j++){
             int featureIndex = logisticRegression.getWeights().getFeatureIndex(j);
             if (featureIndex==-1){
                 penalty.set(j,0);
             } else {
-                penalty.set(j,weightsVector.get(j)/gaussianPriorVariance);
+                penalty.set(j,(weightsVector.get(j)-mean.get(j))/gaussianPriorVariance);
             }
         }
         this.gradient = this.predictedCounts.minus(empiricalCounts).plus(penalty);
