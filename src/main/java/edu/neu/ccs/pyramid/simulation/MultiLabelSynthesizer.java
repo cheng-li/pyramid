@@ -422,8 +422,7 @@ public class MultiLabelSynthesizer {
      * y1: w=(1,0)
      * @return
      */
-    public static MultiLabelClfDataSet gaussianNoise(){
-        int numData = 10000;
+    public static MultiLabelClfDataSet gaussianNoise(int numData){
         int numClass = 2;
         int numFeature = 2;
 
@@ -455,10 +454,10 @@ public class MultiLabelSynthesizer {
 
         double[] means = new double[2];
         double[][] covars = new double[2][2];
-        covars[0][0]=0.2;
-        covars[0][1]=-0.1;
-        covars[1][0]=-0.1;
-        covars[1][1]=0.2;
+        covars[0][0]=2;
+        covars[0][1]=-1.5;
+        covars[1][0]=-1.5;
+        covars[1][1]=2;
 
 
         MultivariateNormalDistribution distribution = new MultivariateNormalDistribution(means,covars);

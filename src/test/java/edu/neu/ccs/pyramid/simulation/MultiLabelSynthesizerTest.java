@@ -752,15 +752,15 @@ public class MultiLabelSynthesizerTest {
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"train.trec"), DataSetType.ML_CLF_DENSE,true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP, "test.trec"), DataSetType.ML_CLF_DENSE, true);
 
-        int numClusters = 1;
-        double softmaxVariance = 100;
-        double logitVariance = 100;
+        int numClusters = 2;
+        double softmaxVariance = 0.1;
+        double logitVariance = 0.1;
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
         BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance);
-        for (int i=1;i<=200;i++){
+        for (int i=1;i<=20;i++){
             optimizer.iterate();
             MultiLabel[] trainPredict;
             MultiLabel[] testPredict;
@@ -774,15 +774,17 @@ public class MultiLabelSynthesizerTest {
             System.out.print("test Hamming loss : " + HammingLoss.hammingLoss(bmmClassifier, testSet) + "\t");
             System.out.print("testAcc  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
             System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
+            System.out.println("distance from mean = "+BMMInspector.distanceFromMean(bmmClassifier));
 
         }
         System.out.println(bmmClassifier);
     }
 
     private static void test9Dump() {
-        MultiLabelClfDataSet all = MultiLabelSynthesizer.gaussianNoise();
-        List<Integer> trainIndices = IntStream.range(0,5000).mapToObj(i -> i).collect(Collectors.toList());
-        List<Integer> testIndices = IntStream.range(5000,10000).mapToObj(i->i).collect(Collectors.toList());
+        int numData = 100;
+        MultiLabelClfDataSet all = MultiLabelSynthesizer.gaussianNoise(numData);
+        List<Integer> trainIndices = IntStream.range(0,numData/2).mapToObj(i -> i).collect(Collectors.toList());
+        List<Integer> testIndices = IntStream.range(numData/2,numData).mapToObj(i->i).collect(Collectors.toList());
         DataSetUtil.sampleData(all,trainIndices);
         MultiLabelClfDataSet trainSet = DataSetUtil.sampleData(all, trainIndices);
         MultiLabelClfDataSet testSet =  DataSetUtil.sampleData(all, testIndices);
