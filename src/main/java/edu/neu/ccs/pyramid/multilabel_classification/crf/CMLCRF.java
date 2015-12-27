@@ -1,10 +1,12 @@
 package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
+import edu.neu.ccs.pyramid.clustering.bmm.BMM;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelSuggester;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
@@ -33,14 +35,18 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private int numSupported;
 
-    public CMLCRF(MultiLabelClfDataSet dataSet) {
+    BMM bmm;
+
+    public CMLCRF(MultiLabelClfDataSet dataSet, int numClusters) {
         this(dataSet.getNumClasses(), dataSet.getNumFeatures());
         this.setSupportedCombinations(gatherMultiLabels(dataSet));
         this.numSupported = supportedCombinations.size();
         System.out.println("supported vector: " + supportedCombinations);
         System.out.println("length of supported: " + this.numSupported);
+        this.bmm = new MultiLabelSuggester(dataSet,numClusters).getBmm();
     }
 
+    //todo remove this constructor
     public CMLCRF(int numClasses, int numFeatures) {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
@@ -98,6 +104,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
                 start += 4;
             }
         }
+
+        score += bmm.logProbability(label.toVector(numClasses));
         return score;
     }
 

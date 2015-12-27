@@ -18,7 +18,8 @@ public class Weights  implements Serializable {
     private int numWeightsForLabels;
     /**
      * size = (numFeatures + 1) * numClasses +
-     * (numClasses choose 2) * 4 *
+     * (numClasses choose 2) * 4
+     * +1
      * where equals number of weights features and plus
      * the pair-wise labels, which has 4 possible combinations
      * vector is not serializable
@@ -34,12 +35,13 @@ public class Weights  implements Serializable {
         this.numFeatures = numFeatures;
         this.numWeightsForFeatures = (numFeatures + 1) * numClasses;
         this.numWeightsForLabels = (numClasses * (numClasses-1)/2) * 4;
-        this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
-        this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels];
+        this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels +1);
+        this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels +1];
         System.out.println("numWeightsForFeature: " + numWeightsForFeatures);
         System.out.println("numWeightsForLabels: " + numWeightsForLabels);
     }
 
+    //todo buggy
     public Weights deepCopy(){
         Weights copy = new Weights(this.numClasses,numFeatures);
         copy.weightVector = new DenseVector(this.weightVector);
@@ -69,7 +71,7 @@ public class Weights  implements Serializable {
 
 
     public void setWeightVector(Vector weightVector) {
-        if (weightVector.size() != (numWeightsForFeatures + numWeightsForLabels)) {
+        if (weightVector.size() != (numWeightsForFeatures + numWeightsForLabels +1)) {
             throw new IllegalArgumentException("given vector size is wrong: " + weightVector.size());
         }
         this.weightVector = weightVector;

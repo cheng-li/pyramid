@@ -23,7 +23,8 @@ public class CMLCRFTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test2();
+//        test2();
+        test1();
     }
 
     public static void test2() throws Exception {
@@ -48,7 +49,7 @@ public class CMLCRFTest {
             System.out.println("loading model:");
             System.out.println(cmlcrf);
         } else{
-            cmlcrf = new CMLCRF(trainSet);
+            cmlcrf = new CMLCRF(trainSet,1);
             CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
 
             if (config.getBoolean("isLBFGS")) {
@@ -105,8 +106,8 @@ public class CMLCRFTest {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "spam/trec_data/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
 
-        CMLCRF cmlcrf = new CMLCRF(dataSet);
-        CRFLoss crfLoss = new CRFLoss(cmlcrf,dataSet,1.0);
+        CMLCRF cmlcrf = new CMLCRF(dataSet,1);
+        CRFLoss crfLoss = new CRFLoss(cmlcrf,dataSet,1);
 
 
         MultiLabel[] predTrain;

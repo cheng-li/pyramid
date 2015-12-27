@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
@@ -30,6 +31,19 @@ public class MultiLabel implements Serializable{
         for (Vector.Element element:vector.nonZeroes()){
             this.addLabel(element.index());
         }
+    }
+
+    /**
+     * return binary vector
+     * @param length
+     * @return
+     */
+    public Vector toVector(int length){
+        Vector vector = new DenseVector(length);
+        for (int l:labels){
+            vector.set(l,1);
+        }
+        return vector;
     }
 
     public MultiLabel addLabel(int k) {
