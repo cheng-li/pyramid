@@ -29,11 +29,20 @@ public class Weights  implements Serializable {
      */
     private double[] serializableWeights;
 
-    public Weights(int numClasses, int numFeatures) {
+    // if ignore the label pair.
+    private boolean featureOnly = false;
+
+    public Weights(int numClasses, int numFeatures, boolean featureOnly) {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.numWeightsForFeatures = (numFeatures + 1) * numClasses;
-        this.numWeightsForLabels = (numClasses * (numClasses-1)/2) * 4;
+        this.featureOnly = featureOnly;
+        if (this.featureOnly) {
+            this.numWeightsForLabels = 0;
+        }
+        else {
+            this.numWeightsForLabels = (numClasses * (numClasses-1)/2) * 4;
+        }
         this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
         this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels];
         System.out.println("numWeightsForFeature: " + numWeightsForFeatures);
@@ -41,7 +50,7 @@ public class Weights  implements Serializable {
     }
 
     public Weights deepCopy(){
-        Weights copy = new Weights(this.numClasses,numFeatures);
+        Weights copy = new Weights(this.numClasses,this.numFeatures,this.featureOnly);
         copy.weightVector = new DenseVector(this.weightVector);
         return copy;
     }
@@ -165,6 +174,7 @@ public class Weights  implements Serializable {
         out.writeInt(numFeatures);
         out.writeInt(numWeightsForFeatures);
         out.writeInt(numWeightsForLabels);
+        out.writeBoolean(featureOnly);
         out.writeObject(serializableWeights);
 
     }
@@ -174,6 +184,7 @@ public class Weights  implements Serializable {
         numFeatures = in.readInt();
         numWeightsForFeatures = in.readInt();
         numWeightsForLabels = in.readInt();
+        featureOnly = in.readBoolean();
         serializableWeights = (double[])in.readObject();
         weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
         for (int i=0;i<serializableWeights.length;i++){

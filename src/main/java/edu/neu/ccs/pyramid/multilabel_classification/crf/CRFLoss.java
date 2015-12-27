@@ -45,10 +45,13 @@ public class CRFLoss implements Optimizable.ByGradientValue {
      */
     private ProbabilityMatrix probabilityMatrix;
 
+    private boolean featureOnly;
+
     public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
         this.cmlcrf = cmlcrf;
         this.supportedCombinations = cmlcrf.getSupportedCombinations();
         this.numSupported = cmlcrf.getNumSupported();
+        this.featureOnly = cmlcrf.getFeatureOnly();
         this.dataSet = dataSet;
         this.numClasses = dataSet.getNumClasses();
         this.gaussianPriorVariance = gaussianPriorVariance;
@@ -260,22 +263,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
     public void initCache() {
-        parameterToL1 = new int[numWeightsForLabels];
-        parameterToL2 = new int[numWeightsForLabels];
-        int start = 0;
-        for (int l1=0; l1<numClasses; l1++) {
-            for (int l2=l1+1; l2<numClasses; l2++) {
-                parameterToL1[start] = l1;
-                parameterToL1[start+1] = l1;
-                parameterToL1[start+2] = l1;
-                parameterToL1[start+3] = l1;
-                parameterToL2[start] = l2;
-                parameterToL2[start+1] = l2;
-                parameterToL2[start+2] = l2;
-                parameterToL2[start+3] = l2;
-                start += 4;
-            }
-        }
+
         parameterToClass = new int[numWeightsForFeatures];
         parameterToFeature = new int[numWeightsForFeatures];
         for (int i=0; i<numWeightsForFeatures; i++) {
@@ -292,8 +280,25 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             }
         }
 
-
-
+        if (featureOnly) {
+            return;
+        }
+        parameterToL1 = new int[numWeightsForLabels];
+        parameterToL2 = new int[numWeightsForLabels];
+        int start = 0;
+        for (int l1=0; l1<numClasses; l1++) {
+            for (int l2=l1+1; l2<numClasses; l2++) {
+                parameterToL1[start] = l1;
+                parameterToL1[start+1] = l1;
+                parameterToL1[start+2] = l1;
+                parameterToL1[start+3] = l1;
+                parameterToL2[start] = l2;
+                parameterToL2[start+1] = l2;
+                parameterToL2[start+2] = l2;
+                parameterToL2[start+3] = l2;
+                start += 4;
+            }
+        }
     }
 
     /**
@@ -309,8 +314,11 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             Vector weightVector = cmlcrf.getWeights().getWeightsWithoutBiasForClass(k);
             weightSquare += weightVector.dot(weightVector);
         }
-        Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
-        weightSquare += labelPairVector.dot(labelPairVector);
+
+        if (!featureOnly) {
+            Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
+            weightSquare += labelPairVector.dot(labelPairVector);
+        }
 
         this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
         this.isValueCacheValid = true;

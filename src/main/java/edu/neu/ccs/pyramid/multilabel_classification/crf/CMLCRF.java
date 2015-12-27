@@ -33,18 +33,20 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private int numSupported;
 
-    public CMLCRF(MultiLabelClfDataSet dataSet) {
-        this(dataSet.getNumClasses(), dataSet.getNumFeatures());
+    private boolean featureOnly = false;
+
+    public CMLCRF(MultiLabelClfDataSet dataSet, boolean featureOnly) {
+        this(dataSet.getNumClasses(), dataSet.getNumFeatures(), featureOnly);
         this.setSupportedCombinations(gatherMultiLabels(dataSet));
         this.numSupported = supportedCombinations.size();
-        System.out.println("supported vector: " + supportedCombinations);
+        this.featureOnly = featureOnly;
         System.out.println("length of supported: " + this.numSupported);
     }
 
-    public CMLCRF(int numClasses, int numFeatures) {
+    public CMLCRF(int numClasses, int numFeatures, boolean featureOnly) {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
-        this.weights = new Weights(numClasses, numFeatures);
+        this.weights = new Weights(numClasses, numFeatures, featureOnly);
     }
 
 
@@ -82,6 +84,9 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
                 score += this.weights.getWeightsWithoutBiasForClass(l).dot(vector);
                 score += this.weights.getBiasForClass(l);
             }
+        }
+        if (featureOnly) {
+            return score;
         }
         int start = this.weights.getNumWeightsForFeatures();
         for (int l1=0; l1<numClasses; l1++) {
@@ -155,6 +160,10 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     public List<MultiLabel> getSupportedCombinations() {
         return supportedCombinations;
+    }
+
+    public boolean getFeatureOnly() {
+        return this.featureOnly;
     }
 
 
