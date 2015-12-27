@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -11,6 +12,20 @@ import java.util.stream.IntStream;
  * Created by chengli on 12/25/15.
  */
 public class BMMInspector {
+    public static Weights getMean(BMMClassifier bmm, int label){
+        int numClusters = bmm.getNumClusters();
+        int length = ((LogisticRegression)bmm.getBinaryClassifiers()[0][0]).getWeights().getAllWeights().size();
+        int numFeatures = ((LogisticRegression)bmm.getBinaryClassifiers()[0][0]).getNumFeatures();
+        Vector mean = new DenseVector(length);
+        for (int k=0;k<numClusters;k++){
+            mean = mean.plus(((LogisticRegression)bmm.getBinaryClassifiers()[k][label]).getWeights().getAllWeights());
+        }
+
+        mean = mean.divide(numClusters);
+        return new Weights(2,numFeatures,mean);
+    }
+
+
     public static double distanceFromMean(BMMClassifier bmm){
         int numClasses = bmm.getNumClasses();
         return IntStream.range(0,numClasses).mapToDouble(l -> distanceFromMean(bmm,l)).average().getAsDouble();

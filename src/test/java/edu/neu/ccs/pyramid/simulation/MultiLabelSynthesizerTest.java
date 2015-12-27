@@ -753,10 +753,11 @@ public class MultiLabelSynthesizerTest {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP, "test.trec"), DataSetType.ML_CLF_DENSE, true);
 
         int numClusters = 2;
-        double softmaxVariance = 0.1;
-        double logitVariance = 0.1;
+        double softmaxVariance = 100;
+        double logitVariance = 1;
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
+        optimizer.setMeanRegularization(true);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
         BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance);

@@ -97,6 +97,7 @@ public class Exp211 {
         BMMClassifier bmmClassifier = loadBMM(config,trainSet,testSet);
 
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet, softmaxVariance, logitVariance);
+        optimizer.setMeanRegularization(config.getBoolean("meanRegularization"));
         optimizer.setInverseTemperature(config.getDouble("inverseTemperature"));
 
 

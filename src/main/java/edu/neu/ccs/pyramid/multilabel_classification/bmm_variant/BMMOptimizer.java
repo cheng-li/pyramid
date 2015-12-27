@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
+import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.optimization.*;
@@ -52,6 +53,8 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 
     // for deterministic annealing
     private double inverseTemperature = 1;
+
+    private boolean meanRegularization = false;
 
     public BMMOptimizer(BMMClassifier bmmClassifier, MultiLabelClfDataSet dataSet,
                         double gaussianPriorforSoftMax, double gaussianPriorforLogit) {
@@ -134,6 +137,10 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     @Override
     public void setParallelism(boolean isParallel) {
         this.isParallel = isParallel;
+    }
+
+    public void setMeanRegularization(boolean meanRegularization) {
+        this.meanRegularization = meanRegularization;
     }
 
     @Override
@@ -238,8 +245,15 @@ public class BMMOptimizer implements Serializable, Parallelizable {
             intStream = intStream.parallel();
         }
         intStream.forEach(l -> {
-            RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
-                    dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
+            RidgeLogisticOptimizer ridgeLogisticOptimizer;
+            if (meanRegularization){
+                Weights mean = BMMInspector.getMean(bmmClassifier,l);
+                ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
+                        dataSet, gammasT[k], targetsDistributions[l], mean, gaussianPriorforLogit);
+            } else {
+                ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
+                        dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);
+            }
             ridgeLogisticOptimizer.optimize();
             if (logger.isDebugEnabled()){
                 logger.debug("for cluster "+k+" label "+l+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
