@@ -755,8 +755,10 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 2;
         double softmaxVariance = 100;
         double logitVariance = 1;
+        double meanRegVar = 10;
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
+        optimizer.setMeanRegVariance(meanRegVar);
         optimizer.setMeanRegularization(true);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
