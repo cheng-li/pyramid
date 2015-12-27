@@ -10,7 +10,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -23,7 +25,6 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     // instance weights
     private double[] weights;
     private double[][] targetDistributions;
-    private double gaussianPriorVariance;
     private Vector empiricalCounts;
     private Vector predictedCounts;
     private Vector gradient;
@@ -47,19 +48,27 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private boolean isValueCacheValid;
     private boolean isParallel = false;
 
-    private Weights priorGaussianMean;
+
+    /**
+     * can have multiple (mean, variance) pairs
+     * the penalty is a weighted sum of deviations from each mean
+     * weight = 1/variance
+     */
+    private List<Weights> priorGaussianMeans;
+
+    private List<Double> priorGaussianVariances;
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[] weights, double[][] targetDistributions,
-                        Weights priorGaussianMean,
-                        double gaussianPriorVariance) {
+                        List<Weights> priorGaussianMeans,
+                        List<Double> priorGaussianVariances) {
         this.logisticRegression = logisticRegression;
         this.targetDistributions = targetDistributions;
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
         this.weights = weights;
-        this.priorGaussianMean = priorGaussianMean;
-        this.gaussianPriorVariance = gaussianPriorVariance;
+        this.priorGaussianMeans = priorGaussianMeans;
+        this.priorGaussianVariances = priorGaussianVariances;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
@@ -70,11 +79,13 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.isGradientCacheValid=false;
     }
 
+
+
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[] weights, double[][] targetDistributions,
                         double gaussianPriorVariance) {
         this(logisticRegression,dataSet,weights,targetDistributions,
-                new Weights(logisticRegression.getNumClasses(),logisticRegression.getNumFeatures()),gaussianPriorVariance);
+                defaultMean(logisticRegression),defaultVariance(gaussianPriorVariance));
 
     }
 
@@ -119,21 +130,39 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         if (isValueCacheValid){
             return this.value;
         }
-        double square = 0;
-        for (int k=0;k<numClasses;k++){
-            Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
-            Vector diff = weightVector.minus(priorGaussianMean.getWeightsWithoutBiasForClass(k));
-            square += diff.dot(diff);
-        }
+
         double kl = logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, weights);
         if (logger.isDebugEnabled()){
             logger.debug("kl divergence = "+kl);
         }
-        this.value =  kl + square/(2*gaussianPriorVariance);
+        this.value =  kl + penaltyValue();
         this.isValueCacheValid = true;
         return this.value;
     }
 
+    /**
+     * the penalty due to one (mean, variance) pair
+     * @param meanIndex
+     * @return
+     */
+    private double penaltyValue(int meanIndex){
+        double square = 0;
+        for (int k=0;k<numClasses;k++){
+            Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+            Vector diff = weightVector.minus(priorGaussianMeans.get(meanIndex).getWeightsWithoutBiasForClass(k));
+            square += diff.dot(diff);
+        }
+        return square/(2*priorGaussianVariances.get(meanIndex));
+    }
+
+    // total penalty
+    private double penaltyValue(){
+        double p=0;
+        for (int m = 0;m<priorGaussianMeans.size();m++){
+            p += penaltyValue(m);
+        }
+        return p;
+    }
 
 
     public Vector getGradient(){
@@ -149,18 +178,21 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
 
     private void updateGradient(){
+        this.gradient = this.predictedCounts.minus(empiricalCounts).plus(penaltyGradient());
+    }
+
+    private Vector penaltyGradient(){
         Vector weightsVector = this.logisticRegression.getWeights().getAllWeights();
-        Vector mean = this.priorGaussianMean.getAllWeights();
         Vector penalty = new DenseVector(weightsVector.size());
-        for (int j=0;j<penalty.size();j++){
-            int featureIndex = logisticRegression.getWeights().getFeatureIndex(j);
-            if (featureIndex==-1){
-                penalty.set(j,0);
-            } else {
-                penalty.set(j,(weightsVector.get(j)-mean.get(j))/gaussianPriorVariance);
-            }
+        for (int m=0;m<priorGaussianMeans.size();m++){
+            Vector mean = priorGaussianMeans.get(m).getAllWeights();
+            double var = priorGaussianVariances.get(m);
+            penalty = penalty.plus((weightsVector.minus(mean)).divide(var));
         }
-        this.gradient = this.predictedCounts.minus(empiricalCounts).plus(penalty);
+        for (int j:logisticRegression.getWeights().getAllBiasPositions()){
+            penalty.set(j,0);
+        }
+        return penalty;
     }
 
     //todo removed isParallel
@@ -270,6 +302,19 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             targetDistributions[i][label]=1;
         }
         return targetDistributions;
+    }
+
+    private static List<Weights> defaultMean(LogisticRegression logisticRegression){
+        List<Weights> list = new ArrayList<>();
+        Weights weights = new Weights(logisticRegression.getNumClasses(),logisticRegression.getNumFeatures());
+        list.add(weights);
+        return list;
+    }
+
+    private static List<Double> defaultVariance(double variance){
+        List<Double> list = new ArrayList<>();
+        list.add(variance);
+        return list;
     }
 
 

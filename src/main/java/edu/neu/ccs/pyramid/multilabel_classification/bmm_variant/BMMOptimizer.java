@@ -14,9 +14,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 
 /**
@@ -248,8 +246,17 @@ public class BMMOptimizer implements Serializable, Parallelizable {
             RidgeLogisticOptimizer ridgeLogisticOptimizer;
             if (meanRegularization){
                 Weights mean = BMMInspector.getMean(bmmClassifier,l);
-                ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
-                        dataSet, gammasT[k], targetsDistributions[l], mean, gaussianPriorforLogit);
+                Weights zero = new Weights(2,dataSet.getNumFeatures());
+                List<Weights> means = new ArrayList<>();
+                means.add(zero);
+                means.add(mean);
+                List<Double> variances = new ArrayList<>();
+                //todo two
+                variances.add(gaussianPriorforLogit);
+                variances.add(gaussianPriorforLogit);
+                LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
+                        dataSet, gammasT[k], targetsDistributions[l], means,variances);
+                ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticLoss);
             } else {
                 ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
                         dataSet, gammasT[k], targetsDistributions[l], gaussianPriorforLogit);

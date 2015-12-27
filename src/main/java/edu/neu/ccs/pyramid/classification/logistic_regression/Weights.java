@@ -6,6 +6,8 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorView;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by chengli on 12/7/14.
@@ -86,6 +88,14 @@ public class Weights implements Serializable {
      */
     public int getFeatureIndex(int parameterIndex){
         return parameterIndex - getClassIndex(parameterIndex)*(numFeatures+1) -1;
+    }
+
+    public List<Integer> getAllBiasPositions(){
+        List<Integer> list = new ArrayList<>();
+        for (int k=0;k<numClasses;k++){
+            list.add((this.numFeatures+1)*k);
+        }
+        return list;
     }
 
     /**
