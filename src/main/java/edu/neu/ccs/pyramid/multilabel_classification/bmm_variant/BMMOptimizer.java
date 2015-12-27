@@ -42,6 +42,8 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     // regularization for binary logisticRegression
     private double gaussianPriorforLogit;
 
+    private double meanRegVariance;
+
     // format [#data]
     private Vector[] labels;
 
@@ -94,6 +96,10 @@ public class BMMOptimizer implements Serializable, Parallelizable {
                 }
             }
         }
+    }
+
+    public void setMeanRegVariance(double meanRegVariance) {
+        this.meanRegVariance = meanRegVariance;
     }
 
     public double getInverseTemperature() {
@@ -253,7 +259,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
                 List<Double> variances = new ArrayList<>();
                 //todo two
                 variances.add(gaussianPriorforLogit);
-                variances.add(gaussianPriorforLogit);
+                variances.add(meanRegVariance);
                 LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression)bmmClassifier.binaryClassifiers[k][l],
                         dataSet, gammasT[k], targetsDistributions[l], means,variances);
                 ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticLoss);
