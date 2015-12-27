@@ -283,10 +283,21 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         double empricalCount = 0.0;
         int classIndex = parameterToClass[parameterIndex];
         int featureIndex = parameterToFeature[parameterIndex];
-        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            double featureValue = (featureIndex==-1) ? 1.0 : dataSet.getRow(i).get(featureIndex);
-            if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
-                empricalCount += featureValue;
+        if (featureIndex==-1){
+            for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+                if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
+                    empricalCount += 1;
+                }
+            }
+        } else{
+            Vector column = dataSet.getColumn(featureIndex);
+            MultiLabel[] multiLabels = dataSet.getMultiLabels();
+            for (Vector.Element element: column.nonZeroes()){
+                int dataIndex = element.index();
+                double featureValue = element.get();
+                if (multiLabels[dataIndex].matchClass(classIndex)){
+                    empricalCount += featureValue;
+                }
             }
         }
         return empricalCount;
