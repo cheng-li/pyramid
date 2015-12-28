@@ -52,6 +52,7 @@ public class Exp218 {
             cmlcrf = new CMLCRF(trainSet,numClusters);
             CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
             crfLoss.setParallelism(true);
+            crfLoss.setRegularizeAll(config.getBoolean("regularizeAll"));
 
             if (config.getBoolean("isLBFGS")) {
                 LBFGS optimizer = new LBFGS(crfLoss);
@@ -62,6 +63,7 @@ public class Exp218 {
                     predTrain = cmlcrf.predict(trainSet);
                     predTest = cmlcrf.predict(testSet);
                     System.out.print("iter: "+ String.format("%04d", i));
+                    System.out.print("\tobjective: "+ String.format("%.4f", optimizer.getTerminator().getLastValue()));
                     System.out.print("\tTrain acc: " + String.format("%.4f",Accuracy.accuracy(trainSet.getMultiLabels(), predTrain)));
                     System.out.print("\tTrain overlap " + String.format("%.4f",Overlap.overlap(trainSet.getMultiLabels(), predTrain)));
                     System.out.print("\tTest acc: " + String.format("%.4f",Accuracy.accuracy(testSet.getMultiLabels(), predTest)));

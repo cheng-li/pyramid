@@ -91,6 +91,7 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
         if (logger.isDebugEnabled()){
             logger.debug("finish one iteration");
         }
+        terminator.add(function.getValue());
     }
 
     Vector findDirection(){

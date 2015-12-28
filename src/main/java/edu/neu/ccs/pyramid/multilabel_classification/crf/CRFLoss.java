@@ -48,6 +48,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // todo cache scores;
     private double[][] combinationScores;
 
+    // if true, regularize all weights
+    private boolean regularizeAll = false;
+
     public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
         this.cmlcrf = cmlcrf;
         this.supportedCombinations = cmlcrf.getSupportCombinations();
@@ -67,7 +70,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.gradient = new DenseVector(numParameters);
     }
 
-
+    public void setRegularizeAll(boolean regularizeAll) {
+        this.regularizeAll = regularizeAll;
+    }
 
     /**
      * gradient of log likelihood
@@ -161,7 +166,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             }
         }
         count -= this.empiricalCounts[parameterIndex];
-        count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+        if (regularizeAll){
+            count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+        }
         return count;
     }
 
@@ -199,17 +206,25 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         }
 
         count -= this.empiricalCounts[parameterIndex];
+
         // regularize
-        if (featureIndex != -1) {
+        if (regularizeAll){
             count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+        } else {
+            if (featureIndex != -1) {
+                count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+            }
         }
         return count;
     }
 
 
     private double calGradientForBMM(int parameterIndex){
-        return calExpCountForBMM() - empiricalCounts[parameterIndex]
-                + cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+        double g =  calExpCountForBMM() - empiricalCounts[parameterIndex];
+        if (regularizeAll){
+            g += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+        }
+        return g;
     }
 
     private double calExpCountForBMM(int i){
@@ -356,8 +371,19 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             Vector weightVector = cmlcrf.getWeights().getWeightsWithoutBiasForClass(k);
             weightSquare += weightVector.dot(weightVector);
         }
-        Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
-        weightSquare += labelPairVector.dot(labelPairVector);
+
+        if (regularizeAll){
+            for (int k=0; k<numClasses; k++) {
+                double bias = cmlcrf.getWeights().getBiasForClass(k);
+                weightSquare += bias*bias;
+            }
+
+            Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
+            weightSquare += labelPairVector.dot(labelPairVector);
+
+            double bmmWeight = cmlcrf.getWeights().getAllWeights().get(numParameters-1);
+            weightSquare += bmmWeight*bmmWeight;
+        }
 
         this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
         this.isValueCacheValid = true;

@@ -20,7 +20,6 @@ public abstract class GradientValueOptimizer implements Optimizer{
     public void optimize() {
         while(true){
             iterate();
-            terminator.add(function.getValue());
             if (terminator.shouldTerminate()){
                 break;
             }

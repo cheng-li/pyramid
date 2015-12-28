@@ -30,6 +30,7 @@ public class ConjugateGradientDescent extends GradientValueOptimizer implements 
         Vector newP = oldP.times(beta).minus(newGradient);
         oldP = newP;
         oldGradient = newGradient;
+        terminator.add(function.getValue());
     }
 
     public BackTrackingLineSearcher getLineSearcher() {
