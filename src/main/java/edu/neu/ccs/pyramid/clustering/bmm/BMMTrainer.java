@@ -34,6 +34,7 @@ public class BMMTrainer {
         this.gammas = new double[dataSet.getNumDataPoints()][numClusters];
         this.bmm = new BMM(numClusters,dataSet.getNumFeatures());
         this.terminator = new Terminator();
+        this.terminator.setAbsoluteEpsilon(0.1);
     }
 
     public BMM train(){

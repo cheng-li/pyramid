@@ -36,7 +36,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // if the supported conbination contains the label;
     private boolean[][] labelInSupported;
 
-    private boolean isParallel = false;
+    private boolean isParallel = true;
     private boolean isGradientCacheValid = false;
     private boolean isValueCacheValid = false;
 
@@ -44,6 +44,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
      * numDataPoints by numSupported;
      */
     private ProbabilityMatrix probabilityMatrix;
+
+    // todo cache scores;
+    private double[][] combinationScores;
 
     public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
         this.cmlcrf = cmlcrf;
@@ -196,7 +199,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         }
 
         count -= this.empiricalCounts[parameterIndex];
-        // normalize
+        // regularize
         if (featureIndex != -1) {
             count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
         }
