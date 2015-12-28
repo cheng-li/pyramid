@@ -16,9 +16,9 @@ public class RidgeLogisticOptimizerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+//        test1();
 //        test2();
-//        test3();
+        test3();
     }
 
     private static void test1() throws Exception{
@@ -26,14 +26,14 @@ public class RidgeLogisticOptimizerTest {
 //                DataSetType.CLF_SPARSE, true);
 //        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
 //                DataSetType.CLF_SPARSE, true);
-//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
-//                DataSetType.CLF_SPARSE, true);
-//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
-//                DataSetType.CLF_SPARSE, true);
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
                 DataSetType.CLF_SPARSE, true);
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+//                DataSetType.CLF_SPARSE, true);
         double variance =1000;
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,variance);
@@ -93,14 +93,14 @@ public class RidgeLogisticOptimizerTest {
 //                DataSetType.CLF_SPARSE, true);
 //        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
 //                DataSetType.CLF_SPARSE, true);
-//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
-//                DataSetType.CLF_SPARSE, true);
-//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
-//                DataSetType.CLF_SPARSE, true);
-        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
                 DataSetType.CLF_SPARSE, true);
-        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
                 DataSetType.CLF_SPARSE, true);
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+//                DataSetType.CLF_SPARSE, true);
         double variance =1000;
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         Optimizable.ByGradientValue loss = new LogisticLoss(logisticRegression,dataSet, variance);
@@ -117,7 +117,7 @@ public class RidgeLogisticOptimizerTest {
 
             System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
             System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
-            System.out.println(logisticRegression);
+//            System.out.println(logisticRegression);
         }
 
     }

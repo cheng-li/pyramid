@@ -1,15 +1,19 @@
 package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
+import edu.neu.ccs.pyramid.clustering.bmm.BMM;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelSuggester;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static edu.neu.ccs.pyramid.dataset.DataSetUtil.gatherMultiLabels;
 
@@ -29,30 +33,42 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private Weights weights;
 
-    private List<MultiLabel> supportedCombinations;
+    private List<MultiLabel> supportCombinations;
 
     private int numSupported;
 
-    private boolean featureOnly = false;
+    private BMM bmm;
 
-    public CMLCRF(MultiLabelClfDataSet dataSet, boolean featureOnly) {
-        this(dataSet.getNumClasses(), dataSet.getNumFeatures(), featureOnly);
-        this.setSupportedCombinations(gatherMultiLabels(dataSet));
-        this.numSupported = supportedCombinations.size();
-        this.featureOnly = featureOnly;
-        System.out.println("length of supported: " + this.numSupported);
-    }
+    // store the mixture score for each combination
+    double[] mixtureScores;
 
-    public CMLCRF(int numClasses, int numFeatures, boolean featureOnly) {
-        this.numClasses = numClasses;
-        this.numFeatures = numFeatures;
-        this.weights = new Weights(numClasses, numFeatures, featureOnly);
-    }
+    // for each data point, store the position of the true combination in the support list
+    int[] labelComIndices;
 
+    public CMLCRF(MultiLabelClfDataSet dataSet, int numClusters) {
+        this.numClasses = dataSet.getNumClasses();
+        this.numFeatures = dataSet.getNumFeatures();
+        this.weights = new Weights(numClasses, numFeatures);
+        this.supportCombinations = gatherMultiLabels(dataSet);
+        this.numSupported = supportCombinations.size();
+        Map<MultiLabel,Integer> map = new HashMap<>();
+        for (int s=0;s<numSupported;s++){
+            map.put(supportCombinations.get(s),s);
+        }
+        this.labelComIndices = new int[dataSet.getNumDataPoints()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            labelComIndices[i] = map.get(dataSet.getMultiLabels()[i]);
+        }
 
-    public void setSupportedCombinations(List<MultiLabel> multiLabels) {
-        this.supportedCombinations = multiLabels;
-        this.numSupported = multiLabels.size();
+        System.out.println("support combinations: " + supportCombinations);
+        System.out.println("size of support " + this.numSupported);
+        System.out.println("fitting bmm");
+        this.bmm = new MultiLabelSuggester(dataSet,numClusters).getBmm();
+        System.out.println("bmm done");
+        this.mixtureScores = new double[numSupported];
+        for (int s=0;s<numSupported;s++){
+            mixtureScores[s] = bmm.logProbability(supportCombinations.get(s).toVector(numClasses));
+        }
     }
 
 
@@ -63,60 +79,98 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
      * @return
      */
     public double[] predictCombinationScores(Vector vector){
+        double[] classScores = predictClassScores(vector);
         double[] scores = new double[this.numSupported];
         for (int k=0;k<scores.length;k++){
-            scores[k] = predictCombinationScore(vector, k);
+            scores[k] = predictCombinationScore(vector, k, classScores);
         }
         return scores;
+    }
+
+
+    // for the feature-label pair
+    private double predictClassScore(Vector vector, int classIndex){
+        double score = 0.0;
+        score += this.weights.getWeightsWithoutBiasForClass(classIndex).dot(vector);
+        score += this.weights.getBiasForClass(classIndex);
+        return score;
+    }
+
+    private double[] predictClassScores(Vector vector){
+        double[] scores = new double[numClasses];
+        for (int k=0;k<numClasses;k++){
+            scores[k] = predictClassScore(vector, k);
+        }
+        return scores;
+    }
+
+    /**
+     * get the score by a given feature x and given label combination.
+
+     * @return
+     */
+    public double predictCombinationScore(Vector vector, int labelComIndex, double[] classScores){
+        MultiLabel label = supportCombinations.get(labelComIndex);
+        double score = 0.0;
+        for (int l: label.getMatchedLabels()){
+            score += classScores[l];
+        }
+
+        score += computePureCombinationScore(labelComIndex);
+
+        return score;
     }
 
 
     /**
      * get the score by a given feature x and given label combination.
      * @param vector
-     * @param label
      * @return
      */
-    public double predictCombinationScore(Vector vector, MultiLabel label){
+    public double predictCombinationScore(Vector vector, int labelComIndex){
+        MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0.0;
         for (int l=0; l<numClasses; l++) {
             if (label.matchClass(l)) {
-                score += this.weights.getWeightsWithoutBiasForClass(l).dot(vector);
-                score += this.weights.getBiasForClass(l);
+                score += predictClassScore(vector,l);
             }
         }
-        if (featureOnly) {
-            return score;
-        }
-        int start = this.weights.getNumWeightsForFeatures();
-        for (int l1=0; l1<numClasses; l1++) {
-            for (int l2=l1+1; l2<numClasses; l2++) {
-                if (!label.matchClass(l1) && !label.matchClass(l2)) {
-                    score += this.weights.getWeightForIndex(start);
-                } else if (label.matchClass(l1) && !label.matchClass(l2)) {
-                    score += this.weights.getWeightForIndex(start + 1);
-                } else if (!label.matchClass(l1) && label.matchClass(l2)) {
-                    score += this.weights.getWeightForIndex(start + 2);
-                } else {
-                    score += this.weights.getWeightForIndex(start + 3);
-                }
-                start += 4;
-            }
-        }
+        score += computePureCombinationScore(labelComIndex);
         return score;
     }
 
     /**
-     *
-     * get the score of a given feature x and given label
-     * combination y_k.
-     * @param vector
-     * @param k
+     * the part of score which depends only on labels
      * @return
      */
-    public double predictCombinationScore(Vector vector, int k){
-        return predictCombinationScore(vector, supportedCombinations.get(k));
+    private double computePureCombinationScore(int labelComIndex){
+        MultiLabel label = supportCombinations.get(labelComIndex);
+        double score = 0;
+        int pos = this.weights.getNumWeightsForFeatures();
+        boolean[] matches = new boolean[numClasses];
+        for (int match: label.getMatchedLabels()){
+            matches[match] = true;
+        }
+        for (int l1=0; l1<numClasses; l1++) {
+            for (int l2=l1+1; l2<numClasses; l2++) {
+                if (!matches[l1] && !matches[l2]) {
+                    score += this.weights.getWeightForIndex(pos);
+                } else if (matches[l1] && !matches[l2]) {
+                    score += this.weights.getWeightForIndex(pos + 1);
+                } else if (!matches[l1] && matches[l2]) {
+                    score += this.weights.getWeightForIndex(pos + 2);
+                } else {
+                    score += this.weights.getWeightForIndex(pos + 3);
+                }
+                pos += 4;
+            }
+        }
+
+        score += mixtureScores[labelComIndex];
+        return score;
     }
+
+
 
     public double[] predictCombinationProbs(Vector vector){
         double[] scoreVector = this.predictCombinationScores(vector);
@@ -158,12 +212,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return weights;
     }
 
-    public List<MultiLabel> getSupportedCombinations() {
-        return supportedCombinations;
-    }
-
-    public boolean getFeatureOnly() {
-        return this.featureOnly;
+    public List<MultiLabel> getSupportCombinations() {
+        return supportCombinations;
     }
 
 
@@ -179,7 +229,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
                 predictedCombination = k;
             }
         }
-        return this.supportedCombinations.get(predictedCombination);
+        return this.supportCombinations.get(predictedCombination);
     }
 
     @Override

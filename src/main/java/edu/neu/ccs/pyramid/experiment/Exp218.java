@@ -48,7 +48,8 @@ public class Exp218 {
             System.out.println("loading model:");
             System.out.println(cmlcrf);
         } else{
-            cmlcrf = new CMLCRF(trainSet, config.getBoolean("featureOnly"));
+            int numClusters = config.getInt("numClusters");
+            cmlcrf = new CMLCRF(trainSet,numClusters);
             CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
             crfLoss.setParallelism(true);
 

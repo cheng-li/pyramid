@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.clustering.bmm;
 
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
@@ -83,6 +84,26 @@ public class BMM implements Serializable{
             probArr[clusterIndex] = clusterConditionalLogProb(vector, clusterIndex);
         }
         return probArr;
+    }
+
+    /**
+     * log probability based on the mixture
+     * @param vector
+     * @return
+     */
+    public double logProbability(Vector vector){
+        double[] clusterConditionalLogProbArr = clusterConditionalLogProbArr(vector);
+        double[] logProportions = new double[numClusters];
+        for (int k=0;k<numClusters;k++){
+            logProportions[k] = Math.log(mixtureCoefficients[k]);
+        }
+
+        double[] arr = new double[numClusters];
+        for (int k=0;k<numClusters;k++){
+            arr[k] = logProportions[k]+clusterConditionalLogProbArr[k];
+        }
+
+        return MathUtil.logSumExp(arr);
     }
 
     /**
