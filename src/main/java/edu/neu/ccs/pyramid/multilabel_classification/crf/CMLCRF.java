@@ -11,7 +11,9 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static edu.neu.ccs.pyramid.dataset.DataSetUtil.gatherMultiLabels;
 
@@ -31,34 +33,42 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private Weights weights;
 
-    private List<MultiLabel> supportedCombinations;
+    private List<MultiLabel> supportCombinations;
 
     private int numSupported;
 
-    BMM bmm;
+    private BMM bmm;
+
+    // store the mixture score for each combination
+    double[] mixtureScores;
+
+    // for each data point, store the position of the true combination in the support list
+    int[] labelComIndices;
 
     public CMLCRF(MultiLabelClfDataSet dataSet, int numClusters) {
-        this(dataSet.getNumClasses(), dataSet.getNumFeatures());
-        this.setSupportedCombinations(gatherMultiLabels(dataSet));
-        this.numSupported = supportedCombinations.size();
-        System.out.println("supported vector: " + supportedCombinations);
-        System.out.println("length of supported: " + this.numSupported);
+        this.numClasses = dataSet.getNumClasses();
+        this.numFeatures = dataSet.getNumFeatures();
+        this.weights = new Weights(numClasses, numFeatures);
+        this.supportCombinations = gatherMultiLabels(dataSet);
+        this.numSupported = supportCombinations.size();
+        Map<MultiLabel,Integer> map = new HashMap<>();
+        for (int s=0;s<numSupported;s++){
+            map.put(supportCombinations.get(s),s);
+        }
+        this.labelComIndices = new int[dataSet.getNumDataPoints()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            labelComIndices[i] = map.get(dataSet.getMultiLabels()[i]);
+        }
+
+        System.out.println("support combinations: " + supportCombinations);
+        System.out.println("size of support " + this.numSupported);
         System.out.println("fitting bmm");
         this.bmm = new MultiLabelSuggester(dataSet,numClusters).getBmm();
         System.out.println("bmm done");
-    }
-
-    //todo remove this constructor
-    public CMLCRF(int numClasses, int numFeatures) {
-        this.numClasses = numClasses;
-        this.numFeatures = numFeatures;
-        this.weights = new Weights(numClasses, numFeatures);
-    }
-
-
-    public void setSupportedCombinations(List<MultiLabel> multiLabels) {
-        this.supportedCombinations = multiLabels;
-        this.numSupported = multiLabels.size();
+        this.mixtureScores = new double[numSupported];
+        for (int s=0;s<numSupported;s++){
+            mixtureScores[s] = bmm.logProbability(supportCombinations.get(s).toVector(numClasses));
+        }
     }
 
 
@@ -96,17 +106,17 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     /**
      * get the score by a given feature x and given label combination.
-     * @param vector
-     * @param label
+
      * @return
      */
-    public double predictCombinationScore(Vector vector, MultiLabel label, double[] classScores){
+    public double predictCombinationScore(Vector vector, int labelComIndex, double[] classScores){
+        MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0.0;
         for (int l: label.getMatchedLabels()){
             score += classScores[l];
         }
 
-        score += computePureCombinationScore(label);
+        score += computePureCombinationScore(labelComIndex);
 
         return score;
     }
@@ -115,26 +125,26 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     /**
      * get the score by a given feature x and given label combination.
      * @param vector
-     * @param label
      * @return
      */
-    public double predictCombinationScore(Vector vector, MultiLabel label){
+    public double predictCombinationScore(Vector vector, int labelComIndex){
+        MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0.0;
         for (int l=0; l<numClasses; l++) {
             if (label.matchClass(l)) {
                 score += predictClassScore(vector,l);
             }
         }
-        score += computePureCombinationScore(label);
+        score += computePureCombinationScore(labelComIndex);
         return score;
     }
 
     /**
      * the part of score which depends only on labels
-     * @param label
      * @return
      */
-    private double computePureCombinationScore(MultiLabel label){
+    private double computePureCombinationScore(int labelComIndex){
+        MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0;
         int pos = this.weights.getNumWeightsForFeatures();
         boolean[] matches = new boolean[numClasses];
@@ -156,21 +166,11 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
             }
         }
 
-        score += bmm.logProbability(label.toVector(numClasses));
+        score += mixtureScores[labelComIndex];
         return score;
     }
 
-    /**
-     *
-     * get the score of a given feature x and given label
-     * combination y_k.
-     * @param vector
-     * @param k
-     * @return
-     */
-    public double predictCombinationScore(Vector vector, int k, double[] classScores){
-        return predictCombinationScore(vector, supportedCombinations.get(k), classScores);
-    }
+
 
     public double[] predictCombinationProbs(Vector vector){
         double[] scoreVector = this.predictCombinationScores(vector);
@@ -212,8 +212,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return weights;
     }
 
-    public List<MultiLabel> getSupportedCombinations() {
-        return supportedCombinations;
+    public List<MultiLabel> getSupportCombinations() {
+        return supportCombinations;
     }
 
 
@@ -229,7 +229,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
                 predictedCombination = k;
             }
         }
-        return this.supportedCombinations.get(predictedCombination);
+        return this.supportCombinations.get(predictedCombination);
     }
 
     @Override

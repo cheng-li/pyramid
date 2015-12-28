@@ -50,7 +50,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
     public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
         this.cmlcrf = cmlcrf;
-        this.supportedCombinations = cmlcrf.getSupportedCombinations();
+        this.supportedCombinations = cmlcrf.getSupportCombinations();
         this.numSupported = cmlcrf.getNumSupported();
         this.dataSet = dataSet;
         this.numClasses = dataSet.getNumClasses();
@@ -216,8 +216,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         double sum = 0;
         double[] probs = probabilityMatrix.getProbabilitiesForData(i);
         for (int s = 0;s<numSupported;s++){
-            MultiLabel multiLabel = supportedCombinations.get(s);
-            sum += cmlcrf.bmm.logProbability(multiLabel.toVector(numClasses))*probs[s];
+            sum += cmlcrf.mixtureScores[s]*probs[s];
         }
         return sum;
     }
@@ -249,7 +248,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private double calEmpiricalCountForBMM(){
         double count =0;
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            count += cmlcrf.bmm.logProbability(dataSet.getMultiLabels()[i].toVector(numClasses));
+            int combinationIndex = cmlcrf.labelComIndices[i];
+            count += cmlcrf.mixtureScores[combinationIndex];
         }
         return count;
     }
@@ -379,11 +379,11 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
     private double getValueForOneData(int i) {
         double sum = 0.0;
-        MultiLabel label = dataSet.getMultiLabels()[i];
+
         Vector vector = dataSet.getRow(i);
         // sum logZ(x_n)
         sum += MathUtil.logSumExp(cmlcrf.predictCombinationScores(vector));
-        sum -= cmlcrf.predictCombinationScore(vector, label);
+        sum -= cmlcrf.predictCombinationScore(vector, cmlcrf.labelComIndices[i]);
         return sum;
     }
 
