@@ -99,31 +99,26 @@ public class Exp41 {
         System.out.println("done");
         System.out.println("initializing lbfgs");
         LBFGS lbfgs = new LBFGS(function);
-        lbfgs.getTerminator().setRelativeEpsilon(config.getDouble("train.epsilon"));
-        lbfgs.setHistory(5);
-        LinkedList<Double> valueQueue = new LinkedList<>();
-        valueQueue.add(function.getValue());
+//        lbfgs.getTerminator().setRelativeEpsilon(config.getDouble("train.epsilon"));
+//        lbfgs.setHistory(5);
+//        LinkedList<Double> valueQueue = new LinkedList<>();
+//        valueQueue.add(function.getValue());
         System.out.println("done");
 
-        int iteration=0;
-        System.out.println("iteration = "+iteration);
-        lbfgs.iterate();
-        valueQueue.add(function.getValue());
-        iteration+=1;
-        while(true){
-            System.out.println("iteration ="+iteration);
-            System.out.println("objective = "+valueQueue.getLast());
-            System.out.println("training accuracy = "+Accuracy.accuracy(mlLogisticRegression,dataSet));
+//        int iteration=0;
+//        System.out.println("iteration = "+iteration);
+//        lbfgs.iterate();
+//        valueQueue.add(function.getValue());
+//        iteration+=1;
+        for (int iteration =0;iteration<config.getInt("numIterations");iteration++){
+            lbfgs.iterate();
+            System.out.println("iteration =" + iteration);
+            System.out.println("objective = "+lbfgs.getTerminator().getLastValue());
+            System.out.println("training accuracy = "+Accuracy.accuracy(mlLogisticRegression, dataSet));
             System.out.println("training overlap +"+Overlap.overlap(mlLogisticRegression,dataSet));
             System.out.println("test accuracy = "+Accuracy.accuracy(mlLogisticRegression,testSet));
             System.out.println("test overlap +"+Overlap.overlap(mlLogisticRegression,testSet));
-            if (Math.abs(valueQueue.getFirst()-valueQueue.getLast())<config.getDouble("train.epsilon")){
-                break;
-            }
-            lbfgs.iterate();
-            valueQueue.remove();
-            valueQueue.add(function.getValue());
-            iteration += 1;
+            System.out.println("=========================");
         }
         
 //        MLLogisticRegression mlLogisticRegression = trainer.train(dataSet,assignments);
