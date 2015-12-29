@@ -387,6 +387,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
 
     private double getValueForAllData() {
+        updateClassScoreMatrix();
+        updateAssignmentScoreMatrix();
         IntStream intStream;
         if (isParallel) {
             intStream = IntStream.range(0,dataSet.getNumDataPoints()).parallel();
@@ -402,8 +404,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
         Vector vector = dataSet.getRow(i);
         // sum logZ(x_n)
-        sum += MathUtil.logSumExp(cmlcrf.predictCombinationScores(vector));
-        sum -= cmlcrf.predictCombinationScore(vector, cmlcrf.labelComIndices[i]);
+        sum += MathUtil.logSumExp(assignmentScoreMatrix[i]);
+        sum -= assignmentScoreMatrix[i][cmlcrf.labelComIndices[i]];
         return sum;
     }
 
