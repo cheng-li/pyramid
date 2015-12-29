@@ -87,16 +87,24 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return scores;
     }
 
+    public double[] predictCombinationScores(Vector vector, double[] classScores){
+        double[] scores = new double[this.numSupported];
+        for (int k=0;k<scores.length;k++){
+            scores[k] = predictCombinationScore(vector, k, classScores);
+        }
+        return scores;
+    }
+
 
     // for the feature-label pair
-    private double predictClassScore(Vector vector, int classIndex){
+    double predictClassScore(Vector vector, int classIndex){
         double score = 0.0;
         score += this.weights.getWeightsWithoutBiasForClass(classIndex).dot(vector);
         score += this.weights.getBiasForClass(classIndex);
         return score;
     }
 
-    private double[] predictClassScores(Vector vector){
+    double[] predictClassScores(Vector vector){
         double[] scores = new double[numClasses];
         for (int k=0;k<numClasses;k++){
             scores[k] = predictClassScore(vector, k);
@@ -184,6 +192,19 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return probVector;
     }
 
+    public double[] predictCombinationProbs(double[] combinationScores){
+        double[] probVector = new double[this.numSupported];
+        double logDenominator = MathUtil.logSumExp(combinationScores);
+        for (int k=0;k<this.numSupported;k++){
+            double logNumerator = combinationScores[k];
+            double pro = Math.exp(logNumerator-logDenominator);
+            probVector[k]=pro;
+        }
+        return probVector;
+    }
+
+
+
     public double[] predictLogCombinationProbs(Vector vector){
         double[] scoreVector = this.predictCombinationScores(vector);
         double[] logProbVector = new double[this.numSupported];
@@ -193,6 +214,18 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
             logProbVector[k]=logNumerator-logDenominator;
         }
         return logProbVector;
+    }
+
+    double[] calClassProbs(double[] assignmentProbs){
+        double[] classProbs = new double[numClasses];
+        for (int a=0;a<numSupported;a++){
+            MultiLabel assignment = supportCombinations.get(a);
+            double prob = assignmentProbs[a];
+            for (Integer label:assignment.getMatchedLabels()){
+                classProbs[label] += prob;
+            }
+        }
+        return classProbs;
     }
 
     @Override

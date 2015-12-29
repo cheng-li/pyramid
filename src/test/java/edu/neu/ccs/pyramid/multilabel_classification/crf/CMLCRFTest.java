@@ -23,10 +23,10 @@ public class CMLCRFTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test1();
+//        test1();
 //        test2();
 
-//        test3();
+        test3();
 //        test4();
 //        test5();
     }

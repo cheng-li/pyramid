@@ -41,12 +41,23 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private boolean isValueCacheValid = false;
 
     /**
-     * numDataPoints by numSupported;
+     * F_k(x), used to speed up training. classScoreMatrix.[i][k] = F_k(x_i)
      */
-    private ProbabilityMatrix probabilityMatrix;
+    private double[][] classScoreMatrix;
+    /**
+     * numDataPoints by numClasses;
+     */
+    private double[][] classProbMatrix;
 
-    // todo cache scores;
-    private double[][] combinationScores;
+    /**
+     * [i][a]=prob of assignment a for x_i
+     */
+    private double[][] assignmentProbMatrix;
+
+    private double[][] assignmentScoreMatrix;
+
+    private int numData;
+
 
     // if true, regularize all weights
     private boolean regularizeAll = false;
@@ -56,12 +67,16 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.supportedCombinations = cmlcrf.getSupportCombinations();
         this.numSupported = cmlcrf.getNumSupported();
         this.dataSet = dataSet;
+        this.numData = dataSet.getNumDataPoints();
         this.numClasses = dataSet.getNumClasses();
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.numParameters = cmlcrf.getWeights().totalSize();
         this.numWeightsForFeatures = cmlcrf.getWeights().getNumWeightsForFeatures();
         this.numWeightsForLabels = cmlcrf.getWeights().getNumWeightsForLabels();
-        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numSupported);
+        this.classScoreMatrix = new double[numData][numClasses];
+        this.classProbMatrix = new double[numData][numClasses];
+        this.assignmentScoreMatrix = new double[numData][numSupported];
+        this.assignmentProbMatrix = new double[numData][numSupported];
         this.isGradientCacheValid = false;
         this.isValueCacheValid = false;
         this.empiricalCounts = new double[numParameters];
@@ -83,28 +98,17 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         if (isGradientCacheValid) {
             return this.gradient;
         }
+        updateClassScoreMatrix();
+        updateAssignmentScoreMatrix();
+        updateAssignmentProbMatrix();
         updateClassProbMatrix();
         updateGradient();
         this.isGradientCacheValid = true;
         return this.gradient;
     }
 
-    private void updateClassProbMatrix(){
-        IntStream intStream;
-        if (isParallel){
-            intStream = IntStream.range(0,dataSet.getNumDataPoints()).parallel();
-        } else {
-            intStream = IntStream.range(0,dataSet.getNumDataPoints());
-        }
-        intStream.forEach(this::updateSupportedProbs);
-    }
 
-    private void updateSupportedProbs(int dataPointIndex){
-        double[] probs = cmlcrf.predictCombinationProbs(dataSet.getRow(dataPointIndex));
-        for (int k=0;k<probs.length;k++){
-            this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
-        }
-    }
+
 
     private void updateGradient() {
         IntStream intStream;
@@ -146,7 +150,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         int l2 = parameterToL2[start];
         int featureCase = start % 4;
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
+            double[] probs = this.assignmentProbMatrix[i];
             for (int num=0; num<probs.length; num++) {
                 switch (featureCase) {
                     // both l1, l2 equal 0;
@@ -184,24 +188,14 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
         if (featureIndex == -1) {
             for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-                double[] probs = this.probabilityMatrix.getProbabilitiesForData(i);
-                for (int num=0; num<probs.length; num++) {
-                    if (labelInSupported[num][classIndex]) {
-                        count += probs[num];
-                    }
-                }
+                count += this.classProbMatrix[i][classIndex];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()) {
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPointIndex);
-                for (int num=0; num<probs.length; num++) {
-                    if (labelInSupported[num][classIndex]) {
-                        count += probs[num] * featureValue;
-                    }
-                }
+                count += this.classProbMatrix[dataPointIndex][classIndex] * featureValue;
             }
         }
 
@@ -229,7 +223,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
     private double calExpCountForBMM(int i){
         double sum = 0;
-        double[] probs = probabilityMatrix.getProbabilitiesForData(i);
+        double[] probs = assignmentProbMatrix[i];
         for (int s = 0;s<numSupported;s++){
             sum += cmlcrf.mixtureScores[s]*probs[s];
         }
@@ -434,6 +428,27 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     @Override
     public boolean isParallel() {
         return this.isParallel;
+    }
+
+
+    private void updateClassScoreMatrix(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i-> classScoreMatrix[i] = cmlcrf.predictClassScores(dataSet.getRow(i)));
+    }
+
+    private void updateAssignmentScoreMatrix(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i -> assignmentScoreMatrix[i] = cmlcrf.predictCombinationScores(dataSet.getRow(i), classScoreMatrix[i]));
+    }
+
+    private void updateAssignmentProbMatrix(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i -> assignmentProbMatrix[i] = cmlcrf.predictCombinationProbs(assignmentScoreMatrix[i]));
+    }
+
+    private void updateClassProbMatrix(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i -> classProbMatrix[i] = cmlcrf.calClassProbs(assignmentProbMatrix[i]));
     }
 
 }
