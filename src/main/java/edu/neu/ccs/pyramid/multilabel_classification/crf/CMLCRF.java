@@ -35,7 +35,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private List<MultiLabel> supportCombinations;
 
-    private int numSupported;
+    private int numSupports;
 
     private BMM bmm;
 
@@ -50,9 +50,9 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         this.numFeatures = dataSet.getNumFeatures();
         this.weights = new Weights(numClasses, numFeatures);
         this.supportCombinations = gatherMultiLabels(dataSet);
-        this.numSupported = supportCombinations.size();
+        this.numSupports = supportCombinations.size();
         Map<MultiLabel,Integer> map = new HashMap<>();
-        for (int s=0;s<numSupported;s++){
+        for (int s=0;s< numSupports;s++){
             map.put(supportCombinations.get(s),s);
         }
         this.labelComIndices = new int[dataSet.getNumDataPoints()];
@@ -61,39 +61,16 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         }
 
         System.out.println("support combinations: " + supportCombinations);
-        System.out.println("size of support " + this.numSupported);
+        System.out.println("size of support " + this.numSupports);
         System.out.println("fitting bmm");
         this.bmm = new MultiLabelSuggester(dataSet,numClusters).getBmm();
         System.out.println("bmm done");
-        this.mixtureScores = new double[numSupported];
-        for (int s=0;s<numSupported;s++){
+        this.mixtureScores = new double[numSupports];
+        for (int s=0;s< numSupports;s++){
             mixtureScores[s] = bmm.logProbability(supportCombinations.get(s).toVector(numClasses));
         }
     }
 
-
-    /**
-     * get the scores for all possible label combination
-     * y and a given feature x.
-     * @param vector
-     * @return
-     */
-    public double[] predictCombinationScores(Vector vector){
-        double[] classScores = predictClassScores(vector);
-        double[] scores = new double[this.numSupported];
-        for (int k=0;k<scores.length;k++){
-            scores[k] = predictCombinationScore(vector, k, classScores);
-        }
-        return scores;
-    }
-
-    public double[] predictCombinationScores(Vector vector, double[] classScores){
-        double[] scores = new double[this.numSupported];
-        for (int k=0;k<scores.length;k++){
-            scores[k] = predictCombinationScore(vector, k, classScores);
-        }
-        return scores;
-    }
 
 
     // for the feature-label pair
@@ -113,45 +90,49 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     }
 
     /**
-     * get the score by a given feature x and given label combination.
-
-     * @return
-     */
-    public double predictCombinationScore(Vector vector, int labelComIndex, double[] classScores){
-        MultiLabel label = supportCombinations.get(labelComIndex);
-        double score = 0.0;
-        for (int l: label.getMatchedLabels()){
-            score += classScores[l];
-        }
-
-        score += computePureCombinationScore(labelComIndex);
-
-        return score;
-    }
-
-
-    /**
-     * get the score by a given feature x and given label combination.
+     * get the scores for all possible label combination
+     * y and a given feature x.
      * @param vector
      * @return
      */
-    public double predictCombinationScore(Vector vector, int labelComIndex){
-        MultiLabel label = supportCombinations.get(labelComIndex);
-        double score = 0.0;
-        for (int l=0; l<numClasses; l++) {
-            if (label.matchClass(l)) {
-                score += predictClassScore(vector,l);
-            }
+    public double[] predictCombinationScores(Vector vector){
+        double[] classScores = predictClassScores(vector);
+        return predictCombinationScores(classScores);
+    }
+
+    double[] predictCombinationScores(double[] classScores){
+        double[] scores = new double[this.numSupports];
+        for (int k=0;k<scores.length;k++){
+            scores[k] = predictCombinationScore(k, classScores);
         }
-        score += computePureCombinationScore(labelComIndex);
-        return score;
+        return scores;
     }
 
     /**
-     * the part of score which depends only on labels
+     * get the score by a given feature x and given label combination.
+
      * @return
      */
-    private double computePureCombinationScore(int labelComIndex){
+    private double predictCombinationScore(int labelComIndex, double[] classScores){
+        MultiLabel label = supportCombinations.get(labelComIndex);
+        double score = 0.0;
+        for (Integer l: label.getMatchedLabels()){
+            score += classScores[l];
+        }
+        score += computeLabelPartScore(labelComIndex);
+
+        return score;
+    }
+
+
+
+    //todo make it faster?
+    /**
+     * the part of score which depends only on labels
+     * for each label pair, exactly one feature function returns 1
+     * @return
+     */
+    private double computeLabelPartScore(int labelComIndex){
         MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0;
         int pos = this.weights.getNumWeightsForFeatures();
@@ -181,21 +162,14 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
 
     public double[] predictCombinationProbs(Vector vector){
-        double[] scoreVector = this.predictCombinationScores(vector);
-        double[] probVector = new double[this.numSupported];
-        double logDenominator = MathUtil.logSumExp(scoreVector);
-        for (int k=0;k<this.numSupported;k++){
-            double logNumerator = scoreVector[k];
-            double pro = Math.exp(logNumerator-logDenominator);
-            probVector[k]=pro;
-        }
-        return probVector;
+        double[] combinationScores = predictCombinationScores(vector);
+        return predictCombinationProbs(combinationScores);
     }
 
     public double[] predictCombinationProbs(double[] combinationScores){
-        double[] probVector = new double[this.numSupported];
+        double[] probVector = new double[this.numSupports];
         double logDenominator = MathUtil.logSumExp(combinationScores);
-        for (int k=0;k<this.numSupported;k++){
+        for (int k=0;k<this.numSupports;k++){
             double logNumerator = combinationScores[k];
             double pro = Math.exp(logNumerator-logDenominator);
             probVector[k]=pro;
@@ -204,21 +178,25 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     }
 
 
-
     public double[] predictLogCombinationProbs(Vector vector){
         double[] scoreVector = this.predictCombinationScores(vector);
-        double[] logProbVector = new double[this.numSupported];
+        double[] logProbVector = new double[this.numSupports];
         double logDenominator = MathUtil.logSumExp(scoreVector);
-        for (int k=0;k<this.numSupported;k++) {
+        for (int k=0;k<this.numSupports;k++) {
             double logNumerator = scoreVector[k];
             logProbVector[k]=logNumerator-logDenominator;
         }
         return logProbVector;
     }
 
+    /**
+     * marginal probabilities
+     * @param assignmentProbs
+     * @return
+     */
     double[] calClassProbs(double[] assignmentProbs){
         double[] classProbs = new double[numClasses];
-        for (int a=0;a<numSupported;a++){
+        for (int a=0;a< numSupports;a++){
             MultiLabel assignment = supportCombinations.get(a);
             double prob = assignmentProbs[a];
             for (Integer label:assignment.getMatchedLabels()){
@@ -233,8 +211,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return numClasses;
     }
 
-    public int getNumSupported() {
-        return numSupported;
+    public int getNumSupports() {
+        return numSupports;
     }
 
     public int getNumFeatures() {
