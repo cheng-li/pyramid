@@ -20,7 +20,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private static final Logger logger = LogManager.getLogger();
     private CMLCRF cmlcrf;
     private List<MultiLabel> supportedCombinations;
-    private int numSupported;
+    private int numSupport;
     private MultiLabelClfDataSet dataSet;
     private double gaussianPriorVariance;
     private int numClasses;
@@ -61,10 +61,13 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // if true, regularize all weights
     private boolean regularizeAll = false;
 
+
+
+
     public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
         this.cmlcrf = cmlcrf;
         this.supportedCombinations = cmlcrf.getSupportCombinations();
-        this.numSupported = cmlcrf.getNumSupports();
+        this.numSupport = cmlcrf.getNumSupports();
         this.dataSet = dataSet;
         this.numData = dataSet.getNumDataPoints();
         this.numClasses = dataSet.getNumClasses();
@@ -74,8 +77,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.numWeightsForLabelPairs = cmlcrf.getWeights().getNumWeightsForLabels();
         this.classScoreMatrix = new double[numData][numClasses];
         this.classProbMatrix = new double[numData][numClasses];
-        this.combScoreMatrix = new double[numData][numSupported];
-        this.combProbMatrix = new double[numData][numSupported];
+        this.combScoreMatrix = new double[numData][numSupport];
+        this.combProbMatrix = new double[numData][numSupport];
         this.isGradientCacheValid = false;
         this.isValueCacheValid = false;
         this.empiricalCounts = new double[numParameters];
@@ -87,11 +90,14 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             labelPairToCombination.add(new ArrayList<>());
         }
         this.mapPairToCombination();
+
     }
 
     public void setRegularizeAll(boolean regularizeAll) {
         this.regularizeAll = regularizeAll;
     }
+
+
 
     /**
      * gradient of log likelihood
@@ -224,7 +230,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private double calExpCountForBMM(int i){
         double sum = 0;
         double[] probs = combProbMatrix[i];
-        for (int s = 0;s<numSupported;s++){
+        for (int s = 0;s< numSupport;s++){
             sum += cmlcrf.mixtureScores[s]*probs[s];
         }
         return sum;
@@ -339,8 +345,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             parameterToFeature[i] = cmlcrf.getWeights().getFeatureIndex(i);
         }
 
-        labelInSupported = new boolean[numSupported][numClasses];
-        for (int num=0; num<numSupported; num++) {
+        labelInSupported = new boolean[numSupport][numClasses];
+        for (int num=0; num< numSupport; num++) {
             for (int l=0; l<numClasses; l++) {
                 if (supportedCombinations.get(num).matchClass(l)) {
                     labelInSupported[num][l] = true;
@@ -419,6 +425,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.cmlcrf.getWeights().setWeightVector(parameters);
         this.isValueCacheValid = false;
         this.isGradientCacheValid = false;
+        this.cmlcrf.updateCombLabelPartScores();
     }
 
     @Override
@@ -504,7 +511,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         int l1 = parameterToL1[position];
         int l2 = parameterToL2[position];
         int featureCase = position % 4;
-        for (int c=0; c<numSupported; c++) {
+        for (int c=0; c< numSupport; c++) {
             switch (featureCase) {
                 // both l1, l2 equal 0;
                 case 0: if (!labelInSupported[c][l1] && !labelInSupported[c][l2]) list.add(c);

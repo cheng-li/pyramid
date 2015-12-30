@@ -14,6 +14,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static edu.neu.ccs.pyramid.dataset.DataSetUtil.gatherMultiLabels;
 
@@ -45,6 +46,10 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     // for each data point, store the position of the true combination in the support list
     int[] labelComIndices;
 
+    // for each combination, store the total score computed based only on labels
+    // Since it doesn't depend on features, it can be re-used by all data points
+    private double[] combinationLabelPartScores;
+
     public CMLCRF(MultiLabelClfDataSet dataSet, int numClusters) {
         this.numClasses = dataSet.getNumClasses();
         this.numFeatures = dataSet.getNumFeatures();
@@ -69,6 +74,9 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         for (int s=0;s< numSupports;s++){
             mixtureScores[s] = bmm.logProbability(supportCombinations.get(s).toVector(numClasses));
         }
+
+        this.combinationLabelPartScores = new double[supportCombinations.size()];
+        updateCombLabelPartScores();
     }
 
 
@@ -108,31 +116,26 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return scores;
     }
 
-    /**
-     * get the score by a given feature x and given label combination.
 
-     * @return
-     */
     private double predictCombinationScore(int labelComIndex, double[] classScores){
         MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0.0;
         for (Integer l: label.getMatchedLabels()){
             score += classScores[l];
         }
-        score += computeLabelPartScore(labelComIndex);
+        score += combinationLabelPartScores[labelComIndex];
 
         return score;
     }
 
 
 
-    //todo make it faster?
     /**
      * the part of score which depends only on labels
      * for each label pair, exactly one feature function returns 1
      * @return
      */
-    private double computeLabelPartScore(int labelComIndex){
+    double computeLabelPartScore(int labelComIndex){
         MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0;
         int pos = this.weights.getNumWeightsForFeatures();
@@ -159,6 +162,10 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         return score;
     }
 
+    void updateCombLabelPartScores(){
+        IntStream.range(0, supportCombinations.size()).parallel()
+                .forEach(c -> combinationLabelPartScores[c]=computeLabelPartScore(c));
+    }
 
 
     public double[] predictCombinationProbs(Vector vector){
