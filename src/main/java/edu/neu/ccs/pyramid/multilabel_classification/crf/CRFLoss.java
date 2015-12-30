@@ -64,6 +64,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
 
 
+
+
     public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
         this.cmlcrf = cmlcrf;
         this.supportedCombinations = cmlcrf.getSupportCombinations();
@@ -132,8 +134,10 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         }
 
         updatedFeatureLabelGradient();
-        updateLabelLabelGradient();
-        updateBMMGradient();
+        if (cmlcrf.considerPair()){
+            updateLabelLabelGradient();
+            updateBMMGradient();
+        }
 
         if (logger.isDebugEnabled()){
             logger.debug("finish method updateGradient()");

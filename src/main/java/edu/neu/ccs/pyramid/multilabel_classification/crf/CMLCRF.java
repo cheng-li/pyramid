@@ -50,6 +50,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     // Since it doesn't depend on features, it can be re-used by all data points
     private double[] combinationLabelPartScores;
 
+    private boolean considerPair = false;
+
     public CMLCRF(MultiLabelClfDataSet dataSet, int numClusters) {
         this.numClasses = dataSet.getNumClasses();
         this.numFeatures = dataSet.getNumFeatures();
@@ -79,7 +81,14 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         updateCombLabelPartScores();
     }
 
+    public boolean considerPair() {
+        return considerPair;
+    }
 
+    public void setConsiderPair(boolean considerPair) {
+        this.considerPair = considerPair;
+        updateCombLabelPartScores();
+    }
 
     // for the feature-label pair
     double predictClassScore(Vector vector, int classIndex){
@@ -123,7 +132,9 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         for (Integer l: label.getMatchedLabels()){
             score += classScores[l];
         }
-        score += combinationLabelPartScores[labelComIndex];
+        if (considerPair){
+            score += combinationLabelPartScores[labelComIndex];
+        }
 
         return score;
     }

@@ -23,12 +23,12 @@ public class CMLCRFTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test1();
+//        test1();
 //        test2();
 
 //        test3();
 //        test4();
-//        test5();
+        test5();
 //        test6();
     }
 
@@ -225,18 +225,37 @@ public class CMLCRFTest {
 
         CMLCRF cmlcrf = new CMLCRF(dataSet,1);
         CRFLoss crfLoss = new CRFLoss(cmlcrf,dataSet,1);
+        cmlcrf.setConsiderPair(false);
 
 
         MultiLabel[] predTrain;
         MultiLabel[] predTest;
 
         LBFGS optimizer = new LBFGS(crfLoss);
-        for (int i=0; i<50; i++) {
-
+        for (int i=0; i<5; i++) {
 //            System.out.print("Obj: " + optimizer.getTerminator().getLastValue());
             System.out.println("iter: "+ i);
             optimizer.iterate();
             System.out.println(crfLoss.getValue());
+            predTrain = cmlcrf.predict(dataSet);
+            predTest = cmlcrf.predict(testSet);
+            System.out.print("\tTrain acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
+            System.out.print("\tTrain overlap " + Overlap.overlap(dataSet.getMultiLabels(), predTrain));
+            System.out.print("\tTest acc: " + Accuracy.accuracy(testSet.getMultiLabels(), predTest));
+            System.out.println("\tTest overlap " + Overlap.overlap(testSet.getMultiLabels(), predTest));
+//            System.out.println("crf = "+cmlcrf.getWeights());
+//            System.out.println(Arrays.toString(predTrain));
+        }
+
+        CRFLoss crfLoss2 = new CRFLoss(cmlcrf,dataSet,1);
+        cmlcrf.setConsiderPair(true);
+        LBFGS optimizer2 = new LBFGS(crfLoss2);
+        for (int i=0; i<50; i++) {
+            System.out.println("consider pairs");
+//            System.out.print("Obj: " + optimizer.getTerminator().getLastValue());
+            System.out.println("iter: "+ i);
+            optimizer2.iterate();
+            System.out.println(crfLoss2.getValue());
             predTrain = cmlcrf.predict(dataSet);
             predTest = cmlcrf.predict(testSet);
             System.out.print("\tTrain acc: " + Accuracy.accuracy(dataSet.getMultiLabels(), predTrain));
