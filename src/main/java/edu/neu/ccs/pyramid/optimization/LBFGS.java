@@ -75,8 +75,10 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
 
 
         if (logger.isDebugEnabled()){
-            logger.debug("y= "+y);
-            logger.debug("s= "+s);
+            if (y.size()<100){
+                logger.debug("y= "+y);
+                logger.debug("s= " + s);
+            }
             logger.debug("denominator = "+denominator);
             logger.debug("rho = "+rho);
         }

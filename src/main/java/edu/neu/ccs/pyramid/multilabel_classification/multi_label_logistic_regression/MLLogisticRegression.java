@@ -199,11 +199,12 @@ public class MLLogisticRegression implements MultiLabelClassifier, MultiLabelCla
     double logLikelihood(Vector vector, MultiLabel multiLabel){
         double[] classScores = predictClassScores(vector);
         int numAssignments = assignments.size();
-        double[] assignmentScores = new double[numAssignments];
-        for (int a=0;a<numAssignments;a++){
-            MultiLabel assignment = assignments.get(a);
-            assignmentScores[a] = this.calAssignmentScore(assignment, classScores);
-        }
+        double[] assignmentScores = calAssignmentScores(classScores);
+//        double[] assignmentScores = new double[numAssignments];
+//        for (int a=0;a<numAssignments;a++){
+//            MultiLabel assignment = assignments.get(a);
+//            assignmentScores[a] = this.calAssignmentScore(assignment, classScores);
+//        }
         double logDenominator = MathUtil.logSumExp(assignmentScores);
 
         double logNumerator = this.calAssignmentScore(multiLabel, classScores);
