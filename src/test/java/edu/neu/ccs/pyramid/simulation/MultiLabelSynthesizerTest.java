@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.HammingLoss;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.*;
@@ -752,10 +753,10 @@ public class MultiLabelSynthesizerTest {
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"train.trec"), DataSetType.ML_CLF_DENSE,true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP, "test.trec"), DataSetType.ML_CLF_DENSE, true);
 
-        int numClusters = 2;
+        int numClusters = 10;
         double softmaxVariance = 100;
         double logitVariance = 1;
-        double meanRegVar = 10;
+        double meanRegVar = 1000000;
         BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         optimizer.setMeanRegVariance(meanRegVar);
@@ -779,12 +780,21 @@ public class MultiLabelSynthesizerTest {
             System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
             System.out.println("distance from mean = "+BMMInspector.distanceFromMean(bmmClassifier));
 
+            double[][] gammas = optimizer.getGammas();
+            double perplexity=    IntStream.range(0,gammas.length).mapToDouble(d->Math.exp(Entropy.entropy(gammas[d]))).average().getAsDouble();
+            System.out.println("perplexity of gammas = "+perplexity);
+
+
+            List<double[]> list = bmmClassifier.getMultiNomialClassifiers().predictClassProbs(trainSet);
+            double perplexitypi=    IntStream.range(0,list.size()).mapToDouble(d->Math.exp(Entropy.entropy(list.get(d)))).average().getAsDouble();
+            System.out.println("perplexity of pi= "+perplexitypi);
+
         }
         System.out.println(bmmClassifier);
     }
 
     private static void test9Dump() {
-        int numData = 100;
+        int numData = 10000;
         MultiLabelClfDataSet all = MultiLabelSynthesizer.gaussianNoise(numData);
         List<Integer> trainIndices = IntStream.range(0,numData/2).mapToObj(i -> i).collect(Collectors.toList());
         List<Integer> testIndices = IntStream.range(numData/2,numData).mapToObj(i->i).collect(Collectors.toList());
