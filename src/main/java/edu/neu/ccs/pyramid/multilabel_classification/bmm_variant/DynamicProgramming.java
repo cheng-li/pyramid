@@ -12,7 +12,7 @@ import java.util.Set;
  */
 public class DynamicProgramming {
 
-    public PriorityQueue<Data> dp;
+    public PriorityQueue<Candidate> dp;
 
     public double[][] probs;
 
@@ -28,6 +28,42 @@ public class DynamicProgramming {
      * cache for the Vectors, we had returned so far.
      */
     private Set<Vector> cache;
+
+    /**
+     *
+     * @param probabilities probabilities of heads
+     */
+    public DynamicProgramming(double[] probabilities){
+        double[][] probs = new double[probabilities.length][2];
+        double[][] logProbs = new double[probabilities.length][2];
+        for (int l=0;l<probabilities.length;l++){
+            probs[l][0] = 1-probabilities[l];
+            probs[l][1] = probabilities[l];
+            logProbs[l][0] = Math.log(probs[l][0]);
+            logProbs[l][1] = Math.log(probs[l][1]);
+        }
+
+        this.numLabels = probs.length;
+        this.probs = probs;
+        this.logProbs = logProbs;
+
+
+        dp = new PriorityQueue<>();
+        Vector vector = new DenseVector(numLabels);
+
+        double logProb = 0.0;
+        for (int l=0; l<numLabels; l++) {
+            if (this.probs[l][1] >= 0.5) {
+                vector.set(l, 1.0);
+                logProb += this.logProbs[l][1];
+            } else {
+                logProb += this.logProbs[l][0];
+            }
+        }
+        dp.add(new Candidate(vector, logProb));
+        cache = new HashSet<>();
+        cache.add(vector);
+    }
 
     /**
      * given probs, format: probs[numLabels][2],
@@ -53,7 +89,7 @@ public class DynamicProgramming {
                 logProb += this.logProbs[l][0];
             }
         }
-        dp.add(new Data(vector, logProb));
+        dp.add(new Candidate(vector, logProb));
         cache = new HashSet<>();
         cache.add(vector);
     }
@@ -63,9 +99,9 @@ public class DynamicProgramming {
      * first element in the queue.
      * @return
      */
-    public double highestProb() {
+    public double nextHighestProb() {
         if (dp.size() > 0) {
-            return Math.exp(dp.peek().logProb);
+            return Math.exp(dp.peek().logProbability);
         }
         return 0;
     }
@@ -77,7 +113,7 @@ public class DynamicProgramming {
      */
     public double highestLogProb() {
         if (dp.size() > 0) {
-            return dp.peek().logProb;
+            return dp.peek().logProbability;
         }
         return Double.NEGATIVE_INFINITY;
     }
@@ -87,7 +123,7 @@ public class DynamicProgramming {
      * And update the queue with flipping every label.
      * @return
      */
-    public Vector nextHighest() {
+    public Vector nextHighestVector() {
         if (dp.size() > 0) {
             flipLabels(dp.peek());
             return dp.poll().vector;
@@ -96,15 +132,27 @@ public class DynamicProgramming {
         return new DenseVector(numLabels);
     }
 
+
+    public Candidate nextHighest(){
+        if (dp.size() > 0) {
+            flipLabels(dp.peek());
+            return dp.poll();
+        }
+        Vector vector = new DenseVector(numLabels);
+        Candidate candidate = new Candidate(vector, Double.NEGATIVE_INFINITY);
+        return candidate;
+    }
+
+
     /**
      * flip each bit in given vector, and calculate its
      * log probability, if it is not cached yet, put it into
      * the max queue.
      * @param data
      */
-    private void flipLabels(Data data) {
+    private void flipLabels(Candidate data) {
 
-        double prevlogProb = data.logProb;
+        double prevlogProb = data.logProbability;
         Vector vector = data.vector;
 
         for (int l=0; l<numLabels; l++) {
@@ -124,7 +172,7 @@ public class DynamicProgramming {
                 logProb = prevlogProb - this.logProbs[l][1] + this.logProbs[l][0];
             }
 
-            dp.add(new Data(flipVector, logProb));
+            dp.add(new Candidate(flipVector, logProb));
             cache.add(flipVector);
         }
     }
@@ -151,22 +199,36 @@ public class DynamicProgramming {
     }
 
 
-    class Data implements Comparable<Data> {
+    public class Candidate implements Comparable<Candidate> {
         private final Vector vector;
-        private final double logProb;
+        private final double logProbability;
+        private final double probability;
 
-        Data(Vector vector, double logProb) {
+        Candidate(Vector vector, double logProbability) {
             this.vector = vector;
-            this.logProb = logProb;
+            this.logProbability = logProbability;
+            this.probability = Math.exp(logProbability);
+        }
+
+        public Vector getVector() {
+            return vector;
+        }
+
+        public double getLogProbability() {
+            return logProbability;
+        }
+
+        public double getProbability() {
+            return probability;
         }
 
         @Override
-        public int compareTo(Data o) {
-            return Double.valueOf(o.logProb).compareTo(logProb);
+        public int compareTo(Candidate o) {
+            return Double.valueOf(o.logProbability).compareTo(logProbability);
         }
 
         public String toString() {
-            return "prob: " + String.format("%.3f", Math.exp(logProb)) + "\tvetcor: " + vector;
+            return "prob: " + String.format("%.3f", Math.exp(logProbability)) + "\tvetcor: " + vector;
         }
     }
 }

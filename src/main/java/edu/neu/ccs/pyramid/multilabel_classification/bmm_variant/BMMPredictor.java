@@ -8,7 +8,6 @@ import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -141,7 +140,7 @@ public class BMMPredictor {
         double[] maxClusterProb = new double[numClusters];
         for (int k=0; k<numClusters; k++) {
             DPs.put(k,new DynamicProgramming(probs[k], logProbs[k]));
-            maxClusterProb[k] = DPs.get(k).highestProb();
+            maxClusterProb[k] = DPs.get(k).nextHighestProb();
         }
 
 
@@ -173,9 +172,9 @@ public class BMMPredictor {
             for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
                 int k = entry.getKey();
                 DynamicProgramming dp = entry.getValue();
-                double prob = dp.highestProb();
+                double prob = dp.nextHighestProb();
 
-                Vector candidateY = dp.nextHighest();
+                Vector candidateY = dp.nextHighestVector();
 
                 // whether consider empty prediction
                 if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
