@@ -53,7 +53,7 @@ public class MultiLabelSynthesizerTest {
 
 //        test8Dump();
 //        test8_powerset();
-        test8_mix();
+        test8_mix(5);
 //        test9Dump();
     }
 
@@ -748,12 +748,12 @@ public class MultiLabelSynthesizerTest {
         System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
     }
 
-    private static void test8_mix() throws Exception{
+    private static void test8_mix(int numClusters) throws Exception{
         System.out.println("mix");
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"train.trec"), DataSetType.ML_CLF_DENSE,true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(TMP, "test.trec"), DataSetType.ML_CLF_DENSE, true);
 
-        int numClusters = 10;
+
         double softmaxVariance = 100;
         double logitVariance = 1;
         double meanRegVar = 1000000;
@@ -761,7 +761,9 @@ public class MultiLabelSynthesizerTest {
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         optimizer.setMeanRegVariance(meanRegVar);
         optimizer.setMeanRegularization(true);
+        optimizer.setInverseTemperature(1);
         bmmClassifier.setAllowEmpty(true);
+
         bmmClassifier.setPredictMode("dynamic");
         BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance);
         for (int i=1;i<=20;i++){
@@ -782,6 +784,8 @@ public class MultiLabelSynthesizerTest {
 
             double[][] gammas = optimizer.getGammas();
             double perplexity=    IntStream.range(0,gammas.length).mapToDouble(d->Math.exp(Entropy.entropy(gammas[d]))).average().getAsDouble();
+            double[] perplexityAll=    IntStream.range(0,gammas.length).mapToDouble(d->Math.exp(Entropy.entropy(gammas[d]))).toArray();
+            System.out.println(Arrays.toString(perplexityAll));
             System.out.println("perplexity of gammas = "+perplexity);
 
 

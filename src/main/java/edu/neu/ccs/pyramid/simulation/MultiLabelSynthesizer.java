@@ -417,14 +417,15 @@ public class MultiLabelSynthesizer {
 
 
     /**
-     * 2 labels, 2 features, multi-variate gaussian noise
-     * y0: w=(0,1)
-     * y1: w=(1,0)
+     * 2 labels, 3 features, multi-variate gaussian noise
+     * y0: w=(0,1,0)
+     * y1: w=(1,0,0)
+     * y2: w=(0,0,1)
      * @return
      */
     public static MultiLabelClfDataSet gaussianNoise(int numData){
-        int numClass = 2;
-        int numFeature = 2;
+        int numClass = 3;
+        int numFeature = 3;
 
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
                 .numClasses(numClass)
@@ -438,11 +439,14 @@ public class MultiLabelSynthesizer {
             weights[k] = vector;
         }
 
-        weights[0].set(0,0);
+
         weights[0].set(1,1);
 
         weights[1].set(0, 1);
-        weights[1].set(1, 0);
+
+
+        weights[2].set(2, 1);
+
 
 
         // generate features
@@ -452,13 +456,18 @@ public class MultiLabelSynthesizer {
             }
         }
 
-        double[] means = new double[2];
-        double[][] covars = new double[2][2];
-        covars[0][0]=2;
-        covars[0][1]=-1.5;
-        covars[1][0]=-1.5;
-        covars[1][1]=2;
+        double[] means = new double[numClass];
+        double[][] covars = new double[numClass][numClass];
+        covars[0][0]=0.5;
+        covars[0][1]=0.02;         covars[1][0]=0.02;
+        covars[0][2]=-0.03;         covars[2][0]=-0.03;
 
+        covars[1][1]=0.2;
+        covars[1][2]=-0.03;         covars[2][1]=-0.03;
+
+
+
+        covars[2][2]=0.3;
 
         MultivariateNormalDistribution distribution = new MultivariateNormalDistribution(means,covars);
 
