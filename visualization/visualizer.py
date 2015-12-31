@@ -232,19 +232,19 @@ def createTable(data, fields, fashion):
             oneRow['predictedRanking'].append(label)
 
 
-        if fashion == "crf":
-            for labels in row["predictedLabelSetRanking"]:
-                labels["types"] = []
-                for index in labels["internalLabels"]:
-                    if index in row['internalLabels'] and index in row['internalPrediction']:
-                        labels["types"].append("TP")
-                    elif index not in row['internalLabels'] and index in row['internalPrediction']:
-                        labels["types"].append("FP")
-                    elif index in row['internalLabels'] and index not in row['internalPrediction']:
-                        labels["types"].append("FN")
-                    else:
-                        labels["types"].append("")
-            oneRow["predictedLabelSetRanking"] = row["predictedLabelSetRanking"]
+        
+        for labels in row["predictedLabelSetRanking"]:
+            labels["types"] = []
+            for index in labels["internalLabels"]:
+                if index in row['internalLabels'] and index in row['internalPrediction']:
+                    labels["types"].append("TP")
+                elif index not in row['internalLabels'] and index in row['internalPrediction']:
+                    labels["types"].append("FP")
+                elif index in row['internalLabels'] and index not in row['internalPrediction']:
+                    labels["types"].append("FN")
+                else:
+                    labels["types"].append("")
+        oneRow["predictedLabelSetRanking"] = row["predictedLabelSetRanking"]
 
         prec = []
         sumOfR = float(0)
@@ -432,7 +432,7 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, out
 
 
 def parseAll(inputPath, directoryName, fileName, fields, fashion):
-    outputFileName = "Viewer"
+    outputFileName = "viewer"
 
     indPerformanceName = "individual_performance"
     topName = "top_features"
@@ -461,7 +461,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     skipJsonFiles = [configName+".json", dataName + ".json", modelName + ".json", topName + ".json",
         performanceName + ".json", indPerformanceName + ".json"]
     if os.path.isfile(inputPath):
-        parse(inputPath, directoryName + outputFileName + "(" + fileName[:-5] + ").html", fields, fashion)
+        parse(inputPath, directoryName + outputFileName + "_" + fileName[:-5] + ".html", fields, fashion)
     else:
         if not inputPath.endswith('/'):
             directoryName += '/'
@@ -474,7 +474,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
             elif f in skipJsonFiles:
                 continue
             else:
-                outputPath = directoryName + outputFileName + "(" + f[:-5] + ").html"
+                outputPath = directoryName + outputFileName + "_" + f[:-5] + ".html"
                 parse(absf, outputPath, fields, fashion)
 
 #constant Strings
