@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;

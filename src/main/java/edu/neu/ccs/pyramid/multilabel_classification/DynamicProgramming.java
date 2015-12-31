@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
+package edu.neu.ccs.pyramid.multilabel_classification;
 
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;

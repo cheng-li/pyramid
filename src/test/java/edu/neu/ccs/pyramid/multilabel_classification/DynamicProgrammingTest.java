@@ -1,4 +1,6 @@
-package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
+package edu.neu.ccs.pyramid.multilabel_classification;
+
+import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 
 /**
  * Created by Rainicy on 11/28/15.

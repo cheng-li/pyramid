@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
+import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
@@ -248,10 +249,12 @@ public class IMLGBInspector {
             predictionAnalysis.setPredictedRanking(labelRanking);
 
 
+        List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
+
         if (boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF
                 || boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF_PLUS_HIGH_PROB){
             double[] labelSetProbs = boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex));
-            List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
+            labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
             .mapToObj(i -> {
                 MultiLabel multiLabel = boosting.getAssignments().get(i);
                 double setProb = labelSetProbs[i];
@@ -261,9 +264,24 @@ public class IMLGBInspector {
                     .limit(labelSetLimit)
                     .collect(Collectors.toList());
 
-            predictionAnalysis.setPredictedLabelSetRanking(labelSetRanking);
+
         }
 
+
+        if (boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.INDEPENDENT){
+            labelSetRanking = new ArrayList<>();
+            double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+            DynamicProgramming dp = new DynamicProgramming(classProbs);
+            for (int c=0;c<labelSetLimit;c++){
+                DynamicProgramming.Candidate candidate = dp.nextHighest();
+                MultiLabel multiLabel = new MultiLabel(candidate.getVector());
+                double setProb = candidate.getProbability();
+                MultiLabelPredictionAnalysis.LabelSetProbInfo labelSetProbInfo = new MultiLabelPredictionAnalysis.LabelSetProbInfo(multiLabel, setProb, labelTranslator);
+                labelSetRanking.add(labelSetProbInfo);
+            }
+        }
+
+        predictionAnalysis.setPredictedLabelSetRanking(labelSetRanking);
 
         return predictionAnalysis;
     }
