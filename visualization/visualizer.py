@@ -190,6 +190,12 @@ def createTable(data, fields, fashion):
             label[row["internalPrediction"][i]] = row["prediction"][i]
             predictions.append(label)
             pres.append(row["prediction"][i])
+        # if (len(predictions) == 0):
+        #     label = {}
+        #     label["-1"] = "N/A"
+        #     predictions.append(label)
+        #     pres.append("N/A")
+
         idlabels['predictions'] = predictions
 
         intersections = set(releLabels) & set(pres)
@@ -1148,12 +1154,17 @@ pre_data = '''<html>
 
                 for (var i = 0; i < predictedLabelSetRanking.length; i++) {
                     labels = predictedLabelSetRanking[i]
-                    temp = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
-                    for (var j = 1; j < labels.labels.length; j++) {
-                        temp += " | " + labels.labels[j].fontcolor(getLabelColor(labels.types[j]))
-                    }
+                    if (labels.labels.length == 0) {
+                        temp = "N/A".fontcolor("black")
+                        temp += "(" + labels.probability.toFixed(2) +")"
+                    } else {
+                        temp = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
+                        for (var j = 1; j < labels.labels.length; j++) {
+                            temp += " | " + labels.labels[j].fontcolor(getLabelColor(labels.types[j]))
+                        }
 
-                    temp += '(' + labels.probability.toFixed(2)  + ')'
+                        temp += '(' + labels.probability.toFixed(2)  + ')'
+                    }
 
                     if (i == 0) {
                         temp = '<span style="background-color:lightGray">' + temp + '</span>'
