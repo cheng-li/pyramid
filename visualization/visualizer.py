@@ -1155,7 +1155,7 @@ pre_data = '''<html>
                 for (var i = 0; i < predictedLabelSetRanking.length; i++) {
                     labels = predictedLabelSetRanking[i]
                     if (labels.labels.length == 0) {
-                        temp = "N/A".fontcolor("black")
+                        temp = "EMPTY_SET".fontcolor("black")
                         temp += "(" + labels.probability.toFixed(2) +")"
                     } else {
                         temp = labels.labels[0].fontcolor(getLabelColor(labels.types[0]))
