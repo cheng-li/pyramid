@@ -52,6 +52,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private boolean considerPair = false;
 
+    private boolean considerBmm = false;
+
     public CMLCRF(MultiLabelClfDataSet dataSet, int numClusters) {
         this.numClasses = dataSet.getNumClasses();
         this.numFeatures = dataSet.getNumFeatures();
@@ -87,6 +89,15 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     public void setConsiderPair(boolean considerPair) {
         this.considerPair = considerPair;
+        updateCombLabelPartScores();
+    }
+
+    public boolean isConsiderBmm() {
+        return considerBmm;
+    }
+
+    public void setConsiderBmm(boolean considerBmm) {
+        this.considerBmm = considerBmm;
         updateCombLabelPartScores();
     }
 
@@ -169,7 +180,10 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
             }
         }
 
-        score += mixtureScores[labelComIndex];
+        if (considerBmm) {
+            score += mixtureScores[labelComIndex];
+        }
+
         return score;
     }
 

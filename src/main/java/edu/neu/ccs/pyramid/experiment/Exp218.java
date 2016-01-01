@@ -50,9 +50,11 @@ public class Exp218 {
         } else{
             int numClusters = config.getInt("numClusters");
             cmlcrf = new CMLCRF(trainSet,numClusters);
+            cmlcrf.setConsiderBmm(config.getBoolean("considerBMM"));
             CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
             crfLoss.setParallelism(true);
             crfLoss.setRegularizeAll(config.getBoolean("regularizeAll"));
+
 
             if (config.getBoolean("isLBFGS")) {
                 LBFGS optimizer = new LBFGS(crfLoss);

@@ -136,6 +136,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         updatedFeatureLabelGradient();
         if (cmlcrf.considerPair()){
             updateLabelLabelGradient();
+        }
+        if (cmlcrf.isConsiderBmm()) {
             updateBMMGradient();
         }
 
