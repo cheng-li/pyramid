@@ -51,6 +51,7 @@ public class Exp218 {
             int numClusters = config.getInt("numClusters");
             cmlcrf = new CMLCRF(trainSet,numClusters);
             cmlcrf.setConsiderBmm(config.getBoolean("considerBMM"));
+            cmlcrf.setConsiderPair(config.getBoolean("considerLabelPair"));
             CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
             crfLoss.setParallelism(true);
             crfLoss.setRegularizeAll(config.getBoolean("regularizeAll"));
@@ -78,9 +79,8 @@ public class Exp218 {
                 crfLoss2.setRegularizeAll(config.getBoolean("regularizeAll"));
                 LBFGS optimizer2 = new LBFGS(crfLoss2);
                 optimizer2.getTerminator().setAbsoluteEpsilon(0.1);
-                cmlcrf.setConsiderPair(true);
                 System.out.println("*********************");
-                System.out.println("Now consider pairs");
+//                System.out.println("Now consider pairs");
 
                 for (int i=0; i<config.getInt("numPairRounds"); i++) {
                     optimizer2.iterate();
