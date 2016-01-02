@@ -61,6 +61,10 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // if true, regularize all weights
     private boolean regularizeAll = false;
 
+    // for each combination, store the sum of probabilities over all data points
+    // size = num combinations
+    private double[] combProbSums;
+
 
 
 
@@ -92,6 +96,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             labelPairToCombination.add(new ArrayList<>());
         }
         this.mapPairToCombination();
+        this.combProbSums = new double[numSupport];
 
     }
 
@@ -117,6 +122,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         updateAssignmentScoreMatrix();
         updateAssignmentProbMatrix();
         updateClassProbMatrix();
+        updateCombProbSums();
         updateGradient();
         this.isGradientCacheValid = true;
         if (logger.isDebugEnabled()){
@@ -179,12 +185,16 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private double calGradientForLabelPair(int parameterIndex) {
         double count = 0.0;
         int pos = parameterIndex - numWeightsForFeatures;
-        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            double[] probs = this.combProbMatrix[i];
-            for (int matched: labelPairToCombination.get(pos)){
-                count += probs[matched];
-            }
+        for (int matched: labelPairToCombination.get(pos)){
+            count += combProbSums[matched];
         }
+
+//        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+//            double[] probs = this.combProbMatrix[i];
+//            for (int matched: labelPairToCombination.get(pos)){
+//                count += probs[matched];
+//            }
+//        }
         count -= this.empiricalCounts[parameterIndex];
         if (regularizeAll){
             count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
@@ -534,6 +544,19 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                 default: throw new RuntimeException("feature case :" + featureCase + " failed.");
             }
         }
+    }
+
+    private void updateCombProbSums(int combinationIndex){
+        double sum =0;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            sum += combProbMatrix[i][combinationIndex];
+        }
+        combProbSums[combinationIndex] = sum;
+    }
+
+    private void updateCombProbSums(){
+        IntStream.range(0,numSupport).parallel()
+                .forEach(this::updateCombProbSums);
     }
 
 }
