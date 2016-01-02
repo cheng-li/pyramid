@@ -60,7 +60,7 @@ public class Exp218 {
                 LBFGS optimizer = new LBFGS(crfLoss);
                 optimizer.getTerminator().setAbsoluteEpsilon(0.1);
 
-                for (int i=0; i<config.getInt("numSimpleRounds"); i++) {
+                for (int i=0; i<config.getInt("numRounds"); i++) {
                     optimizer.iterate();
                     predTrain = cmlcrf.predict(trainSet);
                     predTest = cmlcrf.predict(testSet);
