@@ -137,6 +137,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     }
 
 
+    // todo fix: handle separately
     private double predictCombinationScore(int labelComIndex, double[] classScores){
         MultiLabel label = supportCombinations.get(labelComIndex);
         double score = 0.0;

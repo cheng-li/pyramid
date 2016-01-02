@@ -56,11 +56,9 @@ public class Exp218 {
             crfLoss.setParallelism(true);
             crfLoss.setRegularizeAll(config.getBoolean("regularizeAll"));
 
-
             if (config.getBoolean("isLBFGS")) {
                 LBFGS optimizer = new LBFGS(crfLoss);
                 optimizer.getTerminator().setAbsoluteEpsilon(0.1);
-                cmlcrf.setConsiderPair(false);
 
                 for (int i=0; i<config.getInt("numSimpleRounds"); i++) {
                     optimizer.iterate();
@@ -74,25 +72,7 @@ public class Exp218 {
                     System.out.println("\tTest overlap " + String.format("%.4f",Overlap.overlap(testSet.getMultiLabels(), predTest)));
                 }
 
-                CRFLoss crfLoss2 = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
-                crfLoss2.setParallelism(true);
-                crfLoss2.setRegularizeAll(config.getBoolean("regularizeAll"));
-                LBFGS optimizer2 = new LBFGS(crfLoss2);
-                optimizer2.getTerminator().setAbsoluteEpsilon(0.1);
-                System.out.println("*********************");
-//                System.out.println("Now consider pairs");
 
-                for (int i=0; i<config.getInt("numPairRounds"); i++) {
-                    optimizer2.iterate();
-                    predTrain = cmlcrf.predict(trainSet);
-                    predTest = cmlcrf.predict(testSet);
-                    System.out.print("iter: "+ String.format("%04d", i));
-                    System.out.print("\tobjective: "+ String.format("%.4f", optimizer2.getTerminator().getLastValue()));
-                    System.out.print("\tTrain acc: " + String.format("%.4f",Accuracy.accuracy(trainSet.getMultiLabels(), predTrain)));
-                    System.out.print("\tTrain overlap " + String.format("%.4f",Overlap.overlap(trainSet.getMultiLabels(), predTrain)));
-                    System.out.print("\tTest acc: " + String.format("%.4f",Accuracy.accuracy(testSet.getMultiLabels(), predTest)));
-                    System.out.println("\tTest overlap " + String.format("%.4f",Overlap.overlap(testSet.getMultiLabels(), predTest)));
-                }
 
 
             } else {
