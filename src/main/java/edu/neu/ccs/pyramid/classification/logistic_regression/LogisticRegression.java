@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import edu.neu.ccs.pyramid.util.Vectors;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -84,7 +85,8 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     public double predictClassScore(Vector dataPoint, int k){
         double score = 0;
         score += this.weights.getBiasForClass(k);
-        score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
+//        score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
+        score += Vectors.dot(weights.getWeightsWithoutBiasForClass(k),dataPoint);
         return score;
     }
 

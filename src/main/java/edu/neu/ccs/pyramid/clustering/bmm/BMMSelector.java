@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.clustering.bmm;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 
@@ -12,8 +14,12 @@ import java.util.Arrays;
  * Created by chengli on 9/12/15.
  */
 public class BMMSelector {
+    private static final Logger logger = LogManager.getLogger();
 
     public static BMM select(DataSet dataSet,int numClusters, int numRuns) {
+        if (logger.isDebugEnabled()){
+            logger.debug("start method select");
+        }
         BMM best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
@@ -24,6 +30,9 @@ public class BMMSelector {
                 bestObjective = objective;
                 best = bmm;
             }
+        }
+        if (logger.isDebugEnabled()){
+            logger.debug("finish method select");
         }
         return best;
     }

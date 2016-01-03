@@ -22,7 +22,7 @@ public class BMMClassifierTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+        test3();
     }
 
     private static void test1() throws Exception{
@@ -129,5 +129,72 @@ public class BMMClassifierTest {
             System.out.println("testAcc: " + Accuracy.accuracy(bmmClassifier,testSet));
         }
         System.out.println(bmmClassifier.toString());
+    }
+
+
+    private static void test3() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        int numClusters = 4;
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        bmmClassifier.setPredictMode("dynamic");
+        BMMInitializer.initialize(bmmClassifier,dataSet,1.0,1.0);
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
+        bmmClassifier.setNumSample(100);
+        System.out.println("num cluster: " + bmmClassifier.numClusters);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, dataSet));
+        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+
+
+        for (int i=1;i<=30;i++){
+            optimizer.iterate();
+            System.out.print("iter : "+i + "\t");
+            System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier,dataSet)+ "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, dataSet)+ "\t");
+            System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
+            System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
+        }
+
+
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
+        System.out.println(bmmClassifier);
+    }
+
+    private static void test4() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/train"),
+                DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/test"),
+                DataSetType.ML_CLF_SPARSE, true);
+        int numClusters = 4;
+        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        bmmClassifier.setPredictMode("dynamic");
+        BMMInitializer.initialize(bmmClassifier,dataSet,1.0,1.0);
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
+        bmmClassifier.setNumSample(100);
+        System.out.println("num cluster: " + bmmClassifier.numClusters);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, dataSet));
+        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+
+
+        for (int i=1;i<=30;i++){
+            optimizer.iterate();
+            System.out.print("iter : "+i + "\t");
+            System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier,dataSet)+ "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, dataSet)+ "\t");
+            System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
+            System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
+        }
+
+
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
+        System.out.println(bmmClassifier);
     }
 }

@@ -54,8 +54,6 @@ public class Exp211 {
 //            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
 
             if (config.getBoolean("initialize")) {
-                BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance, new File(config.getString("initializeBy")));
-            } else {
                 BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance);
             }
             System.out.println("after initialization");
