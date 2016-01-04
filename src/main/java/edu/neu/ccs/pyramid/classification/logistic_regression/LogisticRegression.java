@@ -85,8 +85,8 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     public double predictClassScore(Vector dataPoint, int k){
         double score = 0;
         score += this.weights.getBiasForClass(k);
-//        score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
-        score += Vectors.dot(weights.getWeightsWithoutBiasForClass(k),dataPoint);
+        score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
+//        score += Vectors.dot(weights.getWeightsWithoutBiasForClass(k),dataPoint);
         return score;
     }
 
