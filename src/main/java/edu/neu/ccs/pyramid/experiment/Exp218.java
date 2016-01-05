@@ -30,9 +30,9 @@ public class Exp218 {
         System.out.println(config);
 
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SPARSE, true);
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
-                DataSetType.ML_CLF_SPARSE, true);
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
         double gaussianVariance = config.getDouble("gaussianVariance");
 
         // loading or save model infos.

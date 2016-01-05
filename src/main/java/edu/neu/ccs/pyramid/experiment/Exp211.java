@@ -80,9 +80,9 @@ public class Exp211 {
         System.out.println(config);
 
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SPARSE, true);
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
-                DataSetType.ML_CLF_SPARSE, true);
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
 
         double softmaxVariance = config.getDouble("softmaxVariance");
         double logitVariance = config.getDouble("logitVariance");
