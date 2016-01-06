@@ -11,7 +11,9 @@ import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 
 
 /**
@@ -46,7 +48,7 @@ public class Exp211 {
 
 //            trainPredict = bmmClassifier.predict(trainSet);
 //            testPredict = bmmClassifier.predict(testSet);
-            System.out.print("random init" + "\t");
+//            System.out.print("random init");
 //            System.out.print("objective: "+optimizer.getObjective()+ "\t");
 //            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
 //            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
@@ -101,17 +103,32 @@ public class Exp211 {
 
 
         for (int i=1;i<=numIterations;i++){
+            System.out.print("iter : "+i + "\t");
             optimizer.iterate();
             MultiLabel[] trainPredict;
             MultiLabel[] testPredict;
             trainPredict = bmmClassifier.predict(trainSet);
             testPredict = bmmClassifier.predict(testSet);
-            System.out.print("iter : "+i + "\t");
             System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
             System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(),trainPredict)+ "\t");
             System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
             System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
             System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
+            if (config.getBoolean("saveModelForEachIter")) {
+                String path = output + "/" + modelName;
+                (new File(path)).mkdirs();
+                File serializeModel = new File(path,  "iter." + i + ".model");
+                bmmClassifier.serialize(serializeModel);
+                double gammas[][] = optimizer.getGammas();
+                BufferedWriter bw = new BufferedWriter(new FileWriter(new File(path, "iter."+i+".gammas")));
+                for (int n=0; n<gammas.length; n++) {
+                    for (int k=0; k<gammas[n].length; k++) {
+                        bw.write(gammas[n][k] + "\t");
+                    }
+                    bw.write("\n");
+                }
+                bw.close();
+            }
         }
         System.out.println("history = "+optimizer.getTerminator().getHistory());
 
@@ -127,8 +144,8 @@ public class Exp211 {
 //        System.out.println(bmmClassifier);
 
         if (config.getBoolean("saveModel")) {
-            (new File(output)).mkdirs();
-            File serializeModel = new File(output, modelName);
+            (new File(output+"/"+modelName)).mkdirs();
+            File serializeModel = new File(output+"/"+modelName, "model");
             bmmClassifier.serialize(serializeModel);
         }
     }
