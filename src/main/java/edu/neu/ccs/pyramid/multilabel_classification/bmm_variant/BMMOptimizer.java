@@ -346,4 +346,16 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     public double[][] getGammas() {
         return gammas;
     }
+
+    public double[][] getPIs() {
+        double[][] PIs = new double[dataSet.getNumDataPoints()][bmmClassifier.getNumClusters()];
+
+        for (int n=0; n<PIs.length; n++) {
+            double[] logProbs = bmmClassifier.multiNomialClassifiers.predictLogClassProbs(dataSet.getRow(n));
+            for (int k=0; k<PIs[n].length; k++) {
+                PIs[n][k] = Math.exp(logProbs[k]);
+            }
+        }
+        return PIs;
+    }
 }

@@ -119,15 +119,20 @@ public class Exp211 {
                 (new File(path)).mkdirs();
                 File serializeModel = new File(path,  "iter." + i + ".model");
                 bmmClassifier.serialize(serializeModel);
-                double gammas[][] = optimizer.getGammas();
+                double[][] gammas = optimizer.getGammas();
+                double[][] PIs = optimizer.getPIs();
                 BufferedWriter bw = new BufferedWriter(new FileWriter(new File(path, "iter."+i+".gammas")));
+                BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(path, "iter."+i+".PIs")));
                 for (int n=0; n<gammas.length; n++) {
                     for (int k=0; k<gammas[n].length; k++) {
                         bw.write(gammas[n][k] + "\t");
+                        bw1.write(PIs[n][k] + "\t");
                     }
                     bw.write("\n");
+                    bw1.write("\n");
                 }
                 bw.close();
+                bw1.close();
             }
         }
         System.out.println("history = "+optimizer.getTerminator().getHistory());

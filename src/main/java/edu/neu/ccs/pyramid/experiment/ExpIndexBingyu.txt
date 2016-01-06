@@ -16,3 +16,4 @@
 216: experiments for 211 but with multiple parameters
 217: analyze multi prediction results.
 218: CRF for CML model.
+219: perplexity for mixture logistic
