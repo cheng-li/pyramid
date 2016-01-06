@@ -236,18 +236,19 @@ public class ESIndexTest {
 //        String q = "{" +
 //                "    \"match_all\": {}" +
 //                "  }";
-        String q = "{" +
-                "    \"filtered\": {" +
-                "      \"query\": {" +
-                "        \"match_all\": {}" +
-                "      }," +
-                "      \"filter\": {" +
-                "        \"term\": {" +
-                "          \"split\": \"train\"" +
-                "        }" +
-                "      }" +
-                "    }" +
-                "  }";
+//        String q = "{" +
+//                "    \"filtered\": {" +
+//                "      \"query\": {" +
+//                "        \"match_all\": {}" +
+//                "      }," +
+//                "      \"filter\": {" +
+//                "        \"term\": {" +
+//                "          \"split\": \"train\"" +
+//                "        }" +
+//                "      }" +
+//                "    }" +
+//                "  }";
+        String q = "{\"filtered\":{\"query\":{\"match_all\":{}},\"filter\":{\"term\":{\"split\":\"train\"}}}}";
 
 
 

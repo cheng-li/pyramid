@@ -34,7 +34,9 @@ public class App3 {
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
                 "feature.missingValue","index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.featureFieldPrefix","index.ngramExtractionFields",
+                "index.splitMode=field",
                 "index.splitField","index.splitField.train","index.splitField.test",
+                "index.splitQuery.train","index.splitQuery.test",
                 "index.ngramMatchScoreType"};
 
         Config.copy(config,app1Config,same);
@@ -59,8 +61,8 @@ public class App3 {
         Config.copy(config,app2Config,same);
 
         app2Config.setString("input.folder",config.getString("output.folder"));
-        app2Config.setString("input.trainData",App1.splitListToString(config.getStrings("index.splitField.train")));
-        app2Config.setString("input.testData",App1.splitListToString(config.getStrings("index.splitField.test")));
+        app2Config.setString("input.trainData","train");
+        app2Config.setString("input.testData","test");
         return app2Config;
     }
 
