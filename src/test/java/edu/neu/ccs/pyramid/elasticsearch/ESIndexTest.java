@@ -5,11 +5,12 @@ import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.*;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test14();
+        test16();
 
     }
 
@@ -189,6 +190,69 @@ public class ESIndexTest {
         String[] ids = IntStream.range(0,500000).mapToObj(i-> ""+i).toArray(String[]::new);
         SearchResponse searchResponse = index.spanNearFrequency(ngram1, ids);
         System.out.println(searchResponse);
+
+        index.close();
+    }
+
+    static void test15() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build();
+
+//        String q = "{\"term\": {\"id\": 1}}";
+//        String q = "{" +
+//                "    \"match_all\": {}" +
+//                "  }";
+        String q = "{" +
+                "    \"filtered\": {" +
+                "      \"query\": {" +
+                "        \"match_all\": {}" +
+                "      }," +
+                "      \"filter\": {" +
+                "        \"term\": {" +
+                "          \"split\": \"train\"" +
+                "        }" +
+                "      }" +
+                "    }" +
+                "  }";
+
+
+
+        SearchResponse searchResponse = index.getClient().prepareSearch(index.getIndexName())
+                .setSize(index.getNumDocs()).
+                        setHighlighterFilter(false).setTrackScores(false).
+                        setNoFields().setExplain(false).setFetchSource(false)
+                .setQuery(
+                        QueryBuilders.wrapperQuery(q)).execute().actionGet();
+        System.out.println(searchResponse.getHits().getTotalHits());
+
+        index.close();
+    }
+
+    static void test16() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build();
+
+//        String q = "{\"term\": {\"id\": 1}}";
+//        String q = "{" +
+//                "    \"match_all\": {}" +
+//                "  }";
+        String q = "{" +
+                "    \"filtered\": {" +
+                "      \"query\": {" +
+                "        \"match_all\": {}" +
+                "      }," +
+                "      \"filter\": {" +
+                "        \"term\": {" +
+                "          \"split\": \"train\"" +
+                "        }" +
+                "      }" +
+                "    }" +
+                "  }";
+
+
+
+        List<String> res = index.matchStringQuery(q);
+        System.out.println(res);
 
         index.close();
     }
