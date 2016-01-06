@@ -34,7 +34,7 @@ public class App3 {
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
                 "feature.missingValue","index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.featureFieldPrefix","index.ngramExtractionFields",
-                "index.splitMode=field",
+                "index.splitMode",
                 "index.splitField","index.splitField.train","index.splitField.test",
                 "index.splitQuery.train","index.splitQuery.test",
                 "index.ngramMatchScoreType"};

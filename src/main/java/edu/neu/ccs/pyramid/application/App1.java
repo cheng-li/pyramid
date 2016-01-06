@@ -463,6 +463,7 @@ public class App1 {
             default:
                 throw new IllegalArgumentException("unknown split mode");
         }
+        index.close();
         createDataSet(config,indexIds,"train");
     }
 
@@ -480,6 +481,7 @@ public class App1 {
             default:
                 throw new IllegalArgumentException("unknown split mode");
         }
+        index.close();
         createDataSet(config,indexIds,"test");
     }
 
