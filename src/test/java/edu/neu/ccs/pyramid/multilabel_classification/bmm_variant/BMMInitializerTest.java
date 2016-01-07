@@ -26,7 +26,13 @@ public class BMMInitializerTest {
         int numClusters = 2;
         double softmaxVariance = 1000;
         double logitVariance = 1000;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance);
     }
 

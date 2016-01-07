@@ -63,7 +63,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -92,7 +98,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 2;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -120,7 +132,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -152,7 +170,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 3;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -185,7 +209,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -217,7 +247,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 3;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -264,7 +300,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -321,7 +363,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 3;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -385,7 +433,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -442,7 +496,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 20;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -489,7 +549,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -549,7 +615,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 5;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -578,7 +650,13 @@ public class MultiLabelSynthesizerTest {
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/4_labels_nonuniform/train.trec"), DataSetType.ML_CLF_DENSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/4_labels_nonuniform/test.trec"), DataSetType.ML_CLF_DENSE, true);
         int numClusters = 10;
-        BMMClassifier bmmClassifier = BMMClassifier.newMixBoost(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("boost")
+                .setMultiClassClassifierType("boost")
+                .build();
         MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,trainSet);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -624,7 +702,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 1;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -684,7 +768,13 @@ public class MultiLabelSynthesizerTest {
         int numClusters = 10;
         double softmaxVariance = 100;
         double logitVariance = 100;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");
@@ -757,7 +847,13 @@ public class MultiLabelSynthesizerTest {
         double softmaxVariance = 100;
         double logitVariance = 1;
         double meanRegVar = 1000000;
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
         optimizer.setMeanRegVariance(meanRegVar);
         optimizer.setMeanRegularization(true);

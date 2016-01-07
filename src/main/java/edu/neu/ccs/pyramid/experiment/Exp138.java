@@ -40,7 +40,13 @@ public class Exp138 {
         int numTemperatures = config.getInt("numTemperatures");
 
         List<Double> grid = Grid.uniform(start, 1, numTemperatures);
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
 
         bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
         bmmClassifier.setPredictMode("dynamic");

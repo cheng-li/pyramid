@@ -39,7 +39,14 @@ public class BMMClassifierTestBingyu {
                 DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "data_sets/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),4,dataSet.getNumFeatures());
+        int numClusters = 4;
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
         bmmClassifier.setNumSample(100);
         bmmClassifier.setPredictMode("greedy");

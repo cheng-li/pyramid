@@ -67,7 +67,13 @@ public class Exp216 {
                         bmmClassifier.setPredictMode(config.getString("predictMode"));
                     } else {
                         System.out.println("====================training====================");
-                        bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+                        bmmClassifier = BMMClassifier.getBuilder()
+                                .setNumClasses(trainSet.getNumClasses())
+                                .setNumFeatures(trainSet.getNumFeatures())
+                                .setNumClusters(numClusters)
+                                .setBinaryClassifierType("lr")
+                                .setMultiClassClassifierType("lr")
+                                .build();
                         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,v1,v2);
                         bmmClassifier.setNumSample(numSamples);
                         bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));

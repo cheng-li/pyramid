@@ -243,7 +243,15 @@ public class Exp137 {
         double logitVariance = 100;
 
         List<Double> grid = Grid.uniform(0.7,1,10);
-        BMMClassifier bmmClassifier = new BMMClassifier(trainSet.getNumClasses(),numClusters,trainSet.getNumFeatures());
+
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("lr")
+                .build();
+
 
         bmmClassifier.setAllowEmpty(true);
         bmmClassifier.setPredictMode("dynamic");

@@ -25,66 +25,14 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     int numSample = 100;
     boolean allowEmpty = false;
 
-    String predictMode;
+    String predictMode = "dynamic";
 
     // parameters
     // format: [numClusters][numLabels]
     ProbabilityEstimator[][] binaryClassifiers;
     ProbabilityEstimator multiClassClassifier;
 
-
-
-
-
-    /**
-     * Default constructor by given a MultiLabelClfDataSet
-     * @param dataSet
-     * @param numClusters
-     */
-    public BMMClassifier(MultiLabelClfDataSet dataSet, int numClusters) {
-        this(dataSet.getNumClasses(), numClusters, dataSet.getNumFeatures());
-    }
-
-    public BMMClassifier(int numClasses, int numClusters, int numFeatures) {
-        this.numLabels = numClasses;
-        this.numClusters = numClusters;
-        this.numFeatures = numFeatures;
-        // initialize distributions
-        this.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
-        for (int k=0; k<numClusters; k++) {
-            for (int l=0; l<numClasses; l++) {
-                this.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
-            }
-        }
-        this.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
-        this.predictMode = "dynamic";
-    }
-
-    public BMMClassifier() {
-    }
-
-    /**
-     * factory
-     * @param numClasses
-     * @param numClusters
-     * @param numFeatures
-     * @return
-     */
-    public static BMMClassifier newMixBoost(int numClasses, int numClusters, int numFeatures){
-        BMMClassifier bmm = new BMMClassifier();
-        bmm.numLabels = numClasses;
-        bmm.numClusters = numClusters;
-        bmm.numFeatures = numFeatures;
-        // initialize distributions
-        bmm.binaryClassifiers = new LKBoost[numClusters][numClasses];
-        for (int k=0; k<numClusters; k++) {
-            for (int l=0; l<numClasses; l++) {
-                bmm.binaryClassifiers[k][l] = new LKBoost(2);
-            }
-        }
-        bmm.multiClassClassifier = new LKBoost(numClusters);
-        bmm.predictMode = "sampling";
-        return bmm;
+    private BMMClassifier() {
     }
 
     @Override
@@ -147,15 +95,16 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         bmmPredictor.setNumSamples(numSample);
         bmmPredictor.setAllowEmpty(allowEmpty);
         // samples methods
-        if (predictMode.equals("sampling")) {
-            return bmmPredictor.predictBySampling();
+        switch (predictMode) {
+            case "sampling":
+                return bmmPredictor.predictBySampling();
 
-        } else if (predictMode.equals("dynamic")) {
-            return bmmPredictor.predictByDynamic();
-        } else if (predictMode.equals("greedy")) {
-            return bmmPredictor.predictByGreedy();
-        } else {
-            throw new RuntimeException("Unknown predictMode: " + predictMode);
+            case "dynamic":
+                return bmmPredictor.predictByDynamic();
+            case "greedy":
+                return bmmPredictor.predictByGreedy();
+            default:
+                throw new RuntimeException("Unknown predictMode: " + predictMode);
         }
 
     }
@@ -254,5 +203,86 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     public int getNumClusters() {
         return numClusters;
+    }
+
+    public static Builder getBuilder(){
+        return new Builder();
+    }
+
+    public static class Builder {
+        private int numClasses;
+        private int numClusters;
+        private int numFeatures;
+        private String binaryClassifierType= "lr";
+        private String multiClassClassifierType = "boost";
+
+        private Builder() {
+        }
+
+        public Builder setNumClasses(int numClasses) {
+            this.numClasses = numClasses;
+            return this;
+        }
+
+        public Builder setNumClusters(int numClusters) {
+            this.numClusters = numClusters;
+            return this;
+        }
+
+        public Builder setNumFeatures(int numFeatures) {
+            this.numFeatures = numFeatures;
+            return this;
+        }
+
+        public Builder setBinaryClassifierType(String binaryClassifierType) {
+            this.binaryClassifierType = binaryClassifierType;
+            return this;
+        }
+
+        public Builder setMultiClassClassifierType(String multiClassClassifierType) {
+            this.multiClassClassifierType = multiClassClassifierType;
+            return this;
+        }
+
+        public BMMClassifier build(){
+            BMMClassifier bmmClassifier = new BMMClassifier();
+            bmmClassifier.numLabels = numClasses;
+            bmmClassifier.numClusters = numClusters;
+            bmmClassifier.numFeatures = numFeatures;
+            switch (binaryClassifierType){
+                case "lr":
+                    bmmClassifier.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
+                    for (int k=0; k<numClusters; k++) {
+                        for (int l=0; l<numClasses; l++) {
+                            bmmClassifier.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
+                        }
+                    }
+                    break;
+                case "boost":
+                    bmmClassifier.binaryClassifiers = new LKBoost[numClusters][numClasses];
+                    for (int k=0; k<numClusters; k++) {
+                        for (int l=0; l<numClasses; l++) {
+                            bmmClassifier.binaryClassifiers[k][l] = new LKBoost(2);
+                        }
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("binaryClassifierType can be lr or boost");
+            }
+
+            switch (multiClassClassifierType){
+                case "lr":
+                    bmmClassifier.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
+                    break;
+                case "boost":
+                    bmmClassifier.binaryClassifiers = new LKBoost[numClusters][numClasses];
+                    bmmClassifier.multiClassClassifier = new LKBoost(numClusters);
+                    break;
+                default:
+                    throw new IllegalArgumentException("multiClassClassifierType can be lr or boost");
+            }
+
+            return bmmClassifier;
+        }
     }
 }

@@ -26,7 +26,13 @@ public class MixBoostOptimizerTest {
                 DataSetType.ML_CLF_SPARSE, true);
 
         int numClusters = 1;
-        BMMClassifier bmmClassifier = BMMClassifier.newMixBoost(dataSet.getNumClasses(), numClusters, dataSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("boost")
+                .setMultiClassClassifierType("boost")
+                .build();
         MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,dataSet);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
@@ -57,7 +63,13 @@ public class MixBoostOptimizerTest {
                 DataSetType.ML_CLF_SPARSE, true);
 
         int numClusters = 2;
-        BMMClassifier bmmClassifier = BMMClassifier.newMixBoost(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("boost")
+                .setMultiClassClassifierType("boost")
+                .build();
         MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,dataSet);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
@@ -93,7 +105,13 @@ public class MixBoostOptimizerTest {
                 DataSetType.ML_CLF_SPARSE, true);
 
         int numClusters = 2;
-        BMMClassifier bmmClassifier = BMMClassifier.newMixBoost(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("boost")
+                .setMultiClassClassifierType("boost")
+                .build();
         MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,dataSet);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
@@ -129,7 +147,13 @@ public class MixBoostOptimizerTest {
                 DataSetType.ML_CLF_SPARSE, true);
 
         int numClusters = 10;
-        BMMClassifier bmmClassifier = BMMClassifier.newMixBoost(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("boost")
+                .setMultiClassClassifierType("boost")
+                .build();
         MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,dataSet);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
