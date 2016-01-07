@@ -31,8 +31,18 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     // format: [numClusters][numLabels]
     ProbabilityEstimator[][] binaryClassifiers;
     ProbabilityEstimator multiClassClassifier;
+    private String binaryClassifierType;
+    private String multiClassClassifierType;
 
     private BMMClassifier() {
+    }
+
+    public String getBinaryClassifierType() {
+        return binaryClassifierType;
+    }
+
+    public String getMultiClassClassifierType() {
+        return multiClassClassifierType;
     }
 
     @Override
@@ -214,7 +224,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         private int numClusters;
         private int numFeatures;
         private String binaryClassifierType= "lr";
-        private String multiClassClassifierType = "boost";
+        private String multiClassClassifierType = "lr";
 
         private Builder() {
         }
@@ -249,6 +259,9 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
             bmmClassifier.numLabels = numClasses;
             bmmClassifier.numClusters = numClusters;
             bmmClassifier.numFeatures = numFeatures;
+            bmmClassifier.binaryClassifierType = binaryClassifierType;
+            bmmClassifier.multiClassClassifierType = multiClassClassifierType;
+
             switch (binaryClassifierType){
                 case "lr":
                     bmmClassifier.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
