@@ -32,7 +32,7 @@
 //    }
 //
 //    private void generateReportsForN(Vector vector, MultiLabel multiLabel, double[] gamma, BufferedWriter bw, int top) throws IOException {
-//        double[] logisticProb = multiNomialClassifiers.predictClassProbs(vector);
+//        double[] logisticProb = multiClassClassifier.predictClassProbs(vector);
 //        bw.write("PIs: \t");
 //        for (double piK : logisticProb) {
 //            bw.write( String.format( "%.4f", piK) + "\t");
@@ -52,7 +52,7 @@
 //            }
 //        }
 //
-//        double[] logisticLogProb = multiNomialClassifiers.predictLogClassProbs(vector);
+//        double[] logisticLogProb = multiClassClassifier.predictLogClassProbs(vector);
 //        double topM;
 //        if (top >= numClusters) {
 //            topM = 0.0;

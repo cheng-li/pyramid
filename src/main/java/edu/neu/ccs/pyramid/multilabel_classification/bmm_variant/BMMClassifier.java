@@ -30,7 +30,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     // parameters
     // format: [numClusters][numLabels]
     ProbabilityEstimator[][] binaryClassifiers;
-    ProbabilityEstimator multiNomialClassifiers;
+    ProbabilityEstimator multiClassClassifier;
 
 
 
@@ -56,7 +56,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 this.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
             }
         }
-        this.multiNomialClassifiers = new LogisticRegression(numClusters, numFeatures,true);
+        this.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
         this.predictMode = "dynamic";
     }
 
@@ -82,7 +82,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                 bmm.binaryClassifiers[k][l] = new LKBoost(2);
             }
         }
-        bmm.multiNomialClassifiers = new LKBoost(numClusters);
+        bmm.multiClassClassifier = new LKBoost(numClusters);
         bmm.predictMode = "sampling";
         return bmm;
     }
@@ -143,7 +143,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     public MultiLabel predict(Vector vector) {
 
         // new a BMMPredictor
-        BMMPredictor bmmPredictor = new BMMPredictor(vector, multiNomialClassifiers, binaryClassifiers, numClusters, numLabels);
+        BMMPredictor bmmPredictor = new BMMPredictor(vector, multiClassClassifier, binaryClassifiers, numClusters, numLabels);
         bmmPredictor.setNumSamples(numSample);
         bmmPredictor.setAllowEmpty(allowEmpty);
         // samples methods
@@ -163,7 +163,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     public String toString() {
         Vector vector = new RandomAccessSparseVector(numFeatures);
-        double[] mixtureCoefficients = multiNomialClassifiers.predictClassProbs(vector);
+        double[] mixtureCoefficients = multiClassClassifier.predictClassProbs(vector);
         final StringBuilder sb = new StringBuilder("BMM{\n");
         sb.append("numLabels=").append(numLabels).append("\n");
         sb.append("numClusters=").append(numClusters).append("\n");
@@ -173,7 +173,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         }
 
         sb.append("clustering component = \n");
-        sb.append(multiNomialClassifiers);
+        sb.append(multiClassClassifier);
         sb.append("prediction components = \n");
         for (int k=0;k<numClusters;k++){
             for (int l=0;l<numLabels;l++){
@@ -248,8 +248,8 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return binaryClassifiers;
     }
 
-    public ProbabilityEstimator getMultiNomialClassifiers() {
-        return multiNomialClassifiers;
+    public ProbabilityEstimator getMultiClassClassifier() {
+        return multiClassClassifier;
     }
 
     public int getNumClusters() {

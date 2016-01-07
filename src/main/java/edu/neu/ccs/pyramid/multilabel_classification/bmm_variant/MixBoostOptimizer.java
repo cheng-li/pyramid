@@ -210,7 +210,7 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
         Vector Y = this.labels[n];
         int K = bmmClassifier.numClusters;
         // log[p(z_n=k | x_n)] array
-        double[] logLogisticProbs = bmmClassifier.multiNomialClassifiers.predictLogClassProbs(X);
+        double[] logLogisticProbs = bmmClassifier.multiClassClassifier.predictLogClassProbs(X);
         // log[p(y_n | z_n=k, x_n)] for all k from 1 to K;
         double[] logClusterConditionalProbs = bmmClassifier.clusterConditionalLogProbArr(X, Y);
         double[] logNumerators = new double[logLogisticProbs.length];
@@ -282,7 +282,7 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
         int numClusters = bmmClassifier.numClusters;
         int numIterations = numIterationsMultiNomial;
         double shrinkage = shrinkageMultiNomial;
-        LKBoost boost = (LKBoost)this.bmmClassifier.multiNomialClassifiers;
+        LKBoost boost = (LKBoost)this.bmmClassifier.multiClassClassifier;
         RegTreeConfig regTreeConfig = new RegTreeConfig()
                 .setMaxNumLeaves(numLeavesMultiNomial);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
@@ -310,7 +310,7 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
     }
 
 //    private double getMStepObjective() {
-//        KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.multiNomialClassifiers,
+//        KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.multiClassClassifier,
 //                dataSet, gammas, gaussianPriorforSoftMax);
 //        // Q function for \Thata + gamma.entropy and Q function for Weights
 //        return logisticLoss.getValue() + binaryLogitsObj();
@@ -327,7 +327,7 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
 //    }
 
     private double multiNomialObj(){
-        Classifier.ProbabilityEstimator estimator = bmmClassifier.multiNomialClassifiers;
+        Classifier.ProbabilityEstimator estimator = bmmClassifier.multiClassClassifier;
         double[][] targets = gammas;
         return KLDivergence.kl(estimator,dataSet,targets);
     }

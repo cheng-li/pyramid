@@ -15,8 +15,6 @@ import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
-import edu.neu.ccs.pyramid.optimization.*;
-import edu.neu.ccs.pyramid.regression.RegressorFactory;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.simulation.MultiLabelSynthesizer;
@@ -31,9 +29,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -280,7 +276,7 @@ public class Exp137 {
             System.out.println("perplexity of gammas = "+perplexity);
 
 
-            List<double[]> list = bmmClassifier.getMultiNomialClassifiers().predictClassProbs(trainSet);
+            List<double[]> list = bmmClassifier.getMultiClassClassifier().predictClassProbs(trainSet);
             double perplexitypi=    IntStream.range(0,list.size()).mapToDouble(i->Math.exp(Entropy.entropy(list.get(i)))).average().getAsDouble();
             System.out.println("perplexity of pi= "+perplexitypi);
 
@@ -308,7 +304,7 @@ public class Exp137 {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "simulation/multi-label/flip_one/4_labels_nonuniform/test.trec"), DataSetType.ML_CLF_DENSE, true);
 
         BMMClassifier bmmClassifier = (BMMClassifier)Serialization.deserialize(new File(TMP, "mix"));
-        List<double[]> list = bmmClassifier.getMultiNomialClassifiers().predictClassProbs(trainSet);
+        List<double[]> list = bmmClassifier.getMultiClassClassifier().predictClassProbs(trainSet);
         double perplexity=    IntStream.range(0,list.size()).mapToDouble(i->Math.exp(Entropy.entropy(list.get(i)))).average().getAsDouble();
         System.out.println("perplexity of pi= "+perplexity);
 

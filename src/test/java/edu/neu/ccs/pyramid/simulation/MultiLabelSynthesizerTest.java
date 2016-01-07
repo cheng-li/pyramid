@@ -789,7 +789,7 @@ public class MultiLabelSynthesizerTest {
             System.out.println("perplexity of gammas = "+perplexity);
 
 
-            List<double[]> list = bmmClassifier.getMultiNomialClassifiers().predictClassProbs(trainSet);
+            List<double[]> list = bmmClassifier.getMultiClassClassifier().predictClassProbs(trainSet);
             double perplexitypi=    IntStream.range(0,list.size()).mapToDouble(d->Math.exp(Entropy.entropy(list.get(d)))).average().getAsDouble();
             System.out.println("perplexity of pi= "+perplexitypi);
 

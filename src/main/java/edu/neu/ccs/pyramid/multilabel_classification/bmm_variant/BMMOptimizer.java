@@ -37,7 +37,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     // format [#cluster][#data]
     double[][] gammasT;
 
-    // regularization for multiNomialClassifiers
+    // regularization for multiClassClassifier
     private double gaussianPriorforSoftMax;
     // regularization for binary logisticRegression
     private double gaussianPriorforLogit;
@@ -211,7 +211,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         Vector Y = this.labels[n];
         int K = bmmClassifier.numClusters;
         // log[p(z_n=k | x_n)] array
-        double[] logLogisticProbs = bmmClassifier.multiNomialClassifiers.predictLogClassProbs(X);
+        double[] logLogisticProbs = bmmClassifier.multiClassClassifier.predictLogClassProbs(X);
         // log[p(y_n | z_n=k, x_n)] for all k from 1 to K;
         double[] logClusterConditionalProbs = bmmClassifier.clusterConditionalLogProbArr(X, Y);
         double[] logNumerators = new double[logLogisticProbs.length];
@@ -281,7 +281,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     }
 
     private void updateSoftMaxRegression() {
-        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.multiNomialClassifiers,
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.multiClassClassifier,
                 dataSet, gammas, gaussianPriorforSoftMax);
         ridgeLogisticOptimizer.optimize();
     }
@@ -296,14 +296,14 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 
 
     public double getObjective() {
-        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression)bmmClassifier.multiNomialClassifiers,
+        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression)bmmClassifier.multiClassClassifier,
                 dataSet, gammas, gaussianPriorforSoftMax);
         // Q function for \Thata + gamma.entropy and Q function for Weights
         return logisticLoss.getValue() + binaryLogitsObj() +(1-1.0/inverseTemperature)*getEntropy();
     }
 
 //    private double getMStepObjective() {
-//        KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.multiNomialClassifiers,
+//        KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.multiClassClassifier,
 //                dataSet, gammas, gaussianPriorforSoftMax);
 //        // Q function for \Thata + gamma.entropy and Q function for Weights
 //        return logisticLoss.getValue() + binaryLogitsObj();
@@ -351,7 +351,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         double[][] PIs = new double[dataSet.getNumDataPoints()][bmmClassifier.getNumClusters()];
 
         for (int n=0; n<PIs.length; n++) {
-            double[] logProbs = bmmClassifier.multiNomialClassifiers.predictLogClassProbs(dataSet.getRow(n));
+            double[] logProbs = bmmClassifier.multiClassClassifier.predictLogClassProbs(dataSet.getRow(n));
             for (int k=0; k<PIs[n].length; k++) {
                 PIs[n][k] = Math.exp(logProbs[k]);
             }
