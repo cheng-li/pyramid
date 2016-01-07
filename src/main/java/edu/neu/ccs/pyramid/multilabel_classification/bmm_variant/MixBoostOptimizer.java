@@ -247,9 +247,6 @@ public class MixBoostOptimizer implements Serializable, Parallelizable {
         }
 
         IntStream intStream = IntStream.range(0, bmmClassifier.getNumClasses());
-        if (isParallel){
-            intStream = intStream.parallel();
-        }
         intStream.forEach(l -> {
             updateBinaryClassifier(k,l);
         });
