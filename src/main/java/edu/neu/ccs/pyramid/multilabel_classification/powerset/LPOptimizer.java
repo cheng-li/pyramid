@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.powerset;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -10,9 +11,11 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ClfDataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.optimization.*;
 import org.apache.mahout.math.Vector;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,17 +76,34 @@ public class LPOptimizer {
             optimizer.initialize();
 
             for (int round=0; round<config.getInt("numIters"); round++) {
-                System.out.println("round="+round);
+                System.out.print("round:"+round);
+                System.out.println("\tacc: " + Accuracy.accuracy(lkBoost,dataSet));
                 optimizer.iterate();
             }
+
             this.classifier.estimator = lkBoost;
-        } else if (classifier.equals("logistic")) {
+        } else if (classifier.equals("elasticnet")) {
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
             ElasticNetLogisticTrainer optimizer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
                     .setL1Ratio(config.getDouble("l1Ratio"))
                     .setRegularization(config.getDouble("regularization")).build();
 
-            optimizer.optimize();
+            for (int round=0; round<config.getInt("numIters"); round++) {
+                System.out.print("round:"+round);
+                optimizer.iterate();
+                System.out.println("\tacc: " + Accuracy.accuracy(logisticRegression,dataSet));
+            }
+            this.classifier.estimator = logisticRegression;
+        } else if (classifier.equals("lbfgs")){
+            LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
+            LogisticLoss loss = new LogisticLoss(logisticRegression,dataSet, config.getDouble("regularization"));
+            LBFGS optimizer = new LBFGS(loss);
+            optimizer.getTerminator().setAbsoluteEpsilon(0.1);
+            for (int round=0; round<config.getInt("numIters"); round++) {
+                System.out.print("round:"+round);
+                System.out.println("\tacc: " + Accuracy.accuracy(logisticRegression,dataSet));
+                optimizer.iterate();
+            }
             this.classifier.estimator = logisticRegression;
         } else {
             throw new RuntimeException("Unknown classifier");
