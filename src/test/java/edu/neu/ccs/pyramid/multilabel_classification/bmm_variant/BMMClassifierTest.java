@@ -37,7 +37,7 @@ public class BMMClassifierTest {
                 .setNumFeatures(dataSet.getNumFeatures())
                 .setNumClusters(numClusters)
                 .setBinaryClassifierType("lr")
-                .setMultiClassClassifierType("lr")
+                .setMultiClassClassifierType("boost")
                 .build();
 
 //        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),4,dataSet.getNumFeatures());

@@ -288,7 +288,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                     bmmClassifier.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
                     break;
                 case "boost":
-                    bmmClassifier.binaryClassifiers = new LKBoost[numClusters][numClasses];
                     bmmClassifier.multiClassClassifier = new LKBoost(numClusters);
                     break;
                 default:
