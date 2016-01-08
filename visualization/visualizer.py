@@ -483,6 +483,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion, classFile):
         lines = openClassFile.readlines()
         for line in lines:
             line = line.translate(None, "\r\n")
+            line = line.decode("utf-8")
             lineInfo = line.split("\t")
             className = lineInfo[0]
             classDesc = lineInfo[1]
