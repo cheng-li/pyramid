@@ -22,7 +22,7 @@ public class BMMClassifierTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test3();
+        test1();
     }
 
     private static void test1() throws Exception{
@@ -36,8 +36,8 @@ public class BMMClassifierTest {
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
                 .setNumClusters(numClusters)
-                .setBinaryClassifierType("lr")
-                .setMultiClassClassifierType("boost")
+                .setMultiClassClassifierType("lr")
+                .setBinaryClassifierType("boost")
                 .build();
 
         bmmClassifier.setPredictMode("dynamic");
@@ -53,7 +53,7 @@ public class BMMClassifierTest {
         System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
 
 
-        for (int i=1;i<=30;i++){
+        for (int i=1;i<=5;i++){
             optimizer.iterate();
             System.out.print("iter : "+i + "\t");
             System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
@@ -133,7 +133,7 @@ public class BMMClassifierTest {
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
                 .setNumClusters(numClusters)
-                .setBinaryClassifierType("lr")
+                .setBinaryClassifierType("boost")
                 .setMultiClassClassifierType("boost")
                 .build();
 

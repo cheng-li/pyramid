@@ -54,9 +54,9 @@ public class Exp211 {
                     .setNumClasses(trainSet.getNumClasses())
                     .setNumFeatures(trainSet.getNumFeatures())
                     .setNumClusters(numClusters)
-                    .setMultiClassClassifierType("mixture.multiClassClassifierType")
-                    .setBinaryClassifierType("mixture.binaryClassifierType")
-                    .build();
+                    .setMultiClassClassifierType(config.getString("mixture.multiClassClassifierType"))
+                    .setBinaryClassifierType(config.getString("mixture.binaryClassifierType"))
+                            .build();
 
             bmmClassifier.setPredictMode(config.getString("predict.mode"));
             bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
@@ -121,7 +121,7 @@ public class Exp211 {
 
         String output = config.getString("output");
         String modelName = config.getString("modelName");
-        File path = Paths.get(output,modelName).toFile();
+        File path = Paths.get(output, modelName).toFile();
         path.mkdirs();
         FileUtils.cleanDirectory(path);
 

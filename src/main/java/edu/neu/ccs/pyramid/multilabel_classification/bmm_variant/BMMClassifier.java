@@ -280,7 +280,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
                     }
                     break;
                 default:
-                    throw new IllegalArgumentException("binaryClassifierType can be lr or boost");
+                    throw new IllegalArgumentException("binaryClassifierType can be lr or boost. Given: "+binaryClassifierType);
             }
 
             switch (multiClassClassifierType){
