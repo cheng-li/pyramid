@@ -33,7 +33,9 @@ public class BMMInitializerTest {
                 .setBinaryClassifierType("lr")
                 .setMultiClassClassifierType("lr")
                 .build();
-        BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance);
+
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet);
+        BMMInitializer.initialize(bmmClassifier,trainSet,optimizer);
     }
 
 }

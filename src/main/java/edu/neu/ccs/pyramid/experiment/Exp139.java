@@ -61,8 +61,9 @@ public class Exp139 {
         double logitVariance = config.getDouble("logitVariance");
         int numIterations = config.getInt("numIterations");
 
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet, softmaxVariance, logitVariance);
-
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet);
+        optimizer.setPriorVarianceBinary(logitVariance);
+        optimizer.setPriorVarianceMultiClass(softmaxVariance);
 
         for (int i=1;i<=numIterations;i++){
             optimizer.iterate();

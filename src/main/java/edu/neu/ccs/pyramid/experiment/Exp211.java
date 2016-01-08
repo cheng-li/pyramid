@@ -63,7 +63,8 @@ public class Exp211 {
 
             if (config.getBoolean("initialize")) {
                 System.out.println("after initialization");
-                BMMInitializer.initialize(bmmClassifier, trainSet, softmaxVariance, logitVariance);
+                BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet);
+                BMMInitializer.initialize(bmmClassifier, trainSet, optimizer);
             }
             trainPredict = bmmClassifier.predict(trainSet);
             testPredict = bmmClassifier.predict(testSet);
@@ -102,7 +103,9 @@ public class Exp211 {
 
         BMMClassifier bmmClassifier = loadBMM(config,trainSet,testSet);
 
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet, softmaxVariance, logitVariance);
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet);
+        optimizer.setPriorVarianceMultiClass(softmaxVariance);
+        optimizer.setPriorVarianceBinary(logitVariance);
         optimizer.setMeanRegularization(config.getBoolean("meanRegularization"));
         optimizer.setInverseTemperature(config.getDouble("inverseTemperature"));
         optimizer.setMeanRegVariance(config.getDouble("meanRegVariance"));

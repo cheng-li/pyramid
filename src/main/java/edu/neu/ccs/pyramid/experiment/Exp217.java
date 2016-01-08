@@ -53,7 +53,9 @@ public class Exp217 {
                     .setBinaryClassifierType("lr")
                     .setMultiClassClassifierType("lr")
                     .build();
-            BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet,softmaxVariance,logitVariance);
+            BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet);
+            optimizer.setPriorVarianceBinary(logitVariance);
+            optimizer.setPriorVarianceMultiClass(softmaxVariance);
             bmmClassifier.setNumSample(numSamples);
             bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
             bmmClassifier.setPredictMode(config.getString("predictMode"));
@@ -62,11 +64,9 @@ public class Exp217 {
             MultiLabel[] testPredict;
 
             if (config.getBoolean("initialize")) {
-                BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance, new File(config.getString("initializeBy")));
+                BMMInitializer.initialize(bmmClassifier,trainSet,optimizer);
             }
-            else {
-                BMMInitializer.initialize(bmmClassifier,trainSet,softmaxVariance,logitVariance);
-            }
+
             System.out.println("after initialization");
             trainPredict = bmmClassifier.predict(trainSet);
             testPredict = bmmClassifier.predict(testSet);

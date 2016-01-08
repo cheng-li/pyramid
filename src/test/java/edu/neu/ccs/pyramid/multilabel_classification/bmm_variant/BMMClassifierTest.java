@@ -22,7 +22,7 @@ public class BMMClassifierTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+        test3();
     }
 
     private static void test1() throws Exception{
@@ -40,9 +40,11 @@ public class BMMClassifierTest {
                 .setMultiClassClassifierType("boost")
                 .build();
 
-//        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),4,dataSet.getNumFeatures());
         bmmClassifier.setPredictMode("dynamic");
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
         bmmClassifier.setNumSample(100);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
@@ -126,18 +128,20 @@ public class BMMClassifierTest {
             }
         }
 
-        int numClusters = 50;
-//        BMMClassifier bmmClassifier = new BMMClassifier(dataSet,numClusters);
+        int numClusters = 4;
         BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
                 .setNumClusters(numClusters)
                 .setBinaryClassifierType("lr")
-                .setMultiClassClassifierType("lr")
+                .setMultiClassClassifierType("boost")
                 .build();
-        BMMInitializer.initialize(bmmClassifier,dataSet,1.0,1.0);
 
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000,10000);
+        bmmClassifier.setPredictMode("dynamic");
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
         for (int i=0; i<3; i++) {
             optimizer.iterate();
             System.out.print("i: " + i + "\t");
@@ -155,17 +159,20 @@ public class BMMClassifierTest {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
         int numClusters = 4;
-//        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),numClusters,dataSet.getNumFeatures());
         BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
                 .setNumClusters(numClusters)
                 .setBinaryClassifierType("lr")
-                .setMultiClassClassifierType("lr")
+                .setMultiClassClassifierType("boost")
                 .build();
+
         bmmClassifier.setPredictMode("dynamic");
-        BMMInitializer.initialize(bmmClassifier, dataSet, 1.0, 1.0);
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
+
         bmmClassifier.setNumSample(100);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
@@ -200,11 +207,14 @@ public class BMMClassifierTest {
                 .setNumFeatures(dataSet.getNumFeatures())
                 .setNumClusters(numClusters)
                 .setBinaryClassifierType("lr")
-                .setMultiClassClassifierType("lr")
+                .setMultiClassClassifierType("boost")
                 .build();
+
         bmmClassifier.setPredictMode("dynamic");
-        BMMInitializer.initialize(bmmClassifier,dataSet,1.0,1.0);
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
         bmmClassifier.setNumSample(100);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
