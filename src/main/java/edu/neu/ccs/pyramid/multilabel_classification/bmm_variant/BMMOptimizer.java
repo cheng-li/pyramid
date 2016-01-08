@@ -67,11 +67,11 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 
     // boosting parameters
     private int numLeavesBinary = 2;
-    private int numLeavesMultiNomial = 2;
+    private int numLeavesMultiClass = 2;
     private double shrinkageBinary = 0.1;
-    private double shrinkageMultiNomial = 0.1;
+    private double shrinkageMultiClass = 0.1;
     private int numIterationsBinary = 20;
-    private int numIterationsMultiNomial = 20;
+    private int numIterationsMultiClass = 20;
 
 
 
@@ -125,24 +125,24 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         this.numLeavesBinary = numLeavesBinary;
     }
 
-    public void setNumLeavesMultiNomial(int numLeavesMultiNomial) {
-        this.numLeavesMultiNomial = numLeavesMultiNomial;
+    public void setNumLeavesMultiClass(int numLeavesMultiClass) {
+        this.numLeavesMultiClass = numLeavesMultiClass;
     }
 
     public void setShrinkageBinary(double shrinkageBinary) {
         this.shrinkageBinary = shrinkageBinary;
     }
 
-    public void setShrinkageMultiNomial(double shrinkageMultiNomial) {
-        this.shrinkageMultiNomial = shrinkageMultiNomial;
+    public void setShrinkageMultiClass(double shrinkageMultiClass) {
+        this.shrinkageMultiClass = shrinkageMultiClass;
     }
 
     public void setNumIterationsBinary(int numIterationsBinary) {
         this.numIterationsBinary = numIterationsBinary;
     }
 
-    public void setNumIterationsMultiNomial(int numIterationsMultiNomial) {
-        this.numIterationsMultiNomial = numIterationsMultiNomial;
+    public void setNumIterationsMultiClass(int numIterationsMultiClass) {
+        this.numIterationsMultiClass = numIterationsMultiClass;
     }
 
     public void setMeanRegVariance(double meanRegVariance) {
@@ -372,11 +372,11 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 
     private void updateMultiClassBoost() {
         int numClusters = bmmClassifier.numClusters;
-        int numIterations = numIterationsMultiNomial;
-        double shrinkage = shrinkageMultiNomial;
+        int numIterations = numIterationsMultiClass;
+        double shrinkage = shrinkageMultiClass;
         LKBoost boost = (LKBoost)this.bmmClassifier.multiClassClassifier;
         RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setMaxNumLeaves(numLeavesMultiNomial);
+                .setMaxNumLeaves(numLeavesMultiClass);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numClusters));
 

@@ -9,14 +9,14 @@ import org.apache.mahout.math.Vector;
  */
 public class SequentialSparseDataSet extends AbstractDataSet implements DataSet{
 
-    protected SequentialAccessSparseVector[] vectors;
+    protected SequentialAccessSparseVector[] featureRows;
     protected SequentialAccessSparseVector[] featureColumns;
 
     public SequentialSparseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures,missingValue);
-        this.vectors = new SequentialAccessSparseVector[numDataPoints];
+        this.featureRows = new SequentialAccessSparseVector[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.vectors[i] = new SequentialAccessSparseVector(numFeatures);
+            this.featureRows[i] = new SequentialAccessSparseVector(numFeatures);
         }
         this.featureColumns = new SequentialAccessSparseVector[numFeatures];
         for (int j=0;j<numFeatures;j++){
@@ -32,7 +32,7 @@ public class SequentialSparseDataSet extends AbstractDataSet implements DataSet{
 
     @Override
     public Vector getRow(int dataPointIndex) {
-        return this.vectors[dataPointIndex];
+        return this.featureRows[dataPointIndex];
     }
 
     /**
@@ -46,7 +46,7 @@ public class SequentialSparseDataSet extends AbstractDataSet implements DataSet{
         if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
             throw new IllegalArgumentException("missing value is not allowed in this data set");
         }
-        this.vectors[dataPointIndex].set(featureIndex, featureValue);
+        this.featureRows[dataPointIndex].set(featureIndex, featureValue);
         this.featureColumns[featureIndex].set(dataPointIndex, featureValue);
     }
 

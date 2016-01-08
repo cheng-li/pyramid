@@ -53,11 +53,11 @@
 //            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
 //            MixBoostOptimizer optimizer = new MixBoostOptimizer(bmmClassifier,trainSet);
 //            optimizer.setNumLeavesBinary(config.getInt("numLeavesBinary"));
-//            optimizer.setNumLeavesMultiNomial(config.getInt("numLeavesMultiNomial"));
+//            optimizer.setNumLeavesMultiClass(config.getInt("numLeavesMultiNomial"));
 //            optimizer.setNumIterationsBinary(config.getInt("numIterationsBinary"));
-//            optimizer.setNumIterationsMultiNomial(config.getInt("numIterationsMultiNomial"));
+//            optimizer.setNumIterationsMultiClass(config.getInt("numIterationsMultiNomial"));
 //            optimizer.setShrinkageBinary(config.getDouble("shrinkageBinary"));
-//            optimizer.setShrinkageMultiNomial(config.getDouble("shrinkageMultiNomial"));
+//            optimizer.setShrinkageMultiClass(config.getDouble("shrinkageMultiNomial"));
 //            bmmClassifier.setPredictMode(config.getString("predictMode"));
 //
 //            MultiLabel[] trainPredict = bmmClassifier.predict(trainSet);

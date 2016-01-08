@@ -10,10 +10,12 @@ import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
+import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Paths;
 
 
 /**
@@ -21,11 +23,24 @@ import java.io.FileWriter;
  */
 public class Exp211 {
 
+    private static BMMOptimizer getOptimizer(Config config, BMMClassifier bmmClassifier, MultiLabelClfDataSet trainSet){
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet);
+
+        optimizer.setInverseTemperature(config.getDouble("em.inverseTemperature"));
+        optimizer.setMeanRegVariance(config.getDouble("lr.meanRegVariance"));
+        optimizer.setMeanRegularization(config.getBoolean("lr.meanRegularization"));
+        optimizer.setPriorVarianceMultiClass(config.getDouble("lr.multiClassVariance"));
+        optimizer.setPriorVarianceBinary(config.getDouble("lr.binaryVariance"));
+        optimizer.setNumIterationsBinary(config.getInt("boost.numIterationsBinary"));
+        optimizer.setNumIterationsMultiClass(config.getInt("boost.numIterationsMultiClass"));
+        optimizer.setShrinkageBinary(config.getDouble("boost.shrinkageBinary"));
+        optimizer.setShrinkageMultiClass(config.getDouble("boost.shrinkageMultiClass"));
+
+        return optimizer;
+    }
+
     public static BMMClassifier loadBMM(Config config, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet testSet) throws Exception{
-        int numClusters = config.getInt("numClusters");
-        double softmaxVariance = config.getDouble("softmaxVariance");
-        double logitVariance = config.getDouble("logitVariance");
-        int numSamples = config.getInt("numSamples");
+        int numClusters = config.getInt("mixture.numClusters");
 
         String output = config.getString("output");
         String modelName = config.getString("modelName");
@@ -34,37 +49,28 @@ public class Exp211 {
         BMMClassifier bmmClassifier;
         if (config.getBoolean("train.warmStart")) {
             bmmClassifier = BMMClassifier.deserialize(new File(output, modelName));
-            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
-            bmmClassifier.setPredictMode(config.getString("predictMode"));
         } else {
             bmmClassifier = BMMClassifier.getBuilder()
                     .setNumClasses(trainSet.getNumClasses())
                     .setNumFeatures(trainSet.getNumFeatures())
                     .setNumClusters(numClusters)
-                    .setBinaryClassifierType("lr")
-                    .setMultiClassClassifierType("lr")
+                    .setMultiClassClassifierType("mixture.multiClassClassifierType")
+                    .setBinaryClassifierType("mixture.binaryClassifierType")
                     .build();
 
-            bmmClassifier.setNumSample(numSamples);
-            bmmClassifier.setAllowEmpty(config.getBoolean("allowEmpty"));
-            bmmClassifier.setPredictMode(config.getString("predictMode"));
+            bmmClassifier.setPredictMode(config.getString("predict.mode"));
+            bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
+            bmmClassifier.setAllowEmpty(config.getBoolean("predict.allowEmpty"));
 
             MultiLabel[] trainPredict;
             MultiLabel[] testPredict;
 
-//            trainPredict = bmmClassifier.predict(trainSet);
-//            testPredict = bmmClassifier.predict(testSet);
-//            System.out.print("random init");
-//            System.out.print("objective: "+optimizer.getObjective()+ "\t");
-//            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
-//            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
-//            System.out.print("testACC  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict) + "\t");
-//            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
 
-            if (config.getBoolean("initialize")) {
-                System.out.println("after initialization");
-                BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet);
+            if (config.getBoolean("train.initialize")) {
+                System.out.println("start initialization");
+                BMMOptimizer optimizer = getOptimizer(config,bmmClassifier,trainSet);
                 BMMInitializer.initialize(bmmClassifier, trainSet, optimizer);
+                System.out.println("finish initialization");
             }
             trainPredict = bmmClassifier.predict(trainSet);
             testPredict = bmmClassifier.predict(testSet);
@@ -88,28 +94,40 @@ public class Exp211 {
 
         System.out.println(config);
 
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        String matrixType = config.getString("input.matrixType");
 
-        double softmaxVariance = config.getDouble("softmaxVariance");
-        double logitVariance = config.getDouble("logitVariance");
-        int numIterations = config.getInt("numIterations");
+        MultiLabelClfDataSet trainSet;
+        MultiLabelClfDataSet testSet;
 
+        switch (matrixType){
+            case "sparse_random":
+                 trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                 testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                break;
+            case "sparse_sequential":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown type");
+        }
+
+
+        int numIterations = config.getInt("em.numIterations");
 
         String output = config.getString("output");
         String modelName = config.getString("modelName");
+        File path = Paths.get(output,modelName).toFile();
+        path.mkdirs();
+        FileUtils.cleanDirectory(path);
 
         BMMClassifier bmmClassifier = loadBMM(config,trainSet,testSet);
 
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier, trainSet);
-        optimizer.setPriorVarianceMultiClass(softmaxVariance);
-        optimizer.setPriorVarianceBinary(logitVariance);
-        optimizer.setMeanRegularization(config.getBoolean("meanRegularization"));
-        optimizer.setInverseTemperature(config.getDouble("inverseTemperature"));
-        optimizer.setMeanRegVariance(config.getDouble("meanRegVariance"));
-
+        BMMOptimizer optimizer = getOptimizer(config,bmmClassifier,trainSet);
 
         for (int i=1;i<=numIterations;i++){
             System.out.print("iter : "+i + "\t");
@@ -124,8 +142,6 @@ public class Exp211 {
             System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
             System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
             if (config.getBoolean("saveModelForEachIter")) {
-                String path = output + "/" + modelName;
-                (new File(path)).mkdirs();
                 File serializeModel = new File(path,  "iter." + i + ".model");
                 bmmClassifier.serialize(serializeModel);
                 double[][] gammas = optimizer.getGammas();
@@ -158,8 +174,8 @@ public class Exp211 {
 //        System.out.println(bmmClassifier);
 
         if (config.getBoolean("saveModel")) {
-            (new File(output+"/"+modelName)).mkdirs();
-            File serializeModel = new File(output+"/"+modelName, "model");
+
+            File serializeModel = new File(path, "model");
             bmmClassifier.serialize(serializeModel);
         }
     }
