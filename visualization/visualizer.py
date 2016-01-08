@@ -1,8 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from elasticsearch import Elasticsearch
 import json
 import time
-import sys
+import sys, getopt
 import re
 import os
 from os import listdir
@@ -97,10 +97,16 @@ def writeRule(docId, line_count, num, rule):
     return oneRule
 
 
-def writeClass(docId, line_count, clas):
+def writeClass(docId, line_count, clas, classDescription):
     oneClass = {}
     oneClass['id'] = clas["internalClassIndex"]
-    oneClass['name'] = clas["className"]
+    ## add classDescription
+    name = clas["className"]
+    if name in classDescription:
+        name = name + " : " + classDescription[name]
+    else:
+        name = name + " : " + "MISSING DESCRIPTION"
+    oneClass['name'] = name
     oneClass['classProbability'] = clas["classProbability"]
     oneClass['totalScore'] = clas["classScore"]
 
@@ -117,7 +123,7 @@ def writeClass(docId, line_count, clas):
     return oneClass
 
 
-def createTFPNColumns(row, line_count, oneRow):
+def createTFPNColumns(row, line_count, oneRow, classDescription):
     tmpDict = []
     # build set
     labelSet = set()
@@ -126,25 +132,25 @@ def createTFPNColumns(row, line_count, oneRow):
     oneRow['TP'] = []
     for clas in row["classScoreCalculations"]:
         if clas['internalClassIndex'] in row["internalLabels"] and clas['internalClassIndex'] in row["internalPrediction"]:
-            oneRow['TP'].append(writeClass(row["id"], line_count, clas))
+            oneRow['TP'].append(writeClass(row["id"], line_count, clas, classDescription))
 
     # column 5 FP
     oneRow['FP'] = []
     for clas in row["classScoreCalculations"]:
         if clas['internalClassIndex'] not in row["internalLabels"] and clas['internalClassIndex'] in row["internalPrediction"]:
-            oneRow['FP'].append(writeClass(row["id"], line_count, clas))
+            oneRow['FP'].append(writeClass(row["id"], line_count, clas, classDescription))
                                   
     # column 6 FN
     oneRow['FN'] = []
     for clas in row["classScoreCalculations"]:
         if clas['internalClassIndex'] in row["internalLabels"] and clas['internalClassIndex'] not in row["internalPrediction"]:
-            oneRow['FN'].append(writeClass(row["id"], line_count, clas))
+            oneRow['FN'].append(writeClass(row["id"], line_count, clas, classDescription))
 
     # column 7 TN
     oneRow['TN'] = []
     for clas in row["classScoreCalculations"]:
         if clas['internalClassIndex'] not in row["internalLabels"] and clas['internalClassIndex'] not in row["internalPrediction"]:
-            oneRow['TN'].append(writeClass(row["id"], line_count, clas))
+            oneRow['TN'].append(writeClass(row["id"], line_count, clas, classDescription))
 
 
 
@@ -157,7 +163,7 @@ def includesLabel(label, labels):
     return 0
 
 
-def createTable(data, fields, fashion):
+def createTable(data, fields, fashion, classDescription):
     line_count = 0
     output = []
     for row in data:
@@ -285,7 +291,8 @@ def createTable(data, fields, fashion):
                 oneRow["others"][key] = res["_source"][key]
         
         # column 4 - 7 TP FP FN TN columns
-        createTFPNColumns(row, line_count, oneRow)
+        ### pass classDescription
+        createTFPNColumns(row, line_count, oneRow, classDescription)
         
         # finish row
         output.append(oneRow)
@@ -340,14 +347,14 @@ def createNewJsonForTopFeatures(inputData):
     return outputData
 
 
-def parse(input_json_file, outputFileName, fields, fashion):
+def parse(input_json_file, outputFileName, fields, fashion, classDescription):
     # read input
 
     inputJson = open(input_json_file, "r")
     inputData = json.load(inputJson)
     print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
 
-    outputData = createTable(inputData, fields, fashion)
+    outputData = createTable(inputData, fields, fashion, classDescription)
     outputJson = json.dumps(outputData)
 
     output = pre_data + outputJson + post_data
@@ -437,7 +444,7 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, out
     outputFile.close()
 
 
-def parseAll(inputPath, directoryName, fileName, fields, fashion):
+def parseAll(inputPath, directoryName, fileName, fields, fashion, classFile):
     outputFileName = "viewer"
 
     indPerformanceName = "individual_performance"
@@ -463,11 +470,31 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
     outputPath = directoryName + "metadata.html"
     createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputPath)
 
+    ## reading class file if existing.
+    classDescription = {}
+    if classFile == "":
+        print "no class description as input"
+        # no class description as input.
+    else:
+        try:
+            openClassFile = open(classFile, "r")
+        except IOError:
+            print "cannot open class file: ", classFile
+        lines = openClassFile.readlines()
+        for line in lines:
+            line = line.translate(None, "\r\n")
+            lineInfo = line.split("\t")
+            className = lineInfo[0]
+            classDesc = lineInfo[1]
+            classDescription[className] = classDesc 
+        openClassFile.close()
+
+
     ## skipJsonFiles are not default files: reports.json
     skipJsonFiles = [configName+".json", dataName + ".json", modelName + ".json", topName + ".json",
         performanceName + ".json", indPerformanceName + ".json"]
     if os.path.isfile(inputPath):
-        parse(inputPath, directoryName + outputFileName + "_" + fileName[:-5] + ".html", fields, fashion)
+        parse(inputPath, directoryName + outputFileName + "_" + fileName[:-5] + ".html", fields, fashion, classDescription)
     else:
         if not inputPath.endswith('/'):
             directoryName += '/'
@@ -481,7 +508,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion):
                 continue
             else:
                 outputPath = directoryName + outputFileName + "_" + f[:-5] + ".html"
-                parse(absf, outputPath, fields, fashion)
+                parse(absf, outputPath, fields, fashion, classDescription)
 
 #constant Strings
 pre_md_data = ''' <html>
@@ -1739,63 +1766,74 @@ es = Elasticsearch("localhost:9200", timeout=600, max_retries=10, revival_delay=
 esIndex = "ohsumed_20000"
 classNumber = 23
 
-def main():
+def main(argv):
     global esIndex
     global classNumber
+
+    jsonFile = ""
+    classFile = ""
+    try:
+        opts, args = getopt.getopt(argv,"hi:c:",["ifile=","cfile="])
+    except getopt.GetoptError:
+        print 'visualizer.py -i <inputfile> -c <classfile>'
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt == "-h":
+            print 'visualizer.py -i <inputfile> -c <classfile>'
+            sys.exit()
+        elif opt in ("-i", "--ifile"):
+            jsonFile = arg
+        elif opt in ("-c", "--cfile"):
+            classFile = arg
+
     # usage: myprog json_file
-    if len(sys.argv) >= 1:
-        jsonFile = sys.argv[1]
-
-        splits = jsonFile.rsplit("/", 1)
-        if len(splits) == 1:
-            fileName = ""
-            if os.path.isfile(jsonFile):
-                directoryName = "./"
-                fileName = splits[0]
-            else:
-                directoryName = splits[0] + "/"
+    splits = jsonFile.rsplit("/", 1)
+    if len(splits) == 1:
+        fileName = ""
+        if os.path.isfile(jsonFile):
+            directoryName = "./"
+            fileName = splits[0]
         else:
-            directoryName = jsonFile.rsplit("/", 1)[0] + '/'
-            fileName = splits[1]
-        # fileName = ""
-        # if os.path.isfile(jsonFile):
-        #     fileName = jsonFile
-
-        # directoryName = ""
-        # if not jsonFile.endswith("/"):
-        #     directoryName = jsonFile + '/'
-        # else:
-        #     directoryName = jsonFile
-        # print directoryName
-        # raw_input()
-
-        configName = "data_config.json"
-        dataName = "data_info.json"
-        modelName = "model_config.json"
-
-        f1 = open(directoryName + configName, 'r')
-        config1 = json.load(f1)
-        f2 = open(directoryName + dataName, 'r')
-        config2 = json.load(f2)
-        f3 = open(directoryName + modelName, 'r')
-        config3 = json.load(f3)
-
-        esIndex = config1["index.indexName"]
-        classNumber = config2["numClassesInModel"]
-        fields = config1["index.ngramExtractionFields"]
-        fashion = config3["predict.fashion"]
-
+            directoryName = splits[0] + "/"
     else:
-        print "Usage: python Visualizor.py index NumberofClasses json_file"
-        return
+        directoryName = jsonFile.rsplit("/", 1)[0] + '/'
+        fileName = splits[1]
+    # fileName = ""
+    # if os.path.isfile(jsonFile):
+    #     fileName = jsonFile
+
+    # directoryName = ""
+    # if not jsonFile.endswith("/"):
+    #     directoryName = jsonFile + '/'
+    # else:
+    #     directoryName = jsonFile
+    # print directoryName
+    # raw_input()
+
+    configName = "data_config.json"
+    dataName = "data_info.json"
+    modelName = "model_config.json"
+
+    f1 = open(directoryName + configName, 'r')
+    config1 = json.load(f1)
+    f2 = open(directoryName + dataName, 'r')
+    config2 = json.load(f2)
+    f3 = open(directoryName + modelName, 'r')
+    config3 = json.load(f3)
+
+    esIndex = config1["index.indexName"]
+    classNumber = config2["numClassesInModel"]
+    fields = config1["index.ngramExtractionFields"]
+    fashion = config3["predict.fashion"]
     start = time.time()
-    parseAll(jsonFile, directoryName, fileName, fields, fashion)
+    parseAll(jsonFile, directoryName, fileName, fields, fashion, classFile)
     end = time.time()
     print "parsing cost time ", end-start, " seconds"
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
 
 
 
