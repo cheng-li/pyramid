@@ -367,6 +367,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     private void updateMultiClassLR() {
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)bmmClassifier.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass);
+        ridgeLogisticOptimizer.setParallelism(true);
         ridgeLogisticOptimizer.optimize();
     }
 
