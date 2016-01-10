@@ -48,7 +48,7 @@ public class Exp211 {
 
         BMMClassifier bmmClassifier;
         if (config.getBoolean("train.warmStart")) {
-            bmmClassifier = BMMClassifier.deserialize(new File(output, modelName));
+            bmmClassifier = BMMClassifier.deserialize(Paths.get(output,modelName,"model").toFile());
         } else {
             bmmClassifier = BMMClassifier.getBuilder()
                     .setNumClasses(trainSet.getNumClasses())
