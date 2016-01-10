@@ -123,7 +123,7 @@ public class Exp211 {
         String modelName = config.getString("modelName");
         File path = Paths.get(output, modelName).toFile();
         path.mkdirs();
-        FileUtils.cleanDirectory(path);
+//        FileUtils.cleanDirectory(path);
 
         BMMClassifier bmmClassifier = loadBMM(config,trainSet,testSet);
 
