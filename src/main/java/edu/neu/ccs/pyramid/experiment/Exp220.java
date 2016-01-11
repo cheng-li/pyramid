@@ -1,10 +1,7 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInspector;
 import edu.neu.ccs.pyramid.util.Serialization;
@@ -32,6 +29,7 @@ public class Exp220 {
         BMMClassifier bmmClassifier = (BMMClassifier)Serialization.deserialize(config.getString("input.model"));
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.dataSet"),
                 DataSetType.ML_CLF_SPARSE, true);
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
 
         List<Map<MultiLabel,Double>> list = BMMInspector.visualizeClusters(bmmClassifier,dataSet);
         for (int k=0;k<list.size();k++){
@@ -40,7 +38,14 @@ public class Exp220 {
             Comparator<Map.Entry<MultiLabel,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
             List<Map.Entry<MultiLabel,Double>> sorted = list.get(k).entrySet().stream().sorted(comparator.reversed())
                     .collect(Collectors.toList());
-            System.out.println(sorted);
+            for (Map.Entry<MultiLabel,Double> entry: sorted){
+                System.out.print(entry.getKey().toStringWithExtLabels(labelTranslator));
+                System.out.print(":");
+                System.out.print(entry.getValue());
+                System.out.print(", ");
+            }
+            System.out.println();
+
         }
     }
 }
