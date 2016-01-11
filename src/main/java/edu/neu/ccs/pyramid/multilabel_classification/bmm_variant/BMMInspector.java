@@ -3,9 +3,15 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -52,5 +58,25 @@ public class BMMInspector {
             dis += positiveVector.minus(positiveAverageVector).norm(2);
         }
         return dis/numClusters;
+    }
+
+    public static List<Map<MultiLabel,Double>> visualizeClusters(BMMClassifier bmm, MultiLabelClfDataSet dataSet){
+        int numClusters = bmm.getNumClusters();
+        List<Map<MultiLabel,Double>> list = new ArrayList<>();
+        for (int k=0;k<numClusters;k++){
+            list.add(new HashMap<>());
+        }
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            double[] clusterProbs = bmm.getMultiClassClassifier().predictClassProbs(dataSet.getRow(i));
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int k=0;k<numClusters;k++){
+                Map<MultiLabel,Double> map = list.get(k);
+                double count = map.getOrDefault(multiLabel,0.0);
+                double newcount = count+clusterProbs[k];
+                map.put(multiLabel,newcount);
+            }
+        }
+        return list;
     }
 }
