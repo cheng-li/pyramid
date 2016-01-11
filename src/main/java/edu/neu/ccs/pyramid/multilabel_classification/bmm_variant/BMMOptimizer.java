@@ -52,7 +52,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
     private boolean isParallel = true;
 
     // for deterministic annealing
-    private double inverseTemperature = 1;
+    private double temperature = 1;
 
 
     // lr parameters
@@ -149,12 +149,12 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         this.meanRegVariance = meanRegVariance;
     }
 
-    public double getInverseTemperature() {
-        return inverseTemperature;
+    public double getTemperature() {
+        return temperature;
     }
 
-    public void setInverseTemperature(double inverseTemperature) {
-        this.inverseTemperature = inverseTemperature;
+    public void setTemperature(double temperature) {
+        this.temperature = temperature;
     }
 
     public void optimize() {
@@ -263,7 +263,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
         double[] logClusterConditionalProbs = bmmClassifier.clusterConditionalLogProbArr(X, Y);
         double[] logNumerators = new double[logLogisticProbs.length];
         for (int k=0; k<K; k++) {
-            logNumerators[k] = (logLogisticProbs[k] + logClusterConditionalProbs[k])*inverseTemperature;
+            logNumerators[k] = (logLogisticProbs[k] + logClusterConditionalProbs[k])/temperature;
         }
         double logDenominator = MathUtil.logSumExp(logNumerators);
         for (int k=0; k<K; k++) {
@@ -400,7 +400,7 @@ public class BMMOptimizer implements Serializable, Parallelizable {
 
     public double getObjective() {
 
-        return multiClassClassifierObj() + binaryObj() +(1-1.0/inverseTemperature)*getEntropy();
+        return multiClassClassifierObj() + binaryObj() +(1-temperature)*getEntropy();
     }
 
 //    private double getMStepObjective() {

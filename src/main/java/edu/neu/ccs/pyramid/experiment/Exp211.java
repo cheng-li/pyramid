@@ -10,12 +10,14 @@ import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
+import edu.neu.ccs.pyramid.util.Grid;
 import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Paths;
+import java.util.List;
 
 
 /**
@@ -26,7 +28,6 @@ public class Exp211 {
     private static BMMOptimizer getOptimizer(Config config, BMMClassifier bmmClassifier, MultiLabelClfDataSet trainSet){
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet);
 
-        optimizer.setInverseTemperature(config.getDouble("em.inverseTemperature"));
         optimizer.setMeanRegVariance(config.getDouble("lr.meanRegVariance"));
         optimizer.setMeanRegularization(config.getBoolean("lr.meanRegularization"));
         optimizer.setPriorVarianceMultiClass(config.getDouble("lr.multiClassVariance"));
@@ -67,8 +68,9 @@ public class Exp211 {
 
 
             if (config.getBoolean("train.initialize")) {
-                System.out.println("start initialization");
+                System.out.println("start initialization with temperature "+config.getDouble("em.startTemperature"));
                 BMMOptimizer optimizer = getOptimizer(config,bmmClassifier,trainSet);
+                optimizer.setTemperature(config.getDouble("em.startTemperature"));
                 BMMInitializer.initialize(bmmClassifier, trainSet, optimizer);
                 System.out.println("finish initialization");
             }
@@ -123,43 +125,58 @@ public class Exp211 {
         String modelName = config.getString("modelName");
         File path = Paths.get(output, modelName).toFile();
         path.mkdirs();
-//        FileUtils.cleanDirectory(path);
 
         BMMClassifier bmmClassifier = loadBMM(config,trainSet,testSet);
 
         BMMOptimizer optimizer = getOptimizer(config,bmmClassifier,trainSet);
 
-        for (int i=1;i<=numIterations;i++){
-            System.out.print("iter : "+i + "\t");
-            optimizer.iterate();
-            MultiLabel[] trainPredict;
-            MultiLabel[] testPredict;
-            trainPredict = bmmClassifier.predict(trainSet);
-            testPredict = bmmClassifier.predict(testSet);
-            System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
-            System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(),trainPredict)+ "\t");
-            System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
-            System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
-            System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
-            if (config.getBoolean("saveModelForEachIter")) {
-                File serializeModel = new File(path,  "iter." + i + ".model");
-                bmmClassifier.serialize(serializeModel);
-                double[][] gammas = optimizer.getGammas();
-                double[][] PIs = optimizer.getPIs();
-                BufferedWriter bw = new BufferedWriter(new FileWriter(new File(path, "iter."+i+".gammas")));
-                BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(path, "iter."+i+".PIs")));
-                for (int n=0; n<gammas.length; n++) {
-                    for (int k=0; k<gammas[n].length; k++) {
-                        bw.write(gammas[n][k] + "\t");
-                        bw1.write(PIs[n][k] + "\t");
+        double startTemperature = config.getDouble("em.startTemperature");
+        double endTemperature = config.getDouble("em.endTemperature");
+        int numTemperatures = config.getInt("em.numTemperatures");
+        List<Double> temperatures = Grid.uniformDecreasing(endTemperature,startTemperature,numTemperatures);
+
+        int totalIter = 0;
+        for (double temperature: temperatures){
+            System.out.println("------------------------------------------------");
+            System.out.println("temperature = "+temperature);
+            optimizer.setTemperature(temperature);
+
+            for (int i=1;i<=numIterations;i++){
+                System.out.print("iter : "+totalIter + "\t");
+                optimizer.iterate();
+                MultiLabel[] trainPredict;
+                MultiLabel[] testPredict;
+                trainPredict = bmmClassifier.predict(trainSet);
+                testPredict = bmmClassifier.predict(testSet);
+                System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+                System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(),trainPredict)+ "\t");
+                System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
+                System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
+                System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
+                if (config.getBoolean("saveModelForEachIter")) {
+                    File serializeModel = new File(path,  "iter." + totalIter + ".model");
+                    bmmClassifier.serialize(serializeModel);
+                    double[][] gammas = optimizer.getGammas();
+                    double[][] PIs = optimizer.getPIs();
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(new File(path, "iter."+totalIter+".gammas")));
+                    BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File(path, "iter."+totalIter+".PIs")));
+                    for (int n=0; n<gammas.length; n++) {
+                        for (int k=0; k<gammas[n].length; k++) {
+                            bw.write(gammas[n][k] + "\t");
+                            bw1.write(PIs[n][k] + "\t");
+                        }
+                        bw.write("\n");
+                        bw1.write("\n");
                     }
-                    bw.write("\n");
-                    bw1.write("\n");
+                    bw.close();
+                    bw1.close();
                 }
-                bw.close();
-                bw1.close();
+                totalIter += 1;
             }
         }
+
+
+
         System.out.println("history = "+optimizer.getTerminator().getHistory());
 
 
