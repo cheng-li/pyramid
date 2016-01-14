@@ -8,10 +8,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.IntStream;
 
 /**
@@ -78,5 +75,25 @@ public class BMMInspector {
             }
         }
         return list;
+    }
+
+
+
+    public static void visualizePrediction(BMMClassifier bmmClassifier, Vector vector){
+        int numClusters = bmmClassifier.getNumClusters();
+        int numClasses = bmmClassifier.getNumClasses();
+        double[] proportions = bmmClassifier.getMultiClassClassifier().predictClassProbs(vector);
+        double[][] probabilities = new double[numClusters][numClasses];
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numClasses;l++){
+                probabilities[k][l]=bmmClassifier.getBinaryClassifiers()[k][l].predictClassProb(vector,1);
+            }
+        }
+
+        System.out.println("proportion = "+ Arrays.toString(proportions));
+        for (int k=0;k<numClusters;k++){
+            System.out.println("cluster "+k);
+            System.out.println(Arrays.toString(probabilities[k]));
+        }
     }
 }
