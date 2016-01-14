@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInspector;
 import edu.neu.ccs.pyramid.util.Serialization;
@@ -39,13 +40,15 @@ public class Exp221 {
         IdTranslator idTranslator = testSet.getIdTranslator();
         for (int i=0;i<testSet.getNumDataPoints();i++){
             MultiLabel trueLabel = testSet.getMultiLabels()[i];
-            if (!set.contains(trueLabel)){
-                if (bmmClassifier.predict(testSet.getRow(i)).equals(trueLabel)){
-                    System.out.println("----------------------------------------------");
-                    System.out.println("data point "+i+", extId="+idTranslator.toExtId(i));
-                    System.out.println("labels = "+trueLabel);
-                    BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i));
-                }
+            double[] proportions = bmmClassifier.getMultiClassClassifier().predictClassProbs(testSet.getRow(i));
+            double perplexity = Math.pow(2, Entropy.entropy2Based(proportions));
+
+
+            if (trueLabel.getMatchedLabels().size()>2&&perplexity>=3&&bmmClassifier.predict(testSet.getRow(i)).equals(trueLabel)){
+                System.out.println("----------------------------------------------");
+                System.out.println("data point "+i+", extId="+idTranslator.toExtId(i));
+                System.out.println("labels = "+trueLabel);
+                BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i));
             }
         }
     }

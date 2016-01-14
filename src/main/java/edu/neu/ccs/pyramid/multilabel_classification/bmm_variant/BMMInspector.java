@@ -5,6 +5,8 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.Entropy;
+import edu.neu.ccs.pyramid.util.ArgSort;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -91,9 +93,22 @@ public class BMMInspector {
         }
 
         System.out.println("proportion = "+ Arrays.toString(proportions));
-        for (int k=0;k<numClusters;k++){
+        int[] sorted = ArgSort.argSortDescending(proportions);
+        System.out.println("perplexity="+ Math.pow(2,Entropy.entropy2Based(proportions)));
+        for (int k: sorted){
             System.out.println("cluster "+k);
-            System.out.println(Arrays.toString(probabilities[k]));
+            System.out.println(proportions[k]);
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (int l=0;l<numClasses;l++){
+                double p = probabilities[k][l];
+                if (p>0.01){
+                    sb.append(l).append(":").append(p).append(", ");
+                }
+
+            }
+            sb.append("]");
+            System.out.println(sb.toString());
         }
     }
 }
