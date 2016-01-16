@@ -96,6 +96,11 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 //        return results.toArray(new MultiLabel[results.size()]);
 //    }
 
+    // todo rewrite
+    public double predictMaxProb(Vector vector){
+        BMMPredictor bmmPredictor = new BMMPredictor(vector, multiClassClassifier, binaryClassifiers, numClusters, numLabels);
+        return bmmPredictor.predictMaxProb();
+    }
 
 
     public MultiLabel predict(Vector vector) {

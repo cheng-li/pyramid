@@ -44,7 +44,7 @@ public class Exp221 {
             double perplexity = Math.pow(2, Entropy.entropy2Based(proportions));
 
 
-            if (trueLabel.getMatchedLabels().size()>2&&perplexity>=3&&bmmClassifier.predict(testSet.getRow(i)).equals(trueLabel)){
+            if (trueLabel.getMatchedLabels().size()>=2&&perplexity>1.5&&bmmClassifier.predict(testSet.getRow(i)).equals(trueLabel)){
                 System.out.println("----------------------------------------------");
                 System.out.println("data point "+i+", extId="+idTranslator.toExtId(i));
                 System.out.println("labels = "+trueLabel);

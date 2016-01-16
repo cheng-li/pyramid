@@ -25,6 +25,7 @@ public class Exp140 {
         List<MultiLabel> list = DataSetUtil.gatherMultiLabels(trainSet);
         Set<MultiLabel> set = new HashSet<>();
         set.addAll(list);
+        System.out.println("train combinations = "+set.size());
 
         long count = IntStream.range(0,testSet.getNumDataPoints()).filter(i->set.contains(testSet.getMultiLabels()[i])).count();
         System.out.println(count*1.0/testSet.getNumDataPoints());

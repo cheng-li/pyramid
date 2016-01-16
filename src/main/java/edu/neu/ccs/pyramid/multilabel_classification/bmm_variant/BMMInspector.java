@@ -92,23 +92,50 @@ public class BMMInspector {
             }
         }
 
-        System.out.println("proportion = "+ Arrays.toString(proportions));
         int[] sorted = ArgSort.argSortDescending(proportions);
+        double[] topProbs = probabilities[sorted[0]];
+        MultiLabel trivalPred = new MultiLabel();
+        for (int l=0;l<numClasses;l++){
+            if (topProbs[l]>=0.5){
+                trivalPred.addLabel(l);
+            }
+        }
+
+        MultiLabel secondPred = new MultiLabel();
+        for (int l=0;l<numClasses;l++){
+            if (probabilities[sorted[1]][l]>=0.5){
+                secondPred.addLabel(l);
+            }
+        }
+
+        MultiLabel predicted = bmmClassifier.predict(vector);
+        if (!predicted.equals(trivalPred)){
+            System.out.println("interesting case !");
+            if (!predicted.equals(secondPred)){
+                System.out.println("very interesting case !");
+            }
+        }
+
+        System.out.println("probability = "+bmmClassifier.predictMaxProb(vector));
+        System.out.println("proportion = "+ Arrays.toString(proportions));
         System.out.println("perplexity="+ Math.pow(2,Entropy.entropy2Based(proportions)));
-        for (int k: sorted){
+        for (int t=0;t<sorted.length;t++){
+            int k = sorted[t];
+            System.out.println("rank "+t);
             System.out.println("cluster "+k);
             System.out.println(proportions[k]);
             StringBuilder sb = new StringBuilder();
-            sb.append("[");
-            for (int l=0;l<numClasses;l++){
-                double p = probabilities[k][l];
-                if (p>0.01){
-                    sb.append(l).append(":").append(p).append(", ");
-                }
-
-            }
-            sb.append("]");
-            System.out.println(sb.toString());
+//            sb.append("[");
+//            for (int l=0;l<numClasses;l++){
+//                double p = probabilities[k][l];
+//                if (p>0.01){
+//                    sb.append(l).append(":").append(p).append(", ");
+//                }
+//
+//            }
+//            sb.append("]");
+//            System.out.println(sb.toString());
+            System.out.println(Arrays.toString(probabilities[k]));
         }
     }
 }
