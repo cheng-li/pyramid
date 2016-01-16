@@ -72,6 +72,11 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
         </dependency>
+        <dependency>
+            <groupId>org.ojalgo</groupId>
+            <artifactId>ojalgo</artifactId>
+            <version>39.0</version>
+        </dependency>
     </dependencies>
 
     <build>
