@@ -304,7 +304,14 @@ public class TRECFormat {
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
                 String[] lineSplit = line.split(" ");
-                String multiLabelString = lineSplit[0];
+                String multiLabelString = null;
+                try {
+                    multiLabelString = lineSplit[0];
+                } catch (Exception e) {
+                    System.out.println("load data error happens");
+                    System.out.println("line number: " + dataIndex);
+                    System.out.println("line: " + line);
+                }
                 String[] multiLabelSplit = multiLabelString.split(Pattern.quote(","));
                 for (String label: multiLabelSplit){
                     if (label.equals("")) {

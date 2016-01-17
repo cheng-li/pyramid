@@ -31,11 +31,12 @@ public class LibSvm2Trec {
         List<String> trecFiles = config.getStrings("trec");
         boolean dense = config.getBoolean("dense");
         int numFeatures = config.getInt("numFeatures");
+        int numClasses = config.getInt("numClasses");
         for (int i=0; i<libSvmFiles.size(); i++) {
             String libSvmFile = libSvmFiles.get(i);
             String trecFile = trecFiles.get(i);
             System.out.println("translating: " + libSvmFile);
-            MultiLabelClfDataSet dataSet = LibSvmFormat.loadMultiLabelClfDataSet(libSvmFile,dense,numFeatures);
+            MultiLabelClfDataSet dataSet = LibSvmFormat.loadMultiLabelClfDataSet(libSvmFile,dense,numFeatures,numClasses);
             TRECFormat.save(dataSet, trecFile);
         }
 

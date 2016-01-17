@@ -224,9 +224,9 @@ public class LibSvmFormat {
     }
 
     public static MultiLabelClfDataSet loadMultiLabelClfDataSet(String libSvmFile,
-                                                                boolean dense, int numFeatures) throws IOException, ClassNotFoundException {
+                                                                boolean dense, int numFeatures, int numClasses) throws IOException, ClassNotFoundException {
         int numDatapoints = getNumDataPoints(libSvmFile);
-        int numClasses = getNumClasses(libSvmFile);
+//        int numClasses = getNumClasses(libSvmFile);
 //        int numFeatures = getnumFeatures(libSvmFile);
 
         System.out.println("numDatapoints: " + numDatapoints);
@@ -246,6 +246,7 @@ public class LibSvmFormat {
                 String labels = lineInfo[0];
                 for (String label : labels.split(",")) {
                     int l = Integer.parseInt(label);
+//                    dataSet.addLabel(lineCount, l-1);
                     dataSet.addLabel(lineCount, l);
                 }
                 // adding feature

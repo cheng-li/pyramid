@@ -43,28 +43,16 @@ public class Exp219 {
             double[][] gammas = getGammas(config, i, "gammas");
             double[][] PIs = getGammas(config, i, "PIs");
 
+
             Map<Double, HashMap<Boolean, Integer>> gammasPerplexityMap = getPerplexity(labels, predictions, gammas);
             Map<Double, HashMap<Boolean, Integer>> PIsPerplexityMap = getPerplexity(labels, predictions, PIs);
+            Map<Double, HashMap<Boolean, Integer>> KLDivergence = getKL(labels, predictions, gammas, PIs);
 
             writePerplexityFile(gammasPerplexityMap, path, i, "gammas");
-            writePerplexityFile(gammasPerplexityMap, path, i, "PIs");
+            writePerplexityFile(PIsPerplexityMap, path, i, "PIs");
+            writePerplexityFile(KLDivergence, path, i, "KL");
         }
 
-    }
-
-    private static void writePerplexityFile(Map<Double, HashMap<Boolean,Integer>> perplexityMap, String path,
-                                            int iter, String type) throws IOException {
-        File file = new File(path, "iter."+iter+"."+type+".perplexity");
-        BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-        for (Map.Entry<Double, HashMap<Boolean, Integer>> entry : perplexityMap.entrySet()) {
-            double perplexity = entry.getKey();
-            HashMap<Boolean, Integer> hMap = entry.getValue();
-            int falseCount = hMap.containsKey(false) ? hMap.get(false) : 0;
-            int trueCount = hMap.containsKey(true) ? hMap.get(true) : 0;
-
-            bw.write(perplexity + "\t" + falseCount + "\t" + trueCount + "\n");
-        }
-        bw.close();
     }
 
     private static Map<Double, HashMap<Boolean, Integer>> getPerplexity(MultiLabel[] labels, MultiLabel[] predictions, double[][] gammas) {
@@ -90,6 +78,46 @@ public class Exp219 {
 
         return perplexityMap;
     }
+
+    private static Map<Double,HashMap<Boolean,Integer>> getKL(MultiLabel[] labels, MultiLabel[] predictions, double[][] gammas, double[][] PIs) {
+        Map<Double, HashMap<Boolean, Integer>> KLMap = new TreeMap<>();
+
+        for (int i=0; i<gammas.length; i++) {
+            double kl = 0.0;
+            for (int j=0; j<gammas[i].length; j++) {
+                double q = gammas[i][j];
+                double p = PIs[i][j];
+                kl += p * Math.log(p/q)/Math.log(2);
+            }
+            boolean isMath = labels[i].equals(predictions[i]);
+            if (!KLMap.containsKey(kl)) {
+                KLMap.put(kl, new HashMap<>());
+            }
+            if (!KLMap.get(kl).containsKey(isMath)) {
+                KLMap.get(kl).put(isMath, 1);
+            } else {
+                KLMap.get(kl).put(isMath, KLMap.get(kl).get(isMath)+1);
+            }
+        }
+        return KLMap;
+    }
+
+    private static void writePerplexityFile(Map<Double, HashMap<Boolean,Integer>> perplexityMap, String path,
+                                            int iter, String type) throws IOException {
+        File file = new File(path, "iter."+iter+"."+type+".perplexity");
+        BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+        for (Map.Entry<Double, HashMap<Boolean, Integer>> entry : perplexityMap.entrySet()) {
+            double perplexity = entry.getKey();
+            HashMap<Boolean, Integer> hMap = entry.getValue();
+            int falseCount = hMap.containsKey(false) ? hMap.get(false) : 0;
+            int trueCount = hMap.containsKey(true) ? hMap.get(true) : 0;
+
+            bw.write(perplexity + "\t" + falseCount + "\t" + trueCount + "\n");
+        }
+        bw.close();
+    }
+
+
 
     private static double[][] getGammas(Config config, int iter, String type) throws IOException {
         List<ArrayList<Double>> listGammas = new ArrayList<>();
