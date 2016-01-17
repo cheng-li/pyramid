@@ -61,8 +61,8 @@ public class App3 {
         Config.copy(config,app2Config,same);
 
         app2Config.setString("input.folder",config.getString("output.folder"));
-        app2Config.setString("input.trainData","train");
-        app2Config.setString("input.testData","test");
+        app2Config.setString("input.trainData",config.getString("output.trainFolder"));
+        app2Config.setString("input.testData",config.getString("output.testFolder"));
         return app2Config;
     }
 

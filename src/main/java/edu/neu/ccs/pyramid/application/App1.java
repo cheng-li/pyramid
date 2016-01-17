@@ -464,7 +464,7 @@ public class App1 {
                 throw new IllegalArgumentException("unknown split mode");
         }
         index.close();
-        createDataSet(config,indexIds,"train");
+        createDataSet(config,indexIds,config.getString("output.trainFolder"));
     }
 
     static void createTestSet(Config config) throws Exception{
@@ -482,7 +482,7 @@ public class App1 {
                 throw new IllegalArgumentException("unknown split mode");
         }
         index.close();
-        createDataSet(config,indexIds,"test");
+        createDataSet(config,indexIds,config.getString("output.testFolder"));
     }
 
 //    public static String splitListToString(List<String> splitValues){
