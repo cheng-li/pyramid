@@ -30,7 +30,8 @@ public class App3 {
 
     private static Config createApp1Config(Config config){
         Config app1Config = new Config();
-        String[] same = {"output.folder","feature.useInitialFeatures","feature.categFeature.filter",
+        String[] same = {"output.folder","output.trainFolder","output.testFolder",
+                "feature.useInitialFeatures","feature.categFeature.filter",
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
                 "feature.missingValue","index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.featureFieldPrefix","index.ngramExtractionFields",
