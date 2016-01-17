@@ -124,6 +124,37 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     }
 
+    /**
+     * predict Sign(E(y|x))
+     * @param vector
+     * @return
+     */
+    public MultiLabel predictByExpectation(Vector vector){
+        double[] proportions = getMultiClassClassifier().predictClassProbs(vector);
+        double[][] probabilities = new double[numClusters][numLabels];
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                probabilities[k][l]=getBinaryClassifiers()[k][l].predictClassProb(vector,1);
+            }
+        }
+        double[] expectations = new double[numLabels];
+        for (int l=0;l<numLabels;l++){
+            double sum = 0;
+            for (int k=0;k<numClusters;k++){
+                sum += proportions[k]*probabilities[k][l];
+            }
+            expectations[l] = sum;
+        }
+
+        MultiLabel prediction = new MultiLabel();
+        for (int l=0;l<numLabels;l++){
+            if (expectations[l]>0.5){
+                prediction.addLabel(l);
+            }
+        }
+        return prediction;
+    }
+
 
     public String toString() {
         Vector vector = new RandomAccessSparseVector(numFeatures);

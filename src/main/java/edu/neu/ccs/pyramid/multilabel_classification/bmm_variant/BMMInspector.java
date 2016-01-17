@@ -167,7 +167,7 @@ public class BMMInspector {
             meanBuilder.set(l,0,sum);
         }
         BasicMatrix mean = meanBuilder.build();
-        System.out.println(mean);
+//        System.out.println(mean);
 
         List<BasicMatrix> mus  = new ArrayList<>();
         for (int k=0;k<numClusters;k++){
@@ -198,7 +198,7 @@ public class BMMInspector {
         }
         covariance = covariance.subtract(mean.multiply(mean.transpose()));
 
-        System.out.println("covariance = "+ Matrices.display(covariance));
+//        System.out.println("covariance = "+ Matrices.display(covariance));
 
         Access2D.Builder<PrimitiveMatrix> correlationBuilder = factory.getBuilder(numClasses,numClasses);
 
@@ -210,7 +210,7 @@ public class BMMInspector {
         }
 
         BasicMatrix correlation = correlationBuilder.build();
-        System.out.println("correlation = "+ Matrices.display(correlation));
+//        System.out.println("correlation = "+ Matrices.display(correlation));
 
         List<Pair<String,Double>> list = new ArrayList<>();
         for (int l=0;l<numClasses;l++){

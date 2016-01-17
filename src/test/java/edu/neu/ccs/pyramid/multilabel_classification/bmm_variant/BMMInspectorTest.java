@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
@@ -23,7 +24,19 @@ public class BMMInspectorTest {
                 DataSetType.ML_CLF_SPARSE, true);
         BMMClassifier bmmClassifier = (BMMClassifier)Serialization.deserialize(new File(TMP,"model"));
         System.out.println(Accuracy.accuracy(bmmClassifier,testSet));
-        BMMInspector.covariance(bmmClassifier,testSet.getRow(0));
+        for (int i=0;i<testSet.getNumDataPoints();i++){
+            MultiLabel trueLabel = testSet.getMultiLabels()[i];
+            MultiLabel pred = bmmClassifier.predict(testSet.getRow(i));
+            MultiLabel expectation = bmmClassifier.predictByExpectation(testSet.getRow(i));
+            if (pred.equals(trueLabel)&&!pred.equals(expectation)&&expectation.getMatchedLabels().size()>0){
+                System.out.println("==============================");
+                System.out.println("data point "+i);
+                System.out.println("prediction = "+pred);
+                System.out.println("expectation = "+expectation);
+                BMMInspector.covariance(bmmClassifier,testSet.getRow(i));
+            }
+        }
+
 
     }
 

@@ -43,6 +43,12 @@ public class Exp221 {
             double[] proportions = bmmClassifier.getMultiClassClassifier().predictClassProbs(testSet.getRow(i));
             double perplexity = Math.pow(2, Entropy.entropy2Based(proportions));
 
+            if (i==9960){
+                System.out.println("----------------------------------------------");
+                System.out.println("data point "+i+", extId="+idTranslator.toExtId(i));
+                System.out.println("labels = "+trueLabel);
+                BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i));
+            }
 
             if (trueLabel.getMatchedLabels().size()>=2&&perplexity>1.5&&bmmClassifier.predict(testSet.getRow(i)).equals(trueLabel)){
                 System.out.println("----------------------------------------------");
