@@ -233,9 +233,12 @@ public class App2 {
 
 
 
-        boolean topFeaturesToJson = true;
+        boolean topFeaturesToJson = false;
+        File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
+        if (distributionFile.exists()){
+            topFeaturesToJson = true;
+        }
         if (topFeaturesToJson){
-            File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
             Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
             int limit = config.getInt("report.topFeatures.limit");
             List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())

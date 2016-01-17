@@ -404,7 +404,10 @@ public class App1 {
         }
 
         Set<Ngram> ngrams = gather(config,index,trainIndexIds);
-        getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
+        if (config.getBoolean("feature.generateDistribution")){
+            getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
+        }
+
         addNgramFeatures(featureList,ngrams);
 
         Serialization.serialize(featureList,new File(metaDataFolder,"feature_list.ser"));
