@@ -55,7 +55,7 @@ public class ClassScoreCalculation {
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClassScoreCalculation{");
         sb.append("internalClassIndex=").append(internalClassIndex);
-        sb.append(", className='").append(className).append('\'');
+//        sb.append(", className='").append(className).append('\'');
         sb.append(", classScore=").append(classScore);
         sb.append(", classProbability=").append(classProbability);
         sb.append(", rules=").append(rules);

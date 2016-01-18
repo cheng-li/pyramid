@@ -11,6 +11,7 @@ import edu.neu.ccs.pyramid.regression.ClassScoreCalculation;
 import edu.neu.ccs.pyramid.util.Serialization;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -65,6 +66,13 @@ public class Exp222 {
 
         IdTranslator idTranslator = testSet.getIdTranslator();
         LabelTranslator labelTranslator = testSet.getLabelTranslator();
+
+        List<String> extLabels = new ArrayList<>();
+        for (int l=0;l<testSet.getNumClasses();l++){
+            extLabels.add("\""+labelTranslator.toExtLabel(l)+"\"");
+        }
+        System.out.println(extLabels);
+
         for (int i=0;i<testSet.getNumDataPoints();i++){
             MultiLabel trueLabel = testSet.getMultiLabels()[i];
             double[] proportions = bmmClassifier.getMultiClassClassifier().predictClassProbs(testSet.getRow(i));
@@ -73,8 +81,8 @@ public class Exp222 {
             MultiLabel expectation = bmmClassifier.predictByExpectation(testSet.getRow(i));
             MultiLabel indePred = independent.predict(testSet.getRow(i));
 
-//            boolean condition = trueLabel.getMatchedLabels().size()>=2&&perplexity>1.5&&pred.equals(trueLabel)&&!indePred.equals(trueLabel)&&!expectation.equals(trueLabel);
-            boolean condition = i==526;
+            boolean condition = trueLabel.getMatchedLabels().size()>=2&&perplexity>1.5&&pred.equals(trueLabel)&&!indePred.equals(trueLabel)&&!expectation.equals(trueLabel);
+//            boolean condition = i==526;
 
             if (condition){
                 System.out.println("----------------------------------------------");
@@ -93,7 +101,7 @@ public class Exp222 {
                     LogisticRegression logisticRegression = (LogisticRegression)independent.getBinaryClassifiers()[0][label];
                     logisticRegression.setFeatureList(testSet.getFeatureList());
                     ClassScoreCalculation classScoreCalculation = LogisticRegressionInspector.decisionProcess(logisticRegression, testSet.getLabelTranslator(), testSet.getRow(i), 1, 10);
-                    System.out.println("for class "+label);
+                    System.out.println("for class "+labelTranslator.toExtLabel(label));
                     System.out.println(classScoreCalculation);
                 }
             }

@@ -125,13 +125,15 @@ public class BMMInspector {
             }
         }
 
-        System.out.println("proportion = "+ Arrays.toString(proportions));
+//        System.out.println("proportion = "+ Arrays.toString(proportions));
+
         System.out.println("perplexity="+ Math.pow(2,Entropy.entropy2Based(proportions)));
+        double[] sortedPorportions = new double[numClusters];
         for (int t=0;t<sorted.length;t++){
             int k = sorted[t];
-            System.out.println("rank "+t);
-            System.out.println("cluster "+k);
-            System.out.println(proportions[k]);
+//            System.out.println("rank "+t);
+//            System.out.println("cluster "+k);
+//            System.out.println(proportions[k]);
             StringBuilder sb = new StringBuilder();
 //            sb.append("[");
 //            for (int l=0;l<numClasses;l++){
@@ -143,8 +145,10 @@ public class BMMInspector {
 //            }
 //            sb.append("]");
 //            System.out.println(sb.toString());
-            System.out.println(Arrays.toString(probabilities[k]));
+            System.out.println("prob"+(t+1)+" = " +Arrays.toString(probabilities[k]));
+            sortedPorportions[t] = proportions[k];
         }
+        System.out.println("proportions = "+Arrays.toString(sortedPorportions));
     }
 
     public static void covariance(BMMClassifier bmmClassifier, Vector vector, LabelTranslator labelTranslator){
