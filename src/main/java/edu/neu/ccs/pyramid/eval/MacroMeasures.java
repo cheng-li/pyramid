@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+
 /**
  * Created by Rainicy on 8/11/15.
  */
@@ -12,6 +15,10 @@ public class MacroMeasures extends LabelBasedMeasures{
      */
     public MacroMeasures(int numLabels) {
         super(numLabels);
+    }
+
+    public MacroMeasures(MultiLabelClfDataSet dataSet, MultiLabel[] prediction) {
+        super(dataSet,prediction);
     }
 
     /**
