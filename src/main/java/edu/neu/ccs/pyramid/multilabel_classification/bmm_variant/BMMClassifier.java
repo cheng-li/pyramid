@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.classification.Classifier.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
@@ -96,10 +97,34 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 //        return results.toArray(new MultiLabel[results.size()]);
 //    }
 
-    // todo rewrite
-    public double predictMaxProb(Vector vector){
-        BMMPredictor bmmPredictor = new BMMPredictor(vector, multiClassClassifier, binaryClassifiers, numClusters, numLabels);
-        return bmmPredictor.predictMaxProb();
+
+    public double predictLogAssignmentProb(Vector vector, MultiLabel assignment){
+        double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
+        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+            }
+        }
+        double[] logProbs = new double[numClusters];
+        for (int k=0;k<numClusters;k++){
+            double sum = 0;
+            sum += logProportions[k];
+            for (int l=0;l<numLabels;l++){
+                if (assignment.matchClass(l)){
+                    sum += logClassProbs[k][l][1];
+                } else {
+                    sum += logClassProbs[k][l][0];
+                }
+            }
+            logProbs[k] = sum;
+        }
+        return MathUtil.logSumExp(logProbs);
+    }
+
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
+        return Math.exp(predictLogAssignmentProb(vector,assignment));
     }
 
 
@@ -217,6 +242,8 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         File file1 = new File(file);
         return deserialize(file1);
     }
+
+
 
     @Override
     public void serialize(File file) throws Exception {

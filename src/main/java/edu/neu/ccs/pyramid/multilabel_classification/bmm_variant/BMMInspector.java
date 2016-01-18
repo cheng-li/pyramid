@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.bmm_variant;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
@@ -124,7 +125,6 @@ public class BMMInspector {
             }
         }
 
-        System.out.println("probability = "+bmmClassifier.predictMaxProb(vector));
         System.out.println("proportion = "+ Arrays.toString(proportions));
         System.out.println("perplexity="+ Math.pow(2,Entropy.entropy2Based(proportions)));
         for (int t=0;t<sorted.length;t++){
@@ -147,7 +147,7 @@ public class BMMInspector {
         }
     }
 
-    public static void covariance(BMMClassifier bmmClassifier, Vector vector){
+    public static void covariance(BMMClassifier bmmClassifier, Vector vector, LabelTranslator labelTranslator){
         int numClusters = bmmClassifier.getNumClusters();
         int numClasses = bmmClassifier.getNumClasses();
         double[] proportions = bmmClassifier.getMultiClassClassifier().predictClassProbs(vector);
@@ -215,7 +215,7 @@ public class BMMInspector {
         List<Pair<String,Double>> list = new ArrayList<>();
         for (int l=0;l<numClasses;l++){
             for (int j=0;j<l;j++){
-                String s = ""+l+", "+j;
+                String s = ""+labelTranslator.toExtLabel(l)+", "+labelTranslator.toExtLabel(j);
                 double v = correlation.get(l,j).doubleValue();
                 Pair<String,Double> pair = new Pair<>(s,v);
                 list.add(pair);

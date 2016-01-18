@@ -33,7 +33,7 @@ public class BMMInspectorTest {
                 System.out.println("data point "+i);
                 System.out.println("prediction = "+pred);
                 System.out.println("expectation = "+expectation);
-                BMMInspector.covariance(bmmClassifier,testSet.getRow(i));
+                BMMInspector.covariance(bmmClassifier,testSet.getRow(i),testSet.getLabelTranslator());
             }
         }
 

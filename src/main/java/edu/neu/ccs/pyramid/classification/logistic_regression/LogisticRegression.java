@@ -175,7 +175,7 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return featureList;
     }
 
-    void setFeatureList(FeatureList featureList) {
+    public void setFeatureList(FeatureList featureList) {
         this.featureList = featureList;
     }
 

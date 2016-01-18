@@ -45,4 +45,15 @@ public class LinearRule implements Rule {
     public void setScore(double score) {
         this.score = score;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("LinearRule{");
+        sb.append("feature=").append(feature);
+        sb.append(", weight=").append(weight);
+        sb.append(", featureValue=").append(featureValue);
+        sb.append(", score=").append(score);
+        sb.append('}');
+        return sb.toString();
+    }
 }
