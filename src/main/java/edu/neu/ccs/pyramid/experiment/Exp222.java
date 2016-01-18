@@ -81,8 +81,9 @@ public class Exp222 {
             MultiLabel expectation = bmmClassifier.predictByExpectation(testSet.getRow(i));
             MultiLabel indePred = independent.predict(testSet.getRow(i));
 
-            boolean condition = trueLabel.getMatchedLabels().size()>=2&&perplexity>1.5&&pred.equals(trueLabel)&&!indePred.equals(trueLabel)&&!expectation.equals(trueLabel);
+//            boolean condition = trueLabel.getMatchedLabels().size()>=2&&perplexity>1.5&&pred.equals(trueLabel)&&!indePred.equals(trueLabel)&&!expectation.equals(trueLabel);
 //            boolean condition = i==526;
+            boolean condition = !trueLabel.equals(pred);
 
             if (condition){
                 System.out.println("----------------------------------------------");

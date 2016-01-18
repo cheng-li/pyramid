@@ -960,5 +960,21 @@ public class DataSetUtil {
         return sb.toString();
     }
 
+    public static void detectDuplicate(MultiLabelClfDataSet train, MultiLabelClfDataSet test){
+        Set<Vector> vectors = new HashSet<>();
+        for (int i=0;i<train.getNumDataPoints();i++){
+            vectors.add(train.getRow(i));
+        }
+
+        List<Integer> duplicate = new ArrayList<>();
+        for (int i=0;i<test.getNumDataPoints();i++){
+            if (vectors.contains(test.getRow(i))){
+                duplicate.add(i);
+            }
+        }
+        System.out.println("number of test data points which occur in training set = "+duplicate.size());
+        System.out.println("duplicates = "+duplicate);
+    }
+
 
 }
