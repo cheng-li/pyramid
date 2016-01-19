@@ -166,9 +166,9 @@ public class BMMPredictor {
         Vector predVector = new DenseVector(numLabels);
 
         int iter = 0;
-        int maxIter = 0;
+        int maxIter = 100;
 
-        while (DPs.size() > 0) {
+        while (DPs.size() > 0 && iter < maxIter) {
             List<Integer> removeList = new LinkedList<>();
             for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
                 int k = entry.getKey();
@@ -204,7 +204,6 @@ public class BMMPredictor {
 
             iter++;
         }
-
 //        System.out.print("maxIter: " + maxIter + "\t" + Math.exp(maxLogProb) + "\t");
 //        System.out.println("maxIter: " + maxIter);
         MultiLabel predLabel = new MultiLabel();
@@ -213,6 +212,21 @@ public class BMMPredictor {
                 predLabel.addLabel(l);
             }
         }
+
+        // loop break because of maximum iterations
+        if (iter == maxIter) {
+            MultiLabel sampleLabel = predictBySampling();
+            Vector sampleVector = new DenseVector(numLabels);
+            for (int l : sampleLabel.getMatchedLabels()) {
+                sampleVector.set(l, 1.0);
+            }
+            double sampleLogProb = logProbYnGivenXnLogisticProb(sampleVector);
+            if (sampleLogProb > maxLogProb) {
+                return sampleLabel;
+            }
+        }
+
+
         return predLabel;
     }
 
