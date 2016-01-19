@@ -74,13 +74,13 @@ public class Exp211 {
                 BMMInitializer.initialize(bmmClassifier, trainSet, optimizer);
                 System.out.println("finish initialization");
             }
-            trainPredict = bmmClassifier.predict(trainSet);
-            testPredict = bmmClassifier.predict(testSet);
-
-            System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
-            System.out.print("trainOver: " + Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
-            System.out.print("testACC  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
-            System.out.println("testOver : " + Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
+//            trainPredict = bmmClassifier.predict(trainSet);
+//            testPredict = bmmClassifier.predict(testSet);
+//
+//            System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
+//            System.out.print("trainOver: " + Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
+//            System.out.print("testACC  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
+//            System.out.println("testOver : " + Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
 
         }
 
