@@ -35,12 +35,13 @@ public class Exp222 {
 
 //        BMMClassifier independent = (BMMClassifier)Serialization.deserialize(new File(TMP,"inde"));
 
-//        MultiLabel[] indePredictions = independent.predict(testSet);
-        MultiLabel[] bmmPredictions = bmmClassifier.predict(testSet);
+
 
         boolean measure = false;
 
         if (measure){
+            //        MultiLabel[] indePredictions = independent.predict(testSet);
+            MultiLabel[] bmmPredictions = bmmClassifier.predict(testSet);
             System.out.println("independent measures");
 
 //            LabelBasedMeasures indeMeasure = new LabelBasedMeasures(testSet,indePredictions);
