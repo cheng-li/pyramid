@@ -90,7 +90,7 @@ public class BMMInspector {
 
 
 
-    public static void visualizePrediction(BMMClassifier bmmClassifier, Vector vector){
+    public static void visualizePrediction(BMMClassifier bmmClassifier, Vector vector, LabelTranslator labelTranslator){
         int numClusters = bmmClassifier.getNumClusters();
         int numClasses = bmmClassifier.getNumClasses();
         double[] proportions = bmmClassifier.getMultiClassClassifier().predictClassProbs(vector);
@@ -147,6 +147,17 @@ public class BMMInspector {
 //            System.out.println(sb.toString());
             System.out.println("prob"+(t+1)+" = " +Arrays.toString(probabilities[k]));
             sortedPorportions[t] = proportions[k];
+        }
+        for (int t=0;t<sorted.length;t++){
+            int k = sorted[t];
+            double[] probs = probabilities[k];
+            List<String> labels = new ArrayList<>();
+            for (int l=0;l<numClasses;l++){
+                if (probs[l]>0.5){
+                    labels.add("\""+labelTranslator.toExtLabel(l)+"\"");
+                }
+            }
+            System.out.println("labels"+(t+1)+" = "+labels);
         }
         System.out.println("proportions = "+Arrays.toString(sortedPorportions));
     }

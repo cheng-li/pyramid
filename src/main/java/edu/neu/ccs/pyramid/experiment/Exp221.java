@@ -34,6 +34,7 @@ public class Exp221 {
         Set<MultiLabel> set = new HashSet<>();
         set.addAll(list);
 
+        LabelTranslator labelTranslator = trainSet.getLabelTranslator();
 
         BMMClassifier bmmClassifier = (BMMClassifier) Serialization.deserialize(config.getString("input.model"));
 
@@ -47,14 +48,14 @@ public class Exp221 {
                 System.out.println("----------------------------------------------");
                 System.out.println("data point "+i+", extId="+idTranslator.toExtId(i));
                 System.out.println("labels = "+trueLabel);
-                BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i));
+                BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i),labelTranslator);
             }
 
             if (trueLabel.getMatchedLabels().size()>=2&&perplexity>1.5&&bmmClassifier.predict(testSet.getRow(i)).equals(trueLabel)){
                 System.out.println("----------------------------------------------");
                 System.out.println("data point "+i+", extId="+idTranslator.toExtId(i));
                 System.out.println("labels = "+trueLabel);
-                BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i));
+                BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i),labelTranslator);
             }
         }
     }
