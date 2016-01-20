@@ -114,6 +114,12 @@ public class Exp211 {
                 testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
                         DataSetType.ML_CLF_SEQ_SPARSE, true);
                 break;
+            case "dense":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                break;
             default:
                 throw new IllegalArgumentException("unknown type");
         }
