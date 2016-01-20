@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.powerset;
 
+import edu.neu.ccs.pyramid.classification.lkboost.LKBOutputCalculator;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
 import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogisticTrainer;
@@ -13,6 +14,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.optimization.*;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import org.apache.mahout.math.Vector;
 
 import java.awt.*;
@@ -27,7 +30,6 @@ public class LPOptimizer {
 
     private ClfDataSet dataSet;
 
-    // number of single labels
     private int numClasses;
 
 
@@ -70,15 +72,22 @@ public class LPOptimizer {
     public void optimize(Config config) {
         String classifier = config.getString("classifier");
 
-        if (classifier.equals("lkboost")) {
+        if (classifier.equals("boost")) {
             LKBoost lkBoost = new LKBoost(numClasses);
-            LKBoostOptimizer optimizer = new LKBoostOptimizer(lkBoost, this.dataSet);
+            RegTreeConfig regTreeConfig = new RegTreeConfig()
+                    .setMaxNumLeaves(config.getInt("numLeaves"));
+            RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+            regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numClasses));
+
+            LKBoostOptimizer optimizer = new LKBoostOptimizer(lkBoost, this.dataSet, regTreeFactory);
+            optimizer.setShrinkage(0.1);
             optimizer.initialize();
 
             for (int round=0; round<config.getInt("numIters"); round++) {
+                optimizer.iterate();
                 System.out.print("round:"+round);
                 System.out.println("\tacc: " + Accuracy.accuracy(lkBoost,dataSet));
-                optimizer.iterate();
+
             }
 
             this.classifier.estimator = lkBoost;
@@ -94,15 +103,16 @@ public class LPOptimizer {
                 System.out.println("\tacc: " + Accuracy.accuracy(logisticRegression,dataSet));
             }
             this.classifier.estimator = logisticRegression;
-        } else if (classifier.equals("lbfgs")){
+        } else if (classifier.equals("lr")){
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
-            LogisticLoss loss = new LogisticLoss(logisticRegression,dataSet, config.getDouble("regularization"));
+            LogisticLoss loss = new LogisticLoss(logisticRegression,dataSet, config.getDouble("variance"));
             LBFGS optimizer = new LBFGS(loss);
             optimizer.getTerminator().setAbsoluteEpsilon(0.1);
             for (int round=0; round<config.getInt("numIters"); round++) {
+                optimizer.iterate();
                 System.out.print("round:"+round);
                 System.out.println("\tacc: " + Accuracy.accuracy(logisticRegression,dataSet));
-                optimizer.iterate();
+
             }
             this.classifier.estimator = logisticRegression;
         } else {

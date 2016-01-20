@@ -26,10 +26,32 @@ public class Exp215 {
 
         System.out.println(config);
 
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SPARSE, true);
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
-                DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet trainSet;
+        MultiLabelClfDataSet testSet;
+        String matrixType = config.getString("input.matrixType");
+
+        switch (matrixType){
+            case "sparse_random":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                break;
+            case "sparse_sequential":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                break;
+            case "dense":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown type");
+        }
 
 
         LPClassifier lpClassifier;
@@ -44,7 +66,7 @@ public class Exp215 {
             optimizer.optimize(config);
         }
 
-        System.out.println("classifier: \n" + lpClassifier);
+//        System.out.println("classifier: \n" + lpClassifier);
 
         MultiLabel[] trainPredict = lpClassifier.predict(trainSet);
         MultiLabel[] testPredict = lpClassifier.predict(testSet);
