@@ -82,7 +82,8 @@ public class Exp211 {
                         System.out.println("training set does not contain empty labels, automatically set allow empty = false");
                     }
                     break;
-
+                default:
+                    throw new IllegalArgumentException("unknown value for predict.allowEmpty");
             }
 
 
