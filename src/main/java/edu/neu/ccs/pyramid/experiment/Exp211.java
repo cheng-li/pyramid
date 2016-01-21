@@ -1,10 +1,7 @@
 package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
@@ -18,6 +15,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 /**
@@ -36,6 +35,8 @@ public class Exp211 {
         optimizer.setNumIterationsMultiClass(config.getInt("boost.numIterationsMultiClass"));
         optimizer.setShrinkageBinary(config.getDouble("boost.shrinkageBinary"));
         optimizer.setShrinkageMultiClass(config.getDouble("boost.shrinkageMultiClass"));
+        optimizer.setNumLeavesBinary(config.getInt("boost.numLeavesBinary"));
+        optimizer.setNumLeavesMultiClass(config.getInt("boost.numLeavesMultiClass"));
 
         return optimizer;
     }
@@ -61,7 +62,29 @@ public class Exp211 {
 
             bmmClassifier.setPredictMode(config.getString("predict.mode"));
             bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
-            bmmClassifier.setAllowEmpty(config.getBoolean("predict.allowEmpty"));
+
+            String allowEmpty = config.getString("predict.allowEmpty");
+            switch (allowEmpty){
+                case "true":
+                    bmmClassifier.setAllowEmpty(true);
+                    break;
+                case "false":
+                    bmmClassifier.setAllowEmpty(false);
+                    break;
+                case "auto":
+                    Set<MultiLabel> seen = DataSetUtil.gatherMultiLabels(trainSet).stream().collect(Collectors.toSet());
+                    MultiLabel empty = new MultiLabel();
+                    if (seen.contains(empty)){
+                        bmmClassifier.setAllowEmpty(true);
+                        System.out.println("training set contains empty labels, automatically set allow empty = true");
+                    } else {
+                        bmmClassifier.setAllowEmpty(false);
+                        System.out.println("training set does not contain empty labels, automatically set allow empty = false");
+                    }
+                    break;
+
+            }
+
 
             MultiLabel[] trainPredict;
             MultiLabel[] testPredict;
