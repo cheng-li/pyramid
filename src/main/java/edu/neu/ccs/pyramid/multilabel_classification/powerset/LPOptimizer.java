@@ -93,7 +93,7 @@ public class LPOptimizer {
                 System.out.print("\ttrainAcc: " + Accuracy.accuracy(lkBoost,dataSet));
                 MultiLabel[] predictions = this.classifier.predict(testSet);
                 System.out.print("\ttestAcc: " + Accuracy.accuracy(testSet.getMultiLabels(), predictions));
-                System.out.println("\ttestAcc: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
+                System.out.println("\ttestOverlap: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
             }
         } else if (classifier.equals("elasticnet")) {
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
@@ -108,7 +108,7 @@ public class LPOptimizer {
                 System.out.print("\ttrainAcc: " + Accuracy.accuracy(logisticRegression,dataSet));
                 MultiLabel[] predictions = this.classifier.predict(testSet);
                 System.out.print("\ttestAcc: " + Accuracy.accuracy(testSet.getMultiLabels(), predictions));
-                System.out.println("\ttestAcc: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
+                System.out.println("\ttestOverlap: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
             }
         } else if (classifier.equals("lr")){
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
@@ -122,7 +122,7 @@ public class LPOptimizer {
                 System.out.print("\ttrainAcc: " + Accuracy.accuracy(logisticRegression,dataSet));
                 MultiLabel[] predictions = this.classifier.predict(testSet);
                 System.out.print("\ttestAcc: " + Accuracy.accuracy(testSet.getMultiLabels(), predictions));
-                System.out.println("\ttestAcc: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
+                System.out.println("\ttestOverlap: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
                 if (optimizer.getTerminator().shouldTerminate()){
                     break;
                 }
