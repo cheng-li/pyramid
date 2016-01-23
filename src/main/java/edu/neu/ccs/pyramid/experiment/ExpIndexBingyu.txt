@@ -18,3 +18,4 @@
 218: CRF for CML model.
 219: perplexity for mixture logistic
 224: statistics of multilabel dataset
+225: analyze the prediction for mixture exp211

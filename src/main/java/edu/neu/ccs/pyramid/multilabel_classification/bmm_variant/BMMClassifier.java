@@ -13,6 +13,9 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 /**
@@ -127,6 +130,29 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return Math.exp(predictLogAssignmentProb(vector,assignment));
     }
 
+
+    ///////////TEST///////////////
+    public MultiLabel[] predict(MultiLabelClfDataSet dataSet, MultiLabel[] labelSet){
+
+        List<MultiLabel> results = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToObj(i -> predict(dataSet.getRow(i), labelSet))
+                .collect(Collectors.toList());
+        return results.toArray(new MultiLabel[results.size()]);
+    }
+    public MultiLabel predict(Vector vector, MultiLabel[] labelSet) {
+        MultiLabel prediction = new MultiLabel();
+        double maxLogProb = Double.NEGATIVE_INFINITY;
+
+        for (MultiLabel label : labelSet) {
+            double logProb = predictLogAssignmentProb(vector, label);
+            if (logProb > maxLogProb) {
+                maxLogProb = logProb;
+                prediction = label;
+            }
+        }
+        return prediction;
+    }
+    ///////////TEST///////////////
 
     public MultiLabel predict(Vector vector) {
 
