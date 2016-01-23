@@ -13,6 +13,7 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
@@ -30,12 +31,14 @@ public class LPOptimizer {
 
     private ClfDataSet dataSet;
 
+    private MultiLabelClfDataSet testSet;
+
     private int numClasses;
 
 
-    public LPOptimizer(LPClassifier classifier, MultiLabelClfDataSet dataSet) {
+    public LPOptimizer(LPClassifier classifier, MultiLabelClfDataSet dataSet, MultiLabelClfDataSet testSet) {
         this.classifier = classifier;
-
+        this.testSet = testSet;
         // build index to multilabel and multilabel to index map.
         Map<Integer, MultiLabel> IDToML = new HashMap<>();
         Map<MultiLabel, Integer> MLToID = new HashMap<>();
@@ -85,12 +88,13 @@ public class LPOptimizer {
 
             for (int round=0; round<config.getInt("numIters"); round++) {
                 optimizer.iterate();
+                this.classifier.estimator = lkBoost;
                 System.out.print("round:"+round);
-                System.out.println("\tacc: " + Accuracy.accuracy(lkBoost,dataSet));
-
+                System.out.print("\ttrainAcc: " + Accuracy.accuracy(lkBoost,dataSet));
+                MultiLabel[] predictions = this.classifier.predict(testSet);
+                System.out.print("\ttestAcc: " + Accuracy.accuracy(testSet.getMultiLabels(), predictions));
+                System.out.println("\ttestAcc: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
             }
-
-            this.classifier.estimator = lkBoost;
         } else if (classifier.equals("elasticnet")) {
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
             ElasticNetLogisticTrainer optimizer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
@@ -100,9 +104,12 @@ public class LPOptimizer {
             for (int round=0; round<config.getInt("numIters"); round++) {
                 System.out.print("round:"+round);
                 optimizer.iterate();
-                System.out.println("\tacc: " + Accuracy.accuracy(logisticRegression,dataSet));
+                this.classifier.estimator = logisticRegression;
+                System.out.print("\ttrainAcc: " + Accuracy.accuracy(logisticRegression,dataSet));
+                MultiLabel[] predictions = this.classifier.predict(testSet);
+                System.out.print("\ttestAcc: " + Accuracy.accuracy(testSet.getMultiLabels(), predictions));
+                System.out.println("\ttestAcc: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
             }
-            this.classifier.estimator = logisticRegression;
         } else if (classifier.equals("lr")){
             LogisticRegression logisticRegression = new LogisticRegression(numClasses, dataSet.getNumFeatures());
             LogisticLoss loss = new LogisticLoss(logisticRegression,dataSet, config.getDouble("variance"));
@@ -110,11 +117,13 @@ public class LPOptimizer {
             optimizer.getTerminator().setAbsoluteEpsilon(0.1);
             for (int round=0; round<config.getInt("numIters"); round++) {
                 optimizer.iterate();
+                this.classifier.estimator = logisticRegression;
                 System.out.print("round:"+round);
-                System.out.println("\tacc: " + Accuracy.accuracy(logisticRegression,dataSet));
-
+                System.out.print("\ttrainAcc: " + Accuracy.accuracy(logisticRegression,dataSet));
+                MultiLabel[] predictions = this.classifier.predict(testSet);
+                System.out.print("\ttestAcc: " + Accuracy.accuracy(testSet.getMultiLabels(), predictions));
+                System.out.println("\ttestAcc: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
             }
-            this.classifier.estimator = logisticRegression;
         } else {
             throw new RuntimeException("Unknown classifier");
         }
