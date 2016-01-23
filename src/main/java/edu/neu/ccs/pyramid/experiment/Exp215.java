@@ -62,7 +62,7 @@ public class Exp215 {
             lpClassifier = LPClassifier.deserialize(new File(output, modelName));
         } else {
             lpClassifier = new LPClassifier(trainSet);
-            LPOptimizer optimizer = new LPOptimizer(lpClassifier,trainSet);
+            LPOptimizer optimizer = new LPOptimizer(lpClassifier,trainSet, testSet);
             optimizer.optimize(config);
         }
 
