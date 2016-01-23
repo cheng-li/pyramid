@@ -16,8 +16,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -54,7 +56,7 @@ public class Exp211 {
         File lastFile = null;
         int lastIter = -1;
         for (File file: modeFiles){
-            String[] split = file.getName().split(".");
+            String[] split = file.getName().split(Pattern.quote("."));
             int iter = Integer.parseInt(split[1]);
             if (iter>lastIter){
                 lastIter = iter;
@@ -63,7 +65,7 @@ public class Exp211 {
             }
         }
         bmmClassifier = BMMClassifier.deserialize(lastFile);
-        System.out.println("bmm loaded, with "+completedIterations+ "iterations completed");
+        System.out.println("bmm loaded, with "+completedIterations+ " iterations completed");
         return new Pair<>(bmmClassifier,completedIterations);
     }
 
@@ -114,7 +116,7 @@ public class Exp211 {
             System.out.println("finish initialization");
         }
 
-        System.out.println("bmm loaded, with "+completedIterations+ "iterations completed");
+        System.out.println("bmm loaded, with "+completedIterations+ " iterations completed");
         return new Pair<>(bmmClassifier,completedIterations);
     }
 
