@@ -8,11 +8,13 @@ import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
 import edu.neu.ccs.pyramid.util.Grid;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
@@ -41,74 +43,108 @@ public class Exp211 {
         return optimizer;
     }
 
-    public static BMMClassifier loadBMM(Config config, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet testSet) throws Exception{
-        int numClusters = config.getInt("mixture.numClusters");
-
-        String output = config.getString("output");
-        String modelName = config.getString("modelName");
-
+    public static Pair<BMMClassifier,Integer> loadOldBMM(Config config) throws Exception{
 
         BMMClassifier bmmClassifier;
-        if (config.getBoolean("train.warmStart")) {
-            bmmClassifier = BMMClassifier.deserialize(Paths.get(output,modelName,"model").toFile());
-        } else {
-            bmmClassifier = BMMClassifier.getBuilder()
-                    .setNumClasses(trainSet.getNumClasses())
-                    .setNumFeatures(trainSet.getNumFeatures())
-                    .setNumClusters(numClusters)
-                    .setMultiClassClassifierType(config.getString("mixture.multiClassClassifierType"))
-                    .setBinaryClassifierType(config.getString("mixture.binaryClassifierType"))
-                            .build();
+        int completedIterations = 0;
+        String output = config.getString("output");
+        String modelName = config.getString("modelName");
+        File folder = Paths.get(output,modelName).toFile();
+        File[] modeFiles = folder.listFiles((dir, name) -> name.startsWith("iter.") && (name.endsWith(".model")));
+        File lastFile = null;
+        int lastIter = -1;
+        for (File file: modeFiles){
+            String[] split = file.getName().split(".");
+            int iter = Integer.parseInt(split[1]);
+            if (iter>lastIter){
+                lastIter = iter;
+                lastFile = file;
+                completedIterations = lastIter;
+            }
+        }
+        bmmClassifier = BMMClassifier.deserialize(lastFile);
+        System.out.println("bmm loaded, with "+completedIterations+ "iterations completed");
+        return new Pair<>(bmmClassifier,completedIterations);
+    }
 
-            bmmClassifier.setPredictMode(config.getString("predict.mode"));
-            bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
+    public static Pair<BMMClassifier,Integer> loadNewBMM(Config config, MultiLabelClfDataSet trainSet) throws Exception{
 
-            String allowEmpty = config.getString("predict.allowEmpty");
-            switch (allowEmpty){
-                case "true":
+        BMMClassifier bmmClassifier;
+        int completedIterations = 0;
+
+        bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(trainSet.getNumClasses())
+                .setNumFeatures(trainSet.getNumFeatures())
+                .setNumClusters(config.getInt("mixture.numClusters"))
+                .setMultiClassClassifierType(config.getString("mixture.multiClassClassifierType"))
+                .setBinaryClassifierType(config.getString("mixture.binaryClassifierType"))
+                .build();
+
+        bmmClassifier.setPredictMode(config.getString("predict.mode"));
+        bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
+
+        String allowEmpty = config.getString("predict.allowEmpty");
+        switch (allowEmpty){
+            case "true":
+                bmmClassifier.setAllowEmpty(true);
+                break;
+            case "false":
+                bmmClassifier.setAllowEmpty(false);
+                break;
+            case "auto":
+                Set<MultiLabel> seen = DataSetUtil.gatherMultiLabels(trainSet).stream().collect(Collectors.toSet());
+                MultiLabel empty = new MultiLabel();
+                if (seen.contains(empty)){
                     bmmClassifier.setAllowEmpty(true);
-                    break;
-                case "false":
+                    System.out.println("training set contains empty labels, automatically set allow empty = true");
+                } else {
                     bmmClassifier.setAllowEmpty(false);
-                    break;
-                case "auto":
-                    Set<MultiLabel> seen = DataSetUtil.gatherMultiLabels(trainSet).stream().collect(Collectors.toSet());
-                    MultiLabel empty = new MultiLabel();
-                    if (seen.contains(empty)){
-                        bmmClassifier.setAllowEmpty(true);
-                        System.out.println("training set contains empty labels, automatically set allow empty = true");
-                    } else {
-                        bmmClassifier.setAllowEmpty(false);
-                        System.out.println("training set does not contain empty labels, automatically set allow empty = false");
-                    }
-                    break;
-                default:
-                    throw new IllegalArgumentException("unknown value for predict.allowEmpty");
-            }
-
-
-            MultiLabel[] trainPredict;
-            MultiLabel[] testPredict;
-
-
-            if (config.getBoolean("train.initialize")) {
-                System.out.println("start initialization with temperature "+config.getDouble("em.startTemperature"));
-                BMMOptimizer optimizer = getOptimizer(config,bmmClassifier,trainSet);
-                optimizer.setTemperature(config.getDouble("em.startTemperature"));
-                BMMInitializer.initialize(bmmClassifier, trainSet, optimizer);
-                System.out.println("finish initialization");
-            }
-//            trainPredict = bmmClassifier.predict(trainSet);
-//            testPredict = bmmClassifier.predict(testSet);
-//
-//            System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPredict) + "\t");
-//            System.out.print("trainOver: " + Overlap.overlap(trainSet.getMultiLabels(), trainPredict) + "\t");
-//            System.out.print("testACC  : " + Accuracy.accuracy(testSet.getMultiLabels(), testPredict) + "\t");
-//            System.out.println("testOver : " + Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
-
+                    System.out.println("training set does not contain empty labels, automatically set allow empty = false");
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("unknown value for predict.allowEmpty");
         }
 
-        return bmmClassifier;
+        if (config.getBoolean("train.initialize")) {
+            System.out.println("start initialization with temperature "+config.getDouble("em.startTemperature"));
+            BMMOptimizer optimizer = getOptimizer(config,bmmClassifier,trainSet);
+            optimizer.setTemperature(config.getDouble("em.startTemperature"));
+            BMMInitializer.initialize(bmmClassifier, trainSet, optimizer);
+            System.out.println("finish initialization");
+        }
+
+        System.out.println("bmm loaded, with "+completedIterations+ "iterations completed");
+        return new Pair<>(bmmClassifier,completedIterations);
+    }
+
+
+
+    public static Pair<BMMClassifier,Integer> loadBMM(Config config, MultiLabelClfDataSet trainSet) throws Exception{
+        String mode = config.getString("train.warmStart");
+        Pair<BMMClassifier,Integer> pair = null;
+        switch (mode){
+            case "true":
+                pair = loadOldBMM(config);
+                break;
+            case "false":
+                pair = loadNewBMM(config,trainSet);
+                break;
+            case "auto":
+                String output = config.getString("output");
+                String modelName = config.getString("modelName");
+                File folder = Paths.get(output,modelName).toFile();
+                File[] modeFiles = folder.listFiles((dir, name) -> name.startsWith("iter.") && (name.endsWith(".model")));
+                if (modeFiles.length==0){
+                    pair = loadNewBMM(config,trainSet);
+                } else {
+                    pair = loadOldBMM(config);
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("unknown value for train.warmStart");
+        }
+        return pair;
     }
 
     public static void main(String[] args) throws Exception {
@@ -156,7 +192,9 @@ public class Exp211 {
         File path = Paths.get(output, modelName).toFile();
         path.mkdirs();
 
-        BMMClassifier bmmClassifier = loadBMM(config,trainSet,testSet);
+        Pair<BMMClassifier,Integer> pair = loadBMM(config,trainSet);
+        BMMClassifier bmmClassifier = pair.getFirst();
+        int completedIterations = pair.getSecond();
 
         BMMOptimizer optimizer = getOptimizer(config,bmmClassifier,trainSet);
 
@@ -165,7 +203,7 @@ public class Exp211 {
         int numTemperatures = config.getInt("em.numTemperatures");
         List<Double> temperatures = Grid.uniformDecreasing(endTemperature,startTemperature,numTemperatures);
 
-        int totalIter = 0;
+        int totalIter = completedIterations+1;
         for (double temperature: temperatures){
             System.out.println("------------------------------------------------");
             System.out.println("temperature = "+temperature);

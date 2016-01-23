@@ -123,6 +123,9 @@ public class LPOptimizer {
                 MultiLabel[] predictions = this.classifier.predict(testSet);
                 System.out.print("\ttestAcc: " + Accuracy.accuracy(testSet.getMultiLabels(), predictions));
                 System.out.println("\ttestAcc: " + Overlap.overlap(testSet.getMultiLabels(), predictions));
+                if (optimizer.getTerminator().shouldTerminate()){
+                    break;
+                }
             }
         } else {
             throw new RuntimeException("Unknown classifier");
