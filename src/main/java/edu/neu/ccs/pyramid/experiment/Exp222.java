@@ -37,20 +37,23 @@ public class Exp222 {
 
         System.out.println("classifier loaded");
 
-        MultiLabel[] indePredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_independent_lr");
-        MultiLabel[] bmmPredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr");
-        MultiLabel[] expectationPredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr_expectation");
 
-//        MultiLabel[] indePredictions = independent.predict(testSet);
-//        MultiLabel[] bmmPredictions = bmmClassifier.predict(testSet);
-//        MultiLabel[] expectationPredictions = new MultiLabel[testSet.getNumDataPoints()];
-//        for (int i=0;i<testSet.getNumDataPoints();i++){
-//            expectationPredictions[i] = bmmClassifier.predictByExpectation(testSet.getRow(i));
-//        }
-//
-//        Serialization.serialize(indePredictions,new File(TMP,"prediction_independent_lr"));
-//        Serialization.serialize(bmmPredictions,new File(TMP,"prediction_mix_lr"));
-//        Serialization.serialize(expectationPredictions,new File(TMP,"prediction_mix_lr_expectation"));
+        MultiLabel[] indePredictions = independent.predict(testSet);
+        MultiLabel[] bmmPredictions = bmmClassifier.predict(testSet);
+        MultiLabel[] expectationPredictions = new MultiLabel[testSet.getNumDataPoints()];
+        for (int i=0;i<testSet.getNumDataPoints();i++){
+            expectationPredictions[i] = bmmClassifier.predictByExpectation(testSet.getRow(i));
+        }
+
+        Serialization.serialize(indePredictions,new File(TMP,"prediction_independent_lr"));
+        Serialization.serialize(bmmPredictions,new File(TMP,"prediction_mix_lr"));
+        Serialization.serialize(expectationPredictions,new File(TMP,"prediction_mix_lr_expectation"));
+
+//        MultiLabel[] indePredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_independent_lr");
+//        MultiLabel[] bmmPredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr");
+//        MultiLabel[] expectationPredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr_expectation");
+
+
 
         System.out.println("prediction done");
 

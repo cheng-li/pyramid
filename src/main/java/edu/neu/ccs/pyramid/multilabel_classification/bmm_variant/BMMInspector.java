@@ -129,6 +129,12 @@ public class BMMInspector {
 
         System.out.println("perplexity="+ Math.pow(2,Entropy.entropy2Based(proportions)));
         double[] sortedPorportions = new double[numClusters];
+
+        for (int t=0;t<numClusters;t++){
+            System.out.println("cluster"+(t+1)+" = " +Arrays.toString(probabilities[t]));
+        }
+
+        System.out.println("-------------------");
         for (int t=0;t<sorted.length;t++){
             int k = sorted[t];
 //            System.out.println("rank "+t);
