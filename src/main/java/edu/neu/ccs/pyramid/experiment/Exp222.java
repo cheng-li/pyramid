@@ -28,9 +28,11 @@ public class Exp222 {
         List<String> name = names();
         Map<String,String> map = mapToUrl();
 
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "nuswide-128/data_sets//test"),
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "nuswide-128/data_sets/test"),
                 DataSetType.ML_CLF_DENSE, true);
-        BMMClassifier bmmClassifier = (BMMClassifier)Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/model_mix_lr");
+        //todo
+        BMMClassifier bmmClassifier = (BMMClassifier)Serialization
+                .deserialize("/Users/chengli/Documents/mixture_analysis/model_mix_lr_30");
 
 
         BMMClassifier independent = (BMMClassifier)Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/model_independent_lr");
@@ -38,20 +40,24 @@ public class Exp222 {
         System.out.println("classifier loaded");
 
 
-        MultiLabel[] indePredictions = independent.predict(testSet);
-        MultiLabel[] bmmPredictions = bmmClassifier.predict(testSet);
-        MultiLabel[] expectationPredictions = new MultiLabel[testSet.getNumDataPoints()];
-        for (int i=0;i<testSet.getNumDataPoints();i++){
-            expectationPredictions[i] = bmmClassifier.predictByExpectation(testSet.getRow(i));
-        }
+//        MultiLabel[] indePredictions = independent.predict(testSet);
+//        MultiLabel[] bmmPredictions = bmmClassifier.predict(testSet);
+//        MultiLabel[] expectationPredictions = new MultiLabel[testSet.getNumDataPoints()];
+//        for (int i=0;i<testSet.getNumDataPoints();i++){
+//            expectationPredictions[i] = bmmClassifier.predictByExpectation(testSet.getRow(i));
+//        }
+//
+//        Serialization.serialize(indePredictions,new File(TMP,"prediction_independent_lr"));
+//        Serialization.serialize(bmmPredictions,new File(TMP,"prediction_mix_lr"));
+//        Serialization.serialize(expectationPredictions,new File(TMP,"prediction_mix_lr_expectation"));
 
-        Serialization.serialize(indePredictions,new File(TMP,"prediction_independent_lr"));
-        Serialization.serialize(bmmPredictions,new File(TMP,"prediction_mix_lr"));
-        Serialization.serialize(expectationPredictions,new File(TMP,"prediction_mix_lr_expectation"));
-
-//        MultiLabel[] indePredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_independent_lr");
-//        MultiLabel[] bmmPredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr");
-//        MultiLabel[] expectationPredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr_expectation");
+        MultiLabel[] indePredictions = (MultiLabel[])Serialization.deserialize("/Users/chengli/Documents/mixture_analysis/prediction_independent_lr");
+        //todo
+        MultiLabel[] bmmPredictions = (MultiLabel[])Serialization
+                .deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr_30");
+        //todo
+        MultiLabel[] expectationPredictions = (MultiLabel[])Serialization
+                .deserialize("/Users/chengli/Documents/mixture_analysis/prediction_mix_lr_expectation_30");
 
 
 
@@ -117,13 +123,16 @@ public class Exp222 {
                 for (int l: pred.getMatchedLabels()){
                     predString.add("\""+labelTranslator.toExtLabel(l)+"\"");
                 }
-                System.out.println("mixture prediction = "+predString);
+
                 System.out.println("expectation prediction= "+expectation.toStringWithExtLabels(labelTranslator));
                 System.out.println("bmm probability for independent prediction = "+bmmClassifier.predictAssignmentProb(testSet.getRow(i),indePred));
                 System.out.println("bmm probability for mixture prediction = "+bmmClassifier.predictAssignmentProb(testSet.getRow(i),pred));
                 System.out.println("bmm probability for expectation prediction = "+bmmClassifier.predictAssignmentProb(testSet.getRow(i),expectation));
-                BMMInspector.covariance(bmmClassifier,testSet.getRow(i),labelTranslator);
+                System.out.println("******************");
+                System.out.println("prediction = "+predString);
                 BMMInspector.visualizePrediction(bmmClassifier,testSet.getRow(i),labelTranslator);
+                BMMInspector.covariance(bmmClassifier,testSet.getRow(i),labelTranslator);
+
 
 //                for (int label: indePredictions[i].getMatchedLabels()){
 //                    LogisticRegression logisticRegression = (LogisticRegression)independent.getBinaryClassifiers()[0][label];
