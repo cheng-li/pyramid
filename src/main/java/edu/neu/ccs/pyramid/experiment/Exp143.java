@@ -3,8 +3,10 @@ package edu.neu.ccs.pyramid.experiment;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * produce dataset table
@@ -20,21 +22,84 @@ public class Exp143 {
 
     }
 
+    static double parse(String string){
+        double d= 0;
+        if (string.equals("")){
+            d= 0;
+        } else if (string.equals("NA")){
+            d= 0;
+        } else {
+            d = Double.parseDouble(string);
+        }
+        return d*100;
+    }
+
+
     static void performance(String[][] table){
+        DecimalFormat df2 = new DecimalFormat("#0.0");
         int numData=5;
         int numAlgorithms=8;
+        double[][] accs = new double[numAlgorithms][numData];
+        double[][] overlaps = new double[numAlgorithms][numData];
+
+
         String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
         int[] dataRows = {1,5,7,13,17};
         String[] algorithms = {"CBM+LR","CBM+Boost","CRF","BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR"};
         int[] algoC = {9,3,11,13,15,16,17,18};
+
+        for (int i=0;i<numAlgorithms;i++) {
+
+            for (int j = 0; j < numData; j++) {
+                accs[i][j] = parse(table[dataRows[j]][algoC[i]]);
+                overlaps[i][j] = parse(table[dataRows[j] + 1][algoC[i]]);
+            }
+        }
+
+        double[] accMax = new double[numData];
+        double[] overMax = new double[numData];
+        for (int d=0;d<numData;d++){
+            double m = Double.NEGATIVE_INFINITY;
+            for (int a=0;a<numAlgorithms;a++){
+                if (accs[a][d]>m){
+                    m = accs[a][d];
+                }
+            }
+            accMax[d]=m;
+        }
+
+        for (int d=0;d<numData;d++){
+            double m = Double.NEGATIVE_INFINITY;
+            for (int a=0;a<numAlgorithms;a++){
+                if (overlaps[a][d]>m){
+                    m = overlaps[a][d];
+                }
+            }
+            overMax[d]=m;
+        }
+//        System.out.println(Arrays.toString(overMax));
+
+
         StringBuilder sb = new StringBuilder();
         for (int i=0;i<numAlgorithms;i++){
             sb.append(algorithms[i]).append(" ");
             for (int j=0;j<numData;j++){
-                System.out.println("i="+i+"j="+j);
-                System.out.println(""+dataRows[j]+","+algoC[i]);
-                sb.append("&").append(table[dataRows[j]][algoC[i]]);
-                sb.append("&").append(table[dataRows[j]+1][algoC[i]]);
+                sb.append("&");
+                if (accs[i][j]==accMax[j]){
+                    sb.append("\\bf{");
+                }
+                sb.append(df2.format(accs[i][j]));
+                if (accs[i][j]==accMax[j]){
+                    sb.append("}");
+                }
+                sb.append("&");
+                if (overlaps[i][j] == overMax[j]) {
+                    sb.append("\\bf{");
+                }
+                sb.append(df2.format(overlaps[i][j]));
+                if (overlaps[i][j] == overMax[j]) {
+                    sb.append("}");
+                }
             }
             sb.append("\\\\").append("\n").append("\\hline").append("\n");
         }
