@@ -232,6 +232,16 @@ public class App2 {
         System.out.println("label-micro-measures = \n" + microMeasures);
 
 
+        boolean simpleCSV = true;
+        if (simpleCSV){
+            double probThreshold=config.getDouble("report.classProbThreshold");
+            File csv = new File(analysisFolder,"report.csv");
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                String str = IMLGBInspector.simplePredictionAnalysis(boosting,dataSet,i,probThreshold);
+                FileUtils.writeStringToFile(csv,str,true);
+            }
+        }
+
 
         boolean topFeaturesToJson = false;
         File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
