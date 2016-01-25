@@ -101,7 +101,7 @@ public class DynamicProgramming {
      */
     public double nextHighestProb() {
         if (dp.size() > 0) {
-            return Math.exp(dp.peek().logProbability);
+            return dp.peek().probability;
         }
         return 0;
     }

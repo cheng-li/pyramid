@@ -66,6 +66,7 @@ public class Exp211 {
         }
         bmmClassifier = BMMClassifier.deserialize(lastFile);
         System.out.println("bmm loaded, with "+completedIterations+ " iterations completed");
+        bmmClassifier.setPredictMode(config.getString("predict.mode"));
         return new Pair<>(bmmClassifier,completedIterations);
     }
 

@@ -66,7 +66,6 @@ public class Exp225 {
         path.mkdirs();
 
         BMMClassifier bmmClassifier = BMMClassifier.deserialize(new File(path, "model"));
-        bmmClassifier.setPredictMode(config.getString("predict.mode"));
         bmmClassifier.setAllowEmpty(config.getBoolean("predict.allowEmpty"));
 
 
@@ -95,7 +94,9 @@ public class Exp225 {
 
         MultiLabel[] trainPred;
         MultiLabel[] testPred;
-        System.out.println("--------------------------------Analysis Basic-----------------------------\n");
+        System.out.println("--------------------------------Analysis Basic:dynamic-----------------------------\n");
+        bmmClassifier.setPredictMode("dynamic");
+//        bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
         trainPred = bmmClassifier.predict(trainSet);
         testPred = bmmClassifier.predict(testSet);
         int newPredTrueCount = 0;
@@ -110,6 +111,33 @@ public class Exp225 {
             }
         }
         int totalCount = newPredFalseCount + newPredTrueCount;
+        System.out.println("New label prediction data counts: " + totalCount);
+        System.out.println("New label prediction true data: " + newPredTrueCount + "#\t" + (double)newPredTrueCount/testSet.getNumDataPoints());
+        System.out.println("New label prediction false data: " + newPredFalseCount + "#\t" + (double)newPredFalseCount/testSet.getNumDataPoints());
+        System.out.println();
+        System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPred) + "\t");
+        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
+        System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
+        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
+        System.out.println();
+        System.out.println();
+        System.out.println("--------------------------------Analysis Basic:sampling-----------------------------\n");
+        bmmClassifier.setPredictMode("sampling");
+        bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
+        trainPred = bmmClassifier.predict(trainSet);
+        testPred = bmmClassifier.predict(testSet);
+        newPredTrueCount = 0;
+        newPredFalseCount = 0;
+        for (int i=0; i<testPred.length; i++) {
+            MultiLabel label = testPred[i];
+            if (!trainLabelSet.contains(label) && label.equals(testSet.getMultiLabels()[i])) {
+                newPredTrueCount++;
+            }
+            if (!trainLabelSet.contains(label) && !label.equals(testSet.getMultiLabels()[i])) {
+                newPredFalseCount++;
+            }
+        }
+        totalCount = newPredFalseCount + newPredTrueCount;
         System.out.println("New label prediction data counts: " + totalCount);
         System.out.println("New label prediction true data: " + newPredTrueCount + "#\t" + (double)newPredTrueCount/testSet.getNumDataPoints());
         System.out.println("New label prediction false data: " + newPredFalseCount + "#\t" + (double)newPredFalseCount/testSet.getNumDataPoints());

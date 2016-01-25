@@ -165,10 +165,10 @@ public class BMMPredictor {
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
-        int iter = 0;
-        int maxIter = 100;
+//        int iter = 0;
+//        int maxIter = 1000;
 
-        while (DPs.size() > 0 && iter < maxIter) {
+        while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
             for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
                 int k = entry.getKey();
@@ -190,7 +190,7 @@ public class BMMPredictor {
                 if (logProb >= maxLogProb) {
                     predVector = candidateY;
                     maxLogProb = logProb;
-                    maxIter = iter;
+//                    maxIter = iter;
                 }
 
                 // check if need to remove cluster k from the candidates
@@ -202,7 +202,7 @@ public class BMMPredictor {
                 DPs.remove(k);
             }
 
-            iter++;
+//            iter++;
         }
 //        System.out.print("maxIter: " + maxIter + "\t" + Math.exp(maxLogProb) + "\t");
 //        System.out.println("maxIter: " + maxIter);
@@ -212,19 +212,19 @@ public class BMMPredictor {
                 predLabel.addLabel(l);
             }
         }
-
-        // loop break because of maximum iterations
-        if (iter == maxIter) {
-            MultiLabel sampleLabel = predictBySampling();
-            Vector sampleVector = new DenseVector(numLabels);
-            for (int l : sampleLabel.getMatchedLabels()) {
-                sampleVector.set(l, 1.0);
-            }
-            double sampleLogProb = logProbYnGivenXnLogisticProb(sampleVector);
-            if (sampleLogProb > maxLogProb) {
-                return sampleLabel;
-            }
-        }
+//
+//        // loop break because of maximum iterations
+//        if (iter == maxIter) {
+//            MultiLabel sampleLabel = predictBySampling();
+//            Vector sampleVector = new DenseVector(numLabels);
+//            for (int l : sampleLabel.getMatchedLabels()) {
+//                sampleVector.set(l, 1.0);
+//            }
+//            double sampleLogProb = logProbYnGivenXnLogisticProb(sampleVector);
+//            if (sampleLogProb > maxLogProb) {
+//                return sampleLabel;
+//            }
+//        }
 
 
         return predLabel;
