@@ -8,16 +8,11 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.classification.Classifier.ProbabilityEstimator;
-import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.function.Mult;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -148,14 +143,38 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         MultiLabel prediction = new MultiLabel();
         double maxLogProb = Double.NEGATIVE_INFINITY;
 
+        double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
+        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+            }
+        }
+
         for (MultiLabel label : labelSet) {
-            double logProb = predictLogAssignmentProb(vector, label);
+            double logProb = predictLogAssignmentProb(logProportions, logClassProbs, label);
             if (logProb > maxLogProb) {
                 maxLogProb = logProb;
                 prediction = label;
             }
         }
         return prediction;
+    }
+    public double predictLogAssignmentProb(double[] logProportions, double[][][] logClassProbs, MultiLabel assignment){
+        double[] logProbs = new double[numClusters];
+        for (int k=0;k<numClusters;k++){
+            double sum = 0;
+            sum += logProportions[k];
+            for (int l=0;l<numLabels;l++){
+                if (assignment.matchClass(l)){
+                    sum += logClassProbs[k][l][1];
+                } else {
+                    sum += logClassProbs[k][l][0];
+                }
+            }
+            logProbs[k] = sum;
+        }
+        return MathUtil.logSumExp(logProbs);
     }
     ///////////TEST///////////////
 
@@ -256,36 +275,6 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 
     public void setNumSample(int numSample) {
         this.numSample = numSample;
-    }
-
-
-    public List<MultiLabel> samples(Vector vector){
-        List<MultiLabel> list = new ArrayList<>();
-        double[] proportions = multiClassClassifier.predictClassProbs(vector);
-        double[][][] logClassProbs = new double[numClusters][numLabels][2];
-
-        for (int k=0;k<numClusters;k++){
-            for (int l=0;l<numLabels;l++){
-                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
-            }
-        }
-
-        int[] clusters = IntStream.range(0, numClusters).toArray();
-        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
-
-        for (int s=0; s<100000; s++) {
-            int k = enumeratedIntegerDistribution.sample();
-            Vector candidateY = new DenseVector(numLabels);
-
-            for (int l=0; l<numLabels; l++) {
-                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(Math.exp(logClassProbs[k][l][1]));
-                candidateY.set(l, bernoulliDistribution.sample());
-            }
-            MultiLabel multiLabel = new MultiLabel(candidateY);
-            list.add(multiLabel);
-        }
-        return list;
-
     }
 
     public static BMMClassifier deserialize(File file) throws Exception {
