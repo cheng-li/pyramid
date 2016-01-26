@@ -15,8 +15,8 @@ import java.util.stream.IntStream;
 public class Exp143 {
     public static void main(String[] args) throws Exception{
         String[][] table = load();
-        System.out.println(table.length);
-        System.out.println(table[0].length);
+//        System.out.println(table.length);
+//        System.out.println(table[0].length);
 //        dataTable(table);
         performance(table);
 
@@ -35,7 +35,7 @@ public class Exp143 {
     }
 
 
-    static void performance(String[][] table){
+    static void performance(String[][] table) throws Exception{
         DecimalFormat df2 = new DecimalFormat("#0.0");
         int numData=5;
         int numAlgorithms=8;
@@ -45,8 +45,8 @@ public class Exp143 {
 
         String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
         int[] dataRows = {1,5,7,13,17};
-        String[] algorithms = {"CBM+LR","CBM+Boost","CRF","BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR"};
-        int[] algoC = {9,3,11,13,15,16,17,18};
+        String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","CRF","CBM+LR","CBM+Boost"};
+        int[] algoC = {13,15,17,18,19,11, 9,3,};
 
         for (int i=0;i<numAlgorithms;i++) {
 
@@ -101,9 +101,14 @@ public class Exp143 {
                     sb.append("}");
                 }
             }
-            sb.append("\\\\").append("\n").append("\\hline").append("\n");
+            sb.append("\\\\").append("\n");
+            if (algorithms[i].equals("CRF")){
+                sb.append("\\hline").append("\n");
+            }
+
         }
-        System.out.println(sb.toString());
+        sb.append("\\hline").append("\n");
+        FileUtils.writeStringToFile(new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/tables/performance.txt"),sb.toString(),false);
 
     }
 
@@ -111,11 +116,11 @@ public class Exp143 {
         int numData=5;
         String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
         int[] dataRows = {1,5,7,13,17};
-        int domainC = 35;
-        int labelC = 22;
-        int combinatonC = 28;
-        int featureC = 21;
-        int instanceC= 23;
+        int domainC = 36;
+        int labelC = 23;
+        int combinatonC = 29;
+        int featureC = 22;
+        int instanceC= 24;
 
         StringBuilder sb = new StringBuilder();
         sb.append("\\hline").append("\n");
