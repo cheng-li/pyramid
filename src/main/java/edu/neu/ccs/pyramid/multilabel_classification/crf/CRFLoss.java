@@ -118,6 +118,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         if (logger.isDebugEnabled()){
             logger.debug("start method getGradient()");
         }
+        // O(NdL)
         updateClassScoreMatrix();
         updateAssignmentScoreMatrix();
         updateAssignmentProbMatrix();

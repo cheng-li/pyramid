@@ -13,6 +13,17 @@ import java.util.stream.IntStream;
  * Created by chengli on 1/25/16.
  */
 public class Exp143 {
+    static String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
+    static int[] dataRows = {1,3,5,7,9};
+    static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","CRF","MSE","CL","CBM+LR","CBM+Boost"};
+
+    static int[] algoC = {13,15,17,18,19,11,22,23, 9,3,};
+    static int domainC = 36;
+    static int labelC = 23;
+    static int combinatonC = 29;
+    static int featureC = 22;
+    static int instanceC= 24;
+
     public static void main(String[] args) throws Exception{
         String[][] table = load();
 //        System.out.println(table.length);
@@ -38,15 +49,13 @@ public class Exp143 {
     static void performance(String[][] table) throws Exception{
         DecimalFormat df2 = new DecimalFormat("#0.0");
         int numData=5;
-        int numAlgorithms=8;
+
+
+        
+
+        int numAlgorithms=algoC.length;
         double[][] accs = new double[numAlgorithms][numData];
         double[][] overlaps = new double[numAlgorithms][numData];
-
-
-        String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
-        int[] dataRows = {1,5,7,13,17};
-        String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","CRF","CBM+LR","CBM+Boost"};
-        int[] algoC = {13,15,17,18,19,11, 9,3,};
 
         for (int i=0;i<numAlgorithms;i++) {
 
@@ -82,6 +91,9 @@ public class Exp143 {
 
         StringBuilder sb = new StringBuilder();
         for (int i=0;i<numAlgorithms;i++){
+            if (algorithms[i].equals("CBM+LR")){
+                sb.append("\\hline").append("\n");
+            }
             sb.append(algorithms[i]).append(" ");
             for (int j=0;j<numData;j++){
                 sb.append("&");
@@ -102,9 +114,7 @@ public class Exp143 {
                 }
             }
             sb.append("\\\\").append("\n");
-            if (algorithms[i].equals("CRF")){
-                sb.append("\\hline").append("\n");
-            }
+
 
         }
         sb.append("\\hline").append("\n");
@@ -113,15 +123,9 @@ public class Exp143 {
     }
 
     static void dataTable(String[][] table){
-        int numData=5;
-        String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
-        int[] dataRows = {1,5,7,13,17};
-        int domainC = 36;
-        int labelC = 23;
-        int combinatonC = 29;
-        int featureC = 22;
-        int instanceC= 24;
 
+
+        int numData = dataNames.length;
         StringBuilder sb = new StringBuilder();
         sb.append("\\hline").append("\n");
 
