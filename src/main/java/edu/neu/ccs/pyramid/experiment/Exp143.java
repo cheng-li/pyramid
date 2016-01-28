@@ -100,7 +100,11 @@ public class Exp143 {
                 if (accs[i][j]==accMax[j]){
                     sb.append("\\bf{");
                 }
-                sb.append(df2.format(accs[i][j]));
+                if (accs[i][j]==0){
+                    sb.append("---");
+                } else {
+                    sb.append(df2.format(accs[i][j]));
+                }
                 if (accs[i][j]==accMax[j]){
                     sb.append("}");
                 }
@@ -108,7 +112,12 @@ public class Exp143 {
                 if (overlaps[i][j] == overMax[j]) {
                     sb.append("\\bf{");
                 }
-                sb.append(df2.format(overlaps[i][j]));
+                if (overlaps[i][j]==0){
+                    sb.append("---");
+                } else {
+                    sb.append(df2.format(overlaps[i][j]));
+                }
+
                 if (overlaps[i][j] == overMax[j]) {
                     sb.append("}");
                 }
