@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
  */
 public class Exp143 {
     static String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
-    static int[] dataRows = {1,3,5,7,9};
+    static int[] dataRows = {1,4,7,10,13};
     static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","CRF","MSE","CL","CBM+LR","CBM+Boost"};
 
     static int[] algoC = {13,15,17,18,19,11,22,23, 9,3,};
@@ -45,6 +45,18 @@ public class Exp143 {
         return d*100;
     }
 
+    static double parseHam(String string){
+        double d= 1;
+        if (string.equals("")){
+            d= 1;
+        } else if (string.equals("NA")){
+            d= 1;
+        } else {
+            d = Double.parseDouble(string);
+        }
+        return d*100;
+    }
+
 
     static void performance(String[][] table) throws Exception{
         DecimalFormat df2 = new DecimalFormat("#0.0");
@@ -56,17 +68,21 @@ public class Exp143 {
         int numAlgorithms=algoC.length;
         double[][] accs = new double[numAlgorithms][numData];
         double[][] overlaps = new double[numAlgorithms][numData];
+        double[][] hams = new double[numAlgorithms][numData];
 
         for (int i=0;i<numAlgorithms;i++) {
 
             for (int j = 0; j < numData; j++) {
                 accs[i][j] = parse(table[dataRows[j]][algoC[i]]);
                 overlaps[i][j] = parse(table[dataRows[j] + 1][algoC[i]]);
+                hams[i][j] = parseHam(table[dataRows[j] + 2][algoC[i]]);
             }
         }
 
         double[] accMax = new double[numData];
         double[] overMax = new double[numData];
+        double[] hamMin = new double[numData];
+
         for (int d=0;d<numData;d++){
             double m = Double.NEGATIVE_INFINITY;
             for (int a=0;a<numAlgorithms;a++){
@@ -86,6 +102,17 @@ public class Exp143 {
             }
             overMax[d]=m;
         }
+
+        for (int d=0;d<numData;d++){
+            double m = Double.POSITIVE_INFINITY;
+            for (int a=0;a<numAlgorithms;a++){
+                if (hams[a][d]<m){
+                    m = hams[a][d];
+                }
+            }
+            hamMin[d]=m;
+        }
+
 //        System.out.println(Arrays.toString(overMax));
 
 
@@ -119,6 +146,20 @@ public class Exp143 {
                 }
 
                 if (overlaps[i][j] == overMax[j]) {
+                    sb.append("}");
+                }
+
+                sb.append("&");
+                if (hams[i][j] == hamMin[j]) {
+                    sb.append("\\bf{");
+                }
+                if (hams[i][j]==100){
+                    sb.append("---");
+                } else {
+                    sb.append(df2.format(hams[i][j]));
+                }
+
+                if (hams[i][j] == hamMin[j]) {
                     sb.append("}");
                 }
             }
