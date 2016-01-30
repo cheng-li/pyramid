@@ -81,6 +81,7 @@ public class Exp226 {
                 System.out.println();
             }
             avgAcc = avgAcc / (double)numFolder / (double) repeat;
+            System.out.println("avg: " + avgAcc);
             validationAccs.put(cluster, avgAcc);
         }
 
@@ -93,7 +94,7 @@ public class Exp226 {
                 bestCluster = entry.getKey();
             }
         }
-        System.out.println("best cluster: " + bestCluster + "\tacc: " + validationAccs.get(bestCluster));
+        System.out.println("best cluster: " + bestCluster + "\tacc: " + validationAccs.get(bestCluster) +"\n\n\n");
     }
 
     private static void splitData(Config config) throws IOException, ClassNotFoundException {

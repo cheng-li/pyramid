@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.FMeasure;
+import edu.neu.ccs.pyramid.eval.HammingLoss;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.powerset.LPClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.powerset.LPOptimizer;
@@ -76,6 +78,8 @@ public class Exp215 {
         System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
         System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
         System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
+        System.out.println("hamming loss: " + HammingLoss.hammingLoss(testSet.getMultiLabels(), testPredict, testSet.getNumClasses()));
+        System.out.println("F1: " + FMeasure.f1(testSet.getMultiLabels(), testPredict));
         System.out.println();
         System.out.println();
 

@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.FMeasure;
+import edu.neu.ccs.pyramid.eval.HammingLoss;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.CMLCRF;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.CRFLoss;
@@ -99,6 +101,8 @@ public class Exp218 {
         System.out.print("\tTrain overlap " + String.format("%.4f",Overlap.overlap(trainSet.getMultiLabels(), predTrain)));
         System.out.print("\tTest acc: " + String.format("%.4f",Accuracy.accuracy(testSet.getMultiLabels(), predTest)));
         System.out.println("\tTest overlap " + String.format("%.4f",Overlap.overlap(testSet.getMultiLabels(), predTest)));
+        System.out.println("hamming loss: " + HammingLoss.hammingLoss(testSet.getMultiLabels(), predTest, testSet.getNumClasses()));
+        System.out.println("F1: " + FMeasure.f1(testSet.getMultiLabels(), predTest));
 
         if (config.getBoolean("saveModel")) {
             (new File(output)).mkdirs();

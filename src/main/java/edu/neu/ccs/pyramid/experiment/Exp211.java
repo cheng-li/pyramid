@@ -2,8 +2,7 @@ package edu.neu.ccs.pyramid.experiment;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.Accuracy;
-import edu.neu.ccs.pyramid.eval.Overlap;
+import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMOptimizer;
@@ -253,10 +252,13 @@ public class Exp211 {
 
         System.out.println("--------------------------------Results-----------------------------\n");
         System.out.println();
-        System.out.print("trainAcc : " + Accuracy.accuracy(bmmClassifier, trainSet) + "\t");
-        System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet)+ "\t");
-        System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
-        System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
+        MultiLabel[] testPredicts = bmmClassifier.predict(testSet);
+//        System.out.print("trainAcc : " + Accuracy.accuracy(bmmClassifier, trainSet) + "\t");
+//        System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, trainSet)+ "\t");
+        System.out.println("Acc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredicts));
+        System.out.println("Overlap : "+ Overlap.overlap(testSet.getMultiLabels(), testPredicts));
+        System.out.println("hamming loss: " + HammingLoss.hammingLoss(testSet.getMultiLabels(), testPredicts, testSet.getNumClasses()));
+        System.out.println("F1: " + FMeasure.f1(testSet.getMultiLabels(), testPredicts));
         System.out.println();
         System.out.println();
 //        System.out.println(bmmClassifier);
