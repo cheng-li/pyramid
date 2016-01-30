@@ -15,9 +15,8 @@ import java.util.stream.IntStream;
 public class Exp143 {
     static String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
     static int[] dataRows = {1,4,7,10,13};
-    static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","CRF","MSE","CL","CBM+LR","CBM+Boost"};
-
-    static int[] algoC = {13,15,17,18,19,11,22,23, 9,3,};
+    static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","PCC+LR","ECC+LR","CDN+LR","CRF","CBM+LR","CBM+Boost"};
+    static int[] algoC =         {13,     15,        17,     18,        19,     21,      20,      22,       11,   9,       3,};
     static int domainC = 36;
     static int labelC = 23;
     static int combinatonC = 29;
