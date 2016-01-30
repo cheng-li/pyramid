@@ -13,15 +13,15 @@ import java.util.stream.IntStream;
  * Created by chengli on 1/25/16.
  */
 public class Exp143 {
-    static String[] dataNames = {"scene","emotions","mediamill","NUSWIDE","TMC2007"};
-    static int[] dataRows = {1,4,7,10,13};
+    static String[] dataNames = {"Scene","EUR-Lex","Mediamill","NUS-WIDE","TMC2007"};
+    static int[] dataRows = {1,16,7,10,13};
     static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","PCC+LR","ECC+LR","CDN+LR","CRF","CBM+LR","CBM+Boost"};
     static int[] algoC =         {13,     15,        17,     18,        19,     21,      20,      22,       11,   9,       3,};
-    static int domainC = 36;
-    static int labelC = 23;
-    static int combinatonC = 29;
-    static int featureC = 22;
-    static int instanceC= 24;
+    static int domainC = 40;
+    static int labelC = 27;
+    static int combinatonC = 33;
+    static int featureC = 26;
+    static int instanceC= 28;
 
     public static void main(String[] args) throws Exception{
         String[][] table = load();
@@ -218,7 +218,7 @@ public class Exp143 {
     }
 
     static String[][] load() throws Exception{
-        File file = new File("/Users/chengli/Downloads/table.tsv");
+        File file = new File("/Users/chengli/Downloads/CRF vs MEKA - icml.tsv");
         List<String> lines = FileUtils.readLines(file);
         int numColumns = lines.get(0).split("\t").length;
         int numRows = lines.size();
