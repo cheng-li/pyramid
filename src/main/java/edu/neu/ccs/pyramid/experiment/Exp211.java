@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  */
 public class Exp211 {
 
-    private static BMMOptimizer getOptimizer(Config config, BMMClassifier bmmClassifier, MultiLabelClfDataSet trainSet){
+    public static BMMOptimizer getOptimizer(Config config, BMMClassifier bmmClassifier, MultiLabelClfDataSet trainSet){
         BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,trainSet);
 
         optimizer.setMeanRegVariance(config.getDouble("lr.meanRegVariance"));
