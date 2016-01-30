@@ -222,7 +222,8 @@ public class Exp211 {
                 System.out.print("trainAcc : "+ Accuracy.accuracy(trainSet.getMultiLabels(),trainPredict)+ "\t");
                 System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
                 System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
-                System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
+                System.out.print("testOver : " + Overlap.overlap(testSet.getMultiLabels(), testPredict) + "\t");
+                System.out.println("testHam: "+HammingLoss.hammingLoss(testSet.getMultiLabels(), testPredict, bmmClassifier.getNumClasses()));
                 if (config.getBoolean("saveModelForEachIter")) {
                     File serializeModel = new File(path,  "iter." + totalIter + ".model");
                     bmmClassifier.serialize(serializeModel);
