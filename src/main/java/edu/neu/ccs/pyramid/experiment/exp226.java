@@ -37,6 +37,7 @@ public class Exp226 {
         int numFolder = config.getInt("numFolder");
 
         List<Integer> clusters = config.getIntegers("clusters");
+
         Map<Integer, Double> validationAccs = new HashMap<>();
 
         for (int cluster : clusters) {
