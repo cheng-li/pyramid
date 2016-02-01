@@ -177,7 +177,7 @@ public class Weights  implements Serializable {
         numWeightsForFeatures = in.readInt();
         numWeightsForLabels = in.readInt();
         serializableWeights = (double[])in.readObject();
-        weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
+        weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels+1);
         for (int i=0;i<serializableWeights.length;i++){
             weightVector.set(i,serializableWeights[i]);
         }
