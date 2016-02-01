@@ -13,8 +13,8 @@ import java.util.stream.IntStream;
  * Created by chengli on 1/25/16.
  */
 public class Exp143 {
-    static String[] dataNames = {"Scene","EUR-Lex","Mediamill","NUS-WIDE","TMC2007"};
-    static int[] dataRows = {1,13,4,7,10};
+    static String[] dataNames = {"Scene","TMC2007","Mediamill","NUS-WIDE",};
+    static int[] dataRows = {1,10,4,7};
     static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","PCC+LR","ECC+LR","CDN+LR","CRF","CBM+LR","CBM+Boost"};
     static int[] algoC =         {13,     15,        17,     18,        19,     21,      20,      22,       11,   9,       3,};
     static int domainC = 40;
@@ -59,7 +59,7 @@ public class Exp143 {
 
     static void performance(String[][] table) throws Exception{
         DecimalFormat df2 = new DecimalFormat("#0.0");
-        int numData=5;
+        int numData=dataNames.length;
 
 
         
