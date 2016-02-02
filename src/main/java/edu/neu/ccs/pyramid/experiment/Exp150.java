@@ -32,7 +32,7 @@ public class Exp150 {
             System.out.println("id = "+id);
             XContentBuilder builder = IndexBuilder.getBuilder(file,map);
 //               System.out.println(builder.string());
-            IndexResponse response = client.prepareIndex("reuters21578", "document")
+            IndexResponse response = client.prepareIndex("reuters21578", "document",""+id)
                     .setSource(builder)
                     .execute()
                     .actionGet();

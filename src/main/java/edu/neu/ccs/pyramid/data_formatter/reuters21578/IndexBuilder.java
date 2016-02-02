@@ -39,7 +39,7 @@ public class IndexBuilder {
     }
 
     static String getTrainOrTest(File file) throws Exception{
-        String name = file.getParentFile().getParentFile().getName();
+        String name = file.getParentFile().getName();
         String res = null;
         if (name.equals("training")){
             res = "train";
