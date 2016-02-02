@@ -13,8 +13,8 @@ import java.util.stream.IntStream;
  * Created by chengli on 1/25/16.
  */
 public class Exp143 {
-    static String[] dataNames = {"Scene","TMC2007","Mediamill","NUS-WIDE",};
-    static int[] dataRows = {1,10,4,7};
+    static String[] dataNames = {"Scene","RCV1","TMC2007","Mediamill","NUS-WIDE",};
+    static int[] dataRows = {1,13, 10,4,7};
     static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","PCC+LR","ECC+LR","CDN+LR","CRF","CBM+LR","CBM+Boost"};
     static int[] algoC =         {13,     15,        17,     18,        19,     21,      20,      22,       11,   9,       3,};
     static int domainC = 40;
@@ -27,8 +27,8 @@ public class Exp143 {
         String[][] table = load();
 //        System.out.println(table.length);
 //        System.out.println(table[0].length);
-//        dataTable(table);
-        performance(table);
+        dataTable(table);
+//        performance(table);
 
     }
 
@@ -58,6 +58,107 @@ public class Exp143 {
 
 
     static void performance(String[][] table) throws Exception{
+        DecimalFormat df2 = new DecimalFormat("#0.0");
+        int numData=dataNames.length;
+
+
+
+
+        int numAlgorithms=algoC.length;
+        double[][] accs = new double[numAlgorithms][numData];
+        double[][] overlaps = new double[numAlgorithms][numData];
+        double[][] hams = new double[numAlgorithms][numData];
+
+        for (int i=0;i<numAlgorithms;i++) {
+
+            for (int j = 0; j < numData; j++) {
+                accs[i][j] = parse(table[dataRows[j]][algoC[i]]);
+                overlaps[i][j] = parse(table[dataRows[j] + 1][algoC[i]]);
+                hams[i][j] = parseHam(table[dataRows[j] + 2][algoC[i]]);
+            }
+        }
+
+        double[] accMax = new double[numData];
+        double[] overMax = new double[numData];
+        double[] hamMin = new double[numData];
+
+        for (int d=0;d<numData;d++){
+            double m = Double.NEGATIVE_INFINITY;
+            for (int a=0;a<numAlgorithms;a++){
+                if (accs[a][d]>m){
+                    m = accs[a][d];
+                }
+            }
+            accMax[d]=m;
+        }
+
+        for (int d=0;d<numData;d++){
+            double m = Double.NEGATIVE_INFINITY;
+            for (int a=0;a<numAlgorithms;a++){
+                if (overlaps[a][d]>m){
+                    m = overlaps[a][d];
+                }
+            }
+            overMax[d]=m;
+        }
+
+        for (int d=0;d<numData;d++){
+            double m = Double.POSITIVE_INFINITY;
+            for (int a=0;a<numAlgorithms;a++){
+                if (hams[a][d]<m){
+                    m = hams[a][d];
+                }
+            }
+            hamMin[d]=m;
+        }
+
+//        System.out.println(Arrays.toString(overMax));
+
+
+        StringBuilder sb = new StringBuilder();
+        for (int i=0;i<numAlgorithms;i++){
+            if (algorithms[i].equals("CBM+LR")){
+                sb.append("\\hline").append("\n");
+            }
+            sb.append(algorithms[i]).append(" ");
+            for (int j=0;j<numData;j++){
+                sb.append("&");
+                if (accs[i][j]==accMax[j]){
+                    sb.append("\\bf{");
+                }
+                if (accs[i][j]==0){
+                    sb.append("---");
+                } else {
+                    sb.append(df2.format(accs[i][j]));
+                }
+                if (accs[i][j]==accMax[j]){
+                    sb.append("}");
+                }
+                sb.append("&");
+                if (overlaps[i][j] == overMax[j]) {
+                    sb.append("\\bf{");
+                }
+                if (overlaps[i][j]==0){
+                    sb.append("---");
+                } else {
+                    sb.append(df2.format(overlaps[i][j]));
+                }
+
+                if (overlaps[i][j] == overMax[j]) {
+                    sb.append("}");
+                }
+
+            }
+            sb.append("\\\\").append("\n");
+
+
+        }
+        sb.append("\\hline").append("\n");
+        FileUtils.writeStringToFile(new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/tables/performance.txt"),sb.toString(),false);
+
+    }
+
+    static void performance_hl(String[][] table) throws Exception{
         DecimalFormat df2 = new DecimalFormat("#0.0");
         int numData=dataNames.length;
 
@@ -167,7 +268,7 @@ public class Exp143 {
 
         }
         sb.append("\\hline").append("\n");
-        FileUtils.writeStringToFile(new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/tables/performance.txt"),sb.toString(),false);
+        FileUtils.writeStringToFile(new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/tables/performance_hl.txt"),sb.toString(),false);
 
     }
 
