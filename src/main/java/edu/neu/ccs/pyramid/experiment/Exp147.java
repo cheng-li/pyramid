@@ -13,8 +13,15 @@ import java.util.regex.Pattern;
  */
 public class Exp147 {
     public static void main(String[] args) throws Exception{
-        String input = "/Users/chengli/Downloads/CRF vs MEKA - cluster_nuswide.tsv";
-        File output = new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/results/cluster/nuswide/result.txt");
+        // nuswide
+//        String input = "/Users/chengli/Downloads/CRF vs MEKA - cluster_nuswide.tsv";
+//        File output = new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/results/cluster/nuswide/result.txt");
+
+        // scene
+
+        String input = "/Users/chengli/Downloads/CRF vs MEKA - cluster_scene.tsv";
+        File output = new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/results/cluster/scene/result.txt");
+
         List<String> lines = FileUtils.readLines(new File(input));
         List<Double> clusters = new ArrayList<>();
         List<Double> accs = new ArrayList<>();
