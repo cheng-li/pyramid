@@ -17,6 +17,9 @@ public class Exp143 {
     static int[] dataRows = {1,13, 10,4,7};
     static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","PCC+LR","ECC+LR","CDN+LR","CRF","CBM+LR","CBM+Boost"};
     static int[] algoC =         {13,     15,        17,     18,        19,     21,      20,      22,       11,   9,       3,};
+    static String[] methods = {"BR",      "BR",      "PS",   "PS",      "CC",   "PCC",   "ECC",   "CDN",   "CRF", "CBM",   "CBM"};
+    static String[] learners= {"LR",      "GB",      "LR",   "GB",      "LR",   "LR",    "LR",    "LR",    "Linear","LR",   "GB"};
+    static String[] impl   =  {"ours",    "ours",    "ours", "ours",    "MEKA", "MEKA",  "MEKA",  "MEKA",  "ours","ours",  "ours"};
     static int domainC = 40;
     static int labelC = 27;
     static int combinatonC = 33;
@@ -27,8 +30,8 @@ public class Exp143 {
         String[][] table = load();
 //        System.out.println(table.length);
 //        System.out.println(table[0].length);
-        dataTable(table);
-//        performance(table);
+//        dataTable(table);
+        performance(table);
 
     }
 
@@ -120,7 +123,10 @@ public class Exp143 {
             if (algorithms[i].equals("CBM+LR")){
                 sb.append("\\hline").append("\n");
             }
-            sb.append(algorithms[i]).append(" ");
+//            sb.append(algorithms[i]).append(" ");
+            sb.append(methods[i]).append("&");
+            sb.append(learners[i]).append("&");
+            sb.append(impl[i]);
             for (int j=0;j<numData;j++){
                 sb.append("&");
                 if (accs[i][j]==accMax[j]){
