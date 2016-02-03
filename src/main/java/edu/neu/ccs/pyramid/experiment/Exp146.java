@@ -9,7 +9,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.Serialization;
 
 /**
- *
+ * load model back and compute measures
  * Created by chengli on 1/31/16.
  */
 public class Exp146 {
