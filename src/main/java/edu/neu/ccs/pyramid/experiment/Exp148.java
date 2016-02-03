@@ -11,7 +11,7 @@ import java.io.File;
 public class Exp148 {
     public static void main(String[] args) throws Exception{
         int[] numClusters = {1,5,10,15,20,25,30,35,40,45,50,55,60};
-        int configStart = 1;
+        int configStart = 31;
         String out = "/Users/chengli/tmp/tmc";
 
         int[] configs = new int[numClusters.length];
@@ -53,8 +53,8 @@ public class Exp148 {
         sb.append("em.endTemperature=1.0").append("\n");
         sb.append("em.numTemperatures=1").append("\n");
         sb.append("em.numIterations=50").append("\n");
-        sb.append("lr.multiClassVariance=1.0").append("\n");
-        sb.append("lr.binaryVariance=1.0").append("\n");
+        sb.append("lr.multiClassVariance=0.1").append("\n");
+        sb.append("lr.binaryVariance=0.1").append("\n");
         sb.append("lr.meanRegularization=false").append("\n");
         sb.append("lr.meanRegVariance=1.0").append("\n");
         sb.append("boost.numIterationsBinary=20").append("\n");
