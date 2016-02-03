@@ -36,6 +36,18 @@ public class Exp154 {
         System.out.println("done");
     }
 
+    public static void clean(File folder){
+        System.out.println("cleaning "+folder);
+        List<File> old = listOld(folder);
+        for (File file: old){
+            if (file.isDirectory()){
+                throw new RuntimeException("is dir");
+            }
+            file.delete();
+        }
+        System.out.println("done");
+    }
+
     private static List<File> listOld(File folder){
         File[] modeFiles = folder.listFiles((dir, name) -> name.startsWith("iter.") && (name.endsWith(".model")||name.endsWith(".PIs")||name.endsWith(".gammas")));
         File lastFile = null;
