@@ -16,7 +16,7 @@ public class Exp143 {
     static String[] dataNames = {"Scene","RCV1","TMC2007","Mediamill","NUS-WIDE",};
     static int[] dataRows = {1,13, 10,4,7};
     static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","PCC+LR","ECC+LR","CDN+LR","CRF","CBM+LR","CBM+Boost"};
-    static int[] algoC =         {13,     15,        17,     19,        21,     23,      22,      24,       11,   9,       3,};
+    static int[] algoC =         {14,     16,        18,     20,        22,     24,      23,      25,       11,   9,       3,};
     static String[] methods = {"BR",      "BR",      "PS",   "PS",      "CC",   "PCC",   "ECC",   "CDN",   "CRF", "CBM",   "CBM"};
     static String[] learners= {"LR",      "GB",      "LR",   "GB",      "LR",   "LR",    "LR",    "LR",    "Linear","LR",   "GB"};
     static String[] impl   =  {"ours",    "ours",    "ours", "ours",    "MEKA", "MEKA",  "MEKA",  "MEKA",  "ours","ours",  "ours"};
