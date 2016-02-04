@@ -146,4 +146,7 @@
   151: generate exp211 configs for reuters21578
   152: generate exp211 configs for rcv1_1
   153: generate exp211 configs for scene
+  154: disk clean up
+  155: given dataset level folder, clean up subfolders
+  156: write mulit-label data for virgil
 

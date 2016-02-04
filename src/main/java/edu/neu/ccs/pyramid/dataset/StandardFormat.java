@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -107,6 +108,52 @@ public class StandardFormat {
             int[] labels = dataSet.getLabels();
             for (int i=0;i<numDataPoints;i++){
                 bw2.write(""+labels[i]);
+                bw2.write("\n");
+            }
+        }
+    }
+
+    public static void save(MultiLabelClfDataSet dataSet,
+                            File featureFile,
+                            File labelFile,
+                            String delimiter) throws Exception{
+        int numDataPoints = dataSet.getNumDataPoints();
+        int numFeatures = dataSet.getNumFeatures();
+        int numClasses = dataSet.getNumClasses();
+        try(
+                BufferedWriter bw1 = new BufferedWriter(new FileWriter(featureFile));
+        ){
+            for (int i=0;i<numDataPoints;i++){
+                Vector vector = dataSet.getRow(i);
+                Vector dense = new DenseVector(vector);
+                for (int j=0;j<numFeatures;j++){
+                    bw1.write(""+dense.get(j));
+                    if (j!=numFeatures-1){
+                        bw1.write(delimiter);
+                    } else {
+                        bw1.write("\n");
+                    }
+                }
+            }
+        }
+
+        try(
+                BufferedWriter bw2 = new BufferedWriter(new FileWriter(labelFile));
+        ){
+            MultiLabel[] labels = dataSet.getMultiLabels();
+
+            for (int i=0;i<numDataPoints;i++){
+                MultiLabel label = labels[i];
+                for (int l=0;l<numClasses;l++){
+                    if (label.matchClass(l)){
+                        bw2.write(""+1);
+                    } else {
+                        bw2.write(""+0);
+                    }
+                    if (l<numClasses-1){
+                        bw2.write(delimiter);
+                    }
+                }
                 bw2.write("\n");
             }
         }
