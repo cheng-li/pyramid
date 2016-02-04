@@ -11,7 +11,7 @@ import java.io.File;
 public class Exp152 {
     public static void main(String[] args) throws Exception{
         int[] numClusters = {1,5,10,15,20,25,30,35,40,45,50,55,60};
-        int configStart = 1;
+        int configStart = 31;
         String out = "/Users/chengli/tmp/rcv1_1";
 
         int[] configs = new int[numClusters.length];
@@ -69,9 +69,9 @@ public class Exp152 {
     private static String job(int configIndex){
         StringBuilder sb = new StringBuilder();
         sb.append("#!/bin/sh").append("\n");
-        sb.append("#BSUB -q ser-par-10g-3").append("\n");
-        sb.append("#BSUB -n 10").append("\n");
-        sb.append("#BSUB -R span[ptile=10]").append("\n");
+        sb.append("#BSUB -q ser-par-10g-4").append("\n");
+        sb.append("#BSUB -n 48").append("\n");
+        sb.append("#BSUB -R span[ptile=48]").append("\n");
         sb.append("#BSUB -cwd /scratch/li.che/pyramid/exp211").append("\n");
         sb.append("#BSUB -oo /scratch/li.che/pyramid/exp211/logs/rcv1_1/").append(configIndex).append(".log").append("\n");
         sb.append("./run.sh configs/rcv1_1/").append(configIndex).append(" >> logs/rcv1_1/").append(configIndex).append("\n");
