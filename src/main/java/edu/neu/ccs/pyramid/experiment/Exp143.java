@@ -15,16 +15,17 @@ import java.util.stream.IntStream;
 public class Exp143 {
     static String[] dataNames = {"Scene","RCV1","TMC2007","Mediamill","NUS-WIDE",};
     static int[] dataRows = {1,13, 10,4,7};
-    static String[] algorithms = {"BR+LR","BR+Boost","PS+LR","PS+Boost","CC+LR","PCC+LR","ECC+LR","CDN+LR","CRF","CBM+LR","CBM+Boost"};
-    static int[] algoC =         {14,     16,        18,     20,        22,     24,      23,      25,       11,   9,       3,};
-    static String[] methods = {"BR",      "BR",      "PS",   "PS",      "CC",   "PCC",   "ECC",   "CDN",   "CRF", "CBM",   "CBM"};
-    static String[] learners= {"LR",      "GB",      "LR",   "GB",      "LR",   "LR",    "LR",    "LR",    "Linear","LR",   "GB"};
-    static String[] impl   =  {"ours",    "ours",    "ours", "ours",    "MEKA", "MEKA",  "MEKA",  "MEKA",  "ours","ours",  "ours"};
+    static String[] algorithms = {"BR+LR","PS+LR", "CC+LR", "PCC+LR","ECC+LR", "CDN+LR","CRF", "CBM+LR","BR+Boost","PS+Boost","CBM+Boost"};
+    static int[] algoC =         {14,     18,      22,      24,      23,       25,      11,     9,      16,         20,       3 };
+    static String[] methods = {   "BinRel","PowSet","CC",   "PCC",   "ECC",    "CDN",   "pairCRF","CBM", "BinRel", "PowSet",   "CBM"};
+    static String[] learners= {"LR",      "LR",       "LR",   "LR",    "LR",     "LR",  "linear", "LR",  "GB",     "GB",       "GB"};
+    static String[] impl   =  {"ours",    "ours",    "MEKA", "MEKA",    "MEKA", "MEKA",  "ours",  "ours",  "ours","ours",  "ours"};
     static int domainC = 40;
     static int labelC = 27;
     static int combinatonC = 33;
     static int featureC = 26;
     static int instanceC= 28;
+    static int[] highs = {7,10};
 
     public static void main(String[] args) throws Exception{
         String[][] table = load();
@@ -61,6 +62,7 @@ public class Exp143 {
 
 
     static void performance(String[][] table) throws Exception{
+
         DecimalFormat df2 = new DecimalFormat("#0.0");
         int numData=dataNames.length;
 
@@ -120,22 +122,48 @@ public class Exp143 {
 
         StringBuilder sb = new StringBuilder();
         for (int i=0;i<numAlgorithms;i++){
-            if (algorithms[i].equals("CBM+LR")){
+            if (i==8){
                 sb.append("\\hline").append("\n");
             }
 //            sb.append(algorithms[i]).append(" ");
-            sb.append(methods[i]).append("&");
-            sb.append(learners[i]).append("&");
+            if (i==7||i==10){
+                sb.append("\\greentext{");
+            }
+            sb.append(methods[i]);
+            if (i==7|| i == 10){
+                sb.append("}");
+            }
+            sb.append("&");
+            if (i==7||i==10){
+                sb.append("\\greentext{");
+            }
+            sb.append(learners[i]);
+            if (i==7||i==10){
+                sb.append("}");
+            }
+            sb.append("&");
+            if (i==7||i==10){
+                sb.append("\\greentext{");
+            }
             sb.append(impl[i]);
+            if (i==7||i==10){
+                sb.append("}");
+            }
             for (int j=0;j<numData;j++){
                 sb.append("&");
                 if (accs[i][j]==accMax[j]){
                     sb.append("\\bf{");
                 }
+                if (i==7||i==10){
+                    sb.append("\\greentext{");
+                }
                 if (accs[i][j]==0){
                     sb.append("---");
                 } else {
                     sb.append(df2.format(accs[i][j]));
+                }
+                if (i==7||i==10){
+                    sb.append("}");
                 }
                 if (accs[i][j]==accMax[j]){
                     sb.append("}");
@@ -144,10 +172,16 @@ public class Exp143 {
                 if (overlaps[i][j] == overMax[j]) {
                     sb.append("\\bf{");
                 }
+                if (i==7||i==10){
+                    sb.append("\\greentext{");
+                }
                 if (overlaps[i][j]==0){
                     sb.append("---");
                 } else {
                     sb.append(df2.format(overlaps[i][j]));
+                }
+                if (i==7||i==10){
+                    sb.append("}");
                 }
 
                 if (overlaps[i][j] == overMax[j]) {
