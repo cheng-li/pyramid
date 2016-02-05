@@ -33,9 +33,13 @@ public class Exp147 {
 //        String[] input = {"/Users/chengli/Downloads/CRF vs MEKA - cluster_mediamill.tsv"};
 //        File output = new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/results/cluster/mediamill/result.txt");
 
-        // tmc
-        String[] input = {"/Users/chengli/Downloads/CRF vs MEKA - cluster_tmc.tsv"};
-        File output = new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/results/cluster/tmc/result.txt");
+        // tmc LR
+//        String[] input = {"/Users/chengli/Downloads/CRF vs MEKA - cluster_tmc.tsv"};
+//        File output = new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/results/cluster/tmc/result_lr.txt");
+
+        // TMC GB
+        String[] input = {"/Users/chengli/Downloads/CRF vs MEKA - cluster_tmc_boost.tsv"};
+        File output = new File("/Users/chengli/Documents/papers/LTR/ICML16_mixture/results/cluster/tmc/result_gb.txt");
 
 
         List<Double> clusters = parseCluster(input[0]);
