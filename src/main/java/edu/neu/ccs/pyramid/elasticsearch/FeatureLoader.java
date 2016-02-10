@@ -41,8 +41,9 @@ public class FeatureLoader {
                     }
 
                     progressBar.incrementAndPrint();
-                    System.out.println();
-                });
+                }
+                );
+        System.out.println();
     }
 
     public static void loadCategoricalFeature(ESIndex index, DataSet dataSet, CategoricalFeature feature,
