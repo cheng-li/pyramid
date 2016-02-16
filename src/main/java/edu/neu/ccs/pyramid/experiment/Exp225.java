@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.HammingLoss;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.bmm_variant.BMMClassifier;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -119,57 +120,58 @@ public class Exp225 {
         System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
         System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
         System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
+        System.out.println("Hamming Loss: " + HammingLoss.hammingLoss(testSet.getMultiLabels(), testPred, testSet.getNumClasses()));
         System.out.println();
         System.out.println();
-        System.out.println("--------------------------------Analysis Basic:sampling-----------------------------\n");
-        bmmClassifier.setPredictMode("sampling");
-        bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
-        trainPred = bmmClassifier.predict(trainSet);
-        testPred = bmmClassifier.predict(testSet);
-        newPredTrueCount = 0;
-        newPredFalseCount = 0;
-        for (int i=0; i<testPred.length; i++) {
-            MultiLabel label = testPred[i];
-            if (!trainLabelSet.contains(label) && label.equals(testSet.getMultiLabels()[i])) {
-                newPredTrueCount++;
-            }
-            if (!trainLabelSet.contains(label) && !label.equals(testSet.getMultiLabels()[i])) {
-                newPredFalseCount++;
-            }
-        }
-        totalCount = newPredFalseCount + newPredTrueCount;
-        System.out.println("New label prediction data counts: " + totalCount);
-        System.out.println("New label prediction true data: " + newPredTrueCount + "#\t" + (double)newPredTrueCount/testSet.getNumDataPoints());
-        System.out.println("New label prediction false data: " + newPredFalseCount + "#\t" + (double)newPredFalseCount/testSet.getNumDataPoints());
-        System.out.println();
-        System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPred) + "\t");
-        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
-        System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
-        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
-        System.out.println();
-        System.out.println();
-
-
-        System.out.println("--------------------------------Analysis Given Train Labels-----------------------------\n");
-        trainPred = bmmClassifier.predict(trainSet, trainSet.getMultiLabels());
-        testPred = bmmClassifier.predict(testSet, trainSet.getMultiLabels());
-        System.out.println();
-        System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPred) + "\t");
-        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
-        System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
-        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
-        System.out.println();
-        System.out.println();
-        System.out.println("--------------------------------Analysis Given Test Labels-----------------------------\n");
-        trainPred = bmmClassifier.predict(trainSet, testSet.getMultiLabels());
-        testPred = bmmClassifier.predict(testSet, testSet.getMultiLabels());
-        System.out.println();
-        System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPred) + "\t");
-        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
-        System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
-        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
-        System.out.println();
-        System.out.println();
+//        System.out.println("--------------------------------Analysis Basic:sampling-----------------------------\n");
+//        bmmClassifier.setPredictMode("sampling");
+//        bmmClassifier.setNumSample(config.getInt("predict.sampling.numSamples"));
+//        trainPred = bmmClassifier.predict(trainSet);
+//        testPred = bmmClassifier.predict(testSet);
+//        newPredTrueCount = 0;
+//        newPredFalseCount = 0;
+//        for (int i=0; i<testPred.length; i++) {
+//            MultiLabel label = testPred[i];
+//            if (!trainLabelSet.contains(label) && label.equals(testSet.getMultiLabels()[i])) {
+//                newPredTrueCount++;
+//            }
+//            if (!trainLabelSet.contains(label) && !label.equals(testSet.getMultiLabels()[i])) {
+//                newPredFalseCount++;
+//            }
+//        }
+//        totalCount = newPredFalseCount + newPredTrueCount;
+//        System.out.println("New label prediction data counts: " + totalCount);
+//        System.out.println("New label prediction true data: " + newPredTrueCount + "#\t" + (double)newPredTrueCount/testSet.getNumDataPoints());
+//        System.out.println("New label prediction false data: " + newPredFalseCount + "#\t" + (double)newPredFalseCount/testSet.getNumDataPoints());
+//        System.out.println();
+//        System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPred) + "\t");
+//        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
+//        System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
+//        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
+//        System.out.println();
+//        System.out.println();
+//
+//
+//        System.out.println("--------------------------------Analysis Given Train Labels-----------------------------\n");
+//        trainPred = bmmClassifier.predict(trainSet, trainSet.getMultiLabels());
+//        testPred = bmmClassifier.predict(testSet, trainSet.getMultiLabels());
+//        System.out.println();
+//        System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPred) + "\t");
+//        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
+//        System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
+//        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
+//        System.out.println();
+//        System.out.println();
+//        System.out.println("--------------------------------Analysis Given Test Labels-----------------------------\n");
+//        trainPred = bmmClassifier.predict(trainSet, testSet.getMultiLabels());
+//        testPred = bmmClassifier.predict(testSet, testSet.getMultiLabels());
+//        System.out.println();
+//        System.out.print("trainAcc : " + Accuracy.accuracy(trainSet.getMultiLabels(), trainPred) + "\t");
+//        System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPred)+ "\t");
+//        System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPred)+ "\t");
+//        System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPred)+ "\t");
+//        System.out.println();
+//        System.out.println();
     }
 
 }

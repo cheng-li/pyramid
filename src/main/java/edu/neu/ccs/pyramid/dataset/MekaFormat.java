@@ -366,6 +366,7 @@ public class MekaFormat {
                 Ngram ngram = (Ngram) feature;
                 featureName = ngram.getNgram();
             }
+            featureName = featureName+"f"+i;
             bw.write("@attribute " + featureName + " numeric\n");
         }
 

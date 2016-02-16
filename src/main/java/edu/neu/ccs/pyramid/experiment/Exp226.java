@@ -46,9 +46,9 @@ public class Exp226 {
             for (int f=0; f<numFolder; f++) {
                 String folder = Paths.get(config.getString("output"), "folder"+f).toString();
                 MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(new File(folder,"train"),
-                        DataSetType.ML_CLF_SPARSE, true);
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
                 MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(folder,"validation"),
-                        DataSetType.ML_CLF_SPARSE, true);
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
 
                 System.out.print("folder " + f + ": ");
                 for (int r=0; r<repeat; r++) {
