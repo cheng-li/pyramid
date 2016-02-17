@@ -1350,22 +1350,22 @@ pre_data = '''<html>
             }
 
             // BW: highlight all rules by clicked label.
-            function highlightAll(rules, rowNum) {
-                console.log(rules);
-                console.log(rowNum);
-                for (i=0; i<rules.length; i++) {
-                    rule = rules[i]
-                    for (j=0; j<rule['checks'].length; j++) {
-                        check = rule['checks'][j]
-                        highlightText(check.highlights, (rowNum+1), check.field)
-                    }
-                }
-            }
+            // function highlightAll(rules, rowNum) {
+            //    console.log(rules);
+            //    console.log(rowNum);
+            //    for (i=0; i<rules.length; i++) {
+            //        rule = rules[i]
+            //        for (j=0; j<rule['checks'].length; j++) {
+            //            check = rule['checks'][j]
+            //            highlightText(check.highlights, (rowNum+1), check.field)
+            //        }
+            //    }
+            //}
 
-            function printTest(rules,rowNum){
-                console.log(rules);
-                console.log(rowNum)
-            }
+            //function printTest(rules,rowNum){
+            //    console.log(rules);
+            //    console.log(rowNum)
+            //}
 
             function displayClass(clas, displayOptions, rowNum) {
                 str = ""
