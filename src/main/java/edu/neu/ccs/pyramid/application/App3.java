@@ -39,15 +39,9 @@ public class App3 {
                 "index.splitMode",
                 "index.splitField","index.splitField.train","index.splitField.test",
                 "index.splitQuery.train","index.splitQuery.test",
-                "index.ngramMatchScoreType"};
+                "index.ngramMatchScoreType","createTrainSet","createTestSet"};
 
         Config.copy(config,app1Config,same);
-
-        app1Config.setBoolean("createTrainSet",config.getBoolean("train"));
-        if (config.getBoolean("train.warmStart")){
-            app1Config.setBoolean("createTrainSet",false);
-        }
-        app1Config.setBoolean("createTestSet",config.getBoolean("test"));
         return app1Config;
     }
 
