@@ -261,6 +261,10 @@ public class App1 {
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
+            if (config.getBoolean("index.labelFilter")){
+                String prefix = config.getString("index.labelFilter.prefix");
+                extMultiLabel = extMultiLabel.stream().filter(extLabel -> extLabel.startsWith(prefix)).collect(Collectors.toList());
+            }
             for (String extLabel: extMultiLabel){
                 int intLabel = labelTranslator.toIntLabel(extLabel);
                 dataSet.addLabel(i,intLabel);
@@ -298,6 +302,10 @@ public class App1 {
 
     static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds) throws Exception{
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
+        if (config.getBoolean("index.labelFilter")){
+            String prefix = config.getString("index.labelFilter.prefix");
+            buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
+        }
         System.out.println("there are "+buckets.size()+" classes in the training set.");
         List<String> labels = new ArrayList<>();
         System.out.println("label distribution in training set:");
@@ -322,6 +330,10 @@ public class App1 {
         }
 
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), testIndexIds);
+        if (config.getBoolean("index.labelFilter")){
+            String prefix = config.getString("index.labelFilter.prefix");
+            buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
+        }
         List<String> newLabels = new ArrayList<>();
         System.out.println("label distribution in data set:");
         for (Terms.Bucket bucket: buckets){
