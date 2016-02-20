@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.multilabel_classification.multi_label_logistic_regre
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -12,6 +14,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 12/23/14.
  */
 public class MLLogisticLoss implements Optimizable.ByGradient, Optimizable.ByGradientValue{
+    private static final Logger logger = LogManager.getLogger();
     private MLLogisticRegression mlLogisticRegression;
     private MultiLabelClfDataSet dataSet;
     private double gaussianPriorVariance;
@@ -117,8 +120,14 @@ public class MLLogisticLoss implements Optimizable.ByGradient, Optimizable.ByGra
     }
 
     private void updatePredictedCounts(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start method  updatePredictedCounts");
+        }
         IntStream.range(0,numParameters).parallel()
                 .forEach(i -> this.predictedCounts.set(i, calPredictedCount(i)));
+        if (logger.isDebugEnabled()){
+            logger.debug("finish method  updatePredictedCounts");
+        }
     }
 
     private double calEmpricalCount(int parameterIndex){

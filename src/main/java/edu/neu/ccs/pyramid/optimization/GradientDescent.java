@@ -25,6 +25,7 @@ public class GradientDescent extends GradientValueOptimizer implements Optimizer
         Vector gradient = this.function.getGradient();
         Vector direction = gradient.times(-1);
         lineSearcher.moveAlongDirection(direction);
+        terminator.add(function.getValue());
     }
 
 }

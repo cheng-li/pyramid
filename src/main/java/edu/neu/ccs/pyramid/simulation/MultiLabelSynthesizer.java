@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.IntegerDistribution;
+import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -411,6 +412,82 @@ public class MultiLabelSynthesizer {
         }
 
         System.out.println("number of flipped = "+numFlipped);
+        return dataSet;
+    }
+
+
+    /**
+     * 2 labels, 3 features, multi-variate gaussian noise
+     * y0: w=(0,1,0)
+     * y1: w=(1,0,0)
+     * y2: w=(0,0,1)
+     * @return
+     */
+    public static MultiLabelClfDataSet gaussianNoise(int numData){
+        int numClass = 3;
+        int numFeature = 3;
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        // generate weights
+        Vector[] weights = new Vector[numClass];
+        for (int k=0;k<numClass;k++){
+            Vector vector = new DenseVector(numFeature);
+            weights[k] = vector;
+        }
+
+
+        weights[0].set(1,1);
+
+        weights[1].set(0, 1);
+
+
+        weights[2].set(2, 1);
+
+
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
+            }
+        }
+
+        double[] means = new double[numClass];
+        double[][] covars = new double[numClass][numClass];
+        covars[0][0]=0.5;
+        covars[0][1]=0.02;         covars[1][0]=0.02;
+        covars[0][2]=-0.03;         covars[2][0]=-0.03;
+
+        covars[1][1]=0.2;
+        covars[1][2]=-0.03;         covars[2][1]=-0.03;
+
+
+
+        covars[2][2]=0.3;
+
+        MultivariateNormalDistribution distribution = new MultivariateNormalDistribution(means,covars);
+
+        // assign labels
+        int numFlipped = 0;
+        for (int i=0;i<numData;i++){
+            double[] noises = distribution.sample();
+            for (int k=0;k<numClass;k++){
+                double dot = weights[k].dot(dataSet.getRow(i));
+                double score = dot + noises[k];
+                if (score>=0){
+                    dataSet.addLabel(i,k);
+                }
+                if (dot*score<0){
+                    numFlipped += 1;
+                }
+            }
+        }
+
+        System.out.println("number of flipped bits = "+numFlipped);
         return dataSet;
     }
 }

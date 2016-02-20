@@ -4,20 +4,18 @@ package edu.neu.ccs.pyramid.dataset;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.List;
-
 /**
  * Created by chengli on 8/4/14.
  */
 public class SparseDataSet extends AbstractDataSet implements DataSet{
-    protected RandomAccessSparseVector[] vectors;
+    protected RandomAccessSparseVector[] featureRows;
     protected RandomAccessSparseVector[] featureColumns;
 
     public SparseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures,missingValue);
-        this.vectors = new RandomAccessSparseVector[numDataPoints];
+        this.featureRows = new RandomAccessSparseVector[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.vectors[i] = new RandomAccessSparseVector(numFeatures);
+            this.featureRows[i] = new RandomAccessSparseVector(numFeatures);
         }
         this.featureColumns = new RandomAccessSparseVector[numFeatures];
         for (int j=0;j<numFeatures;j++){
@@ -33,7 +31,7 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
 
     @Override
     public Vector getRow(int dataPointIndex) {
-        return this.vectors[dataPointIndex];
+        return this.featureRows[dataPointIndex];
     }
 
     /**
@@ -47,7 +45,7 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
         if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
             throw new IllegalArgumentException("missing value is not allowed in this data set");
         }
-        this.vectors[dataPointIndex].set(featureIndex, featureValue);
+        this.featureRows[dataPointIndex].set(featureIndex, featureValue);
         this.featureColumns[featureIndex].set(dataPointIndex, featureValue);
     }
 

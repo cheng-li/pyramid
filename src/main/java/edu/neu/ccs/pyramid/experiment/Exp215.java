@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.FMeasure;
+import edu.neu.ccs.pyramid.eval.HammingLoss;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.powerset.LPClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.powerset.LPOptimizer;
@@ -26,10 +28,32 @@ public class Exp215 {
 
         System.out.println(config);
 
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SPARSE, true);
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
-                DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet trainSet;
+        MultiLabelClfDataSet testSet;
+        String matrixType = config.getString("input.matrixType");
+
+        switch (matrixType){
+            case "sparse_random":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                break;
+            case "sparse_sequential":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                break;
+            case "dense":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown type");
+        }
 
 
         LPClassifier lpClassifier;
@@ -40,11 +64,11 @@ public class Exp215 {
             lpClassifier = LPClassifier.deserialize(new File(output, modelName));
         } else {
             lpClassifier = new LPClassifier(trainSet);
-            LPOptimizer optimizer = new LPOptimizer(lpClassifier,trainSet);
+            LPOptimizer optimizer = new LPOptimizer(lpClassifier,trainSet, testSet);
             optimizer.optimize(config);
         }
 
-        System.out.println("classifier: \n" + lpClassifier);
+//        System.out.println("classifier: \n" + lpClassifier);
 
         MultiLabel[] trainPredict = lpClassifier.predict(trainSet);
         MultiLabel[] testPredict = lpClassifier.predict(testSet);
@@ -54,6 +78,8 @@ public class Exp215 {
         System.out.print("trainOver: "+ Overlap.overlap(trainSet.getMultiLabels(), trainPredict)+ "\t");
         System.out.print("testAcc  : "+ Accuracy.accuracy(testSet.getMultiLabels(),testPredict)+ "\t");
         System.out.println("testOver : "+ Overlap.overlap(testSet.getMultiLabels(), testPredict)+ "\t");
+        System.out.println("hamming loss: " + HammingLoss.hammingLoss(testSet.getMultiLabels(), testPredict, testSet.getNumClasses()));
+        System.out.println("F1: " + FMeasure.f1(testSet.getMultiLabels(), testPredict));
         System.out.println();
         System.out.println();
 

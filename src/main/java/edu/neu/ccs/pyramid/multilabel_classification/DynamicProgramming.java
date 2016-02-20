@@ -101,7 +101,7 @@ public class DynamicProgramming {
      */
     public double nextHighestProb() {
         if (dp.size() > 0) {
-            return Math.exp(dp.peek().logProbability);
+            return dp.peek().probability;
         }
         return 0;
     }
@@ -160,18 +160,16 @@ public class DynamicProgramming {
             double logProb;
             if (flipVector.get(l) == 0.0) {
                 flipVector.set(l, 1.0);
-                if (cache.contains(flipVector)) {
-                    continue;
-                }
                 logProb = prevlogProb - this.logProbs[l][0] + this.logProbs[l][1];
             } else {
                 flipVector.set(l, 0.0);
-                if (cache.contains(flipVector)) {
-                    continue;
-                }
+
                 logProb = prevlogProb - this.logProbs[l][1] + this.logProbs[l][0];
             }
 
+            if (cache.contains(flipVector)) {
+                continue;
+            }
             dp.add(new Candidate(flipVector, logProb));
             cache.add(flipVector);
         }

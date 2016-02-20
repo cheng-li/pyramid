@@ -8,10 +8,18 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.classification.Classifier.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.util.BernoulliDistribution;
+import edu.neu.ccs.pyramid.util.MathUtil;
+import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 /**
@@ -25,66 +33,24 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
     int numSample = 100;
     boolean allowEmpty = false;
 
-    String predictMode;
+    String predictMode = "dynamic";
 
     // parameters
     // format: [numClusters][numLabels]
     ProbabilityEstimator[][] binaryClassifiers;
-    ProbabilityEstimator multiNomialClassifiers;
+    ProbabilityEstimator multiClassClassifier;
+    private String binaryClassifierType;
+    private String multiClassClassifierType;
 
-
-
-
-
-    /**
-     * Default constructor by given a MultiLabelClfDataSet
-     * @param dataSet
-     * @param numClusters
-     */
-    public BMMClassifier(MultiLabelClfDataSet dataSet, int numClusters) {
-        this(dataSet.getNumClasses(), numClusters, dataSet.getNumFeatures());
+    private BMMClassifier() {
     }
 
-    public BMMClassifier(int numClasses, int numClusters, int numFeatures) {
-        this.numLabels = numClasses;
-        this.numClusters = numClusters;
-        this.numFeatures = numFeatures;
-        // initialize distributions
-        this.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
-        for (int k=0; k<numClusters; k++) {
-            for (int l=0; l<numClasses; l++) {
-                this.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
-            }
-        }
-        this.multiNomialClassifiers = new LogisticRegression(numClusters, numFeatures,true);
-        this.predictMode = "dynamic";
+    public String getBinaryClassifierType() {
+        return binaryClassifierType;
     }
 
-    public BMMClassifier() {
-    }
-
-    /**
-     * factory
-     * @param numClasses
-     * @param numClusters
-     * @param numFeatures
-     * @return
-     */
-    public static BMMClassifier newMixBoost(int numClasses, int numClusters, int numFeatures){
-        BMMClassifier bmm = new BMMClassifier();
-        bmm.numLabels = numClasses;
-        bmm.numClusters = numClusters;
-        bmm.numFeatures = numFeatures;
-        // initialize distributions
-        bmm.binaryClassifiers = new LKBoost[numClusters][numClasses];
-        for (int k=0; k<numClusters; k++) {
-            for (int l=0; l<numClasses; l++) {
-                bmm.binaryClassifiers[k][l] = new LKBoost(2);
-            }
-        }
-        bmm.multiNomialClassifiers = new LKBoost(numClusters);
-        bmm.predictMode = "sampling";
-        return bmm;
+    public String getMultiClassClassifierType() {
+        return multiClassClassifierType;
     }
 
     @Override
@@ -139,31 +105,139 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
 //    }
 
 
+    public double predictLogAssignmentProb(Vector vector, MultiLabel assignment){
+        double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
+        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+            }
+        }
+        double[] logProbs = new double[numClusters];
+        for (int k=0;k<numClusters;k++){
+            double sum = 0;
+            sum += logProportions[k];
+            for (int l=0;l<numLabels;l++){
+                if (assignment.matchClass(l)){
+                    sum += logClassProbs[k][l][1];
+                } else {
+                    sum += logClassProbs[k][l][0];
+                }
+            }
+            logProbs[k] = sum;
+        }
+        return MathUtil.logSumExp(logProbs);
+    }
+
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
+        return Math.exp(predictLogAssignmentProb(vector,assignment));
+    }
+
+
+    ///////////TEST///////////////
+    public MultiLabel[] predict(MultiLabelClfDataSet dataSet, MultiLabel[] labelSet){
+
+        List<MultiLabel> results = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToObj(i -> predict(dataSet.getRow(i), labelSet))
+                .collect(Collectors.toList());
+        return results.toArray(new MultiLabel[results.size()]);
+    }
+    public MultiLabel predict(Vector vector, MultiLabel[] labelSet) {
+        MultiLabel prediction = new MultiLabel();
+        double maxLogProb = Double.NEGATIVE_INFINITY;
+
+        double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
+        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+            }
+        }
+
+        for (MultiLabel label : labelSet) {
+            double logProb = predictLogAssignmentProb(logProportions, logClassProbs, label);
+            if (logProb > maxLogProb) {
+                maxLogProb = logProb;
+                prediction = label;
+            }
+        }
+        return prediction;
+    }
+    public double predictLogAssignmentProb(double[] logProportions, double[][][] logClassProbs, MultiLabel assignment){
+        double[] logProbs = new double[numClusters];
+        for (int k=0;k<numClusters;k++){
+            double sum = 0;
+            sum += logProportions[k];
+            for (int l=0;l<numLabels;l++){
+                if (assignment.matchClass(l)){
+                    sum += logClassProbs[k][l][1];
+                } else {
+                    sum += logClassProbs[k][l][0];
+                }
+            }
+            logProbs[k] = sum;
+        }
+        return MathUtil.logSumExp(logProbs);
+    }
+    ///////////TEST///////////////
 
     public MultiLabel predict(Vector vector) {
 
         // new a BMMPredictor
-        BMMPredictor bmmPredictor = new BMMPredictor(vector, multiNomialClassifiers, binaryClassifiers, numClusters, numLabels);
+        BMMPredictor bmmPredictor = new BMMPredictor(vector, multiClassClassifier, binaryClassifiers, numClusters, numLabels);
         bmmPredictor.setNumSamples(numSample);
         bmmPredictor.setAllowEmpty(allowEmpty);
         // samples methods
-        if (predictMode.equals("sampling")) {
-            return bmmPredictor.predictBySampling();
+        switch (predictMode) {
+            case "sampling":
+                return bmmPredictor.predictBySampling();
 
-        } else if (predictMode.equals("dynamic")) {
-            return bmmPredictor.predictByDynamic();
-        } else if (predictMode.equals("greedy")) {
-            return bmmPredictor.predictByGreedy();
-        } else {
-            throw new RuntimeException("Unknown predictMode: " + predictMode);
+            case "dynamic":
+                return bmmPredictor.predictByDynamic();
+            case "greedy":
+                return bmmPredictor.predictByGreedy();
+            default:
+                throw new RuntimeException("Unknown predictMode: " + predictMode);
         }
 
+    }
+
+    /**
+     * predict Sign(E(y|x))
+     * @param vector
+     * @return
+     */
+    public MultiLabel predictByExpectation(Vector vector){
+        double[] proportions = getMultiClassClassifier().predictClassProbs(vector);
+        double[][] probabilities = new double[numClusters][numLabels];
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                probabilities[k][l]=getBinaryClassifiers()[k][l].predictClassProb(vector,1);
+            }
+        }
+        double[] expectations = new double[numLabels];
+        for (int l=0;l<numLabels;l++){
+            double sum = 0;
+            for (int k=0;k<numClusters;k++){
+                sum += proportions[k]*probabilities[k][l];
+            }
+            expectations[l] = sum;
+        }
+
+        MultiLabel prediction = new MultiLabel();
+        for (int l=0;l<numLabels;l++){
+            if (expectations[l]>0.5){
+                prediction.addLabel(l);
+            }
+        }
+        return prediction;
     }
 
 
     public String toString() {
         Vector vector = new RandomAccessSparseVector(numFeatures);
-        double[] mixtureCoefficients = multiNomialClassifiers.predictClassProbs(vector);
+        double[] mixtureCoefficients = multiClassClassifier.predictClassProbs(vector);
         final StringBuilder sb = new StringBuilder("BMM{\n");
         sb.append("numLabels=").append(numLabels).append("\n");
         sb.append("numClusters=").append(numClusters).append("\n");
@@ -173,7 +247,7 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         }
 
         sb.append("clustering component = \n");
-        sb.append(multiNomialClassifiers);
+        sb.append(multiClassClassifier);
         sb.append("prediction components = \n");
         for (int k=0;k<numClusters;k++){
             for (int l=0;l<numLabels;l++){
@@ -207,6 +281,35 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         this.numSample = numSample;
     }
 
+    public List<MultiLabel> samples(Vector vector){
+        List<MultiLabel> list = new ArrayList<>();
+        double[] proportions = multiClassClassifier.predictClassProbs(vector);
+        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+            }
+        }
+
+        int[] clusters = IntStream.range(0, numClusters).toArray();
+        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
+
+        for (int s=0; s<100000; s++) {
+            int k = enumeratedIntegerDistribution.sample();
+            Vector candidateY = new DenseVector(numLabels);
+
+            for (int l=0; l<numLabels; l++) {
+                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(Math.exp(logClassProbs[k][l][1]));
+                candidateY.set(l, bernoulliDistribution.sample());
+            }
+            MultiLabel multiLabel = new MultiLabel(candidateY);
+            list.add(multiLabel);
+        }
+        return list;
+
+    }
+
     public static BMMClassifier deserialize(File file) throws Exception {
         try (
                 FileInputStream fileInputStream = new FileInputStream(file);
@@ -222,6 +325,8 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         File file1 = new File(file);
         return deserialize(file1);
     }
+
+
 
     @Override
     public void serialize(File file) throws Exception {
@@ -248,11 +353,94 @@ public class BMMClassifier implements MultiLabelClassifier, Serializable {
         return binaryClassifiers;
     }
 
-    public ProbabilityEstimator getMultiNomialClassifiers() {
-        return multiNomialClassifiers;
+    public ProbabilityEstimator getMultiClassClassifier() {
+        return multiClassClassifier;
     }
 
     public int getNumClusters() {
         return numClusters;
+    }
+
+    public static Builder getBuilder(){
+        return new Builder();
+    }
+
+    public static class Builder {
+        private int numClasses;
+        private int numClusters;
+        private int numFeatures;
+        private String binaryClassifierType= "lr";
+        private String multiClassClassifierType = "lr";
+
+        private Builder() {
+        }
+
+        public Builder setNumClasses(int numClasses) {
+            this.numClasses = numClasses;
+            return this;
+        }
+
+        public Builder setNumClusters(int numClusters) {
+            this.numClusters = numClusters;
+            return this;
+        }
+
+        public Builder setNumFeatures(int numFeatures) {
+            this.numFeatures = numFeatures;
+            return this;
+        }
+
+        public Builder setBinaryClassifierType(String binaryClassifierType) {
+            this.binaryClassifierType = binaryClassifierType;
+            return this;
+        }
+
+        public Builder setMultiClassClassifierType(String multiClassClassifierType) {
+            this.multiClassClassifierType = multiClassClassifierType;
+            return this;
+        }
+
+        public BMMClassifier build(){
+            BMMClassifier bmmClassifier = new BMMClassifier();
+            bmmClassifier.numLabels = numClasses;
+            bmmClassifier.numClusters = numClusters;
+            bmmClassifier.numFeatures = numFeatures;
+            bmmClassifier.binaryClassifierType = binaryClassifierType;
+            bmmClassifier.multiClassClassifierType = multiClassClassifierType;
+
+            switch (binaryClassifierType){
+                case "lr":
+                    bmmClassifier.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
+                    for (int k=0; k<numClusters; k++) {
+                        for (int l=0; l<numClasses; l++) {
+                            bmmClassifier.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
+                        }
+                    }
+                    break;
+                case "boost":
+                    bmmClassifier.binaryClassifiers = new LKBoost[numClusters][numClasses];
+                    for (int k=0; k<numClusters; k++) {
+                        for (int l=0; l<numClasses; l++) {
+                            bmmClassifier.binaryClassifiers[k][l] = new LKBoost(2);
+                        }
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("binaryClassifierType can be lr or boost. Given: "+binaryClassifierType);
+            }
+
+            switch (multiClassClassifierType){
+                case "lr":
+                    bmmClassifier.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
+                    break;
+                case "boost":
+                    bmmClassifier.multiClassClassifier = new LKBoost(numClusters);
+                    break;
+                default:
+                    throw new IllegalArgumentException("multiClassClassifierType can be lr or boost");
+            }
+
+            return bmmClassifier;
+        }
     }
 }

@@ -20,7 +20,7 @@ public class BMMTrainerTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test6();
+        test5();
 
     }
 
@@ -131,6 +131,20 @@ public class BMMTrainerTest {
 //        }
 
         System.out.println(trainer.bmm);
+        Vector vector1= new DenseVector(5);
+        vector1.set(0,1);
+
+        Vector vector2= new DenseVector(5);
+        vector2.set(1,1);
+
+        Vector vector3= new DenseVector(5);
+        vector3.set(2,1);
+        vector3.set(3,1);
+
+        System.out.println(Math.exp(trainer.bmm.logProbability(vector1)));
+        System.out.println(Math.exp(trainer.bmm.logProbability(vector2)));
+        System.out.println(Math.exp(trainer.bmm.logProbability(vector3)));
+
     }
 
 

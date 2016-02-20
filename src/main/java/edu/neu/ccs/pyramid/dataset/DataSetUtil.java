@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
+import edu.neu.ccs.pyramid.util.SetUtil;
 import edu.neu.ccs.pyramid.util.Translator;
 import org.apache.mahout.math.Vector;
 
@@ -960,5 +961,66 @@ public class DataSetUtil {
         return sb.toString();
     }
 
+    public static void detectDuplicate(MultiLabelClfDataSet train, MultiLabelClfDataSet test){
+        Set<Vector> vectors = new HashSet<>();
+        for (int i=0;i<train.getNumDataPoints();i++){
+            vectors.add(train.getRow(i));
+        }
 
+        List<Integer> duplicate = new ArrayList<>();
+        for (int i=0;i<test.getNumDataPoints();i++){
+            if (vectors.contains(test.getRow(i))){
+                duplicate.add(i);
+            }
+        }
+        System.out.println("number of test data points which occur in training set = "+duplicate.size());
+        System.out.println("duplicates = "+duplicate);
+    }
+
+    public static void dataComparasion(MultiLabelClfDataSet trainSet, MultiLabelClfDataSet testSet){
+        System.out.println("---------------------------------Data Comparasion------------------------------");
+        System.out.println("Number of Features: " + trainSet.getNumFeatures());
+        System.out.println("Number of Labels: " + trainSet.getNumClasses());
+        System.out.println("Number of Training: " + trainSet.getNumDataPoints());
+        System.out.println("Number of Testing: " + testSet.getNumDataPoints());
+
+        Set<MultiLabel> trainLabelSet = new HashSet<>();
+        Set<MultiLabel> testLabelSet  = new HashSet<>();
+
+        for (MultiLabel multiLabel : trainSet.getMultiLabels()) {
+            trainLabelSet.add(multiLabel);
+        }
+        for (MultiLabel multiLabel : testSet.getMultiLabels()) {
+            testLabelSet.add(multiLabel);
+        }
+
+
+        System.out.println("Train label Cardinality: " + trainSet.labelCardinality());
+        System.out.println("Test label Cardinality: " + testSet.labelCardinality());
+        System.out.println("Train label Density: " + trainSet.labelDensity());
+        System.out.println("Test label Density: " + testSet.labelDensity());
+        System.out.println();
+
+        System.out.println("Train distinct label num: " + trainLabelSet.size());
+        System.out.println("Test distinct label num: " + testLabelSet.size());
+        Set<MultiLabel> unionSet = SetUtil.union(trainLabelSet, testLabelSet);
+        System.out.println("Union distinct label num: " + unionSet.size());
+        Set<MultiLabel> intersectSet = SetUtil.intersect(trainLabelSet, testLabelSet);
+        System.out.println("Intersect distinct label num: " + intersectSet.size());
+
+        Set<MultiLabel> newTestSet = SetUtil.complement(testLabelSet, trainLabelSet);
+        System.out.println("New label combination number in test: " + newTestSet.size());
+
+        int newTestLabelCounts = 0;
+        for (MultiLabel label : testSet.getMultiLabels()) {
+            if (newTestSet.contains(label)) {
+                newTestLabelCounts++;
+            }
+        }
+        System.out.println("New label combination data counts: " + newTestLabelCounts);
+        System.out.println("New label combination data rate: " + (double)newTestLabelCounts/testSet.getNumDataPoints());
+        System.out.println("---------------------------------------------------------------");
+        System.out.println();
+        System.out.println();
+    }
 }

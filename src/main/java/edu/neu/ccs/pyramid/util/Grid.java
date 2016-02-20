@@ -38,6 +38,15 @@ public class Grid {
         return values;
     }
 
+    public static List<Double> uniformDecreasing(double min, double max, int num){
+        List<Double> list = uniform(min,max,num);
+        List<Double> des = new ArrayList<>();
+        for (int i=0;i<list.size();i++){
+            des.add(list.get(list.size()-i-1));
+        }
+        return des;
+    }
+
     /**
      * log uniform grid
      * from small to big

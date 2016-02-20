@@ -67,7 +67,7 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
             rho = 1/denominator;
         }
         else {
-//            terminator.forceTerminate();
+            terminator.forceTerminate();
             if (logger.isWarnEnabled()){
                 logger.warn("denominator <= 0");
             }
@@ -75,8 +75,10 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
 
 
         if (logger.isDebugEnabled()){
-            logger.debug("y= "+y);
-            logger.debug("s= "+s);
+            if (y.size()<100){
+                logger.debug("y= "+y);
+                logger.debug("s= " + s);
+            }
             logger.debug("denominator = "+denominator);
             logger.debug("rho = "+rho);
         }
@@ -91,6 +93,7 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
         if (logger.isDebugEnabled()){
             logger.debug("finish one iteration");
         }
+        terminator.add(function.getValue());
     }
 
     Vector findDirection(){

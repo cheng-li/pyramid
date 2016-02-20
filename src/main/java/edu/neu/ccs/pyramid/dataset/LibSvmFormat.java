@@ -213,6 +213,7 @@ public class LibSvmFormat {
             while ((line=br.readLine())!=null){
                 num += 1;
             }
+            br.close();
         }
         return num;
     }
@@ -222,8 +223,84 @@ public class LibSvmFormat {
         return null;
     }
 
-    public static MultiLabelClfDataSet loaMultiLabelClfDataSet(String libSvmFile, DataSetType dataSetType,
-                                                               boolean loadSettings) throws IOException, ClassNotFoundException {
-        return null;
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSet(String libSvmFile,
+                                                                boolean dense, int numFeatures, int numClasses) throws IOException, ClassNotFoundException {
+        int numDatapoints = getNumDataPoints(libSvmFile);
+//        int numClasses = getNumClasses(libSvmFile);
+//        int numFeatures = getnumFeatures(libSvmFile);
+
+        System.out.println("numDatapoints: " + numDatapoints);
+        System.out.println("numClasses: " + numClasses);
+        System.out.println("numFeatures: " + numFeatures);
+
+        MultiLabelClfDataSet dataSet = new MLClfDataSetBuilder().numClasses(numClasses)
+                .numFeatures(numFeatures).numDataPoints(numDatapoints).dense(dense).build();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
+        ) {
+            String line = null;
+            int lineCount = 0;
+            while ((line=br.readLine()) != null) {
+                String[] lineInfo = line.split(" ");
+                // adding labels
+                String labels = lineInfo[0];
+                for (String label : labels.split(",")) {
+                    int l = Integer.parseInt(label);
+//                    dataSet.addLabel(lineCount, l-1);
+                    dataSet.addLabel(lineCount, l);
+                }
+                // adding feature
+                for (int i=1; i<lineInfo.length; i++) {
+                    String[] featureValue = lineInfo[i].split(":");
+                    int feature = Integer.parseInt(featureValue[0]);
+                    double value = Double.parseDouble(featureValue[1]);
+                    dataSet.setFeatureValue(lineCount, feature-1, value);
+                }
+                lineCount++;
+            }
+            br.close();
+        }
+
+
+        return dataSet;
+    }
+
+    private static int getnumFeatures(String libSvmFile) throws IOException {
+        Set<String> featureSet = new HashSet<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
+        ) {
+            String line = null;
+            while ((line=br.readLine()) != null) {
+                String[] features = line.split(" ");
+                for (int i=1; i<features.length; i++) {
+                    String featureIndex = features[i].split(":")[0];
+                    if (!featureSet.contains(featureIndex)) {
+                        featureSet.add(featureIndex);
+                    }
+                }
+            }
+            br.close();
+        }
+        return featureSet.size();
+    }
+
+    private static int getNumClasses(String libSvmFile) throws IOException {
+        Set<String> labelSet = new HashSet<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
+        ) {
+            String line = null;
+            while ((line=br.readLine()) != null) {
+                String labelStr = line.split(" ")[0];
+                String[] labels = labelStr.split(",");
+                for (String l : labels) {
+                    if (!labelSet.contains(l)) {
+                        labelSet.add(l);
+                    }
+                }
+            }
+            br.close();
+        }
+
+        return labelSet.size();
     }
 }

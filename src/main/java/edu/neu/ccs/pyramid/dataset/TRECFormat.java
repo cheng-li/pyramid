@@ -138,7 +138,7 @@ public class TRECFormat {
     public static MultiLabelClfDataSet loadMultiLabelClfDataSet(File trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
         boolean legalArg = ((dataSetType == DataSetType.ML_CLF_DENSE)
-                ||(dataSetType==DataSetType.ML_CLF_SPARSE));
+                ||(dataSetType==DataSetType.ML_CLF_SPARSE)||(dataSetType == DataSetType.ML_CLF_SEQ_SPARSE));
         if (!legalArg){
             throw new IllegalArgumentException("illegal data set type");
         }
@@ -152,6 +152,9 @@ public class TRECFormat {
         }
         if (dataSetType==DataSetType.ML_CLF_SPARSE){
             dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+        }
+        if (dataSetType==DataSetType.ML_CLF_SEQ_SPARSE) {
+            dataSet = new SequentialSparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
         }
         fillMultiLabelClfDataSet(dataSet,trecFile);
         if (loadSettings){
@@ -301,7 +304,14 @@ public class TRECFormat {
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
                 String[] lineSplit = line.split(" ");
-                String multiLabelString = lineSplit[0];
+                String multiLabelString = null;
+                try {
+                    multiLabelString = lineSplit[0];
+                } catch (Exception e) {
+                    System.out.println("load data error happens");
+                    System.out.println("line number: " + dataIndex);
+                    System.out.println("line: " + line);
+                }
                 String[] multiLabelSplit = multiLabelString.split(Pattern.quote(","));
                 for (String label: multiLabelSplit){
                     if (label.equals("")) {

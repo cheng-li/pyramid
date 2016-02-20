@@ -16,3 +16,7 @@
 216: experiments for 211 but with multiple parameters
 217: analyze multi prediction results.
 218: CRF for CML model.
+219: perplexity for mixture logistic
+224: statistics of multilabel dataset
+225: analyze the prediction for mixture exp211
+226: tuning parameters for exp211 mixture BMM

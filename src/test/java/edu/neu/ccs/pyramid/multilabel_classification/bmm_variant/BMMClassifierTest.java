@@ -30,9 +30,21 @@ public class BMMClassifierTest {
                 DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        BMMClassifier bmmClassifier = new BMMClassifier(dataSet.getNumClasses(),4,dataSet.getNumFeatures());
+
+        int numClusters = 4;
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setMultiClassClassifierType("lr")
+                .setBinaryClassifierType("boost")
+                .build();
+
         bmmClassifier.setPredictMode("dynamic");
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,1,1);
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
         bmmClassifier.setNumSample(100);
         System.out.println("num cluster: " + bmmClassifier.numClusters);
 
@@ -41,7 +53,7 @@ public class BMMClassifierTest {
         System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
 
 
-        for (int i=1;i<=30;i++){
+        for (int i=1;i<=5;i++){
             optimizer.iterate();
             System.out.print("iter : "+i + "\t");
             System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
@@ -116,11 +128,20 @@ public class BMMClassifierTest {
             }
         }
 
-        int numClusters = 50;
-        BMMClassifier bmmClassifier = new BMMClassifier(dataSet,numClusters);
-        BMMInitializer.initialize(bmmClassifier,dataSet,1.0,1.0);
+        int numClusters = 4;
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("boost")
+                .setMultiClassClassifierType("boost")
+                .build();
 
-        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet,10000,10000);
+        bmmClassifier.setPredictMode("dynamic");
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
         for (int i=0; i<3; i++) {
             optimizer.iterate();
             System.out.print("i: " + i + "\t");
@@ -129,5 +150,91 @@ public class BMMClassifierTest {
             System.out.println("testAcc: " + Accuracy.accuracy(bmmClassifier,testSet));
         }
         System.out.println(bmmClassifier.toString());
+    }
+
+
+    private static void test3() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"),
+                DataSetType.ML_CLF_SPARSE, true);
+        int numClusters = 4;
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("boost")
+                .build();
+
+        bmmClassifier.setPredictMode("dynamic");
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
+
+        bmmClassifier.setNumSample(100);
+        System.out.println("num cluster: " + bmmClassifier.numClusters);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, dataSet));
+        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+
+
+        for (int i=1;i<=30;i++){
+            optimizer.iterate();
+            System.out.print("iter : "+i + "\t");
+            System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier,dataSet)+ "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, dataSet)+ "\t");
+            System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
+            System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
+        }
+
+
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
+        System.out.println(bmmClassifier);
+    }
+
+    private static void test4() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/train"),
+                DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/test"),
+                DataSetType.ML_CLF_SPARSE, true);
+        int numClusters = 4;
+        BMMClassifier bmmClassifier = BMMClassifier.getBuilder()
+                .setNumClasses(dataSet.getNumClasses())
+                .setNumFeatures(dataSet.getNumFeatures())
+                .setNumClusters(numClusters)
+                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("boost")
+                .build();
+
+        bmmClassifier.setPredictMode("dynamic");
+        BMMOptimizer optimizer = new BMMOptimizer(bmmClassifier,dataSet);
+        optimizer.setPriorVarianceBinary(10);
+        optimizer.setPriorVarianceMultiClass(10);
+        BMMInitializer.initialize(bmmClassifier,dataSet,optimizer);
+        bmmClassifier.setNumSample(100);
+        System.out.println("num cluster: " + bmmClassifier.numClusters);
+
+        System.out.println("after initialization");
+        System.out.println("train acc = "+ Accuracy.accuracy(bmmClassifier, dataSet));
+        System.out.println("test acc = "+ Accuracy.accuracy(bmmClassifier,testSet));
+
+
+        for (int i=1;i<=30;i++){
+            optimizer.iterate();
+            System.out.print("iter : "+i + "\t");
+            System.out.print("objective: "+optimizer.getTerminator().getLastValue() + "\t");
+            System.out.print("trainAcc : "+ Accuracy.accuracy(bmmClassifier,dataSet)+ "\t");
+            System.out.print("trainOver: "+ Overlap.overlap(bmmClassifier, dataSet)+ "\t");
+            System.out.print("testAcc  : "+ Accuracy.accuracy(bmmClassifier,testSet)+ "\t");
+            System.out.println("testOver : "+ Overlap.overlap(bmmClassifier, testSet)+ "\t");
+        }
+
+
+        System.out.println("history = "+optimizer.getTerminator().getHistory());
+        System.out.println(bmmClassifier);
     }
 }

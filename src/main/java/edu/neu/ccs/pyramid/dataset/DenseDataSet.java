@@ -4,22 +4,20 @@ package edu.neu.ccs.pyramid.dataset;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.List;
-
 /**
  * Created by chengli on 8/7/14.
  */
 class DenseDataSet extends AbstractDataSet implements DataSet{
 
-    protected DenseVector[] vectors;
+    protected DenseVector[] featureRows;
     protected DenseVector[] featureColumns;
 
 
     DenseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures, missingValue);
-        this.vectors = new DenseVector[numDataPoints];
+        this.featureRows = new DenseVector[numDataPoints];
         for (int i=0;i<numDataPoints;i++){
-            this.vectors[i] = new DenseVector(numFeatures);
+            this.featureRows[i] = new DenseVector(numFeatures);
         }
         this.featureColumns = new DenseVector[numFeatures];
         for (int j=0;j<numFeatures;j++){
@@ -35,7 +33,7 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
 
     @Override
     public Vector getRow(int dataPointIndex) {
-        return this.vectors[dataPointIndex];
+        return this.featureRows[dataPointIndex];
     }
 
     @Override
@@ -43,7 +41,7 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
         if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
             throw new IllegalArgumentException("missing value is not allowed in this data set");
         }
-        this.vectors[dataPointIndex].set(featureIndex, featureValue);
+        this.featureRows[dataPointIndex].set(featureIndex, featureValue);
         this.featureColumns[featureIndex].set(dataPointIndex, featureValue);
     }
 

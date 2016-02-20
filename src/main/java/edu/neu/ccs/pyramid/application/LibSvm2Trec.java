@@ -1,10 +1,10 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.LibSvmFormat;
-import edu.neu.ccs.pyramid.dataset.RegDataSet;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by chengli on 5/30/15.
@@ -21,6 +21,23 @@ public class LibSvm2Trec {
             case "reg":
                 translateRegData(config);
                 break;
+            case "mlclf":
+                translateMLClfData(config);
+        }
+    }
+
+    private static void translateMLClfData(Config config) throws IOException, ClassNotFoundException {
+        List<String> libSvmFiles = config.getStrings("libsvm");
+        List<String> trecFiles = config.getStrings("trec");
+        boolean dense = config.getBoolean("dense");
+        int numFeatures = config.getInt("numFeatures");
+        int numClasses = config.getInt("numClasses");
+        for (int i=0; i<libSvmFiles.size(); i++) {
+            String libSvmFile = libSvmFiles.get(i);
+            String trecFile = trecFiles.get(i);
+            System.out.println("translating: " + libSvmFile);
+            MultiLabelClfDataSet dataSet = LibSvmFormat.loadMultiLabelClfDataSet(libSvmFile,dense,numFeatures,numClasses);
+            TRECFormat.save(dataSet, trecFile);
         }
 
     }

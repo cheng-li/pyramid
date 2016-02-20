@@ -144,6 +144,20 @@ public class LabelBasedMeasures {
         }
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("LabelBasedMeasures{");
+        for (int k=0;k<numLabels;k++){
+            sb.append("label=").append(k).append("; ");
+            sb.append("precision=").append(precision(k)).append("; ");
+            sb.append("recall=").append(recall(k)).append("; ");
+            sb.append("f1=").append(f1(k)).append("; ");
+            sb.append("accuracy=").append(accuracy(k)).append("\n");
+        }
+        sb.append('}');
+        return sb.toString();
+    }
+
     public static class Serializer extends JsonSerializer<LabelBasedMeasures> {
         @Override
         public void serialize(LabelBasedMeasures labelBasedMeasures, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {

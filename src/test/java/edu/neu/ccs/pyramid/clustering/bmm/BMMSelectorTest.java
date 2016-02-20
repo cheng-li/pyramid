@@ -2,6 +2,8 @@ package edu.neu.ccs.pyramid.clustering.bmm;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
 
 public class BMMSelectorTest {
     public static void main(String[] args) {
@@ -37,6 +39,21 @@ public class BMMSelectorTest {
             System.out.println("sample "+i);
             System.out.println(bmm.sample());
         }
+
+        Vector vector1= new DenseVector(5);
+        vector1.set(0,1);
+
+        Vector vector2= new DenseVector(5);
+        vector2.set(1,1);
+
+        Vector vector3= new DenseVector(5);
+        vector3.set(1,1);
+        vector3.set(2,1);
+        vector3.set(3,1);
+
+        System.out.println(Math.exp(bmm.logProbability(vector1)));
+        System.out.println(Math.exp(bmm.logProbability(vector2)));
+        System.out.println(Math.exp(bmm.logProbability(vector3)));
 
 
     }

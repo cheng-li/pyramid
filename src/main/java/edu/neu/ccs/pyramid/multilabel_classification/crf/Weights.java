@@ -4,7 +4,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorView;
 
-import java.io.Serializable;
+import java.io.*;
 
 /**
  * Created by Rainicy on 12/12/15.
@@ -18,7 +18,8 @@ public class Weights  implements Serializable {
     private int numWeightsForLabels;
     /**
      * size = (numFeatures + 1) * numClasses +
-     * (numClasses choose 2) * 4 *
+     * (numClasses choose 2) * 4
+     * +1
      * where equals number of weights features and plus
      * the pair-wise labels, which has 4 possible combinations
      * vector is not serializable
@@ -34,17 +35,13 @@ public class Weights  implements Serializable {
         this.numFeatures = numFeatures;
         this.numWeightsForFeatures = (numFeatures + 1) * numClasses;
         this.numWeightsForLabels = (numClasses * (numClasses-1)/2) * 4;
-        this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
-        this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels];
-//        for (int i=0; i<weightVector.size(); i++) {
-//            double randWeight = Math.random()*2 - 1.0;
-//            weightVector.set(i, randWeight);
-//            serializableWeights[i] = randWeight;
-//        }
+        this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels +1);
+        this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels +1];
         System.out.println("numWeightsForFeature: " + numWeightsForFeatures);
         System.out.println("numWeightsForLabels: " + numWeightsForLabels);
     }
 
+    //todo buggy
     public Weights deepCopy(){
         Weights copy = new Weights(this.numClasses,numFeatures);
         copy.weightVector = new DenseVector(this.weightVector);
@@ -74,8 +71,7 @@ public class Weights  implements Serializable {
 
 
     public void setWeightVector(Vector weightVector) {
-//        System.out.println("given weightVector size: " + weightVector.size());
-        if (weightVector.size() != (numWeightsForFeatures + numWeightsForLabels)) {
+        if (weightVector.size() != (numWeightsForFeatures + numWeightsForLabels +1)) {
             throw new IllegalArgumentException("given vector size is wrong: " + weightVector.size());
         }
         this.weightVector = weightVector;
@@ -160,5 +156,54 @@ public class Weights  implements Serializable {
         }
         sb.append('}');
         return sb.toString();
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        for (int i=0;i<serializableWeights.length;i++){
+            serializableWeights[i] = weightVector.get(i);
+        }
+        out.writeInt(numClasses);
+        out.writeInt(numFeatures);
+        out.writeInt(numWeightsForFeatures);
+        out.writeInt(numWeightsForLabels);
+        out.writeObject(serializableWeights);
+
+    }
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        numClasses = in.readInt();
+        numFeatures = in.readInt();
+        numWeightsForFeatures = in.readInt();
+        numWeightsForLabels = in.readInt();
+        serializableWeights = (double[])in.readObject();
+        weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels+1);
+        for (int i=0;i<serializableWeights.length;i++){
+            weightVector.set(i,serializableWeights[i]);
+        }
+    }
+
+    void serialize(File file) throws Exception{
+        File parent = file.getParentFile();
+        if (!parent.exists()){
+            parent.mkdirs();
+        }
+        try (
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+        ){
+            objectOutputStream.writeObject(this);
+        }
+    }
+
+    public static Weights deserialize(File file) throws Exception{
+        try(
+                FileInputStream fileInputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                ObjectInputStream objectInputStream = new ObjectInputStream(bufferedInputStream);
+        ){
+            return (Weights)objectInputStream.readObject();
+        }
     }
 }
