@@ -217,6 +217,20 @@ public class ESIndex {
         return list;
     }
 
+    public List<String> matchStringQuery(String query){
+        SearchResponse response = client.prepareSearch(this.indexName)
+                .setSize(numDocs).
+                        setHighlighterFilter(false).setTrackScores(false).
+                        setNoFields().setExplain(false).setFetchSource(false)
+                .setQuery(QueryBuilders.wrapperQuery(query)).execute().actionGet();
+        List<String> list = new ArrayList<>(response.getHits().getHits().length);
+        for (SearchHit searchHit : response.getHits()) {
+            list.add(searchHit.getId());
+        }
+
+        return list;
+    }
+
 
     /**
      * use as an inverted index

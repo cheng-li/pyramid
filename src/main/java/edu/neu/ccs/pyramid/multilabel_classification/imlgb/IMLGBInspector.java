@@ -11,7 +11,9 @@ import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.function.Mult;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -286,5 +288,46 @@ public class IMLGBInspector {
         return predictionAnalysis;
     }
 
+
+    public static String simplePredictionAnalysis(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
+                                                  int dataPointIndex,  double classProbThreshold){
+        StringBuilder sb = new StringBuilder();
+        int numClasses = boosting.getNumClasses();
+        MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
+        String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
+        List<Pair<Integer,Double>> list = IntStream.range(0,numClasses).mapToObj(l -> new Pair<Integer, Double>(l, classProbs[l]))
+                .filter(pair -> pair.getSecond() >= classProbThreshold).sorted(comparator.reversed()).collect(Collectors.toList());
+        for (Pair<Integer,Double> pair: list){
+            int label = pair.getFirst();
+            double prob = pair.getSecond();
+            int match = 0;
+            if (trueLabels.matchClass(label)){
+                match=1;
+            }
+            sb.append(id).append("\t").append(labelTranslator.toExtLabel(label)).append("\t")
+                    .append("single").append("\t").append(prob)
+                    .append("\t").append(match).append("\n");
+        }
+        MultiLabel predicted = boosting.predict(dataSet.getRow(dataPointIndex));
+        double probability = boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex),predicted);
+        List<Integer> predictedList = predicted.getMatchedLabelsOrdered();
+        sb.append(id).append("\t");
+        for (int i=0;i<predictedList.size();i++){
+            sb.append(labelTranslator.toExtLabel(predictedList.get(i)));
+            if (i!=predictedList.size()-1){
+                sb.append(",");
+            }
+        }
+        sb.append("\t");
+        int setMatch = 0;
+        if (predicted.equals(trueLabels)){
+            setMatch=1;
+        }
+        sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\n");
+        return sb.toString();
+    }
 
 }

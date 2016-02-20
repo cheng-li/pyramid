@@ -1,8 +1,5 @@
 package edu.neu.ccs.pyramid.application;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
@@ -18,17 +15,14 @@ import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.elasticsearch.search.aggregations.bucket.filters.Filters;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * for multi label dataset,
@@ -87,7 +81,7 @@ public class App1 {
         return index;
     }
 
-    static String[] getDocsForSplit(Config config, ESIndex index, List<String> splitValues) throws Exception{
+    static String[] getDocsForSplitFromField(Config config, ESIndex index, List<String> splitValues) throws Exception{
         String splitField = config.getString("index.splitField");
         Set<String> docs = new HashSet<>();
         for (String value: splitValues){
@@ -95,6 +89,11 @@ public class App1 {
         }
         String[] ids = docs.toArray(new String[docs.size()]);
         return ids;
+    }
+
+    static String[] getDocsForSplitFromQuery(ESIndex index, String query){
+        List<String> docs = index.matchStringQuery(query);
+        return docs.toArray(new String[docs.size()]);
     }
 
 
@@ -262,6 +261,10 @@ public class App1 {
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
+            if (config.getBoolean("index.labelFilter")){
+                String prefix = config.getString("index.labelFilter.prefix");
+                extMultiLabel = extMultiLabel.stream().filter(extLabel -> extLabel.startsWith(prefix)).collect(Collectors.toList());
+            }
             for (String extLabel: extMultiLabel){
                 int intLabel = labelTranslator.toIntLabel(extLabel);
                 dataSet.addLabel(i,intLabel);
@@ -299,6 +302,10 @@ public class App1 {
 
     static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds) throws Exception{
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
+        if (config.getBoolean("index.labelFilter")){
+            String prefix = config.getString("index.labelFilter.prefix");
+            buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
+        }
         System.out.println("there are "+buckets.size()+" classes in the training set.");
         List<String> labels = new ArrayList<>();
         System.out.println("label distribution in training set:");
@@ -323,6 +330,10 @@ public class App1 {
         }
 
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), testIndexIds);
+        if (config.getBoolean("index.labelFilter")){
+            String prefix = config.getString("index.labelFilter.prefix");
+            buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
+        }
         List<String> newLabels = new ArrayList<>();
         System.out.println("label distribution in data set:");
         for (Terms.Bucket bucket: buckets){
@@ -381,7 +392,19 @@ public class App1 {
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
         MultiLabelIndex index = loadIndex(config);
-        String[] trainIndexIds = getDocsForSplit(config, index, config.getStrings("index.splitField.train"));
+        String[] trainIndexIds;
+        String splitMode = config.getString("index.splitMode");
+        switch (splitMode) {
+            case "field":
+                trainIndexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
+                break;
+            case "query":
+                trainIndexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
+                break;
+            default:
+                throw new IllegalArgumentException("unknown split mode");
+        }
+
 
         LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(config, index, trainIndexIds);
         Serialization.serialize(trainLabelTranslator,new File(metaDataFolder,"label_translator.ser"));
@@ -393,7 +416,10 @@ public class App1 {
         }
 
         Set<Ngram> ngrams = gather(config,index,trainIndexIds);
-        getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
+        if (config.getBoolean("feature.generateDistribution")){
+            getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
+        }
+
         addNgramFeatures(featureList,ngrams);
 
         Serialization.serialize(featureList,new File(metaDataFolder,"feature_list.ser"));
@@ -409,14 +435,13 @@ public class App1 {
         System.out.println("meta data generated");
     }
 
-    static void createDataSet(Config config, List<String> splitValues) throws Exception{
-        String splitValueAll = splitListToString(splitValues);
+    static void createDataSet(Config config, String[] indexIds, String datasetName) throws Exception{
+//        String splitValueAll = splitListToString(splitValues);
 
 
-        System.out.println("creating data set "+splitValueAll);
+        System.out.println("creating data set "+datasetName);
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         MultiLabelIndex index = loadIndex(config);
-        String[] indexIds = getDocsForSplit(config, index, splitValues);
         IdTranslator idTranslator = loadIdTranslator(indexIds);
         String archive = config.getString("output.folder");
         LabelTranslator trainLabelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
@@ -427,11 +452,11 @@ public class App1 {
         MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator);
         dataSet.setFeatureList(featureList);
 
-        File dataFile = new File(new File(archive,"data_sets"),splitValueAll);
+        File dataFile = new File(new File(archive,"data_sets"),datasetName);
 
         TRECFormat.save(dataSet,dataFile);
         index.close();
-        System.out.println("data set "+splitValueAll+" created");
+        System.out.println("data set "+datasetName+" created");
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.writeValue(new File(dataFile,"data_config.json"),config);
@@ -440,25 +465,53 @@ public class App1 {
 
     static void createTrainSet(Config config) throws Exception{
         generateMetaData(config);
-        List<String> splitValue = config.getStrings("index.splitField.train");
-        createDataSet(config,splitValue);
+        String[] indexIds;
+        String splitMode = config.getString("index.splitMode");
+        ESIndex index =  loadIndex(config);
+        switch (splitMode) {
+            case "field":
+                indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
+                break;
+            case "query":
+                indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
+                break;
+            default:
+                throw new IllegalArgumentException("unknown split mode");
+        }
+        index.close();
+        createDataSet(config,indexIds,config.getString("output.trainFolder"));
     }
 
     static void createTestSet(Config config) throws Exception{
-        List<String> splitValue = config.getStrings("index.splitField.test");
-        createDataSet(config,splitValue);
+        String[] indexIds;
+        String splitMode = config.getString("index.splitMode");
+        ESIndex index =  loadIndex(config);
+        switch (splitMode) {
+            case "field":
+                indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.test"));
+                break;
+            case "query":
+                indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.test"));
+                break;
+            default:
+                throw new IllegalArgumentException("unknown split mode");
+        }
+        index.close();
+        createDataSet(config,indexIds,config.getString("output.testFolder"));
     }
 
-    public static String splitListToString(List<String> splitValues){
-        String splitValueAll = "";
-        for (int i=0;i<splitValues.size();i++){
-            splitValueAll = splitValueAll+splitValues.get(i);
-            if (i<splitValues.size()-1){
-                splitValueAll = splitValueAll+"_";
-            }
-        }
-        return splitValueAll;
-    }
+//    public static String splitListToString(List<String> splitValues){
+//        String splitValueAll = "";
+//        for (int i=0;i<splitValues.size();i++){
+//            splitValueAll = splitValueAll+splitValues.get(i);
+//            if (i<splitValues.size()-1){
+//                splitValueAll = splitValueAll+"_";
+//            }
+//        }
+//        return splitValueAll;
+//    }
+
+
 
 
 

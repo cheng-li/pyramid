@@ -232,10 +232,23 @@ public class App2 {
         System.out.println("label-micro-measures = \n" + microMeasures);
 
 
+        boolean simpleCSV = true;
+        if (simpleCSV){
+            double probThreshold=config.getDouble("report.classProbThreshold");
+            File csv = new File(analysisFolder,"report.csv");
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                String str = IMLGBInspector.simplePredictionAnalysis(boosting,dataSet,i,probThreshold);
+                FileUtils.writeStringToFile(csv,str,true);
+            }
+        }
 
-        boolean topFeaturesToJson = true;
+
+        boolean topFeaturesToJson = false;
+        File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
+        if (distributionFile.exists()){
+            topFeaturesToJson = true;
+        }
         if (topFeaturesToJson){
-            File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
             Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
             int limit = config.getInt("report.topFeatures.limit");
             List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())

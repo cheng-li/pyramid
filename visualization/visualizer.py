@@ -70,6 +70,9 @@ def writeRule(docId, line_count, num, rule):
     oneRule['score'] = rule['score']
     oneRule['checks'] = []
     
+    # BW: add all position into one list and field
+    allPos = []
+    field = ""
     for check in rule["checks"]:
         #read pos from ElasticSearch
         checkOneRule = {}
@@ -86,15 +89,17 @@ def writeRule(docId, line_count, num, rule):
             checkOneRule["index"] = check["feature"]["index"]
             checkOneRule["field"] = check["feature"]["field"]
             checkOneRule["slop"] = check["feature"]["slop"]
+            field = checkOneRule["field"]
 
         checkOneRule['value'] = check["feature value"]
         checkOneRule['relation'] = check["relation"]
         checkOneRule['threshold'] = check["threshold"]
         checkOneRule['highlights'] = str(pos)
+        allPos.extend(pos)
 
         oneRule['checks'].append(checkOneRule)
         
-    return oneRule
+    return oneRule, allPos, field
 
 
 def writeClass(docId, line_count, clas, classDescription):
@@ -117,8 +122,15 @@ def writeClass(docId, line_count, clas, classDescription):
         start = 1
 
     oneClass['rules'] = []
+    allPos = []
+    field = ""
     for i in range(start, len(clas["rules"])):
-        oneClass['rules'].append(writeRule(docId, line_count, i, clas["rules"][i]))
+        oneRule, pos, field = writeRule(docId, line_count, i, clas["rules"][i])
+        oneClass['rules'].append(oneRule)
+        allPos.extend(pos)
+
+    oneClass['allPos'] = str(allPos)
+    oneClass['field'] = field
 
     return oneClass
 
@@ -769,7 +781,7 @@ pre_tf_data = ''' <html>
 pre_data = '''<html>
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-        <script src="./js/jquery.min.js"></script>
+        <!-- <script src="./js/jquery.min.js"></script> -->
     </head>
     <body><br>
         <table id='optionTable'  style='width:55%'>
@@ -942,7 +954,7 @@ pre_data = '''<html>
                 }
 
                 for (k = 0; k < pos1.length; k++) {
-                    if (pos1[k][0] != pos2[k][0] || pos1[k][1] != pos1[k][1]) {
+                    if (pos1[k][0] != pos2[k][0] || pos1[k][1] != pos2[k][1]) {
                         return false
                     }
                 }
@@ -1315,7 +1327,7 @@ pre_data = '''<html>
                 str += '<li>' + serialize(rule['checks'], function (check) {
                             style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
                                 (rowNum + 1) + ", \\"" + check.field + "\\")'"
-                            // alert(Object.keys(check))
+                            //alert(Object.keys(check))
                             if ('ngram' in check) {
                                 str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
                                 check.threshold.toFixed(2) +']'
@@ -1337,6 +1349,23 @@ pre_data = '''<html>
                 return str + score
             }
 
+            // BW: highlight all rules by clicked label.
+            // function highlightAll(rules, rowNum) {
+            //    console.log(rules);
+            //    console.log(rowNum);
+            //    for (i=0; i<rules.length; i++) {
+            //        rule = rules[i]
+            //        for (j=0; j<rule['checks'].length; j++) {
+            //            check = rule['checks'][j]
+            //            highlightText(check.highlights, (rowNum+1), check.field)
+            //        }
+            //    }
+            //}
+
+            //function printTest(rules,rowNum){
+            //    console.log(rules);
+            //    console.log(rowNum)
+            //}
 
             function displayClass(clas, displayOptions, rowNum) {
                 str = ""
@@ -1350,7 +1379,10 @@ pre_data = '''<html>
                             if (i > 0) {
                                 str += '<hr>'
                             }
-                            str += lb.name + '<br><br>classProbability: ' + 
+                            // BW: add clickable style to label
+                            style = "style='color:#00FF00; margin:0px; padding:0px;' onclick='highlightText(" + lb.allPos + "," + 
+                                (rowNum + 1) + ", \\"" + lb.field + "\\")'"
+                            str += '<p ' + style + '>' + lb.name + '</p>' + '<br><br>classProbability: ' + 
                             lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
                             lb.totalScore.toFixed(2) + '<br><ul>' + 
                             prior +

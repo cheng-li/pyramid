@@ -30,20 +30,19 @@ public class App3 {
 
     private static Config createApp1Config(Config config){
         Config app1Config = new Config();
-        String[] same = {"output.folder","feature.useInitialFeatures","feature.categFeature.filter",
+        String[] same = {"output.folder","output.trainFolder","output.testFolder",
+                "feature.useInitialFeatures","feature.categFeature.filter",
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
-                "feature.missingValue","index.indexName","index.clusterName","index.documentType","index.clientType",
-                "index.hosts","index.ports","index.labelField","index.featureFieldPrefix","index.ngramExtractionFields",
+                "feature.missingValue","feature.generateDistribution",
+                "index.indexName","index.clusterName","index.documentType","index.clientType",
+                "index.hosts","index.ports","index.labelField","index.labelFilter","index.labelFilter.prefix",
+                "index.featureFieldPrefix","index.ngramExtractionFields",
+                "index.splitMode",
                 "index.splitField","index.splitField.train","index.splitField.test",
-                "index.ngramMatchScoreType"};
+                "index.splitQuery.train","index.splitQuery.test",
+                "index.ngramMatchScoreType","createTrainSet","createTestSet"};
 
         Config.copy(config,app1Config,same);
-
-        app1Config.setBoolean("createTrainSet",config.getBoolean("train"));
-        if (config.getBoolean("train.warmStart")){
-            app1Config.setBoolean("createTrainSet",false);
-        }
-        app1Config.setBoolean("createTestSet",config.getBoolean("test"));
         return app1Config;
     }
 
@@ -59,8 +58,8 @@ public class App3 {
         Config.copy(config,app2Config,same);
 
         app2Config.setString("input.folder",config.getString("output.folder"));
-        app2Config.setString("input.trainData",App1.splitListToString(config.getStrings("index.splitField.train")));
-        app2Config.setString("input.testData",App1.splitListToString(config.getStrings("index.splitField.test")));
+        app2Config.setString("input.trainData",config.getString("output.trainFolder"));
+        app2Config.setString("input.testData",config.getString("output.testFolder"));
         return app2Config;
     }
 

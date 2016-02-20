@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.elasticsearch;
 
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.feature.*;
+import edu.neu.ccs.pyramid.util.ProgressBar;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.elasticsearch.action.search.SearchResponse;
@@ -9,6 +10,7 @@ import org.elasticsearch.search.SearchHit;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
@@ -24,13 +26,9 @@ public class FeatureLoader {
 
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator, MatchScoreType matchScoreType){
-
-
+        ProgressBar progressBar = new ProgressBar(features.size());
         IntStream.range(0,features.size()).parallel()
                 .forEach(i-> {
-//                    if (i%10000==0){
-//                        System.out.println("feature "+i);
-//                    }
                     Feature feature = features.get(i);
                     if (feature instanceof CategoricalFeature){
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);
@@ -41,7 +39,11 @@ public class FeatureLoader {
                     } else {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
-                });
+
+                    progressBar.incrementAndPrint();
+                }
+                );
+        System.out.println();
     }
 
     public static void loadCategoricalFeature(ESIndex index, DataSet dataSet, CategoricalFeature feature,
