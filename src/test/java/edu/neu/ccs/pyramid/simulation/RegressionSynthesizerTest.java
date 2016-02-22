@@ -5,9 +5,6 @@ import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.optimization.*;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStump;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.SoftRegStumpTrainer;
-import edu.neu.ccs.pyramid.regression.probabilistic_regression_tree.Sigmoid;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
@@ -32,97 +29,97 @@ public class RegressionSynthesizerTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test1();
+//        test1();
     }
 
 
-    private static void test1() throws Exception{
-//        RegDataSet trainSet = RegressionSynthesizer.univarStep();
-//        RegDataSet testSet = RegressionSynthesizer.univarStep();
-
-//        RegDataSet trainSet = RegressionSynthesizer.univarSine();
-//        RegDataSet testSet = RegressionSynthesizer.univarSine();
-
-//        RegDataSet trainSet = RegressionSynthesizer.univarLine();
-//        RegDataSet testSet = RegressionSynthesizer.univarLine();
-
-//        RegDataSet trainSet = RegressionSynthesizer.univarQuadratic();
-//        RegDataSet testSet = RegressionSynthesizer.univarQuadratic();
-
-        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder().build();
-
-        RegDataSet trainSet = regressionSynthesizer.univarExp();
-        RegDataSet testSet = regressionSynthesizer.univarExp();
-
-        TRECFormat.save(trainSet,new File(TMP,"train.trec"));
-        TRECFormat.save(testSet,new File(TMP,"test.trec"));
-
-        int[] activeFeatures = IntStream.range(0, trainSet.getNumFeatures()).toArray();
-        int[] activeDataPoints = IntStream.range(0, trainSet.getNumDataPoints()).toArray();
-        RegTreeConfig regTreeConfig = new RegTreeConfig();
-
-
-        regTreeConfig.setMaxNumLeaves(2);
-        regTreeConfig.setMinDataPerLeaf(5);
-
-
-        regTreeConfig.setNumSplitIntervals(1000);
-        RegressionTree tree = RegTreeTrainer.fit(regTreeConfig,trainSet);
-        System.out.println(tree.toString());
-
-
-        System.out.println("hard rt");
-        System.out.println("training mse = "+ MSE.mse(tree,trainSet));
-        System.out.println("test mse = "+ MSE.mse(tree,testSet));
-
-        String hardTrainPrediction = Arrays.toString(tree.predict(trainSet)).replace("[","").replace("]","");
-        FileUtils.writeStringToFile(new File(TMP,"hardTrainPrediction"),hardTrainPrediction);
-        FileUtils.writeStringToFile(new File(TMP,"hardTrainMSE"),""+MSE.mse(tree,trainSet));
-
-
-        String hardTestPrediction = Arrays.toString(tree.predict(testSet)).replace("[","").replace("]","");
-        FileUtils.writeStringToFile(new File(TMP,"hardTestPrediction"),hardTestPrediction);
-        FileUtils.writeStringToFile(new File(TMP,"hardTestMSE"),""+MSE.mse(tree,testSet));
-
-        SoftRegStumpTrainer trainer = SoftRegStumpTrainer.getBuilder()
-                .setDataSet(trainSet)
-                .setLabels(trainSet.getLabels())
-                .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
-                .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
-                .build();
-
-        Optimizer optimizer = trainer.getOptimizer();
-        optimizer.getTerminator().setMode(Terminator.Mode.STANDARD);
-        optimizer.getTerminator().setMaxIteration(10000);
-
-        SoftRegStump softRegStump = trainer.train();
-        System.out.println("prob rt");
-        System.out.println("training mse = "+ MSE.mse(softRegStump,trainSet));
-        System.out.println("test mse = "+ MSE.mse(softRegStump,testSet));
-        System.out.println(softRegStump.toString());
-
-
-        String softTrainPrediction = Arrays.toString(softRegStump.predict(trainSet)).replace("[","").replace("]","");
-        FileUtils.writeStringToFile(new File(TMP,"softTrainPrediction"),softTrainPrediction);
-        FileUtils.writeStringToFile(new File(TMP,"softTrainMSE"),""+MSE.mse(softRegStump,trainSet));
-
-
-        String softTestPrediction = Arrays.toString(softRegStump.predict(testSet)).replace("[","").replace("]","");
-        FileUtils.writeStringToFile(new File(TMP,"softTestPrediction"),softTestPrediction);
-        FileUtils.writeStringToFile(new File(TMP,"softTestMSE"),""+MSE.mse(softRegStump,testSet));
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(((Sigmoid) softRegStump.getGatingFunction()).getWeights().get(0));
-        sb.append(",");
-        sb.append(((Sigmoid) softRegStump.getGatingFunction()).getBias());
-        sb.append(",");
-        sb.append(softRegStump.getLeftOutput());
-        sb.append(",");
-        sb.append(softRegStump.getRightOutput());
-
-        FileUtils.writeStringToFile(new File(TMP,"curve"),sb.toString());
-
-    }
+//    private static void test1() throws Exception{
+////        RegDataSet trainSet = RegressionSynthesizer.univarStep();
+////        RegDataSet testSet = RegressionSynthesizer.univarStep();
+//
+////        RegDataSet trainSet = RegressionSynthesizer.univarSine();
+////        RegDataSet testSet = RegressionSynthesizer.univarSine();
+//
+////        RegDataSet trainSet = RegressionSynthesizer.univarLine();
+////        RegDataSet testSet = RegressionSynthesizer.univarLine();
+//
+////        RegDataSet trainSet = RegressionSynthesizer.univarQuadratic();
+////        RegDataSet testSet = RegressionSynthesizer.univarQuadratic();
+//
+//        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder().build();
+//
+//        RegDataSet trainSet = regressionSynthesizer.univarExp();
+//        RegDataSet testSet = regressionSynthesizer.univarExp();
+//
+//        TRECFormat.save(trainSet,new File(TMP,"train.trec"));
+//        TRECFormat.save(testSet,new File(TMP,"test.trec"));
+//
+//        int[] activeFeatures = IntStream.range(0, trainSet.getNumFeatures()).toArray();
+//        int[] activeDataPoints = IntStream.range(0, trainSet.getNumDataPoints()).toArray();
+//        RegTreeConfig regTreeConfig = new RegTreeConfig();
+//
+//
+//        regTreeConfig.setMaxNumLeaves(2);
+//        regTreeConfig.setMinDataPerLeaf(5);
+//
+//
+//        regTreeConfig.setNumSplitIntervals(1000);
+//        RegressionTree tree = RegTreeTrainer.fit(regTreeConfig,trainSet);
+//        System.out.println(tree.toString());
+//
+//
+//        System.out.println("hard rt");
+//        System.out.println("training mse = "+ MSE.mse(tree,trainSet));
+//        System.out.println("test mse = "+ MSE.mse(tree,testSet));
+//
+//        String hardTrainPrediction = Arrays.toString(tree.predict(trainSet)).replace("[","").replace("]","");
+//        FileUtils.writeStringToFile(new File(TMP,"hardTrainPrediction"),hardTrainPrediction);
+//        FileUtils.writeStringToFile(new File(TMP,"hardTrainMSE"),""+MSE.mse(tree,trainSet));
+//
+//
+//        String hardTestPrediction = Arrays.toString(tree.predict(testSet)).replace("[","").replace("]","");
+//        FileUtils.writeStringToFile(new File(TMP,"hardTestPrediction"),hardTestPrediction);
+//        FileUtils.writeStringToFile(new File(TMP,"hardTestMSE"),""+MSE.mse(tree,testSet));
+//
+//        SoftRegStumpTrainer trainer = SoftRegStumpTrainer.getBuilder()
+//                .setDataSet(trainSet)
+//                .setLabels(trainSet.getLabels())
+//                .setFeatureType(SoftRegStumpTrainer.FeatureType.FOLLOW_HARD_TREE_FEATURE)
+//                .setLossType(SoftRegStumpTrainer.LossType.SquaredLossOfExpectation)
+//                .build();
+//
+//        Optimizer optimizer = trainer.getOptimizer();
+//        optimizer.getTerminator().setMode(Terminator.Mode.STANDARD);
+//        optimizer.getTerminator().setMaxIteration(10000);
+//
+//        SoftRegStump softRegStump = trainer.train();
+//        System.out.println("prob rt");
+//        System.out.println("training mse = "+ MSE.mse(softRegStump,trainSet));
+//        System.out.println("test mse = "+ MSE.mse(softRegStump,testSet));
+//        System.out.println(softRegStump.toString());
+//
+//
+//        String softTrainPrediction = Arrays.toString(softRegStump.predict(trainSet)).replace("[","").replace("]","");
+//        FileUtils.writeStringToFile(new File(TMP,"softTrainPrediction"),softTrainPrediction);
+//        FileUtils.writeStringToFile(new File(TMP,"softTrainMSE"),""+MSE.mse(softRegStump,trainSet));
+//
+//
+//        String softTestPrediction = Arrays.toString(softRegStump.predict(testSet)).replace("[","").replace("]","");
+//        FileUtils.writeStringToFile(new File(TMP,"softTestPrediction"),softTestPrediction);
+//        FileUtils.writeStringToFile(new File(TMP,"softTestMSE"),""+MSE.mse(softRegStump,testSet));
+//
+//        StringBuilder sb = new StringBuilder();
+//        sb.append(((Sigmoid) softRegStump.getGatingFunction()).getWeights().get(0));
+//        sb.append(",");
+//        sb.append(((Sigmoid) softRegStump.getGatingFunction()).getBias());
+//        sb.append(",");
+//        sb.append(softRegStump.getLeftOutput());
+//        sb.append(",");
+//        sb.append(softRegStump.getRightOutput());
+//
+//        FileUtils.writeStringToFile(new File(TMP,"curve"),sb.toString());
+//
+//    }
 
     private static void test2(){
         RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder()
