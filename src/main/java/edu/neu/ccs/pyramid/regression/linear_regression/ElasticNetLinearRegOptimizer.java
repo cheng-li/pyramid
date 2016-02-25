@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.regression.linear_regression;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.optimization.Terminator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +36,10 @@ public class ElasticNetLinearRegOptimizer {
 
     public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels) {
         this(linearRegression,dataSet,labels,defaultWeights(dataSet.getNumDataPoints()));
+    }
+
+    public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, RegDataSet dataSet) {
+        this(linearRegression,dataSet,dataSet.getLabels());
     }
 
     public double getRegularization() {
