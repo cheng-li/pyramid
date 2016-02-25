@@ -8,9 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-import sun.rmi.runtime.Log;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -111,10 +109,10 @@ public class ElasticNetLogisticTrainer {
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon
-        ElasticNetLinearRegTrainer linearRegTrainer = ElasticNetLinearRegTrainer.getBuilder()
-                .setRegularization(this.regularization)
-                .setL1Ratio(this.l1Ratio).build();
-        linearRegTrainer.train(linearRegression,dataSet,labels,instanceWeights);
+        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,labels,instanceWeights);
+        linearRegTrainer.setRegularization(this.regularization);
+        linearRegTrainer.setL1Ratio(this.l1Ratio);
+        linearRegTrainer.optimize();
 
         Weights newWeights = logisticRegression.getWeights().deepCopy();
 

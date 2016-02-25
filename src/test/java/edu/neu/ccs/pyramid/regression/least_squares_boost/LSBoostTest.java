@@ -6,8 +6,6 @@ import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.StandardFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.eval.RMSE;
-import edu.neu.ccs.pyramid.regression.linear_regression.ElasticNetLinearRegTrainer;
-import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
 import edu.neu.ccs.pyramid.simulation.RegressionSynthesizer;
 
 import java.io.File;

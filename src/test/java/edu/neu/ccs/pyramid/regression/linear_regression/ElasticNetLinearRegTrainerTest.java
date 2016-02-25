@@ -4,7 +4,6 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.StandardFormat;
-import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.eval.RMSE;
 import edu.neu.ccs.pyramid.util.Grid;
 
@@ -31,17 +30,15 @@ public class ElasticNetLinearRegTrainerTest {
         RegDataSet testDataSet = StandardFormat.loadRegDataSet(new File(DATASETS, "spam/test_data.txt"),
                 new File(DATASETS, "spam/test_label.txt"), ",", DataSetType.REG_DENSE,false);
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures());
-        ElasticNetLinearRegTrainer trainer = ElasticNetLinearRegTrainer.getBuilder()
-                .setRegularization(0.1).setL1Ratio(0.5).setEpsilon(0.001)
-                .build();
-        double[] instanceWeights = new double[dataSet.getNumDataPoints()];
-        double weight = 1.0/dataSet.getNumDataPoints();
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            instanceWeights[i] = weight;
-        }
-        System.out.println("rmse before training = "+ RMSE.rmse(linearRegression, dataSet));
-        trainer.train(linearRegression,dataSet,labels,instanceWeights);
-        System.out.println("rmse after training = "+ RMSE.rmse(linearRegression, dataSet));
+
+        ElasticNetLinearRegOptimizer trainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,labels);
+        trainer.setRegularization(10);
+        trainer.setL1Ratio(0.5);
+
+        System.out.println("train rmse before training = "+ RMSE.rmse(linearRegression, dataSet));
+        System.out.println("test rmse before training = "+ RMSE.rmse(linearRegression, testDataSet));
+        trainer.optimize();
+        System.out.println("train rmse after training = "+ RMSE.rmse(linearRegression, dataSet));
         System.out.println("test rmse after training = "+ RMSE.rmse(linearRegression, testDataSet));
         System.out.println("non-zeros = "+linearRegression.getWeights().getWeightsWithoutBias().getNumNonZeroElements());
     }
@@ -53,20 +50,16 @@ public class ElasticNetLinearRegTrainerTest {
         RegDataSet testDataSet = StandardFormat.loadRegDataSet(new File(DATASETS, "spam/test_data.txt"),
                 new File(DATASETS, "spam/test_label.txt"), ",", DataSetType.REG_DENSE, false);
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures());
-        double[] instanceWeights = new double[dataSet.getNumDataPoints()];
-        double weight = 1.0/dataSet.getNumDataPoints();
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            instanceWeights[i] = weight;
-        }
+
         Comparator<Double> comparator = Comparator.comparing(Double::doubleValue);
         List<Double> grid = Grid.logUniform(0.01, 100, 5).stream().sorted(comparator.reversed()).collect(Collectors.toList());
         List<LinearRegression> regressions = new ArrayList<>();
 
         for (double regularization: grid){
-            ElasticNetLinearRegTrainer trainer = ElasticNetLinearRegTrainer.getBuilder()
-                    .setRegularization(regularization).setL1Ratio(0.5).setEpsilon(0.001)
-                    .build();
-            trainer.train(linearRegression,dataSet,labels,instanceWeights);
+            ElasticNetLinearRegOptimizer trainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,labels);
+            trainer.setRegularization(regularization);
+            trainer.setL1Ratio(0.5);
+            trainer.optimize();
             regressions.add(linearRegression.deepCopy());
         }
 

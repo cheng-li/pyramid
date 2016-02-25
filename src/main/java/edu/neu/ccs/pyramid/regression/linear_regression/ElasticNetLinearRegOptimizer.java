@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.regression.linear_regression;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.optimization.Terminator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
@@ -14,26 +15,54 @@ import java.util.stream.IntStream;
  * Journal of statistical software 33.1 (2010): 1.
  * Created by chengli on 2/18/15.
  */
-public class ElasticNetLinearRegTrainer {
+public class ElasticNetLinearRegOptimizer {
     private static final Logger logger = LogManager.getLogger();
-    private double regularization;
-    private double l1Ratio;
-    // relative threshold
-    private double epsilon;
+    private double regularization = 0;
+    private double l1Ratio = 0;
+    private Terminator terminator;
+    private LinearRegression linearRegression;
+    private DataSet dataSet;
+    private double[] labels;
+    double[] instanceWeights;
 
-    public static Builder getBuilder(){
-        return new Builder();
+    public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights) {
+        this.linearRegression = linearRegression;
+        this.dataSet = dataSet;
+        this.labels = labels;
+        this.instanceWeights = instanceWeights;
+        this.terminator = new Terminator();
     }
+
+    public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels) {
+        this(linearRegression,dataSet,labels,defaultWeights(dataSet.getNumDataPoints()));
+    }
+
+    public double getRegularization() {
+        return regularization;
+    }
+
+    public void setRegularization(double regularization) {
+        this.regularization = regularization;
+    }
+
+    public double getL1Ratio() {
+        return l1Ratio;
+    }
+
+    public void setL1Ratio(double l1Ratio) {
+        this.l1Ratio = l1Ratio;
+    }
+
+    public Terminator getTerminator() {
+        return terminator;
+    }
+
+
 
     /**
      * weighted least square fit by coordinate descent
-     * @param linearRegression
-     * @param dataSet
-     * @param labels
-     * @param instanceWeights
      */
-    public void train(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights){
-
+    public void optimize(){
         double[] scores = new double[dataSet.getNumDataPoints()];
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
             scores[i] = linearRegression.predict(dataSet.getRow(i)));
@@ -42,29 +71,24 @@ public class ElasticNetLinearRegTrainer {
         if (logger.isDebugEnabled()){
             logger.debug("initial loss = "+lastLoss);
         }
-        double threshold = lastLoss*epsilon;
-        while(true){
-            iterate(linearRegression,dataSet,labels,instanceWeights,scores);
-            double loss = loss(linearRegression,scores,labels,instanceWeights);
 
-            if (Math.abs(lastLoss-loss)<=threshold){
+        while(true){
+            iterate(scores);
+            double loss = loss(linearRegression,scores,labels,instanceWeights);
+            terminator.add(loss);
+            if (terminator.shouldTerminate()){
                 if (logger.isDebugEnabled()){
                     logger.debug("final loss = "+loss);
                 }
                 break;
             }
-            lastLoss = loss;
         }
     }
 
     /**
      * one cycle of coordinate descent
-     * @param linearRegression
-     * @param dataSet
-     * @param labels
-     * @param instanceWeights
      */
-    private void iterate(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights, double[] scores){
+    private void iterate(double[] scores){
         double totalWeight = Arrays.stream(instanceWeights).parallel().sum();
         // if no weight at all, only minimize the penalty
         if (totalWeight==0){
@@ -84,13 +108,11 @@ public class ElasticNetLinearRegTrainer {
         double difference = newBias - oldBias;
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
         for (int j=0;j<dataSet.getNumFeatures();j++){
-            optimizeOneFeature(linearRegression,dataSet,labels,instanceWeights,scores,j);
+            optimizeOneFeature(scores,j);
         }
     }
 
-    private void optimizeOneFeature(LinearRegression linearRegression, DataSet dataSet,
-                                    double[] labels, double[] instanceWeights,
-                                    double[] scores, int featureIndex){
+    private void optimizeOneFeature(double[] scores, int featureIndex){
         double oldCoeff = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
         double fit = 0;
         double denominator = 0;
@@ -154,36 +176,14 @@ public class ElasticNetLinearRegTrainer {
         return softThreshold(z, regularization*l1Ratio);
     }
 
-
-    public static class Builder{
-        private double regularization=0;
-        private double l1Ratio=0;
-        private double epsilon=0.001;
-
-        public Builder setRegularization(double regularization) {
-            this.regularization = regularization;
-            return this;
-        }
-
-
-        public Builder setL1Ratio(double l1Ratio) {
-            this.l1Ratio = l1Ratio;
-            return this;
-        }
-
-        public Builder setEpsilon(double epsilon) {
-            this.epsilon = epsilon;
-            return this;
-        }
-
-        public ElasticNetLinearRegTrainer build(){
-            ElasticNetLinearRegTrainer trainer = new ElasticNetLinearRegTrainer();
-            trainer.regularization = this.regularization;
-            trainer.l1Ratio = this.l1Ratio;
-            trainer.epsilon = this.epsilon;
-            return trainer;
-        }
+    // todo double check: what's the meaning of weight; what happens if default weight = 1; how will that affect hyper parameters?
+    private static double[] defaultWeights(int numData){
+        double[] weights = new double[numData];
+        double weight = 1.0/numData;
+        Arrays.fill(weights,weight);
+        return weights;
     }
+
 
 
 }
