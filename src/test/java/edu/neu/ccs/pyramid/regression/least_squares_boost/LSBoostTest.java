@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.stream.IntStream;
 
 public class LSBoostTest {
-    private static final Config config = new Config("config/local.config");
+    private static final Config config = new Config("config/local.properties");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{

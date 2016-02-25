@@ -8,7 +8,7 @@ import java.io.File;
  * Created by Rainicy on 10/28/14.
  */
 public class LibSvmFormatTest {
-    private static final Config config = new Config("config/local.config");
+    private static final Config config = new Config("config/local.properties");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
 

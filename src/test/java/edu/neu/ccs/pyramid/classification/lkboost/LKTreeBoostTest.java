@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class LKTreeBoostTest {
-    private static final Config config = new Config("config/local.config");
+    private static final Config config = new Config("config/local.properties");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     
