@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * todo make better
+ * Launch an app based on the string name of the app
  * Created by chengli on 9/2/15.
  */
 
@@ -78,7 +78,7 @@ public class AppLauncher {
         return realName;
     }
 
-    public static void invokeMain(String className, String[] args) throws Exception{
+    private static void invokeMain(String className, String[] args) throws Exception{
         Class<?> c = Class.forName(className);
         Class[] argTypes = new Class[] { String[].class };
         Method main = c.getDeclaredMethod("main", argTypes);
