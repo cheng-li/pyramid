@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.application;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
+import edu.neu.ccs.pyramid.Version;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -17,14 +18,18 @@ public class AppLauncher {
     private static final String[] helpCommands = {"help","-help","--help",
             "usage","-usage","--usage"};
 
+    private static final String[] versionCommands = {"version","-version","--version"};
+
     public static void main(String[] args) throws Exception{
         if (args.length==1){
             Set<String> helpSet = Arrays.stream(helpCommands).collect(Collectors.toSet());
+            Set<String> versionSet = Arrays.stream(versionCommands).collect(Collectors.toSet());
             String arg = args[0].toLowerCase();
             if (helpSet.contains(arg)){
                 help();
-            }
-            else {
+            } else if (versionSet.contains(arg)){
+                version();
+            } else {
                 error();
             }
         } else if (args.length==2){
@@ -83,6 +88,10 @@ public class AppLauncher {
         Class[] argTypes = new Class[] { String[].class };
         Method main = c.getDeclaredMethod("main", argTypes);
         main.invoke(null, (Object)args);
+    }
+
+    private static void version(){
+        System.out.println("Pyramid "+ Version.getVersion());
     }
 
 
