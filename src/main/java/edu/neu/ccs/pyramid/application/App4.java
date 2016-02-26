@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.RMSE;
 import edu.neu.ccs.pyramid.regression.linear_regression.ElasticNetLinearRegOptimizer;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
+import org.apache.commons.lang3.time.StopWatch;
 
 /**
  * Linear Regression with Elasticnet (L1+L2) regularization
@@ -46,10 +47,19 @@ public class App4 {
         System.out.println("training set RMSE = "+ RMSE.rmse(linearRegression,trainSet));
         System.out.println("test set RMSE = "+ RMSE.rmse(linearRegression,testSet));
         System.out.println("start training");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         optimizer.optimize();
         System.out.println("training done");
+        System.out.println("time spent on training = "+stopWatch);
         System.out.println("after training");
         System.out.println("training set RMSE = "+ RMSE.rmse(linearRegression,trainSet));
         System.out.println("test set RMSE = "+ RMSE.rmse(linearRegression,testSet));
+
+        System.out.println("number of non-zeros weights in linear regression (not including bias) = "+linearRegression.getWeights().getWeightsWithoutBias().getNumNonZeroElements());
+        System.out.println("all non-zero weights in the format of (feature index:feature weight) pairs:");
+        System.out.println("(Note that feature indices start from 0)");
+        System.out.println(linearRegression.getWeights().getWeightsWithoutBias());
+
     }
 }

@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.application;
 import java.util.Arrays;
 
 /**
+ * todo make better
  * Created by chengli on 9/2/15.
  */
 public class AppLauncher {
@@ -38,6 +39,9 @@ public class AppLauncher {
                 break;
             case "app3":
                 App3.main(appArgs);
+                break;
+            case "app4":
+                App4.main(appArgs);
                 break;
             default:
                 System.err.println("Unknown app name: "+appName);
