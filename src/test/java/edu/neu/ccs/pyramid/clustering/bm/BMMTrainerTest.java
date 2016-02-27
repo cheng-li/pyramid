@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.clustering.bmm;
+package edu.neu.ccs.pyramid.clustering.bm;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
@@ -9,8 +9,6 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-
-import static org.junit.Assert.*;
 
 public class BMMTrainerTest {
 
@@ -35,9 +33,9 @@ public class BMMTrainerTest {
 
         System.out.println("dataset = "+dataSet);
         BMMTrainer trainer = new BMMTrainer(dataSet,1);
-        System.out.println(trainer.bmm);
-        BMM bmm = trainer.train();
-        System.out.println(bmm);
+        System.out.println(trainer.bm);
+        BM bm = trainer.train();
+        System.out.println(bm);
     }
 
 
@@ -52,9 +50,9 @@ public class BMMTrainerTest {
 
         System.out.println("dataset = "+dataSet);
         BMMTrainer trainer = new BMMTrainer(dataSet,1);
-        System.out.println(trainer.bmm);
-        BMM bmm = trainer.train();
-        System.out.println(bmm);
+        System.out.println(trainer.bm);
+        BM bm = trainer.train();
+        System.out.println(bm);
     }
 
     private static void test3(){
@@ -68,9 +66,9 @@ public class BMMTrainerTest {
 
         System.out.println("dataset = "+dataSet);
         BMMTrainer trainer = new BMMTrainer(dataSet,2);
-        System.out.println(trainer.bmm);
-        BMM bmm = trainer.train();
-        System.out.println(bmm);
+        System.out.println(trainer.bm);
+        BM bm = trainer.train();
+        System.out.println(bm);
     }
 
     private static void test4(){
@@ -91,13 +89,13 @@ public class BMMTrainerTest {
 
         System.out.println("dataset = "+dataSet);
         BMMTrainer trainer = new BMMTrainer(dataSet,2);
-        System.out.println(trainer.bmm);
+        System.out.println(trainer.bm);
         trainer.train();
 //        for (int iter=0;iter<100;iter++){
 //            trainer.iterate();
 //        }
 
-        System.out.println(trainer.bmm);
+        System.out.println(trainer.bm);
     }
 
 
@@ -124,13 +122,13 @@ public class BMMTrainerTest {
 
         System.out.println("dataset = "+dataSet);
         BMMTrainer trainer = new BMMTrainer(dataSet,3);
-        System.out.println(trainer.bmm);
+        System.out.println(trainer.bm);
         trainer.train();
 //        for (int iter=0;iter<100;iter++){
 //            trainer.iterate();
 //        }
 
-        System.out.println(trainer.bmm);
+        System.out.println(trainer.bm);
         Vector vector1= new DenseVector(5);
         vector1.set(0,1);
 
@@ -141,9 +139,9 @@ public class BMMTrainerTest {
         vector3.set(2,1);
         vector3.set(3,1);
 
-        System.out.println(Math.exp(trainer.bmm.logProbability(vector1)));
-        System.out.println(Math.exp(trainer.bmm.logProbability(vector2)));
-        System.out.println(Math.exp(trainer.bmm.logProbability(vector3)));
+        System.out.println(Math.exp(trainer.bm.logProbability(vector1)));
+        System.out.println(Math.exp(trainer.bm.logProbability(vector2)));
+        System.out.println(Math.exp(trainer.bm.logProbability(vector3)));
 
     }
 
@@ -172,17 +170,17 @@ public class BMMTrainerTest {
 
         System.out.println("dataset = "+dataSet);
         BMMTrainer trainer = new BMMTrainer(dataSet,3);
-        System.out.println(trainer.bmm);
-        BMM bmm = trainer.train();
+        System.out.println(trainer.bm);
+        BM bm = trainer.train();
 //        for (int iter=0;iter<100;iter++){
 //            trainer.iterate();
 //        }
 
-        System.out.println(bmm);
+        System.out.println(bm);
 
         for (int i=0;i<5;i++){
             System.out.println("sample "+i);
-            System.out.println(bmm.sample());
+            System.out.println(bm.sample());
         }
 
     }

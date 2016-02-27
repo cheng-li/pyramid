@@ -1,12 +1,10 @@
-package edu.neu.ccs.pyramid.clustering.bmm;
+package edu.neu.ccs.pyramid.clustering.bm;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Arrays;
 
 
 /**
@@ -16,19 +14,19 @@ import java.util.Arrays;
 public class BMMSelector {
     private static final Logger logger = LogManager.getLogger();
 
-    public static BMM select(DataSet dataSet,int numClusters, int numRuns) {
+    public static BM select(DataSet dataSet, int numClusters, int numRuns) {
         if (logger.isDebugEnabled()){
             logger.debug("start method select");
         }
-        BMM best = null;
+        BM best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
             BMMTrainer trainer = new BMMTrainer(dataSet,numClusters);
-            BMM bmm = trainer.train();
+            BM bm = trainer.train();
             double objective = trainer.terminator.getLastValue();
             if (objective < bestObjective){
                 bestObjective = objective;
-                best = bmm;
+                best = bm;
             }
         }
         if (logger.isDebugEnabled()){
@@ -42,7 +40,7 @@ public class BMMSelector {
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
             BMMTrainer trainer = new BMMTrainer(dataSet,numClusters);
-            BMM bmm = trainer.train();
+            BM bm = trainer.train();
             double objective = trainer.terminator.getLastValue();
             if (objective < bestObjective){
                 bestObjective = objective;
@@ -65,7 +63,7 @@ public class BMMSelector {
             }
         }
         BMMTrainer trainer = BMMSelector.selectTrainer(dataSet, numClusters, 10);
-//        System.out.println("bmm = "+trainer.bmm);
+//        System.out.println("bm = "+trainer.bm);
 //        System.out.println("gamma = "+ Arrays.deepToString(trainer.gammas));
         return trainer.gammas;
     }

@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.clustering.bmm;
+package edu.neu.ccs.pyramid.clustering.bm;
 
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
  * when dimension = 1; we can only identify 1 cluster
  * Created by chengli on 9/12/15.
  */
-public class BMM implements Serializable{
+public class BM implements Serializable{
     private static final long serialVersionUID = 1L;
     private int numClusters;
     private int dimension;
@@ -35,7 +35,7 @@ public class BMM implements Serializable{
     double[] mixtureCoefficients;
     List<String> names;
 
-    public BMM(int numClusters, int dimension) {
+    public BM(int numClusters, int dimension) {
         this.numClusters = numClusters;
         this.dimension = dimension;
         this.distributions = new BernoulliDistribution[numClusters][dimension];

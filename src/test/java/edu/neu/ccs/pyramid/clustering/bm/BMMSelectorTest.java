@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.clustering.bmm;
+package edu.neu.ccs.pyramid.clustering.bm;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
@@ -33,11 +33,11 @@ public class BMMSelectorTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMM bmm = BMMSelector.select(dataSet,3,10);
-        System.out.println(bmm);
+        BM bm = BMMSelector.select(dataSet,3,10);
+        System.out.println(bm);
         for (int i=0;i<5;i++){
             System.out.println("sample "+i);
-            System.out.println(bmm.sample());
+            System.out.println(bm.sample());
         }
 
         Vector vector1= new DenseVector(5);
@@ -51,9 +51,9 @@ public class BMMSelectorTest {
         vector3.set(2,1);
         vector3.set(3,1);
 
-        System.out.println(Math.exp(bmm.logProbability(vector1)));
-        System.out.println(Math.exp(bmm.logProbability(vector2)));
-        System.out.println(Math.exp(bmm.logProbability(vector3)));
+        System.out.println(Math.exp(bm.logProbability(vector1)));
+        System.out.println(Math.exp(bm.logProbability(vector2)));
+        System.out.println(Math.exp(bm.logProbability(vector3)));
 
 
     }

@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.clustering.bmm;
+package edu.neu.ccs.pyramid.clustering.bm;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -25,19 +24,19 @@ public class BMMTrainer {
      */
     double[][] gammas;
     int numClusters;
-    BMM bmm;
+    BM bm;
     Terminator terminator;
 
     public BMMTrainer(DataSet dataSet,int numClusters) {
         this.numClusters = numClusters;
         this.dataSet = dataSet;
         this.gammas = new double[dataSet.getNumDataPoints()][numClusters];
-        this.bmm = new BMM(numClusters,dataSet.getNumFeatures());
+        this.bm = new BM(numClusters,dataSet.getNumFeatures());
         this.terminator = new Terminator();
         this.terminator.setAbsoluteEpsilon(0.1);
     }
 
-    public BMM train(){
+    public BM train(){
         while (true){
             iterate();
             if (terminator.shouldTerminate()){
@@ -45,7 +44,7 @@ public class BMMTrainer {
             }
         }
 
-        return this.bmm;
+        return this.bm;
     }
 
 
@@ -115,10 +114,10 @@ public class BMMTrainer {
 //            logger.debug("average vector = "+average);
 //        }
         for (int d=0;d<dataSet.getNumFeatures();d++){
-            bmm.distributions[k][d] = new BernoulliDistribution(average.get(d));
+            bm.distributions[k][d] = new BernoulliDistribution(average.get(d));
         }
 
-        bmm.mixtureCoefficients[k] = nk/dataSet.getNumDataPoints();
+        bm.mixtureCoefficients[k] = nk/dataSet.getNumDataPoints();
     }
 
 
@@ -136,12 +135,12 @@ public class BMMTrainer {
      */
     private void updateGamma(int n){
         Vector feature = dataSet.getRow(n);
-        int numClusters = bmm.getNumClusters();
+        int numClusters = bm.getNumClusters();
         double[] logPis = new double[numClusters];
         for (int k=0;k<numClusters;k++){
-            logPis[k] = Math.log(bmm.mixtureCoefficients[k]);
+            logPis[k] = Math.log(bm.mixtureCoefficients[k]);
         }
-        double[] logClusterConditionalProbs = bmm.clusterConditionalLogProbArr(feature);
+        double[] logClusterConditionalProbs = bm.clusterConditionalLogProbArr(feature);
         double[] logNumerators = new double[numClusters];
         for (int k=0;k<numClusters;k++){
             logNumerators[k] = logPis[k] + logClusterConditionalProbs[k];
@@ -174,9 +173,9 @@ public class BMMTrainer {
         Vector feature = dataSet.getRow(i);
         double[] logPis = new double[numClusters];
         for (int k=0;k<numClusters;k++){
-            logPis[k] = Math.log(bmm.mixtureCoefficients[k]);
+            logPis[k] = Math.log(bm.mixtureCoefficients[k]);
         }
-        double[] logClusterConditionalProbs = bmm.clusterConditionalLogProbArr(feature);
+        double[] logClusterConditionalProbs = bm.clusterConditionalLogProbArr(feature);
         double[] scores = new double[numClusters];
         for (int k=0;k<numClusters;k++){
             scores[k] = logPis[k] + logClusterConditionalProbs[k];
@@ -196,7 +195,7 @@ public class BMMTrainer {
 
     private double bernoulliObj(int dataPoint){
         double res = 0;
-        for (int k=0;k<bmm.getNumClusters();k++){
+        for (int k = 0; k< bm.getNumClusters(); k++){
             res += bernoulliObj(dataPoint,k);
         }
         return res;
@@ -207,7 +206,7 @@ public class BMMTrainer {
             return 0;
         }
         double sum = 0;
-        BernoulliDistribution[][] distributions = bmm.distributions;
+        BernoulliDistribution[][] distributions = bm.distributions;
         int dim = dataSet.getNumFeatures();
         for (int l=0;l<dim;l++){
             double mu = distributions[cluster][l].getP();
@@ -237,7 +236,7 @@ public class BMMTrainer {
     }
 
     private double klDivergence(int i){
-        return KLDivergence.kl(gammas[i],bmm.mixtureCoefficients);
+        return KLDivergence.kl(gammas[i], bm.mixtureCoefficients);
     }
 
     private double getMStepObjective(){
