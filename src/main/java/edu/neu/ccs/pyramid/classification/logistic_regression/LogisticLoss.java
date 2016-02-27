@@ -58,6 +58,16 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
     private List<Double> priorGaussianVariances;
 
+
+    /**
+     *
+     * @param logisticRegression
+     * @param dataSet
+     * @param weights
+     * @param targetDistributions [# data points][# labels]
+     * @param priorGaussianMeans
+     * @param priorGaussianVariances
+     */
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[] weights, double[][] targetDistributions,
                         List<Weights> priorGaussianMeans,
