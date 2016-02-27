@@ -19,6 +19,11 @@ public class RidgeLogisticOptimizer implements Parallelizable{
         this.optimizer.getTerminator().setAbsoluteEpsilon(0.1);
     }
 
+    public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
+                                  int[] labels, double gaussianPriorVariance) {
+        this(logisticRegression,dataSet,labelsToDistributions(labels,logisticRegression.getNumClasses()),gaussianPriorVariance);
+    }
+
     /**
      *
      * @param logisticRegression
@@ -79,6 +84,16 @@ public class RidgeLogisticOptimizer implements Parallelizable{
 
     public Optimizable.ByGradientValue getFunction() {
         return function;
+    }
+
+    private static double[][] labelsToDistributions(int[] labels, int numClass){
+        int numData = labels.length;
+        double[][] distribution = new double[numData][numClass];
+        for (int i=0;i<numData;i++){
+            int label = labels[i];
+            distribution[i][label] = 1;
+        }
+        return distribution;
     }
 
 }
