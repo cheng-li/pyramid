@@ -14,6 +14,7 @@ public class InstanceAverage {
     private double precision;
     private double recall;
     private double hammingLoss;
+    private double accuracy;
 
     public InstanceAverage(MLConfusionMatrix confusionMatrix) {
         int numClasses = confusionMatrix.getNumClasses();
@@ -68,6 +69,10 @@ public class InstanceAverage {
                         fpArray[i],fnArray[i]))
                 .average().getAsDouble();
 
+        accuracy = IntStream.range(0,numDataPoints).parallel()
+                .filter(i->tpArray[i]+tnArray[i]==numClasses).count()/(double)numDataPoints;
+
+
     }
 
     public double getF1() {
@@ -98,6 +103,7 @@ public class InstanceAverage {
         sb.append(", precision=").append(precision);
         sb.append(", recall=").append(recall);
         sb.append(", hammingLoss=").append(hammingLoss);
+        sb.append(", accuracy=").append(accuracy);
         sb.append('}');
         return sb.toString();
     }

@@ -63,6 +63,10 @@ public class MLConfusionMatrix {
         this(dataSet.getNumClasses(),dataSet.getMultiLabels(),classifier.predict(dataSet));
     }
 
+    public MLConfusionMatrix(MultiLabelClfDataSet dataSet, MultiLabel[] predictions){
+        this(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
+    }
+
     public enum Entry{
         TP, TN, FP, FN
     }
