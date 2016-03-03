@@ -1,22 +1,27 @@
 package edu.neu.ccs.pyramid.eval;
 
 /**
+ * Based on
+ * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
+ * Advances in Neural Information Processing Systems. 2015.
  * Created by chengli on 3/2/16.
  */
-public class Micro {
-    private double tp;
-    private double tn;
-    private double fp;
-    private double fn;
+public class MicroAverage {
+
     private double f1;
     private double overlap;
     private double precision;
     private double recall;
+    private double hammingLoss;
 
 
-    public Micro(MLConfusionMatrix confusionMatrix) {
+    public MicroAverage(MLConfusionMatrix confusionMatrix) {
         int numClasses = confusionMatrix.getNumClasses();
         int numDataPoints = confusionMatrix.getNumDataPoints();
+        double tp = 0;
+        double tn = 0;
+        double fp = 0;
+        double fn = 0;
         MLConfusionMatrix.Entry[][] entries = confusionMatrix.getEntries();
         for (int i=0;i<numDataPoints;i++){
             for (int l=0;l<numClasses;l++){
@@ -42,6 +47,7 @@ public class Micro {
         recall = Recall.recall(tp,fn);
         f1 = FMeasure.f1(tp,fp,fn);
         overlap = Overlap.overlap(tp,fp,fn);
+        hammingLoss = HammingLoss.hammingLoss(tp,tn,fp,fn);
     }
 
     public double getF1() {
@@ -58,5 +64,21 @@ public class Micro {
 
     public double getRecall() {
         return recall;
+    }
+
+    public double getHammingLoss() {
+        return hammingLoss;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("MicroAverage{");
+        sb.append("f1=").append(f1);
+        sb.append(", overlap=").append(overlap);
+        sb.append(", precision=").append(precision);
+        sb.append(", recall=").append(recall);
+        sb.append(", hammingLoss=").append(hammingLoss);
+        sb.append('}');
+        return sb.toString();
     }
 }
