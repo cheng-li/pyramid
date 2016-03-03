@@ -72,12 +72,12 @@ public class MicroAverage {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("MicroAverage{");
-        sb.append("f1=").append(f1);
-        sb.append(", overlap=").append(overlap);
-        sb.append(", precision=").append(precision);
-        sb.append(", recall=").append(recall);
-        sb.append(", hammingLoss=").append(hammingLoss);
+        final StringBuilder sb = new StringBuilder("MicroAverage{").append("\n");
+        sb.append("overlap=").append(overlap).append(",").append("\n");
+        sb.append("hammingLoss=").append(hammingLoss).append(",").append("\n");
+        sb.append("f1=").append(f1).append(",").append("\n");
+        sb.append("precision=").append(precision).append(",").append("\n");
+        sb.append("recall=").append(recall).append("\n");
         sb.append('}');
         return sb.toString();
     }

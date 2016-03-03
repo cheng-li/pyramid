@@ -70,8 +70,7 @@ public class InstanceAverage {
                 .average().getAsDouble();
 
         accuracy = IntStream.range(0,numDataPoints).parallel()
-                .filter(i->tpArray[i]+tnArray[i]==numClasses).count()/(double)numDataPoints;
-
+                .filter(i->correct(entries[i])).count()/(double)numDataPoints;
 
     }
 
@@ -95,15 +94,31 @@ public class InstanceAverage {
         return hammingLoss;
     }
 
+    /**
+     * Judge whether a prediction is completely correct based on a row of confusion matrix
+     * Using raw entries is more stable than using double numbers.
+     * @param dataEntry a row
+     * @return
+     */
+    private boolean correct(MLConfusionMatrix.Entry[] dataEntry){
+        for (int l=0;l<dataEntry.length;l++){
+            MLConfusionMatrix.Entry entry = dataEntry[l];
+            if (entry== MLConfusionMatrix.Entry.FP || entry== MLConfusionMatrix.Entry.FN){
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("InstanceAverage{");
-        sb.append("f1=").append(f1);
-        sb.append(", overlap=").append(overlap);
-        sb.append(", precision=").append(precision);
-        sb.append(", recall=").append(recall);
-        sb.append(", hammingLoss=").append(hammingLoss);
-        sb.append(", accuracy=").append(accuracy);
+        final StringBuilder sb = new StringBuilder("InstanceAverage{").append("\n");
+        sb.append("accuracy=").append(accuracy).append(",").append("\n");
+        sb.append("overlap=").append(overlap).append(",").append("\n");
+        sb.append("hammingLoss=").append(hammingLoss).append(",").append("\n");
+        sb.append("f1=").append(f1).append(",").append("\n");
+        sb.append("precision=").append(precision).append(",").append("\n");
+        sb.append("recall=").append(recall).append("\n");
         sb.append('}');
         return sb.toString();
     }
