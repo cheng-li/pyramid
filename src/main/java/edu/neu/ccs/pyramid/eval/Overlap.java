@@ -15,16 +15,21 @@ import java.util.stream.IntStream;
  */
 public class Overlap {
 
+    public static double overlap(double tp, double fp, double fn){
+        return SafeDivide.divide(tp,tp+fp+fn,1);
+    }
+
+    @Deprecated
     public static double overlap(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
         return overlap(dataSet.getMultiLabels(),classifier.predict(dataSet));
     }
 
+    @Deprecated
     public static double overlap(MultiLabel[] multiLabels, MultiLabel[] predictions){
         return IntStream.range(0,multiLabels.length).parallel()
                 .mapToDouble(i -> overlap(multiLabels[i],predictions[i]))
                 .average().getAsDouble();
     }
-
 
     private static double overlap(MultiLabel multiLabel1, MultiLabel multiLabel2){
         Set<Integer> set1 = multiLabel1.getMatchedLabels();

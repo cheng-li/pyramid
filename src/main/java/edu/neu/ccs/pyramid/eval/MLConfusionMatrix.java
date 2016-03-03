@@ -13,6 +13,7 @@ import java.util.Arrays;
  */
 public class MLConfusionMatrix {
     private int numClasses;
+    private int numDataPoints;
     private Entry[][] entries;
 
     public int getNumClasses() {
@@ -23,8 +24,13 @@ public class MLConfusionMatrix {
         return entries;
     }
 
+    public int getNumDataPoints() {
+        return numDataPoints;
+    }
+
     public MLConfusionMatrix(int numClasses, MultiLabel[] trueLabels, MultiLabel[] predictions) {
         this.numClasses = numClasses;
+        this.numDataPoints = trueLabels.length;
         int numData = trueLabels.length;
         this.entries = new Entry[numData][numClasses];
         for (int i=0;i<numData;i++){

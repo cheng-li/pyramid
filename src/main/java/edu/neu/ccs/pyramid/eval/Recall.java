@@ -13,13 +13,8 @@ import java.util.List;
  */
 public class Recall {
 
-    public static double recall(int tp, int fn) {
-
-        if (tp + fn == 0) {
-            return 1;
-        }
-
-        return tp * 1.0 / (tp + fn);
+    public static double recall(double tp, double fn) {
+        return SafeDivide.divide(tp,tp+fn,1);
     }
 
 
@@ -58,6 +53,7 @@ public class Recall {
         return recall(truePositives,falseNegative);
     }
 
+    @Deprecated
     /**
      * From "Mining Multi-label Data by Grigorios Tsoumakas".
      * @param multiLabels
@@ -78,6 +74,7 @@ public class Recall {
         return r / multiLabels.length;
     }
 
+    @Deprecated
     /**
      * Please see function: double recall(MultiLabel[] multiLabels, List<MultiLabel> predictions);
      * @param classifier

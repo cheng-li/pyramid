@@ -10,20 +10,10 @@ import java.util.List;
  */
 public class FMeasure {
 
-    public static double fBeta(int tp, int fp, int fn, double beta){
+    public static double fBeta(double tp, double fp, double fn, double beta){
         double precision = Precision.precision(tp,fp);
         double recall = Recall.recall(tp,fn);
         return fBeta(precision,recall,beta);
-    }
-
-    /**
-     *
-     * @param precision
-     * @param recall
-     * @return
-     */
-    public static double f1(double precision, double recall){
-        return fBeta(precision,recall,1);
     }
 
     /**
@@ -37,9 +27,27 @@ public class FMeasure {
         if (precision==0 || recall==0){
             return 0;
         }
+
         return (1+beta*beta)*precision*recall/(beta*beta*precision + recall);
     }
 
+
+    public static double f1(double tp, double fp, double fn){
+        return fBeta(tp,fp,fn,1);
+    }
+
+    /**
+     *
+     * @param precision
+     * @param recall
+     * @return
+     */
+    public static double f1(double precision, double recall){
+        return fBeta(precision,recall,1);
+    }
+
+
+    @Deprecated
     /**
      * From "Mining Multi-label Data by Grigorios Tsoumakas".
      * @param multiLabels
