@@ -31,18 +31,15 @@ public class Overlap {
                 .average().getAsDouble();
     }
 
-    private static double overlap(MultiLabel multiLabel1, MultiLabel multiLabel2){
+    public static double overlap(MultiLabel multiLabel1, MultiLabel multiLabel2){
         Set<Integer> set1 = multiLabel1.getMatchedLabels();
         Set<Integer> set2 = multiLabel2.getMatchedLabels();
         Set<Integer> union = new HashSet<>();
         union.addAll(set1);
         union.addAll(set2);
-        Set<Integer> itersection = new HashSet<>();
-        itersection.addAll(set1);
-        itersection.retainAll(set2);
-        if (union.size()==0){
-            return 1;
-        }
-        return ((double)itersection.size())/union.size();
+        Set<Integer> intersection = new HashSet<>();
+        intersection.addAll(set1);
+        intersection.retainAll(set2);
+        return SafeDivide.divide(intersection.size(),union.size(),1);
     }
 }
