@@ -2,9 +2,14 @@ package edu.neu.ccs.pyramid.simulation;
 
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.RegDataSetBuilder;
+import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
+
+import java.util.Random;
 
 /**
  * Created by chengli on 5/21/15.
@@ -271,6 +276,36 @@ public class RegressionSynthesizer {
             label += noise.sample();
             featureValue+= featureNoise.sample();
             dataSet.setFeatureValue(i,0,featureValue);
+            dataSet.setLabel(i,label);
+        }
+        return dataSet;
+    }
+
+
+    public static RegDataSet linear(){
+        int numData = 50;
+        RegDataSet dataSet = RegDataSetBuilder.getBuilder()
+                .numDataPoints(numData)
+                .numFeatures(16000)
+                .dense(true)
+                .missingValue(false)
+                .build();
+        Vector weights = new DenseVector(16000);
+        weights.set(0,0.001);
+        weights.set(1,0.001);
+        weights.set(2,0.001);
+        weights.set(3,0.001);
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<16000;j++){
+                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(0.5);
+                int sample = bernoulliDistribution.sample();
+                if (sample==0){
+                    dataSet.setFeatureValue(i,j,-1);
+                } else {
+                    dataSet.setFeatureValue(i,j,1);
+                }
+            }
+            double label = weights.dot(dataSet.getRow(i));
             dataSet.setLabel(i,label);
         }
         return dataSet;

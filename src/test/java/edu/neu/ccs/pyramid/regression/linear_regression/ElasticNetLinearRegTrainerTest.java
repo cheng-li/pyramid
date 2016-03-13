@@ -5,12 +5,13 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.StandardFormat;
 import edu.neu.ccs.pyramid.eval.RMSE;
+import edu.neu.ccs.pyramid.simulation.RegressionSynthesizer;
 import edu.neu.ccs.pyramid.util.Grid;
+import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.mahout.math.Vector;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -19,8 +20,9 @@ public class ElasticNetLinearRegTrainerTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
-        test2();
+//        test1();
+//        test2();
+        test3();
     }
 
     private static void test1() throws Exception{
@@ -69,6 +71,39 @@ public class ElasticNetLinearRegTrainerTest {
             System.out.println("non-zeros = " + regressions.get(i).getWeights().getWeightsWithoutBias().getNumNonZeroElements());
             System.out.println("test rmse  = "+ RMSE.rmse(regressions.get(i), testDataSet));
         }
+
+    }
+
+    private static void test3() throws Exception{
+        RegDataSet dataSet = RegressionSynthesizer.linear();
+        LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures());
+
+        ElasticNetLinearRegOptimizer trainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet);
+        trainer.setRegularization(0.001);
+        trainer.setL1Ratio(0.1);
+
+        System.out.println("train rmse before training = "+ RMSE.rmse(linearRegression, dataSet));
+
+        trainer.optimize();
+        System.out.println("train rmse after training = "+ RMSE.rmse(linearRegression, dataSet));
+        System.out.println("non-zeros = "+linearRegression.getWeights().getWeightsWithoutBias());
+        List<Pair<Integer,Double>> pairs = new ArrayList<>();
+        for (Vector.Element element: linearRegression.getWeights().getWeightsWithoutBias().nonZeroes()){
+            pairs.add(new Pair<>(element.index(),element.get()));
+        }
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair-> pair.getSecond());
+        Set<Integer> set = pairs.stream().sorted(comparator.reversed()).limit(4).map(pair-> pair.getFirst()).collect(Collectors.toSet());
+        Set<Integer> trueSet = new HashSet<>();
+        trueSet.add(0);
+        trueSet.add(1);
+        trueSet.add(2);
+        trueSet.add(3);
+        if (set.equals(trueSet)){
+            System.out.println("correct");
+        } else {
+            System.out.println("incorrect");
+        }
+
 
     }
 
