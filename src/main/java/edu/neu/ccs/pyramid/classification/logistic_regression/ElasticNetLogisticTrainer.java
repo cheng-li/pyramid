@@ -66,7 +66,9 @@ public class ElasticNetLogisticTrainer {
         return loss();
     }
 
-
+    public Terminator getTerminator() {
+        return terminator;
+    }
 
     private void optimizeOneClass(int classIndex){
         //create weighted least square problem
@@ -112,7 +114,13 @@ public class ElasticNetLogisticTrainer {
         ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,labels,instanceWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
+        if (logger.isDebugEnabled()){
+            logger.debug("start linearRegTrainer.optimize()");
+        }
         linearRegTrainer.optimize();
+        if (logger.isDebugEnabled()){
+            logger.debug("finish linearRegTrainer.optimize()");
+        }
 
         Weights newWeights = logisticRegression.getWeights().deepCopy();
 
@@ -145,8 +153,14 @@ public class ElasticNetLogisticTrainer {
     }
 
     private void updateClassProbMatrix(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateClassProbMatrix()");
+        }
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(this::updateClassProbs);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateClassProbMatrix()");
+        }
     }
 
     private double loss(){
@@ -175,7 +189,7 @@ public class ElasticNetLogisticTrainer {
      * @return
      */
     private void lineSearch(Vector searchDirection, Vector gradient){
-
+        Vector localSearchDir;
         double initialStepLength = 1;
         double shrinkage = 0.5;
         double c = 1e-4;
@@ -188,15 +202,20 @@ public class ElasticNetLogisticTrainer {
         }
         double penalty = penalty();
         double product = gradient.dot(searchDirection);
-        if (logger.isDebugEnabled()){
-            logger.debug("product of search direction and gradient = "+product);
-            if (product>0){
-                logger.warn("bad search direction for the negative log likelihood term !");
+        if (product < 0){
+            localSearchDir = searchDirection;
+        } else {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Bad search direction! Use negative gradient instead. Product of gradient and search direction = " + product);
             }
+
+            localSearchDir = gradient.times(-1);
         }
 
+
+
         while(true){
-            Vector step = searchDirection.times(stepLength);
+            Vector step = localSearchDir.times(stepLength);
             Vector target = start.plus(step);
             logisticRegression.getWeights().setWeightVector(target);
             double targetValue = loss();
@@ -246,8 +265,14 @@ public class ElasticNetLogisticTrainer {
     }
 
     private void updatePredictedCounts(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updatePredictedCounts()");
+        }
         IntStream.range(0,numParameters).parallel()
                 .forEach(i -> this.predictedCounts.set(i, calPredictedCount(i)));
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updatePredictedCounts()");
+        }
     }
 
     private double calPredictedCount(int parameterIndex){
