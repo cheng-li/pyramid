@@ -80,6 +80,9 @@ public class ElasticNetLinearRegOptimizer {
         while(true){
             iterate(scores);
             double loss = loss(linearRegression,scores,labels,instanceWeights);
+            if (logger.isDebugEnabled()){
+                logger.debug("loss = "+loss);
+            }
             terminator.add(loss);
             if (terminator.shouldTerminate()){
                 if (logger.isDebugEnabled()){
