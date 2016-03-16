@@ -19,6 +19,16 @@ public class HammingLoss {
         return MultiLabel.symmetricDifference(label, prediction).size()/(double) numLabels;
     }
 
+    /**
+     * not divided by numLabels
+     * @param label
+     * @param prediction
+     * @return
+     */
+    public static double unnormalized(MultiLabel label, MultiLabel prediction){
+        return MultiLabel.symmetricDifference(label, prediction).size();
+    }
+
 
     /**
      * Hamming loss:
