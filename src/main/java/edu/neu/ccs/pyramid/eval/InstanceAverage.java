@@ -94,6 +94,10 @@ public class InstanceAverage {
         return hammingLoss;
     }
 
+    public double getAccuracy() {
+        return accuracy;
+    }
+
     /**
      * Judge whether a prediction is completely correct based on a row of confusion matrix
      * Using raw entries is more stable than using double numbers.
