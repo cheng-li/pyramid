@@ -57,10 +57,12 @@ public class MicroAveragedMeasures {
 
     @Override
     public String toString() {
-        return "MicroAveragedMeasures{" +
-                "precision=" + precision +
-                ", recall=" + recall +
-                ", f1=" + f1 +
-                '}';
+        final StringBuilder sb = new StringBuilder("MicroAveragedMeasures{").append("\n");
+        sb.append("accuracy=").append(accuracy).append("\n");
+        sb.append(", precision=").append(precision).append("\n");
+        sb.append(", recall=").append(recall).append("\n");
+        sb.append(", f1=").append(f1).append("\n");
+        sb.append('}');
+        return sb.toString();
     }
 }

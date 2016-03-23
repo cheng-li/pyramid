@@ -11,9 +11,22 @@ import java.util.stream.IntStream;
  */
 public class HammingLoss {
 
+    public static double hammingLoss(double tp, double tn, double fp, double fn){
+        return (fp+fn)/(tp+tn+fp+fn);
+    }
 
     public static double hammingLoss(MultiLabel label, MultiLabel prediction, int numLabels){
         return MultiLabel.symmetricDifference(label, prediction).size()/(double) numLabels;
+    }
+
+    /**
+     * not divided by numLabels
+     * @param label
+     * @param prediction
+     * @return
+     */
+    public static double unnormalized(MultiLabel label, MultiLabel prediction){
+        return MultiLabel.symmetricDifference(label, prediction).size();
     }
 
 

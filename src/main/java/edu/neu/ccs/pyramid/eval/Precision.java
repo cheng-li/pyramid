@@ -14,13 +14,8 @@ import java.util.stream.IntStream;
  */
 public class Precision {
 
-    public static double precision(int tp, int fp) {
-
-        if (tp + fp == 0) {
-            return 1;
-        }
-
-        return tp * 1.0 / (tp + fp);
+    public static double precision(double tp, double fp) {
+        return SafeDivide.divide(tp,tp+fp,1);
     }
 
     /**
@@ -59,6 +54,7 @@ public class Precision {
         return precision(truePositive,falsePositive);
     }
 
+    @Deprecated
     /**
      * From "Mining Multi-label Data by Grigorios Tsoumakas".
      * @param multiLabels
@@ -81,6 +77,7 @@ public class Precision {
         return p / multiLabels.length;
     }
 
+    @Deprecated
     /**
      * see function: double precision(MultiLabel[] multiLabels, List<MultiLabel> predictions)
      * @param classifier
