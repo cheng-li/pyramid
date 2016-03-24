@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.eval;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -39,18 +40,16 @@ public class MLMeasures {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("MLMeasures{");
-        sb.append("mlConfusionMatrix=").append(mlConfusionMatrix);
-        sb.append(", instanceAverage=").append(instanceAverage);
-        sb.append(", microAverage=").append(microAverage);
-        sb.append('}');
+        final StringBuilder sb = new StringBuilder();
+        sb.append(instanceAverage);
+        sb.append(microAverage);
         return sb.toString();
     }
 
     public static class Serializer extends JsonSerializer<MLMeasures> {
         @Override
         public void serialize(MLMeasures mlMeasures, JsonGenerator jsonGenerator,
-                              SerializerProvider serializerProvider) throws IOException {
+                              SerializerProvider serializerProvider) throws IOException , JsonProcessingException {
 
             jsonGenerator.writeStartObject();
             jsonGenerator.writeNumberField("instance subset accuracy",mlMeasures.instanceAverage.getAccuracy());
