@@ -41,7 +41,7 @@ public class MacroAverage {
 
 
         for (int l=0;l<numClasses;l++){
-            for (int i=0;l<numDataPoints;i++){
+            for (int i=0;i<numDataPoints;i++){
                 MLConfusionMatrix.Entry entry = entries[i][l];
                 switch (entry){
                     case TP:
