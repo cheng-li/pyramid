@@ -353,9 +353,8 @@ public class App2 {
         boolean individualPerformance = true;
         if (individualPerformance){
             //todo
-            LabelBasedMeasures labelBasedMeasures = new LabelBasedMeasures(dataSet,boosting.predict(dataSet));
             ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),labelBasedMeasures);
+            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
         }
 
         System.out.println("reports generated");

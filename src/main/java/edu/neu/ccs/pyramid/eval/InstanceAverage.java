@@ -117,12 +117,12 @@ public class InstanceAverage {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("instance subset accuracy=").append(accuracy).append(",").append("\n");
-        sb.append("instance overlap=").append(overlap).append(",").append("\n");
-        sb.append("instance Hamming loss=").append(hammingLoss).append(",").append("\n");
-        sb.append("instance F1=").append(f1).append(",").append("\n");
-        sb.append("instance precision=").append(precision).append(",").append("\n");
-        sb.append("instance recall=").append(recall).append("\n");
+        sb.append("instance subset accuracy = ").append(accuracy).append("\n");
+        sb.append("instance overlap = ").append(overlap).append("\n");
+        sb.append("instance Hamming loss = ").append(hammingLoss).append("\n");
+        sb.append("instance F1 = ").append(f1).append("\n");
+        sb.append("instance precision = ").append(precision).append("\n");
+        sb.append("instance recall = ").append(recall).append("\n");
         return sb.toString();
     }
 }

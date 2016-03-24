@@ -1,16 +1,29 @@
 package edu.neu.ccs.pyramid.eval;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
+ * Based on
+ * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
+ * Advances in Neural Information Processing Systems. 2015.
  * Created by chengli on 3/24/16.
  */
+@JsonSerialize(using = MacroAverage.Serializer.class)
 public class MacroAverage {
+    private int numClasses;
     private double f1;
     private double overlap;
     private double precision;
     private double recall;
     private double hammingLoss;
+    private double binaryAccuracy;
     // per class counts
     private int[] labelWiseTP;
     private int[] labelWiseTN;
@@ -22,10 +35,11 @@ public class MacroAverage {
     private double[] labelWiseOverlap;
     private double[] labelWiseF1;
     private double[] labelWiseHammingLoss;
+    private double[] labelWiseAccuracy;
 
 
     public MacroAverage(MLConfusionMatrix confusionMatrix) {
-        int numClasses = confusionMatrix.getNumClasses();
+        this.numClasses = confusionMatrix.getNumClasses();
         int numDataPoints = confusionMatrix.getNumDataPoints();
         MLConfusionMatrix.Entry[][] entries = confusionMatrix.getEntries();
         this.labelWiseTP = new int[numClasses];
@@ -38,6 +52,7 @@ public class MacroAverage {
         this.labelWiseOverlap = new double[numClasses];
         this.labelWiseF1 = new double[numClasses];
         this.labelWiseHammingLoss = new double[numClasses];
+        this.labelWiseAccuracy = new double[numClasses];
 
 
         for (int l=0;l<numClasses;l++){
@@ -69,6 +84,7 @@ public class MacroAverage {
             labelWiseOverlap[l] = Overlap.overlap(tp,fp,fn);
             labelWiseHammingLoss[l] = HammingLoss.hammingLoss(tp,tn,
                     fp,fn);
+            labelWiseAccuracy[l] = tp+tn;
         }
 
         precision = Arrays.stream(labelWisePrecision).average().getAsDouble();
@@ -80,6 +96,8 @@ public class MacroAverage {
         overlap = Arrays.stream(labelWiseOverlap).average().getAsDouble();
 
         hammingLoss = Arrays.stream(labelWiseHammingLoss).average().getAsDouble();
+
+        binaryAccuracy = Arrays.stream(labelWiseAccuracy).average().getAsDouble();
     }
 
     public double getF1() {
@@ -138,14 +156,46 @@ public class MacroAverage {
         return labelWiseHammingLoss;
     }
 
+    public double getBinaryAccuracy() {
+        return binaryAccuracy;
+    }
+
+    public double[] getLabelWiseAccuracy() {
+        return labelWiseAccuracy;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("macro overlap=").append(overlap).append(",").append("\n");
-        sb.append("macro Hamming loss=").append(hammingLoss).append(",").append("\n");
-        sb.append("macro F1=").append(f1).append(",").append("\n");
-        sb.append("macro precision=").append(precision).append(",").append("\n");
-        sb.append("macro recall=").append(recall).append("\n");
+        sb.append("macro overlap = ").append(overlap).append("\n");
+        sb.append("macro Hamming loss = ").append(hammingLoss).append("\n");
+        sb.append("macro F1 = ").append(f1).append("\n");
+        sb.append("macro precision = ").append(precision).append("\n");
+        sb.append("macro recall = ").append(recall).append("\n");
+        sb.append("macro binary accuracy = ").append(binaryAccuracy).append("\n");
+
         return sb.toString();
+    }
+
+    public static class Serializer extends JsonSerializer<MacroAverage> {
+        @Override
+        public void serialize(MacroAverage macroAverage, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+
+            jsonGenerator.writeStartArray();
+            for (int k=0;k<macroAverage.numClasses;k++){
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeNumberField("label", k);
+                jsonGenerator.writeNumberField("TP",macroAverage.labelWiseTP[k]);
+                jsonGenerator.writeNumberField("TN",macroAverage.labelWiseTN[k]);
+                jsonGenerator.writeNumberField("FP",macroAverage.labelWiseFP[k]);
+                jsonGenerator.writeNumberField("FN",macroAverage.labelWiseFN[k]);
+                jsonGenerator.writeNumberField("precision",macroAverage.labelWisePrecision[k]);
+                jsonGenerator.writeNumberField("recall",macroAverage.labelWiseRecall[k]);
+                jsonGenerator.writeNumberField("f1",macroAverage.labelWiseF1[k]);
+                jsonGenerator.writeNumberField("accuracy",macroAverage.labelWiseAccuracy[k]);
+                jsonGenerator.writeEndObject();
+            }
+            jsonGenerator.writeEndArray();
+        }
     }
 }
