@@ -14,6 +14,7 @@ import java.util.Arrays;
 public class MLConfusionMatrix {
     private int numClasses;
     private int numDataPoints;
+    //[numData][numClasses]
     private Entry[][] entries;
 
     public int getNumClasses() {
