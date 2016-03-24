@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.eval;
 
 /**
+ * multi-class
  * micro-averaged precision/recall/f1 = overall accuracy
  * Created by chengli on 10/3/14.
  */

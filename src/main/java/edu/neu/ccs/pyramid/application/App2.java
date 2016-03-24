@@ -213,23 +213,27 @@ public class App2 {
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
-        int numClasses = dataSet.getNumClasses();
-        MultiLabel[] multiLabels = dataSet.getMultiLabels();
-        MultiLabel[] predictions = boosting.predict(dataSet);
+        MLMeasures mlMeasures = new MLMeasures(boosting,dataSet);
 
-        MicroMeasures microMeasures = new MicroMeasures(numClasses);
-        MacroMeasures macroMeasures = new MacroMeasures(numClasses);
-        microMeasures.update(multiLabels,predictions);
-        macroMeasures.update(multiLabels,predictions);
-        System.out.println("data-hamming loss = " + HammingLoss.hammingLoss(multiLabels,predictions,numClasses));
-        System.out.println("data-accuracy = " + Accuracy.accuracy(multiLabels,predictions));
-//        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions)); // same as overlap
-        System.out.println("data-precision = " + Precision.precision(multiLabels,predictions));
-        System.out.println("data-recall = " + Recall.recall(multiLabels,predictions));
-        System.out.println("data-overlap = "+ Overlap.overlap(multiLabels,predictions));
-        System.out.println("data-average precision= " + AveragePrecision.averagePrecision(boosting,dataSet));
-        System.out.println("label-macro-measures = \n" + macroMeasures);
-        System.out.println("label-micro-measures = \n" + microMeasures);
+        int numClasses = dataSet.getNumClasses();
+        System.out.println("All measures");
+        System.out.println(mlMeasures);
+//        MultiLabel[] multiLabels = dataSet.getMultiLabels();
+//        MultiLabel[] predictions = boosting.predict(dataSet);
+//
+//        MicroMeasures microMeasures = new MicroMeasures(numClasses);
+//        MacroMeasures macroMeasures = new MacroMeasures(numClasses);
+//        microMeasures.update(multiLabels,predictions);
+//        macroMeasures.update(multiLabels,predictions);
+//        System.out.println("data-hamming loss = " + HammingLoss.hammingLoss(multiLabels,predictions,numClasses));
+//        System.out.println("data-accuracy = " + Accuracy.accuracy(multiLabels,predictions));
+////        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions)); // same as overlap
+//        System.out.println("data-precision = " + Precision.precision(multiLabels,predictions));
+//        System.out.println("data-recall = " + Recall.recall(multiLabels,predictions));
+//        System.out.println("data-overlap = "+ Overlap.overlap(multiLabels,predictions));
+//        System.out.println("data-average precision= " + AveragePrecision.averagePrecision(boosting,dataSet));
+//        System.out.println("label-macro-measures = \n" + macroMeasures);
+//        System.out.println("label-micro-measures = \n" + microMeasures);
 
 
         boolean simpleCSV = true;
@@ -342,33 +346,14 @@ public class App2 {
 
         boolean performanceToJson = true;
         if (performanceToJson){
-            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"performance.json"), JsonEncoding.UTF8);
-            jsonGenerator.writeStartObject();
-
-            //TODO: to add more measures into json, edit this section
-
-            jsonGenerator.writeNumberField("data-accuracy",Accuracy.accuracy(multiLabels, predictions));
-//            jsonGenerator.writeNumberField("proportion accuracy",Accuracy.partialAccuracy(multiLabels, predictions)); // same as overlap
-            jsonGenerator.writeNumberField("data-precision",Precision.precision(multiLabels, predictions));
-            jsonGenerator.writeNumberField("data-recall",Recall.recall(multiLabels, predictions));
-            jsonGenerator.writeNumberField("data-overlap",Overlap.overlap(multiLabels, predictions));
-            jsonGenerator.writeNumberField("data-average-precision", AveragePrecision.averagePrecision(boosting,dataSet));
-            jsonGenerator.writeNumberField("hamming loss",HammingLoss.hammingLoss(multiLabels, predictions, numClasses));
-            jsonGenerator.writeNumberField("label-micro-f1",microMeasures.getF1Score());
-            jsonGenerator.writeNumberField("label-micro-precision",microMeasures.getPrecision());
-            jsonGenerator.writeNumberField("label-micro-recall",microMeasures.getRecall());
-            jsonGenerator.writeNumberField("label-micro-specificity",microMeasures.getSpecificity());
-            jsonGenerator.writeNumberField("label-macro-f1",macroMeasures.getF1Score());
-            jsonGenerator.writeNumberField("label-macro-precision",macroMeasures.getPrecision());
-            jsonGenerator.writeNumberField("label-macro-recall",macroMeasures.getRecall());
-            jsonGenerator.writeNumberField("label-macro-specificity",macroMeasures.getSpecificity());
-            jsonGenerator.writeEndObject();
-            jsonGenerator.close();
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"performance.json"),mlMeasures);
         }
 
         boolean individualPerformance = true;
         if (individualPerformance){
-            LabelBasedMeasures labelBasedMeasures = new LabelBasedMeasures(dataSet,predictions);
+            //todo
+            LabelBasedMeasures labelBasedMeasures = new LabelBasedMeasures(dataSet,boosting.predict(dataSet));
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),labelBasedMeasures);
         }
