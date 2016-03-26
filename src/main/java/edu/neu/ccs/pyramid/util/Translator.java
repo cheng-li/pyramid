@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.util;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +8,8 @@ import java.util.Map;
 /**
  * Created by chengli on 12/15/15.
  */
-public class Translator<T> {
+public class Translator<T> implements Serializable{
+    private static final long serialVersionUID = 1L;
     private Map<T,Integer> objToIndex;
     private Map<Integer,T> indexToObj;
     private int startIndex;
