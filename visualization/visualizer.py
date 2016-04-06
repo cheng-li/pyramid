@@ -377,17 +377,22 @@ def parse(input_json_file, outputFileName, fields, fashion, classDescription):
     outputFile.close()
 
 def createTopFeatureHTML(input_json_file, outputFileName):
-    inputJson = open(input_json_file, "r")
-    inputData = json.load(inputJson)
+    output = ""
+    try:
+        inputJson = open(input_json_file, "r")
+        inputData = json.load(inputJson)
 
-    outputData = createNewJsonForTopFeatures(inputData)
-    outputJson = json.dumps(outputData)
+        outputData = createNewJsonForTopFeatures(inputData)
+        outputJson = json.dumps(outputData)
 
-    output = pre_tf_data + outputJson + post_data
+        output = pre_tf_data + outputJson + post_data
+        inputJson.close()
+    except IOError:
+        print "Json: " + input_json_file + " no such file and skip it."
+        output = pre_tf_data + post_data
 
     outputFile = open(outputFileName, "w")
     outputFile.write(output)
-    inputJson.close()
     outputFile.close()
 
 def createIndPerHTML(inputIndPer, inputAllPer, outputPath):
@@ -413,13 +418,14 @@ def createIndPerHTML(inputIndPer, inputAllPer, outputPath):
 
 
 
-
-def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputFileName):
+## BW: remove performance json from MetaData
+# def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputFileName):
+def createMetaDataHTML(inputData, inputModel, inputConfig, outputFileName):
     outputData = {}
     inputD = None
     inputM = None
     inputC = None
-    inputP = None
+    # inputP = None
     if os.path.isfile(inputData):
         f1 = open(inputData, "r")
         inputD = json.load(f1)
@@ -429,14 +435,14 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, out
     if os.path.isfile(inputConfig):
         f3 = open(inputConfig, "r")
         inputC = json.load(f3)
-    if os.path.isfile(inputPerformance):
-        f4 = open(inputPerformance, "r")
-        inputP = json.load(f4)
+    # if os.path.isfile(inputPerformance):
+    #     f4 = open(inputPerformance, "r")
+    #     inputP = json.load(f4)
 
     outputData["data"] = inputD
     outputData["model"] = inputM
     outputData["config"] = inputC
-    outputData["performance"] = inputP
+    # outputData["performance"] = inputP
 
     outputJson = json.dumps(outputData)
 
@@ -451,8 +457,8 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, out
         f2.close()
     if inputC != None:
         f3.close()
-    if inputP != None:
-        f4.close()
+    # if inputP != None:
+    #     f4.close()
     outputFile.close()
 
 
@@ -478,9 +484,10 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion, classFile):
     inputData = directoryName + dataName + ".json"
     inputModel = directoryName + modelName + ".json"
     inputConfig = directoryName + configName + ".json"
-    inputPerformance = directoryName + performanceName + ".json"
+    # inputPerformance = directoryName + performanceName + ".json"
     outputPath = directoryName + "metadata.html"
-    createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputPath)
+    # createMetaDataHTML(inputData, inputModel, inputConfig, inputPerformance, outputPath)
+    createMetaDataHTML(inputData, inputModel, inputConfig, outputPath)
 
     ## reading class file if existing.
     classDescription = {}
@@ -1688,20 +1695,22 @@ $(document).ready(function() {
         "aaData": allData,
         "iDisplayLength": 10,
         "aoColumns": [
-            { "mDataProp": "data-accuracy" },
-            { "mDataProp": "data-precision" },
-            { "mDataProp": "data-recall" },
-            { "mDataProp": "data-average-precision" },
-            { "mDataProp": "data-overlap" },
-            { "mDataProp": "hamming loss" },
-            { "mDataProp": "label-micro-precision" },
-            { "mDataProp": "label-micro-recall" },
-            { "mDataProp": "label-micro-specificity" },
-            { "mDataProp": "label-micro-f1" },
-            { "mDataProp": "label-macro-precision" },
-            { "mDataProp": "label-macro-recall" },
-            { "mDataProp": "label-macro-specificity" },
-            { "mDataProp": "label-macro-f1" }
+            { "mDataProp": "instance subset accuracy" },
+            { "mDataProp": "instance overlap" },
+            { "mDataProp": "instance F1" },
+            { "mDataProp": "instance Hamming loss" },
+            { "mDataProp": "instance precision" },
+            { "mDataProp": "instance recall"},
+            { "mDataProp": "macro overlap" },
+            { "mDataProp": "macro F1" },
+            { "mDataProp": "macro Hamming loss" },
+            { "mDataProp": "macro precision" },
+            { "mDataProp": "macro recall" },
+            { "mDataProp": "micro overlap" },
+            { "mDataProp": "micro F1" },
+            { "mDataProp": "micro Hamming loss" },
+            { "mDataProp": "micro precision" },
+            { "mDataProp": "micro recall" }
         ]
     } );
     $('#indvidual').DataTable( {
@@ -1729,20 +1738,22 @@ $(document).ready(function() {
         <table id="overall" class="display" width="100%">
             <thead>
         <tr>
-            <th>data-accuracy</th>
-            <th>data-precision</th>
-            <th>data-recall</th>
-            <th>data-average-precision</th>
-            <th>data-overlap</th>
-            <th>hamming loss</th>
-            <th>label-micro-precision</th>
-            <th>label-micro-recall</th>
-            <th>label-micro-specificity</th>
-            <th>label-micro-f1</th>
-            <th>label-macro-precision</th>
-            <th>label-macro-recall</th>
-            <th>label-macro-specificity</th>
-            <th>label-macro-f1</th>
+            <th>instance subset accuracy</th>
+            <th>instance overlap</th>
+            <th>instance F1</th>
+            <th>instance Hamming loss</th>
+            <th>instance precision</th>
+            <th>instance recall</th>
+            <th>macro overlap</th>
+            <th>macro F1</th>
+            <th>macro Hamming loss</th>
+            <th>macro precision</th>
+            <th>macro recall</th>
+            <th>micro overlap</th>
+            <th>micro F1</th>
+            <th>micro Hamming loss</th>
+            <th>micro precision</th>
+            <th>micro recall</th>
         </tr>
             </thead>
         </table>
