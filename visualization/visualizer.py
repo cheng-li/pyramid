@@ -1713,7 +1713,7 @@ $(document).ready(function() {
             { "mDataProp": "micro recall" }
         ]
     } );
-    $('#indvidual').DataTable( {
+    $('#individual').DataTable( {
         "aaData": data,
         "iDisplayLength": 50,
         "aoColumns": [
@@ -1759,9 +1759,9 @@ $(document).ready(function() {
         </table>
 
         <h1>
-            <span>Indvidual Label Performance</span>
+            <span>Individual Label Performance</span>
         </h1>
-        <table id="indvidual" class="display" width="100%">
+        <table id="individual" class="display" width="100%">
             <thead>
         <tr>
             <th>label</th>
