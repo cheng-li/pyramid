@@ -352,7 +352,6 @@ public class App2 {
 
         boolean individualPerformance = true;
         if (individualPerformance){
-            //todo
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
         }
