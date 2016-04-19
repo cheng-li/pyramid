@@ -10,10 +10,7 @@ import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.io.FileUtils;
@@ -192,6 +189,24 @@ public class App2 {
 
     }
 
+    // todo merge
+    static void reportF1(Config config, String dataName) throws Exception{
+        System.out.println("generating reports for data set "+dataName);
+        String output = config.getString("output.folder");
+        String modelName = "model";
+        File analysisFolder = new File(new File(output,"reports"),dataName+"_reports");
+        analysisFolder.mkdirs();
+        FileUtils.cleanDirectory(analysisFolder);
+
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        MultiLabelClfDataSet dataSet = loadData(config,dataName);
+        PlugInF1 plugInF1 = new PlugInF1(boosting);
+        MLMeasures mlMeasures = new MLMeasures(plugInF1,dataSet);
+
+        System.out.println("All measures");
+        System.out.println(mlMeasures);
+    }
+
     static void report(Config config, String dataName) throws Exception{
         System.out.println("generating reports for data set "+dataName);
         String output = config.getString("output.folder");
@@ -209,31 +224,19 @@ public class App2 {
             case "independent":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
                 break;
+            // todo
+            case "f1":
+                reportF1(config,dataName);
+                return;
         }
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
         MLMeasures mlMeasures = new MLMeasures(boosting,dataSet);
 
-        int numClasses = dataSet.getNumClasses();
         System.out.println("All measures");
         System.out.println(mlMeasures);
-//        MultiLabel[] multiLabels = dataSet.getMultiLabels();
-//        MultiLabel[] predictions = boosting.predict(dataSet);
-//
-//        MicroMeasures microMeasures = new MicroMeasures(numClasses);
-//        MacroMeasures macroMeasures = new MacroMeasures(numClasses);
-//        microMeasures.update(multiLabels,predictions);
-//        macroMeasures.update(multiLabels,predictions);
-//        System.out.println("data-hamming loss = " + HammingLoss.hammingLoss(multiLabels,predictions,numClasses));
-//        System.out.println("data-accuracy = " + Accuracy.accuracy(multiLabels,predictions));
-////        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions)); // same as overlap
-//        System.out.println("data-precision = " + Precision.precision(multiLabels,predictions));
-//        System.out.println("data-recall = " + Recall.recall(multiLabels,predictions));
-//        System.out.println("data-overlap = "+ Overlap.overlap(multiLabels,predictions));
-//        System.out.println("data-average precision= " + AveragePrecision.averagePrecision(boosting,dataSet));
-//        System.out.println("label-macro-measures = \n" + macroMeasures);
-//        System.out.println("label-micro-measures = \n" + microMeasures);
+
 
 
         boolean simpleCSV = true;
