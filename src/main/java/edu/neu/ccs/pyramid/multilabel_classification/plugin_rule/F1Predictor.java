@@ -13,6 +13,7 @@ import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,6 +46,11 @@ public class F1Predictor {
             }
         }
         return predict(delta,zeroProb).getFirst();
+    }
+
+    public static MultiLabel predict(int numClasses, List<MultiLabel> multiLabels, double[] probabilities){
+        List<Double> p = Arrays.stream(probabilities).mapToObj(a->a).collect(Collectors.toList());
+        return predict(numClasses,multiLabels,p);
     }
 
 
