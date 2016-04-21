@@ -201,6 +201,7 @@ public class App2 {
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
         PlugInF1 plugInF1 = new PlugInF1(boosting);
         MLMeasures mlMeasures = new MLMeasures(plugInF1,dataSet);
+        mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
 
         System.out.println("All measures");
         System.out.println(mlMeasures);
@@ -294,6 +295,7 @@ public class App2 {
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
         MLMeasures mlMeasures = new MLMeasures(boosting,dataSet);
+        mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
 
         System.out.println("All measures");
         System.out.println(mlMeasures);

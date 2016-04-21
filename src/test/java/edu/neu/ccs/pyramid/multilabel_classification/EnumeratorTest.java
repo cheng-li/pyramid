@@ -1,11 +1,10 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
-import junit.framework.TestCase;
 
 /**
  * Created by chengli on 4/20/16.
  */
-public class EnumeratorTest extends TestCase {
+public class EnumeratorTest{
     public static void main(String[] args) {
         test1();
     }
