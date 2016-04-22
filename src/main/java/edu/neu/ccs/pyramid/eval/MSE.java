@@ -40,9 +40,9 @@ public class MSE {
     }
 
     public static double mseForNumLabels(MultiLabelClassifier multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet){
-        double[] truth = Arrays.stream(multiLabelClfDataSet.getMultiLabels()).mapToDouble(m->m.getMatchedLabels().size()).toArray();
-        double[] predi = IntStream.range(0,multiLabelClfDataSet.getNumDataPoints())
-                .mapToDouble(i->multiLabelClassifier.predict(multiLabelClfDataSet.getRow(i)).getMatchedLabels().size())
+        double[] truth = Arrays.stream(multiLabelClfDataSet.getMultiLabels()).mapToDouble(MultiLabel::getNumMatchedLabels).toArray();
+        double[] predi = IntStream.range(0,multiLabelClfDataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i->multiLabelClassifier.predict(multiLabelClfDataSet.getRow(i)).getNumMatchedLabels())
                 .toArray();
         return mse(truth,predi);
 
