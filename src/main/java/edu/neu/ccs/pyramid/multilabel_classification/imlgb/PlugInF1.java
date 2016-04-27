@@ -21,6 +21,10 @@ public class PlugInF1 extends AbstractPlugIn {
         this.imlGradientBoosting = imlGradientBoosting;
     }
 
+    public IMLGradientBoosting getImlGradientBoosting() {
+        return imlGradientBoosting;
+    }
+
     @Override
     public MultiLabel predict(Vector vector) {
         double[] probs = imlGradientBoosting.predictAllAssignmentProbsWithConstraint(vector);

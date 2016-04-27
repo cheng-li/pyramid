@@ -206,6 +206,18 @@ public class App2 {
         System.out.println("All measures");
         System.out.println(mlMeasures);
 
+
+        boolean simpleCSV = true;
+        if (simpleCSV){
+            double probThreshold=config.getDouble("report.classProbThreshold");
+            File csv = new File(analysisFolder,"report.csv");
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                String str = PlugInF1Inspector.simplePredictionAnalysis(plugInF1,dataSet,i,probThreshold);
+                FileUtils.writeStringToFile(csv,str,true);
+            }
+        }
+
+
         boolean dataInfoToJson = true;
         if (dataInfoToJson){
             Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
