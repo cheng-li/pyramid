@@ -24,7 +24,7 @@ public class Terminator {
      * absolute threshold for big change;
      * both have to apply in order to terminate
      * for small values, relativeEpsilon is more picky
-     * for big values, absoluteEpsilon is moe picky
+     * for big values, absoluteEpsilon is more picky
      */
     private double absoluteEpsilon = 0.001;
     /**
@@ -38,16 +38,18 @@ public class Terminator {
     private boolean forceTerminated = false;
     private Mode mode = Mode.STANDARD;
     private Goal goal = Goal.UNDEFINED;
+    private boolean allowNaN = false;
+    private boolean allowInfinite = false;
 
     public Terminator() {
         this.history = new ArrayList<>();
     }
 
     public void add(double value){
-        if (Double.isInfinite(value)){
+        if (Double.isInfinite(value)&&!allowInfinite){
             throw new RuntimeException("value is infinite");
         }
-        if (Double.isNaN(value)){
+        if (Double.isNaN(value)&&!allowNaN){
             throw new RuntimeException("value is NaN");
         }
         if (!isMoveValid(value)){
@@ -85,6 +87,14 @@ public class Terminator {
             logger.debug("is converged = "+isConverged());
             logger.debug("should terminate = "+shouldTerminate());
         }
+    }
+
+    public void setAllowNaN(boolean allowNaN) {
+        this.allowNaN = allowNaN;
+    }
+
+    public void setAllowInfinite(boolean allowInfinite) {
+        this.allowInfinite = allowInfinite;
     }
 
     public double getMaxValue(){
