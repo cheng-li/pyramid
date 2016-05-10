@@ -128,6 +128,13 @@ public class F1Predictor {
         return pMatrix.times(wMatrix);
     }
 
+
+    public static MultiLabel predict(Matrix pMatrix){
+        Matrix deltaMatrix = getDeltaMatrix(pMatrix);
+        // todo zero probability
+        return predict(deltaMatrix,0).getFirst();
+    }
+
     public static Matrix getPMatrix(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
         DenseMatrix pMatrix = new DenseMatrix(numClasses,numClasses);
         for (int j=0;j<multiLabels.size();j++){
