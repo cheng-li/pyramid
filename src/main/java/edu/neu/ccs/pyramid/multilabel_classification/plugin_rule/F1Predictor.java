@@ -2,11 +2,9 @@ package edu.neu.ccs.pyramid.multilabel_classification.plugin_rule;
 
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
-import com.google.common.collect.Multisets;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
-import org.apache.commons.math3.linear.RealVector;
 import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
@@ -45,7 +43,7 @@ public class F1Predictor {
                 break;
             }
         }
-        return predict(delta,zeroProb).getFirst();
+        return predictByDeltaMatrix(delta,zeroProb).getFirst();
     }
 
     public static MultiLabel predict(int numClasses, List<MultiLabel> multiLabels, double[] probabilities){
@@ -82,7 +80,7 @@ public class F1Predictor {
      * @param zeroProbability
      * @return best multi-label and F1
      */
-    public static Pair<MultiLabel,Double> predict(Matrix deltaMatrix, double zeroProbability){
+    private static Pair<MultiLabel,Double> predictByDeltaMatrix(Matrix deltaMatrix, double zeroProbability){
         int numClasses = deltaMatrix.numCols();
         MultiLabel pred = null;
         double maxValue = Double.NEGATIVE_INFINITY;
@@ -117,7 +115,7 @@ public class F1Predictor {
         return new Pair<>(pred,maxValue);
     }
 
-    public static Matrix getDeltaMatrix(Matrix pMatrix){
+    private static Matrix getDeltaMatrix(Matrix pMatrix){
         int size = pMatrix.numRows();
         DenseMatrix wMatrix = new DenseMatrix(size,size);
         for (int s=1;s<=size;s++){
@@ -134,13 +132,12 @@ public class F1Predictor {
      * @param pMatrix access: matrix[l][s-1] = score for label l (0~L-1), size s (1~L)
      * @return
      */
-    public static MultiLabel predict(Matrix pMatrix){
+    public static MultiLabel predict(Matrix pMatrix, double zeroProbability){
         Matrix deltaMatrix = getDeltaMatrix(pMatrix);
-        // todo zero probability
-        return predict(deltaMatrix,0).getFirst();
+        return predictByDeltaMatrix(deltaMatrix,zeroProbability).getFirst();
     }
 
-    public static Matrix getPMatrix(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
+    private static Matrix getPMatrix(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
         DenseMatrix pMatrix = new DenseMatrix(numClasses,numClasses);
         for (int j=0;j<multiLabels.size();j++){
             MultiLabel multiLabel = multiLabels.get(j);
