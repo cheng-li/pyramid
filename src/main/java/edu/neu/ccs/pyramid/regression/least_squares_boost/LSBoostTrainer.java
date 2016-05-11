@@ -54,6 +54,12 @@ public class LSBoostTrainer {
         addRegressor(regressor,lsbConfig.getLearningRate());
     }
 
+    public void iterate(int numIterations){
+        for (int i=0;i<numIterations;i++){
+            iterate();
+        }
+    }
+
     // the prior regressor should not be shrunk
     public void addRegressor(Regressor regressor, double weight){
         boost.regressors.add(regressor);
