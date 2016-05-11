@@ -129,6 +129,11 @@ public class F1Predictor {
     }
 
 
+    /**
+     *
+     * @param pMatrix access: matrix[l][s-1] = score for label l (0~L-1), size s (1~L)
+     * @return
+     */
     public static MultiLabel predict(Matrix pMatrix){
         Matrix deltaMatrix = getDeltaMatrix(pMatrix);
         // todo zero probability
