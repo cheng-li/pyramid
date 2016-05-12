@@ -12,12 +12,19 @@ import java.util.Arrays;
  * Created by chengli on 2/28/16.
  */
 public class TunedMarginalClassifier implements MultiLabelClassifier{
-    MultiLabelClassifier.ClassProbEstimator classProbEstimator;
-    double[] thresholds;
+    private static final long serialVersionUID = 1L;
+
+    private MultiLabelClassifier.ClassProbEstimator classProbEstimator;
+    private double[] thresholds;
 
     public TunedMarginalClassifier(MultiLabelClassifier.ClassProbEstimator classProbEstimator) {
         this.classProbEstimator = classProbEstimator;
         thresholds = new double[classProbEstimator.getNumClasses()];
+    }
+
+    public TunedMarginalClassifier(ClassProbEstimator classProbEstimator, double[] thresholds) {
+        this.classProbEstimator = classProbEstimator;
+        this.thresholds = thresholds;
     }
 
     public double[] getThresholds() {

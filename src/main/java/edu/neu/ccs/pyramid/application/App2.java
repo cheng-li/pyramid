@@ -11,10 +11,11 @@ import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
+import edu.neu.ccs.pyramid.multilabel_classification.thresholding.MacroFMeasureTuner;
+import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -28,7 +29,6 @@ import java.util.stream.IntStream;
 
 /**
  * imlgb
- * follow exp14
  * Created by chengli on 6/13/15.
  */
 public class App2 {
@@ -46,6 +46,10 @@ public class App2 {
         if (config.getBoolean("train")){
             train(config);
             report(config,config.getString("input.trainData"));
+        }
+
+        if (config.getBoolean("tune")){
+            tuneForMacroF(config);
         }
 
         if (config.getBoolean("test")){
@@ -148,17 +152,9 @@ public class App2 {
             boosting  = new IMLGradientBoosting(numClasses);
         }
 
-        String predictFashion = config.getString("predict.fashion").toLowerCase();
-        switch (predictFashion){
-            case "crf":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
-                break;
-            case "independent":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
-                break;
-            default:
-                throw new IllegalArgumentException("predict.fashion should be independent or crf");
-        }
+        // todo
+        boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
+        System.out.println("During training, the performance is reported using Subset Accuracy optimal predictor");
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
@@ -189,8 +185,53 @@ public class App2 {
 
     }
 
+    static void tuneForMacroF(Config config) throws Exception{
+        String output = config.getString("output.folder");
+        String modelName = "model";
+        double beta = config.getDouble("tune.FMeasure.beta");
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        String tuneBy = config.getString("tune.data");
+        String dataName;
+        switch (tuneBy){
+            case "train":
+                dataName = config.getString("input.trainData");
+                break;
+            case "test":
+                dataName = config.getString("input.testData");
+                break;
+            default:
+                throw new IllegalArgumentException("tune.data should be train or test");
+        }
+
+
+        MultiLabelClfDataSet dataSet = loadData(config,dataName);
+        double[] thresholds = MacroFMeasureTuner.tuneThresholds(boosting,dataSet,beta);
+        TunedMarginalClassifier  tunedMarginalClassifier = new TunedMarginalClassifier(boosting,thresholds);
+        Serialization.serialize(tunedMarginalClassifier, new File(output,"predictor_macro_f"));
+        System.out.println("finish tuning for macro F measure");
+
+    }
+
+    private static void reportForMacroF(Config config, String dataName) throws Exception{
+        String output = config.getString("output.folder");
+        String modelName = "model";
+        File analysisFolder = new File(new File(output,"reports"),dataName+"_reports");
+        analysisFolder.mkdirs();
+        FileUtils.cleanDirectory(analysisFolder);
+
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        TunedMarginalClassifier  tunedMarginalClassifier = (TunedMarginalClassifier)Serialization.deserialize(new File(output, "predictor_macro_f"));
+
+        MultiLabelClfDataSet dataSet = loadData(config,dataName);
+        MLMeasures mlMeasures = new MLMeasures(tunedMarginalClassifier,dataSet);
+        mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
+
+        System.out.println("All measures");
+        System.out.println(mlMeasures);
+    }
+
     // todo merge
-    static void reportF1(Config config, String dataName) throws Exception{
+    private static void reportForInstanceF(Config config, String dataName) throws Exception{
         String output = config.getString("output.folder");
         String modelName = "model";
         File analysisFolder = new File(new File(output,"reports"),dataName+"_reports");
@@ -290,18 +331,22 @@ public class App2 {
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        String predictFashion = config.getString("predict.fashion").toLowerCase();
+        String predictFashion = config.getString("predict.target").toLowerCase();
         switch (predictFashion){
-            case "crf":
+            case "subsetAccuracy":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
                 break;
-            case "independent":
+            case "hammingLoss":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
                 break;
             // todo
-            case "f1":
-                reportF1(config,dataName);
+            case "instanceFMeasure":
+                reportForInstanceF(config,dataName);
                 return;
+            case "macroFMeasure":
+                reportForMacroF(config,dataName);
+                return;
+
         }
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
