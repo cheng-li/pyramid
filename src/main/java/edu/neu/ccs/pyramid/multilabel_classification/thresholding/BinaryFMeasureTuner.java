@@ -21,6 +21,7 @@ public class BinaryFMeasureTuner {
             double fBeta = FMeasure.fBeta(precision,recall,beta);
             if (fBeta>bestFBeta){
                 bestThreshold = threshold;
+                bestFBeta = fBeta;
             }
         }
         return bestThreshold;

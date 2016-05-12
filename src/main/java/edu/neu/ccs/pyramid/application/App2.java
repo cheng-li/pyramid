@@ -39,29 +39,27 @@ public class App2 {
         }
 
         Config config = new Config(args[0]);
+        main(config);
+    }
+
+    public static void main(Config config) throws Exception{
         System.out.println(config);
 
         new File(config.getString("output.folder")).mkdirs();
 
         if (config.getBoolean("train")){
             train(config);
-            report(config,config.getString("input.trainData"));
+            if (config.getString("predict.target").equals("macroFMeasure")){
+                System.out.println("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
+                        "Reports will be generated after tuning.");
+            } else {
+                report(config,config.getString("input.trainData"));
+            }
+
         }
 
         if (config.getBoolean("tune")){
             tuneForMacroF(config);
-        }
-
-        if (config.getBoolean("test")){
-            report(config,config.getString("input.testData"));
-        }
-    }
-
-    public static void main(Config config) throws Exception{
-        new File(config.getString("output.folder")).mkdirs();
-
-        if (config.getBoolean("train")){
-            train(config);
             report(config,config.getString("input.trainData"));
         }
 
@@ -186,6 +184,7 @@ public class App2 {
     }
 
     static void tuneForMacroF(Config config) throws Exception{
+        System.out.println("start tuning for macro F measure");
         String output = config.getString("output.folder");
         String modelName = "model";
         double beta = config.getDouble("tune.FMeasure.beta");
@@ -331,8 +330,8 @@ public class App2 {
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        String predictFashion = config.getString("predict.target").toLowerCase();
-        switch (predictFashion){
+        String predictTarget = config.getString("predict.target");
+        switch (predictTarget){
             case "subsetAccuracy":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
                 break;
@@ -346,6 +345,8 @@ public class App2 {
             case "macroFMeasure":
                 reportForMacroF(config,dataName);
                 return;
+            default:
+                throw new IllegalArgumentException("unknown prediction target measure "+predictTarget);
 
         }
 

@@ -49,10 +49,10 @@ public class App3 {
 
     private static Config createApp2Config(Config config){
         Config app2Config = new Config();
-        String[] same = {"output.folder","train","test","predict.fashion","train.warmStart","train.usePrior",
+        String[] same = {"output.folder","train","test","tune","predict.target","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf","train.featureSamplingRate",
         "train.dataSamplingRate","train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
-                "train.showProgress.interval",
+                "train.showProgress.interval","tune.data","tune.FMeasure.beta",
         "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit"};
 
         Config.copy(config,app2Config,same);
