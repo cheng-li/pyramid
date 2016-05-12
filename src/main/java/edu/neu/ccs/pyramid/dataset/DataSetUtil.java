@@ -750,6 +750,16 @@ public class DataSetUtil {
         return labels;
     }
 
+    public static int[] toBinaryLabels(MultiLabel[] multiLabels, int k){
+        int[] binaryLabels = new int[multiLabels.length];
+        for (int i=0;i<multiLabels.length;i++){
+            if (multiLabels[i].matchClass(k)){
+                binaryLabels[i]=1;
+            }
+        }
+        return binaryLabels;
+    }
+
     /**
      * merge to binary dataset
      * k=positive (1), others = negative(0)
