@@ -227,6 +227,68 @@ public class App2 {
 
         System.out.println("All measures");
         System.out.println(mlMeasures);
+
+        boolean dataInfoToJson = true;
+        if (dataInfoToJson){
+            Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
+
+            Set<String> dataSetLabels = DataSetUtil.gatherLabels(dataSet).stream().map(i -> dataSet.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
+
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"data_info.json"), JsonEncoding.UTF8);
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("dataSet",dataName);
+            jsonGenerator.writeNumberField("numClassesInModel",boosting.getNumClasses());
+            jsonGenerator.writeNumberField("numClassesInDataSet",dataSetLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelDataSetCombined",dataSet.getNumClasses());
+            Set<String> modelNotDataLabels = SetUtil.complement(modelLabels, dataSetLabels);
+            Set<String> dataNotModelLabels = SetUtil.complement(dataSetLabels,modelLabels);
+            jsonGenerator.writeNumberField("numClassesInDataSetButNotModel",dataNotModelLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelButNotDataSet",modelNotDataLabels.size());
+            jsonGenerator.writeArrayFieldStart("classesInDataSetButNotModel");
+            for (String label: dataNotModelLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeArrayFieldStart("classesInModelButNotDataSet");
+            for (String label: modelNotDataLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeNumberField("labelCardinality",dataSet.labelCardinality());
+
+            jsonGenerator.writeEndObject();
+            jsonGenerator.close();
+        }
+
+
+        boolean modelConfigToJson = true;
+        if (modelConfigToJson){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
+        }
+
+        boolean dataConfigToJson = true;
+        if (dataConfigToJson){
+            File dataConfigFile = Paths.get(config.getString("input.folder"),
+                    "data_sets",dataName,"data_config.json").toFile();
+            if (dataConfigFile.exists()){
+                FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
+            }
+        }
+
+        boolean performanceToJson = true;
+        if (performanceToJson){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"performance.json"),mlMeasures);
+        }
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
+        }
     }
 
     // todo merge
