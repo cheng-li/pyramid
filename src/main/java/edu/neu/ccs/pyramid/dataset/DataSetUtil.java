@@ -760,6 +760,7 @@ public class DataSetUtil {
         return binaryLabels;
     }
 
+
     /**
      * merge to binary dataset
      * k=positive (1), others = negative(0)

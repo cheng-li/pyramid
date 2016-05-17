@@ -29,6 +29,8 @@ public class ElasticNetLogisticTrainer {
     private static final Logger logger = LogManager.getLogger();
     private LogisticRegression logisticRegression;
     private ClfDataSet dataSet;
+    private int numClasses;
+    private int[] labels;
     private double regularization;
     private double l1Ratio;
     // relative threshold
@@ -39,6 +41,10 @@ public class ElasticNetLogisticTrainer {
     private ProbabilityMatrix probabilityMatrix;
     private Terminator terminator;
     private boolean lineSearch;
+
+    public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet, int[] labels){
+        return new Builder(logisticRegression, dataSet, labels);
+    }
 
     public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet){
         return new Builder(logisticRegression, dataSet);
@@ -57,7 +63,7 @@ public class ElasticNetLogisticTrainer {
     }
 
     public void iterate(){
-        for (int k=0;k<dataSet.getNumClasses();k++){
+        for (int k=0;k<numClasses;k++){
             optimizeOneClass(k);
         }
         terminator.add(getLoss());
@@ -81,7 +87,7 @@ public class ElasticNetLogisticTrainer {
             double prob = logisticRegression.predictClassProbs(dataSet.getRow(i))[classIndex];
             double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
             double y = 0;
-            if (dataSet.getLabels()[i]==classIndex){
+            if (labels[i]==classIndex){
                 y = 1;
             }
             double frac = 0;
@@ -153,7 +159,7 @@ public class ElasticNetLogisticTrainer {
 
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
-        for (int k=0;k<dataSet.getNumClasses();k++){
+        for (int k=0;k<numClasses;k++){
             this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
         }
     }
@@ -170,13 +176,13 @@ public class ElasticNetLogisticTrainer {
     }
 
     private double loss(){
-        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet) * -1;
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, labels) * -1;
         double penalty = penalty();
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
     private double loss(double penalty){
-        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet) * -1;
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, labels) * -1;
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
@@ -268,7 +274,6 @@ public class ElasticNetLogisticTrainer {
 
     private double calEmpricalCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
-        int[] labels = dataSet.getLabels();
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
         //bias
@@ -328,6 +333,9 @@ public class ElasticNetLogisticTrainer {
     public static class Builder{
         private LogisticRegression logisticRegression;
         private ClfDataSet dataSet;
+        private int[] labels;
+        private int numClasses;
+
         // when p>>N, logistic regression with 0 regularization is ill-defined
         // use a small regularization
         private double regularization=0.00001;
@@ -335,9 +343,15 @@ public class ElasticNetLogisticTrainer {
         private double epsilon=0.001;
         private boolean lineSearch=true;
 
-        public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
+        public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet, int[] labels) {
             this.logisticRegression = logisticRegression;
             this.dataSet = dataSet;
+            this.labels = labels;
+            this.numClasses = dataSet.getNumClasses();
+        }
+
+        public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
+            this(logisticRegression, dataSet, dataSet.getLabels());
         }
 
         public Builder setRegularization(double regularization) {
@@ -377,6 +391,8 @@ public class ElasticNetLogisticTrainer {
             ElasticNetLogisticTrainer trainer = new ElasticNetLogisticTrainer();
             trainer.logisticRegression = logisticRegression;
             trainer.dataSet = dataSet;
+            trainer.labels = labels;
+            trainer.numClasses = numClasses;
             trainer.regularization = this.regularization;
             trainer.l1Ratio = this.l1Ratio;
             trainer.epsilon = this.epsilon;

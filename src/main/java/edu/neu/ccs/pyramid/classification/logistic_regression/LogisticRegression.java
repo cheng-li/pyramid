@@ -158,6 +158,12 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
                 .sum();
     }
 
+    public double dataSetLogLikelihood(ClfDataSet dataSet, int[] labels) {
+        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i->logLikelihood(dataSet.getRow(i),labels[i]))
+                .sum();
+    }
+
 
 
 
