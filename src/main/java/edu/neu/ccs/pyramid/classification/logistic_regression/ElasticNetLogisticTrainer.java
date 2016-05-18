@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.linear_regression.*;
@@ -28,7 +29,7 @@ import java.util.stream.IntStream;
 public class ElasticNetLogisticTrainer {
     private static final Logger logger = LogManager.getLogger();
     private LogisticRegression logisticRegression;
-    private ClfDataSet dataSet;
+    private DataSet dataSet;
     private int numClasses;
     private int[] labels;
     private double regularization;
@@ -42,8 +43,8 @@ public class ElasticNetLogisticTrainer {
     private Terminator terminator;
     private boolean lineSearch;
 
-    public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet, int[] labels){
-        return new Builder(logisticRegression, dataSet, labels);
+    public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels){
+        return new Builder(logisticRegression, dataSet, numClasses, labels);
     }
 
     public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet){
@@ -52,7 +53,7 @@ public class ElasticNetLogisticTrainer {
 
     public void optimize(){
         logisticRegression.setFeatureList(dataSet.getFeatureList());
-        logisticRegression.setLabelTranslator(dataSet.getLabelTranslator());
+//        logisticRegression.setLabelTranslator(dataSet.getLabelTranslator());
 
         while(true){
             iterate();
@@ -332,7 +333,7 @@ public class ElasticNetLogisticTrainer {
 
     public static class Builder{
         private LogisticRegression logisticRegression;
-        private ClfDataSet dataSet;
+        private DataSet dataSet;
         private int[] labels;
         private int numClasses;
 
@@ -343,15 +344,15 @@ public class ElasticNetLogisticTrainer {
         private double epsilon=0.001;
         private boolean lineSearch=true;
 
-        public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet, int[] labels) {
+        public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels) {
             this.logisticRegression = logisticRegression;
             this.dataSet = dataSet;
             this.labels = labels;
-            this.numClasses = dataSet.getNumClasses();
+            this.numClasses = numClasses;
         }
 
         public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
-            this(logisticRegression, dataSet, dataSet.getLabels());
+            this(logisticRegression, dataSet, dataSet.getNumClasses(), dataSet.getLabels());
         }
 
         public Builder setRegularization(double regularization) {
@@ -400,7 +401,7 @@ public class ElasticNetLogisticTrainer {
             trainer.numParameters = logisticRegression.getWeights().totalSize();
             trainer.empiricalCounts = new DenseVector(trainer.numParameters);
             trainer.predictedCounts = new DenseVector(trainer.numParameters);
-            trainer.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
+            trainer.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numClasses);
             trainer.updateEmpricalCounts();
             trainer.updateClassProbMatrix();
             trainer.updatePredictedCounts();
