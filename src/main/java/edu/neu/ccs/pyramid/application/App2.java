@@ -313,10 +313,16 @@ public class App2 {
         if (simpleCSV){
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
+            List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                    .mapToObj(i->IMLGBInspector.simplePredictionAnalysis(boosting,dataSet,i,probThreshold))
+                    .collect(Collectors.toList());
+            StringBuilder sb = new StringBuilder();
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                String str = PlugInF1Inspector.simplePredictionAnalysis(plugInF1,dataSet,i,probThreshold);
-                FileUtils.writeStringToFile(csv,str,true);
+                String str = strs.get(i);
+                sb.append(str);
+
             }
+            FileUtils.writeStringToFile(csv,sb.toString(),false);
         }
 
 
@@ -426,10 +432,16 @@ public class App2 {
         if (simpleCSV){
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
+            List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                    .mapToObj(i->IMLGBInspector.simplePredictionAnalysis(boosting,dataSet,i,probThreshold))
+                    .collect(Collectors.toList());
+            StringBuilder sb = new StringBuilder();
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                String str = IMLGBInspector.simplePredictionAnalysis(boosting,dataSet,i,probThreshold);
-                FileUtils.writeStringToFile(csv,str,true);
+                String str = strs.get(i);
+                sb.append(str);
+
             }
+            FileUtils.writeStringToFile(csv,sb.toString(),false);
         }
 
 
