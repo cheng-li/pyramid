@@ -398,7 +398,7 @@ public class IMLGradientBoostingTest {
         System.out.println(dataSet.getMultiLabels()[0]);
         System.out.println("pro for 1 = "+boosting.predictClassProb(dataSet.getRow(0),1));
         System.out.println("pro for 17 = "+boosting.predictClassProb(dataSet.getRow(0),17));
-        System.out.println(boosting.predictAssignmentProb(dataSet.getRow(0),dataSet.getMultiLabels()[0]));
+//        System.out.println(boosting.predictAssignmentProb(dataSet.getRow(0),dataSet.getMultiLabels()[0]));
 
 //        System.out.println(boosting.predictAssignmentProbWithConstraint(dataSet.getRow(0), dataSet.getMultiLabels()[0]));
         System.out.println(boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(0), dataSet.getMultiLabels()[0]));

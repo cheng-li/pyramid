@@ -181,7 +181,7 @@ public class IMLGBInspector {
                     dataSet.getMultiLabels()[dataPointIndex]));
         }
 
-        if (pluginPredictor instanceof HammingPredictor){
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
             predictionAnalysis.setProbForTrueLabels(boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),
                     dataSet.getMultiLabels()[dataPointIndex]));
         }
@@ -197,7 +197,7 @@ public class IMLGBInspector {
             predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),predictedLabels));
         }
 
-        if (pluginPredictor instanceof HammingPredictor){
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor ){
             predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),predictedLabels));
         }
 
@@ -237,7 +237,7 @@ public class IMLGBInspector {
         }
 
 
-        if (pluginPredictor instanceof HammingPredictor){
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
             labelSetRanking = new ArrayList<>();
             double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
             DynamicProgramming dp = new DynamicProgramming(classProbs);
@@ -287,7 +287,7 @@ public class IMLGBInspector {
             probability = boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),predicted);
         }
 
-        if (pluginPredictor instanceof HammingPredictor){
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
             probability = boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),predicted);
         }
 
