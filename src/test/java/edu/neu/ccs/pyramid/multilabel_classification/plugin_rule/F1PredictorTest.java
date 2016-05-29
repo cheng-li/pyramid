@@ -2,18 +2,12 @@ package edu.neu.ccs.pyramid.multilabel_classification.plugin_rule;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.MLMeasures;
-import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
 import edu.neu.ccs.pyramid.multilabel_classification.LossMatrixGenerator;
 import org.apache.mahout.math.Matrix;
-import org.apache.mahout.math.Vector;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by chengli on 4/5/16.
@@ -36,7 +30,7 @@ public class F1PredictorTest {
         probs.add(0.4);
 //        Matrix p = F1Predictor.getPMatrix(2,multiLabelList,probs);
 //        Matrix delta = F1Predictor.getDeltaMatrix(p);
-        System.out.println(F1Predictor.predict(2,multiLabelList,probs));
+        System.out.println(GeneralF1Predictor.predict(2,multiLabelList,probs));
 
     }
 
@@ -45,8 +39,8 @@ public class F1PredictorTest {
         Matrix matrix = LossMatrixGenerator.matrix(numLabels,"f1");
         List<MultiLabel> multiLabels = Enumerator.enumerate(numLabels);
         List<Double> dis = LossMatrixGenerator.sampleDistribution(numLabels);
-        MultiLabel pred = F1Predictor.predict(numLabels,multiLabels,dis);
-        MultiLabel search = F1Predictor.exhaustiveSearch(numLabels,matrix,dis);
+        MultiLabel pred = GeneralF1Predictor.predict(numLabels,multiLabels,dis);
+        MultiLabel search = GeneralF1Predictor.exhaustiveSearch(numLabels,matrix,dis);
         System.out.println("pred = "+pred);
         System.out.println("search = "+search);
 

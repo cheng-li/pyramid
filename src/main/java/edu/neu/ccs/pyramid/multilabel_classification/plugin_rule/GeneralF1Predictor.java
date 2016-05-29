@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * Section 5.
  * Created by chengli on 4/5/16.
  */
-public class F1Predictor {
+public class GeneralF1Predictor {
 
     /**
      *

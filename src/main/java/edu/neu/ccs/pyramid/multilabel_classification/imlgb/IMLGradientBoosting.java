@@ -29,6 +29,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
     private List<MultiLabel> assignments;
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
+    @Deprecated
     private PredictFashion predictFashion = PredictFashion.INDEPENDENT;
 
     public IMLGradientBoosting(int numClasses) {
@@ -57,78 +58,21 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
     }
 
 
-    public PredictFashion getPredictFashion() {
-        return predictFashion;
-    }
 
-    public void setPredictFashion(PredictFashion predictFashion) {
-        this.predictFashion = predictFashion;
-    }
 
     /**
-     * independent do prediction without any constraint;
-     * if crf, only consider these assignments
+     * return Hamming Loss optimal prediction
      * @param vector
      * @return
      */
     @Override
     public MultiLabel predict(Vector vector) {
-        MultiLabel prediction = null;
-        switch (this.predictFashion){
-            case INDEPENDENT:
-                prediction = predictWithoutConstraints(vector);
-                break;
-            case CRF:
-                prediction = predictWithConstraints(vector);
-                break;
-            case CRF_PLUS_HIGH_PROB:
-                prediction = predictWithConstraints(vector);
-                MultiLabel independentPred = predictWithoutConstraints(vector);
-                for (int label:independentPred.getMatchedLabels()){
-                    prediction.addLabel(label);
-                }
-                break;
-        }
-        return prediction;
+        HammingPredictor hammingPredictor = new HammingPredictor(this);
+        return hammingPredictor.predict(vector);
+
     }
 
-    /**
-     * do prediction without any constraint
-     * @param vector
-     * @return
-     */
-    private MultiLabel predictWithoutConstraints(Vector vector){
-        MultiLabel prediction = new MultiLabel();
-        for (int k=0;k<numClasses;k++){
-            double score = this.predictClassScore(vector, k);
-            if (score > 0){
-                prediction.addLabel(k);
-            }
-        }
-        return prediction;
-    }
 
-    /**
-     * only consider these assignments
-     * @param vector
-     * @return
-     */
-    private MultiLabel predictWithConstraints(Vector vector){
-        if (this.assignments==null){
-            throw new RuntimeException("CRF is used but legal assignments is not specified!");
-        }
-        double maxScore = Double.NEGATIVE_INFINITY;
-        MultiLabel prediction = null;
-        double[] classScores = predictClassScores(vector);
-        for (MultiLabel assignment: this.assignments){
-            double score = this.calAssignmentScore(assignment,classScores);
-            if (score > maxScore){
-                maxScore = score;
-                prediction = assignment;
-            }
-        }
-        return prediction;
-    }
 
     double calAssignmentScore(MultiLabel assignment, double[] classScores){
         double score = 0;
@@ -186,25 +130,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
                 .mapToDouble(k -> predictClassProb(vector,k)).toArray();
     }
 
-    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
-        if (assignment.outOfBound(this.numClasses)){
-            return 0;
-        }
-        double prob = 0;
-        switch (this.predictFashion){
-            case INDEPENDENT:
-                prob = predictAssignmentProbWithoutConstraint(vector,assignment);
-                break;
-            case CRF:
-                prob = predictAssignmentProbWithConstraint(vector,assignment);
-                break;
-            case CRF_PLUS_HIGH_PROB:
-                prob = predictAssignmentProbWithConstraint(vector,assignment);
-                break;
 
-        }
-        return prob;
-    }
 
     double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
         if (this.assignments==null){

@@ -8,11 +8,11 @@ import org.apache.mahout.math.Vector;
  * Optimal for subset accuracy
  * Created by chengli on 4/6/16.
  */
-public class PlugInSubsetAcc extends AbstractPlugIn {
+public class SubsetAccPredictor extends AbstractPlugIn {
     private static final long serialVersionUID = 1L;
     private IMLGradientBoosting imlGradientBoosting;
 
-    public PlugInSubsetAcc(IMLGradientBoosting imlGradientBoosting) {
+    public SubsetAccPredictor(IMLGradientBoosting imlGradientBoosting) {
         super(imlGradientBoosting);
         this.imlGradientBoosting = imlGradientBoosting;
     }
@@ -33,5 +33,12 @@ public class PlugInSubsetAcc extends AbstractPlugIn {
             }
         }
         return prediction;
+    }
+
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
+        if (assignment.outOfBound(imlGradientBoosting.getNumClasses())){
+            return 0;
+        }
+        return imlGradientBoosting.predictAssignmentProbWithConstraint(vector,assignment);
     }
 }

@@ -150,9 +150,7 @@ public class App2 {
             boosting  = new IMLGradientBoosting(numClasses);
         }
 
-        // todo
-        boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
-        System.out.println("During training, the performance is reported using Subset Accuracy optimal predictor");
+        System.out.println("During training, the performance is reported using Hamming loss optimal predictor");
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
@@ -163,20 +161,16 @@ public class App2 {
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
             trainer.iterate();
-//            System.out.println("model size = "+boosting.getRegressors(0).size());
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations-1)){
-                MultiLabel[] predictions = boosting.predict(dataSet);
-                System.out.println("accuracy on training set = "+ Accuracy.accuracy(dataSet.getMultiLabels(),predictions));
-                System.out.println("overlap on training set = "+ Overlap.overlap(boosting, dataSet));
+                System.out.println("training set performance");
+                System.out.println(new MLMeasures(boosting,dataSet));
             }
             if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations-1)){
-                MultiLabel[] predictions = boosting.predict(testSet);
-                System.out.println("accuracy on test set = "+ Accuracy.accuracy(testSet.getMultiLabels(),predictions));
-                System.out.println("overlap on test set = "+ Overlap.overlap(testSet.getMultiLabels(),predictions));
+                System.out.println("test set performance");
+                System.out.println(new MLMeasures(boosting,dataSet));
             }
         }
         File serializedModel =  new File(output,modelName);
-
 
         boosting.serialize(serializedModel);
         System.out.println(stopWatch);
@@ -301,8 +295,8 @@ public class App2 {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
-        PlugInF1 plugInF1 = new PlugInF1(boosting);
-        MLMeasures mlMeasures = new MLMeasures(plugInF1,dataSet);
+        F1Predictor f1Predictor = new F1Predictor(boosting);
+        MLMeasures mlMeasures = new MLMeasures(f1Predictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
 
         System.out.println("All measures");
@@ -399,6 +393,7 @@ public class App2 {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         String predictTarget = config.getString("predict.target");
+
         switch (predictTarget){
             case "subsetAccuracy":
                 boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);

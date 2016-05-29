@@ -5,19 +5,27 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.AbstractPlugIn;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import org.apache.mahout.math.Vector;
 
 /**
  * optimal for Hamming Loss
  * Created by chengli on 4/6/16.
  */
-public class PlugInHamming extends AbstractPlugIn{
+public class HammingPredictor extends AbstractPlugIn implements PluginPredictor<IMLGradientBoosting>{
+
+
     private static final long serialVersionUID = 1L;
     private IMLGradientBoosting imlGradientBoosting;
 
-    public PlugInHamming(IMLGradientBoosting imlGradientBoosting) {
+    public HammingPredictor(IMLGradientBoosting imlGradientBoosting) {
         super(imlGradientBoosting);
         this.imlGradientBoosting = imlGradientBoosting;
+    }
+
+    @Override
+    public IMLGradientBoosting getModel() {
+        return imlGradientBoosting;
     }
 
     @Override
@@ -30,6 +38,13 @@ public class PlugInHamming extends AbstractPlugIn{
             }
         }
         return prediction;
+    }
+
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment){
+        if (assignment.outOfBound(imlGradientBoosting.getNumClasses())){
+            return 0;
+        }
+        return imlGradientBoosting.predictAssignmentProbWithoutConstraint(vector,assignment);
     }
 
 }
