@@ -5,16 +5,15 @@ import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
-import edu.neu.ccs.pyramid.multilabel_classification.AbstractPlugIn;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
+import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.function.Mult;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -163,8 +162,8 @@ public class IMLGBInspector {
     //todo  speed up
 
 
-    public static <E extends AbstractPlugIn> MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting,
-                                                                 E pluginPredictor,
+    public static  MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting,
+                                                                  PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                  MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, List<Integer> classes, int ruleLimit,
                                                                  int labelSetLimit){
@@ -177,7 +176,7 @@ public class IMLGBInspector {
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setLabels(labels);
-        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof F1Predictor){
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
             predictionAnalysis.setProbForTrueLabels(boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),
                     dataSet.getMultiLabels()[dataPointIndex]));
         }
@@ -194,7 +193,7 @@ public class IMLGBInspector {
         List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setPrediction(prediction);
 
-        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof F1Predictor){
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
             predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),predictedLabels));
         }
 
@@ -224,7 +223,7 @@ public class IMLGBInspector {
 
         List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
 
-        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof F1Predictor){
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
             double[] labelSetProbs = boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex));
             labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
             .mapToObj(i -> {
@@ -257,8 +256,8 @@ public class IMLGBInspector {
     }
 
 
-    public static <E extends AbstractPlugIn> String simplePredictionAnalysis(IMLGradientBoosting boosting,
-                                                                             E pluginPredictor,
+    public static  String simplePredictionAnalysis(IMLGradientBoosting boosting,
+                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                              MultiLabelClfDataSet dataSet,
                                                   int dataPointIndex,  double classProbThreshold){
         StringBuilder sb = new StringBuilder();
@@ -284,7 +283,7 @@ public class IMLGBInspector {
         MultiLabel predicted = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
 
         double probability = 0;
-        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof F1Predictor){
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
             probability = boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),predicted);
         }
 

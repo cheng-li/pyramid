@@ -1,10 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
-import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.feature.FeatureList;
-import edu.neu.ccs.pyramid.multilabel_classification.AbstractPlugIn;
-import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import org.apache.mahout.math.Vector;
 
@@ -12,14 +8,14 @@ import org.apache.mahout.math.Vector;
  * optimal for Hamming Loss
  * Created by chengli on 4/6/16.
  */
-public class HammingPredictor extends AbstractPlugIn implements PluginPredictor<IMLGradientBoosting>{
+public class HammingPredictor implements PluginPredictor<IMLGradientBoosting>{
 
 
     private static final long serialVersionUID = 1L;
     private IMLGradientBoosting imlGradientBoosting;
 
+
     public HammingPredictor(IMLGradientBoosting imlGradientBoosting) {
-        super(imlGradientBoosting);
         this.imlGradientBoosting = imlGradientBoosting;
     }
 

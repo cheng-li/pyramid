@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.multilabel_classification.AbstractPlugIn;
+import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
 import org.apache.mahout.math.Vector;
 
@@ -12,18 +12,19 @@ import java.util.stream.Collectors;
 /**
  * Created by chengli on 4/19/16.
  */
-public class F1Predictor extends AbstractPlugIn {
+public class InstanceF1Predictor implements PluginPredictor<IMLGradientBoosting> {
     private static final long serialVersionUID = 1L;
     private IMLGradientBoosting imlGradientBoosting;
 
-    public F1Predictor(IMLGradientBoosting imlGradientBoosting) {
-        super(imlGradientBoosting);
+    public InstanceF1Predictor(IMLGradientBoosting imlGradientBoosting) {
         this.imlGradientBoosting = imlGradientBoosting;
     }
 
-    public IMLGradientBoosting getImlGradientBoosting() {
+    @Override
+    public IMLGradientBoosting getModel() {
         return imlGradientBoosting;
     }
+
 
     @Override
     public MultiLabel predict(Vector vector) {

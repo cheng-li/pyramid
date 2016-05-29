@@ -295,8 +295,8 @@ public class App2 {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
-        F1Predictor f1Predictor = new F1Predictor(boosting);
-        MLMeasures mlMeasures = new MLMeasures(f1Predictor,dataSet);
+        InstanceF1Predictor instanceF1Predictor = new InstanceF1Predictor(boosting);
+        MLMeasures mlMeasures = new MLMeasures(instanceF1Predictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
 
         System.out.println("All measures");
