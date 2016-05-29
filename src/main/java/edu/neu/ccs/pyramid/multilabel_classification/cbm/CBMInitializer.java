@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
-import edu.neu.ccs.pyramid.clustering.bm.BMMSelector;
+import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.util.MathUtil;
 
@@ -12,7 +12,7 @@ public class CBMInitializer {
 
 
     public static void initialize(CBM CBM, MultiLabelClfDataSet dataSet, CBMOptimizer optimizer){
-        double[][] gamms = BMMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), CBM.numClusters);
+        double[][] gamms = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), CBM.numClusters);
         optimizer.setParallelism(true);
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int k = 0; k< CBM.numClusters; k++){

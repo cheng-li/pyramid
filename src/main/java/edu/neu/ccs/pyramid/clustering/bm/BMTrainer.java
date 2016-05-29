@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 9/12/15.
  */
-public class BMMTrainer {
+public class BMTrainer {
     private static final Logger logger = LogManager.getLogger();
     DataSet dataSet;
     /**
@@ -27,7 +27,7 @@ public class BMMTrainer {
     BM bm;
     Terminator terminator;
 
-    public BMMTrainer(DataSet dataSet,int numClusters) {
+    public BMTrainer(DataSet dataSet, int numClusters) {
         this.numClusters = numClusters;
         this.dataSet = dataSet;
         this.gammas = new double[dataSet.getNumDataPoints()][numClusters];
