@@ -73,6 +73,10 @@ public class MultiLabel implements Serializable{
         return labels;
     }
 
+    public int getNumMatchedLabels(){
+        return labels.size();
+    }
+
     public List<Integer> getMatchedLabelsOrdered(){
         return labels.stream().sorted().collect(Collectors.toList());
     }

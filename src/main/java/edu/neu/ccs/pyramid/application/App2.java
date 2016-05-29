@@ -10,14 +10,13 @@ import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBConfig;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBTrainer;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
+import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
+import edu.neu.ccs.pyramid.multilabel_classification.thresholding.MacroFMeasureTuner;
+import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
@@ -31,7 +30,6 @@ import java.util.stream.IntStream;
 
 /**
  * imlgb
- * follow exp14
  * Created by chengli on 6/13/15.
  */
 public class App2 {
@@ -42,25 +40,27 @@ public class App2 {
         }
 
         Config config = new Config(args[0]);
+        main(config);
+    }
+
+    public static void main(Config config) throws Exception{
         System.out.println(config);
 
         new File(config.getString("output.folder")).mkdirs();
 
         if (config.getBoolean("train")){
             train(config);
-            report(config,config.getString("input.trainData"));
+            if (config.getString("predict.target").equals("macroFMeasure")){
+                System.out.println("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
+                        "Reports will be generated after tuning.");
+            } else {
+                report(config,config.getString("input.trainData"));
+            }
+
         }
 
-        if (config.getBoolean("test")){
-            report(config,config.getString("input.testData"));
-        }
-    }
-
-    public static void main(Config config) throws Exception{
-        new File(config.getString("output.folder")).mkdirs();
-
-        if (config.getBoolean("train")){
-            train(config);
+        if (config.getBoolean("tune")){
+            tuneForMacroF(config);
             report(config,config.getString("input.trainData"));
         }
 
@@ -76,38 +76,6 @@ public class App2 {
                 true);
         return dataSet;
     }
-
-//    static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
-//        String trainFile = new File(config.getString("input.folder"),
-//                config.getString("input.trainData")).getAbsolutePath();
-//        MultiLabelClfDataSet dataSet;
-//
-//        if (config.getBoolean("input.featureMatrix.sparse")){
-//            dataSet= TRECFormat.loadMultiLabelClfDataSet(new File(trainFile), DataSetType.ML_CLF_SPARSE,
-//                    true);
-//        } else {
-//            dataSet= TRECFormat.loadMultiLabelClfDataSet(new File(trainFile), DataSetType.ML_CLF_DENSE,
-//                    true);
-//        }
-//
-//        return dataSet;
-//    }
-//
-//    static MultiLabelClfDataSet loadTestData(Config config) throws Exception{
-//        String trainFile = new File(config.getString("input.folder"),
-//                config.getString("input.testData")).getAbsolutePath();
-//        MultiLabelClfDataSet dataSet;
-//
-//        if (config.getBoolean("input.featureMatrix.sparse")){
-//            dataSet= TRECFormat.loadMultiLabelClfDataSet(new File(trainFile), DataSetType.ML_CLF_SPARSE,
-//                    true);
-//        } else {
-//            dataSet= TRECFormat.loadMultiLabelClfDataSet(new File(trainFile), DataSetType.ML_CLF_DENSE,
-//                    true);
-//        }
-//
-//        return dataSet;
-//    }
 
     static void train(Config config) throws Exception{
         String output = config.getString("output.folder");
@@ -151,17 +119,7 @@ public class App2 {
             boosting  = new IMLGradientBoosting(numClasses);
         }
 
-        String predictFashion = config.getString("predict.fashion").toLowerCase();
-        switch (predictFashion){
-            case "crf":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
-                break;
-            case "independent":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
-                break;
-            default:
-                throw new IllegalArgumentException("predict.fashion should be independent or crf");
-        }
+        System.out.println("During training, the performance is reported using Hamming loss optimal predictor");
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
@@ -172,23 +130,47 @@ public class App2 {
         for (int i=0;i<numIterations;i++){
             System.out.println("iteration "+i);
             trainer.iterate();
-//            System.out.println("model size = "+boosting.getRegressors(0).size());
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations-1)){
-                MultiLabel[] predictions = boosting.predict(dataSet);
-                System.out.println("accuracy on training set = "+ Accuracy.accuracy(dataSet.getMultiLabels(),predictions));
-                System.out.println("overlap on training set = "+ Overlap.overlap(boosting, dataSet));
+                System.out.println("training set performance");
+                System.out.println(new MLMeasures(boosting,dataSet));
             }
             if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations-1)){
-                MultiLabel[] predictions = boosting.predict(testSet);
-                System.out.println("accuracy on test set = "+ Accuracy.accuracy(testSet.getMultiLabels(),predictions));
-                System.out.println("overlap on test set = "+ Overlap.overlap(testSet.getMultiLabels(),predictions));
+                System.out.println("test set performance");
+                System.out.println(new MLMeasures(boosting,testSet));
             }
         }
         File serializedModel =  new File(output,modelName);
 
-
         boosting.serialize(serializedModel);
         System.out.println(stopWatch);
+
+    }
+
+    static void tuneForMacroF(Config config) throws Exception{
+        System.out.println("start tuning for macro F measure");
+        String output = config.getString("output.folder");
+        String modelName = "model";
+        double beta = config.getDouble("tune.FMeasure.beta");
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        String tuneBy = config.getString("tune.data");
+        String dataName;
+        switch (tuneBy){
+            case "train":
+                dataName = config.getString("input.trainData");
+                break;
+            case "test":
+                dataName = config.getString("input.testData");
+                break;
+            default:
+                throw new IllegalArgumentException("tune.data should be train or test");
+        }
+
+
+        MultiLabelClfDataSet dataSet = loadData(config,dataName);
+        double[] thresholds = MacroFMeasureTuner.tuneThresholds(boosting,dataSet,beta);
+        TunedMarginalClassifier  tunedMarginalClassifier = new TunedMarginalClassifier(boosting,thresholds);
+        Serialization.serialize(tunedMarginalClassifier, new File(output,"predictor_macro_f"));
+        System.out.println("finish tuning for macro F measure");
 
     }
 
@@ -201,49 +183,54 @@ public class App2 {
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        String predictFashion = config.getString("predict.fashion").toLowerCase();
-        switch (predictFashion){
-            case "crf":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.CRF);
+        String predictTarget = config.getString("predict.target");
+
+        PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = null;
+
+        switch (predictTarget){
+            case "subsetAccuracy":
+                pluginPredictorTmp = new SubsetAccPredictor(boosting);
                 break;
-            case "independent":
-                boosting.setPredictFashion(IMLGradientBoosting.PredictFashion.INDEPENDENT);
+            case "hammingLoss":
+                pluginPredictorTmp = new HammingPredictor(boosting);
                 break;
+            case "instanceFMeasure":
+                pluginPredictorTmp = new InstanceF1Predictor(boosting);
+                break;
+            case "macroFMeasure":
+                TunedMarginalClassifier  tunedMarginalClassifier = (TunedMarginalClassifier)Serialization.deserialize(new File(output, "predictor_macro_f"));
+                pluginPredictorTmp = new MacroF1Predictor(boosting,tunedMarginalClassifier);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown prediction target measure "+predictTarget);
         }
+
+        // just to make Lambda expressions happy
+        final PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
-        MLMeasures mlMeasures = new MLMeasures(boosting,dataSet);
+        MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
+        mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
 
-        int numClasses = dataSet.getNumClasses();
-        System.out.println("All measures");
+        System.out.println("performance on dataset "+dataName);
         System.out.println(mlMeasures);
-//        MultiLabel[] multiLabels = dataSet.getMultiLabels();
-//        MultiLabel[] predictions = boosting.predict(dataSet);
-//
-//        MicroMeasures microMeasures = new MicroMeasures(numClasses);
-//        MacroMeasures macroMeasures = new MacroMeasures(numClasses);
-//        microMeasures.update(multiLabels,predictions);
-//        macroMeasures.update(multiLabels,predictions);
-//        System.out.println("data-hamming loss = " + HammingLoss.hammingLoss(multiLabels,predictions,numClasses));
-//        System.out.println("data-accuracy = " + Accuracy.accuracy(multiLabels,predictions));
-////        System.out.println("proportion accuracy on data set = " + Accuracy.partialAccuracy(multiLabels, predictions)); // same as overlap
-//        System.out.println("data-precision = " + Precision.precision(multiLabels,predictions));
-//        System.out.println("data-recall = " + Recall.recall(multiLabels,predictions));
-//        System.out.println("data-overlap = "+ Overlap.overlap(multiLabels,predictions));
-//        System.out.println("data-average precision= " + AveragePrecision.averagePrecision(boosting,dataSet));
-//        System.out.println("label-macro-measures = \n" + macroMeasures);
-//        System.out.println("label-micro-measures = \n" + microMeasures);
 
 
         boolean simpleCSV = true;
         if (simpleCSV){
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
+            List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                    .mapToObj(i->IMLGBInspector.simplePredictionAnalysis(boosting,pluginPredictor,dataSet,i,probThreshold))
+                    .collect(Collectors.toList());
+            StringBuilder sb = new StringBuilder();
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                String str = IMLGBInspector.simplePredictionAnalysis(boosting,dataSet,i,probThreshold);
-                FileUtils.writeStringToFile(csv,str,true);
+                String str = strs.get(i);
+                sb.append(str);
+
             }
+            FileUtils.writeStringToFile(csv,sb.toString(),false);
         }
 
 
@@ -284,7 +271,7 @@ public class App2 {
                             classes.add(k);
                         }
                     }
-                    partition.add(IMLGBInspector.analyzePrediction(boosting, dataSet, a, classes, ruleLimit,labelSetLimit));
+                    partition.add(IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a, classes, ruleLimit,labelSetLimit));
                 }
                 ObjectMapper mapper = new ObjectMapper();
 
@@ -358,10 +345,6 @@ public class App2 {
 
         System.out.println("reports generated");
     }
-
-
-
-
 
 
 }

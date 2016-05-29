@@ -6,11 +6,13 @@ import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Sampling;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import edu.neu.ccs.pyramid.util.Translator;
+import org.apache.mahout.math.*;
 import org.apache.mahout.math.Vector;
 
 
 import java.io.*;
 import java.util.*;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -404,6 +406,33 @@ public class DataSetUtil {
         return sample;
     }
 
+
+    public static Pair<DataSet, double[][]> sampleData(DataSet dataSet, double[][] targetDistribution, List<Integer> indices){
+        DataSet sample;
+        int numClasses = targetDistribution[0].length;
+        double[][] sampledTargets = new double[indices.size()][numClasses];
+        sample = DataSetBuilder.getBuilder().dense(dataSet.isDense()).missingValue(dataSet.hasMissingValue())
+                .numDataPoints(indices.size()).numFeatures(dataSet.getNumFeatures()).build();
+
+        for (int i=0;i<indices.size();i++){
+            int indexInOld = indices.get(i);
+            Vector oldVector = dataSet.getRow(indexInOld);
+            double[] targets = targetDistribution[indexInOld];
+            //copy label
+            sampledTargets[i] = Arrays.copyOf(targets,targets.length);
+            //copy row feature values, optimized for sparse vector
+            for (Vector.Element element: oldVector.nonZeroes()){
+                sample.setFeatureValue(i,element.index(),element.get());
+            }
+
+        }
+
+        sample.setFeatureList(dataSet.getFeatureList());
+
+        //ignore idTranslator as we may have duplicate extIds
+        return new Pair<>(sample, sampledTargets);
+    }
+
     /**
      * create a subset with the indices
      * it's fine to have duplicate indices
@@ -602,6 +631,26 @@ public class DataSetUtil {
         return sampleData(dataSet,keep);
     }
 
+    public static Pair<DataSet,double[][]> sampleByFold(DataSet dataSet, double[][] targetDistribution, int numFolds, Set<Integer> foldIndices){
+        for (int fold: foldIndices){
+            boolean con = fold>=1 && fold<=numFolds;
+            if (! con){
+                throw new IllegalArgumentException("should have fold>=1 && fold<=numFolds");
+            }
+        }
+
+        int numData = dataSet.getNumDataPoints();
+        List<Integer> keep = new ArrayList<>();
+        for (int i=0;i<numData;i++){
+            int rem = i%numFolds;
+            if (foldIndices.contains(rem+1)){
+                keep.add(i);
+            }
+        }
+
+        return sampleData(dataSet,targetDistribution, keep);
+    }
+
     /**
      *
      * @param clfDataSet
@@ -749,6 +798,17 @@ public class DataSetUtil {
         }
         return labels;
     }
+
+    public static int[] toBinaryLabels(MultiLabel[] multiLabels, int k){
+        int[] binaryLabels = new int[multiLabels.length];
+        for (int i=0;i<multiLabels.length;i++){
+            if (multiLabels[i].matchClass(k)){
+                binaryLabels[i]=1;
+            }
+        }
+        return binaryLabels;
+    }
+
 
     /**
      * merge to binary dataset

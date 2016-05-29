@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
  * select the best BMM from multiple random starts
  * Created by chengli on 9/12/15.
  */
-public class BMMSelector {
+public class BMSelector {
     private static final Logger logger = LogManager.getLogger();
 
     public static BM select(DataSet dataSet, int numClusters, int numRuns) {
@@ -21,7 +21,7 @@ public class BMMSelector {
         BM best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
-            BMMTrainer trainer = new BMMTrainer(dataSet,numClusters);
+            BMTrainer trainer = new BMTrainer(dataSet,numClusters);
             BM bm = trainer.train();
             double objective = trainer.terminator.getLastValue();
             if (objective < bestObjective){
@@ -35,11 +35,11 @@ public class BMMSelector {
         return best;
     }
 
-    public static BMMTrainer selectTrainer(DataSet dataSet,int numClusters, int numRuns) {
-        BMMTrainer best = null;
+    public static BMTrainer selectTrainer(DataSet dataSet, int numClusters, int numRuns) {
+        BMTrainer best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
-            BMMTrainer trainer = new BMMTrainer(dataSet,numClusters);
+            BMTrainer trainer = new BMTrainer(dataSet,numClusters);
             BM bm = trainer.train();
             double objective = trainer.terminator.getLastValue();
             if (objective < bestObjective){
@@ -62,7 +62,7 @@ public class BMMSelector {
                 dataSet.setFeatureValue(i,label,1);
             }
         }
-        BMMTrainer trainer = BMMSelector.selectTrainer(dataSet, numClusters, 10);
+        BMTrainer trainer = BMSelector.selectTrainer(dataSet, numClusters, 10);
 //        System.out.println("bm = "+trainer.bm);
 //        System.out.println("gamma = "+ Arrays.deepToString(trainer.gammas));
         return trainer.gammas;

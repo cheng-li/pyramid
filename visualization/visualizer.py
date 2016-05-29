@@ -175,7 +175,7 @@ def includesLabel(label, labels):
     return 0
 
 
-def createTable(data, fields, fashion, classDescription):
+def createTable(data, fields,  classDescription):
     line_count = 0
     output = []
     for row in data:
@@ -359,14 +359,14 @@ def createNewJsonForTopFeatures(inputData):
     return outputData
 
 
-def parse(input_json_file, outputFileName, fields, fashion, classDescription):
+def parse(input_json_file, outputFileName, fields,  classDescription):
     # read input
 
     inputJson = open(input_json_file, "r")
     inputData = json.load(inputJson)
     print "Json:" + input_json_file + " load successfully.\nStart Parsing..."
 
-    outputData = createTable(inputData, fields, fashion, classDescription)
+    outputData = createTable(inputData, fields,  classDescription)
     outputJson = json.dumps(outputData)
 
     output = pre_data + outputJson + post_data
@@ -462,7 +462,7 @@ def createMetaDataHTML(inputData, inputModel, inputConfig, outputFileName):
     outputFile.close()
 
 
-def parseAll(inputPath, directoryName, fileName, fields, fashion, classFile):
+def parseAll(inputPath, directoryName, fileName, fields,  classFile):
     outputFileName = "viewer"
 
     indPerformanceName = "individual_performance"
@@ -514,7 +514,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion, classFile):
     skipJsonFiles = [configName+".json", dataName + ".json", modelName + ".json", topName + ".json",
         performanceName + ".json", indPerformanceName + ".json"]
     if os.path.isfile(inputPath):
-        parse(inputPath, directoryName + outputFileName + "_" + fileName[:-5] + ".html", fields, fashion, classDescription)
+        parse(inputPath, directoryName + outputFileName + "_" + fileName[:-5] + ".html", fields,  classDescription)
     else:
         if not inputPath.endswith('/'):
             directoryName += '/'
@@ -528,7 +528,7 @@ def parseAll(inputPath, directoryName, fileName, fields, fashion, classFile):
                 continue
             else:
                 outputPath = directoryName + outputFileName + "_" + f[:-5] + ".html"
-                parse(absf, outputPath, fields, fashion, classDescription)
+                parse(absf, outputPath, fields,  classDescription)
 
 #constant Strings
 pre_md_data = ''' <html>
@@ -1869,9 +1869,8 @@ def main(argv):
     esIndex = config1["index.indexName"]
     classNumber = config2["numClassesInModel"]
     fields = config1["index.ngramExtractionFields"]
-    fashion = config3["predict.fashion"]
     start = time.time()
-    parseAll(jsonFile, directoryName, fileName, fields, fashion, classFile)
+    parseAll(jsonFile, directoryName, fileName, fields, classFile)
     end = time.time()
     print "parsing cost time ", end-start, " seconds"
 

@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
 import edu.neu.ccs.pyramid.optimization.*;
 import edu.neu.ccs.pyramid.regression.linear_regression.*;
@@ -28,7 +29,9 @@ import java.util.stream.IntStream;
 public class ElasticNetLogisticTrainer {
     private static final Logger logger = LogManager.getLogger();
     private LogisticRegression logisticRegression;
-    private ClfDataSet dataSet;
+    private DataSet dataSet;
+    private int numClasses;
+    private int[] labels;
     private double regularization;
     private double l1Ratio;
     // relative threshold
@@ -38,6 +41,11 @@ public class ElasticNetLogisticTrainer {
     private int numParameters;
     private ProbabilityMatrix probabilityMatrix;
     private Terminator terminator;
+    private boolean lineSearch;
+
+    public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels){
+        return new Builder(logisticRegression, dataSet, numClasses, labels);
+    }
 
     public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet){
         return new Builder(logisticRegression, dataSet);
@@ -45,7 +53,7 @@ public class ElasticNetLogisticTrainer {
 
     public void optimize(){
         logisticRegression.setFeatureList(dataSet.getFeatureList());
-        logisticRegression.setLabelTranslator(dataSet.getLabelTranslator());
+//        logisticRegression.setLabelTranslator(dataSet.getLabelTranslator());
 
         while(true){
             iterate();
@@ -56,7 +64,7 @@ public class ElasticNetLogisticTrainer {
     }
 
     public void iterate(){
-        for (int k=0;k<dataSet.getNumClasses();k++){
+        for (int k=0;k<numClasses;k++){
             optimizeOneClass(k);
         }
         terminator.add(getLoss());
@@ -80,7 +88,7 @@ public class ElasticNetLogisticTrainer {
             double prob = logisticRegression.predictClassProbs(dataSet.getRow(i))[classIndex];
             double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
             double y = 0;
-            if (dataSet.getLabels()[i]==classIndex){
+            if (labels[i]==classIndex){
                 y = 1;
             }
             double frac = 0;
@@ -135,7 +143,12 @@ public class ElasticNetLogisticTrainer {
 
         // line search
         // the original glmnet algorithm may diverge without line search
-        lineSearch(searchDirection, gradient);
+        if (lineSearch) {
+            lineSearch(searchDirection, gradient);
+        } else {
+            withoutLineSearch(searchDirection, gradient);
+        }
+
         if (logger.isDebugEnabled()){
             logger.debug("loss after optimization of one class = " + loss());
         }
@@ -147,7 +160,7 @@ public class ElasticNetLogisticTrainer {
 
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
-        for (int k=0;k<dataSet.getNumClasses();k++){
+        for (int k=0;k<numClasses;k++){
             this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
         }
     }
@@ -164,21 +177,45 @@ public class ElasticNetLogisticTrainer {
     }
 
     private double loss(){
-        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet) * -1;
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, labels) * -1;
         double penalty = penalty();
+        return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
+    }
+
+    private double loss(double penalty){
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, labels) * -1;
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
 
     private double penalty(){
-        double penalty = 0;
-        for (int k=0;k<logisticRegression.getNumClasses();k++){
-            Vector vector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
-            double normCombination = (1-l1Ratio)*0.5*Math.pow(vector.norm(2),2) +
-                    l1Ratio*vector.norm(1);
-            penalty += regularization * normCombination;
+        return IntStream.range(0,logisticRegression.getNumClasses()).parallel().mapToDouble(k -> penalty(k)).sum();
+    }
+
+    private double penalty(int k) {
+        Vector vector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
+        double normCombination = (1-l1Ratio)*0.5*Math.pow(vector.norm(2),2) +
+                l1Ratio*vector.norm(1);
+        return regularization * normCombination;
+    }
+
+
+    private void withoutLineSearch(Vector searchDirection, Vector gradient) {
+        Vector localSearchDir;
+        double product = gradient.dot(searchDirection);
+        if (product < 0){
+            localSearchDir = searchDirection;
+        } else {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Bad search direction! Use negative gradient instead. Product of gradient and search direction = " + product);
+            }
+            localSearchDir = gradient.times(-1);
         }
-        return penalty;
+
+        Vector start = logisticRegression.getWeights().getAllWeights();
+
+        Vector target = start.plus(localSearchDir);
+        logisticRegression.getWeights().setWeightVector(target);
     }
 
     /**
@@ -195,12 +232,12 @@ public class ElasticNetLogisticTrainer {
         double c = 1e-4;
         double stepLength = initialStepLength;
         Vector start = logisticRegression.getWeights().getAllWeights();
-        double value = loss();
+        double penalty = penalty();
+        double value = loss(penalty);
         if (logger.isDebugEnabled()){
             logger.debug("start line search");
             logger.debug("initial loss = "+loss());
         }
-        double penalty = penalty();
         double product = gradient.dot(searchDirection);
         if (product < 0){
             localSearchDir = searchDirection;
@@ -212,14 +249,12 @@ public class ElasticNetLogisticTrainer {
             localSearchDir = gradient.times(-1);
         }
 
-
-
         while(true){
             Vector step = localSearchDir.times(stepLength);
             Vector target = start.plus(step);
             logisticRegression.getWeights().setWeightVector(target);
-            double targetValue = loss();
             double targetPenalty = penalty();
+            double targetValue = loss(targetPenalty);
             if (targetValue <= value + c*stepLength*(product + targetPenalty - penalty)){
                 if (logger.isDebugEnabled()){
                     logger.debug("step size = "+stepLength);
@@ -240,7 +275,6 @@ public class ElasticNetLogisticTrainer {
 
     private double calEmpricalCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
-        int[] labels = dataSet.getLabels();
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
         //bias
@@ -299,16 +333,26 @@ public class ElasticNetLogisticTrainer {
 
     public static class Builder{
         private LogisticRegression logisticRegression;
-        private ClfDataSet dataSet;
+        private DataSet dataSet;
+        private int[] labels;
+        private int numClasses;
+
         // when p>>N, logistic regression with 0 regularization is ill-defined
         // use a small regularization
         private double regularization=0.00001;
         private double l1Ratio=0;
         private double epsilon=0.001;
+        private boolean lineSearch=true;
 
-        public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
+        public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels) {
             this.logisticRegression = logisticRegression;
             this.dataSet = dataSet;
+            this.labels = labels;
+            this.numClasses = numClasses;
+        }
+
+        public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
+            this(logisticRegression, dataSet, dataSet.getNumClasses(), dataSet.getLabels());
         }
 
         public Builder setRegularization(double regularization) {
@@ -339,17 +383,25 @@ public class ElasticNetLogisticTrainer {
             return this;
         }
 
+        public Builder setLineSearch(boolean lineSearch) {
+            this.lineSearch = lineSearch;
+            return this;
+        }
+
         public ElasticNetLogisticTrainer build(){
             ElasticNetLogisticTrainer trainer = new ElasticNetLogisticTrainer();
             trainer.logisticRegression = logisticRegression;
             trainer.dataSet = dataSet;
+            trainer.labels = labels;
+            trainer.numClasses = numClasses;
             trainer.regularization = this.regularization;
             trainer.l1Ratio = this.l1Ratio;
             trainer.epsilon = this.epsilon;
+            trainer.lineSearch = this.lineSearch;
             trainer.numParameters = logisticRegression.getWeights().totalSize();
             trainer.empiricalCounts = new DenseVector(trainer.numParameters);
             trainer.predictedCounts = new DenseVector(trainer.numParameters);
-            trainer.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),dataSet.getNumClasses());
+            trainer.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numClasses);
             trainer.updateEmpricalCounts();
             trainer.updateClassProbMatrix();
             trainer.updatePredictedCounts();

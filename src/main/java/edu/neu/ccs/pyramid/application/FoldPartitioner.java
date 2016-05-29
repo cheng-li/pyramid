@@ -1,10 +1,7 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.DataSetUtil;
-import edu.neu.ccs.pyramid.dataset.RegDataSet;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
 
 import java.io.File;
 import java.util.HashSet;
@@ -30,7 +27,27 @@ public class FoldPartitioner {
     }
 
     private static void partitionClfData(Config config) throws Exception{
-        //todo implement
+        String input = config.getString("input.data");
+        String output= config.getString("output.folder");
+        int numFolds = config.getInt("numFolds");
+        ClfDataSet all = TRECFormat.loadClfDataSet(input, DataSetType.CLF_DENSE,true);
+        for (int i=1;i<=numFolds;i++){
+            Set<Integer> trainFold = new HashSet<>();
+            for (int j=1;j<=numFolds;j++){
+                if (j!=i){
+                    trainFold.add(j);
+                }
+            }
+            Set<Integer> testFold = new HashSet<>();
+            testFold.add(i);
+            ClfDataSet trainSet = DataSetUtil.sampleByFold(all,numFolds,trainFold);
+            ClfDataSet testSet = DataSetUtil.sampleByFold(all,numFolds,testFold);
+
+            File foldFolder = new File(output,"fold_"+i);
+            foldFolder.mkdirs();
+            TRECFormat.save(trainSet,new File(foldFolder,"train"));
+            TRECFormat.save(testSet,new File(foldFolder,"test"));
+        }
     }
 
     private static void partitionRegData(Config config) throws Exception{

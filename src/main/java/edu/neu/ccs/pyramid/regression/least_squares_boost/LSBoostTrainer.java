@@ -27,12 +27,15 @@ public class LSBoostTrainer {
     private double[] gradients;
     private LSBoost boost;
     private LSBConfig lsbConfig;
-    private RegDataSet dataSet;
+    private DataSet dataSet;
+    private double[] labels;
 
-    public LSBoostTrainer(LSBoost boost, LSBConfig lsbConfig, RegDataSet dataSet) {
+
+    public LSBoostTrainer(LSBoost boost, LSBConfig lsbConfig, DataSet dataSet, double[] labels) {
         this.boost = boost;
         this.lsbConfig = lsbConfig;
         this.dataSet = dataSet;
+        this.labels = labels;
         boost.featureList = dataSet.getFeatureList();
         int numDataPoints = dataSet.getNumDataPoints();
         this.scores = new double[numDataPoints];
@@ -41,10 +44,20 @@ public class LSBoostTrainer {
         updateGradients();
     }
 
+    public LSBoostTrainer(LSBoost boost, LSBConfig lsbConfig, RegDataSet dataSet) {
+        this(boost, lsbConfig, dataSet, dataSet.getLabels());
+    }
+
 
     public void iterate(){
         Regressor regressor = fitRegressor();
         addRegressor(regressor,lsbConfig.getLearningRate());
+    }
+
+    public void iterate(int numIterations){
+        for (int i=0;i<numIterations;i++){
+            iterate();
+        }
     }
 
     // the prior regressor should not be shrunk
@@ -71,7 +84,6 @@ public class LSBoostTrainer {
     }
 
     void updateGradients(){
-        double[] labels = dataSet.getLabels();
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(
                 i -> gradients[i] = labels[i] - scores[i]
         );
@@ -83,7 +95,6 @@ public class LSBoostTrainer {
     }
 
     Regressor fitPriorRegressor(){
-        double[] labels = dataSet.getLabels();
         double ave = Arrays.stream(labels).average().getAsDouble();
         return new ConstantRegressor(ave);
     }

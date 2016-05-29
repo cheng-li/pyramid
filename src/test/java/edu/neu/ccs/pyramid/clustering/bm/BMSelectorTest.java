@@ -5,7 +5,7 @@ import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-public class BMMSelectorTest {
+public class BMSelectorTest {
     public static void main(String[] args) {
         test1();
     }
@@ -33,7 +33,7 @@ public class BMMSelectorTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BM bm = BMMSelector.select(dataSet,3,10);
+        BM bm = BMSelector.select(dataSet,3,10);
         System.out.println(bm);
         for (int i=0;i<5;i++){
             System.out.println("sample "+i);

@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.Version;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,6 +21,8 @@ public class AppLauncher {
             "usage","-usage","--usage"};
 
     private static final String[] versionCommands = {"version","-version","--version"};
+
+    private static final String[] alias = {"cbm:App5"};
 
     public static void main(String[] args) throws Exception{
         if (args.length==1){
@@ -70,6 +74,15 @@ public class AppLauncher {
 
 
     private static String matchClass(String className) throws Exception{
+        // deal with alias
+        for (String a: alias){
+            String[] split = a.split(":");
+            if (className.toLowerCase().equals(split[0])){
+                return "edu.neu.ccs.pyramid.application."+split[1];
+            }
+        }
+
+        // deal with normal names
         String lower = className.toLowerCase();
         String realName = null;
         ClassPath classPath = ClassPath.from(Thread.currentThread().getContextClassLoader());

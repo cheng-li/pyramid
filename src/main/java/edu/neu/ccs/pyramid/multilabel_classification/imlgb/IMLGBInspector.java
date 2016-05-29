@@ -7,13 +7,13 @@ import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
+import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.function.Mult;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -112,50 +112,6 @@ public class IMLGBInspector {
     }
 
 
-//    /**
-//     *
-//     * @param boostings ensemble of lktbs
-//     * @param classIndex
-//     * @return
-//     */
-//    public static List<Pair<Integer,String>> topFeatures(List<IMLGradientBoosting> boostings, int classIndex){
-//        Map<Integer,Pair<String,Double>> totalContributions = new HashMap<>();
-//        for (IMLGradientBoosting boosting: boostings){
-//            List<Regressor> regressors = boosting.getRegressors(classIndex);
-//            List<RegressionTree> trees = regressors.stream().filter(regressor ->
-//                    regressor instanceof RegressionTree)
-//                    .map(regressor -> (RegressionTree) regressor)
-//                    .collect(Collectors.toList());
-//            for (RegressionTree tree: trees){
-//                Map<Integer,Pair<String,Double>> contributions = RegTreeInspector.featureImportance(tree);
-//                for (Map.Entry<Integer, Pair<String,Double>> entry: contributions.entrySet()){
-//                    int featureIndex = entry.getKey();
-//                    Pair<String,Double> pair = entry.getValue();
-//                    String featureName = pair.getFirst();
-//                    Pair<String,Double> oldPair = totalContributions.getOrDefault(featureIndex,new Pair<>(featureName,0.0));
-//                    Pair<String,Double> newPair = new Pair<>(featureName,oldPair.getSecond()+pair.getSecond());
-//                    totalContributions.put(featureIndex,newPair);
-//                }
-//            }
-//        }
-//
-//        Comparator<Map.Entry<Integer, Pair<String,Double>>> comparator = Comparator.comparing(entry -> entry.getValue().getSecond());
-//        List<Pair<Integer,String>> list = totalContributions.entrySet().stream().sorted(comparator.reversed())
-//                .map(entry -> new Pair<>(entry.getKey(),entry.getValue().getFirst())).collect(Collectors.toList());
-//        return list;
-//    }
-//
-//    public static List<Integer> topFeatureIndices(List<IMLGradientBoosting> boostings, int classIndex){
-//        return topFeatures(boostings,classIndex).stream().map(Pair::getFirst)
-//                .collect(Collectors.toList());
-//    }
-//
-//    public static List<String> topFeatureNames(List<IMLGradientBoosting> boostings, int classIndex){
-//        return topFeatures(boostings,classIndex).stream().map(Pair::getSecond)
-//                .collect(Collectors.toList());
-//    }
-
-
     public static Map<List<Integer>, Double> countPathMatches(IMLGradientBoosting boosting, DataSet dataSet, int classIndex){
         List<RegressionTree> trees = boosting.getRegressors(classIndex)
                 .stream().filter(regressor ->
@@ -170,10 +126,6 @@ public class IMLGBInspector {
         }
         return map;
     }
-
-
-
-
 
 
     public static ClassScoreCalculation decisionProcess(IMLGradientBoosting boosting, LabelTranslator labelTranslator,
@@ -210,7 +162,9 @@ public class IMLGBInspector {
     //todo  speed up
 
 
-    public static MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
+    public static  MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting,
+                                                                  PluginPredictor<IMLGradientBoosting> pluginPredictor,
+                                                                 MultiLabelClfDataSet dataSet,
                                                                  int dataPointIndex, List<Integer> classes, int ruleLimit,
                                                                  int labelSetLimit){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
@@ -222,15 +176,31 @@ public class IMLGBInspector {
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setLabels(labels);
-        predictionAnalysis.setProbForTrueLabels(boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex),
-                dataSet.getMultiLabels()[dataPointIndex]));
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
+            predictionAnalysis.setProbForTrueLabels(boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),
+                    dataSet.getMultiLabels()[dataPointIndex]));
+        }
 
-        MultiLabel predictedLabels = boosting.predict(dataSet.getRow(dataPointIndex));
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
+            predictionAnalysis.setProbForTrueLabels(boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),
+                    dataSet.getMultiLabels()[dataPointIndex]));
+        }
+
+
+        MultiLabel predictedLabels = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
         List<Integer> internalPrediction = predictedLabels.getMatchedLabelsOrdered();
         predictionAnalysis.setInternalPrediction(internalPrediction);
         List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setPrediction(prediction);
-        predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex),predictedLabels));
+
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
+            predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),predictedLabels));
+        }
+
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor ){
+            predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),predictedLabels));
+        }
+
 
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){
@@ -253,8 +223,7 @@ public class IMLGBInspector {
 
         List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
 
-        if (boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF
-                || boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.CRF_PLUS_HIGH_PROB){
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
             double[] labelSetProbs = boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex));
             labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
             .mapToObj(i -> {
@@ -265,12 +234,10 @@ public class IMLGBInspector {
             }).sorted(Comparator.comparing(MultiLabelPredictionAnalysis.LabelSetProbInfo::getProbability).reversed())
                     .limit(labelSetLimit)
                     .collect(Collectors.toList());
-
-
         }
 
 
-        if (boosting.getPredictFashion()== IMLGradientBoosting.PredictFashion.INDEPENDENT){
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
             labelSetRanking = new ArrayList<>();
             double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
             DynamicProgramming dp = new DynamicProgramming(classProbs);
@@ -289,7 +256,9 @@ public class IMLGBInspector {
     }
 
 
-    public static String simplePredictionAnalysis(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet,
+    public static  String simplePredictionAnalysis(IMLGradientBoosting boosting,
+                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
+                                                                             MultiLabelClfDataSet dataSet,
                                                   int dataPointIndex,  double classProbThreshold){
         StringBuilder sb = new StringBuilder();
         int numClasses = boosting.getNumClasses();
@@ -311,8 +280,17 @@ public class IMLGBInspector {
                     .append("single").append("\t").append(prob)
                     .append("\t").append(match).append("\n");
         }
-        MultiLabel predicted = boosting.predict(dataSet.getRow(dataPointIndex));
-        double probability = boosting.predictAssignmentProb(dataSet.getRow(dataPointIndex),predicted);
+        MultiLabel predicted = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
+
+        double probability = 0;
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
+            probability = boosting.predictAssignmentProbWithConstraint(dataSet.getRow(dataPointIndex),predicted);
+        }
+
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
+            probability = boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),predicted);
+        }
+
         List<Integer> predictedList = predicted.getMatchedLabelsOrdered();
         sb.append(id).append("\t");
         for (int i=0;i<predictedList.size();i++){

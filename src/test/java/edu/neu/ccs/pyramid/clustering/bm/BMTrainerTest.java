@@ -10,7 +10,7 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-public class BMMTrainerTest {
+public class BMTrainerTest {
 
     public static void main(String[] args) {
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
@@ -32,7 +32,7 @@ public class BMMTrainerTest {
         dataSet.setFeatureValue(1,0,1);
 
         System.out.println("dataset = "+dataSet);
-        BMMTrainer trainer = new BMMTrainer(dataSet,1);
+        BMTrainer trainer = new BMTrainer(dataSet,1);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
         System.out.println(bm);
@@ -49,7 +49,7 @@ public class BMMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMMTrainer trainer = new BMMTrainer(dataSet,1);
+        BMTrainer trainer = new BMTrainer(dataSet,1);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
         System.out.println(bm);
@@ -65,7 +65,7 @@ public class BMMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMMTrainer trainer = new BMMTrainer(dataSet,2);
+        BMTrainer trainer = new BMTrainer(dataSet,2);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
         System.out.println(bm);
@@ -88,7 +88,7 @@ public class BMMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMMTrainer trainer = new BMMTrainer(dataSet,2);
+        BMTrainer trainer = new BMTrainer(dataSet,2);
         System.out.println(trainer.bm);
         trainer.train();
 //        for (int iter=0;iter<100;iter++){
@@ -121,7 +121,7 @@ public class BMMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMMTrainer trainer = new BMMTrainer(dataSet,3);
+        BMTrainer trainer = new BMTrainer(dataSet,3);
         System.out.println(trainer.bm);
         trainer.train();
 //        for (int iter=0;iter<100;iter++){
@@ -169,7 +169,7 @@ public class BMMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMMTrainer trainer = new BMMTrainer(dataSet,3);
+        BMTrainer trainer = new BMTrainer(dataSet,3);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
 //        for (int iter=0;iter<100;iter++){

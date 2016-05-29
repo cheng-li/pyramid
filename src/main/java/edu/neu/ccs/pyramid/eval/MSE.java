@@ -1,8 +1,12 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.Regressor;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -33,5 +37,14 @@ public class MSE {
                 .mapToDouble(i -> Math.pow(regressor.predict(dataSet.getRow(i))-labels[i],2))
                 .average().getAsDouble();
         return result;
+    }
+
+    public static double mseForNumLabels(MultiLabelClassifier multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet){
+        double[] truth = Arrays.stream(multiLabelClfDataSet.getMultiLabels()).mapToDouble(MultiLabel::getNumMatchedLabels).toArray();
+        double[] predi = IntStream.range(0,multiLabelClfDataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i->multiLabelClassifier.predict(multiLabelClfDataSet.getRow(i)).getNumMatchedLabels())
+                .toArray();
+        return mse(truth,predi);
+
     }
 }

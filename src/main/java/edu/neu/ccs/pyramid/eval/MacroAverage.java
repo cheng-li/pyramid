@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -36,6 +37,8 @@ public class MacroAverage {
     private double[] labelWiseF1;
     private double[] labelWiseHammingLoss;
     private double[] labelWiseAccuracy;
+
+    private LabelTranslator labelTranslator;
 
 
     public MacroAverage(MLConfusionMatrix confusionMatrix) {
@@ -98,6 +101,12 @@ public class MacroAverage {
         hammingLoss = Arrays.stream(labelWiseHammingLoss).average().getAsDouble();
 
         binaryAccuracy = Arrays.stream(labelWiseAccuracy).average().getAsDouble();
+
+        this.labelTranslator = LabelTranslator.newDefaultLabelTranslator(numClasses);
+    }
+
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 
     public double getF1() {
@@ -184,7 +193,7 @@ public class MacroAverage {
             jsonGenerator.writeStartArray();
             for (int k=0;k<macroAverage.numClasses;k++){
                 jsonGenerator.writeStartObject();
-                jsonGenerator.writeNumberField("label", k);
+                jsonGenerator.writeStringField("label", macroAverage.labelTranslator.toExtLabel(k));
                 jsonGenerator.writeNumberField("TP",macroAverage.labelWiseTP[k]);
                 jsonGenerator.writeNumberField("TN",macroAverage.labelWiseTN[k]);
                 jsonGenerator.writeNumberField("FP",macroAverage.labelWiseFP[k]);
