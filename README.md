@@ -29,26 +29,28 @@ Pyramid is a Java machine learning library which implements many state-of-the-ar
     * Gaussian Mixture
     * Bernoulli Mixture
 
-
+_At the moment, not all algorithms are released yet. We are actively working on tidying up the source files and adding documentations. We will release a few algorithms at a time when they are ready and hope to have all available soon!_
 ## **Requirements**
-If you just want to use pyramid as a command line tool, all you need is [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
+If you just want to use pyramid as a command line tool (which is very simple), all you need is [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
 
-If you are a Java developer and wish to call pyramid Java APIs, you will also need [Maven](https://maven.apache.org/).
+If you are also a Java developer and wish to call Pyramid Java APIs, you will also need [Maven](https://maven.apache.org/).
 
 ## **Setup**
-Pyramid doesn't require any installation effort. You can simply download a pre-compiled package from the [project release page](https://github.com/cheng-li/pyramid/releases). Decompress the file, move into the created folder and type 
+Pyramid doesn't require any installation effort. All you need is downloading the latest [pre-compiled package] (https://github.com/cheng-li/pyramid/releases) (with a name like pyramid-x.x.x.zip) and decompressing it. Now you can move into the created folder and type 
 
 `./pyramid welcome config/welcome.properties`
 
-A welcome message will show up on your screen.
+You will see a welcome message and that means everything is working perfectly.
 ## **Command Line Usage**
-All commands are in the following format:
+All algorithms implemented in Pyramid can be run though a simple command. All commands have the following format:
 
 `./pyramid <app_name> <properties_file>`
 
-The `<app_name>` is case-insensitive.
+`pyramid` is a launcher script which invokes an algorithm/application specified by the user.
 
-The `<properties_file>` can be specified by either an absolute or a relative path.
+The `<app_name>` is the algorithm/application name and is case-insensitive. The list of available algorithms and  applications can be found in the Wiki.
+
+The `<properties_file>` is the only direct input file for the program. It is used to provide all program configurations, such as input dataset path, program output path, and learning algorithm hyper parameters. The `<properties_file>` can be specified by either an absolute or a relative path.
 
 Example: 
 
@@ -56,11 +58,13 @@ Example:
 
 or
 
-`./pyramid app1 config/app1.properties`
+`./pyramid cbm config/cbm.properties`
 ## **Building from Source**
+_If you are a Java developer who prefer working with the source code or want to contribute to the Pyramid package:_
+
 Pyramid uses [Maven](https://maven.apache.org/) for its build system.
 
-To compile and package the project, simply run the `mvn clean package -DskipTests` command in the cloned directory. The compressed package will be created under the target/releases directory. Just decompress either the .zip file or the .tar.gz file and you are done.
+To compile and package the project from the source code, simply run the `mvn clean package -DskipTests` command in the cloned directory. The compressed package will be created under the target/releases directory.
 
 ## Feedback
-We welcome your feedback on the package. To ask questions, request new features or report bugs, please email Cheng Li (chengli.email@gmail.com).
+We welcome your feedback on the package. To ask questions, request new features or report bugs, please contact Cheng Li  via chengli.email@gmail.com.
