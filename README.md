@@ -29,7 +29,7 @@ Pyramid is a Java machine learning library which implements many state-of-the-ar
     * Gaussian Mixture
     * Bernoulli Mixture
 
-_At the moment, not all algorithms are released yet. We are actively working on tidying up the source files and adding documentations. We will release a few algorithms at a time when they are ready and hope to have all available soon!_
+_At the moment, not all algorithms are released. We are actively working on tidying up the source files and adding documentations. We will release a few algorithms at a time when they are ready and hope to have all algorthms released soon!_
 ## **Requirements**
 If you just want to use pyramid as a command line tool (which is very simple), all you need is [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
 
