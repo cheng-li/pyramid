@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+
 import java.util.stream.IntStream;
 
 /**
@@ -15,6 +17,14 @@ public class InstanceAverage {
     private double recall;
     private double hammingLoss;
     private double accuracy;
+
+    public InstanceAverage(int numClasses, MultiLabel trueLabel, MultiLabel prediction){
+        this(new MLConfusionMatrix(numClasses,toArray(trueLabel),toArray(prediction)));
+    }
+
+    private static MultiLabel[] toArray(MultiLabel multiLabel){
+        return new MultiLabel[]{multiLabel};
+    }
 
     public InstanceAverage(MLConfusionMatrix confusionMatrix) {
         int numClasses = confusionMatrix.getNumClasses();
