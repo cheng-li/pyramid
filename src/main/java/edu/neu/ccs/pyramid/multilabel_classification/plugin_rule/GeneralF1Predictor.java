@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 /**
  * Based on the paper
- * Willem Waegeman, Krzysztof Dembczyn ́ki, Arkadiusz Jachnik, Weiwei Cheng, and Eyke Hüllermeier.
  * On the bayes-optimality of f-measure maximizers.
  * The Journal of Machine Learning Research, 15(1):3333–3388, 2014.
  * Section 5.
