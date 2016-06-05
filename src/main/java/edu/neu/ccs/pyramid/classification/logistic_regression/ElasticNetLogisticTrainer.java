@@ -81,10 +81,11 @@ public class ElasticNetLogisticTrainer {
     private void optimizeOneClass(int classIndex){
         //create weighted least square problem
         int numDataPoints = dataSet.getNumDataPoints();
-        double[] labels = new double[numDataPoints];
+        double[] realLabels = new double[numDataPoints];
         double[] instanceWeights = new double[numDataPoints];
         IntStream.range(0,numDataPoints).parallel().forEach(i ->
         {
+            // TODO: repeated calculations in following two steps.
             double prob = logisticRegression.predictClassProbs(dataSet.getRow(i))[classIndex];
             double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
             double y = 0;
@@ -105,7 +106,7 @@ public class ElasticNetLogisticTrainer {
                 frac=-1;
             }
 
-            labels[i] = classScore + frac;
+            realLabels[i] = classScore + frac;
             instanceWeights[i] = (prob*(1-prob))/numDataPoints;
         });
 
@@ -116,10 +117,11 @@ public class ElasticNetLogisticTrainer {
 
         // in glmnet algorithm:
         // this correspond to moving towards the search direction with step size 1
+        // TODO: use the oldWeights
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon
-        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,labels,instanceWeights);
+        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
         if (logger.isDebugEnabled()){
