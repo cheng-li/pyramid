@@ -4,10 +4,7 @@ import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBOutputCalculator;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
-import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
-import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
+import edu.neu.ccs.pyramid.classification.logistic_regression.*;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
@@ -63,6 +60,13 @@ public class CBMOptimizer implements Serializable, Parallelizable {
     private double priorVarianceMultiClass =1;
     // regularization for binary logisticRegression
     private double priorVarianceBinary =1;
+
+    // elasticnet parameters
+    private double regularizationMultiClass = 1.0;
+    private double regularizationBinary = 1.0;
+    private double l1RatioBinary = 0.0;
+    private double l1RatioMultiClass = 0.0;
+    private boolean lineSearch = true;
 
     private double meanRegVariance = 10000;
 
@@ -163,6 +167,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
     public void setHardAssignment(boolean hardAssignment) {
         this.hardAssignment = hardAssignment;
     }
+
 
     public void optimize() {
         while (true) {
@@ -331,11 +336,12 @@ public class CBMOptimizer implements Serializable, Parallelizable {
                 // no parallel for boosting
                 IntStream.range(0, CBM.numLabels).forEach(l -> updateBinaryBoosting(clusterIndex, l));
                 break;
+            case "elasticnet":
+                IntStream.range(0, CBM.numLabels).parallel().forEach(l-> updateBinaryLogisticRegressionEL(clusterIndex,l));
             default:
                 throw new IllegalArgumentException("known type");
         }
     }
-
 
     private void updateBinaryBoosting(int clusterIndex, int labelIndex){
         int numIterations = numIterationsBinary;
@@ -381,6 +387,15 @@ public class CBMOptimizer implements Serializable, Parallelizable {
         }
     }
 
+    private void updateBinaryLogisticRegressionEL(int clusterIndex, int labelIndex) {
+        ElasticNetLogisticTrainer elasticNetLogisticTrainer = new ElasticNetLogisticTrainer.Builder((LogisticRegression)
+                CBM.binaryClassifiers[clusterIndex][labelIndex], dataSet, 2, targetsDistributions[labelIndex])
+                .setRegularization(regularizationBinary)
+                .setL1Ratio(l1RatioBinary)
+                .setLineSearch(lineSearch).build();
+        //TODO: maximum iterations.
+        elasticNetLogisticTrainer.optimize();
+    }
 
     private void updateMultiClassClassifier(){
         String type = CBM.getMultiClassClassifierType();
@@ -391,9 +406,21 @@ public class CBMOptimizer implements Serializable, Parallelizable {
             case "boost":
                updateMultiClassBoost();
                 break;
+            case "elasticnet":
+                updateMultiClassEL();
             default:
                 throw new IllegalArgumentException("known type");
         }
+    }
+
+    private void updateMultiClassEL() {
+        ElasticNetLogisticTrainer elasticNetLogisticTrainer = new ElasticNetLogisticTrainer.Builder((LogisticRegression)
+        CBM.multiClassClassifier, dataSet, CBM.multiClassClassifier.getNumClasses(), gammas)
+                .setRegularization(regularizationMultiClass)
+                .setL1Ratio(l1RatioMultiClass)
+                .setLineSearch(lineSearch).build();
+        // TODO: maximum iterations
+        elasticNetLogisticTrainer.optimize();
     }
 
     private void updateMultiClassLR() {
@@ -432,8 +459,8 @@ public class CBMOptimizer implements Serializable, Parallelizable {
 //    }
 
 
+    //TODO: have to modify the objectives by introducing L1 regularization part
     public double getObjective() {
-
         return multiClassClassifierObj() + binaryObj() +(1-temperature)*getEntropy();
     }
 
@@ -532,5 +559,46 @@ public class CBMOptimizer implements Serializable, Parallelizable {
             }
         }
         return PIs;
+    }
+
+    // For ElasticEet Parameters
+    public double getRegularizationMultiClass() {
+        return regularizationMultiClass;
+    }
+
+    public void setRegularizationMultiClass(double regularizationMultiClass) {
+        this.regularizationMultiClass = regularizationMultiClass;
+    }
+
+    public double getRegularizationBinary() {
+        return regularizationBinary;
+    }
+
+    public void setRegularizationBinary(double regularizationBinary) {
+        this.regularizationBinary = regularizationBinary;
+    }
+
+    public boolean isLineSearch() {
+        return lineSearch;
+    }
+
+    public void setLineSearch(boolean lineSearch) {
+        this.lineSearch = lineSearch;
+    }
+
+    public double getL1RatioBinary() {
+        return l1RatioBinary;
+    }
+
+    public void setL1RatioBinary(double l1RatioBinary) {
+        this.l1RatioBinary = l1RatioBinary;
+    }
+
+    public double getL1RatioMultiClass() {
+        return l1RatioMultiClass;
+    }
+
+    public void setL1RatioMultiClass(double l1RatioMultiClass) {
+        this.l1RatioMultiClass = l1RatioMultiClass;
     }
 }
