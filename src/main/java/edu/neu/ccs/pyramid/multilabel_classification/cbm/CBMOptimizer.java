@@ -338,8 +338,9 @@ public class CBMOptimizer implements Serializable, Parallelizable {
                 break;
             case "elasticnet":
                 IntStream.range(0, CBM.numLabels).parallel().forEach(l-> updateBinaryLogisticRegressionEL(clusterIndex,l));
+                break;
             default:
-                throw new IllegalArgumentException("known type");
+                throw new IllegalArgumentException("unknown type: " + CBM.getBinaryClassifierType());
         }
     }
 
@@ -394,6 +395,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
         //TODO: maximum iterations.
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(10);
         elasticNetLogisticTrainer.optimize();
     }
 
@@ -408,8 +410,9 @@ public class CBMOptimizer implements Serializable, Parallelizable {
                 break;
             case "elasticnet":
                 updateMultiClassEL();
+                break;
             default:
-                throw new IllegalArgumentException("known type");
+                throw new IllegalArgumentException("unknown type: " + CBM.getMultiClassClassifierType());
         }
     }
 
@@ -420,6 +423,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
                 .setL1Ratio(l1RatioMultiClass)
                 .setLineSearch(lineSearch).build();
         // TODO: maximum iterations
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(10);
         elasticNetLogisticTrainer.optimize();
     }
 
@@ -496,8 +500,10 @@ public class CBMOptimizer implements Serializable, Parallelizable {
                 return binaryLRObj(clusterIndex, classIndex);
             case "boost":
                 return binaryBoostObj(clusterIndex, classIndex);
+            case "elasticnet":
+                return binaryLRObj(clusterIndex, classIndex);
             default:
-                throw new IllegalArgumentException("known type");
+                throw new IllegalArgumentException("unknown type: " + type);
         }
     }
 
@@ -523,8 +529,11 @@ public class CBMOptimizer implements Serializable, Parallelizable {
                 return multiClassLRObj();
             case "boost":
                 return multiClassBoostObj();
+            //TODO: change to elastic net
+            case "elasticnet":
+                return multiClassLRObj();
             default:
-                throw new IllegalArgumentException("known type");
+                throw new IllegalArgumentException("unknown type: " + type);
         }
     }
 
