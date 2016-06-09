@@ -390,7 +390,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
 
     private void updateBinaryLogisticRegressionEL(int clusterIndex, int labelIndex) {
         ElasticNetLogisticTrainer elasticNetLogisticTrainer = new ElasticNetLogisticTrainer.Builder((LogisticRegression)
-                CBM.binaryClassifiers[clusterIndex][labelIndex], dataSet, 2, targetsDistributions[labelIndex])
+                CBM.binaryClassifiers[clusterIndex][labelIndex], dataSet, 2, targetsDistributions[labelIndex], gammasT[clusterIndex])
                 .setRegularization(regularizationBinary)
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
@@ -474,7 +474,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
 //        // Q function for \Thata + gamma.entropy and Q function for Weights
 //        return logisticLoss.getValue() + binaryLRObj();
 //    }
-//
+
     private double getEntropy() {
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(this::getEntropy).sum();
