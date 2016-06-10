@@ -1,0 +1,160 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="./js/jquery.min.js"></script>
+    </head>
+    <body><br>
+        <table id="mytable" border=1  align="center" style="width:100%">
+            <caption> Report </caption>
+                <thead><tr>
+                    <td align="center" width="50%"><b>topFeatures</b></td>
+                    <td align="center" width="50%"><b>featureDistributions</b></td>
+                </tr></thead>
+            <tbody id="data-table"></tbody>
+        </table>
+
+        <script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+
+            function render(data, displayOptions) {
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+                classes = data[0]
+                details = data[1]
+                details.forEach(function (row, i) {
+                    var labels = ''
+                    html += '<tr>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + row[0] + "." + row[1] +
+                        "<br>" + displayTopFeatures(row[2], i) + '</td>' +
+                        displayFeatureDistributions(i, details.length) +
+                        + '</tr>'
+                })
+                $body.append(html)
+            }
+
+            function displayOccurrence(data, i, j) {
+                str = ''
+                classes = data[0]
+                occurrence = data[1][i][2][j][1]
+                totalCount = data[1][i][2][j][2]
+
+                str += "<br><br>totalCount: " + totalCount + "<br>"
+
+                for (k = 0; k < occurrence.length; k++) {
+                    occu = occurrence[k]
+                    str += classes[occu[0]][0] + ":" + occu[1] + "/" 
+                        + classes[occu[0]][1] + "<br>"
+                }
+
+                return str
+            }
+
+            function showDistribution(i, j) {
+                var table = document.getElementById("mytable");
+                var rows = table.getElementsByTagName('tr');
+                var cols = rows[1].children;
+                var cell = cols[1];
+
+                data = dataFromJson()
+
+                str = ""
+                str += displayOccurrence(data, i, j)
+
+                cell.innerHTML = str
+            }
+
+            function serialize(a, cb) {
+                var str = ''
+                a.forEach(function (obj, i) {
+                    if (cb) {
+                        str += cb(obj, i)
+                    } else {
+                        str += obj
+                    }
+                })
+                return str
+            }
+
+            function sortByViewOptions(data, displayOptions) {
+                return data
+            }
+
+
+            function displayFeature(distribution, i, j) {
+                str = ''
+                style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='showDistribution(" + i + ", " + j + ")'"
+                str += '<button ' + style + '>' + distribution[0] + '</button>'
+
+                return str
+            }
+
+            function displayTopFeatures(fds, i) {
+                str = ''
+                str += serialize(fds, function(distribution, j) {
+                            str = ""
+                            if (j != 0) {
+                                str += ","
+                            }
+                            str += displayFeature(distribution, i, j)
+                            return str
+                        })
+
+                return str
+            }
+
+            function displayFeatureDistributions(index, len) {
+                str = ''
+                if (index == 0) {
+                    str += "<td style='vertical-align:top;text-align:left;' rowspan='" + len + "'></td>"
+                }
+                return str
+            }
+
+            function render(data, displayOptions) {
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+                classes = data[0]
+                details = data[1]
+                details.forEach(function (row, i) {
+                    var labels = ''
+
+                    html += '<tr>' +
+                        "<td style='vertical-align:top;text-align:left;'>" + 
+                        "<br>" + row[0] + "." + row[1] +
+                        "<br>" + displayTopFeatures(row[2], i) + '</td>' +
+                        displayFeatureDistributions(i, details.length) +
+                        + '</tr>'
+
+
+                })
+
+                $body.append(html)
+            }
+
+            function refresh() {
+            //console.log(dataFromJson()[0])
+
+                var displayOptions = ""
+                render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
+            }            
+
+            $(document).ready(function () {
+                refresh()
+            })
+        </script>
+
+        <style>
+            #mytable{
+                border: 1px solid black;
+                border-collapse: collapse;
+                word-wrap: break-word;
+                table-layout:fixed;
+            }
+        </style>
+
+    <script id="raw-data" type="application/json">
