@@ -511,7 +511,7 @@ public class Visualizer {
             }
             
             feature.add(fds);
-            ((List<Object>) outputData.get(0)).add(feature);
+            ((List<Object>) outputData.get(1)).add(feature);
         }
         
         return outputData;
