@@ -267,7 +267,7 @@ public class App2 {
                 for (int a=start;a<end && a<dataSet.getNumDataPoints();a++){
                     List<Integer> classes = new ArrayList<Integer>();
                     for (int k = 0; k < boosting.getNumClasses(); k++){
-                        if (boosting.predictClassProb(dataSet.getRow(a),k)>=probThreshold){
+                        if (boosting.predictClassProb(dataSet.getRow(a),k)>=probThreshold||dataSet.getMultiLabels()[a].matchClass(k)){
                             classes.add(k);
                         }
                     }
