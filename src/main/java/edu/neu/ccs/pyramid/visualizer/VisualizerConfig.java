@@ -9,6 +9,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -33,6 +39,8 @@ public class VisualizerConfig {
     private final String ngramFields;
     
     private final File resourcesDir;
+    
+    private final Client client;
     
     public VisualizerConfig(final Config config) throws IOException {
         Preconditions.checkNotNull(config);
@@ -59,8 +67,14 @@ public class VisualizerConfig {
         this.resourcesDir = new File(config.getString("resources.dir"));
         
         checkFileExists(classFile);
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("cluster.name", "fijielasticsearch").build();
+        this.client =    new TransportClient(settings);
+        /*
+        this.client = new TransportClient()
+                .addTransportAddress(new InetSocketTransportAddress("127.0.0.1", 9200));*/
     }
-    
+       
     /**
      * Throw up {@link IllegalStateException} if file is not a file(ie a dir, symlink etc)
      * @param file
@@ -116,5 +130,12 @@ public class VisualizerConfig {
      */
     public File getResourcesDir() {
         return resourcesDir;
+    }
+
+    /**
+     * @return the client
+     */
+    public Client getClient() {
+        return client;
     }
 }

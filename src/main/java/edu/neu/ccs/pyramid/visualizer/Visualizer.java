@@ -5,10 +5,12 @@
  *******************************************************************************/
 package edu.neu.ccs.pyramid.visualizer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,13 +21,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.get.GetRequestBuilder;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.base.Preconditions;
-import org.elasticsearch.common.collect.Tuple;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Maps;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 
@@ -61,7 +64,7 @@ public class Visualizer {
         
         // create individual performance html
         final File inputIndPer = new File(config.getInputFileBaseDir(), indPerformanceName + ".json");
-        final File inputAllPer = new File(config.getInputFileBaseDir(), indPerformanceName + ".json");
+        final File inputAllPer = new File(config.getInputFileBaseDir(), performanceName + ".json");
         outputPath =  new File(config.getInputFileBaseDir(), indPerformanceName + ".html");
         createIndPerHTML(inputIndPer, inputAllPer, outputPath);
         
@@ -115,7 +118,7 @@ public class Visualizer {
         writeStringToFile(outputFileName, output);
     }
 
-    private List<Object> createTable(List<Object> data, String fields, Map<String, String> classDescription) {
+    private List<Object> createTable(List<Object> data, String fields, Map<String, String> classDescription) throws IOException {
         int line_count = 0;
         List<Object> output = new ArrayList<>();
         
@@ -246,20 +249,19 @@ public class Visualizer {
             }
             
             oneRow.put("idLabels", idLabels);
-            /* TODO
-            res = es.get(index=esIndex, doc_type="document", id=row["id"])
-                    keys = fields
-                    oneRow["text"] = {}
-                    oneRow["others"] = {}
-                    for key in res["_source"]:
-                        if key in keys and isinstance(res["_source"][key], basestring):
-                            oneRow["text"][key] = res["_source"][key].encode('utf-8').replace("<", "&lt").replace(">", "&gt")
-                        else:
-                            oneRow["others"][key] = res["_source"][key]
+            
+            GetResponse res = config.getClient().prepareGet(config.getEsIndexName(), "document", (String) row.get("id")).execute().actionGet();
+            String keys = fields;
+            oneRow.put("text",  new HashMap<String, Map<String, Object>>());
+            oneRow.put("others", new HashMap<String, Map<String, Object>>());
+            for (String key : ((Map<String, Object>)res.getContext().get("_source")).keySet()) {
+                if (keys.equals(key)) {
+                    ((Map<String, Object>) oneRow.get("text")).put(key, ((String)((Map<String, Object>)res.getContext().get("_source")).get(key)).replace("<", "&lt").replace(">", "&gt"));
+                } else {
+                    ((Map<String, Object>) oneRow.get("others")).put(key, ((String)((Map<String, Object>)res.getContext().get("_source")).get(key)));
+                }
+            }
                     
-                    # column 4 - 7 TP FP FN TN columns
-                    ### pass classDescription
-            */
             createTFPNColumns(row, line_count, oneRow, classDescription);
             output.add(oneRow);
         }
@@ -268,7 +270,7 @@ public class Visualizer {
     }
 
     private void createTFPNColumns(Map<String, Object> row, int line_count, Map<String, Object> oneRow,
-            Map<String, String> classDescription) {
+            Map<String, String> classDescription) throws IOException {
         final List<Object> tmpDict = new ArrayList<>();
         final Set<Object> labelSet = new HashSet<>();
         
@@ -288,7 +290,7 @@ public class Visualizer {
     }
 
     private Object writeClass(Object docId, int line_count, Map<String, Object> clas,
-            Map<String, String> classDescription) {
+            Map<String, String> classDescription) throws IOException {
         final Map<String, Object> oneClass = new HashMap<>();
         oneClass.put("id", clas.get("internalClassIndex"));
         
@@ -331,7 +333,7 @@ public class Visualizer {
         
     }
 
-    private List<Object> writeRule(Object docId, int line_count, int i, Map<String, Object> rule) {
+    private List<Object> writeRule(Object docId, int line_count, int i, Map<String, Object> rule) throws IOException {
         final Map<String, Object> oneRule = new HashMap<>();
         oneRule.put("score", rule.get("score"));
         oneRule.put("checks", new ArrayList<>());
@@ -377,9 +379,95 @@ public class Visualizer {
         
     }
 
-    private List<Integer> getPositions(Object docId, Object field, Object keywords, Object slop, Object in_order) {
+    private List<Object> newSpanTerm(String terms, String field) {
+        List<Object> allSpans = new ArrayList<>();
+        
+        for (String term : terms.split("\\s+")) {
+            final Map<String, Object> spanTerm = new HashMap<>();
+            final Map<String, Object> internalSpanTerm = new HashMap<>();
+            internalSpanTerm.put(field, term);
+
+            spanTerm.put("span_term", internalSpanTerm);
+            allSpans.add(spanTerm);
+        }
+        
+        return allSpans;
+    }
+    private List<Integer> getPositions(Object docId, Object field, Object keywords, Object slop, Object in_order) throws IOException {
         System.out.println(docId + " " + field + " " + keywords + " " + slop + " " + in_order);
-        return Arrays.asList(0, 1); //TODO dummy values
+        
+        final URL url = new URL("http://localhost:9200/ohsumed_20000/document/_search");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.addRequestProperty("Content-Type", "application/" + "POST");
+        
+        final String clauses =getJsonString(newSpanTerm((String)keywords, (String)field));
+        final String body = "{\"explain\":\"false\"," + 
+                "                              \"query\":{" + 
+                "                                  \"filtered\":{" + 
+                "                                      \"query\":{" + 
+                "                                          \"span_near\": {" + 
+                "                                              \"clauses\":" + clauses + "," + 
+                "                                              \"slop\":" + slop.toString() +  "," + 
+                "                                              \"in_order\":"  + in_order.toString() + "," +  
+                "                                              \"collect_payloads\": false}}," + 
+                "                                      \"filter\":{\"ids\":{\"values\":[\"" + docId  + "\"]}}}}," + 
+                "                              \"highlight\":{\"fields\":{\"" + field + "\":{}}}," + 
+                "                              \"size\":1}";
+        System.out.println(body);
+        conn.setRequestProperty("Content-Length", Integer.toString(body.length()));
+        conn.getOutputStream().write(body.getBytes("UTF-8"));
+        
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        final StringBuilder result = new StringBuilder();
+        for (String line = null; (line = reader.readLine()) != null; ) {
+           result.append(line);
+        }
+        
+        final JsonFactory factory = new JsonFactory(); 
+        final ObjectMapper mapper = new ObjectMapper(factory);
+        
+        final Map<String, Object> hits = mapper.readValue(result.toString(), new TypeReference<Map<String, Object>>() {
+        });
+        final List<Integer> positions = new ArrayList<>();
+        
+        if (hits.get("hits") != null && 
+                ((Map<String, Object>) hits.get("hits")).containsKey("hits")) {
+            for (String hlField : 
+                ((Map<String, Object>)((Map<String, Object>)((List<Map<String, Object>>)((Map<String, Object>) hits.get("hits")).get("hits")).get(0)).get("highlight")).keySet()) {
+                
+                final String text = (String) ((Map<String, Object>)(((List<Map<String, Object>>)
+                        ((Map<String, Object>) hits.get("hits")).get("hits")).get(0).get("_source"))).get(hlField);
+                final List<String> highlights = (List<String>) ((Map<String, Object>)(((List<Map<String, Object>>)
+                        ((Map<String, Object>) hits.get("hits")).get("hits")).get(0).get("highlight"))).get(hlField);
+                
+                for (String HL : highlights) {
+                    String cleanHL = HL.replaceAll("<em>", "");
+                    
+                    cleanHL = cleanHL.replaceAll("</em>", "");
+                    int baseindex = text.indexOf(cleanHL);
+
+                    // in case the highlight not found in body
+                    if (baseindex == -1) {
+                                continue;
+                    }
+
+                     while (HL.indexOf("<em>") != -1) {
+                         int start = HL.indexOf("<em>") + baseindex;
+                         HL = HL.replace("<em>", "");
+                         int end = HL.indexOf("</em>") + baseindex;
+                         HL = HL.replace("</em>", "");
+                         positions.add(start);
+                         positions.add(end);
+                     }
+                }
+                
+                
+            }
+        }
+        
+        return positions; 
     }
 
     private Object includesLabel(Object label, List<Object> labels) {
@@ -417,7 +505,10 @@ public class Visualizer {
         outputData.put("model", inputM);
         outputData.put("config", inputC);
         
-        storeJson(outputPath, outputData);
+        final String output = getResourcesFileAsString("pre-md-data.html")
+                                 + getJsonString(outputData)
+                                 + getResourcesFileAsString("post-data.txt");
+        writeStringToFile(outputPath, output);
         
     }
 
