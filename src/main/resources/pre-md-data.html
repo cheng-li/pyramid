@@ -1,0 +1,89 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="./js/jquery.min.js"></script>
+    </head>
+    <body><br>
+        <table id="mytable" border=1  align="center" style="width:100%">
+            <caption> Report </caption>
+                <thead><tr>
+                    <td align="center" width="30%"><b>data&nbspinfo</b></td>
+                    <td align="center" width="30%"><b>data&nbspconfig</b></td>
+                    <td align="center" width="30%"><b>model&nbspconfig</b></td>
+                </tr></thead>
+            <tbody id="data-table"></tbody>
+        </table>
+        <script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+
+            function sortByViewOptions(data, displayOptions) {
+                return data
+            }
+
+            function displayData(data) {
+                str = ''
+
+                for (key in data) {
+                    str += '<br>' + key + ": " + data[key]
+                }
+
+                return str
+            }
+
+            function displayModel(model) {
+                str = ''
+
+                for (key in model) {
+                    str += '<br>' + key + ": " + model[key]
+                }
+
+                return str
+            }
+
+            function displayConfig(config) {
+                str = ''
+
+                for (key in config) {
+                    str += '<br>' + key + ": " + config[key]
+                }
+
+                return str
+            }
+
+            function render(data, displayOptions) {
+                var $body = $('#data-table')
+                $body.empty()
+                var html = ''
+
+                html += '<tr>' +
+                    "<td style='vertical-align:top;text-align:left;'>" + 
+                    displayData(data["data"]) + "</td>" +
+                    "<td style='vertical-align:top;text-align:left;' rowspan='3'>" + 
+                    displayConfig(data["config"]) + "</td>" +
+                    "<td style='vertical-align:top;text-align:left;' rowspan='3'>" +
+                    displayModel(data["model"]) + "</td>" +
+                    '</tr>'
+
+                $body.append(html)
+            }
+
+            function refresh() {
+                var displayOptions = ""
+                render(sortByViewOptions(dataFromJson(), displayOptions), displayOptions)
+            }
+
+            $(document).ready(function () {
+                refresh()
+            })
+        </script>
+        <style>
+            #mytable{
+                border: 1px solid black;
+                border-collapse: collapse;
+                word-wrap: break-word;
+                table-layout:fixed;
+            }
+        </style>
+    <script id="raw-data" type="application/json">

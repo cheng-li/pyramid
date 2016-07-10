@@ -14,12 +14,14 @@ import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.MacroFMeasureTuner;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
+import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,14 +56,19 @@ public class App2 {
                 System.out.println("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
                         "Reports will be generated after tuning.");
             } else {
-                report(config,config.getString("input.trainData"));
+                if (config.getBoolean("train.generateReports")){
+                    report(config,config.getString("input.trainData"));
+                }
+
             }
 
         }
 
         if (config.getBoolean("tune")){
             tuneForMacroF(config);
-            report(config,config.getString("input.trainData"));
+            if (config.getBoolean("train.generateReports")){
+                report(config,config.getString("input.trainData"));
+            }
         }
 
         if (config.getBoolean("test")){
@@ -219,6 +226,7 @@ public class App2 {
 
         boolean simpleCSV = true;
         if (simpleCSV){
+            System.out.println("start generating simple CSV report");
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
             List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
@@ -231,6 +239,7 @@ public class App2 {
 
             }
             FileUtils.writeStringToFile(csv,sb.toString(),false);
+            System.out.println("finish generating simple CSV report");
         }
 
 
@@ -240,6 +249,7 @@ public class App2 {
             topFeaturesToJson = true;
         }
         if (topFeaturesToJson){
+            System.out.println("start writing top features");
             Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
             int limit = config.getInt("report.topFeatures.limit");
             List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
@@ -248,11 +258,13 @@ public class App2 {
             ObjectMapper mapper = new ObjectMapper();
             String file = "top_features.json";
             mapper.writeValue(new File(analysisFolder,file), topFeaturesList);
+            System.out.println("finish writing top features");
         }
 
 
         boolean rulesToJson = true;
         if (rulesToJson){
+            System.out.println("start writing rules to json");
             int ruleLimit = config.getInt("report.rule.limit");
             int numDocsPerFile = config.getInt("report.numDocsPerFile");
             int numFiles = (int)Math.ceil((double)dataSet.getNumDataPoints()/numDocsPerFile);
@@ -260,29 +272,37 @@ public class App2 {
             double probThreshold=config.getDouble("report.classProbThreshold");
             int labelSetLimit = config.getInt("report.labelSetLimit");
 
-            for (int i=0;i<numFiles;i++){
+
+            IntStream.range(0,numFiles).forEach(i->{
                 int start = i*numDocsPerFile;
                 int end = start+numDocsPerFile;
-                List<MultiLabelPredictionAnalysis> partition = new ArrayList<>();
-                for (int a=start;a<end && a<dataSet.getNumDataPoints();a++){
+                List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->{
                     List<Integer> classes = new ArrayList<Integer>();
                     for (int k = 0; k < boosting.getNumClasses(); k++){
-                        if (boosting.predictClassProb(dataSet.getRow(a),k)>=probThreshold){
+                        if (boosting.predictClassProb(dataSet.getRow(a),k)>=probThreshold||dataSet.getMultiLabels()[a].matchClass(k)){
                             classes.add(k);
                         }
                     }
-                    partition.add(IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a, classes, ruleLimit,labelSetLimit));
-                }
+                    return IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a, classes, ruleLimit,labelSetLimit);
+                }).collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
 
                 String file = "report_"+(i+1)+".json";
-                mapper.writeValue(new File(analysisFolder,file), partition);
-            }
+                try {
+                    mapper.writeValue(new File(analysisFolder,file), partition);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("progress = "+ Progress.percentage(i+1,numFiles));
+            });
+
+            System.out.println("finish writing rules to json");
         }
 
 
         boolean dataInfoToJson = true;
         if (dataInfoToJson){
+            System.out.println("start writing data info to json");
             Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
                     .collect(Collectors.toSet());
 
@@ -313,22 +333,27 @@ public class App2 {
 
             jsonGenerator.writeEndObject();
             jsonGenerator.close();
+            System.out.println("finish writing data info to json");
         }
 
 
         boolean modelConfigToJson = true;
         if (modelConfigToJson){
+            System.out.println("start writing model config to json");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
+            System.out.println("finish writing model config to json");
         }
 
         boolean dataConfigToJson = true;
         if (dataConfigToJson){
+            System.out.println("start writing data config to json");
             File dataConfigFile = Paths.get(config.getString("input.folder"),
                     "data_sets",dataName,"data_config.json").toFile();
             if (dataConfigFile.exists()){
                 FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
             }
+            System.out.println("finish writing data config to json");
         }
 
         boolean performanceToJson = true;
@@ -339,8 +364,10 @@ public class App2 {
 
         boolean individualPerformance = true;
         if (individualPerformance){
+            System.out.println("start writing individual label performance to json");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
+            System.out.println("finish writing individual label performance to json");
         }
 
         System.out.println("reports generated");

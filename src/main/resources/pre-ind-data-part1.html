@@ -1,0 +1,130 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+        <script src="./js/jquery.min.js"></script>
+        <script src="./js/jquery.dataTables.min.js"></script>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        
+        <title>DataTables Editor - error</title>
+
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/r/dt/jqc-1.11.3,dt-1.10.9,b-1.0.3,se-1.0.1/datatables.min.css">
+        <link rel="stylesheet" type="text/css" href="css/generator-base.css">
+        <link rel="stylesheet" type="text/css" href="css/editor.dataTables.min.css">
+
+        <script type="text/javascript" charset="utf-8" src="https://cdn.datatables.net/r/dt/jqc-1.11.3,dt-1.10.9,b-1.0.3,se-1.0.1/datatables.min.js"></script>
+        <script type="text/javascript" charset="utf-8" src="js/dataTables.editor.min.js"></script>
+        <script type="text/javascript" charset="utf-8" src="js/table.error.js"></script>
+        <script type="text/javascript" class="init">
+$(document).ready(function() {
+    data = dataFromJson()
+    allData = alldataFromJson()
+    $('#overall').DataTable( {
+        "aaData": allData,
+        "iDisplayLength": 10,
+        "aoColumns": [
+            { "mDataProp": "instance subset accuracy" },
+            { "mDataProp": "instance overlap" },
+            { "mDataProp": "instance F1" },
+            { "mDataProp": "instance Hamming loss" },
+            { "mDataProp": "instance precision" },
+            { "mDataProp": "instance recall"},
+            { "mDataProp": "macro overlap" },
+            { "mDataProp": "macro F1" },
+            { "mDataProp": "macro Hamming loss" },
+            { "mDataProp": "macro precision" },
+            { "mDataProp": "macro recall" },
+            { "mDataProp": "micro overlap" },
+            { "mDataProp": "micro F1" },
+            { "mDataProp": "micro Hamming loss" },
+            { "mDataProp": "micro precision" },
+            { "mDataProp": "micro recall" }
+        ]
+    } );
+    $('#individual').DataTable( {
+        "aaData": data,
+        "iDisplayLength": 50,
+        "aoColumns": [
+            { "mDataProp": "label" },
+            { "mDataProp": "TP" },
+            { "mDataProp": "FP" },
+            { "mDataProp": "TN" },
+            { "mDataProp": "FN" },
+            { "mDataProp": "accuracy" },
+            { "mDataProp": "precision" },
+            { "mDataProp": "recall" },
+            { "mDataProp": "f1" }
+        ]
+    } );
+} );
+    </script>
+    </head>
+    <body><br>
+        <h1>
+            <span>Overall Performance</span>
+        </h1>
+        <table id="overall" class="display" width="100%">
+            <thead>
+        <tr>
+            <th>instance subset accuracy</th>
+            <th>instance overlap</th>
+            <th>instance F1</th>
+            <th>instance Hamming loss</th>
+            <th>instance precision</th>
+            <th>instance recall</th>
+            <th>macro overlap</th>
+            <th>macro F1</th>
+            <th>macro Hamming loss</th>
+            <th>macro precision</th>
+            <th>macro recall</th>
+            <th>micro overlap</th>
+            <th>micro F1</th>
+            <th>micro Hamming loss</th>
+            <th>micro precision</th>
+            <th>micro recall</th>
+        </tr>
+            </thead>
+        </table>
+
+        <h1>
+            <span>Individual Label Performance</span>
+        </h1>
+        <table id="individual" class="display" width="100%">
+            <thead>
+        <tr>
+            <th>label</th>
+            <th>TP</th>
+            <th>FP</th>
+            <th>TN</th>
+            <th>FN</th>
+            <th>accuracy</th>
+            <th>precision</th>
+            <th>recall</th>
+            <th>f1</th>
+        </tr>
+    </thead>
+ 
+    <tfoot>
+        <tr>
+            <th>label</th>
+            <th>TP</th>
+            <th>FP</th>
+            <th>TN</th>
+            <th>FN</th>
+            <th>accuracy</th>
+            <th>precision</th>
+            <th>recall</th>
+            <th>f1</th>
+        </tr>
+    </tfoot>
+        </table>
+    <script>
+            function dataFromJson() {
+                return JSON.parse($('#raw-data').html())
+            }
+            function alldataFromJson() {
+                return JSON.parse($('#all-data').html())
+            }
+    </script>
+
+    <script id="all-data" type="application/json">
