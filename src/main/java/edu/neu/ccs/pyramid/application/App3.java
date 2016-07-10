@@ -52,7 +52,7 @@ public class App3 {
         String[] same = {"output.folder","train","test","tune","predict.target","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf","train.featureSamplingRate",
         "train.dataSamplingRate","train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
-                "train.showProgress.interval","tune.data","tune.FMeasure.beta",
+                "train.showProgress.interval","train.generateReports","tune.data","tune.FMeasure.beta",
         "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit"};
 
         Config.copy(config,app2Config,same);

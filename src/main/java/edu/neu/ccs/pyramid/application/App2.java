@@ -54,14 +54,19 @@ public class App2 {
                 System.out.println("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
                         "Reports will be generated after tuning.");
             } else {
-                report(config,config.getString("input.trainData"));
+                if (config.getBoolean("train.generateReports")){
+                    report(config,config.getString("input.trainData"));
+                }
+
             }
 
         }
 
         if (config.getBoolean("tune")){
             tuneForMacroF(config);
-            report(config,config.getString("input.trainData"));
+            if (config.getBoolean("train.generateReports")){
+                report(config,config.getString("input.trainData"));
+            }
         }
 
         if (config.getBoolean("test")){
