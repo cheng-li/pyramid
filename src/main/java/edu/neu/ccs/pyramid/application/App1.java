@@ -319,7 +319,7 @@ public class App1 {
         System.out.println();
 
         LabelTranslator labelTranslator = new LabelTranslator(labels);
-        System.out.println(labelTranslator);
+//        System.out.println(labelTranslator);
         return labelTranslator;
     }
 
