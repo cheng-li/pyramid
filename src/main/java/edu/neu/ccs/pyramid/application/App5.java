@@ -73,7 +73,7 @@ public class App5 {
         CBM cbm = pair.getFirst();
 
 
-        CBMOptimizer optimizer = getOptimizer(config, cbm,trainSet);
+        CBMOptimizer optimizer = getOptimizer(config, cbm, trainSet);
 
 
         for (int i=1;i<=numIterations;i++){
@@ -102,6 +102,12 @@ public class App5 {
 
     public static CBMOptimizer getOptimizer(Config config, CBM cbm, MultiLabelClfDataSet trainSet){
         CBMOptimizer optimizer = new CBMOptimizer(cbm,trainSet);
+
+        optimizer.setLineSearch(config.getBoolean("elasticnet.lineSearch"));
+        optimizer.setRegularizationBinary(config.getDouble("elasticnet.binaryRegularization"));
+        optimizer.setRegularizationMultiClass(config.getDouble("elasticnet.multiClassRegularization"));
+        optimizer.setL1RatioBinary(config.getDouble("elasticnet.binaryL1Ratio"));
+        optimizer.setL1RatioMultiClass(config.getDouble("elasticnet.multiClassL1Ratio"));
 
         optimizer.setPriorVarianceMultiClass(config.getDouble("lr.multiClassVariance"));
         optimizer.setPriorVarianceBinary(config.getDouble("lr.binaryVariance"));
