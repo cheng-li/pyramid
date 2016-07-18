@@ -221,15 +221,15 @@ def createTable(data, fields,  classDescription):
         if len(unions) == 0:
             idlabels['overlap'] = "N/A"
         else:
-            idlabels['overlap'] = "{0:.2f}".format(float(len(intersections)) / len(unions))
+            idlabels['overlap'] = "{0:.2e}".format(float(len(intersections)) / len(unions))
         if len(releLabels) == 0:
             idlabels['recall'] = "N/A"
         else:
-            idlabels['recall'] = "{0:.2f}".format(float(len(intersections)) / len(releLabels))
+            idlabels['recall'] = "{0:.2e}".format(float(len(intersections)) / len(releLabels))
         if len(pres) == 0:
             idlabels['precision'] = "N/A"
         else:
-            idlabels['precision'] = "{0:.2f}".format(float(len(intersections)) / len(pres))
+            idlabels['precision'] = "{0:.2e}".format(float(len(intersections)) / len(pres))
 
         oneRow['probForPredictedLabels'] = row['probForPredictedLabels']
         
@@ -284,7 +284,7 @@ def createTable(data, fields,  classDescription):
         if len(releLabels) == 0:
             idlabels['ap'] = "N/A"
         else:
-            idlabels['ap'] = "{0:.2f}".format(float(sumOfPrec) / len(releLabels))
+            idlabels['ap'] = "{0:.2e}".format(float(sumOfPrec) / len(releLabels))
         if sumOfR < len(releLabels):
             idlabels['rankoffullrecall'] = "N/A"
         else:
