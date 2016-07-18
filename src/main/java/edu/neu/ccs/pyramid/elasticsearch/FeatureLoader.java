@@ -10,7 +10,6 @@ import org.elasticsearch.search.SearchHit;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
@@ -83,6 +82,9 @@ public class FeatureLoader {
                 break;
             case FREQUENCY:
                 loadNgramFeatureFrequency(index, dataSet, feature, idTranslator);
+                break;
+            case TFIFL:
+                loadNgramFeatureTFIFL(index, dataSet, feature, idTranslator);
         }
     }
 
@@ -112,6 +114,26 @@ public class FeatureLoader {
             float score = hit.getScore();
             int algorithmId = idTranslator.toIntId(indexId);
             dataSet.setFeatureValue(algorithmId,featureIndex,score);
+        }
+    }
+
+    // term frequency inverse field length
+    // field storing the length of the body field should be called body_field_length
+    private static void loadNgramFeatureTFIFL(ESIndex index, DataSet dataSet, Ngram feature,
+                                              IdTranslator idTranslator){
+        String[] dataIndexIds = idTranslator.getAllExtIds();
+        int featureIndex = feature.getIndex();
+        SearchResponse response = index.spanNearFrequency(feature, dataIndexIds);
+        SearchHit[] hits = response.getHits().getHits();
+        String field = feature.getField();
+        String lengthField = field+"_"+"field_length";
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            float docLength = index.getFloatField(indexId,lengthField);
+            double s = score/docLength;
+            int algorithmId = idTranslator.toIntId(indexId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,s);
         }
     }
 
@@ -180,6 +202,6 @@ public class FeatureLoader {
     }
 
     public static enum MatchScoreType{
-        ES_ORIGINAL, BINARY, FREQUENCY
+        ES_ORIGINAL, BINARY, FREQUENCY, TFIFL
     }
 }

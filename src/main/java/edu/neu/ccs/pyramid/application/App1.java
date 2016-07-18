@@ -285,6 +285,9 @@ public class App1 {
             case "frequency":
                 matchScoreType= FeatureLoader.MatchScoreType.FREQUENCY;
                 break;
+            case "tfifl":
+                matchScoreType= FeatureLoader.MatchScoreType.TFIFL;
+                break;
             default:
                 throw new IllegalArgumentException("unknown ngramMatchScoreType");
         }
