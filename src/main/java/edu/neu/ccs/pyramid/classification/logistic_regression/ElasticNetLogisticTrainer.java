@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -31,7 +32,11 @@ public class ElasticNetLogisticTrainer {
     private LogisticRegression logisticRegression;
     private DataSet dataSet;
     private int numClasses;
-    private int[] labels;
+//    private int[] labels;
+    // y_nl: number of datapoint and number of labels
+    private double[][] targets;
+    // instances weights
+    private double[] weights;
     private double regularization;
     private double l1Ratio;
     // relative threshold
@@ -42,6 +47,15 @@ public class ElasticNetLogisticTrainer {
     private ProbabilityMatrix probabilityMatrix;
     private Terminator terminator;
     private boolean lineSearch;
+
+    public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses,
+                                     double[][] targets, double[] weights) {
+        return new Builder(logisticRegression, dataSet, numClasses, targets, weights);
+    }
+
+    public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, double[][] targets) {
+        return new Builder(logisticRegression, dataSet, numClasses, targets);
+    }
 
     public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels){
         return new Builder(logisticRegression, dataSet, numClasses, labels);
@@ -88,10 +102,11 @@ public class ElasticNetLogisticTrainer {
             // TODO: repeated calculations in following two steps.
             double prob = logisticRegression.predictClassProbs(dataSet.getRow(i))[classIndex];
             double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
-            double y = 0;
-            if (labels[i]==classIndex){
-                y = 1;
-            }
+//            double y = 0;
+            double y = targets[i][classIndex];
+//            if (labels[i]==classIndex){
+//                y = 1;
+//            }
             double frac = 0;
             // if prob = 0 or prob = 1, weight = 0; doesn't matter how we decide frac; leave it 0
             if (prob!=0&&prob!=1){
@@ -107,7 +122,8 @@ public class ElasticNetLogisticTrainer {
             }
 
             realLabels[i] = classScore + frac;
-            instanceWeights[i] = (prob*(1-prob))/numDataPoints;
+            // TODO: why divided by numDataPoints?
+            instanceWeights[i] = (weights[i]*prob*(1-prob))/numDataPoints;
         });
 
         Weights oldWeights = logisticRegression.getWeights().deepCopy();
@@ -179,13 +195,13 @@ public class ElasticNetLogisticTrainer {
     }
 
     private double loss(){
-        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, labels) * -1;
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets) * -1;
         double penalty = penalty();
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
     private double loss(double penalty){
-        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, labels) * -1;
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets) * -1;
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
@@ -282,19 +298,21 @@ public class ElasticNetLogisticTrainer {
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                if (labels[i]==classIndex){
-                    count +=1;
-                }
+                count += targets[i][classIndex];
+//                if (labels[i]==classIndex){
+//                    count +=1;
+//                }
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                int label = labels[dataPointIndex];
-                if (label==classIndex){
-                    count += featureValue;
-                }
+                count += featureValue * targets[dataPointIndex][classIndex];
+//                int label = labels[dataPointIndex];
+//                if (label==classIndex){
+//                    count += featureValue;
+//                }
             }
         }
         return count;
@@ -336,7 +354,11 @@ public class ElasticNetLogisticTrainer {
     public static class Builder{
         private LogisticRegression logisticRegression;
         private DataSet dataSet;
-        private int[] labels;
+//        private int[] labels;
+        // N * L
+        private double[][] targets;
+        // N
+        private double[] weights;
         private int numClasses;
 
         // when p>>N, logistic regression with 0 regularization is ill-defined
@@ -346,16 +368,44 @@ public class ElasticNetLogisticTrainer {
         private double epsilon=0.001;
         private boolean lineSearch=true;
 
+
         public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels) {
+            int numDataPoints = dataSet.getNumDataPoints();
+            double[][] targs = new double[numDataPoints][numClasses];
+            for (int i=0; i<numDataPoints; i++) {
+                targs[i][labels[i]] = 1.0;
+            }
+
             this.logisticRegression = logisticRegression;
             this.dataSet = dataSet;
-            this.labels = labels;
             this.numClasses = numClasses;
+            this.targets = targs;
+            this.weights = new double[dataSet.getNumDataPoints()];
+            Arrays.fill(this.weights, 1);
         }
 
         public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
             this(logisticRegression, dataSet, dataSet.getNumClasses(), dataSet.getLabels());
         }
+
+        public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, double[][] targets) {
+            this.logisticRegression = logisticRegression;
+            this.dataSet = dataSet;
+            this.numClasses = numClasses;
+            this.targets = targets;
+            this.weights = new double[dataSet.getNumDataPoints()];
+            Arrays.fill(this.weights, 1);
+        }
+
+        public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, double[][] targets,
+                       double[] weights) {
+            this.logisticRegression = logisticRegression;
+            this.dataSet = dataSet;
+            this.numClasses = numClasses;
+            this.targets = targets;
+            this.weights = weights;
+        }
+
 
         public Builder setRegularization(double regularization) {
             boolean legal = regularization>=0;
@@ -394,7 +444,8 @@ public class ElasticNetLogisticTrainer {
             ElasticNetLogisticTrainer trainer = new ElasticNetLogisticTrainer();
             trainer.logisticRegression = logisticRegression;
             trainer.dataSet = dataSet;
-            trainer.labels = labels;
+            trainer.targets = targets;
+            trainer.weights = weights;
             trainer.numClasses = numClasses;
             trainer.regularization = this.regularization;
             trainer.l1Ratio = this.l1Ratio;

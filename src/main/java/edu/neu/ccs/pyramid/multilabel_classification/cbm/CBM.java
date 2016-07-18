@@ -396,6 +396,14 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
                         }
                     }
                     break;
+                case "elasticnet":
+                    CBM.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
+                    for (int k=0; k<numClusters; k++) {
+                        for (int l=0; l<numClasses; l++) {
+                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
+                        }
+                    }
+                    break;
                 default:
                     throw new IllegalArgumentException("binaryClassifierType can be lr or boost. Given: "+binaryClassifierType);
             }
@@ -406,6 +414,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
                     break;
                 case "boost":
                     CBM.multiClassClassifier = new LKBoost(numClusters);
+                    break;
+                case "elasticnet":
+                    CBM.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
                     break;
                 default:
                     throw new IllegalArgumentException("multiClassClassifierType can be lr or boost");
