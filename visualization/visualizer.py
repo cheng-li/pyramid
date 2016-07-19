@@ -1327,24 +1327,24 @@ pre_data = '''<html>
                 str = ""
                 score = ''
                 if (rule.score >= 0) {
-                    score += ": +" + Math.abs(rule.score.toFixed(2))
+                    score += ": +" + Math.abs(rule.score).toExponential(2)
                 } else {
-                    score += ": -" + Math.abs(rule.score.toFixed(2))
+                    score += ": -" + Math.abs(rule.score).toExponential(2)
                 }
                 str += '<li>' + serialize(rule['checks'], function (check) {
                             style = "style='color:#0000FF; margin:0px; padding:0px;' onclick='highlightText(" + check.highlights + ", " + 
                                 (rowNum + 1) + ", \\"" + check.field + "\\")'"
                             //alert(Object.keys(check))
                             if ('ngram' in check) {
-                                str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toFixed(2) + check.relation + 
-                                check.threshold.toFixed(2) +']'
+                                str = '<p ' + style + '>' + check.ngram + ' [' + check.value.toExponential(2) + check.relation + 
+                                check.threshold.toExponential(2) +']'
                                 if (displayOptions.details) {
                                     str += 'index=' + check.index + ' field=' + check.field + ' slop:' + check.slop
                                 }
                             }
                             else {
-                                str = '<p ' + style + '>' + check.name + ' [' + check.value.toFixed(2) + check.relation + 
-                                check.threshold.toFixed(2) +']'
+                                str = '<p ' + style + '>' + check.name + ' [' + check.value.toExponential(2) + check.relation + 
+                                check.threshold.toExponential(2) +']'
                                 if (displayOptions.details) {
                                     str += 'index=' + check.index
                                 }
@@ -1381,7 +1381,7 @@ pre_data = '''<html>
                             str = ""
                             prior = ""
                             if (lb.prior != undefined) {
-                                prior = '<li>prior: ' + lb.prior.toFixed(2) + '</li>'
+                                prior = '<li>prior: ' + lb.prior.toExponential(2) + '</li>'
                             }
                             if (i > 0) {
                                 str += '<hr>'
@@ -1390,8 +1390,8 @@ pre_data = '''<html>
                             style = "style='color:#00FF00; margin:0px; padding:0px;' onclick='highlightText(" + lb.allPos + "," + 
                                 (rowNum + 1) + ", \\"" + lb.field + "\\")'"
                             str += '<p ' + style + '>' + lb.name + '</p>' + '<br><br>classProbability: ' + 
-                            lb.classProbability.toFixed(2) + '<br><br>totalScore: ' + 
-                            lb.totalScore.toFixed(2) + '<br><ul>' + 
+                            lb.classProbability.toExponential(2) + '<br><br>totalScore: ' + 
+                            lb.totalScore.toExponential(2) + '<br><ul>' + 
                             prior +
                             serialize(lb.rules, function (rule, i) {
                                 if (i >= displayOptions.ruleNum) {
