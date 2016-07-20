@@ -100,14 +100,14 @@ public class App5 {
 
     }
 
-    public static CBMOptimizer getOptimizer(Config config, CBM cbm, MultiLabelClfDataSet trainSet){
+    private static CBMOptimizer getOptimizer(Config config, CBM cbm, MultiLabelClfDataSet trainSet){
         CBMOptimizer optimizer = new CBMOptimizer(cbm,trainSet);
 
-        optimizer.setLineSearch(config.getBoolean("elasticnet.lineSearch"));
-        optimizer.setRegularizationBinary(config.getDouble("elasticnet.binaryRegularization"));
-        optimizer.setRegularizationMultiClass(config.getDouble("elasticnet.multiClassRegularization"));
-        optimizer.setL1RatioBinary(config.getDouble("elasticnet.binaryL1Ratio"));
-        optimizer.setL1RatioMultiClass(config.getDouble("elasticnet.multiClassL1Ratio"));
+//        optimizer.setLineSearch(config.getBoolean("elasticnet.lineSearch"));
+//        optimizer.setRegularizationBinary(config.getDouble("elasticnet.binaryRegularization"));
+//        optimizer.setRegularizationMultiClass(config.getDouble("elasticnet.multiClassRegularization"));
+//        optimizer.setL1RatioBinary(config.getDouble("elasticnet.binaryL1Ratio"));
+//        optimizer.setL1RatioMultiClass(config.getDouble("elasticnet.multiClassL1Ratio"));
 
         optimizer.setPriorVarianceMultiClass(config.getDouble("lr.multiClassVariance"));
         optimizer.setPriorVarianceBinary(config.getDouble("lr.binaryVariance"));
