@@ -276,15 +276,8 @@ public class App2 {
             IntStream.range(0,numFiles).forEach(i->{
                 int start = i*numDocsPerFile;
                 int end = start+numDocsPerFile;
-                List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->{
-                    List<Integer> classes = new ArrayList<Integer>();
-                    for (int k = 0; k < boosting.getNumClasses(); k++){
-                        if (boosting.predictClassProb(dataSet.getRow(a),k)>=probThreshold||dataSet.getMultiLabels()[a].matchClass(k)){
-                            classes.add(k);
-                        }
-                    }
-                    return IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a, classes, ruleLimit,labelSetLimit);
-                }).collect(Collectors.toList());
+                List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->
+                    IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a,  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
 
                 String file = "report_"+(i+1)+".json";

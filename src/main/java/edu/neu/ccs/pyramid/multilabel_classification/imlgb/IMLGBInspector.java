@@ -165,8 +165,8 @@ public class IMLGBInspector {
     public static  MultiLabelPredictionAnalysis analyzePrediction(IMLGradientBoosting boosting,
                                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                  MultiLabelClfDataSet dataSet,
-                                                                 int dataPointIndex, List<Integer> classes, int ruleLimit,
-                                                                 int labelSetLimit){
+                                                                 int dataPointIndex,  int ruleLimit,
+                                                                 int labelSetLimit, double classProbThreshold){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         IdTranslator idTranslator = dataSet.getIdTranslator();
@@ -201,6 +201,15 @@ public class IMLGBInspector {
             predictionAnalysis.setProbForPredictedLabels(boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),predictedLabels));
         }
 
+        double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        List<Integer> classes = new ArrayList<Integer>();
+        for (int k = 0; k < boosting.getNumClasses(); k++){
+            if (classProbs[k]>=classProbThreshold
+                    ||dataSet.getMultiLabels()[dataPointIndex].matchClass(k)
+                    ||predictedLabels.matchClass(k)){
+                classes.add(k);
+            }
+        }
 
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){
@@ -239,7 +248,6 @@ public class IMLGBInspector {
 
         if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
             labelSetRanking = new ArrayList<>();
-            double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
             DynamicProgramming dp = new DynamicProgramming(classProbs);
             for (int c=0;c<labelSetLimit;c++){
                 DynamicProgramming.Candidate candidate = dp.nextHighest();
@@ -261,14 +269,24 @@ public class IMLGBInspector {
                                                                              MultiLabelClfDataSet dataSet,
                                                   int dataPointIndex,  double classProbThreshold){
         StringBuilder sb = new StringBuilder();
-        int numClasses = boosting.getNumClasses();
         MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        MultiLabel predicted = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
+
+        List<Integer> classes = new ArrayList<Integer>();
+        for (int k = 0; k < boosting.getNumClasses(); k++){
+            if (classProbs[k]>=classProbThreshold
+                    ||dataSet.getMultiLabels()[dataPointIndex].matchClass(k)
+                    ||predicted.matchClass(k)){
+                classes.add(k);
+            }
+        }
+
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        List<Pair<Integer,Double>> list = IntStream.range(0,numClasses).mapToObj(l -> new Pair<Integer, Double>(l, classProbs[l]))
-                .filter(pair -> pair.getSecond() >= classProbThreshold).sorted(comparator.reversed()).collect(Collectors.toList());
+        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<Integer, Double>(l, classProbs[l]))
+                .sorted(comparator.reversed()).collect(Collectors.toList());
         for (Pair<Integer,Double> pair: list){
             int label = pair.getFirst();
             double prob = pair.getSecond();
@@ -280,7 +298,7 @@ public class IMLGBInspector {
                     .append("single").append("\t").append(prob)
                     .append("\t").append(match).append("\n");
         }
-        MultiLabel predicted = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
+       
 
         double probability = 0;
         if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
