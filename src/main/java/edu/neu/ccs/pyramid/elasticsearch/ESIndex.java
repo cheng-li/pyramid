@@ -301,7 +301,11 @@ public class ESIndex {
     }
 
     public List<String> getStringListField(String id, String field){
-        return getListField(id,field).stream().map(object -> object.toString())
+        Object object = getField(id,field);
+        if (object==null){
+            return new ArrayList<>();
+        }
+        return getListField(id,field).stream().map(obj -> obj.toString())
                 .collect(Collectors.toList());
     }
 
