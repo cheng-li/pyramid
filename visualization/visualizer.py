@@ -1292,6 +1292,14 @@ pre_data = '''<html>
                             }
                             return str
                          }) + 
+                        '<br><b>Predictions</b>:' + 
+                        serialize(row.idlabels.predictions, function (lb) {
+                            var str = ''
+                            for (var k in lb) {
+                                str += '<li>' + lb[k] + '</li>'
+                            }
+                            return str
+                        }) +
                         '<br><b>Label&nbspRanking</b>:' +
                         displayPredictedRanking(row, displayOptions) + 
                         "<br><b>AP:&nbsp</b>" + row.idlabels.ap +
