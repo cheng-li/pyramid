@@ -1,10 +1,14 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
+import com.google.common.collect.ConcurrentHashMultiset;
+import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
+import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,5 +71,10 @@ public class PluginF1 implements PluginPredictor<CBM>{
     @Override
     public CBM getModel() {
         return cbm;
+    }
+
+    public Matrix getPMatrix(Vector vector){
+        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+        return GeneralF1Predictor.getPMatrix(cbm.getNumClasses(),samples);
     }
 }

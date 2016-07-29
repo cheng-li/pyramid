@@ -150,6 +150,24 @@ public class GeneralF1Predictor {
         return pMatrix;
     }
 
+
+    public static Matrix getPMatrix(int numClasses, List<MultiLabel> samples){
+        Multiset<MultiLabel> multiset = ConcurrentHashMultiset.create();
+        for (MultiLabel multiLabel: samples){
+            multiset.add(multiLabel);
+        }
+
+        int sampleSize = samples.size();
+        List<MultiLabel> uniqueOnes = new ArrayList<>();
+        List<Double> probs = new ArrayList<>();
+        for (Multiset.Entry<MultiLabel> entry: multiset.entrySet()){
+            uniqueOnes.add(entry.getElement());
+            probs.add((double)entry.getCount()/sampleSize);
+        }
+        Matrix p = getPMatrix(numClasses, uniqueOnes, probs);
+        return p;
+    }
+
     public static MultiLabel exhaustiveSearch(int numClasses, Matrix lossMatrix, List<Double> probabilities){
         double bestScore = Double.POSITIVE_INFINITY;
         Vector vector = new DenseVector(probabilities.size());
@@ -168,5 +186,14 @@ public class GeneralF1Predictor {
             }
         }
         return multiLabel;
+    }
+
+    public static Matrix getTruePMatrix(int numClasses, MultiLabel trueMultiLabel){
+        int s = trueMultiLabel.getNumMatchedLabels();
+        DenseMatrix pMatrix = new DenseMatrix(numClasses,numClasses);
+        for (int l: trueMultiLabel.getMatchedLabels()){
+            pMatrix.set(l,s-1,1);
+        }
+        return  pMatrix;
     }
 }
