@@ -318,6 +318,12 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
     }
 
+    /**
+     * sample until the total probability mass of unique subsets exceeds the threshold
+     * @param vector
+     * @param probMassThreshold
+     * @return
+     */
     public List<MultiLabel> samples(Vector vector, double probMassThreshold){
         List<MultiLabel> list = new ArrayList<>();
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
@@ -330,7 +336,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
                 classProbs[k][l] = Math.exp(logClassProbs[k][l][1]);
             }
         }
-        
+
         int[] clusters = IntStream.range(0, numClusters).toArray();
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
 
