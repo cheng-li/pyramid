@@ -54,7 +54,7 @@ public class GeneralF1Predictor {
     /**
      *
      * @param numClasses
-     * @param samples sampled multi-labels; can have duplicates; their empirical probabilities with be estimated
+     * @param samples sampled multi-labels; can have duplicates; their empirical probabilities will be estimated
      * @return
      */
     public static MultiLabel predict(int numClasses, List<MultiLabel> samples){

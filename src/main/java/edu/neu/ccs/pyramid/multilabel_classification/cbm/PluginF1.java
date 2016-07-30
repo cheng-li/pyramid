@@ -5,6 +5,7 @@ import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
@@ -60,8 +61,8 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     private MultiLabel predictBySampling(Vector vector){
 //        List<MultiLabel> samples = cbm.samples(vector, numSamples);
-        List<MultiLabel> samples = cbm.samples(vector, probMassThreshold);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),samples);
+        Pair<List<MultiLabel>, List<Double>> pair = cbm.samples(vector, probMassThreshold);
+        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
     }
 
     private MultiLabel predictBySupport(Vector vector){

@@ -9,6 +9,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.classification.Classifier.ProbabilityEstimator;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
@@ -324,8 +325,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @param probMassThreshold
      * @return
      */
-    public List<MultiLabel> samples(Vector vector, double probMassThreshold){
-        List<MultiLabel> list = new ArrayList<>();
+    public Pair<List<MultiLabel>, List<Double>> samples(Vector vector, double probMassThreshold){
+        List<MultiLabel> multiLabels = new ArrayList<>();
+        List<Double> probs = new ArrayList<>();
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
         double[] proportions = Arrays.stream(logProportions).map(Math::exp).toArray();
         double[][][] logClassProbs = new double[numClusters][numLabels][2];
@@ -351,10 +353,12 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
                 candidateY.set(l, bernoulliDistribution.sample());
             }
             MultiLabel multiLabel = new MultiLabel(candidateY);
-            list.add(multiLabel);
 
             if (!unique.contains(multiLabel)){
-                mass += Math.exp(predictLogAssignmentProb(multiLabel,logProportions, logClassProbs));
+                multiLabels.add(multiLabel);
+                double p = Math.exp(predictLogAssignmentProb(multiLabel,logProportions, logClassProbs));
+                probs.add(p);
+                mass += p;
                 unique.add(multiLabel);
             }
 
@@ -362,7 +366,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
                 break;
             }
         }
-        return list;
+        return new Pair<>(multiLabels, probs);
 
     }
 
