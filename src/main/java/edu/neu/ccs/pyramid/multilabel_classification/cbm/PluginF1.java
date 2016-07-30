@@ -19,6 +19,7 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private String predictionMode = "sampling";
     private int numSamples = 1000;
     private List<MultiLabel> support;
+    private double probMassThreshold = 0.95;
 
     public PluginF1(CBM model) {
         this.cbm = model;
@@ -58,7 +59,8 @@ public class PluginF1 implements PluginPredictor<CBM>{
     }
 
     private MultiLabel predictBySampling(Vector vector){
-        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+//        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+        List<MultiLabel> samples = cbm.samples(vector, probMassThreshold);
         return GeneralF1Predictor.predict(cbm.getNumClasses(),samples);
     }
 

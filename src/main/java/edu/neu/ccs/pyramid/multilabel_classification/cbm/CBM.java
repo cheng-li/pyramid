@@ -15,8 +15,7 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -318,6 +317,49 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         return list;
 
     }
+
+    public List<MultiLabel> samples(Vector vector, double probMassThreshold){
+        List<MultiLabel> list = new ArrayList<>();
+        double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
+        double[] proportions = Arrays.stream(logProportions).map(Math::exp).toArray();
+        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+        double[][] classProbs = new double[numClusters][numLabels];
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+                classProbs[k][l] = Math.exp(logClassProbs[k][l][1]);
+            }
+        }
+        
+        int[] clusters = IntStream.range(0, numClusters).toArray();
+        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
+
+        double mass = 0;
+        Set<MultiLabel> unique = new HashSet<>();
+        while (true) {
+            int k = enumeratedIntegerDistribution.sample();
+            Vector candidateY = new DenseVector(numLabels);
+
+            for (int l=0; l<numLabels; l++) {
+                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(classProbs[k][l]);
+                candidateY.set(l, bernoulliDistribution.sample());
+            }
+            MultiLabel multiLabel = new MultiLabel(candidateY);
+            list.add(multiLabel);
+
+            if (!unique.contains(multiLabel)){
+                mass += Math.exp(predictLogAssignmentProb(multiLabel,logProportions, logClassProbs));
+                unique.add(multiLabel);
+            }
+
+            if (mass>probMassThreshold){
+                break;
+            }
+        }
+        return list;
+
+    }
+
 
 
     public ProbabilityEstimator[][] getBinaryClassifiers() {
