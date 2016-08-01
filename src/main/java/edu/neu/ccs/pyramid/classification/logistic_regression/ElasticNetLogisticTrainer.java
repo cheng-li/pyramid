@@ -257,15 +257,8 @@ public class ElasticNetLogisticTrainer {
             logger.debug("initial loss = "+loss());
         }
         double product = gradient.dot(searchDirection);
-        if (product < 0){
-            localSearchDir = searchDirection;
-        } else {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Bad search direction! Use negative gradient instead. Product of gradient and search direction = " + product);
-            }
 
-            localSearchDir = gradient.times(-1);
-        }
+        localSearchDir = searchDirection;
 
         while(true){
             Vector step = localSearchDir.times(stepLength);
