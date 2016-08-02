@@ -108,6 +108,22 @@ public class PluginF1 implements PluginPredictor<CBM>{
         return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
     }
 
+    public MultiLabel showPredictBySamplingNonEmpty(Vector vector){
+        System.out.println("sampling procedure");
+        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
+        List<Pair<MultiLabel, Double>> list = new ArrayList<>();
+        List<MultiLabel> labels = pair.getFirst();
+        List<Double> probs = pair.getSecond();
+        for (int i=0;i<labels.size();i++){
+            list.add(new Pair<>(labels.get(i),probs.get(i)));
+        }
+        Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
+
+        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
+
+        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
+    }
+
     public MultiLabel showPredictBySupport(Vector vector){
         System.out.println("support procedure");
         List<Double> probs = cbm.predictAssignmentProbs(vector,support);
