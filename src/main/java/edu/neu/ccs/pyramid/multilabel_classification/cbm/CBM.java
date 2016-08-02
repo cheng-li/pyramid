@@ -370,6 +370,64 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
     }
 
+    /**
+     * only consider non empty sets
+     * using the conditional probability p(y|y non empty, x)=p(y, y non empty|x) / p(y non empty |x)
+     * sample until the total probability mass of unique subsets exceeds the threshold
+     * @param vector
+     * @param probMassThreshold
+     * @return
+     */
+    public Pair<List<MultiLabel>, List<Double>> sampleNonEmptySets(Vector vector, double probMassThreshold){
+        List<MultiLabel> multiLabels = new ArrayList<>();
+        List<Double> probs = new ArrayList<>();
+        double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
+        double[] proportions = Arrays.stream(logProportions).map(Math::exp).toArray();
+        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+        double[][] classProbs = new double[numClusters][numLabels];
+        for (int k=0;k<numClusters;k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+                classProbs[k][l] = Math.exp(logClassProbs[k][l][1]);
+            }
+        }
+
+        int[] clusters = IntStream.range(0, numClusters).toArray();
+        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
+
+        MultiLabel emptySet = new MultiLabel();
+        double emptyProb = Math.exp(predictLogAssignmentProb(emptySet,logProportions, logClassProbs));
+        double nonEmptyProb = 1-emptyProb;
+
+        double mass = 0;
+        Set<MultiLabel> unique = new HashSet<>();
+        while (true) {
+            int k = enumeratedIntegerDistribution.sample();
+            Vector candidateY = new DenseVector(numLabels);
+
+            for (int l=0; l<numLabels; l++) {
+                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(classProbs[k][l]);
+                candidateY.set(l, bernoulliDistribution.sample());
+            }
+            MultiLabel multiLabel = new MultiLabel(candidateY);
+
+            if (multiLabel.getNumMatchedLabels()>0 && !unique.contains(multiLabel)){
+                multiLabels.add(multiLabel);
+                double p = Math.exp(predictLogAssignmentProb(multiLabel,logProportions, logClassProbs));
+                double conditionalP = p/nonEmptyProb;
+                probs.add(conditionalP);
+                mass += conditionalP;
+                unique.add(multiLabel);
+            }
+
+            if (mass>probMassThreshold){
+                break;
+            }
+        }
+        return new Pair<>(multiLabels, probs);
+
+    }
+
 
 
     public ProbabilityEstimator[][] getBinaryClassifiers() {
