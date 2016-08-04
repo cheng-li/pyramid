@@ -538,13 +538,16 @@ public class ESIndex {
                 setFields(field)
                 .execute()
                 .actionGet();
-        if (logger.isErrorEnabled()){
-            if (response==null){
-                logger.error("no response from document "+id+" when fetching field "+field+"!");
+        if (response==null){
+            if (logger.isWarnEnabled()){
+                logger.warn("no response from document "+id+" when fetching field "+field+"!");
             }
-            else if (response.getField(field)==null){
-                logger.error("document "+id+" has no field "+field+"!");
+            return new ArrayList<>();
+        }else if (response.getField(field)==null){
+            if (logger.isWarnEnabled()) {
+                logger.warn("document " + id + " has no field " + field + "!");
             }
+            return new ArrayList<>();
         }
         return response.getField(field).getValues();
     }
