@@ -651,6 +651,7 @@ public class DataSetUtil {
         return sampleData(dataSet,targetDistribution, keep);
     }
 
+
     /**
      *
      * @param clfDataSet
@@ -694,6 +695,32 @@ public class DataSetUtil {
         pair.setSecond(DataSetUtil.sampleData(dataSet, testIndices));
         return pair;
     }
+
+    /**
+     *
+     * @param multiLabelClfDataSet
+     * @param trainPercentage
+     * @return
+     */
+    public static Pair<MultiLabelClfDataSet, MultiLabelClfDataSet> splitToTrainValidation(MultiLabelClfDataSet multiLabelClfDataSet,
+                                                                                          double trainPercentage) {
+        int numDataPoints = multiLabelClfDataSet.getNumDataPoints();
+        List<Integer> all = IntStream.range(0,numDataPoints).mapToObj(i->i).collect(Collectors.toList());
+        List<Integer> trainIndices = Sampling.sampleByPercentage(all, trainPercentage);
+
+        Set<Integer> testIndicesSet = new HashSet<>();
+        for (int i=0; i<numDataPoints; i++) {
+            testIndicesSet.add(i);
+        }
+        testIndicesSet.removeAll(trainIndices);
+        List<Integer> testIndices = testIndicesSet.stream().collect(Collectors.toList());
+        Pair<MultiLabelClfDataSet, MultiLabelClfDataSet> pair = new Pair<>();
+        pair.setFirst(DataSetUtil.sampleData(multiLabelClfDataSet, trainIndices));
+        pair.setSecond(DataSetUtil.sampleData(multiLabelClfDataSet, testIndices));
+        return pair;
+    }
+
+
 
     public static void dumpDataPointSettings(ClfDataSet dataSet, String file) throws IOException{
         dumpDataPointSettings(dataSet, new File(file));
