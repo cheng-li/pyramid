@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.plugin_rule;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.eval.InstanceAverage;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
 import org.apache.mahout.math.DenseMatrix;
@@ -195,5 +196,13 @@ public class GeneralF1Predictor {
             pMatrix.set(l,s-1,1);
         }
         return  pMatrix;
+    }
+
+    public static double expectedF1(List<MultiLabel> combinations, double[] probs, MultiLabel prediction, int numClasses){
+        double sum = 0;
+        for (int i=0;i<combinations.size();i++){
+            sum += probs[i]*(new InstanceAverage(numClasses,combinations.get(i),prediction).getF1());
+        }
+        return sum;
     }
 }

@@ -108,20 +108,25 @@ public class PluginF1 implements PluginPredictor<CBM>{
         return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
     }
 
-    public MultiLabel showPredictBySamplingNonEmpty(Vector vector){
+    public void showPredictBySamplingNonEmpty(Vector vector){
         System.out.println("sampling procedure");
         Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
         List<Pair<MultiLabel, Double>> list = new ArrayList<>();
         List<MultiLabel> labels = pair.getFirst();
         List<Double> probs = pair.getSecond();
+        double[] probsArray = probs.stream().mapToDouble(a->a).toArray();
+
         for (int i=0;i<labels.size();i++){
             list.add(new Pair<>(labels.get(i),probs.get(i)));
         }
         Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
 
-        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
+        MultiLabel gfmPred =  GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
+        MultiLabel argmaxPre = cbm.predict(vector);
+        System.out.println("expected f1 of argmax predictor= "+GeneralF1Predictor.expectedF1(labels,probsArray, argmaxPre,cbm.getNumClasses()));
+        System.out.println("expected f1 of GFM predictor= "+GeneralF1Predictor.expectedF1(labels,probsArray, gfmPred,cbm.getNumClasses()));
 
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
+        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
     }
 
     public MultiLabel showPredictBySupport(Vector vector){
