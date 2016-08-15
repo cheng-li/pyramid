@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test16();
+        test17();
 
     }
 
@@ -255,6 +255,16 @@ public class ESIndexTest {
         List<String> res = index.matchStringQuery(q);
         System.out.println(res);
 
+        index.close();
+    }
+
+
+    static void test17() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build();
+
+        Ngram ngram = index.analyze("Story of a man who has unnatural feelings for a pig man test","my_analyzer");
+        System.out.println(ngram);
         index.close();
     }
 

@@ -12,6 +12,8 @@ import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.similarities.DefaultSimilarity;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
 import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsResponse;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.get.GetResponse;
@@ -934,6 +936,32 @@ public class ESIndex {
         return response.getHits().getTotalHits();
 
     }
+
+    /**
+     * analyze the given text using the provided analyzer, return an ngram
+     * @param text
+     * @param analyzer
+     * @return
+     */
+    public Ngram analyze(String text, String analyzer){
+        List<AnalyzeResponse.AnalyzeToken> tokens = client.admin().indices().prepareAnalyze(indexName,text).setAnalyzer(analyzer).get().getTokens();
+
+        Ngram ngram = new Ngram();
+        StringBuilder sb = new StringBuilder();
+        for (int i=0;i<tokens.size();i++)
+        {
+            AnalyzeResponse.AnalyzeToken token = tokens.get(i);
+            sb.append(token.getTerm());
+            if (i!=tokens.size()-1){
+                sb.append(" ");
+            }
+        }
+        ngram.setNgram(sb.toString());
+        return ngram;
+
+    }
+
+
 
 
 

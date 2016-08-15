@@ -34,6 +34,8 @@ public class App3 {
                 "feature.useInitialFeatures","feature.categFeature.filter",
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
                 "feature.missingValue","feature.generateDistribution",
+                "feature.addExternalNgrams","feature.externalNgramFile","feature.analyzer",
+                "feature.filterNgrams","feature.filterNgrams.keyWordsFile",
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.labelFilter","index.labelFilter.prefix",
                 "index.featureFieldPrefix","index.ngramExtractionFields",

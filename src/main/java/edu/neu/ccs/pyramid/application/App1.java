@@ -20,6 +20,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -221,23 +222,40 @@ public class App1 {
             }
         }
         System.out.println("there are "+allNgrams.elementSet().size()+" ngrams in total");
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(metaDataFolder,"all_ngrams.txt")));
-        for (Multiset.Entry<Ngram> ngramEntry: allNgrams.entrySet()){
-            bufferedWriter.write(ngramEntry.getElement().toString());
-            bufferedWriter.write("\t");
-            bufferedWriter.write(""+ngramEntry.getCount());
-            bufferedWriter.newLine();
-        }
-
-        bufferedWriter.close();
-
-        //for serialization
-        Set<Ngram> uniques = new HashSet<>();
-        uniques.addAll(allNgrams.elementSet());
-        Serialization.serialize(uniques, new File(metaDataFolder, "all_ngrams.ser"));
+//        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(metaDataFolder,"all_ngrams.txt")));
+//        for (Multiset.Entry<Ngram> ngramEntry: allNgrams.entrySet()){
+//            bufferedWriter.write(ngramEntry.getElement().toString());
+//            bufferedWriter.write("\t");
+//            bufferedWriter.write(""+ngramEntry.getCount());
+//            bufferedWriter.newLine();
+//        }
+//
+//        bufferedWriter.close();
+//
+//        //for serialization
+//        Set<Ngram> uniques = new HashSet<>();
+//        uniques.addAll(allNgrams.elementSet());
+//        Serialization.serialize(uniques, new File(metaDataFolder, "all_ngrams.ser"));
         return allNgrams.elementSet();
     }
 
+    private static List<Ngram> addNgramFromFile(Config config, ESIndex index) throws IOException {
+        List<Ngram> ngrams = new ArrayList<>();
+        String externalNgramFile = config.getString("feature.externalNgramFile");
+        List<String> lines = FileUtils.readLines(new File(externalNgramFile));
+        List<String> fields = config.getStrings("index.ngramExtractionFields");
+        String analyzer = config.getString("feature.analyzer");
+        for (String field: fields){
+            for (String line: lines){
+                Ngram ngram = index.analyze(line,analyzer);
+                ngram.setField(field);
+                ngrams.add(ngram);
+            }
+        }
+        System.out.println("ngrams collected from file "+externalNgramFile);
+        System.out.println(ngrams);
+        return ngrams;
+    }
 
 
     static void addNgramFeatures(FeatureList featureList, Set<Ngram> ngrams){
@@ -364,31 +382,31 @@ public class App1 {
 
 
 
-    static void getNgramDistributions(Config config, ESIndex index, String[] ids,LabelTranslator labelTranslator ) throws Exception{
-        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
-        metaDataFolder.mkdirs();
-
-        System.out.println("generating ngram distributions");
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        File file = new File(metaDataFolder,"all_ngrams.ser");
-        Set<Ngram> ngrams= (Set) Serialization.deserialize(file);
-        String labelField = config.getString("index.labelField");
-        long[] labelDistribution = LabelDistribution.getLabelDistribution(index,labelField,ids,labelTranslator);
-        List<FeatureDistribution> distributions = ngrams.stream().parallel()
-                .map(ngram -> new FeatureDistribution(ngram, index, labelField, ids, labelTranslator,labelDistribution))
-                .collect(Collectors.toList());
-        Serialization.serialize(distributions,new File(metaDataFolder,"distributions.ser"));
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(metaDataFolder,"distributions.txt")));
-        for (FeatureDistribution distribution: distributions){
-            bufferedWriter.write(distribution.toString());
-            bufferedWriter.newLine();
-        }
-
-        bufferedWriter.close();
-        System.out.println("done");
-        System.out.println("time spent on generating distributions = "+stopWatch);
-    }
+//    static void getNgramDistributions(Config config, ESIndex index, String[] ids,LabelTranslator labelTranslator ) throws Exception{
+//        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
+//        metaDataFolder.mkdirs();
+//
+//        System.out.println("generating ngram distributions");
+//        StopWatch stopWatch = new StopWatch();
+//        stopWatch.start();
+//        File file = new File(metaDataFolder,"all_ngrams.ser");
+//        Set<Ngram> ngrams= (Set) Serialization.deserialize(file);
+//        String labelField = config.getString("index.labelField");
+//        long[] labelDistribution = LabelDistribution.getLabelDistribution(index,labelField,ids,labelTranslator);
+//        List<FeatureDistribution> distributions = ngrams.stream().parallel()
+//                .map(ngram -> new FeatureDistribution(ngram, index, labelField, ids, labelTranslator,labelDistribution))
+//                .collect(Collectors.toList());
+//        Serialization.serialize(distributions,new File(metaDataFolder,"distributions.ser"));
+//        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(metaDataFolder,"distributions.txt")));
+//        for (FeatureDistribution distribution: distributions){
+//            bufferedWriter.write(distribution.toString());
+//            bufferedWriter.newLine();
+//        }
+//
+//        bufferedWriter.close();
+//        System.out.println("done");
+//        System.out.println("time spent on generating distributions = "+stopWatch);
+//    }
     
     static void generateMetaData(Config config) throws Exception{
         System.out.println("generating meta data");
@@ -418,10 +436,19 @@ public class App1 {
             addInitialFeatures(config,index,featureList,trainIndexIds);
         }
 
-        Set<Ngram> ngrams = gather(config,index,trainIndexIds);
-        if (config.getBoolean("feature.generateDistribution")){
-            getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
+        Set<Ngram> ngrams = new HashSet<>();
+        ngrams.addAll(gather(config,index,trainIndexIds));
+
+        if (config.getBoolean("feature.filterNgrams")){
+            ngrams = ngramFilter(config,index,ngrams);
         }
+
+        if (config.getBoolean("feature.addExternalNgrams")){
+            ngrams.addAll(addNgramFromFile(config, index));
+        }
+//        if (config.getBoolean("feature.generateDistribution")){
+//            getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
+//        }
 
         addNgramFeatures(featureList,ngrams);
 
@@ -514,7 +541,32 @@ public class App1 {
 //        return splitValueAll;
 //    }
 
+    /**
+     * filter ngrams by given unigrams in the file
+     * do not filter unigram candidates
+     */
+    private static Set<Ngram> ngramFilter(Config config, ESIndex index, Set<Ngram> ngrams) throws IOException {
+        String externalKeywordsFile = config.getString("feature.filterNgrams.keyWordsFile");
+        List<String> lines = FileUtils.readLines(new File(externalKeywordsFile));
+        String analyzer = config.getString("feature.analyzer");
+        Set<String> keywords = new HashSet<>();
+        for (String line: lines){
+            keywords.add(index.analyze(line, analyzer).getNgram());
+        }
 
+        return ngrams.stream().parallel().filter(ngram-> ngram.getN()==1||containsKeyWords(ngram,keywords))
+                .collect(Collectors.toSet());
+    }
+
+    private static boolean containsKeyWords(Ngram ngram, Set<String> keywords){
+        String[] terms = ngram.getTerms();
+        for (String term: terms){
+            if (keywords.contains(term)){
+                return true;
+            }
+        }
+        return false;
+    }
 
 
 
