@@ -205,4 +205,24 @@ public class GeneralF1Predictor {
         }
         return sum;
     }
+
+    public static String showSupportPrediction(List<MultiLabel> combinations, double[] probs, MultiLabel truth, MultiLabel prediction, int numClasses){
+        List<Pair<MultiLabel, Double>> list = new ArrayList<>();
+        for (int i=0;i<combinations.size();i++){
+            list.add(new Pair<>(combinations.get(i),probs[i]));
+        }
+        Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
+        List<Pair<MultiLabel, Double>> sorted = list.stream().sorted(comparator.reversed()).filter(pair->pair.getSecond()>0.001).collect(Collectors.toList());
+        StringBuilder sb = new StringBuilder();
+        sb.append("truth = ").append(truth).append("\n");
+        sb.append("prediction = ").append(prediction).append("\n");
+        sb.append("expected F1 = ").append(expectedF1(combinations, probs, prediction, numClasses)).append("\n");
+        sb.append("actual F1 = ").append(new InstanceAverage(numClasses, truth, prediction).getF1()).append("\n");
+        sb.append("joint = ");
+        for (int i=0;i<sorted.size();i++){
+            sb.append(sorted.get(i).getFirst()).append(":").append(sorted.get(i).getSecond()).append(", ");
+        }
+        sb.append("\n");
+        return sb.toString();
+    }
 }

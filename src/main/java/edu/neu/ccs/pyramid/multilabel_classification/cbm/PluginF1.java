@@ -129,21 +129,13 @@ public class PluginF1 implements PluginPredictor<CBM>{
         System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
     }
 
-    public MultiLabel showPredictBySupport(Vector vector){
+    public void showPredictBySupport(Vector vector, MultiLabel truth){
         System.out.println("support procedure");
         List<Double> probs = cbm.predictAssignmentProbs(vector,support);
-        List<Pair<MultiLabel, Double>> list = new ArrayList<>();
-        for (int i=0;i<support.size();i++){
-            list.add(new Pair<>(support.get(i),probs.get(i)));
-        }
-        Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
+        double[] probArray = probs.stream().mapToDouble(a->a).toArray();
 
-        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
-
-//        for (int i=0;i<support.size();i++){
-//            System.out.println(support.get(i)+": "+probs.get(i));
-//        }
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
+        MultiLabel prediction =  GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
+        System.out.println(GeneralF1Predictor.showSupportPrediction(support,probArray, truth, prediction, cbm.getNumClasses()));
     }
 
 

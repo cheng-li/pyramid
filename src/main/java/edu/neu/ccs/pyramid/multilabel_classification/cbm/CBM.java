@@ -326,6 +326,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @return
      */
     public Pair<List<MultiLabel>, List<Double>> samples(Vector vector, double probMassThreshold){
+        int maxNumSamples = 1000;
         List<MultiLabel> multiLabels = new ArrayList<>();
         List<Double> probs = new ArrayList<>();
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
@@ -344,7 +345,10 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
         double mass = 0;
         Set<MultiLabel> unique = new HashSet<>();
+        int numSamples = 0;
         while (true) {
+            numSamples += 1;
+//            System.out.println("samples = "+numSamples);
             int k = enumeratedIntegerDistribution.sample();
             Vector candidateY = new DenseVector(numLabels);
 
@@ -355,14 +359,16 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
             MultiLabel multiLabel = new MultiLabel(candidateY);
 
             if (!unique.contains(multiLabel)){
+//                System.out.println("new one");
                 multiLabels.add(multiLabel);
                 double p = Math.exp(predictLogAssignmentProb(multiLabel,logProportions, logClassProbs));
                 probs.add(p);
                 mass += p;
                 unique.add(multiLabel);
+//                System.out.println("mass = "+mass);
             }
 
-            if (mass>probMassThreshold){
+            if (mass>probMassThreshold || numSamples == maxNumSamples){
                 break;
             }
         }
@@ -379,6 +385,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @return
      */
     public Pair<List<MultiLabel>, List<Double>> sampleNonEmptySets(Vector vector, double probMassThreshold){
+        int maxNumSamples = 1000;
         List<MultiLabel> multiLabels = new ArrayList<>();
         List<Double> probs = new ArrayList<>();
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
@@ -401,7 +408,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
         double mass = 0;
         Set<MultiLabel> unique = new HashSet<>();
+        int numSamples = 0;
         while (true) {
+            numSamples += 1;
             int k = enumeratedIntegerDistribution.sample();
             Vector candidateY = new DenseVector(numLabels);
 
@@ -420,7 +429,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
                 unique.add(multiLabel);
             }
 
-            if (mass>probMassThreshold){
+            if (mass>probMassThreshold || numSamples == maxNumSamples){
                 break;
             }
         }
