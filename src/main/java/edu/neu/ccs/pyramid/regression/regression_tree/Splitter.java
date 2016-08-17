@@ -17,8 +17,6 @@ import java.util.stream.IntStream;
  */
 public class Splitter {
     private static final Logger logger = LogManager.getLogger();
-    private static ForkJoinPool pool = new ForkJoinPool();
-
 
     /**
      *
@@ -37,18 +35,17 @@ public class Splitter {
 
         int randomLevel = regTreeConfig.getRandomLevel();
 
-        ForkJoinTask<List<SplitResult>> task = pool.submit(() ->
-                IntStream.range(0, dataSet.getNumFeatures())
-                        .parallel()
-                        .mapToObj(featureIndex -> split(regTreeConfig, dataSet, labels,
-                                probs, featureIndex, globalStats))
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .sorted(Comparator.comparing(SplitResult::getReduction).reversed())
-                        .limit(randomLevel)
-                        .collect(Collectors.toList()));
+
         // the list might be empty
-        List<SplitResult> splitResults = task.join();
+        List<SplitResult> splitResults = IntStream.range(0, dataSet.getNumFeatures())
+                .parallel()
+                .mapToObj(featureIndex -> split(regTreeConfig, dataSet, labels,
+                        probs, featureIndex, globalStats))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .sorted(Comparator.comparing(SplitResult::getReduction).reversed())
+                .limit(randomLevel)
+                .collect(Collectors.toList());
         return sample(splitResults);
 //
 //        Optional<SplitResult> result = Arrays.stream(activeFeatures).parallel()
