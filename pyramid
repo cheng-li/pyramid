@@ -1,5 +1,6 @@
 # set java arguments such as memory allocation
 JAVA_OPTS="-Xms5g -Xmx10g"
+# to limit the number of worker threads, add " -Djava.util.concurrent.ForkJoinPool.common.parallelism=N" to JAVA_OPTS, where N is the desired number of threads; by default, the program uses all the available cores.
 
 # check if this is a packaged version
 IS_PACKAGED_VERSION='${project.name}'
