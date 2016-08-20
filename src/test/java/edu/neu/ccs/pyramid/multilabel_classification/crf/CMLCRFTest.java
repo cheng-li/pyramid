@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramidexp.multilabel_classification.crf;
+package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSetType;

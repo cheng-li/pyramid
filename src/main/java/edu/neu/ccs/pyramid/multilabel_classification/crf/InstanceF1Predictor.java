@@ -10,11 +10,11 @@ import java.util.List;
 /**
  * Created by Rainicy on 5/7/16.
  */
-public class PluginF1 implements PluginPredictor<CMLCRF> {
+public class InstanceF1Predictor implements PluginPredictor<CMLCRF> {
     private CMLCRF cmlcrf;
     private int numClasses;
 
-    public PluginF1(CMLCRF model) {
+    public InstanceF1Predictor(CMLCRF model) {
         this.cmlcrf = model;
         this.numClasses = model.getNumClasses();
     }
