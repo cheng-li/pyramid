@@ -11,6 +11,11 @@ import org.apache.mahout.math.Vector;
 public class SubsetAccPredictor implements PluginPredictor<CMLCRF> {
     private static final long serialVersionUID = 1L;
     private CMLCRF crf;
+
+    public SubsetAccPredictor(CMLCRF crf) {
+        this.crf = crf;
+    }
+
     @Override
     public CMLCRF getModel() {
         return crf;

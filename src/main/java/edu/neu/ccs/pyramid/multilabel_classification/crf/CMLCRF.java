@@ -71,13 +71,13 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             labelComIndices[i] = map.get(dataSet.getMultiLabels()[i]);
         }
-
-        System.out.println("support combinations: " + supportCombinations);
-        System.out.println("size of support " + this.numSupports);
+//
+//        System.out.println("support combinations: " + supportCombinations);
+//        System.out.println("size of support " + this.numSupports);
 
         this.combinationLabelPartScores = new double[supportCombinations.size()];
         updateCombLabelPartScores();
-        System.out.println("done with updating combined label part scores.");
+//        System.out.println("done with updating combined label part scores.");
     }
 
     public double getLossStrength() {

@@ -36,8 +36,8 @@ public class Weights  implements Serializable {
         this.numWeightsForLabels = (numClasses * (numClasses-1)/2) * 4;
         this.weightVector = new DenseVector(numWeightsForFeatures + numWeightsForLabels);
         this.serializableWeights = new double[numWeightsForFeatures + numWeightsForLabels];
-        System.out.println("numWeightsForFeature: " + numWeightsForFeatures);
-        System.out.println("numWeightsForLabels: " + numWeightsForLabels);
+//        System.out.println("numWeightsForFeature: " + numWeightsForFeatures);
+//        System.out.println("numWeightsForLabels: " + numWeightsForLabels);
     }
 
     //todo buggy
