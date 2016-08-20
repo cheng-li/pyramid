@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  */
 public class PluginF1 implements PluginPredictor<CBM>{
     CBM cbm;
-    private String predictionMode = "sampling";
+    private String predictionMode = "support";
     private int numSamples = 1000;
     private List<MultiLabel> support;
     private double probMassThreshold = 0.95;
