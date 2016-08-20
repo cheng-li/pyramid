@@ -90,7 +90,7 @@ public class App2 {
         int numLeaves = config.getInt("train.numLeaves");
         double learningRate = config.getDouble("train.learningRate");
         int minDataPerLeaf = config.getInt("train.minDataPerLeaf");
-        String modelName = "model";
+        String modelName = "model_app3";
         double featureSamplingRate = config.getDouble("train.featureSamplingRate");
         double dataSamplingRate = config.getDouble("train.dataSamplingRate");
 
@@ -156,7 +156,7 @@ public class App2 {
     static void tuneForMacroF(Config config) throws Exception{
         System.out.println("start tuning for macro F measure");
         String output = config.getString("output.folder");
-        String modelName = "model";
+        String modelName = "model_app3";
         double beta = config.getDouble("tune.FMeasure.beta");
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         String tuneBy = config.getString("tune.data");
@@ -184,8 +184,8 @@ public class App2 {
     static void report(Config config, String dataName) throws Exception{
         System.out.println("generating reports for data set "+dataName);
         String output = config.getString("output.folder");
-        String modelName = "model";
-        File analysisFolder = new File(new File(output,"reports"),dataName+"_reports");
+        String modelName = "model_app3";
+        File analysisFolder = new File(new File(output,"reports_app3"),dataName+"_reports");
         analysisFolder.mkdirs();
         FileUtils.cleanDirectory(analysisFolder);
 
