@@ -53,6 +53,10 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private double lossStrength = 1;
 
+    private LabelTranslator labelTranslator;
+
+    private FeatureList featureList;
+
 
     public CMLCRF(MultiLabelClfDataSet dataSet) {
         this.numClasses = dataSet.getNumClasses();
@@ -78,6 +82,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         this.combinationLabelPartScores = new double[supportCombinations.size()];
         updateCombLabelPartScores();
 //        System.out.println("done with updating combined label part scores.");
+        this.labelTranslator = dataSet.getLabelTranslator();
+        this.featureList = dataSet.getFeatureList();
     }
 
     public double getLossStrength() {
@@ -253,7 +259,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
      * @param assignmentProbs
      * @return
      */
-    double[] calClassProbs(double[] assignmentProbs){
+    public double[] calClassProbs(double[] assignmentProbs){
         double[] classProbs = new double[numClasses];
         for (int a=0;a< numSupports;a++){
             MultiLabel assignment = supportCombinations.get(a);
@@ -263,6 +269,11 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
             }
         }
         return classProbs;
+    }
+
+    public double[] predictClassProbs(Vector vector){
+        double[] combProbs = predictCombinationProbs(vector);
+        return calClassProbs(combProbs);
     }
 
     @Override
@@ -304,12 +315,12 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     @Override
     public FeatureList getFeatureList() {
-        return null;
+        return featureList;
     }
 
     @Override
     public LabelTranslator getLabelTranslator() {
-        return null;
+        return labelTranslator;
     }
 
 
