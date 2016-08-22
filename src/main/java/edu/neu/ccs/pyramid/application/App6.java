@@ -70,9 +70,12 @@ public class App6 {
         double gaussianVariance = config.getDouble("train.gaussianVariance");
         cmlcrf.setConsiderPair(config.getBoolean("train.considerLabelPair"));
         CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
+
+        int maxIteration = config.getInt("train.maxIteration");
         crfLoss.setParallelism(true);
         crfLoss.setRegularizeAll(config.getBoolean("train.regularizeAll"));
         LBFGS optimizer = new LBFGS(crfLoss);
+        optimizer.getTerminator().setMaxIteration(maxIteration);
 
         PluginPredictor<CMLCRF> predictor = null;
         String predictTarget = config.getString("predict.target");
