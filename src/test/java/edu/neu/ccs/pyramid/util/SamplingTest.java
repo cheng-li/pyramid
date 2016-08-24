@@ -1,11 +1,12 @@
 package edu.neu.ccs.pyramid.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SamplingTest {
     public static void main(String[] args) {
-        test4();
+        test5();
     }
 
     private static void test1(){
@@ -27,5 +28,10 @@ public class SamplingTest {
         probs.add(new Pair<>(2,0.2));
         System.out.println(Sampling.rotate(probs,2));
     }
+
+    private static void test5(){
+        System.out.println(Arrays.toString(Sampling.randomCategoricalDis(4)));
+    }
+
 
 }

@@ -162,4 +162,28 @@ public class Sampling {
         return res;
     }
 
+
+    /**
+     *
+     * @param dimension
+     * @return a random vector with elements summing up to 1
+     */
+    public static double[] randomCategoricalDis(int dimension){
+        double[] vector = new double[dimension];
+        double used = 0;
+        for (int i=0;i<dimension;i++){
+
+            double prob;
+            if (i==dimension-1){
+                prob = 1-used;
+            } else {
+                prob = Sampling.doubleUniform(0,1-used);
+            }
+
+            vector[i]=prob;
+            used += prob;
+        }
+        return vector;
+    }
+
 }
