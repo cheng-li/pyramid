@@ -12,6 +12,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.cbm.PluginF1;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -75,6 +76,9 @@ public class App5 {
 
         CBMOptimizer optimizer = getOptimizer(config, cbm, trainSet);
 
+        PluginF1 pluginF1 = new PluginF1(cbm);
+        List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
+        pluginF1.setSupport(support);
 
         for (int i=1;i<=numIterations;i++){
             System.out.println("=================================================");
@@ -86,11 +90,11 @@ public class App5 {
             System.out.println(new MLMeasures(cbm,trainSet));
             System.out.println("test performance with subset accuracy optimal predictor::");
             System.out.println(new MLMeasures(cbm,testSet));
-            PluginF1 pluginF1 = new PluginF1(cbm);
-            System.out.println("training performance with instance F1 optimal predictor:");
-            System.out.println(new MLMeasures(pluginF1,trainSet));
-            System.out.println("test performance with instance F1 optimal predictor:");
-            System.out.println(new MLMeasures(pluginF1,testSet));
+
+//            System.out.println("training performance with instance F1 optimal predictor:");
+//            System.out.println(new MLMeasures(pluginF1,trainSet));
+//            System.out.println("test performance with instance F1 optimal predictor:");
+//            System.out.println(new MLMeasures(pluginF1,testSet));
             File serializeModel = new File(path,  "iter." + i + ".model");
             cbm.serialize(serializeModel);
 
