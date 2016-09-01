@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.application;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBMInitializer;
@@ -33,6 +34,18 @@ public class App5 {
 
         System.out.println(config);
 
+        if (config.getBoolean("train")){
+            train(config);
+        }
+
+        if (config.getBoolean("test")){
+            test(config);
+        }
+
+    }
+
+
+    private static void train(Config config) throws Exception{
         String matrixType = config.getString("input.matrixType");
 
         MultiLabelClfDataSet trainSet;
@@ -79,6 +92,18 @@ public class App5 {
         PluginF1 pluginF1 = new PluginF1(cbm);
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
         pluginF1.setSupport(support);
+        MultiLabelClassifier classifier;
+        String predictTarget = config.getString("predict.target");
+        switch (predictTarget){
+            case "subsetAccuracy":
+                classifier = cbm;
+                break;
+            case "instanceFMeasure":
+                classifier = pluginF1;
+                break;
+            default:
+                throw new IllegalArgumentException("predictTarget can be subsetAccuracy or instanceFMeasure");
+        }
 
         for (int i=1;i<=numIterations;i++){
             System.out.println("=================================================");
@@ -86,21 +111,71 @@ public class App5 {
             optimizer.iterate();
             System.out.println("loss: "+optimizer.getTerminator().getLastValue());
 
-            System.out.println("training performance with subset accuracy optimal predictor:");
-            System.out.println(new MLMeasures(cbm,trainSet));
-            System.out.println("test performance with subset accuracy optimal predictor::");
-            System.out.println(new MLMeasures(cbm,testSet));
+            System.out.println("training performance with "+predictTarget+" optimal predictor:");
+            System.out.println(new MLMeasures(classifier,trainSet));
+            System.out.println("test performance with "+predictTarget+" optimal predictor:");
+            System.out.println(new MLMeasures(classifier,testSet));
 
-//            System.out.println("training performance with instance F1 optimal predictor:");
-//            System.out.println(new MLMeasures(pluginF1,trainSet));
-//            System.out.println("test performance with instance F1 optimal predictor:");
-//            System.out.println(new MLMeasures(pluginF1,testSet));
             File serializeModel = new File(path,  "iter." + i + ".model");
             cbm.serialize(serializeModel);
 
         }
         File serializeModel = new File(path, "model");
         cbm.serialize(serializeModel);
+    }
+
+    private static void test(Config config) throws Exception{
+
+
+        String matrixType = config.getString("input.matrixType");
+
+        MultiLabelClfDataSet trainSet;
+        MultiLabelClfDataSet testSet;
+
+        switch (matrixType){
+            case "sparse_random":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SPARSE, true);
+                break;
+            case "sparse_sequential":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_SEQ_SPARSE, true);
+                break;
+            case "dense":
+                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                        DataSetType.ML_CLF_DENSE, true);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown type");
+        }
+        String output = config.getString("output");
+        String modelName = "model";
+        File path = Paths.get(output, modelName).toFile();
+        CBM cbm = (CBM) Serialization.deserialize(new File(path, "model"));
+        PluginF1 pluginF1 = new PluginF1(cbm);
+        List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
+        pluginF1.setSupport(support);
+
+        String predictTarget = config.getString("predict.target");
+        MultiLabelClassifier classifier;
+        switch (predictTarget){
+            case "subsetAccuracy":
+                classifier = cbm;
+                break;
+            case "instanceFMeasure":
+                classifier = pluginF1;
+                break;
+            default:
+                throw new IllegalArgumentException("predictTarget can be subsetAccuracy or instanceFMeasure");
+        }
+        System.out.println("test performance with "+predictTarget+" optimal predictor:");
+        System.out.println(new MLMeasures(classifier,testSet));
 
     }
 
