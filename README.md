@@ -15,7 +15,7 @@ Pyramid is a Java machine learning library which implements many state-of-the-ar
     * Binary Relevance
     * Power Set
     * Probabilistic Classifier Chain (PCC)
-    * Conditional Random Field (CRF)
+    * [Conditional Random Field (CRF)](https://github.com/cheng-li/pyramid/wiki/CRF)
     * [Conditional Bernoulli Mixture (CBM)](https://github.com/cheng-li/pyramid/wiki/CBM)
 * Regression algorithms:
     * Linear Regression with L1 regularization (Lasso), L2 regularization (Ridge) and L1+L2 regularization (Elastic-net)
