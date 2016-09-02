@@ -68,12 +68,12 @@ public class App6 {
                 DataSetType.ML_CLF_SEQ_SPARSE, true);
         CMLCRF cmlcrf = new CMLCRF(trainSet);
         double gaussianVariance = config.getDouble("train.gaussianVariance");
-        cmlcrf.setConsiderPair(config.getBoolean("train.considerLabelPair"));
+        cmlcrf.setConsiderPair(true);
         CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
 
         int maxIteration = config.getInt("train.maxIteration");
         crfLoss.setParallelism(true);
-        crfLoss.setRegularizeAll(config.getBoolean("train.regularizeAll"));
+        crfLoss.setRegularizeAll(true);
         LBFGS optimizer = new LBFGS(crfLoss);
         optimizer.getTerminator().setMaxIteration(maxIteration);
 
@@ -186,7 +186,7 @@ public class App6 {
 
         boolean simpleCSV = true;
         if (simpleCSV){
-            System.out.println("start generating simple CSV report");
+//            System.out.println("start generating simple CSV report");
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
             List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
@@ -199,7 +199,7 @@ public class App6 {
 
             }
             FileUtils.writeStringToFile(csv,sb.toString(),false);
-            System.out.println("finish generating simple CSV report");
+//            System.out.println("finish generating simple CSV report");
         }
 
 
@@ -207,7 +207,7 @@ public class App6 {
 
         boolean dataInfoToJson = true;
         if (dataInfoToJson){
-            System.out.println("start writing data info to json");
+//            System.out.println("start writing data info to json");
             Set<String> modelLabels = IntStream.range(0,crf.getNumClasses()).mapToObj(i->crf.getLabelTranslator().toExtLabel(i))
                     .collect(Collectors.toSet());
 
@@ -238,16 +238,16 @@ public class App6 {
 
             jsonGenerator.writeEndObject();
             jsonGenerator.close();
-            System.out.println("finish writing data info to json");
+//            System.out.println("finish writing data info to json");
         }
 
 
         boolean modelConfigToJson = true;
         if (modelConfigToJson){
-            System.out.println("start writing model config to json");
+//            System.out.println("start writing model config to json");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
-            System.out.println("finish writing model config to json");
+//            System.out.println("finish writing model config to json");
         }
         
 
@@ -259,10 +259,10 @@ public class App6 {
 
         boolean individualPerformance = true;
         if (individualPerformance){
-            System.out.println("start writing individual label performance to json");
+//            System.out.println("start writing individual label performance to json");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
-            System.out.println("finish writing individual label performance to json");
+//            System.out.println("finish writing individual label performance to json");
         }
 
         System.out.println("reports generated");
