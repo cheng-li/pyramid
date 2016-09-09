@@ -4,6 +4,7 @@ import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.eval.InstanceAverage;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
 import org.apache.mahout.math.DenseMatrix;
@@ -206,23 +207,41 @@ public class GeneralF1Predictor {
         return sum;
     }
 
-    public static String showSupportPrediction(List<MultiLabel> combinations, double[] probs, MultiLabel truth, MultiLabel prediction, int numClasses){
+    public static List<Object> showSupportPrediction(List<MultiLabel> combinations, double[] probs, MultiLabel truth, MultiLabel prediction, int numClasses){
+        int truthIndex = 0;
+        for (int i=0;i<combinations.size();i++){
+            if (combinations.get(i).equals(truth)){
+                truthIndex = i;
+                break;
+            }
+        }
+
+        double[] trueJoint = new double[combinations.size()];
+        trueJoint[truthIndex] = 1;
+        double kl = KLDivergence.kl(trueJoint, probs);
+
         List<Pair<MultiLabel, Double>> list = new ArrayList<>();
         for (int i=0;i<combinations.size();i++){
             list.add(new Pair<>(combinations.get(i),probs[i]));
         }
         Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
-        List<Pair<MultiLabel, Double>> sorted = list.stream().sorted(comparator.reversed()).filter(pair->pair.getSecond()>0.001).collect(Collectors.toList());
+        List<Pair<MultiLabel, Double>> sorted = list.stream().sorted(comparator.reversed()).filter(pair->pair.getSecond()>0.01).collect(Collectors.toList());
         StringBuilder sb = new StringBuilder();
         sb.append("truth = ").append(truth).append("\n");
         sb.append("prediction = ").append(prediction).append("\n");
         sb.append("expected F1 = ").append(expectedF1(combinations, probs, prediction, numClasses)).append("\n");
-        sb.append("actual F1 = ").append(new InstanceAverage(numClasses, truth, prediction).getF1()).append("\n");
+        double actualF1 = new InstanceAverage(numClasses, truth, prediction).getF1();
+        sb.append("actual F1 = ").append(actualF1).append("\n");
+        sb.append("KL = "+kl).append("\n");
         sb.append("joint = ");
         for (int i=0;i<sorted.size();i++){
             sb.append(sorted.get(i).getFirst()).append(":").append(sorted.get(i).getSecond()).append(", ");
         }
         sb.append("\n");
-        return sb.toString();
+        List<Object> res = new ArrayList<>();
+        res.add(sb.toString());
+        res.add(actualF1);
+        res.add(kl);
+        return res;
     }
 }

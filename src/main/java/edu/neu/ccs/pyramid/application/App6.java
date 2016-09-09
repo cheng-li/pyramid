@@ -91,6 +91,7 @@ public class App6 {
         }
 
         int progressInterval = config.getInt("train.showProgress.interval");
+        System.out.println("start training");
         int iteration = 0;
         while(true){
             optimizer.iterate();
