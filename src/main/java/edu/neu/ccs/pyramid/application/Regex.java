@@ -22,24 +22,12 @@ public class Regex {
 
         System.out.println(config);
 
-        Pattern pattern =
-                Pattern.compile(config.getString("regularExpression"));
 
-        Matcher matcher =
-                pattern.matcher(config.getString("string"));
-
-        boolean found = false;
-        while (matcher.find()) {
-            System.out.format("Regular expression matches the text" +
-                            " \"%s\" starting at " +
-                            "character %d and ending at character %d.%n",
-                    matcher.group(),
-                    matcher.start()+1,
-                    matcher.end());
-            found = true;
-        }
-        if(!found){
-            System.out.format("No match found.%n");
+        boolean match = config.getString("string").matches(config.getString("regularExpression"));
+        if (match){
+            System.out.println("match!");
+        } else {
+            System.out.println("not match!");
         }
 
     }

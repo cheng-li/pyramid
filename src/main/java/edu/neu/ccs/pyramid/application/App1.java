@@ -11,10 +11,8 @@ import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
-import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import java.io.BufferedWriter;
@@ -28,7 +26,6 @@ import java.util.stream.Collectors;
 /**
  * for multi label dataset,
  * dump feature matrix with initial features and ngram features
- * follow exp12
  * Created by chengli on 6/12/15.
  */
 public class App1 {
@@ -318,9 +315,6 @@ public class App1 {
     }
 
 
-
-
-
     static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds) throws Exception{
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
         if (config.getBoolean("index.labelFilter")){
@@ -439,8 +433,12 @@ public class App1 {
         Set<Ngram> ngrams = new HashSet<>();
         ngrams.addAll(gather(config,index,trainIndexIds));
 
-        if (config.getBoolean("feature.filterNgrams")){
-            ngrams = ngramFilter(config,index,ngrams);
+        if (config.getBoolean("feature.filterNgramsByKeyWords")){
+            ngrams = keywordsFilter(config,index,ngrams);
+        }
+
+        if (config.getBoolean("feature.filterNgramsByRegex")){
+            ngrams = regexFilter(config,ngrams);
         }
 
         if (config.getBoolean("feature.addExternalNgrams")){
@@ -545,7 +543,7 @@ public class App1 {
      * filter ngrams by given unigrams in the file
      * do not filter unigram candidates
      */
-    private static Set<Ngram> ngramFilter(Config config, ESIndex index, Set<Ngram> ngrams) throws IOException {
+    private static Set<Ngram> keywordsFilter(Config config, ESIndex index, Set<Ngram> ngrams) throws IOException {
         String externalKeywordsFile = config.getString("feature.filterNgrams.keyWordsFile");
         List<String> lines = FileUtils.readLines(new File(externalKeywordsFile));
         String analyzer = config.getString("feature.analyzer");
@@ -568,6 +566,17 @@ public class App1 {
         return false;
     }
 
+
+    /**
+     *
+     * @param config
+     * @param ngrams
+     * @return ngrams that do not match the regular expression
+     */
+    private static Set<Ngram> regexFilter(Config config, Set<Ngram> ngrams){
+        String regex = config.getString("feature.filterNgrams.regex");
+        return ngrams.parallelStream().filter(ngram->!ngram.getNgram().matches(regex)).collect(Collectors.toSet());
+    }
 
 
 }
