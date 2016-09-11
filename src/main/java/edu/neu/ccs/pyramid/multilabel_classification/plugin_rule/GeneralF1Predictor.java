@@ -199,15 +199,23 @@ public class GeneralF1Predictor {
         return  pMatrix;
     }
 
-    public static double expectedF1(List<MultiLabel> combinations, double[] probs, MultiLabel prediction, int numClasses){
+    /**
+     * the expected F1 of the target combination under the estimated joint
+     * @param combinations
+     * @param probs
+     * @param target
+     * @param numClasses
+     * @return
+     */
+    public static double expectedF1(List<MultiLabel> combinations, double[] probs, MultiLabel target, int numClasses){
         double sum = 0;
         for (int i=0;i<combinations.size();i++){
-            sum += probs[i]*(new InstanceAverage(numClasses,combinations.get(i),prediction).getF1());
+            sum += probs[i]*(new InstanceAverage(numClasses,combinations.get(i),target).getF1());
         }
         return sum;
     }
 
-    public static List<Object> showSupportPrediction(List<MultiLabel> combinations, double[] probs, MultiLabel truth, MultiLabel prediction, int numClasses){
+    public static Analysis showSupportPrediction(List<MultiLabel> combinations, double[] probs, MultiLabel truth, MultiLabel prediction, int numClasses){
         int truthIndex = 0;
         for (int i=0;i<combinations.size();i++){
             if (combinations.get(i).equals(truth)){
@@ -226,22 +234,78 @@ public class GeneralF1Predictor {
         }
         Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
         List<Pair<MultiLabel, Double>> sorted = list.stream().sorted(comparator.reversed()).filter(pair->pair.getSecond()>0.01).collect(Collectors.toList());
-        StringBuilder sb = new StringBuilder();
-        sb.append("truth = ").append(truth).append("\n");
-        sb.append("prediction = ").append(prediction).append("\n");
-        sb.append("expected F1 = ").append(expectedF1(combinations, probs, prediction, numClasses)).append("\n");
+
+        double expectedF1Prediction = expectedF1(combinations, probs, prediction, numClasses);
+
+        double expectedF1Truth = expectedF1(combinations, probs, truth, numClasses);
+
         double actualF1 = new InstanceAverage(numClasses, truth, prediction).getF1();
-        sb.append("actual F1 = ").append(actualF1).append("\n");
-        sb.append("KL = "+kl).append("\n");
-        sb.append("joint = ");
+
+        StringBuilder jointString = new StringBuilder();
         for (int i=0;i<sorted.size();i++){
-            sb.append(sorted.get(i).getFirst()).append(":").append(sorted.get(i).getSecond()).append(", ");
+            jointString.append(sorted.get(i).getFirst()).append(":").append(sorted.get(i).getSecond()).append(", ");
         }
-        sb.append("\n");
-        List<Object> res = new ArrayList<>();
-        res.add(sb.toString());
-        res.add(actualF1);
-        res.add(kl);
-        return res;
+
+        Analysis analysis = new Analysis();
+        analysis.expectedF1Prediction = expectedF1Prediction;
+        analysis.expectedF1Truth = expectedF1Truth;
+        analysis.actualF1 = actualF1;
+        analysis.kl = kl;
+        analysis.prediction = prediction;
+        analysis.truth = truth;
+        analysis.joint = jointString.toString();
+
+        return analysis;
+    }
+
+    public static class Analysis{
+        double expectedF1Prediction;
+        double expectedF1Truth;
+        double actualF1;
+        double kl;
+        MultiLabel truth;
+        MultiLabel prediction;
+        String joint;
+
+        public double getExpectedF1Prediction() {
+            return expectedF1Prediction;
+        }
+
+        public double getExpectedF1Truth() {
+            return expectedF1Truth;
+        }
+
+        public double getActualF1() {
+            return actualF1;
+        }
+
+        public double getKl() {
+            return kl;
+        }
+
+        public MultiLabel getTruth() {
+            return truth;
+        }
+
+        public MultiLabel getPrediction() {
+            return prediction;
+        }
+
+        public String getJoint() {
+            return joint;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("truth=").append(truth).append("\n");
+            sb.append("prediction=").append(prediction).append("\n");
+            sb.append("actual F1=").append(actualF1).append("\n");
+            sb.append("kl=").append(kl).append("\n");
+            sb.append("expected F1 of truth=").append(expectedF1Truth).append("\n");
+            sb.append("expected F1 of prediction=").append(expectedF1Prediction).append("\n");
+            sb.append("joint=").append(joint).append("\n");
+            return sb.toString();
+        }
     }
 }

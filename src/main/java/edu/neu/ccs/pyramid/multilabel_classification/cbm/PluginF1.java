@@ -129,15 +129,14 @@ public class PluginF1 implements PluginPredictor<CBM>{
         System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
     }
 
-    public List<Object> showPredictBySupport(Vector vector, MultiLabel truth){
+    public GeneralF1Predictor.Analysis showPredictBySupport(Vector vector, MultiLabel truth){
 //        System.out.println("support procedure");
         List<Double> probs = cbm.predictAssignmentProbs(vector,support);
         double[] probArray = probs.stream().mapToDouble(a->a).toArray();
 
         MultiLabel prediction =  GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
-        List<Object> list = GeneralF1Predictor.showSupportPrediction(support,probArray, truth, prediction, cbm.getNumClasses());
-        System.out.println((String)list.get(0));
-        return list;
+        GeneralF1Predictor.Analysis analysis = GeneralF1Predictor.showSupportPrediction(support,probArray, truth, prediction, cbm.getNumClasses());
+        return analysis;
     }
 
 
