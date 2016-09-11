@@ -166,7 +166,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
     // total penalty
-    private double penaltyValue(){
+    public double penaltyValue(){
         double p=0;
         for (int m = 0;m<priorGaussianMeans.size();m++){
             p += penaltyValue(m);
