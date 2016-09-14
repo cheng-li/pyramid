@@ -7,7 +7,14 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.RMSE;
 import edu.neu.ccs.pyramid.regression.linear_regression.ElasticNetLinearRegOptimizer;
 import edu.neu.ccs.pyramid.regression.linear_regression.LinearRegression;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.mahout.math.Vector;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Linear Regression with Elasticnet (L1+L2) regularization
@@ -60,6 +67,20 @@ public class App4 {
         System.out.println("all non-zero weights in the format of (feature index:feature weight) pairs:");
         System.out.println("(Note that feature indices start from 0)");
         System.out.println(linearRegression.getWeights().getWeightsWithoutBias());
+
+        List<Pair<Integer,Double>> sorted = new ArrayList<>();
+        for (Vector.Element element: linearRegression.getWeights().getWeightsWithoutBias().nonZeroes()){
+            sorted.add(new Pair<>(element.index(),element.get()));
+        }
+
+        Comparator<Pair<Integer, Double>> comparator = Comparator.comparing(pair -> Math.abs(pair.getSecond()));
+        sorted = sorted.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        System.out.println("all non-zero weights in sorted order:");
+        StringBuilder sb = new StringBuilder();
+        for (Pair<Integer, Double> pair: sorted){
+            sb.append(pair.getFirst()).append(":").append(pair.getSecond()).append(", ");
+        }
+        System.out.println(sb.toString());
 
     }
 }
