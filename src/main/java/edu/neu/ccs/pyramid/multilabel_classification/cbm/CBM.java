@@ -149,7 +149,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @param assignments
      * @return
      */
-    List<Double> predictAssignmentProbs(Vector vector, List<MultiLabel> assignments){
+    public List<Double> predictAssignmentProbs(Vector vector, List<MultiLabel> assignments){
         List<Double> logProbs = predictLogAssignmentProbs(vector, assignments);
         return logProbs.stream().map(Math::exp).collect(Collectors.toList());
     }
