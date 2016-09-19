@@ -9,9 +9,7 @@ import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -62,11 +60,18 @@ public class PluginF1 implements PluginPredictor<CBM>{
             case "samplingNonEmpty":
                 pred =  predictBySamplingNonEmpty(vector);
                 break;
+            case "dynamic":
+                pred = predictByDynamic(vector);
+                break;
+            case "dynamicAndSupport":
+                pred = predictByDynamicAndSupport(vector);
+                break;
             default:
                 throw new IllegalArgumentException("unknown mode");
         }
         return pred;
     }
+
 
     private MultiLabel predictBySampling(Vector vector){
 //        List<MultiLabel> samples = cbm.samples(vector, numSamples);
@@ -84,6 +89,27 @@ public class PluginF1 implements PluginPredictor<CBM>{
         List<Double> probs = cbm.predictAssignmentProbs(vector,support);
         return GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
     }
+
+    private MultiLabel predictByDynamic(Vector vector) {
+        Pair<List<MultiLabel>, List<Double>> pair = cbm.predictDynamicProbs(vector);
+        return GeneralF1Predictor.predict(cbm.getNumClasses(), pair.getFirst(), pair.getSecond());
+    }
+
+    private MultiLabel predictByDynamicAndSupport(Vector vector) {
+        Pair<List<MultiLabel>, List<Double>> pair = cbm.predictDynamicProbs(vector);
+        List<Double> probs = cbm.predictAssignmentProbs(vector,support);
+        Set<MultiLabel> dynamicSet = new HashSet<>(pair.getFirst());
+        for (int i=0; i<probs.size(); i++) {
+            if (dynamicSet.contains(support.get(i))) {
+                continue;
+            } else {
+                pair.getFirst().add(support.get(i));
+                pair.getSecond().add(probs.get(i));
+            }
+        }
+        return GeneralF1Predictor.predict(cbm.getNumClasses(), pair.getFirst(), pair.getSecond());
+    }
+
 
 
     public MultiLabel showPredictBySampling(Vector vector){

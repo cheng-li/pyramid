@@ -154,6 +154,17 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         return logProbs.stream().map(Math::exp).collect(Collectors.toList());
     }
 
+    /**
+     * according to dynamic results, return the top label combinations and the corresponding probs.
+     * @param vector
+     * @return
+     */
+    public Pair<List<MultiLabel>, List<Double>> predictDynamicProbs(Vector vector) {
+        CBMPredictor cbmPredictor = new CBMPredictor(vector, multiClassClassifier, binaryClassifiers, numClusters, numLabels);
+        cbmPredictor.setAllowEmpty(allowEmpty);
+        return cbmPredictor.getDynamicProbs();
+    }
+
 
     private double predictLogAssignmentProb(MultiLabel assignment,double[] logProportions,double[][][] logClassProbs){
         double[] logProbs = new double[numClusters];
@@ -454,6 +465,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
     public static Builder getBuilder(){
         return new Builder();
     }
+
 
     public static class Builder {
         private int numClasses;

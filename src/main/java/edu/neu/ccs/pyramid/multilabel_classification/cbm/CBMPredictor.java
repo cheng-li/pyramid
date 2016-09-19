@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -135,6 +136,80 @@ public class CBMPredictor {
         return predLabel;
     }
 
+    public Pair<List<MultiLabel>, List<Double>> getDynamicProbs() {
+        Pair<List<MultiLabel>, List<Double>> pair = new Pair<>();
+
+        List<MultiLabel> predLabels = new LinkedList<>();
+        List<Double> predProbs = new LinkedList<>();
+
+        // initialization
+        Map<Integer, DynamicProgramming> DPs = new HashMap<>();
+        double[] maxClusterProb = new double[numClusters];
+        for (int k=0; k<numClusters; k++) {
+            DPs.put(k,new DynamicProgramming(probs[k], logProbs[k]));
+            maxClusterProb[k] = DPs.get(k).nextHighestProb();
+        }
+
+
+        // speed up:
+        // 1) for pi^k (D^k - q) >= 1 - pi^k
+        double[] cond1 = new double[numClusters];
+        // 2) save condition for sum_{r!=k} (pi^r * D^r)
+        double[] sumPiD = new double[numClusters];
+        for (int k=0; k<numClusters; k++) {
+            cond1[k] = maxClusterProb[k] - 1.0/logisticProb[k] + 1;
+            double sum = 0.0;
+            for (int r=0; r<numClusters; r++) {
+                if (r == k) {
+                    continue;
+                }
+                sum += logisticProb[r] * maxClusterProb[r];
+            }
+            sumPiD[k] = sum;
+        }
+
+        double maxLogProb = Double.NEGATIVE_INFINITY;
+
+        while (DPs.size() > 0) {
+            List<Integer> removeList = new LinkedList<>();
+            for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
+                int k = entry.getKey();
+                DynamicProgramming dp = entry.getValue();
+                double prob = dp.nextHighestProb();
+
+                Vector candidateY = dp.nextHighestVector();
+
+                // whether consider empty prediction
+                if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
+                    if (dp.dp.size() == 0) {
+                        removeList.add(k);
+                    }
+                    continue;
+                }
+
+                double logProb = logProbYnGivenXnLogisticProb(candidateY);
+
+                predLabels.add(new MultiLabel(candidateY));
+                predProbs.add(Math.exp(logProb));
+
+                if (logProb >= maxLogProb) {
+                    maxLogProb = logProb;
+                }
+
+                // check if need to remove cluster k from the candidates
+                if (checkStop(prob, cond1[k], maxLogProb, sumPiD[k], k) || dp.dp.size() == 0) {
+                    removeList.add(k);
+                }
+            }
+            for (int k : removeList) {
+                DPs.remove(k);
+            }
+        }
+        pair.setFirst(predLabels);
+        pair.setSecond(predProbs);
+        return pair;
+    }
+
     public MultiLabel predictByDynamic() {
         // initialization
         Map<Integer, DynamicProgramming> DPs = new HashMap<>();
@@ -165,9 +240,6 @@ public class CBMPredictor {
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
-//        int iter = 0;
-//        int maxIter = 1000;
-
         while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
             for (Map.Entry<Integer, DynamicProgramming> entry : DPs.entrySet()) {
@@ -190,7 +262,6 @@ public class CBMPredictor {
                 if (logProb >= maxLogProb) {
                     predVector = candidateY;
                     maxLogProb = logProb;
-//                    maxIter = iter;
                 }
 
                 // check if need to remove cluster k from the candidates
@@ -201,32 +272,13 @@ public class CBMPredictor {
             for (int k : removeList) {
                 DPs.remove(k);
             }
-
-//            iter++;
         }
-//        System.out.print("maxIter: " + maxIter + "\t" + Math.exp(maxLogProb) + "\t");
-//        System.out.println("maxIter: " + maxIter);
         MultiLabel predLabel = new MultiLabel();
         for (int l=0; l<numLabels; l++) {
             if (predVector.get(l) == 1.0) {
                 predLabel.addLabel(l);
             }
         }
-//
-//        // loop break because of maximum iterations
-//        if (iter == maxIter) {
-//            MultiLabel sampleLabel = predictBySampling();
-//            Vector sampleVector = new DenseVector(numLabels);
-//            for (int l : sampleLabel.getMatchedLabels()) {
-//                sampleVector.set(l, 1.0);
-//            }
-//            double sampleLogProb = logProbYnGivenXnLogisticProb(sampleVector);
-//            if (sampleLogProb > maxLogProb) {
-//                return sampleLabel;
-//            }
-//        }
-
-
         return predLabel;
     }
 
@@ -357,4 +409,6 @@ public class CBMPredictor {
     public void setAllowEmpty(boolean allowEmpty) {
         this.allowEmpty = allowEmpty;
     }
+
+
 }
