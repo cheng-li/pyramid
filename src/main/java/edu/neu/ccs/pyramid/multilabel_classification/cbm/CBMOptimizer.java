@@ -363,23 +363,8 @@ public class CBMOptimizer implements Serializable, Parallelizable {
 
     private void updateBinaryLogisticRegression(int clusterIndex, int labelIndex){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
-        if (meanRegularization){
-            Weights mean = CBMInspector.getMean(CBM,labelIndex);
-            Weights zero = new Weights(2,dataSet.getNumFeatures());
-            List<Weights> means = new ArrayList<>();
-            means.add(zero);
-            means.add(mean);
-            List<Double> variances = new ArrayList<>();
-            //todo two
-            variances.add(priorVarianceBinary);
-            variances.add(meanRegVariance);
-            LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) CBM.binaryClassifiers[clusterIndex][labelIndex],
-                    dataSet, gammasT[clusterIndex], targetsDistributions[labelIndex], means,variances);
-            ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticLoss);
-        } else {
-            ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression) CBM.binaryClassifiers[clusterIndex][labelIndex],
-                    dataSet, gammasT[clusterIndex], targetsDistributions[labelIndex], priorVarianceBinary);
-        }
+        ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression) CBM.binaryClassifiers[clusterIndex][labelIndex],
+                dataSet, gammasT[clusterIndex], targetsDistributions[labelIndex], priorVarianceBinary);
         //TODO
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
         ridgeLogisticOptimizer.optimize();

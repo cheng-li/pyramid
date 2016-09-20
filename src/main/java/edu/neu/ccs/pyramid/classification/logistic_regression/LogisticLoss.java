@@ -49,14 +49,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private boolean isParallel = false;
 
 
-    /**
-     * can have multiple (mean, variance) pairs
-     * the penalty is a weighted sum of deviations from each mean
-     * weight = 1/variance
-     */
-    private List<Weights> priorGaussianMeans;
 
-    private List<Double> priorGaussianVariances;
+    private double priorGaussianVariance;
 
 
     /**
@@ -77,8 +71,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
         this.weights = weights;
-        this.priorGaussianMeans = priorGaussianMeans;
-        this.priorGaussianVariances = priorGaussianVariances;
+        this.priorGaussianVariance = priorGaussianVariances.get(0);
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
@@ -150,28 +143,24 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         return this.value;
     }
 
-    /**
-     * the penalty due to one (mean, variance) pair
-     * @param meanIndex
-     * @return
-     */
-    private double penaltyValue(int meanIndex){
+
+
+    private double penaltyValue(int classIndex){
         double square = 0;
-        for (int k=0;k<numClasses;k++){
-            Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
-            Vector diff = weightVector.minus(priorGaussianMeans.get(meanIndex).getWeightsWithoutBiasForClass(k));
-            square += diff.dot(diff);
-        }
-        return square/(2*priorGaussianVariances.get(meanIndex));
+        Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
+        square += weightVector.dot(weightVector);
+        return square/(2*priorGaussianVariance);
     }
 
     // total penalty
     public double penaltyValue(){
-        double p=0;
-        for (int m = 0;m<priorGaussianMeans.size();m++){
-            p += penaltyValue(m);
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, numClasses).parallel();
+        } else {
+            intStream = IntStream.range(0, numClasses);
         }
-        return p;
+        return intStream.mapToDouble(this::penaltyValue).sum();
     }
 
 
@@ -194,11 +183,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private Vector penaltyGradient(){
         Vector weightsVector = this.logisticRegression.getWeights().getAllWeights();
         Vector penalty = new DenseVector(weightsVector.size());
-        for (int m=0;m<priorGaussianMeans.size();m++){
-            Vector mean = priorGaussianMeans.get(m).getAllWeights();
-            double var = priorGaussianVariances.get(m);
-            penalty = penalty.plus((weightsVector.minus(mean)).divide(var));
-        }
+
+        penalty = penalty.plus(weightsVector.divide(priorGaussianVariance));
+
         for (int j:logisticRegression.getWeights().getAllBiasPositions()){
             penalty.set(j,0);
         }
