@@ -44,15 +44,6 @@ public class IMLLogisticLoss implements Optimizable.ByGradientValue {
         this.isGradientCacheValid=false;
     }
 
-    @Override
-    public void setParallelism(boolean isParallel) {
-
-    }
-
-    @Override
-    public boolean isParallel() {
-        return false;
-    }
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();

@@ -47,31 +47,20 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
     private boolean isParallel = false;
-
-
-
     private double priorGaussianVariance;
 
 
-    /**
-     *
-     * @param logisticRegression
-     * @param dataSet
-     * @param weights
-     * @param targetDistributions [# data points][# labels]
-     * @param priorGaussianMeans
-     * @param priorGaussianVariances
-     */
+
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[] weights, double[][] targetDistributions,
-                        List<Weights> priorGaussianMeans,
-                        List<Double> priorGaussianVariances) {
+                        double priorGaussianVariance, boolean parallel) {
         this.logisticRegression = logisticRegression;
         this.targetDistributions = targetDistributions;
+        this.isParallel = parallel;
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
         this.weights = weights;
-        this.priorGaussianVariance = priorGaussianVariances.get(0);
+        this.priorGaussianVariance = priorGaussianVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
@@ -85,36 +74,18 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
 
     public LogisticLoss(LogisticRegression logisticRegression,
-                        DataSet dataSet, double[] weights, double[][] targetDistributions,
-                        double gaussianPriorVariance) {
-        this(logisticRegression,dataSet,weights,targetDistributions,
-                defaultMean(logisticRegression),defaultVariance(gaussianPriorVariance));
-
-    }
-
-
-    public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[][] targetDistributions,
-                        double gaussianPriorVariance) {
-        this(logisticRegression,dataSet,defaultWeights(dataSet.getNumDataPoints()),targetDistributions,gaussianPriorVariance);
+                        double gaussianPriorVariance, boolean parallel) {
+        this(logisticRegression,dataSet,defaultWeights(dataSet.getNumDataPoints()),targetDistributions,gaussianPriorVariance, parallel);
     }
 
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         ClfDataSet dataSet,
-                        double gaussianPriorVariance){
-        this(logisticRegression,dataSet,defaultTargetDistribution(dataSet),gaussianPriorVariance);
+                        double gaussianPriorVariance, boolean parallel){
+        this(logisticRegression,dataSet,defaultTargetDistribution(dataSet),gaussianPriorVariance, parallel);
     }
 
-    @Override
-    public void setParallelism(boolean isParallel) {
-        this.isParallel = isParallel;
-    }
-
-    @Override
-    public boolean isParallel() {
-        return this.isParallel;
-    }
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();
@@ -301,18 +272,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         return targetDistributions;
     }
 
-    private static List<Weights> defaultMean(LogisticRegression logisticRegression){
-        List<Weights> list = new ArrayList<>();
-        Weights weights = new Weights(logisticRegression.getNumClasses(),logisticRegression.getNumFeatures());
-        list.add(weights);
-        return list;
-    }
 
-    private static List<Double> defaultVariance(double variance){
-        List<Double> list = new ArrayList<>();
-        list.add(variance);
-        return list;
-    }
 
 
 }

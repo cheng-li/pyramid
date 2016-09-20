@@ -416,15 +416,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.cmlcrf.updateCombLabelPartScores();
     }
 
-    @Override
-    public void setParallelism(boolean isParallel) {
-        this.isParallel = isParallel;
-    }
-
-    @Override
-    public boolean isParallel() {
-        return this.isParallel;
-    }
 
 
     private void updateClassScoreMatrix(){

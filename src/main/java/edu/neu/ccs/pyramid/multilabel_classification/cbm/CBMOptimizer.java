@@ -30,7 +30,7 @@ import java.util.stream.IntStream;
  *
  * Created by Rainicy on 10/23/15.
  */
-public class CBMOptimizer implements Serializable, Parallelizable {
+public class CBMOptimizer implements Serializable {
     private static final Logger logger = LogManager.getLogger();
     private CBM CBM;
     private MultiLabelClfDataSet dataSet;
@@ -199,20 +199,6 @@ public class CBMOptimizer implements Serializable, Parallelizable {
         }
     }
 
-    @Override
-    public void setParallelism(boolean isParallel) {
-        this.isParallel = isParallel;
-    }
-
-    public void setMeanRegularization(boolean meanRegularization) {
-        this.meanRegularization = meanRegularization;
-    }
-
-    @Override
-    public boolean isParallel() {
-        return this.isParallel;
-    }
-
     private void reweightedGammas() {
         IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .forEach(this::reweightedGammas);
@@ -364,7 +350,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
     private void updateBinaryLogisticRegression(int clusterIndex, int labelIndex){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression) CBM.binaryClassifiers[clusterIndex][labelIndex],
-                dataSet, gammasT[clusterIndex], targetsDistributions[labelIndex], priorVarianceBinary);
+                dataSet, gammasT[clusterIndex], targetsDistributions[labelIndex], priorVarianceBinary, false);
         //TODO
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
         ridgeLogisticOptimizer.optimize();
@@ -414,8 +400,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
 
     private void updateMultiClassLR() {
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression) CBM.multiClassClassifier,
-                dataSet, gammas, priorVarianceMultiClass);
-        ridgeLogisticOptimizer.setParallelism(true);
+                dataSet, gammas, priorVarianceMultiClass, true);
         //TODO
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
         ridgeLogisticOptimizer.optimize();
@@ -492,11 +477,10 @@ public class CBMOptimizer implements Serializable, Parallelizable {
         }
     }
 
-    //todo mean regularization is not handled here
     // consider regularization penalty
     private double binaryLRObj(int clusterIndex, int classIndex) {
             LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) CBM.binaryClassifiers[clusterIndex][classIndex],
-                    dataSet, gammasT[clusterIndex], targetsDistributions[classIndex], priorVarianceBinary);
+                    dataSet, gammasT[clusterIndex], targetsDistributions[classIndex], priorVarianceBinary, false);
             return logisticLoss.getValue();
     }
 
@@ -530,7 +514,7 @@ public class CBMOptimizer implements Serializable, Parallelizable {
 
     private double multiClassLRObj(){
         LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression) CBM.multiClassClassifier,
-                dataSet, gammas, priorVarianceMultiClass);
+                dataSet, gammas, priorVarianceMultiClass, true);
         return logisticLoss.getValue();
     }
 
