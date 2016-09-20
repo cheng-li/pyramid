@@ -30,10 +30,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private Vector gradient;
     private int numParameters;
     private int numClasses;
-    /**
-     * numDataPoints by numClasses;
-     */
-    private ProbabilityMatrix probabilityMatrix;
+
+    // size = num classes * num data
+    private double[][] probabilityMatrix;
 
     //todo the concept is not unified in logistic regression and gradient boosting
 
@@ -64,7 +63,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numClasses);
+        this.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
         this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
@@ -209,7 +208,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
-        double[] probs = this.probabilityMatrix.getProbabilitiesForClass(classIndex);
+        double[] probs = this.probabilityMatrix[classIndex];
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -229,7 +228,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
-            this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
+            this.probabilityMatrix[k][dataPointIndex]=probs[k];
         }
     }
 
@@ -246,10 +245,6 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
 
 
-
-    public ProbabilityMatrix getProbabilityMatrix() {
-        return probabilityMatrix;
-    }
 
     public GradientMatrix getGradientMatrix() {
         return gradientMatrix;
