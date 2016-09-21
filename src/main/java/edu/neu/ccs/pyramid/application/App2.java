@@ -140,6 +140,10 @@ public class App2 {
             System.out.println("iteration "+i);
             trainer.iterate();
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations-1)){
+                // todo
+                System.out.println("predicting");
+                MultiLabel[] a = boosting.predict(dataSet);
+                System.out.println("prediction done");
                 System.out.println("training set performance");
                 System.out.println(new MLMeasures(boosting,dataSet));
             }
