@@ -3,16 +3,14 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
-import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -32,9 +30,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private int numClasses;
 
     // size = num classes * num data
-    private double[][] probabilityMatrix;
+    private double[][] probabilityMatrixKByN;
 
-    //todo the concept is not unified in logistic regression and gradient boosting
 
     /**
      * actually negative gradient
@@ -45,6 +42,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
+    private boolean isProbabilityCacheValid;
     private boolean isParallel = false;
     private double priorGaussianVariance;
 
@@ -63,11 +61,13 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
+        this.probabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
         this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
+        this.isProbabilityCacheValid=false;
+
     }
 
 
@@ -95,7 +95,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.logisticRegression.getWeights().setWeightVector(parameters);
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
-
+        this.isProbabilityCacheValid=false;
     }
 
 
@@ -104,7 +104,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             return this.value;
         }
 
-        double kl = logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, weights);
+        double kl = kl();
         if (logger.isDebugEnabled()){
             logger.debug("kl divergence = "+kl);
         }
@@ -113,6 +113,26 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         return this.value;
     }
 
+    private double kl(){
+        if (!isProbabilityCacheValid){
+            updateClassProbMatrix();
+        }
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, dataSet.getNumDataPoints()).parallel();
+        } else {
+            intStream = IntStream.range(0, dataSet.getNumDataPoints());
+        }
+        return intStream.mapToDouble(this::kl).sum();
+    }
+
+    private double kl(int dataPointIndex){
+        double[] predicted = new double[numClasses];
+        for (int k=0;k<numClasses;k++){
+            predicted[k] = probabilityMatrixKByN[k][dataPointIndex];
+        }
+        return weights[dataPointIndex]* KLDivergence.kl(targetDistributions[dataPointIndex], predicted);
+    }
 
 
     private double penaltyValue(int classIndex){
@@ -208,7 +228,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
-        double[] probs = this.probabilityMatrix[classIndex];
+        double[] probs = this.probabilityMatrixKByN[classIndex];
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -228,7 +248,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
-            this.probabilityMatrix[k][dataPointIndex]=probs[k];
+            this.probabilityMatrixKByN[k][dataPointIndex]=probs[k];
         }
     }
 
@@ -240,6 +260,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             intStream = IntStream.range(0,dataSet.getNumDataPoints());
         }
         intStream.forEach(this::updateClassProbs);
+        this.isProbabilityCacheValid = true;
     }
 
 

@@ -196,6 +196,8 @@ public class ElasticNetLogisticTrainer {
     }
 
     private double loss(){
+        // todo: this should be re-implemented here
+        // should not use the method provided by LR
         double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets) * -1;
         double penalty = penalty();
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;

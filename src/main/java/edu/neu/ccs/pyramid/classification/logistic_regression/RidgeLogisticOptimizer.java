@@ -57,7 +57,6 @@ public class RidgeLogisticOptimizer{
      */
     public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
                                   double[] weights, double[][] targetsDistribution, double gaussianPriorVar, boolean parallel) {
-        logisticRegression.setFeatureExtraction(false);
         this.function = new LogisticLoss(logisticRegression, dataSet, weights, targetsDistribution, gaussianPriorVar, parallel);
         this.optimizer = new LBFGS(function);
         this.optimizer.getTerminator().setAbsoluteEpsilon(0.1);
