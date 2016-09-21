@@ -92,13 +92,13 @@ public class IMLGBTrainer {
         return probabilityMatrix;
     }
 
-    public void setActiveFeatures(int[] activeFeatures) {
-        this.config.setActiveFeatures(activeFeatures);
-    }
-
-    public void setActiveDataPoints(int[] activeDataPoints) {
-        this.config.setActiveDataPoints(activeDataPoints);
-    }
+//    public void setActiveFeatures(int[] activeFeatures) {
+//        this.config.setActiveFeatures(activeFeatures);
+//    }
+//
+//    public void setActiveDataPoints(int[] activeDataPoints) {
+//        this.config.setActiveDataPoints(activeDataPoints);
+//    }
 
     //========================== PRIVATE ============================
     /**
