@@ -27,7 +27,7 @@ public class IMLGBTrainer {
     /**
      * F_k(x), used to speed up training. scoreMatrix.[i][k] = F_k(x_i)
      */
-    private ScoreMatrix scoreMatrix;
+    private FloatScoreMatrix scoreMatrix;
 
     /**
      * gradients for maximum likelihood estimation, to be fit by the tree
@@ -35,7 +35,7 @@ public class IMLGBTrainer {
      * store class first to ensure fast access of gradient
      */
     private GradientMatrix gradientMatrix;
-    private ProbabilityMatrix probabilityMatrix;
+    private FloatProbabilityMatrix probabilityMatrix;
     private IMLGradientBoosting boosting;
 
 
@@ -51,12 +51,12 @@ public class IMLGBTrainer {
         boosting.setLabelTranslator(dataSet.getLabelTranslator());
         int numClasses = dataSet.getNumClasses();
         int numDataPoints = dataSet.getNumDataPoints();
-        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
+        this.scoreMatrix = new FloatScoreMatrix(numDataPoints,numClasses);
         if (config.usePrior() && boosting.getRegressors(0).size()==0){
             this.setPriorProbs(dataSet);
         }
         this.initStagedClassScoreMatrix(boosting);
-        this.probabilityMatrix = new ProbabilityMatrix(numDataPoints,numClasses);
+        this.probabilityMatrix = new FloatProbabilityMatrix(numDataPoints,numClasses);
         this.updateProbabilityMatrix();
         this.gradientMatrix = new GradientMatrix(numDataPoints,numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateClassGradientMatrix();
@@ -80,17 +80,11 @@ public class IMLGBTrainer {
         this.updateClassGradientMatrix();
     }
 
-    public ScoreMatrix getScoreMatrix() {
-        return scoreMatrix;
-    }
 
     public GradientMatrix getGradientMatrix() {
         return gradientMatrix;
     }
 
-    public ProbabilityMatrix getProbabilityMatrix() {
-        return probabilityMatrix;
-    }
 
 //    public void setActiveFeatures(int[] activeFeatures) {
 //        this.config.setActiveFeatures(activeFeatures);
@@ -209,7 +203,7 @@ public class IMLGBTrainer {
         MultiLabel multiLabel = this.config.getDataSet().getMultiLabels()[dataPoint];
         //just use as a local variable
         //no need to store all in a matrix
-        double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
+        float[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
         for (int k=0;k<numClasses;k++){
             double gradient = 0;
             if (multiLabel.matchClass(k)){
