@@ -22,7 +22,7 @@ public class AppLauncher {
 
     private static final String[] versionCommands = {"version","-version","--version"};
 
-    private static final String[] alias = {"cbm:App5", "crf:App6"};
+    private static final String[] alias = {"cbm:App5", "crf:App6", "lsboost:AppLSBoost"};
 
     public static void main(String[] args) throws Exception{
         if (args.length==1){
