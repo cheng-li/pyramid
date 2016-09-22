@@ -9,6 +9,7 @@ import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Based on
@@ -58,7 +59,7 @@ public class MacroAverage {
         this.labelWiseAccuracy = new double[numClasses];
 
 
-        for (int l=0;l<numClasses;l++){
+        IntStream.range(0,numClasses).parallel().forEach(l->{
             for (int i=0;i<numDataPoints;i++){
                 MLConfusionMatrix.Entry entry = entries[i][l];
                 switch (entry){
@@ -88,7 +89,7 @@ public class MacroAverage {
             labelWiseHammingLoss[l] = HammingLoss.hammingLoss(tp,tn,
                     fp,fn);
             labelWiseAccuracy[l] = tp+tn;
-        }
+        });
 
         precision = Arrays.stream(labelWisePrecision).average().getAsDouble();
 

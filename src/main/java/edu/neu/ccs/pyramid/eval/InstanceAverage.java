@@ -34,7 +34,7 @@ public class InstanceAverage {
         double[] tnArray = new double[numDataPoints];
         double[] fpArray = new double[numDataPoints];
         double[] fnArray = new double[numDataPoints];
-        for (int i=0;i<numDataPoints;i++){
+        IntStream.range(0, numDataPoints).parallel().forEach(i->{
             for (int l=0;l<numClasses;l++){
                 MLConfusionMatrix.Entry entry = entries[i][l];
                 switch (entry){
@@ -56,7 +56,7 @@ public class InstanceAverage {
             tnArray[i] /= numClasses;
             fpArray[i] /= numClasses;
             fnArray[i] /= numClasses;
-        }
+        });
 
         precision = IntStream.range(0,numDataPoints).parallel()
                 .mapToDouble(i->Precision.precision(tpArray[i],fpArray[i]))
