@@ -79,9 +79,6 @@ public class LKBoostOptimizer extends GBOptimizer {
 //        addRegressors(regressors);
 //    }
 
-    public GradientMatrix getGradientMatrix() {
-        return gradientMatrix;
-    }
 
     public ProbabilityMatrix getProbabilityMatrix() {
         return probabilityMatrix;
@@ -91,25 +88,16 @@ public class LKBoostOptimizer extends GBOptimizer {
     //======================== PRIVATE ===============================================
 
 
-    /**
-     * parallel by classes
-     * calculate gradient vectors for all classes, store them
-     */
-    protected void updateGradientMatrix(){
-        int numDataPoints = this.dataSet.getNumDataPoints();
-        IntStream.range(0, numDataPoints).parallel()
-                .forEach(this::updateClassGradients);
+    @Override
+    protected double[] gradient(int ensembleIndex) {
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel().mapToDouble(i->gradient(ensembleIndex, i)).toArray();
     }
 
-    private void updateClassGradients(int dataPoint){
-        int numClasses = this.boosting.getNumClasses();
-        double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
-        for (int k=0;k<numClasses;k++){
-            double gradient;
-            gradient = targetDistribution[dataPoint][k] - probs[k];
-            this.gradientMatrix.setGradient(dataPoint,k,gradient);
-        }
+    private double gradient(int ensembleIndex, int dataPoint){
+        double prob = probabilityMatrix.getProbabilitiesForData(dataPoint)[ensembleIndex];
+        return targetDistribution[dataPoint][ensembleIndex] - prob;
     }
+
 
     /**
      * use scoreMatrix to update probabilities

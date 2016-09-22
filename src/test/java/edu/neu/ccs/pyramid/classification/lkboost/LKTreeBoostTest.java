@@ -24,8 +24,8 @@ public class LKTreeBoostTest {
     private static final String TMP = config.getString("output.tmp");
     
     public static void main(String[] args) throws Exception {
-        weightTest();
-//        spam_test();
+//        weightTest();
+        spam_test();
 //        newsgroup_test();
 //        spam_build();
 //        spam_load();
