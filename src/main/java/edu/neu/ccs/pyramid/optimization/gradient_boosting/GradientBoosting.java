@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.optimization.gradient_boosting;
 
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
@@ -13,6 +14,7 @@ public class GradientBoosting implements Serializable{
     private static final long serialVersionUID = 1L;
     protected int numEnsembles;
     protected List<Ensemble> ensembles;
+    protected FeatureList featureList;
 
     
     public GradientBoosting(int numEnsembles) {
@@ -42,6 +44,10 @@ public class GradientBoosting implements Serializable{
             scores[k] = score(vector,k);
         }
         return scores;
+    }
+
+    public FeatureList getFeatureList() {
+        return featureList;
     }
 
     @Override

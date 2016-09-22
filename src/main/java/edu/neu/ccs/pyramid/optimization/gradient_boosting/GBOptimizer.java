@@ -30,6 +30,11 @@ public abstract class GBOptimizer {
         this.factory = factory;
         this.dataSet = dataSet;
         this.weights = weights;
+        boosting.featureList = dataSet.getFeatureList();
+    }
+
+    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet,  RegressorFactory factory){
+        this(boosting, dataSet, factory, defaultWeights(dataSet.getNumDataPoints()));
     }
 
 

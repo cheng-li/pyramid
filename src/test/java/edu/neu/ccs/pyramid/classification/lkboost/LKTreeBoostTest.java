@@ -174,7 +174,7 @@ public class LKTreeBoostTest {
         System.out.println(dataSet.getMetaInfo());
 
         LKBoost lkBoost = new LKBoost(2);
-        lkBoost.setLabelTranslator(dataSet.getLabelTranslator());
+
 
 
 

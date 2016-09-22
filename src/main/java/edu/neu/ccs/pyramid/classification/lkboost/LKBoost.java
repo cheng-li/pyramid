@@ -18,7 +18,6 @@ import java.io.*;
 public class LKBoost extends GradientBoosting implements Classifier.ProbabilityEstimator, Classifier.ScoreEstimator{
     private static final long serialVersionUID = 5L;
     private int numClasses;
-    private FeatureList featureList;
     private LabelTranslator labelTranslator;
 
     public LKBoost(int numClasses) {
@@ -113,21 +112,10 @@ public class LKBoost extends GradientBoosting implements Classifier.ProbabilityE
         return sb.toString();
     }
 
-    @Override
-    public FeatureList getFeatureList() {
-        return featureList;
-    }
 
     @Override
     public LabelTranslator getLabelTranslator() {
         return labelTranslator;
     }
 
-    void setFeatureList(FeatureList featureList) {
-        this.featureList = featureList;
-    }
-
-    void setLabelTranslator(LabelTranslator labelTranslator) {
-        this.labelTranslator = labelTranslator;
-    }
 }
