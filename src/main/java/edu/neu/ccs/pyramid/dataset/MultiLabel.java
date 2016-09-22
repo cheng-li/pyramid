@@ -4,22 +4,19 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Created by chengli on 9/27/14.
  */
 public class MultiLabel implements Serializable{
-    private static final long serialVersionUID = 2L;
-    private Set<Integer> labels;
+    private static final long serialVersionUID = 3L;
+    private BitSet labels;
 
 
     public MultiLabel() {
-        this.labels = new HashSet<>();
+        this.labels = new BitSet();
     }
 
     /**
@@ -40,45 +37,43 @@ public class MultiLabel implements Serializable{
      */
     public Vector toVector(int length){
         Vector vector = new DenseVector(length);
-        for (int l:labels){
-            vector.set(l,1);
+        for (int i = labels.nextSetBit(0); i >= 0; i = labels.nextSetBit(i+1)){
+            vector.set(i,1);
         }
         return vector;
     }
 
     public MultiLabel addLabel(int k) {
-        this.labels.add(k);
+        this.labels.set(k);
         return this;
     }
 
     public void removeLabel(int k) {
-        if (labels.contains(k)) {
-            labels.remove(k);
-        }
+        this.labels.clear(k);
     }
 
     public void flipLabel(int k){
-        if (labels.contains(k)){
-            labels.remove(k);
-        } else {
-            labels.add(k);
-        }
+        this.labels.flip(k);
     }
 
     public boolean matchClass(int k){
-        return labels.contains(k);
+        return labels.get(k);
     }
 
     public Set<Integer> getMatchedLabels(){
-        return labels;
+        Set<Integer> set = new HashSet<>();
+        for (int i = labels.nextSetBit(0); i >= 0; i = labels.nextSetBit(i+1)) {
+            set.add(i);
+        }
+        return set;
     }
 
     public int getNumMatchedLabels(){
-        return labels.size();
+        return labels.cardinality();
     }
 
     public List<Integer> getMatchedLabelsOrdered(){
-        return labels.stream().sorted().collect(Collectors.toList());
+        return getMatchedLabels().stream().sorted().collect(Collectors.toList());
     }
 
     public static Set<Integer> union(MultiLabel multiLabel1, MultiLabel multiLabel2){
@@ -98,8 +93,8 @@ public class MultiLabel implements Serializable{
 
     public static Set<Integer> symmetricDifference(MultiLabel multiLabel1, MultiLabel multiLabel2){
         Set<Integer> union = union(multiLabel1,multiLabel2);
-        Set<Integer> itersection = intersection(multiLabel1,multiLabel2);
-        union.removeAll(itersection);
+        Set<Integer> intersection = intersection(multiLabel1,multiLabel2);
+        union.removeAll(intersection);
         return union;
     }
 
@@ -114,11 +109,11 @@ public class MultiLabel implements Serializable{
 
     @Override
     public String toString() {
-        return labels.stream().sorted().collect(Collectors.toList()).toString();
+        return getMatchedLabels().stream().sorted().collect(Collectors.toList()).toString();
     }
 
     public String toStringWithExtLabels(LabelTranslator labelTranslator){
-        return labels.stream().sorted().map(labelTranslator::toExtLabel).collect(Collectors.toList()).toString();
+        return getMatchedLabels().stream().sorted().map(labelTranslator::toExtLabel).collect(Collectors.toList()).toString();
     }
 
     @Override

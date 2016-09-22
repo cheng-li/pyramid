@@ -3,16 +3,14 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.GradientMatrix;
-import edu.neu.ccs.pyramid.dataset.ProbabilityMatrix;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -30,12 +28,10 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private Vector gradient;
     private int numParameters;
     private int numClasses;
-    /**
-     * numDataPoints by numClasses;
-     */
-    private ProbabilityMatrix probabilityMatrix;
 
-    //todo the concept is not unified in logistic regression and gradient boosting
+    // size = num classes * num data
+    private double[][] probabilityMatrixKByN;
+
 
     /**
      * actually negative gradient
@@ -46,82 +42,49 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
+    private boolean isProbabilityCacheValid;
     private boolean isParallel = false;
+    private double priorGaussianVariance;
 
 
-    /**
-     * can have multiple (mean, variance) pairs
-     * the penalty is a weighted sum of deviations from each mean
-     * weight = 1/variance
-     */
-    private List<Weights> priorGaussianMeans;
 
-    private List<Double> priorGaussianVariances;
-
-
-    /**
-     *
-     * @param logisticRegression
-     * @param dataSet
-     * @param weights
-     * @param targetDistributions [# data points][# labels]
-     * @param priorGaussianMeans
-     * @param priorGaussianVariances
-     */
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[] weights, double[][] targetDistributions,
-                        List<Weights> priorGaussianMeans,
-                        List<Double> priorGaussianVariances) {
+                        double priorGaussianVariance, boolean parallel) {
         this.logisticRegression = logisticRegression;
         this.targetDistributions = targetDistributions;
+        this.isParallel = parallel;
         numParameters = logisticRegression.getWeights().totalSize();
         this.dataSet = dataSet;
         this.weights = weights;
-        this.priorGaussianMeans = priorGaussianMeans;
-        this.priorGaussianVariances = priorGaussianVariances;
+        this.priorGaussianVariance = priorGaussianVariance;
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numClasses);
+        this.probabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
         this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
-    }
-
-
-
-    public LogisticLoss(LogisticRegression logisticRegression,
-                        DataSet dataSet, double[] weights, double[][] targetDistributions,
-                        double gaussianPriorVariance) {
-        this(logisticRegression,dataSet,weights,targetDistributions,
-                defaultMean(logisticRegression),defaultVariance(gaussianPriorVariance));
+        this.isProbabilityCacheValid=false;
 
     }
+
 
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[][] targetDistributions,
-                        double gaussianPriorVariance) {
-        this(logisticRegression,dataSet,defaultWeights(dataSet.getNumDataPoints()),targetDistributions,gaussianPriorVariance);
+                        double gaussianPriorVariance, boolean parallel) {
+        this(logisticRegression,dataSet,defaultWeights(dataSet.getNumDataPoints()),targetDistributions,gaussianPriorVariance, parallel);
     }
 
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         ClfDataSet dataSet,
-                        double gaussianPriorVariance){
-        this(logisticRegression,dataSet,defaultTargetDistribution(dataSet),gaussianPriorVariance);
+                        double gaussianPriorVariance, boolean parallel){
+        this(logisticRegression,dataSet,defaultTargetDistribution(dataSet),gaussianPriorVariance, parallel);
     }
 
-    @Override
-    public void setParallelism(boolean isParallel) {
-        this.isParallel = isParallel;
-    }
-
-    @Override
-    public boolean isParallel() {
-        return this.isParallel;
-    }
 
     public Vector getParameters(){
         return logisticRegression.getWeights().getAllWeights();
@@ -132,7 +95,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.logisticRegression.getWeights().setWeightVector(parameters);
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
-
+        this.isProbabilityCacheValid=false;
     }
 
 
@@ -141,7 +104,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             return this.value;
         }
 
-        double kl = logisticRegression.dataSetKLWeightedDivergence(dataSet, targetDistributions, weights);
+        double kl = kl();
         if (logger.isDebugEnabled()){
             logger.debug("kl divergence = "+kl);
         }
@@ -150,28 +113,44 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         return this.value;
     }
 
-    /**
-     * the penalty due to one (mean, variance) pair
-     * @param meanIndex
-     * @return
-     */
-    private double penaltyValue(int meanIndex){
-        double square = 0;
-        for (int k=0;k<numClasses;k++){
-            Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(k);
-            Vector diff = weightVector.minus(priorGaussianMeans.get(meanIndex).getWeightsWithoutBiasForClass(k));
-            square += diff.dot(diff);
+    private double kl(){
+        if (!isProbabilityCacheValid){
+            updateClassProbMatrix();
         }
-        return square/(2*priorGaussianVariances.get(meanIndex));
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, dataSet.getNumDataPoints()).parallel();
+        } else {
+            intStream = IntStream.range(0, dataSet.getNumDataPoints());
+        }
+        return intStream.mapToDouble(this::kl).sum();
+    }
+
+    private double kl(int dataPointIndex){
+        double[] predicted = new double[numClasses];
+        for (int k=0;k<numClasses;k++){
+            predicted[k] = probabilityMatrixKByN[k][dataPointIndex];
+        }
+        return weights[dataPointIndex]* KLDivergence.kl(targetDistributions[dataPointIndex], predicted);
+    }
+
+
+    private double penaltyValue(int classIndex){
+        double square = 0;
+        Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
+        square += weightVector.dot(weightVector);
+        return square/(2*priorGaussianVariance);
     }
 
     // total penalty
     public double penaltyValue(){
-        double p=0;
-        for (int m = 0;m<priorGaussianMeans.size();m++){
-            p += penaltyValue(m);
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, numClasses).parallel();
+        } else {
+            intStream = IntStream.range(0, numClasses);
         }
-        return p;
+        return intStream.mapToDouble(this::penaltyValue).sum();
     }
 
 
@@ -194,11 +173,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private Vector penaltyGradient(){
         Vector weightsVector = this.logisticRegression.getWeights().getAllWeights();
         Vector penalty = new DenseVector(weightsVector.size());
-        for (int m=0;m<priorGaussianMeans.size();m++){
-            Vector mean = priorGaussianMeans.get(m).getAllWeights();
-            double var = priorGaussianVariances.get(m);
-            penalty = penalty.plus((weightsVector.minus(mean)).divide(var));
-        }
+
+        penalty = penalty.plus(weightsVector.divide(priorGaussianVariance));
+
         for (int j:logisticRegression.getWeights().getAllBiasPositions()){
             penalty.set(j,0);
         }
@@ -251,7 +228,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
-        double[] probs = this.probabilityMatrix.getProbabilitiesForClass(classIndex);
+        double[] probs = this.probabilityMatrixKByN[classIndex];
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -271,7 +248,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
-            this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
+            this.probabilityMatrixKByN[k][dataPointIndex]=probs[k];
         }
     }
 
@@ -283,15 +260,12 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             intStream = IntStream.range(0,dataSet.getNumDataPoints());
         }
         intStream.forEach(this::updateClassProbs);
+        this.isProbabilityCacheValid = true;
     }
 
 
 
 
-
-    public ProbabilityMatrix getProbabilityMatrix() {
-        return probabilityMatrix;
-    }
 
     public GradientMatrix getGradientMatrix() {
         return gradientMatrix;
@@ -314,18 +288,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         return targetDistributions;
     }
 
-    private static List<Weights> defaultMean(LogisticRegression logisticRegression){
-        List<Weights> list = new ArrayList<>();
-        Weights weights = new Weights(logisticRegression.getNumClasses(),logisticRegression.getNumFeatures());
-        list.add(weights);
-        return list;
-    }
 
-    private static List<Double> defaultVariance(double variance){
-        List<Double> list = new ArrayList<>();
-        list.add(variance);
-        return list;
-    }
 
 
 }

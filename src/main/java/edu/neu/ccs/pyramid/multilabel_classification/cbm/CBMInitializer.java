@@ -13,7 +13,6 @@ public class CBMInitializer {
 
     public static void initialize(CBM CBM, MultiLabelClfDataSet dataSet, CBMOptimizer optimizer){
         double[][] gamms = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), CBM.numClusters);
-        optimizer.setParallelism(true);
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int k = 0; k< CBM.numClusters; k++){
                 optimizer.gammas[i][k] = gamms[i][k];

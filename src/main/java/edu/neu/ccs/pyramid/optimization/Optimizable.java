@@ -6,7 +6,7 @@ import org.apache.mahout.math.Vector;
  * Created by chengli on 12/7/14.
  * inspired by the design of mallet
  */
-public interface Optimizable extends Parallelizable{
+public interface Optimizable{
     Vector getParameters();
 
     /**

@@ -40,8 +40,7 @@ public class LogisticRegressionTest {
         System.out.println(dataSet.getMetaInfo());
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        logisticRegression.setFeatureExtraction(true);
-        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,1000);
+        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,1000, true);
         GradientDescent gradientDescent = new GradientDescent(function);
         gradientDescent.getLineSearcher().setInitialStepLength(1.0E-4);
         gradientDescent.optimize();
@@ -60,8 +59,7 @@ public class LogisticRegressionTest {
         System.out.println(dataSet.getMetaInfo());
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        logisticRegression.setFeatureExtraction(true);
-        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
+        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1, true);
         ConjugateGradientDescent conjugateGradientDescent = new ConjugateGradientDescent(function);
         conjugateGradientDescent.getLineSearcher().setInitialStepLength(0.01);
         conjugateGradientDescent.optimize();
@@ -82,8 +80,7 @@ public class LogisticRegressionTest {
         System.out.println(dataSet.getMetaInfo());
 
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        logisticRegression.setFeatureExtraction(false);
-        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1);
+        LogisticLoss function = new LogisticLoss(logisticRegression,dataSet,0.1, true);
         LBFGS lbfgs = new LBFGS(function);
         lbfgs.optimize();
         System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));

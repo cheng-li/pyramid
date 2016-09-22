@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * multi-label confusion matrix
@@ -34,7 +35,7 @@ public class MLConfusionMatrix {
         this.numDataPoints = trueLabels.length;
         int numData = trueLabels.length;
         this.entries = new Entry[numData][numClasses];
-        for (int i=0;i<numData;i++){
+        IntStream.range(0,numData).parallel().forEach(i->{
             MultiLabel label = trueLabels[i];
             MultiLabel prediction = predictions[i];
             Vector labelVector = label.toVector(numClasses);
@@ -52,7 +53,7 @@ public class MLConfusionMatrix {
                     entries[i][l]=Entry.FP;
                 }
             }
-        }
+        });
     }
 
     /**

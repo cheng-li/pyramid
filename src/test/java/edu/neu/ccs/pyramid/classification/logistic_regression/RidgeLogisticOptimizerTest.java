@@ -36,8 +36,7 @@ public class RidgeLogisticOptimizerTest {
 //                DataSetType.CLF_SPARSE, true);
         double variance =1000;
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,variance);
-        optimizer.setParallelism(true);
+        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,variance, true);
         optimizer.getOptimizer().getTerminator().setMaxIteration(10000).setMode(Terminator.Mode.STANDARD);
         System.out.println("after initialization");
         System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
@@ -75,7 +74,7 @@ public class RidgeLogisticOptimizerTest {
             }
         }
 
-        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,gammas,targets,500);
+        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,gammas,targets,500, true);
         optimizer.getOptimizer().getTerminator().setMaxIteration(10000).setMode(Terminator.Mode.STANDARD);
         System.out.println("after initialization");
         System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
@@ -103,8 +102,7 @@ public class RidgeLogisticOptimizerTest {
 //                DataSetType.CLF_SPARSE, true);
         double variance =1000;
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
-        Optimizable.ByGradientValue loss = new LogisticLoss(logisticRegression,dataSet, variance);
-        loss.setParallelism(true);
+        Optimizable.ByGradientValue loss = new LogisticLoss(logisticRegression,dataSet, variance, true);
 //        GradientDescent optimizer = new GradientDescent(loss);
         LBFGS optimizer = new LBFGS(loss);
         System.out.println("after initialization");

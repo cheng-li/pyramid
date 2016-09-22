@@ -21,7 +21,6 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     private int numClasses;
     private int numFeatures;
     private Weights weights;
-    private boolean featureExtraction = false;
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
 
@@ -45,14 +44,6 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         this.weights = new Weights(numClasses, numFeatures, weightVector);
     }
 
-
-    public boolean featureExtraction() {
-        return featureExtraction;
-    }
-
-    public void setFeatureExtraction(boolean featureExtraction) {
-        this.featureExtraction = featureExtraction;
-    }
 
     public Weights getWeights() {
         return weights;
@@ -139,53 +130,12 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return logNumberator - logDenominator;
     }
 
-    double logLikelihood(Vector vector, int k){
-        double[] scoreVector = this.predictClassScores(vector);
-        double logDenominator = MathUtil.logSumExp(scoreVector);
-        double logNumerator = scoreVector[k];
-        return logNumerator-logDenominator;
-    }
-
-    double klDivergence(Vector vector, double[] targetDistribution){
-        double[] logEstimation = predictLogClassProbs(vector);
-
-        return KLDivergence.klGivenPLogQ(targetDistribution,logEstimation);
-
-    }
-
-    double dataSetKLDivergence(DataSet dataSet, double[][] targetDistributions){
-        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(i -> klDivergence(dataSet.getRow(i),targetDistributions[i]))
-                .sum();
-    }
-
-    public double dataSetKLWeightedDivergence(DataSet dataSet, double[][] targetDistributions, double[] weights) {
-        double sum = 0.0;
-        for(int n=0; n<dataSet.getNumDataPoints(); n++) {
-            sum += weights[n] * klDivergence(dataSet.getRow(n), targetDistributions[n]);
-        }
-        return sum;
-    }
 
     public double dataSetLogLikelihood(DataSet dataSet, double[][] targets) {
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i -> logLikelihood(dataSet.getRow(i), targets[i]))
                 .sum();
     }
-
-    public double dataSetLogLikelihood(ClfDataSet dataSet){
-        int[] labels = dataSet.getLabels();
-        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(i->logLikelihood(dataSet.getRow(i),labels[i]))
-                .sum();
-    }
-
-    public double dataSetLogLikelihood(DataSet dataSet, int[] labels) {
-        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(i->logLikelihood(dataSet.getRow(i),labels[i]))
-                .sum();
-    }
-
 
 
 
