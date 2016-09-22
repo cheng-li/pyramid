@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="warn">
     <Appenders>
+        <Console name="Console">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
         <File name="MyFile" fileName="logs/log4j.log">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Pattern>
@@ -11,8 +14,8 @@
         </Async>
     </Appenders>
     <Loggers>
-        <Root level="off">
-            <AppenderRef ref="Async"/>
+        <Root level="error">
+            <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
 </Configuration>
