@@ -101,6 +101,12 @@ public abstract class GBOptimizer {
         updateOthers();
     }
 
+    public void iterate(int numIterations){
+        for (int i=0;i<numIterations;i++){
+            iterate();
+        }
+    }
+
     protected void initStagedScores(){
         for (int k=0;k<boosting.getNumEnsembles();k++){
             for (Regressor regressor: boosting.getEnsemble(k).getRegressors()){
