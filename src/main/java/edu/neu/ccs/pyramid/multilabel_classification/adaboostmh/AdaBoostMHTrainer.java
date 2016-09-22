@@ -96,7 +96,7 @@ public class AdaBoostMHTrainer {
             for (int k: dataSet.getMultiLabels()[i].getMatchedLabels()){
                 y[k] = 1;
             }
-            double[] scores = scoreMatrix.getScoresForData(i);
+            float[] scores = scoreMatrix.getScoresForData(i);
             for (int k=0;k<numClasses;k++){
                 double prob = Math.exp(-1*y[k]*scores[k]);
                 weightMatrix.setProbability(i, k, prob);

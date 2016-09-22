@@ -106,7 +106,7 @@ public class LKBoostOptimizer extends GBOptimizer {
      */
     private void updateClassProb(int i){
         int numClasses = this.boosting.getNumClasses();
-        double[] scores = scoreMatrix.getScoresForData(i);
+        float[] scores = scoreMatrix.getScoresForData(i);
 
         double logDenominator = MathUtil.logSumExp(scores);
 //        if (logger.isDebugEnabled()){

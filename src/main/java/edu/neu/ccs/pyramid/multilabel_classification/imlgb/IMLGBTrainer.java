@@ -27,7 +27,7 @@ public class IMLGBTrainer {
     /**
      * F_k(x), used to speed up training. scoreMatrix.[i][k] = F_k(x_i)
      */
-    private FloatScoreMatrix scoreMatrix;
+    private ScoreMatrix scoreMatrix;
 
     /**
      * gradients for maximum likelihood estimation, to be fit by the tree
@@ -50,7 +50,7 @@ public class IMLGBTrainer {
         boosting.setLabelTranslator(dataSet.getLabelTranslator());
         int numClasses = dataSet.getNumClasses();
         int numDataPoints = dataSet.getNumDataPoints();
-        this.scoreMatrix = new FloatScoreMatrix(numDataPoints,numClasses);
+        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
         if (config.usePrior() && boosting.getRegressors(0).size()==0){
             this.setPriorProbs(dataSet);
         }

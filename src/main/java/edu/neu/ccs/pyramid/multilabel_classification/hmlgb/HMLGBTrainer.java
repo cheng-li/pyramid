@@ -208,7 +208,7 @@ public class HMLGBTrainer {
 
     private double calAssignmentScores(int dataPoint, MultiLabel assignment){
         double score = 0;
-        double[] scores = this.scoreMatrix.getScoresForData(dataPoint);
+        float[] scores = this.scoreMatrix.getScoresForData(dataPoint);
         for (Integer label : assignment.getMatchedLabels()){
             score += scores[label];
         }

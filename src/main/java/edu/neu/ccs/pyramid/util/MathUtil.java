@@ -82,6 +82,18 @@ public class MathUtil {
     }
 
     /**
+     * calculate log(exp(x1)+exp(x2)+...)
+     * @return
+     */
+    public static double logSumExp(float[] arr){
+        double[] d = new double[arr.length];
+        for (int i=0;i<d.length;i++){
+            d[i] = arr[i];
+        }
+        return logSumExp(d);
+    }
+
+    /**
      *
      * @param arr
      * @return L1 norm of an array
