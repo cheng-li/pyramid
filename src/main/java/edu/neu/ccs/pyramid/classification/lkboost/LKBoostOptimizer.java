@@ -38,10 +38,12 @@ public class LKBoostOptimizer extends GBOptimizer {
 
     public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, RegressorFactory factory, double[] weights) {
         this(boosting,dataSet, factory, weights,DataSetUtil.labelDistribution(dataSet));
+        this.boosting.labelTranslator = dataSet.getLabelTranslator();
     }
 
     public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, RegressorFactory factory) {
         this(boosting,dataSet, factory, defaultWeights(dataSet.getNumDataPoints()),DataSetUtil.labelDistribution(dataSet));
+        this.boosting.labelTranslator = dataSet.getLabelTranslator();
     }
 
     public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, double[] weights) {
@@ -111,7 +113,6 @@ public class LKBoostOptimizer extends GBOptimizer {
                 throw new RuntimeException("pro=NaN, logNumerator = "
                         +logNumerator+", logDenominator="+logDenominator+
                         ", scores = "+Arrays.toString(scores));
-
             }
         }
     }
