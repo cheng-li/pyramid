@@ -35,7 +35,6 @@ public class IMLGBTrainer {
      * store class first to ensure fast access of gradient
      */
 //    private FloatGradientMatrix gradientMatrix;
-    private FloatProbabilityMatrix probabilityMatrix;
     private IMLGradientBoosting boosting;
 
 
@@ -56,8 +55,6 @@ public class IMLGBTrainer {
             this.setPriorProbs(dataSet);
         }
         this.initStagedClassScoreMatrix(boosting);
-        this.probabilityMatrix = new FloatProbabilityMatrix(numDataPoints,numClasses);
-        this.updateProbabilityMatrix();
 //        this.gradientMatrix = new FloatGradientMatrix(numDataPoints,numClasses, FloatGradientMatrix.Objective.MAXIMIZE);
         List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         boosting.setAssignments(assignments);
@@ -75,7 +72,6 @@ public class IMLGBTrainer {
              */
             this.updateStagedClassScores(regressor,k);
         }
-        this.updateProbabilityMatrix();
     }
 
 
@@ -156,25 +152,7 @@ public class IMLGBTrainer {
         this.scoreMatrix.increment(dataIndex,k,prediction);
     }
 
-    private void updateProbabilityMatrix(){
-        DataSet dataSet= this.config.getDataSet();
-        int numDataPoints = dataSet.getNumDataPoints();
-        IntStream.range(0, numDataPoints).parallel()
-                .forEach(this::updateClassProbs);
-    }
 
-    /**
-     * probability for each class
-     * @param dataPoint
-     * @return
-     */
-    private void updateClassProbs(int dataPoint){
-        int numClasses = this.config.getDataSet().getNumClasses();
-        for (int k=0;k<numClasses;k++){
-            double prob = this.calClassProb(dataPoint, k);
-            this.probabilityMatrix.setProbability(dataPoint,k,prob);
-        }
-    }
 
     private double calClassProb(int dataPoint, int k){
         double score = this.scoreMatrix.getScoresForData(dataPoint)[k];
@@ -196,12 +174,12 @@ public class IMLGBTrainer {
 
     private double computeGradient(int k, int dataPoint){
         MultiLabel multiLabel = this.config.getDataSet().getMultiLabels()[dataPoint];
-        float[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
+        double classProb = this.calClassProb(dataPoint, k);
         double gradient;
         if (multiLabel.matchClass(k)){
-            gradient = 1-classProbs[k];
+            gradient = 1-classProb;
         } else {
-            gradient = 0-classProbs[k];
+            gradient = 0-classProb;
         }
         return gradient;
     }
