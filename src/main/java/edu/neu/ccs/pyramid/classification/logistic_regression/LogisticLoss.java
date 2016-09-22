@@ -31,14 +31,6 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
     // size = num classes * num data
     private double[][] probabilityMatrixKByN;
-
-
-    /**
-     * actually negative gradient
-     *  y_ik - p_k(x_i)
-     * numClasses by numDataPoints
-     */
-    private GradientMatrix gradientMatrix;
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
@@ -62,7 +54,6 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
         this.probabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
-        this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),numClasses, GradientMatrix.Objective.MAXIMIZE);
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
@@ -263,13 +254,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.isProbabilityCacheValid = true;
     }
 
-
-
-
-
-    public GradientMatrix getGradientMatrix() {
-        return gradientMatrix;
-    }
+    
 
     private static double[] defaultWeights(int numDataPoints){
         double[] weights = new double[numDataPoints];

@@ -256,7 +256,7 @@ public class HMLGBTrainer {
         MultiLabel multiLabel = this.config.getDataSet().getMultiLabels()[dataPoint];
         //just use as a local variable
         //no need to store all in a matrix
-        double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
+        float[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
         for (int k=0;k<numClasses;k++){
             double gradient = 0;
             if (multiLabel.matchClass(k)){
