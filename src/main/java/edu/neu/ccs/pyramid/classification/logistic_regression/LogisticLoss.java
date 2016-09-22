@@ -254,7 +254,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.isProbabilityCacheValid = true;
     }
 
-    
+
 
     private static double[] defaultWeights(int numDataPoints){
         double[] weights = new double[numDataPoints];

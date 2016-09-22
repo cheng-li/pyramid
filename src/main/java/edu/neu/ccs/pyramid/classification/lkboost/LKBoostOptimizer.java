@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.classification.lkboost;
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GBOptimizer;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
+import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
 import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
@@ -62,36 +64,24 @@ public class LKBoostOptimizer extends GBOptimizer {
 
     @Override
     protected void addPriors() {
-        //todo
+        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(numClasses);
+        priorProbClassifier.fit(dataSet, targetDistribution, weights);
+        double[] probs = priorProbClassifier.getClassProbs();
+        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+        for (int k=0;k<numClasses;k++){
+            double score = Math.log(probs[k] - average);
+            Regressor constant = new ConstantRegressor(score);
+            boosting.getEnsemble(k).add(constant);
+        }
     }
-
-//    public void addPriorRegressors(){
-//        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.lkTreeBoost.getNumClasses());
-//        priorProbClassifier.fit(this.lktbConfig.getDataSet());
-//        double[] probs = priorProbClassifier.getClassProbs();
-//        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
-//        List<Regressor> regressors = new ArrayList<>();
-//        for (int k=0;k<this.lkTreeBoost.getNumClasses();k++){
-//            double score = Math.log(probs[k] - average);
-//            Regressor constant = new ConstantRegressor(score);
-//            regressors.add(constant);
-//        }
-//        addRegressors(regressors);
-//    }
-
-
-    public ProbabilityMatrix getProbabilityMatrix() {
-        return probabilityMatrix;
-    }
-
-
-    //======================== PRIVATE ===============================================
-
 
     @Override
     protected double[] gradient(int ensembleIndex) {
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel().mapToDouble(i->gradient(ensembleIndex, i)).toArray();
     }
+
+    //======================== PRIVATE ===============================================
+
 
     private double gradient(int ensembleIndex, int dataPoint){
         double prob = probabilityMatrix.getProbabilitiesForData(dataPoint)[ensembleIndex];
