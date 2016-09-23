@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.util;
 
+import java.util.Arrays;
+import java.util.regex.Pattern;
+
 /**
  * Created by chengli on 9/22/16.
  */
@@ -26,6 +29,10 @@ public class PrintUtil {
             sb.append(obj).append("\n");
         }
         return sb.toString();
+    }
+
+    public static String toSimpleString(double[] arr){
+        return Arrays.toString(arr).replaceAll(Pattern.quote("["),"").replaceAll(Pattern.quote("]"),"");
     }
 
 }

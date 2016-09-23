@@ -14,8 +14,12 @@ import edu.neu.ccs.pyramid.util.PrintUtil;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * multi-class gradient boosting with KL divergence loss
@@ -90,6 +94,9 @@ public class GBMultiClass {
         File reportFile = new File(output, "train_predictions.txt");
         report(lkBoost, trainSet, reportFile);
         System.out.println("predictions on the training set are written to "+reportFile.getAbsolutePath());
+        File probabilitiesFile = new File(output, "train_predicted_probabilities.txt");
+        probabilities(lkBoost, trainSet, probabilitiesFile);
+        System.out.println("predicted probabilities on the training set are written to "+probabilitiesFile.getAbsolutePath());
     }
 
     private static void test(Config config) throws Exception{
@@ -113,11 +120,24 @@ public class GBMultiClass {
         File reportFile = new File(output, "test_predictions.txt");
         report(lkBoost, testSet, reportFile);
         System.out.println("predictions on the test set are written to "+reportFile.getAbsolutePath());
+        File probabilitiesFile = new File(output, "test_predicted_probabilities.txt");
+        probabilities(lkBoost, testSet, probabilitiesFile);
+        System.out.println("predicted probabilities on the test set are written to "+probabilitiesFile.getAbsolutePath());
     }
 
     private static void report(LKBoost lkBoost, ClfDataSet dataSet, File reportFile) throws IOException {
         int[] prediction = lkBoost.predict(dataSet);
         String str = PrintUtil.toMutipleLines(prediction);
         FileUtils.writeStringToFile(reportFile, str);
+    }
+
+    private static void probabilities(LKBoost lkBoost, ClfDataSet dataSet, File file) throws Exception{
+        List<double[]> probs = lkBoost.predictClassProbs(dataSet);
+        try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))){
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                bw.write(PrintUtil.toSimpleString(probs.get(i)));
+                bw.newLine();
+            }
+        }
     }
 }
