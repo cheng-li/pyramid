@@ -22,7 +22,7 @@ public class AppLauncher {
 
     private static final String[] versionCommands = {"version","-version","--version"};
 
-    private static final String[] alias = {"cbm:App5", "crf:App6", "gb_multi_class:GBMultiClass", "gb_regression:GBRegression"};
+    private static final String[] alias = {"cbm:App5", "crf:App6", "gb_classifier:GBClassifier", "gb_regressor:GBRegressor"};
 
     public static void main(String[] args) throws Exception{
         if (args.length==1){
