@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.application;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import edu.neu.ccs.pyramid.Version;
+import edu.neu.ccs.pyramid.configuration.Config;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -17,26 +18,9 @@ import java.util.stream.Collectors;
  */
 
 public class AppLauncher {
-    private static final String[] helpCommands = {"help","-help","--help",
-            "usage","-usage","--usage"};
-
-    private static final String[] versionCommands = {"version","-version","--version"};
-
-    private static final String[] alias = {"cbm:App5", "crf:App6", "gb_classifier:GBClassifier", "gb_regressor:GBRegressor"};
 
     public static void main(String[] args) throws Exception{
         if (args.length==1){
-            Set<String> helpSet = Arrays.stream(helpCommands).collect(Collectors.toSet());
-            Set<String> versionSet = Arrays.stream(versionCommands).collect(Collectors.toSet());
-            String arg = args[0].toLowerCase();
-            if (helpSet.contains(arg)){
-                help();
-            } else if (versionSet.contains(arg)){
-                version();
-            } else {
-                error();
-            }
-        } else if (args.length==2){
             launch(args);
         } else {
             error();
@@ -44,8 +28,9 @@ public class AppLauncher {
     }
 
     private static void launch(String[] args) throws Exception{
-        String className = args[0];
-        String[] mainArgs = Arrays.copyOfRange(args,1,2);
+        Config config = new Config(args[0]);
+        String className = config.getString("pyramid.class");
+        String[] mainArgs = Arrays.copyOfRange(args,0,1);
         String realName = matchClass(className);
         if (realName==null){
             System.err.println("Unknown app name: "+className);
@@ -54,34 +39,18 @@ public class AppLauncher {
         invokeMain(realName,mainArgs);
     }
 
-    private static void help(){
-        System.out.println("Usage: ./pyramid <app_name> <properties_file>\n" +
-                "The <app_name> is case-insensitive.\n" +
-                "The <properties_file> can be specified by either an absolute or a relative path.\n"+
-                "Example: ./pyramid welcome config/welcome.properties");
-        System.exit(0);
-    }
 
     private static void error(){
         System.err.println("Invalid command.\n" +
-                "Usage: ./pyramid <app_name> <properties_file>\n" +
-                "The <app_name> is case-insensitive.\n" +
+                "Usage: ./pyramid <properties_file>\n" +
                 "The <properties_file> can be specified by either an absolute or a relative path.\n"+
-                "Example: ./pyramid welcome config/welcome.properties");
+                "Example: ./pyramid config/welcome.properties");
         System.exit(1);
     }
 
 
 
     private static String matchClass(String className) throws Exception{
-        // deal with alias
-        for (String a: alias){
-            String[] split = a.split(":");
-            if (className.toLowerCase().equals(split[0].toLowerCase())){
-                return "edu.neu.ccs.pyramid.application."+split[1];
-            }
-        }
-
         // deal with normal names
         String lower = className.toLowerCase();
         String realName = null;
@@ -103,9 +72,6 @@ public class AppLauncher {
         main.invoke(null, (Object)args);
     }
 
-    private static void version(){
-        System.out.println("Pyramid "+ Version.getVersion());
-    }
 
 
 }
