@@ -22,7 +22,7 @@ public class PrintUtil {
 
     public static String toMutipleLines(int[] arr){
         StringBuilder sb = new StringBuilder();
-        for (double obj: arr){
+        for (int obj: arr){
             sb.append(obj).append("\n");
         }
         return sb.toString();
