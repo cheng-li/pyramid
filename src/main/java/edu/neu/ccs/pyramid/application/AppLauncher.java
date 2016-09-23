@@ -22,7 +22,7 @@ public class AppLauncher {
 
     private static final String[] versionCommands = {"version","-version","--version"};
 
-    private static final String[] alias = {"cbm:App5", "crf:App6", "lsboost:AppLSBoost"};
+    private static final String[] alias = {"cbm:App5", "crf:App6", "gb_multi_class:GBMultiClass", "gb_regression:GBRegression"};
 
     public static void main(String[] args) throws Exception{
         if (args.length==1){
@@ -77,7 +77,7 @@ public class AppLauncher {
         // deal with alias
         for (String a: alias){
             String[] split = a.split(":");
-            if (className.toLowerCase().equals(split[0])){
+            if (className.toLowerCase().equals(split[0].toLowerCase())){
                 return "edu.neu.ccs.pyramid.application."+split[1];
             }
         }
