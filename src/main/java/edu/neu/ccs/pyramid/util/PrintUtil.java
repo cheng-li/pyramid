@@ -20,4 +20,12 @@ public class PrintUtil {
         return sb.toString();
     }
 
+    public static String toMutipleLines(int[] arr){
+        StringBuilder sb = new StringBuilder();
+        for (double obj: arr){
+            sb.append(obj).append("\n");
+        }
+        return sb.toString();
+    }
+
 }
