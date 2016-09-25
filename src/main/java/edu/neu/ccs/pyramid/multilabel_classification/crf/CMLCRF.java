@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.ArgMax;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
@@ -294,15 +295,8 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     @Override
     public MultiLabel predict(Vector vector) {
         double[] scores = predictCombinationScores(vector);
-        double maxScore = Double.NEGATIVE_INFINITY;
-        int predictedCombination = 0;
-        for (int k=0;k<scores.length;k++){
-            double scoreCombinationK = scores[k];
-            if (scoreCombinationK > maxScore){
-                maxScore = scoreCombinationK;
-                predictedCombination = k;
-            }
-        }
+        int predictedCombination = ArgMax.argMax(scores);
+
         return this.supportCombinations.get(predictedCombination);
     }
 

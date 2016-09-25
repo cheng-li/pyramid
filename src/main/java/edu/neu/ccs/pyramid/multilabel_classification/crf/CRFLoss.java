@@ -309,7 +309,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         return empiricalCount;
     }
 
-    public void initCache() {
+    private void initCache() {
         parameterToL1 = new int[numWeightsForLabelPairs];
         parameterToL2 = new int[numWeightsForLabelPairs];
         int start = 0;
