@@ -232,14 +232,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     }
 
     public double[] predictCombinationProbs(double[] combinationScores){
-        double[] probVector = new double[this.numSupports];
-        double logDenominator = MathUtil.logSumExp(combinationScores);
-        for (int k=0;k<this.numSupports;k++){
-            double logNumerator = combinationScores[k];
-            double pro = Math.exp(logNumerator-logDenominator);
-            probVector[k]=pro;
-        }
-        return probVector;
+        return MathUtil.softmax(combinationScores);
     }
 
 
