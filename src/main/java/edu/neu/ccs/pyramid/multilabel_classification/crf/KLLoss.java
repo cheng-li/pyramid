@@ -87,6 +87,7 @@ public class KLLoss implements Optimizable.ByGradientValue {
         this.numData = dataSet.getNumDataPoints();
         this.numClasses = dataSet.getNumClasses();
         this.targetDistribution = targetDistribution;
+        this.initTargetMarginals();
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.numParameters = cmlcrf.getWeights().totalSize();
         this.numWeightsForFeatures = cmlcrf.getWeights().getNumWeightsForFeatures();
@@ -192,13 +193,6 @@ public class KLLoss implements Optimizable.ByGradientValue {
         for (int matched: labelPairToCombination.get(pos)){
             count += combProbSums[matched];
         }
-
-//        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-//            double[] probs = this.combProbMatrix[i];
-//            for (int matched: labelPairToCombination.get(pos)){
-//                count += probs[matched];
-//            }
-//        }
         count -= this.empiricalCounts[parameterIndex];
         if (regularizeAll){
             count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
@@ -265,26 +259,11 @@ public class KLLoss implements Optimizable.ByGradientValue {
 
     private double calEmpiricalCountForLabelPair(int parameterIndex) {
         double empiricalCount = 0.0;
-        int start = parameterIndex - numWeightsForFeatures;
-        int l1 = parameterToL1[start];
-        int l2 = parameterToL2[start];
-        int featureCase = start % 4;
+        int pos = parameterIndex - numWeightsForFeatures;
+        List<Integer> comIndices = labelPairToCombination.get(pos);
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            MultiLabel label = dataSet.getMultiLabels()[i];
-            switch (featureCase) {
-                // both l1, l2 equal 0;
-                case 0: if (!label.matchClass(l1) && !label.matchClass(l2)) empiricalCount += 1.0;
-                    break;
-                // l1 = 1; l2 = 0;
-                case 1: if (label.matchClass(l1) && !label.matchClass(l2)) empiricalCount += 1.0;
-                    break;
-                // l1 = 0; l2 = 1;
-                case 2: if (!label.matchClass(l1) && label.matchClass(l2)) empiricalCount += 1.0;
-                    break;
-                // l1 = 1; l2 = 1;
-                case 3: if (label.matchClass(l1) && label.matchClass(l2)) empiricalCount += 1.0;
-                    break;
-                default: throw new RuntimeException("feature case :" + featureCase + " failed.");
+            for (int matchedCom: comIndices){
+               empiricalCount += targetDistribution[i][matchedCom];
             }
         }
         return empiricalCount;
@@ -297,19 +276,14 @@ public class KLLoss implements Optimizable.ByGradientValue {
         int featureIndex = parameterToFeature[parameterIndex];
         if (featureIndex==-1){
             for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-                if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
-                    empiricalCount += 1;
-                }
+                empiricalCount += targetMarginals[i][classIndex];
             }
         } else{
             Vector column = dataSet.getColumn(featureIndex);
-            MultiLabel[] multiLabels = dataSet.getMultiLabels();
             for (Vector.Element element: column.nonZeroes()){
                 int dataIndex = element.index();
                 double featureValue = element.get();
-                if (multiLabels[dataIndex].matchClass(classIndex)){
-                    empiricalCount += featureValue;
-                }
+                empiricalCount += featureValue*targetMarginals[dataIndex][classIndex];
             }
         }
         return empiricalCount;
@@ -465,23 +439,6 @@ public class KLLoss implements Optimizable.ByGradientValue {
         }
     }
 
-
-
-//    double logLikelihood(int dataPoint){
-//        Vector vector = dataSet.getRow(dataPoint);
-//        double[] combinationScores = cmlcrf.predictCombinationScores(vector);
-//        double logDenominator = MathUtil.logSumExp(combinationScores);
-//
-//        double logNumerator = combinationScores[cmlcrf.labelComIndices[dataPoint]];
-//        return logNumerator-logDenominator;
-//    }
-//
-//
-//    double dataSetLogLikelihood(MultiLabelClfDataSet dataSet){
-//        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-//                .mapToDouble(i -> logLikelihood(i))
-//                .sum();
-//    }
 
     private void mapPairToCombination(){
         IntStream.range(0, numWeightsForLabelPairs).parallel().forEach(this::mapPairToCombination);
