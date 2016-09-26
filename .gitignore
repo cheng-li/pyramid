@@ -37,3 +37,4 @@ nbactions.xml
 
 ## python
 *.pyc
+local.properties

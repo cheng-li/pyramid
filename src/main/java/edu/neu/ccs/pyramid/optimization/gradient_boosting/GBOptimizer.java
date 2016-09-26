@@ -16,10 +16,7 @@ import java.util.stream.IntStream;
  */
 public abstract class GBOptimizer {
     protected ScoreMatrix scoreMatrix;
-    /**
-     * actually negative gradients, to be fit by the tree
-     */
-    protected GradientMatrix gradientMatrix;
+
     protected GradientBoosting boosting;
     protected RegressorFactory factory;
     protected DataSet dataSet;
@@ -33,6 +30,11 @@ public abstract class GBOptimizer {
         this.factory = factory;
         this.dataSet = dataSet;
         this.weights = weights;
+        boosting.featureList = dataSet.getFeatureList();
+    }
+
+    protected GBOptimizer(GradientBoosting boosting, DataSet dataSet,  RegressorFactory factory){
+        this(boosting, dataSet, factory, defaultWeights(dataSet.getNumDataPoints()));
     }
 
 
@@ -48,12 +50,12 @@ public abstract class GBOptimizer {
         this.initStagedScores();
         initializeOthers();
         updateOthers();
-        this.gradientMatrix = new GradientMatrix(dataSet.getNumDataPoints(),boosting.getNumEnsembles(), GradientMatrix.Objective.MAXIMIZE);
-        updateGradientMatrix();
         this.isInitialized = true;
     }
 
     protected abstract void addPriors();
+
+    protected abstract double[] gradient(int ensembleIndex);
 
     /**
      * e.g. probability matrix
@@ -61,7 +63,7 @@ public abstract class GBOptimizer {
     protected abstract void initializeOthers();
 
     protected Regressor fitRegressor(int ensembleIndex){
-        double[] gradients = this.gradientMatrix.getGradientsForClass(ensembleIndex);
+        double[] gradients = gradient(ensembleIndex);
         Regressor regressor = factory.fit(dataSet,gradients, weights);
         return regressor;
     }
@@ -97,7 +99,12 @@ public abstract class GBOptimizer {
             updateStagedScores(regressor,k);
         }
         updateOthers();
-        updateGradientMatrix();
+    }
+
+    public void iterate(int numIterations){
+        for (int i=0;i<numIterations;i++){
+            iterate();
+        }
     }
 
     protected void initStagedScores(){
@@ -113,7 +120,6 @@ public abstract class GBOptimizer {
      */
     protected abstract void updateOthers();
 
-    protected abstract void updateGradientMatrix();
 
     public void setShrinkage(double shrinkage) {
         this.shrinkage = shrinkage;

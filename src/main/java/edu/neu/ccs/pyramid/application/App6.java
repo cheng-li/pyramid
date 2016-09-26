@@ -72,7 +72,6 @@ public class App6 {
         CRFLoss crfLoss = new CRFLoss(cmlcrf, trainSet, gaussianVariance);
 
         int maxIteration = config.getInt("train.maxIteration");
-        crfLoss.setParallelism(true);
         crfLoss.setRegularizeAll(true);
         LBFGS optimizer = new LBFGS(crfLoss);
         optimizer.getTerminator().setMaxIteration(maxIteration);

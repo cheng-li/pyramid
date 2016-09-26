@@ -19,7 +19,10 @@ PYRAMID_HOME=`cd "$PYRAMID_HOME"; pwd`
 # set class path
 PYRAMID_CLASSPATH="$PYRAMID_HOME/lib/*"
 
+# path containing the log4j2.xml file
+LOG4J2="$PYRAMID_HOME/config/"
+
 # run
-exec java $JAVA_OPTS  -cp "$PYRAMID_CLASSPATH"  \
+exec java $JAVA_OPTS  -cp "$PYRAMID_CLASSPATH":"$LOG4J2"  \
                 edu.neu.ccs.pyramid.application.AppLauncher $@
 

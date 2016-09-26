@@ -4,8 +4,11 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.dataset.StandardFormat;
+import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.eval.RMSE;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.simulation.RegressionSynthesizer;
 
 import java.io.File;
@@ -16,71 +19,30 @@ public class LSBoostTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test2();
+        test1();
     }
 
 
 
     private static void test1() throws Exception{
+        RegDataSet trainSet = TRECFormat.loadRegDataSet(new File(DATASETS,"abalone/folds/fold_1/train.trec"),DataSetType.REG_DENSE,true);
 
-        RegressionSynthesizer regressionSynthesizer = RegressionSynthesizer.getBuilder().build();
+        RegDataSet testSet = TRECFormat.loadRegDataSet(new File(DATASETS,"abalone/folds/fold_1/test.trec"),DataSetType.REG_DENSE,true);
 
-        RegDataSet trainSet = regressionSynthesizer.univarStep();
-        RegDataSet testSet = regressionSynthesizer.univarStep();
-
-//        RegDataSet trainSet = regressionSynthesizer.univarSine();
-//        RegDataSet testSet = regressionSynthesizer.univarSine();
-
-//        RegDataSet trainSet = regressionSynthesizer.univarLine();
-//        RegDataSet testSet = regressionSynthesizer.univarLine();
-
-//        RegDataSet trainSet = regressionSynthesizer.univarQuadratic();
-//        RegDataSet testSet = regressionSynthesizer.univarQuadratic();
-
-
-//        RegDataSet trainSet = regressionSynthesizer.univarExp();
-//        RegDataSet testSet = regressionSynthesizer.univarExp();
-        int[] activeFeatures = IntStream.range(0, trainSet.getNumFeatures()).toArray();
-        int[] activeDataPoints = IntStream.range(0, trainSet.getNumDataPoints()).toArray();
-
-        LSBConfig lsbConfig = LSBConfig.getBuilder()
-
-                .learningRate(1)
-
-                .build();
 
         LSBoost lsBoost = new LSBoost();
-        LSBoostTrainer trainer = new LSBoostTrainer(lsBoost,lsbConfig,trainSet);
-        trainer.addPriorRegressor();
-        for (int i=0;i<100;i++){
-            System.out.println("iteration "+i);
-            System.out.println("train MSE = "+ MSE.mse(lsBoost,trainSet));
-            System.out.println("test MSE = "+ MSE.mse(lsBoost,testSet));
-            trainer.iterate();
-        }
 
-    }
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(3);
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, trainSet, regTreeFactory);
+        optimizer.setShrinkage(0.1);
+        optimizer.initialize();
 
-    private static void test2() throws Exception{
-        RegDataSet trainSet = StandardFormat.loadRegDataSet(new File(DATASETS, "spam/train_data.txt"),
-                new File(DATASETS, "spam/train_label.txt"), ",", DataSetType.REG_DENSE, false);
-
-        RegDataSet testSet = StandardFormat.loadRegDataSet(new File(DATASETS, "spam/test_data.txt"),
-                new File(DATASETS, "spam/test_label.txt"), ",", DataSetType.REG_DENSE,false);
-        LSBConfig lsbConfig = LSBConfig.getBuilder()
-
-                .learningRate(1)
-
-                .build();
-
-        LSBoost lsBoost = new LSBoost();
-        LSBoostTrainer trainer = new LSBoostTrainer(lsBoost,lsbConfig,trainSet);
-        trainer.addPriorRegressor();
         for (int i=0;i<100;i++){
             System.out.println("iteration "+i);
             System.out.println("train RMSE = "+ RMSE.rmse(lsBoost, trainSet));
             System.out.println("test RMSE = "+ RMSE.rmse(lsBoost, testSet));
-            trainer.iterate();
+            optimizer.iterate();
         }
     }
 

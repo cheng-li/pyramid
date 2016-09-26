@@ -7,7 +7,7 @@ Pyramid is a Java machine learning library which implements many state-of-the-ar
 * Binary and Multi-class classification algorithms:
     * Logistic Regression with L1 regularization (Lasso), L2 regularization (Ridge) and L1+L2 regularization (Elastic-net)
     * Variational Bayesian Logistic Regression
-    * Gradient Boosted Trees
+    * [Gradient Boosted Trees](https://github.com/cheng-li/pyramid/wiki/GB-Classifier)
     * Naive Bayes
     * Error-Correcting Output Codes (ECOC)
     * Support Vector Machines (SVM)
@@ -15,13 +15,13 @@ Pyramid is a Java machine learning library which implements many state-of-the-ar
     * Binary Relevance
     * Power Set
     * Probabilistic Classifier Chain (PCC)
-    * Conditional Random Field (CRF)
+    * [Conditional Random Field (CRF)](https://github.com/cheng-li/pyramid/wiki/CRF)
     * [Conditional Bernoulli Mixture (CBM)](https://github.com/cheng-li/pyramid/wiki/CBM)
 * Regression algorithms:
     * Linear Regression with L1 regularization (Lasso), L2 regularization (Ridge) and L1+L2 regularization (Elastic-net)
     * Variational Bayesian Linear Regression
     * Regression Tree
-    * Gradient Boosted Trees
+    * [Gradient Boosted Trees](https://github.com/cheng-li/pyramid/wiki/GB-Regressor)
 * Learning to rank algorithms:
     * LambdaMART
 * Clustering: 
@@ -38,29 +38,29 @@ If you are also a Java developer and wish to call Pyramid Java APIs, you will al
 ## **Setup**
 Pyramid doesn't require any installation effort. All you need is downloading the latest [pre-compiled package] (https://github.com/cheng-li/pyramid/releases) (with a name like pyramid-x.x.x.zip) and decompressing it. Now you can move into the created folder and type 
 
-`./pyramid welcome config/welcome.properties`
+`./pyramid config/welcome.properties`
 
 You will see a welcome message and that means everything is working perfectly.
 
 Windows users please see the [notes](https://github.com/cheng-li/pyramid/wiki/Notes-for-Windows-Users).
 ## **Command Line Usage**
-All algorithms implemented in Pyramid can be run though a simple command. All commands have the following format:
+All algorithms/functions implemented in Pyramid can be run though a simple command, with the following format:
 
-`./pyramid <app_name> <properties_file>`
-
-`pyramid` is a launcher script which invokes an algorithm/application specified by the user.
-
-The `<app_name>` is the algorithm/application name and is case-insensitive. The list of available algorithms and  applications can be found in the Wiki.
-
-The `<properties_file>` is the only direct input file for the program. It is used to provide all program configurations, such as input dataset path, program output path, and learning algorithm hyper parameters. The `<properties_file>` can be specified by either an absolute or a relative path.
+`./pyramid <properties_file>`
 
 Example: 
 
-`./pyramid welcome config/welcome.properties`
+`./pyramid config/welcome.properties`
 
 or
 
-`./pyramid cbm config/cbm.properties`
+`./pyramid config/cbm.properties`
+
+`pyramid` is a launcher script and `<properties_file>` specifies the name of the algorithm and all necessary parameters, such as the input data, output folder, and learning algorithm hyper parameters. The `<properties_file>` can be specified by either an absolute or a relative path.
+
+To run different algorithms, you just need to invoke the program with different properties files. The list of available algorithms and their corresponding properties file templates can be found in the [Wiki](https://github.com/cheng-li/pyramid/wiki).
+ 
+
 ## **Building from Source**
 _If you are a Java developer who prefer working with the source code or want to contribute to the Pyramid package:_
 

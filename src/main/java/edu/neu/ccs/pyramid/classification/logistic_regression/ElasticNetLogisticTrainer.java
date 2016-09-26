@@ -44,9 +44,10 @@ public class ElasticNetLogisticTrainer {
     private Vector empiricalCounts;
     private Vector predictedCounts;
     private int numParameters;
-    private ProbabilityMatrix probabilityMatrix;
+    // size num classes * num data
+    private double[][] probabilityMatrix;
     private Terminator terminator;
-    private boolean lineSearch;
+    private boolean lineSearch = true;
 
     public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses,
                                      double[][] targets, double[] weights) {
@@ -179,7 +180,7 @@ public class ElasticNetLogisticTrainer {
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
-            this.probabilityMatrix.setProbability(dataPointIndex,k,probs[k]);
+            this.probabilityMatrix[k][dataPointIndex]=probs[k];
         }
     }
 
@@ -195,6 +196,8 @@ public class ElasticNetLogisticTrainer {
     }
 
     private double loss(){
+        // todo: this should be re-implemented here
+        // should not use the method provided by LR
         double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets) * -1;
         double penalty = penalty();
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
@@ -326,7 +329,7 @@ public class ElasticNetLogisticTrainer {
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
-        double[] probs = this.probabilityMatrix.getProbabilitiesForClass(classIndex);
+        double[] probs = this.probabilityMatrix[classIndex];
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -447,7 +450,7 @@ public class ElasticNetLogisticTrainer {
             trainer.numParameters = logisticRegression.getWeights().totalSize();
             trainer.empiricalCounts = new DenseVector(trainer.numParameters);
             trainer.predictedCounts = new DenseVector(trainer.numParameters);
-            trainer.probabilityMatrix = new ProbabilityMatrix(dataSet.getNumDataPoints(),numClasses);
+            trainer.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
             trainer.updateEmpricalCounts();
             trainer.updateClassProbMatrix();
             trainer.updatePredictedCounts();

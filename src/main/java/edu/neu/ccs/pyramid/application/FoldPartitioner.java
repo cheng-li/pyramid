@@ -22,6 +22,11 @@ public class FoldPartitioner {
             case "reg":
                 partitionRegData(config);
                 break;
+            case "mlclf":
+                partitionMLClfData(config);
+                break;
+            default:
+                throw new IllegalArgumentException("illegal dataSetType");
         }
 
     }
@@ -30,7 +35,7 @@ public class FoldPartitioner {
         String input = config.getString("input.data");
         String output= config.getString("output.folder");
         int numFolds = config.getInt("numFolds");
-        ClfDataSet all = TRECFormat.loadClfDataSet(input, DataSetType.CLF_DENSE,true);
+        ClfDataSet all = TRECFormat.loadClfDataSet(input, DataSetType.CLF_SPARSE,true);
         for (int i=1;i<=numFolds;i++){
             Set<Integer> trainFold = new HashSet<>();
             for (int j=1;j<=numFolds;j++){
@@ -42,6 +47,33 @@ public class FoldPartitioner {
             testFold.add(i);
             ClfDataSet trainSet = DataSetUtil.sampleByFold(all,numFolds,trainFold);
             ClfDataSet testSet = DataSetUtil.sampleByFold(all,numFolds,testFold);
+
+            File foldFolder = new File(output,"fold_"+i);
+            foldFolder.mkdirs();
+            TRECFormat.save(trainSet,new File(foldFolder,"train"));
+            TRECFormat.save(testSet,new File(foldFolder,"test"));
+        }
+    }
+
+
+
+    private static void partitionMLClfData(Config config) throws Exception{
+        String input = config.getString("input.data");
+        String output= config.getString("output.folder");
+        int numFolds = config.getInt("numFolds");
+        MultiLabelClfDataSet all = TRECFormat.loadMultiLabelClfDataSet(input, DataSetType.ML_CLF_SPARSE,true);
+        System.out.println("data loaded");
+        for (int i=1;i<=numFolds;i++){
+            Set<Integer> trainFold = new HashSet<>();
+            for (int j=1;j<=numFolds;j++){
+                if (j!=i){
+                    trainFold.add(j);
+                }
+            }
+            Set<Integer> testFold = new HashSet<>();
+            testFold.add(i);
+            MultiLabelClfDataSet trainSet = DataSetUtil.sampleByFold(all,numFolds,trainFold);
+            MultiLabelClfDataSet testSet = DataSetUtil.sampleByFold(all,numFolds,testFold);
 
             File foldFolder = new File(output,"fold_"+i);
             foldFolder.mkdirs();
@@ -70,8 +102,8 @@ public class FoldPartitioner {
 
             File foldFolder = new File(output,"fold_"+i);
             foldFolder.mkdirs();
-            TRECFormat.save(trainSet,new File(foldFolder,"train.trec"));
-            TRECFormat.save(testSet,new File(foldFolder,"test.trec"));
+            TRECFormat.save(trainSet,new File(foldFolder,"train"));
+            TRECFormat.save(testSet,new File(foldFolder,"test"));
         }
     }
 

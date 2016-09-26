@@ -126,7 +126,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @param assignments
      * @return
      */
-    private List<Double> predictLogAssignmentProbs(Vector vector, List<MultiLabel> assignments){
+    public List<Double> predictLogAssignmentProbs(Vector vector, List<MultiLabel> assignments){
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
         double[][][] logClassProbs = new double[numClusters][numLabels][2];
 

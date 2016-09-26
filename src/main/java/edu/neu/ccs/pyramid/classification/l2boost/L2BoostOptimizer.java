@@ -76,21 +76,13 @@ public class L2BoostOptimizer extends GBOptimizer {
     }
 
     @Override
-    protected void updateGradientMatrix() {
-        int numDataPoints = dataSet.getNumDataPoints();
-        IntStream.range(0, numDataPoints).parallel()
-                .forEach(this::updateGradients);
+    protected double[] gradient(int ensembleIndex) {
+        // ensemble will always be 0
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i->targetDistribution[i][1]-probabilityMatrix.getProbabilitiesForData(i)[1])
+                .toArray();
     }
 
-    /**
-     * just for the positive class
-     * @param dataPoint
-     */
-    private void updateGradients(int dataPoint){
-        double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
-        double gradient = targetDistribution[dataPoint][1]-probs[1];
-        this.gradientMatrix.setGradient(dataPoint,0,gradient);
-    }
 
     private static RegressorFactory defaultFactory(){
         RegTreeConfig regTreeConfig = new RegTreeConfig();

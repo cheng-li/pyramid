@@ -23,8 +23,7 @@ public class RidgeLogisticTrainer {
         LogisticRegression logisticRegression = new LogisticRegression(clfDataSet.getNumClasses(),clfDataSet.getNumFeatures());
         logisticRegression.setFeatureList(clfDataSet.getFeatureList());
         logisticRegression.setLabelTranslator(clfDataSet.getLabelTranslator());
-        logisticRegression.setFeatureExtraction(false);
-        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,clfDataSet,gaussianPriorVariance);
+        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression,clfDataSet,gaussianPriorVariance, true);
         optimizer.optimize();
         return logisticRegression;
     }

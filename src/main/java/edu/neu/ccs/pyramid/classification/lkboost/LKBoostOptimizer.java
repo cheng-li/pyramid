@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.classification.lkboost;
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GBOptimizer;
+import edu.neu.ccs.pyramid.regression.ConstantRegressor;
+import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
 import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
@@ -36,10 +38,12 @@ public class LKBoostOptimizer extends GBOptimizer {
 
     public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, RegressorFactory factory, double[] weights) {
         this(boosting,dataSet, factory, weights,DataSetUtil.labelDistribution(dataSet));
+        this.boosting.labelTranslator = dataSet.getLabelTranslator();
     }
 
     public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, RegressorFactory factory) {
         this(boosting,dataSet, factory, defaultWeights(dataSet.getNumDataPoints()),DataSetUtil.labelDistribution(dataSet));
+        this.boosting.labelTranslator = dataSet.getLabelTranslator();
     }
 
     public LKBoostOptimizer(LKBoost boosting, ClfDataSet dataSet, double[] weights) {
@@ -62,54 +66,30 @@ public class LKBoostOptimizer extends GBOptimizer {
 
     @Override
     protected void addPriors() {
-        //todo
+        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(numClasses);
+        priorProbClassifier.fit(dataSet, targetDistribution, weights);
+        double[] probs = priorProbClassifier.getClassProbs();
+        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+        for (int k=0;k<numClasses;k++){
+            double score = Math.log(probs[k] - average);
+            Regressor constant = new ConstantRegressor(score);
+            boosting.getEnsemble(k).add(constant);
+        }
     }
 
-//    public void addPriorRegressors(){
-//        PriorProbClassifier priorProbClassifier = new PriorProbClassifier(this.lkTreeBoost.getNumClasses());
-//        priorProbClassifier.fit(this.lktbConfig.getDataSet());
-//        double[] probs = priorProbClassifier.getClassProbs();
-//        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
-//        List<Regressor> regressors = new ArrayList<>();
-//        for (int k=0;k<this.lkTreeBoost.getNumClasses();k++){
-//            double score = Math.log(probs[k] - average);
-//            Regressor constant = new ConstantRegressor(score);
-//            regressors.add(constant);
-//        }
-//        addRegressors(regressors);
-//    }
-
-    public GradientMatrix getGradientMatrix() {
-        return gradientMatrix;
+    @Override
+    protected double[] gradient(int ensembleIndex) {
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel().mapToDouble(i->gradient(ensembleIndex, i)).toArray();
     }
-
-    public ProbabilityMatrix getProbabilityMatrix() {
-        return probabilityMatrix;
-    }
-
 
     //======================== PRIVATE ===============================================
 
 
-    /**
-     * parallel by classes
-     * calculate gradient vectors for all classes, store them
-     */
-    protected void updateGradientMatrix(){
-        int numDataPoints = this.dataSet.getNumDataPoints();
-        IntStream.range(0, numDataPoints).parallel()
-                .forEach(this::updateClassGradients);
+    private double gradient(int ensembleIndex, int dataPoint){
+        double prob = probabilityMatrix.getProbabilitiesForData(dataPoint)[ensembleIndex];
+        return targetDistribution[dataPoint][ensembleIndex] - prob;
     }
 
-    private void updateClassGradients(int dataPoint){
-        int numClasses = this.boosting.getNumClasses();
-        double[] probs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
-        for (int k=0;k<numClasses;k++){
-            double gradient;
-            gradient = targetDistribution[dataPoint][k] - probs[k];
-            this.gradientMatrix.setGradient(dataPoint,k,gradient);
-        }
-    }
 
     /**
      * use scoreMatrix to update probabilities
@@ -118,7 +98,7 @@ public class LKBoostOptimizer extends GBOptimizer {
      */
     private void updateClassProb(int i){
         int numClasses = this.boosting.getNumClasses();
-        double[] scores = scoreMatrix.getScoresForData(i);
+        float[] scores = scoreMatrix.getScoresForData(i);
 
         double logDenominator = MathUtil.logSumExp(scores);
 //        if (logger.isDebugEnabled()){
@@ -133,7 +113,6 @@ public class LKBoostOptimizer extends GBOptimizer {
                 throw new RuntimeException("pro=NaN, logNumerator = "
                         +logNumerator+", logDenominator="+logDenominator+
                         ", scores = "+Arrays.toString(scores));
-
             }
         }
     }

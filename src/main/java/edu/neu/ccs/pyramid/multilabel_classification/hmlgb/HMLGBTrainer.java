@@ -208,7 +208,7 @@ public class HMLGBTrainer {
 
     private double calAssignmentScores(int dataPoint, MultiLabel assignment){
         double score = 0;
-        double[] scores = this.scoreMatrix.getScoresForData(dataPoint);
+        float[] scores = this.scoreMatrix.getScoresForData(dataPoint);
         for (Integer label : assignment.getMatchedLabels()){
             score += scores[label];
         }
@@ -256,7 +256,7 @@ public class HMLGBTrainer {
         MultiLabel multiLabel = this.config.getDataSet().getMultiLabels()[dataPoint];
         //just use as a local variable
         //no need to store all in a matrix
-        double[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
+        float[] classProbs = this.probabilityMatrix.getProbabilitiesForData(dataPoint);
         for (int k=0;k<numClasses;k++){
             double gradient = 0;
             if (multiLabel.matchClass(k)){

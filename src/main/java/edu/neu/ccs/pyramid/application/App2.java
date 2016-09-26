@@ -91,8 +91,8 @@ public class App2 {
         double learningRate = config.getDouble("train.learningRate");
         int minDataPerLeaf = config.getInt("train.minDataPerLeaf");
         String modelName = "model_app3";
-        double featureSamplingRate = config.getDouble("train.featureSamplingRate");
-        double dataSamplingRate = config.getDouble("train.dataSamplingRate");
+//        double featureSamplingRate = config.getDouble("train.featureSamplingRate");
+//        double dataSamplingRate = config.getDouble("train.dataSamplingRate");
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -110,8 +110,8 @@ public class App2 {
         int numClasses = dataSet.getNumClasses();
         System.out.println("number of class = "+numClasses);
         IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(dataSet)
-                .dataSamplingRate(dataSamplingRate)
-                .featureSamplingRate(featureSamplingRate)
+//                .dataSamplingRate(dataSamplingRate)
+//                .featureSamplingRate(featureSamplingRate)
                 .learningRate(learningRate)
                 .minDataPerLeaf(minDataPerLeaf)
                 .numLeaves(numLeaves)
@@ -127,11 +127,13 @@ public class App2 {
         }
 
         System.out.println("During training, the performance is reported using Hamming loss optimal predictor");
+        System.out.println("initialing trainer");
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
+        System.out.println("trainer initialized");
         //todo make it better
-        trainer.setActiveFeatures(activeFeatures);
+//        trainer.setActiveFeatures(activeFeatures);
 
         int progressInterval = config.getInt("train.showProgress.interval");
         for (int i=0;i<numIterations;i++){

@@ -29,7 +29,7 @@ public class ElasticNetLogisticTrainerTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.OFF);
         ctx.updateLoggers();
-        test1();
+        test3();
     }
 
     private static void test1() throws Exception{
@@ -75,7 +75,7 @@ public class ElasticNetLogisticTrainerTest {
         System.out.println(dataSet.getMetaInfo());
         LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
         ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
-                .setEpsilon(0.01).setL1Ratio(1).setRegularization(0.01).build();
+                .setEpsilon(0.01).setL1Ratio(0.1).setRegularization(0.001).build();
 
         for (int i=0;i<10;i++){
             System.out.println("iteration "+i);

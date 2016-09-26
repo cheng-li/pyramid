@@ -3,7 +3,8 @@ package edu.neu.ccs.pyramid.dataset;
 public class MultiLabelTest {
     public static void main(String[] args)
     {
-////        test3();
+//        test1();
+//        test3();
 //        test4();
 //        test5();
 //        test6();

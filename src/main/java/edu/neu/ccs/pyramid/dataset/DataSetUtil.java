@@ -603,6 +603,26 @@ public class DataSetUtil {
         return sampleData(dataSet,keep);
     }
 
+    public static MultiLabelClfDataSet sampleByFold(MultiLabelClfDataSet dataSet, int numFolds, Set<Integer> foldIndices){
+        for (int fold: foldIndices){
+            boolean con = fold>=1 && fold<=numFolds;
+            if (! con){
+                throw new IllegalArgumentException("should have fold>=1 && fold<=numFolds");
+            }
+        }
+
+        int numData = dataSet.getNumDataPoints();
+        List<Integer> keep = new ArrayList<>();
+        for (int i=0;i<numData;i++){
+            int rem = i%numFolds;
+            if (foldIndices.contains(rem+1)){
+                keep.add(i);
+            }
+        }
+
+        return sampleData(dataSet,keep);
+    }
+
 
     /**
      *

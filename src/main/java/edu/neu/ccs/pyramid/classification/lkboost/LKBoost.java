@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.Ensemble;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GradientBoosting;
+import edu.neu.ccs.pyramid.util.ArgMax;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
@@ -15,11 +16,9 @@ import java.io.*;
  * Created by chengli on 8/14/14.
  */
 public class LKBoost extends GradientBoosting implements Classifier.ProbabilityEstimator, Classifier.ScoreEstimator{
-    private static final long serialVersionUID = 4L;
+    private static final long serialVersionUID = 5L;
     private int numClasses;
-    private FeatureList featureList;
-    private LabelTranslator labelTranslator;
-
+    LabelTranslator labelTranslator;
 
     public LKBoost(int numClasses) {
         super(numClasses);
@@ -33,33 +32,12 @@ public class LKBoost extends GradientBoosting implements Classifier.ProbabilityE
      */
     public int predict(Vector vector){
         double[] scores = predictClassScores(vector);
-        double maxScore = Double.NEGATIVE_INFINITY;
-        int predictedClass = 0;
-        for (int k=0;k<this.numClasses;k++){
-            double scoreClassK = scores[k];
-            if (scoreClassK > maxScore){
-                maxScore = scoreClassK;
-                predictedClass = k;
-            }
-        }
-        return predictedClass;
+        return ArgMax.argMax(scores);
     }
 
     public int getNumClasses() {
         return this.numClasses;
     }
-
-    //    /**
-//     * remove first n tree for all classes
-//     * calibrate the scores and probabilities
-//     */
-//    public void removeFirstNTrees(int n){
-//        for (int i=0;i<n;i++){
-//            this.removeFirstTree();
-//        }
-//        this.updateProbabilityMatrix();
-//    }
-
 
     /**
      *
@@ -68,17 +46,12 @@ public class LKBoost extends GradientBoosting implements Classifier.ProbabilityE
      * @return
      */
     public double predictClassScore(Vector vector, int k){
-        return getEnsemble(k).score(vector);
+        return score(vector, k);
     }
 
     public double[] predictClassScores(Vector vector){
-        double[] scoreVector = new double[this.numClasses];
-        for (int k=0;k<this.numClasses;k++){
-            scoreVector[k] = this.predictClassScore(vector,k);
-        }
-        return scoreVector;
+        return scores(vector);
     }
-
 
     public double[] predictClassProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
@@ -104,8 +77,6 @@ public class LKBoost extends GradientBoosting implements Classifier.ProbabilityE
         }
         return logProbVector;
     }
-
-
 
 
     /**
@@ -141,21 +112,10 @@ public class LKBoost extends GradientBoosting implements Classifier.ProbabilityE
         return sb.toString();
     }
 
-    @Override
-    public FeatureList getFeatureList() {
-        return featureList;
-    }
 
     @Override
     public LabelTranslator getLabelTranslator() {
         return labelTranslator;
     }
 
-    void setFeatureList(FeatureList featureList) {
-        this.featureList = featureList;
-    }
-
-    void setLabelTranslator(LabelTranslator labelTranslator) {
-        this.labelTranslator = labelTranslator;
-    }
 }

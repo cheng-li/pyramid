@@ -1,8 +1,11 @@
 package edu.neu.ccs.pyramid.classification;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.FeatureList;
+import edu.neu.ccs.pyramid.util.ArgMax;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -17,7 +20,7 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
     private static final long serialVersionUID = 2L;
 
     private int numClasses;
-    private int[] counts;
+    private double[] counts;
     private double[] probs;
     private int topClass;
     private FeatureList featureList;
@@ -27,7 +30,7 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
     public PriorProbClassifier(int numClasses) {
         this.numClasses = numClasses;
         this.probs = new double[numClasses];
-        this.counts = new int[numClasses];
+        this.counts = new double[numClasses];
     }
 
     public void fit(ClfDataSet clfDataSet){
@@ -37,13 +40,24 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
         }
         int numDataPoints = clfDataSet.getNumDataPoints();
         for (int k=0;k<this.numClasses;k++){
-            this.probs[k] = (double)counts[k]/numDataPoints;
+            this.probs[k] = counts[k]/numDataPoints;
         }
 
-        this.topClass = IntStream.range(0, this.numClasses)
-                .mapToObj(k -> new Pair<>(k,counts[k]))
-                .max(Comparator.comparing(Pair::getSecond))
-                .get().getFirst();
+        this.topClass = ArgMax.argMax(probs);
+    }
+
+    public void fit(DataSet dataSet, double[][] targetDistribution, double[] weights){
+        double totalCount = MathUtil.arraySum(weights);
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            for (int k=0;k<numClasses;k++){
+                counts[k] += targetDistribution[i][k]*weights[i];
+            }
+        }
+        for (int k=0;k<this.numClasses;k++){
+            this.probs[k] = counts[k]/totalCount;
+        }
+        this.topClass = ArgMax.argMax(probs);
     }
 
     /**
@@ -111,7 +125,4 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
         this.labelTranslator = labelTranslator;
     }
 
-    public int[] getCounts() {
-        return counts;
-    }
 }
