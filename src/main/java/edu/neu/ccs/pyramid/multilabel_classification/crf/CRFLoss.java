@@ -35,7 +35,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private int[] parameterToClass;
     private int[] parameterToFeature;
     // whether the support combination contains the label;
-    private boolean[][] labelInSupported;
+    // size num combination* num classes
+    private boolean[][] comContainsLabel;
     private boolean isParallel = true;
     private boolean isGradientCacheValid = false;
     private boolean isValueCacheValid = false;
@@ -233,10 +234,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
 
 
-
-
-
-
     private void updateEmpiricalCounts(){
         IntStream intStream;
         if (isParallel){
@@ -333,11 +330,11 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             parameterToFeature[i] = cmlcrf.getWeights().getFeatureIndex(i);
         }
 
-        labelInSupported = new boolean[numSupport][numClasses];
+        comContainsLabel = new boolean[numSupport][numClasses];
         for (int num=0; num< numSupport; num++) {
             for (int l=0; l<numClasses; l++) {
                 if (supportedCombinations.get(num).matchClass(l)) {
-                    labelInSupported[num][l] = true;
+                    comContainsLabel[num][l] = true;
                 }
             }
         }
@@ -366,8 +363,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
             weightSquare += labelPairVector.dot(labelPairVector);
 
-            double bmmWeight = cmlcrf.getWeights().getAllWeights().get(numParameters-1);
-            weightSquare += bmmWeight*bmmWeight;
         }
 
         this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
@@ -388,8 +383,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         }
 
         return intStream.mapToDouble(this::getValueForOneData).sum();
-
-//        return dataSetLogLikelihood(dataSet)*-1;
     }
 
     // NLL
@@ -493,16 +486,16 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         for (int c=0; c< numSupport; c++) {
             switch (featureCase) {
                 // both l1, l2 equal 0;
-                case 0: if (!labelInSupported[c][l1] && !labelInSupported[c][l2]) list.add(c);
+                case 0: if (!comContainsLabel[c][l1] && !comContainsLabel[c][l2]) list.add(c);
                     break;
                 // l1 = 1; l2 = 0;
-                case 1: if (labelInSupported[c][l1] && !labelInSupported[c][l2]) list.add(c);
+                case 1: if (comContainsLabel[c][l1] && !comContainsLabel[c][l2]) list.add(c);
                     break;
                 // l1 = 0; l2 = 1;
-                case 2: if (!labelInSupported[c][l1] && labelInSupported[c][l2]) list.add(c);
+                case 2: if (!comContainsLabel[c][l1] && comContainsLabel[c][l2]) list.add(c);
                     break;
                 // l1 = 1; l2 = 1;
-                case 3: if (labelInSupported[c][l1] && labelInSupported[c][l2]) list.add(c);
+                case 3: if (comContainsLabel[c][l1] && comContainsLabel[c][l2]) list.add(c);
                     break;
                 default: throw new RuntimeException("feature case :" + featureCase + " failed.");
             }
