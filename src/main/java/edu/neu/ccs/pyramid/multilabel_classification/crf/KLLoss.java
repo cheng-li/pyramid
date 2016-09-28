@@ -100,13 +100,14 @@ public class KLLoss implements Optimizable.ByGradientValue {
         this.isValueCacheValid = false;
         this.empiricalCounts = new double[numParameters];
         this.initCache();
-        this.updateEmpiricalCounts();
-        this.gradient = new DenseVector(numParameters);
         this.labelPairToCombination = new ArrayList<>();
         for (int i=0;i< numWeightsForLabelPairs;i++){
             labelPairToCombination.add(new ArrayList<>());
         }
         this.mapPairToCombination();
+        this.updateEmpiricalCounts();
+        this.gradient = new DenseVector(numParameters);
+
         this.combProbSums = new double[numSupport];
 
     }
