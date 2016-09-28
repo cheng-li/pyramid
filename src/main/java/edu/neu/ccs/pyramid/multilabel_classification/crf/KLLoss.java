@@ -87,7 +87,6 @@ public class KLLoss implements Optimizable.ByGradientValue {
         this.numData = dataSet.getNumDataPoints();
         this.numClasses = dataSet.getNumClasses();
         this.targetDistribution = targetDistribution;
-        this.initTargetMarginals();
         this.gaussianPriorVariance = gaussianPriorVariance;
         this.numParameters = cmlcrf.getWeights().totalSize();
         this.numWeightsForFeatures = cmlcrf.getWeights().getNumWeightsForFeatures();
@@ -99,16 +98,14 @@ public class KLLoss implements Optimizable.ByGradientValue {
         this.isGradientCacheValid = false;
         this.isValueCacheValid = false;
         this.empiricalCounts = new double[numParameters];
-        this.initCache();
-        this.labelPairToCombination = new ArrayList<>();
-        for (int i=0;i< numWeightsForLabelPairs;i++){
-            labelPairToCombination.add(new ArrayList<>());
-        }
-        this.mapPairToCombination();
-        this.updateEmpiricalCounts();
         this.gradient = new DenseVector(numParameters);
-
         this.combProbSums = new double[numSupport];
+        this.initTargetMarginals();
+        this.mapParameters();
+        this.initComContainsLabel();
+        this.mapPairToCombination();
+        this.initEmpiricalCounts();
+
 
     }
 
@@ -238,7 +235,7 @@ public class KLLoss implements Optimizable.ByGradientValue {
 
 
 
-    private void updateEmpiricalCounts(){
+    private void initEmpiricalCounts(){
         IntStream intStream;
         if (isParallel){
             intStream = IntStream.range(0, numParameters).parallel();
@@ -290,7 +287,7 @@ public class KLLoss implements Optimizable.ByGradientValue {
         return empiricalCount;
     }
 
-    private void initCache() {
+    private void mapParameters() {
         parameterToL1 = new int[numWeightsForLabelPairs];
         parameterToL2 = new int[numWeightsForLabelPairs];
         int start = 0;
@@ -314,6 +311,9 @@ public class KLLoss implements Optimizable.ByGradientValue {
             parameterToFeature[i] = cmlcrf.getWeights().getFeatureIndex(i);
         }
 
+    }
+
+    private void initComContainsLabel(){
         comContainsLabel = new boolean[numSupport][numClasses];
         for (int num=0; num< numSupport; num++) {
             for (int l=0; l<numClasses; l++) {
@@ -445,6 +445,10 @@ public class KLLoss implements Optimizable.ByGradientValue {
 
 
     private void mapPairToCombination(){
+        this.labelPairToCombination = new ArrayList<>();
+        for (int i=0;i< numWeightsForLabelPairs;i++){
+            labelPairToCombination.add(new ArrayList<>());
+        }
         IntStream.range(0, numWeightsForLabelPairs).parallel().forEach(this::mapPairToCombination);
     }
 
