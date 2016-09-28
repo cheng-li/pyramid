@@ -188,16 +188,16 @@ public class KLLoss implements Optimizable.ByGradientValue {
 
 
     private double calGradientForLabelPair(int parameterIndex) {
-        double count = 0.0;
+        double gradient = 0.0;
         int pos = parameterIndex - numWeightsForFeatures;
         for (int matched: labelPairToCombination.get(pos)){
-            count += combProbSums[matched];
+            gradient += combProbSums[matched];
         }
-        count -= this.empiricalCounts[parameterIndex];
+        gradient -= this.empiricalCounts[parameterIndex];
         if (regularizeAll){
-            count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+            gradient += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
         }
-        return count;
+        return gradient;
     }
 
 
@@ -205,34 +205,34 @@ public class KLLoss implements Optimizable.ByGradientValue {
     // the paper "Collective Multi-Label Classification"
     // the sum of y can be pushed in and gives the marginal
     private double calGradientForFeature(int parameterIndex) {
-        double count = 0.0;
+        double gradient = 0.0;
         int classIndex = parameterToClass[parameterIndex];
         int featureIndex = parameterToFeature[parameterIndex];
 
         if (featureIndex == -1) {
             for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-                count += this.classProbMatrix[i][classIndex];
+                gradient += this.classProbMatrix[i][classIndex];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()) {
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                count += this.classProbMatrix[dataPointIndex][classIndex] * featureValue;
+                gradient += this.classProbMatrix[dataPointIndex][classIndex] * featureValue;
             }
         }
 
-        count -= this.empiricalCounts[parameterIndex];
+        gradient -= this.empiricalCounts[parameterIndex];
 
         // regularize
         if (regularizeAll){
-            count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+            gradient += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
         } else {
             if (featureIndex != -1) {
-                count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+                gradient += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
             }
         }
-        return count;
+        return gradient;
     }
 
 
@@ -373,8 +373,11 @@ public class KLLoss implements Optimizable.ByGradientValue {
         double sum = 0.0;
         // sum logZ(x_n)
         sum += MathUtil.logSumExp(combScoreMatrix[i]);
-        // score for the true combination
-        sum -= combScoreMatrix[i][cmlcrf.labelComIndices[i]];
+        double[] scores = combScoreMatrix[i];
+        double[] targetProbs = targetDistribution[i];
+        for (int j=0;j<numSupport;j++){
+            sum -= scores[j]*targetProbs[j];
+        }
         return sum;
     }
 
