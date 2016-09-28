@@ -471,11 +471,18 @@ public class CBMOptimizer implements Serializable {
             case "boost":
                 return binaryBoostObj(clusterIndex, classIndex);
             case "elasticnet":
-                return binaryLRObj(clusterIndex, classIndex);
+                return binaryLRELObj(clusterIndex, classIndex);
             default:
                 throw new IllegalArgumentException("unknown type: " + type);
         }
     }
+
+    private double binaryLRELObj(int clusterIndex, int classIndex) {
+        LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) CBM.binaryClassifiers[clusterIndex][classIndex],
+                dataSet, gammasT[clusterIndex], targetsDistributions[classIndex], regularizationBinary, l1RatioBinary, false);
+        return logisticLoss.getValueEL();
+    }
+
 
     // consider regularization penalty
     private double binaryLRObj(int clusterIndex, int classIndex) {
@@ -500,10 +507,16 @@ public class CBMOptimizer implements Serializable {
                 return multiClassBoostObj();
             //TODO: change to elastic net
             case "elasticnet":
-                return multiClassLRObj();
+                return multiClassLRELObj();
             default:
                 throw new IllegalArgumentException("unknown type: " + type);
         }
+    }
+
+    private double multiClassLRELObj() {
+        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression) CBM.multiClassClassifier,
+                dataSet, gammas, regularizationMultiClass, l1RatioMultiClass, true);
+        return logisticLoss.getValueEL();
     }
 
     private double multiClassBoostObj(){

@@ -109,9 +109,10 @@ public class ElasticNetLogisticTrainer {
 //                y = 1;
 //            }
             double frac = 0;
+            double tmpP = prob*(1-prob);
             // if prob = 0 or prob = 1, weight = 0; doesn't matter how we decide frac; leave it 0
             if (prob!=0&&prob!=1){
-                frac = (y-prob)/(prob*(1-prob));
+                frac = (y-prob)/tmpP;
             }
             // frac is numerically unstable; if it is too big, the weighted least square solver will crash
             if (frac>1){
@@ -124,7 +125,8 @@ public class ElasticNetLogisticTrainer {
 
             realLabels[i] = classScore + frac;
             // TODO: why divided by numDataPoints?
-            instanceWeights[i] = (weights[i]*prob*(1-prob))/numDataPoints;
+//            instanceWeights[i] = (weights[i]*prob*(1-prob))/numDataPoints;
+            instanceWeights[i] = weights[i]*tmpP;
         });
 
         Weights oldWeights = logisticRegression.getWeights().deepCopy();
@@ -198,13 +200,14 @@ public class ElasticNetLogisticTrainer {
     private double loss(){
         // todo: this should be re-implemented here
         // should not use the method provided by LR
-        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets) * -1;
+        // negativeLogLikelihood should be multiplied by weights
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets, weights) * -1;
         double penalty = penalty();
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
     private double loss(double penalty){
-        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets) * -1;
+        double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets, weights) * -1;
         return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
     }
 
@@ -224,13 +227,9 @@ public class ElasticNetLogisticTrainer {
     private void withoutLineSearch(Vector searchDirection, Vector gradient) {
         Vector localSearchDir;
         double product = gradient.dot(searchDirection);
-        if (product < 0){
-            localSearchDir = searchDirection;
-        } else {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Bad search direction! Use negative gradient instead. Product of gradient and search direction = " + product);
-            }
-            localSearchDir = gradient.times(-1);
+        localSearchDir = searchDirection;
+        if (logger.isWarnEnabled()) {
+            logger.warn("Bad search direction! Use negative gradient instead. Product of gradient and search direction = " + product);
         }
 
         Vector start = logisticRegression.getWeights().getAllWeights();

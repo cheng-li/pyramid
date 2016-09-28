@@ -130,10 +130,32 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return logNumberator - logDenominator;
     }
 
+    /**
+     * logLikelihood for each datapoint.
+     * @param vector
+     * @param targets
+     * @return
+     */
+    double logLikelihood(Vector vector, double[] targets, double weight) {
+        double[] scoreVector = this.predictClassScores(vector);
+        double logDenominator = MathUtil.logSumExp(scoreVector);
+        double logNumberator = 0.0;
+        for (int k=0; k<scoreVector.length; k++) {
+            logNumberator += targets[k] * scoreVector[k];
+        }
+        return weight*(logNumberator - logDenominator);
+    }
+
 
     public double dataSetLogLikelihood(DataSet dataSet, double[][] targets) {
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i -> logLikelihood(dataSet.getRow(i), targets[i]))
+                .sum();
+    }
+
+    public double dataSetLogLikelihood(DataSet dataSet, double[][] targets, double[] weights) {
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> logLikelihood(dataSet.getRow(i), targets[i], weights[i]))
                 .sum();
     }
 
