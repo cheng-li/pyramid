@@ -332,24 +332,9 @@ public class KLLoss implements Optimizable.ByGradientValue {
         if (isValueCacheValid) {
             return this.value;
         }
-        double weightSquare = 0.0;
-        for (int k=0; k<numClasses; k++) {
-            Vector weightVector = cmlcrf.getWeights().getWeightsWithoutBiasForClass(k);
-            weightSquare += weightVector.dot(weightVector);
-        }
 
-        if (regularizeAll){
-            for (int k=0; k<numClasses; k++) {
-                double bias = cmlcrf.getWeights().getBiasForClass(k);
-                weightSquare += bias*bias;
-            }
 
-            Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
-            weightSquare += labelPairVector.dot(labelPairVector);
-
-        }
-
-        this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
+        this.value = getValueForAllData() + getPenalty();
         this.isValueCacheValid = true;
         return this.value;
     }
@@ -396,6 +381,26 @@ public class KLLoss implements Optimizable.ByGradientValue {
         this.cmlcrf.updateCombLabelPartScores();
     }
 
+
+    public double getPenalty(){
+        double weightSquare = 0.0;
+        for (int k=0; k<numClasses; k++) {
+            Vector weightVector = cmlcrf.getWeights().getWeightsWithoutBiasForClass(k);
+            weightSquare += weightVector.dot(weightVector);
+        }
+
+        if (regularizeAll){
+            for (int k=0; k<numClasses; k++) {
+                double bias = cmlcrf.getWeights().getBiasForClass(k);
+                weightSquare += bias*bias;
+            }
+
+            Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
+            weightSquare += labelPairVector.dot(labelPairVector);
+
+        }
+        return weightSquare/2*gaussianPriorVariance;
+    }
 
 
     private void updateClassScoreMatrix(){

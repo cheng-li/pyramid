@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Created by chengli on 9/28/16.
  */
-public class KLLossTest extends TestCase {
+public class KLLossTest{
     private static final Config config = new Config("config/local.properties");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
