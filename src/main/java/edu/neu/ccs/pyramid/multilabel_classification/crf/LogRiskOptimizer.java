@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
-import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MLScorer;
@@ -21,7 +19,7 @@ public class LogRiskOptimizer {
     private MultiLabelClfDataSet dataSet;
     private CMLCRF crf;
     // size = [num data][num combination]
-    private double[][] weights;
+    private double[][] targets;
     // todo
     // should be the same as crf combination
     private List<MultiLabel> combinations;
@@ -61,7 +59,7 @@ public class LogRiskOptimizer {
 
             }
         }
-        this.weights = new double[dataSet.getNumDataPoints()][combinations.size()];
+        this.targets = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.probabilities = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.updateProbabilities();
         if (logger.isDebugEnabled()){
@@ -84,7 +82,7 @@ public class LogRiskOptimizer {
         }
     }
 
-    private  void updateWeights(int dataPointIndex){
+    private  void updateTargets(int dataPointIndex){
         double[] probs = probabilities[dataPointIndex];
         double[] product = new double[probs.length];
         double[] s = this.scores[dataPointIndex];
@@ -94,24 +92,24 @@ public class LogRiskOptimizer {
 
         double denominator = MathUtil.arraySum(product);
         for (int j=0;j<probs.length;j++){
-            weights[dataPointIndex][j] = product[j]/denominator;
+            targets[dataPointIndex][j] = product[j]/denominator;
         }
     }
 
 
     public void iterate(){
-        updateWeights();
+        updateTargets();
         updateModel();
         updateProbabilities();
     }
 
-    private void updateWeights(){
+    private void updateTargets(){
         if (logger.isDebugEnabled()){
-            logger.debug("start updateWeights()");
+            logger.debug("start updateTargets()");
         }
-        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(this::updateWeights);
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(this::updateTargets);
         if (logger.isDebugEnabled()){
-            logger.debug("finish updateWeights()");
+            logger.debug("finish updateTargets()");
         }
     }
 
@@ -120,7 +118,7 @@ public class LogRiskOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("start updateModel()");
         }
-        KLLoss klLoss = new KLLoss(crf, dataSet, weights, variance);
+        KLLoss klLoss = new KLLoss(crf, dataSet, targets, variance);
         LBFGS lbfgs = new LBFGS(klLoss);
         lbfgs.optimize();
         if (logger.isDebugEnabled()){
@@ -160,7 +158,7 @@ public class LogRiskOptimizer {
 
     // regularization
     private double penalty(){
-        KLLoss klLoss = new KLLoss(crf, dataSet, weights, variance);
+        KLLoss klLoss = new KLLoss(crf, dataSet, targets, variance);
         return klLoss.getPenalty();
     }
 }
