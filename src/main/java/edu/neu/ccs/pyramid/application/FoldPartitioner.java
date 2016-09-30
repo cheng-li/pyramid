@@ -102,8 +102,8 @@ public class FoldPartitioner {
 
             File foldFolder = new File(output,"fold_"+i);
             foldFolder.mkdirs();
-            TRECFormat.save(trainSet,new File(foldFolder,"train.trec"));
-            TRECFormat.save(testSet,new File(foldFolder,"test.trec"));
+            TRECFormat.save(trainSet,new File(foldFolder,"train"));
+            TRECFormat.save(testSet,new File(foldFolder,"test"));
         }
     }
 

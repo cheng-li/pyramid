@@ -67,7 +67,7 @@ public class Terminator {
         }
         if (history.size()>=2){
             double previous = history.get(history.size()-2);
-            boolean condition1 = Math.abs((value-previous)/previous) <= relativeEpsilon;
+            boolean condition1 = Math.abs(value-previous) <= relativeEpsilon*Math.abs(previous);
             boolean condition2 = Math.abs(value-previous) <= absoluteEpsilon;
             if (condition1&&condition2){
                 stableCounter += 1;
