@@ -131,9 +131,6 @@ public class ElasticNetLogisticTrainer {
 
         Weights oldWeights = logisticRegression.getWeights().deepCopy();
 
-        // this gradient doesn't include the penalty term, so it is only approximate
-        Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(numDataPoints);
-
         // in glmnet algorithm:
         // this correspond to moving towards the search direction with step size 1
         // TODO: use the oldWeights
@@ -165,9 +162,12 @@ public class ElasticNetLogisticTrainer {
         // line search
         // the original glmnet algorithm may diverge without line search
         if (lineSearch) {
+            // this gradient doesn't include the penalty term, so it is only approximate
+            Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(numDataPoints);
             lineSearch(searchDirection, gradient);
+            updatePredictedCounts();
         } else {
-            withoutLineSearch(searchDirection, gradient);
+            withoutLineSearch(searchDirection);
         }
 
         if (logger.isDebugEnabled()){
@@ -175,7 +175,6 @@ public class ElasticNetLogisticTrainer {
         }
 
         updateClassProbMatrix();
-        updatePredictedCounts();
     }
 
 
@@ -224,17 +223,9 @@ public class ElasticNetLogisticTrainer {
     }
 
 
-    private void withoutLineSearch(Vector searchDirection, Vector gradient) {
-        Vector localSearchDir;
-        double product = gradient.dot(searchDirection);
-        localSearchDir = searchDirection;
-        if (logger.isWarnEnabled()) {
-            logger.warn("Bad search direction! Use negative gradient instead. Product of gradient and search direction = " + product);
-        }
-
+    private void withoutLineSearch(Vector searchDirection) {
         Vector start = logisticRegression.getWeights().getAllWeights();
-
-        Vector target = start.plus(localSearchDir);
+        Vector target = start.plus(searchDirection);
         logisticRegression.getWeights().setWeightVector(target);
     }
 
