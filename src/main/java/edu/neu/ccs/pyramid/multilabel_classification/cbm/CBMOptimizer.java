@@ -88,13 +88,13 @@ public class CBMOptimizer implements Serializable {
         this.terminator = new Terminator();
         this.terminator.setGoal(Terminator.Goal.MINIMIZE);
 
-        this.gammas = new double[dataSet.getNumDataPoints()][CBM.numClusters];
+        this.gammas = new double[dataSet.getNumDataPoints()][CBM.getNumComponents()];
 
-        this.gammasT = new double[CBM.numClusters][dataSet.getNumDataPoints()];
+        this.gammasT = new double[CBM.getNumComponents()][dataSet.getNumDataPoints()];
         for (int n=0;n<dataSet.getNumDataPoints();n++){
-            for (int k = 0; k< CBM.numClusters; k++){
-                gammas[n][k] = 1.0/ CBM.numClusters;
-                gammasT[k][n] = 1.0/ CBM.numClusters;
+            for (int k = 0; k< CBM.getNumComponents(); k++){
+                gammas[n][k] = 1.0/ CBM.getNumComponents();
+                gammasT[k][n] = 1.0/ CBM.getNumComponents();
             }
         }
         this.labels = new DenseVector[dataSet.getNumDataPoints()];
@@ -277,7 +277,7 @@ public class CBMOptimizer implements Serializable {
     private void updateGamma(int n) {
         Vector X = dataSet.getRow(n);
         Vector Y = this.labels[n];
-        int K = CBM.numClusters;
+        int K = CBM.numComponents;
         // log[p(z_n=k | x_n)] array
         double[] logLogisticProbs = CBM.multiClassClassifier.predictLogClassProbs(X);
         // log[p(y_n | z_n=k, x_n)] for all k from 1 to K;
@@ -307,7 +307,7 @@ public class CBMOptimizer implements Serializable {
     }
 
     private void updateBinaryClassifiers() {
-        IntStream.range(0, CBM.numClusters).forEach(this::updateBinaryClassifiers);
+        IntStream.range(0, CBM.numComponents).forEach(this::updateBinaryClassifiers);
 
     }
 
@@ -407,14 +407,14 @@ public class CBMOptimizer implements Serializable {
     }
 
     private void updateMultiClassBoost() {
-        int numClusters = CBM.numClusters;
+        int numComponents = CBM.numComponents;
         int numIterations = numIterationsMultiClass;
         double shrinkage = shrinkageMultiClass;
         LKBoost boost = (LKBoost)this.CBM.multiClassClassifier;
         RegTreeConfig regTreeConfig = new RegTreeConfig()
                 .setMaxNumLeaves(numLeavesMultiClass);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numClusters));
+        regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numComponents));
 
         LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,dataSet, regTreeFactory,gammas);
         optimizer.setShrinkage(shrinkage);
@@ -456,7 +456,7 @@ public class CBMOptimizer implements Serializable {
 
 
     private double binaryObj(){
-        return IntStream.range(0, CBM.numClusters).mapToDouble(this::binaryObj).sum();
+        return IntStream.range(0, CBM.numComponents).mapToDouble(this::binaryObj).sum();
     }
 
     private double binaryObj(int clusterIndex){
@@ -528,7 +528,7 @@ public class CBMOptimizer implements Serializable {
     }
 
     public double[][] getPIs() {
-        double[][] PIs = new double[dataSet.getNumDataPoints()][CBM.getNumClusters()];
+        double[][] PIs = new double[dataSet.getNumDataPoints()][CBM.getNumComponents()];
 
         for (int n=0; n<PIs.length; n++) {
             double[] logProbs = CBM.multiClassClassifier.predictLogClassProbs(dataSet.getRow(n));

@@ -30,11 +30,11 @@ public class CBMTest {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
 
-        int numClusters = 4;
+        int numComponents = 4;
         CBM cbm = CBM.getBuilder()
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
-                .setNumClusters(numClusters)
+                .setNumComponents(numComponents)
                 .setMultiClassClassifierType("lr")
                 .setBinaryClassifierType("boost")
                 .build();
@@ -45,7 +45,7 @@ public class CBMTest {
         optimizer.setPriorVarianceMultiClass(10);
         CBMInitializer.initialize(cbm,dataSet,optimizer);
         cbm.setNumSample(100);
-        System.out.println("num cluster: " + cbm.numClusters);
+        System.out.println("num cluster: " + cbm.numComponents);
 
         System.out.println("after initialization");
         System.out.println("train acc = "+ Accuracy.accuracy(cbm, dataSet));
@@ -127,11 +127,11 @@ public class CBMTest {
             }
         }
 
-        int numClusters = 4;
+        int numComponents = 4;
         CBM cbm = CBM.getBuilder()
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
-                .setNumClusters(numClusters)
+                .setNumComponents(numComponents)
                 .setBinaryClassifierType("boost")
                 .setMultiClassClassifierType("boost")
                 .build();
@@ -157,11 +157,11 @@ public class CBMTest {
                 DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/test.trec"),
                 DataSetType.ML_CLF_SPARSE, true);
-        int numClusters = 4;
+        int numComponents = 4;
         CBM cbm = CBM.getBuilder()
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
-                .setNumClusters(numClusters)
+                .setNumComponents(numComponents)
                 .setBinaryClassifierType("lr")
                 .setMultiClassClassifierType("boost")
                 .build();
@@ -173,7 +173,7 @@ public class CBMTest {
         CBMInitializer.initialize(cbm,dataSet,optimizer);
 
         cbm.setNumSample(100);
-        System.out.println("num cluster: " + cbm.numClusters);
+        System.out.println("num cluster: " + cbm.numComponents);
 
         System.out.println("after initialization");
         System.out.println("train acc = "+ Accuracy.accuracy(cbm, dataSet));
@@ -200,11 +200,11 @@ public class CBMTest {
                 DataSetType.ML_CLF_SPARSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/test"),
                 DataSetType.ML_CLF_SPARSE, true);
-        int numClusters = 4;
+        int numComponents = 4;
         CBM cbm = CBM.getBuilder()
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
-                .setNumClusters(numClusters)
+                .setNumComponents(numComponents)
                 .setBinaryClassifierType("lr")
                 .setMultiClassClassifierType("boost")
                 .build();
@@ -215,7 +215,7 @@ public class CBMTest {
         optimizer.setPriorVarianceMultiClass(10);
         CBMInitializer.initialize(cbm,dataSet,optimizer);
         cbm.setNumSample(100);
-        System.out.println("num cluster: " + cbm.numClusters);
+        System.out.println("num cluster: " + cbm.numComponents);
 
         System.out.println("after initialization");
         System.out.println("train acc = "+ Accuracy.accuracy(cbm, dataSet));

@@ -28,17 +28,17 @@ import java.util.stream.IntStream;
  * Created by Rainicy on 10/23/15.
  */
 public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     int numLabels;
-    int numClusters;
-    int numFeatures;
-    int numSample = 100;
-    boolean allowEmpty = false;
+    int numComponents;
+    private int numFeatures;
+    private int numSample = 100;
+    private boolean allowEmpty = false;
 
-    String predictMode = "dynamic";
+    private String predictMode = "dynamic";
 
     // parameters
-    // format: [numClusters][numLabels]
+    // format: [numComponents][numLabels]
     ProbabilityEstimator[][] binaryClassifiers;
     ProbabilityEstimator multiClassClassifier;
     private String binaryClassifierType;
@@ -67,9 +67,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @return
      */
     double[] clusterConditionalLogProbArr(Vector X, Vector Y) {
-        double[] probArr = new double[numClusters];
+        double[] probArr = new double[numComponents];
 
-        for (int k=0; k<numClusters; k++) {
+        for (int k = 0; k< numComponents; k++) {
             probArr[k] = clusterConditionalLogProb(X, Y, k);
         }
 
@@ -77,17 +77,17 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
     }
 
     /**
-     * return one value for log [p(y_n | z_n=k, x_n; w_k)] by given k;
-     * @param X
-     * @param Y
-     * @param k
+     * return log of p(y | z=k, x);
+     * @param x feature vector
+     * @param y label vector
+     * @param k component index
      * @return
      */
-    private double clusterConditionalLogProb(Vector X, Vector Y, int k) {
+    private double clusterConditionalLogProb(Vector x, Vector y, int k) {
         double logProbResult = 0.0;
-        for (int l=0; l< binaryClassifiers[k].length; l++) {
-            double[] logProbs = binaryClassifiers[k][l].predictLogClassProbs(X);
-            if (Y.get(l) == 1.0) {
+        for (int l=0; l< numLabels; l++) {
+            double[] logProbs = binaryClassifiers[k][l].predictLogClassProbs(x);
+            if (y.get(l) == 1.0) {
                 logProbResult += logProbs[1];
             } else {
                 logProbResult += logProbs[0];
@@ -105,9 +105,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      */
     private double predictLogAssignmentProb(Vector vector, MultiLabel assignment){
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
-        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+        double[][][] logClassProbs = new double[numComponents][numLabels][2];
 
-        for (int k=0;k<numClusters;k++){
+        for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
             }
@@ -128,9 +128,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      */
     public List<Double> predictLogAssignmentProbs(Vector vector, List<MultiLabel> assignments){
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
-        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+        double[][][] logClassProbs = new double[numComponents][numLabels][2];
 
-        for (int k=0;k<numClusters;k++){
+        for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
             }
@@ -156,8 +156,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
 
     private double predictLogAssignmentProb(MultiLabel assignment,double[] logProportions,double[][][] logClassProbs){
-        double[] logProbs = new double[numClusters];
-        for (int k=0;k<numClusters;k++){
+        double[] logProbs = new double[numComponents];
+        for (int k = 0; k< numComponents; k++){
             double sum = 0;
             sum += logProportions[k];
             for (int l=0;l<numLabels;l++){
@@ -176,7 +176,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
     public MultiLabel predict(Vector vector) {
 
         // new a BMMPredictor
-        CBMPredictor CBMPredictor = new CBMPredictor(vector, multiClassClassifier, binaryClassifiers, numClusters, numLabels);
+        CBMPredictor CBMPredictor = new CBMPredictor(vector, multiClassClassifier, binaryClassifiers, numComponents, numLabels);
         CBMPredictor.setNumSamples(numSample);
         CBMPredictor.setAllowEmpty(allowEmpty);
         // samples methods
@@ -204,8 +204,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      */
     public double[] predictClassProbs(Vector vector){
         double[] proportions = getMultiClassClassifier().predictClassProbs(vector);
-        double[][] probabilities = new double[numClusters][numLabels];
-        for (int k=0;k<numClusters;k++){
+        double[][] probabilities = new double[numComponents][numLabels];
+        for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 probabilities[k][l]=getBinaryClassifiers()[k][l].predictClassProb(vector,1);
             }
@@ -213,7 +213,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         double[] probs = new double[numLabels];
         for (int l=0;l<numLabels;l++){
             double sum = 0;
-            for (int k=0;k<numClusters;k++){
+            for (int k = 0; k< numComponents; k++){
                 sum += proportions[k]*probabilities[k][l];
             }
             probs[l] = sum;
@@ -226,7 +226,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @param vector
      * @return
      */
-     MultiLabel predictByMarginals(Vector vector){
+    MultiLabel predictByMarginals(Vector vector){
         double[] probs = predictClassProbs(vector);
         MultiLabel prediction = new MultiLabel();
         for (int l=0;l<numLabels;l++){
@@ -243,8 +243,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         double[] mixtureCoefficients = multiClassClassifier.predictClassProbs(vector);
         final StringBuilder sb = new StringBuilder("BMM{\n");
         sb.append("numLabels=").append(numLabels).append("\n");
-        sb.append("numClusters=").append(numClusters).append("\n");
-        for (int k=0;k<numClusters;k++){
+        sb.append("numComponents=").append(numComponents).append("\n");
+        for (int k = 0; k< numComponents; k++){
             sb.append("cluster ").append(k).append(":\n");
             sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
         }
@@ -252,7 +252,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         sb.append("clustering component = \n");
         sb.append(multiClassClassifier);
         sb.append("prediction components = \n");
-        for (int k=0;k<numClusters;k++){
+        for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 sb.append("cluster ").append(k).append(" class ").append(l).append("\n");
                 sb.append(binaryClassifiers[k][l]).append("\n");
@@ -293,15 +293,15 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
     public List<MultiLabel> samples(Vector vector, int numSamples){
         List<MultiLabel> list = new ArrayList<>();
         double[] proportions = multiClassClassifier.predictClassProbs(vector);
-        double[][][] logClassProbs = new double[numClusters][numLabels][2];
+        double[][][] logClassProbs = new double[numComponents][numLabels][2];
 
-        for (int k=0;k<numClusters;k++){
+        for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
             }
         }
 
-        int[] clusters = IntStream.range(0, numClusters).toArray();
+        int[] clusters = IntStream.range(0, numComponents).toArray();
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
 
         for (int s=0; s<numSamples; s++) {
@@ -331,16 +331,16 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         List<Double> probs = new ArrayList<>();
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
         double[] proportions = Arrays.stream(logProportions).map(Math::exp).toArray();
-        double[][][] logClassProbs = new double[numClusters][numLabels][2];
-        double[][] classProbs = new double[numClusters][numLabels];
-        for (int k=0;k<numClusters;k++){
+        double[][][] logClassProbs = new double[numComponents][numLabels][2];
+        double[][] classProbs = new double[numComponents][numLabels];
+        for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
                 classProbs[k][l] = Math.exp(logClassProbs[k][l][1]);
             }
         }
 
-        int[] clusters = IntStream.range(0, numClusters).toArray();
+        int[] clusters = IntStream.range(0, numComponents).toArray();
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
 
         double mass = 0;
@@ -390,16 +390,16 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         List<Double> probs = new ArrayList<>();
         double[] logProportions = multiClassClassifier.predictLogClassProbs(vector);
         double[] proportions = Arrays.stream(logProportions).map(Math::exp).toArray();
-        double[][][] logClassProbs = new double[numClusters][numLabels][2];
-        double[][] classProbs = new double[numClusters][numLabels];
-        for (int k=0;k<numClusters;k++){
+        double[][][] logClassProbs = new double[numComponents][numLabels][2];
+        double[][] classProbs = new double[numComponents][numLabels];
+        for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 logClassProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
                 classProbs[k][l] = Math.exp(logClassProbs[k][l][1]);
             }
         }
 
-        int[] clusters = IntStream.range(0, numClusters).toArray();
+        int[] clusters = IntStream.range(0, numComponents).toArray();
         EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, proportions);
 
         MultiLabel emptySet = new MultiLabel();
@@ -447,8 +447,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         return multiClassClassifier;
     }
 
-    public int getNumClusters() {
-        return numClusters;
+    public int getNumComponents() {
+        return numComponents;
     }
 
     public static Builder getBuilder(){
@@ -457,7 +457,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
     public static class Builder {
         private int numClasses;
-        private int numClusters;
+        private int numComponents;
         private int numFeatures;
         private String binaryClassifierType= "lr";
         private String multiClassClassifierType = "lr";
@@ -470,8 +470,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
             return this;
         }
 
-        public Builder setNumClusters(int numClusters) {
-            this.numClusters = numClusters;
+        public Builder setNumComponents(int numComponents) {
+            this.numComponents = numComponents;
             return this;
         }
 
@@ -493,31 +493,31 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         public CBM build(){
             CBM CBM = new CBM();
             CBM.numLabels = numClasses;
-            CBM.numClusters = numClusters;
+            CBM.numComponents = numComponents;
             CBM.numFeatures = numFeatures;
             CBM.binaryClassifierType = binaryClassifierType;
             CBM.multiClassClassifierType = multiClassClassifierType;
 
             switch (binaryClassifierType){
                 case "lr":
-                    CBM.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
-                    for (int k=0; k<numClusters; k++) {
+                    CBM.binaryClassifiers = new LogisticRegression[numComponents][numClasses];
+                    for (int k = 0; k< numComponents; k++) {
                         for (int l=0; l<numClasses; l++) {
                             CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
                         }
                     }
                     break;
                 case "boost":
-                    CBM.binaryClassifiers = new LKBoost[numClusters][numClasses];
-                    for (int k=0; k<numClusters; k++) {
+                    CBM.binaryClassifiers = new LKBoost[numComponents][numClasses];
+                    for (int k = 0; k< numComponents; k++) {
                         for (int l=0; l<numClasses; l++) {
                             CBM.binaryClassifiers[k][l] = new LKBoost(2);
                         }
                     }
                     break;
                 case "elasticnet":
-                    CBM.binaryClassifiers = new LogisticRegression[numClusters][numClasses];
-                    for (int k=0; k<numClusters; k++) {
+                    CBM.binaryClassifiers = new LogisticRegression[numComponents][numClasses];
+                    for (int k = 0; k< numComponents; k++) {
                         for (int l=0; l<numClasses; l++) {
                             CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
                         }
@@ -529,13 +529,13 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
             switch (multiClassClassifierType){
                 case "lr":
-                    CBM.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
+                    CBM.multiClassClassifier = new LogisticRegression(numComponents, numFeatures,true);
                     break;
                 case "boost":
-                    CBM.multiClassClassifier = new LKBoost(numClusters);
+                    CBM.multiClassClassifier = new LKBoost(numComponents);
                     break;
                 case "elasticnet":
-                    CBM.multiClassClassifier = new LogisticRegression(numClusters, numFeatures,true);
+                    CBM.multiClassClassifier = new LogisticRegression(numComponents, numFeatures,true);
                     break;
                 default:
                     throw new IllegalArgumentException("multiClassClassifierType can be lr or boost");
