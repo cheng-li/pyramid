@@ -78,10 +78,88 @@ public class ElasticNetLogisticTrainer {
         }
     }
 
-    public void iterate(){
-        // TODO: parallel for PowerSet MultiLabel.
-//        IntStream.range(0,numClasses).parallel()
-//                .forEach(this::optimizeOneClass);
+    public void iterate() {
+        double[][] probs = new double[dataSet.getNumDataPoints()][numClasses];
+        double[][] classScores = new double[dataSet.getNumDataPoints()][numClasses];
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(i -> {
+            probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
+            classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
+        });
+        IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs[i], classScores[i]));
+        if (lineSearch) {
+            Weights oldWeights = logisticRegression.getWeights().deepCopy();
+            Weights newWeights = logisticRegression.getWeights().deepCopy();
+            // infer searchDirection
+            Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
+
+            if (logger.isDebugEnabled()){
+                logger.debug("norm of the search direction = " + searchDirection.norm(2));
+            }
+            // move back to starting point
+            logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
+            // this gradient doesn't include the penalty term, so it is only approximate
+            Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(dataSet.getNumDataPoints());
+            lineSearch(searchDirection, gradient);
+            updateClassProbMatrix();
+            updatePredictedCounts();
+        }
+    }
+
+    private void optimizeOneClass(int classIndex, double[] probs, double[] classScores) {
+        //create weighted least square problem
+        int numDataPoints = dataSet.getNumDataPoints();
+        double[] realLabels = new double[numDataPoints];
+        double[] instanceWeights = new double[numDataPoints];
+        IntStream.range(0,numDataPoints).parallel().forEach(i ->
+        {
+            // TODO: repeated calculations in following two steps.
+            double prob = probs[i];
+            double classScore = classScores[i];
+            double y = targets[i][classIndex];
+
+            double frac = 0;
+            double tmpP = prob*(1-prob);
+            // if prob = 0 or prob = 1, weight = 0; doesn't matter how we decide frac; leave it 0
+            if (prob!=0&&prob!=1){
+                frac = (y-prob)/tmpP;
+            }
+            // frac is numerically unstable; if it is too big, the weighted least square solver will crash
+            if (frac>1){
+                frac=1;
+            }
+
+            if (frac<-1){
+                frac=-1;
+            }
+
+            realLabels[i] = classScore + frac;
+            instanceWeights[i] = weights[i]*tmpP;
+        });
+
+        // in glmnet algorithm:
+        // this correspond to moving towards the search direction with step size 1
+        // TODO: use the oldWeights
+        LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
+                logisticRegression.getWeights().getWeightsForClass(classIndex));
+        // use default epsilon
+        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights);
+        linearRegTrainer.setRegularization(this.regularization);
+        linearRegTrainer.setL1Ratio(this.l1Ratio);
+        if (logger.isDebugEnabled()){
+            logger.debug("start linearRegTrainer.optimize()");
+        }
+        linearRegTrainer.optimize();
+        if (logger.isDebugEnabled()){
+            logger.debug("finish linearRegTrainer.optimize()");
+        }
+
+        if (logger.isDebugEnabled()){
+            logger.debug("loss after optimization of one class = " + loss());
+        }
+    }
+
+
+    public void iterate1(){
         for (int k=0;k<numClasses;k++){
             optimizeOneClass(k);
         }

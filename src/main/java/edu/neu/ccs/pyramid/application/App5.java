@@ -232,7 +232,7 @@ public class App5 {
         cbm = CBM.getBuilder()
                 .setNumClasses(trainSet.getNumClasses())
                 .setNumFeatures(trainSet.getNumFeatures())
-                .setNumClusters(config.getInt("mixture.numClusters"))
+                .setNumComponents(config.getInt("mixture.numComponents"))
                 .setMultiClassClassifierType(config.getString("mixture.multiClassClassifierType"))
                 .setBinaryClassifierType(config.getString("mixture.binaryClassifierType"))
                 .build();
