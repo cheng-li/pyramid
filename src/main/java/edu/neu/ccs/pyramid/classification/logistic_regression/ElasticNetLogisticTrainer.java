@@ -79,6 +79,9 @@ public class ElasticNetLogisticTrainer {
     }
 
     public void iterate(){
+        // TODO: parallel for PowerSet MultiLabel.
+//        IntStream.range(0,numClasses).parallel()
+//                .forEach(this::optimizeOneClass);
         for (int k=0;k<numClasses;k++){
             optimizeOneClass(k);
         }
@@ -148,26 +151,20 @@ public class ElasticNetLogisticTrainer {
             logger.debug("finish linearRegTrainer.optimize()");
         }
 
-        Weights newWeights = logisticRegression.getWeights().deepCopy();
-
-        // infer searchDirection
-        Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
-
-        if (logger.isDebugEnabled()){
-            logger.debug("norm of the search direction = " + searchDirection.norm(2));
-        }
-        // move back to starting point
-        logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
-
-        // line search
-        // the original glmnet algorithm may diverge without line search
         if (lineSearch) {
+            Weights newWeights = logisticRegression.getWeights().deepCopy();
+            // infer searchDirection
+            Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
+
+            if (logger.isDebugEnabled()){
+                logger.debug("norm of the search direction = " + searchDirection.norm(2));
+            }
+            // move back to starting point
+            logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
             // this gradient doesn't include the penalty term, so it is only approximate
             Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(numDataPoints);
             lineSearch(searchDirection, gradient);
             updatePredictedCounts();
-        } else {
-            withoutLineSearch(searchDirection);
         }
 
         if (logger.isDebugEnabled()){
@@ -223,11 +220,11 @@ public class ElasticNetLogisticTrainer {
     }
 
 
-    private void withoutLineSearch(Vector searchDirection) {
-        Vector start = logisticRegression.getWeights().getAllWeights();
-        Vector target = start.plus(searchDirection);
-        logisticRegression.getWeights().setWeightVector(target);
-    }
+//    private void withoutLineSearch(Vector searchDirection) {
+//        Vector start = logisticRegression.getWeights().getAllWeights();
+//        Vector target = start.plus(searchDirection);
+//        logisticRegression.getWeights().setWeightVector(target);
+//    }
 
     /**
      * a special back track line search for sufficient decrease with elasticnet penalized model
