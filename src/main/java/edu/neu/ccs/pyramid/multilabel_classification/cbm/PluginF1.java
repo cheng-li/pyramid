@@ -9,7 +9,9 @@ import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -54,106 +56,78 @@ public class PluginF1 implements PluginPredictor<CBM>{
             case "support":
                 pred =  predictBySupport(vector);
                 break;
-            case "sampling":
-                pred =  predictBySampling(vector);
-                break;
-            case "samplingNonEmpty":
-                pred =  predictBySamplingNonEmpty(vector);
-                break;
-            case "dynamic":
-                pred = predictByDynamic(vector);
-                break;
-            case "dynamicAndSupport":
-                pred = predictByDynamicAndSupport(vector);
-                break;
+//            case "sampling":
+//                pred =  predictBySampling(vector);
+//                break;
+//            case "samplingNonEmpty":
+//                pred =  predictBySamplingNonEmpty(vector);
+//                break;
             default:
                 throw new IllegalArgumentException("unknown mode");
         }
         return pred;
     }
 
-
-    private MultiLabel predictBySampling(Vector vector){
-//        List<MultiLabel> samples = cbm.samples(vector, numSamples);
-        Pair<List<MultiLabel>, List<Double>> pair = cbm.samples(vector, probMassThreshold);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
-    }
-
-
-    private MultiLabel predictBySamplingNonEmpty(Vector vector){
-        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
-    }
+//    private MultiLabel predictBySampling(Vector vector){
+////        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+//        Pair<List<MultiLabel>, List<Double>> pair = cbm.samples(vector, probMassThreshold);
+//        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
+//    }
+//
+//
+//    private MultiLabel predictBySamplingNonEmpty(Vector vector){
+//        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
+//        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
+//    }
 
     private MultiLabel predictBySupport(Vector vector){
         List<Double> probs = cbm.predictAssignmentProbs(vector,support);
         return GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
     }
 
-    private MultiLabel predictByDynamic(Vector vector) {
-        Pair<List<MultiLabel>, List<Double>> pair = cbm.predictDynamicProbs(vector);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(), pair.getFirst(), pair.getSecond());
-    }
 
-    private MultiLabel predictByDynamicAndSupport(Vector vector) {
-        Pair<List<MultiLabel>, List<Double>> pair = cbm.predictDynamicProbs(vector);
-        List<Double> probs = cbm.predictAssignmentProbs(vector,support);
-        Set<MultiLabel> dynamicSet = new HashSet<>(pair.getFirst());
-        for (int i=0; i<probs.size(); i++) {
-            if (dynamicSet.contains(support.get(i))) {
-                continue;
-            } else {
-                pair.getFirst().add(support.get(i));
-                pair.getSecond().add(probs.get(i));
-            }
-        }
-        return GeneralF1Predictor.predict(cbm.getNumClasses(), pair.getFirst(), pair.getSecond());
-    }
-
-
-
-    public MultiLabel showPredictBySampling(Vector vector){
-        System.out.println("sampling procedure");
-//        List<MultiLabel> samples = cbm.samples(vector, numSamples);
-        Pair<List<MultiLabel>, List<Double>> pair = cbm.samples(vector, probMassThreshold);
-        List<Pair<MultiLabel, Double>> list = new ArrayList<>();
-        List<MultiLabel> labels = pair.getFirst();
-        List<Double> probs = pair.getSecond();
-        for (int i=0;i<labels.size();i++){
-            list.add(new Pair<>(labels.get(i),probs.get(i)));
-        }
-        Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
-
-        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
-
-
-
+//    public MultiLabel showPredictBySampling(Vector vector){
+//        System.out.println("sampling procedure");
+////        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+//        Pair<List<MultiLabel>, List<Double>> pair = cbm.samples(vector, probMassThreshold);
+//        List<Pair<MultiLabel, Double>> list = new ArrayList<>();
+//        List<MultiLabel> labels = pair.getFirst();
+//        List<Double> probs = pair.getSecond();
 //        for (int i=0;i<labels.size();i++){
-//            System.out.println(labels.get(i)+": "+probs.get(i));
+//            list.add(new Pair<>(labels.get(i),probs.get(i)));
 //        }
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
-    }
-
-    public void showPredictBySamplingNonEmpty(Vector vector){
-        System.out.println("sampling procedure");
-        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
-        List<Pair<MultiLabel, Double>> list = new ArrayList<>();
-        List<MultiLabel> labels = pair.getFirst();
-        List<Double> probs = pair.getSecond();
-        double[] probsArray = probs.stream().mapToDouble(a->a).toArray();
-
-        for (int i=0;i<labels.size();i++){
-            list.add(new Pair<>(labels.get(i),probs.get(i)));
-        }
-        Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
-
-        MultiLabel gfmPred =  GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
-        MultiLabel argmaxPre = cbm.predict(vector);
-        System.out.println("expected f1 of argmax predictor= "+GeneralF1Predictor.expectedF1(labels,probsArray, argmaxPre,cbm.getNumClasses()));
-        System.out.println("expected f1 of GFM predictor= "+GeneralF1Predictor.expectedF1(labels,probsArray, gfmPred,cbm.getNumClasses()));
-
-        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
-    }
+//        Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
+//
+//        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
+//
+//
+//
+////        for (int i=0;i<labels.size();i++){
+////            System.out.println(labels.get(i)+": "+probs.get(i));
+////        }
+//        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
+//    }
+//
+//    public void showPredictBySamplingNonEmpty(Vector vector){
+//        System.out.println("sampling procedure");
+//        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
+//        List<Pair<MultiLabel, Double>> list = new ArrayList<>();
+//        List<MultiLabel> labels = pair.getFirst();
+//        List<Double> probs = pair.getSecond();
+//        double[] probsArray = probs.stream().mapToDouble(a->a).toArray();
+//
+//        for (int i=0;i<labels.size();i++){
+//            list.add(new Pair<>(labels.get(i),probs.get(i)));
+//        }
+//        Comparator<Pair<MultiLabel, Double>> comparator = Comparator.comparing(a-> a.getSecond());
+//
+//        MultiLabel gfmPred =  GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
+//        MultiLabel argmaxPre = cbm.predict(vector);
+//        System.out.println("expected f1 of argmax predictor= "+GeneralF1Predictor.expectedF1(labels,probsArray, argmaxPre,cbm.getNumClasses()));
+//        System.out.println("expected f1 of GFM predictor= "+GeneralF1Predictor.expectedF1(labels,probsArray, gfmPred,cbm.getNumClasses()));
+//
+//        System.out.println(list.stream().sorted(comparator.reversed()).collect(Collectors.toList()));
+//    }
 
     public GeneralF1Predictor.Analysis showPredictBySupport(Vector vector, MultiLabel truth){
 //        System.out.println("support procedure");
