@@ -179,7 +179,7 @@ public class CBMPredictor {
 
                 // whether consider empty prediction
                 if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
-                    if (dp.dp.size() == 0) {
+                    if (dp.getQueue().size() == 0) {
                         removeList.add(k);
                     }
                     continue;
@@ -194,7 +194,7 @@ public class CBMPredictor {
                 }
 
                 // check if need to remove cluster k from the candidates
-                if (checkStop(prob, cond1[k], maxLogProb, sumPiD[k], k) || dp.dp.size() == 0) {
+                if (checkStop(prob, cond1[k], maxLogProb, sumPiD[k], k) || dp.getQueue().size() == 0) {
                     removeList.add(k);
                 }
             }

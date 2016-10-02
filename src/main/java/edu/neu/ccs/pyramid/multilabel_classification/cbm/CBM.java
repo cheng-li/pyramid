@@ -222,7 +222,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         return bmDistribution.sample(numSamples);
 
     }
-    
+
 
     public ProbabilityEstimator[][] getBinaryClassifiers() {
         return binaryClassifiers;
