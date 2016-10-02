@@ -20,18 +20,18 @@ public class BMDistribution {
     // log(z=k)
     private double[] logProportions;
     // log p(y_l=1|z=k)
-    // size = num components * num classes
-    private double[][] logClassProbs;
+    // size = num components * num classes * 2
+    private double[][][] logClassProbs;
 
 
     BMDistribution(CBM cbm, Vector x) {
         this.numLabels = cbm.numLabels;
         this.numComponents = cbm.numComponents;
         this.logProportions = cbm.multiClassClassifier.predictLogClassProbs(x);
-        this.logClassProbs = new double[numComponents][numLabels];
+        this.logClassProbs = new double[numComponents][numLabels][2];
         for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
-                logClassProbs[k][l] = cbm.binaryClassifiers[k][l].predictLogClassProbs(x)[1];
+                logClassProbs[k][l] = cbm.binaryClassifiers[k][l].predictLogClassProbs(x);
             }
         }
     }
@@ -41,9 +41,9 @@ public class BMDistribution {
         double sum = 0.0;
         for (int l=0; l< numLabels; l++) {
             if (y.matchClass(l)) {
-                sum += logClassProbs[k][l];
+                sum += logClassProbs[k][l][1];
             } else {
-                sum += 1- logClassProbs[k][l];
+                sum += logClassProbs[k][l][0];
             }
         }
         return sum;
@@ -77,7 +77,7 @@ public class BMDistribution {
     private double marginal(int labelIndex){
         double sum = 0;
         for (int k=0;k<numComponents;k++){
-            sum += Math.exp(logProportions[k])*Math.exp(logClassProbs[k][labelIndex]);
+            sum += Math.exp(logProportions[k])*Math.exp(logClassProbs[k][labelIndex][1]);
         }
         return sum;
     }
@@ -96,7 +96,7 @@ public class BMDistribution {
         double[][] classProbs = new double[numComponents][numLabels];
         for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
-                classProbs[k][l] = Math.exp(logClassProbs[k][l]);
+                classProbs[k][l] = Math.exp(logClassProbs[k][l][1]);
             }
         }
         int[] components = IntStream.range(0, numComponents).toArray();

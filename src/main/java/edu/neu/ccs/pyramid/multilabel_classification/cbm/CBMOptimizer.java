@@ -337,9 +337,9 @@ public class CBMOptimizer implements Serializable {
         //TODO
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
         ridgeLogisticOptimizer.optimize();
-        if (logger.isDebugEnabled()){
-            logger.debug("for cluster "+clusterIndex+" label "+labelIndex+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
-        }
+//        if (logger.isDebugEnabled()){
+//            logger.debug("for cluster "+clusterIndex+" label "+labelIndex+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
+//        }
     }
 
     private void updateBinaryLogisticRegressionEL(int clusterIndex, int labelIndex) {
