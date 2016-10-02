@@ -14,15 +14,18 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.io.Serializable;
-import java.util.*;
 import java.util.stream.IntStream;
 
 /**
  * References
+ *
+ * CBM training algorithm
+ * Conditional Bernoulli Mixtures for Multi-label Classification.
+ * Cheng Li, Bingyu Wang, Virgil Pavlu, and Javed Aslam.
+ * In Proceedings of the 33rd International Conference on Machine Learning (ICML), 2016.
+ *
  * Deterministic annealing:
  * Katahira, Kentaro, Kazuho Watanabe, and Masato Okada.
  * "Deterministic annealing variant of variational Bayes method."
@@ -30,21 +33,19 @@ import java.util.stream.IntStream;
  *
  * Created by Rainicy on 10/23/15.
  */
-public class CBMOptimizer implements Serializable {
+public class CBMOptimizer {
     private static final Logger logger = LogManager.getLogger();
     private CBM cbm;
     private MultiLabelClfDataSet dataSet;
     private Terminator terminator;
 
-    // format [#data][#cluster]
+    // format [#data][#components]
     double[][] gammas;
-    // format [#cluster][#data]
+    // format [#components][#data]
     double[][] gammasT;
 
-    // format [#data]
-    private Vector[] labels;
-
     // format [#labels][#data][2]
+    // to be fit by binary classifiers
     private double[][][] targetsDistributions;
     private boolean isParallel = true;
 
@@ -86,33 +87,26 @@ public class CBMOptimizer implements Serializable {
         this.terminator.setGoal(Terminator.Goal.MINIMIZE);
 
         this.gammas = new double[dataSet.getNumDataPoints()][cbm.getNumComponents()];
-
         this.gammasT = new double[cbm.getNumComponents()][dataSet.getNumDataPoints()];
+        double average = 1.0/ cbm.getNumComponents();
         for (int n=0;n<dataSet.getNumDataPoints();n++){
             for (int k = 0; k< cbm.getNumComponents(); k++){
-                gammas[n][k] = 1.0/ cbm.getNumComponents();
-                gammasT[k][n] = 1.0/ cbm.getNumComponents();
-            }
-        }
-        this.labels = new DenseVector[dataSet.getNumDataPoints()];
-        for (int n=0; n<labels.length; n++) {
-            Set<Integer> label = dataSet.getMultiLabels()[n].getMatchedLabels();
-            labels[n] = new DenseVector(dataSet.getNumClasses());
-            for (int l : label) {
-                labels[n].set(l, 1);
+                gammas[n][k] = average;
+                gammasT[k][n] = average;
             }
         }
 
-        // 2 means binary classification problem.
+
         this.targetsDistributions = new double[cbm.getNumClasses()][dataSet.getNumDataPoints()][2];
         for (int n=0; n<dataSet.getNumDataPoints(); n++) {
-            Vector label = labels[n];
-            for (int l=0; l<label.size(); l++) {
-                if (label.get(l) == 0.0) {
-                    this.targetsDistributions[l][n][0] = 1;
-                } else {
-                    this.targetsDistributions[l][n][1] = 1;
-                }
+            // first mark all labels as negative
+            for (int l=0;l<cbm.getNumClasses(); l++){
+                this.targetsDistributions[l][n][0] = 1;
+            }
+            MultiLabel multiLabel = dataSet.getMultiLabels()[n];
+            for (int l: multiLabel.getMatchedLabels()){
+                this.targetsDistributions[l][n][0] = 0;
+                this.targetsDistributions[l][n][1] = 1;
             }
         }
     }
@@ -157,11 +151,6 @@ public class CBMOptimizer implements Serializable {
         this.temperature = temperature;
     }
 
-    public void setHardAssignment(boolean hardAssignment) {
-        this.hardAssignment = hardAssignment;
-    }
-
-
     public void optimize() {
         while (true) {
             iterate();
@@ -177,90 +166,18 @@ public class CBMOptimizer implements Serializable {
         this.terminator.add(getObjective());
     }
 
-    public void eStep(){
+    private void eStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
         updateGamma();
-        // reweightedGammas
-        if (hardAssignment) {
-            reweightedGammas();
-        }
+
         if (logger.isDebugEnabled()){
             logger.debug("finish E step");
             logger.debug("objective = "+getObjective());
         }
     }
 
-    private void reweightedGammas() {
-        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .forEach(this::reweightedGammas);
-    }
-
-    private void reweightedGammas(int n) {
-
-        // find the max gamma index
-        int maxK = 0;
-        double maxGam = gammas[n][0];
-        for (int k=1; k<gammas[n].length; k++) {
-            if (maxGam < gammas[n][k]) {
-                maxGam = gammas[n][k];
-                maxK = k;
-            }
-        }
-
-        // reweighted
-        for (int k=0; k<gammas[n].length; k++) {
-            if (k == maxK) {
-                gammas[n][k] = 1.0;
-                gammasT[k][n] = 1.0;
-            } else {
-                gammas[n][k] = 0.0;
-                gammasT[k][n] = 0.0;
-            }
-        }
-
-//        int[] indexes = maxKIndex(gammas[n],3);
-//        Set<Integer> indexSet = new HashSet<>();
-//        for (int topK : indexes) {
-//            indexSet.add(topK);
-//        }
-//
-//        //reweighted
-//        double restValues = 0.0;
-//        for (int k=0; k<gammas[n].length; k++) {
-//            if (!indexSet.contains(k)) {
-//                restValues += gammas[n][k];
-//                gammas[n][k] = 0.0;
-//                gammasT[k][n] = 0.0;
-//            }
-//        }
-//        double averageValue = restValues / 3.0;
-//        for (int topK : indexSet) {
-//            gammas[n][topK] += averageValue;
-//            gammasT[topK][n] += averageValue;
-//        }
-    }
-
-//    private static int[] maxKIndex(double[] array, int top_k) {
-//        double[] max = new double[top_k];
-//        int[] maxIndex = new int[top_k];
-//        Arrays.fill(max, Double.NEGATIVE_INFINITY);
-//        Arrays.fill(maxIndex, -1);
-//
-//        top: for(int i = 0; i < array.length; i++) {
-//            for(int j = 0; j < top_k; j++) {
-//                if(array[i] > max[j]) {
-//                    for(int x = top_k - 1; x > j; x--) {
-//                        maxIndex[x] = maxIndex[x-1]; max[x] = max[x-1];
-//                    }
-//                    maxIndex[j] = i; max[j] = array[i];
-//                    continue top;
-//                }
-//            }
-//        }
-//        return maxIndex;
-//    }
 
     private void updateGamma() {
         IntStream.range(0, dataSet.getNumDataPoints()).parallel()
@@ -291,50 +208,48 @@ public class CBMOptimizer implements Serializable {
 
     private void updateBinaryClassifiers() {
         IntStream.range(0, cbm.numComponents).forEach(this::updateBinaryClassifiers);
-
     }
 
     //todo pay attention to parallelism
-    private void updateBinaryClassifiers(int clusterIndex){
+    private void updateBinaryClassifiers(int component){
         String type = cbm.getBinaryClassifierType();
         switch (type){
             case "lr":
-                IntStream.range(0, cbm.numLabels).parallel().forEach(l-> updateBinaryLogisticRegression(clusterIndex,l));
+                IntStream.range(0, cbm.numLabels).parallel().forEach(l-> updateBinaryLogisticRegression(component,l));
                 break;
             case "boost":
                 // no parallel for boosting
-                IntStream.range(0, cbm.numLabels).forEach(l -> updateBinaryBoosting(clusterIndex, l));
+                IntStream.range(0, cbm.numLabels).forEach(l -> updateBinaryBoosting(component, l));
                 break;
             case "elasticnet":
-                IntStream.range(0, cbm.numLabels).parallel().forEach(l-> updateBinaryLogisticRegressionEL(clusterIndex,l));
+                IntStream.range(0, cbm.numLabels).parallel().forEach(l-> updateBinaryLogisticRegressionEL(component,l));
                 break;
             default:
                 throw new IllegalArgumentException("unknown type: " + cbm.getBinaryClassifierType());
         }
     }
 
-    private void updateBinaryBoosting(int clusterIndex, int labelIndex){
+    private void updateBinaryBoosting(int componentIndex, int labelIndex){
         int numIterations = numIterationsBinary;
         double shrinkage = shrinkageBinary;
-        LKBoost boost = (LKBoost)this.cbm.binaryClassifiers[clusterIndex][labelIndex];
+        LKBoost boost = (LKBoost)this.cbm.binaryClassifiers[componentIndex][labelIndex];
         RegTreeConfig regTreeConfig = new RegTreeConfig()
                 .setMaxNumLeaves(numLeavesBinary);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(2));
-
-        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,dataSet, regTreeFactory,gammasT[clusterIndex],targetsDistributions[labelIndex]);
+        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,dataSet, regTreeFactory,
+                gammasT[componentIndex],targetsDistributions[labelIndex]);
         optimizer.setShrinkage(shrinkage);
         optimizer.initialize();
-        for (int i=0;i<numIterations;i++){
-            optimizer.iterate();
-        }
+        optimizer.iterate(numIterations);
     }
 
-    private void updateBinaryLogisticRegression(int clusterIndex, int labelIndex){
+    private void updateBinaryLogisticRegression(int componentIndex, int labelIndex){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
-        ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression) cbm.binaryClassifiers[clusterIndex][labelIndex],
-                dataSet, gammasT[clusterIndex], targetsDistributions[labelIndex], priorVarianceBinary, false);
-        //TODO
+        // no parallelism
+        ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex],
+                dataSet, gammasT[componentIndex], targetsDistributions[labelIndex], priorVarianceBinary, false);
+        //TODO maximum iterations
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
         ridgeLogisticOptimizer.optimize();
 //        if (logger.isDebugEnabled()){
@@ -342,13 +257,13 @@ public class CBMOptimizer implements Serializable {
 //        }
     }
 
-    private void updateBinaryLogisticRegressionEL(int clusterIndex, int labelIndex) {
+    private void updateBinaryLogisticRegressionEL(int componentIndex, int labelIndex) {
         ElasticNetLogisticTrainer elasticNetLogisticTrainer = new ElasticNetLogisticTrainer.Builder((LogisticRegression)
-                cbm.binaryClassifiers[clusterIndex][labelIndex], dataSet, 2, targetsDistributions[labelIndex], gammasT[clusterIndex])
+                cbm.binaryClassifiers[componentIndex][labelIndex], dataSet, 2, targetsDistributions[labelIndex], gammasT[componentIndex])
                 .setRegularization(regularizationBinary)
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
-        //TODO: maximum iterations.
+        //TODO: maximum iterations
         elasticNetLogisticTrainer.getTerminator().setMaxIteration(10);
         elasticNetLogisticTrainer.optimize();
     }
@@ -382,9 +297,10 @@ public class CBMOptimizer implements Serializable {
     }
 
     private void updateMultiClassLR() {
-        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression) cbm.multiClassClassifier,
+        // parallel
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
-        //TODO
+        //TODO maximum iterations
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
         ridgeLogisticOptimizer.optimize();
     }
@@ -399,12 +315,10 @@ public class CBMOptimizer implements Serializable {
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numComponents));
 
-        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,dataSet, regTreeFactory,gammas);
+        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost, dataSet, regTreeFactory, gammas);
         optimizer.setShrinkage(shrinkage);
         optimizer.initialize();
-        for (int i=0;i<numIterations;i++){
-            optimizer.iterate();
-        }
+        optimizer.iterate(numIterations);
     }
 
 //    public static Object[] getColumn(Object[][] array, int index){
@@ -454,6 +368,7 @@ public class CBMOptimizer implements Serializable {
             case "boost":
                 return binaryBoostObj(clusterIndex, classIndex);
             case "elasticnet":
+                // todo
                 return binaryLRObj(clusterIndex, classIndex);
             default:
                 throw new IllegalArgumentException("unknown type: " + type);

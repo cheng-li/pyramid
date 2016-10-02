@@ -23,8 +23,8 @@ import java.util.stream.IntStream;
 
 /**
  * Conditional Bernoulli Mixtures for Multi-label Classification.
- Cheng Li, Bingyu Wang, Virgil Pavlu, and Javed Aslam.
- In Proceedings of the 33rd International Conference on Machine Learning (ICML), 2016.
+ * Cheng Li, Bingyu Wang, Virgil Pavlu, and Javed Aslam.
+ * In Proceedings of the 33rd International Conference on Machine Learning (ICML), 2016.
  * Created by Rainicy on 10/23/15.
  */
 public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializable {
