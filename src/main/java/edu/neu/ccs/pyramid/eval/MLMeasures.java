@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
@@ -21,6 +22,13 @@ public class MLMeasures {
     private MacroAverage macroAverage;
     private MicroAverage microAverage;
 
+
+    public MLMeasures(int numClasses, MultiLabel[] truth, MultiLabel[] prediction){
+        this.mlConfusionMatrix = new MLConfusionMatrix(numClasses, truth, prediction);
+        this.instanceAverage = new InstanceAverage(mlConfusionMatrix);
+        this.macroAverage = new MacroAverage(mlConfusionMatrix);
+        this.microAverage = new MicroAverage(mlConfusionMatrix);
+    }
 
     public MLMeasures(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
         this.mlConfusionMatrix = new MLConfusionMatrix(classifier,dataSet);
