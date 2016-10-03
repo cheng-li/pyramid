@@ -85,7 +85,7 @@ public class ElasticNetLogisticTrainer {
             probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
             classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
         });
-        IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs[i], classScores[i]));
+        IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs, classScores));
         if (lineSearch) {
             Weights oldWeights = logisticRegression.getWeights().deepCopy();
             Weights newWeights = logisticRegression.getWeights().deepCopy();
@@ -103,9 +103,10 @@ public class ElasticNetLogisticTrainer {
             updateClassProbMatrix();
             updatePredictedCounts();
         }
+        terminator.add(getLoss());
     }
 
-    private void optimizeOneClass(int classIndex, double[] probs, double[] classScores) {
+    private void optimizeOneClass(int classIndex, double[][] probs, double[][] classScores) {
         //create weighted least square problem
         int numDataPoints = dataSet.getNumDataPoints();
         double[] realLabels = new double[numDataPoints];
@@ -113,8 +114,8 @@ public class ElasticNetLogisticTrainer {
         IntStream.range(0,numDataPoints).parallel().forEach(i ->
         {
             // TODO: repeated calculations in following two steps.
-            double prob = probs[i];
-            double classScore = classScores[i];
+            double prob = probs[i][classIndex];
+            double classScore = classScores[i][classIndex];
             double y = targets[i][classIndex];
 
             double frac = 0;
@@ -138,7 +139,6 @@ public class ElasticNetLogisticTrainer {
 
         // in glmnet algorithm:
         // this correspond to moving towards the search direction with step size 1
-        // TODO: use the oldWeights
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon

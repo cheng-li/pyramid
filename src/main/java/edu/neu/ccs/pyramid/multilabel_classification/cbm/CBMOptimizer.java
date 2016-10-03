@@ -250,7 +250,7 @@ public class CBMOptimizer {
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex],
                 dataSet, gammasT[componentIndex], targetsDistributions[labelIndex], priorVarianceBinary, false);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(15);
         ridgeLogisticOptimizer.optimize();
 //        if (logger.isDebugEnabled()){
 //            logger.debug("for cluster "+clusterIndex+" label "+labelIndex+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
@@ -264,7 +264,7 @@ public class CBMOptimizer {
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
         //TODO: maximum iterations
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(10);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(15);
         elasticNetLogisticTrainer.optimize();
     }
 
@@ -292,7 +292,7 @@ public class CBMOptimizer {
                 .setL1Ratio(l1RatioMultiClass)
                 .setLineSearch(lineSearch).build();
         // TODO: maximum iterations
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(10);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(15);
         elasticNetLogisticTrainer.optimize();
     }
 
@@ -301,7 +301,7 @@ public class CBMOptimizer {
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(15);
         ridgeLogisticOptimizer.optimize();
     }
 
@@ -369,10 +369,16 @@ public class CBMOptimizer {
                 return binaryBoostObj(clusterIndex, classIndex);
             case "elasticnet":
                 // todo
-                return binaryLRObj(clusterIndex, classIndex);
+                return binaryLRELObj(clusterIndex, classIndex);
             default:
                 throw new IllegalArgumentException("unknown type: " + type);
         }
+    }
+
+    private double binaryLRELObj(int clusterIndex, int classIndex) {
+        LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) cbm.binaryClassifiers[clusterIndex][classIndex],
+                dataSet, gammasT[clusterIndex], targetsDistributions[classIndex], regularizationBinary, l1RatioBinary, false);
+        return logisticLoss.getValueEL();
     }
 
     // consider regularization penalty
@@ -398,10 +404,16 @@ public class CBMOptimizer {
                 return multiClassBoostObj();
             //TODO: change to elastic net
             case "elasticnet":
-                return multiClassLRObj();
+                return multiClassLRELObj();
             default:
                 throw new IllegalArgumentException("unknown type: " + type);
         }
+    }
+
+    private double multiClassLRELObj() {
+        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression) cbm.multiClassClassifier,
+                dataSet, gammas, regularizationMultiClass, l1RatioMultiClass, true);
+        return logisticLoss.getValueEL();
     }
 
     private double multiClassBoostObj(){
