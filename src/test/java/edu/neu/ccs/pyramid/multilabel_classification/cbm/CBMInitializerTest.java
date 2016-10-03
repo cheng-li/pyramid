@@ -27,7 +27,7 @@ public class CBMInitializerTest {
         CBM cbm = CBM.getBuilder()
                 .setNumClasses(trainSet.getNumClasses())
                 .setNumFeatures(trainSet.getNumFeatures())
-                .setNumClusters(numClusters)
+                .setNumComponents(numClusters)
                 .setBinaryClassifierType("lr")
                 .setMultiClassClassifierType("lr")
                 .build();

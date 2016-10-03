@@ -26,7 +26,7 @@ public class CBMInspector {
     private static BasicMatrix.Factory<PrimitiveMatrix> factory = PrimitiveMatrix.FACTORY;
 
     public static Weights getMean(CBM bmm, int label){
-        int numClusters = bmm.getNumClusters();
+        int numClusters = bmm.getNumComponents();
         int length = ((LogisticRegression)bmm.getBinaryClassifiers()[0][0]).getWeights().getAllWeights().size();
         int numFeatures = ((LogisticRegression)bmm.getBinaryClassifiers()[0][0]).getNumFeatures();
         Vector mean = new DenseVector(length);
@@ -46,7 +46,7 @@ public class CBMInspector {
 
     public static double distanceFromMean(CBM bmm, int label){
         Classifier.ProbabilityEstimator[][] logistics = bmm.getBinaryClassifiers();
-        int numClusters = bmm.getNumClusters();
+        int numClusters = bmm.getNumComponents();
         int numFeatures =  ((LogisticRegression)logistics[0][0]).getNumFeatures();
 
         Vector positiveAverageVector = new DenseVector(numFeatures);
@@ -68,7 +68,7 @@ public class CBMInspector {
     }
 
     public static List<Map<MultiLabel,Double>> visualizeClusters(CBM bmm, MultiLabelClfDataSet dataSet){
-        int numClusters = bmm.getNumClusters();
+        int numClusters = bmm.getNumComponents();
         List<Map<MultiLabel,Double>> list = new ArrayList<>();
         for (int k=0;k<numClusters;k++){
             list.add(new HashMap<>());
@@ -90,7 +90,7 @@ public class CBMInspector {
 
 
     public static void visualizePrediction(CBM CBM, Vector vector, LabelTranslator labelTranslator){
-        int numClusters = CBM.getNumClusters();
+        int numClusters = CBM.getNumComponents();
         int numClasses = CBM.getNumClasses();
         double[] proportions = CBM.getMultiClassClassifier().predictClassProbs(vector);
         double[][] probabilities = new double[numClusters][numClasses];
@@ -160,7 +160,7 @@ public class CBMInspector {
     }
 
     public static void covariance(CBM CBM, Vector vector, LabelTranslator labelTranslator){
-        int numClusters = CBM.getNumClusters();
+        int numClusters = CBM.getNumComponents();
         int numClasses = CBM.getNumClasses();
         double[] proportions = CBM.getMultiClassClassifier().predictClassProbs(vector);
         double[][] probabilities = new double[numClusters][numClasses];
