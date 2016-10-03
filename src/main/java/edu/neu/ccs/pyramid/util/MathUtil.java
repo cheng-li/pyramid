@@ -171,4 +171,29 @@ public class MathUtil {
         }
         return probVector;
     }
+
+    /**
+     *
+     * @param probabilities
+     * @return scores that can produce the given probabilities after softmax
+     */
+    public static double[] inverseSoftMax(double[] probabilities){
+        int len = probabilities.length;
+        // cannot compute log(0), using log(1E-10) instead
+        for (int i=0;i<len;i++){
+            if (probabilities[i]==0){
+                probabilities[i]=1E-10;
+            }
+        }
+        double[] logs = new double[len];
+        for (int i=0;i<len;i++){
+            logs[i] = Math.log(probabilities[i]);
+        }
+        double average = MathUtil.arraySum(logs)/len;
+        double[] scores = new double[len];
+        for (int i=0;i<len;i++){
+            scores[i] = logs[i] - average;
+        }
+        return scores;
+    }
 }
