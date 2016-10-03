@@ -11,19 +11,20 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 public class CBMInitializer {
 
 
-    public static void initialize(CBM CBM, MultiLabelClfDataSet dataSet, CBMOptimizer optimizer){
-        double[][] gamms = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), CBM.numClusters);
+    public static void initialize(CBM cbm, MultiLabelClfDataSet dataSet, CBMOptimizer optimizer){
+        double[][] gamms = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int k = 0; k< CBM.numClusters; k++){
+            for (int k = 0; k< cbm.getNumComponents(); k++){
                 optimizer.gammas[i][k] = gamms[i][k];
                 optimizer.gammasT[k][i] = gamms[i][k];
             }
         }
+        System.out.println("performing M step");
         optimizer.mStep();
     }
 
     public static void randInitialize(CBM CBM, MultiLabelClfDataSet dataSet, CBMOptimizer optimizer) {
-        int K = CBM.getNumClusters();
+        int K = CBM.getNumComponents();
 
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
             double[] dist = new double[K];
@@ -41,7 +42,7 @@ public class CBMInitializer {
     }
 
     public static void avgInitialize(CBM CBM, MultiLabelClfDataSet dataSet, CBMOptimizer optimizer) {
-        int K = CBM.getNumClusters();
+        int K = CBM.getNumComponents();
         double avgValue = 1 / (double) K;
         for (int i=0; i<dataSet.getNumDataPoints(); i++) {
             for (int k=0; k<K; k++) {

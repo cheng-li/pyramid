@@ -69,10 +69,18 @@ public class LKBoostOptimizer extends GBOptimizer {
         PriorProbClassifier priorProbClassifier = new PriorProbClassifier(numClasses);
         priorProbClassifier.fit(dataSet, targetDistribution, weights);
         double[] probs = priorProbClassifier.getClassProbs();
-        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+        double[] scores = MathUtil.inverseSoftMax(probs);
+        // weaken the priors
+        for (int i=0;i<scores.length;i++){
+            if (scores[i]>5){
+                scores[i]=5;
+            }
+            if (scores[i]<-5){
+                scores[i]=-5;
+            }
+        }
         for (int k=0;k<numClasses;k++){
-            double score = Math.log(probs[k] - average);
-            Regressor constant = new ConstantRegressor(score);
+            Regressor constant = new ConstantRegressor(scores[k]);
             boosting.getEnsemble(k).add(constant);
         }
     }

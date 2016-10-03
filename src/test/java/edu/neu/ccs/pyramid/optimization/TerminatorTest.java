@@ -8,12 +8,12 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 
 public class TerminatorTest {
     public static void main(String[] args) {
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
-        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
-        loggerConfig.setLevel(Level.DEBUG);
-        ctx.updateLoggers();
-        test2();
+//        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+//        Configuration config = ctx.getConfiguration();
+//        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+//        loggerConfig.setLevel(Level.DEBUG);
+//        ctx.updateLoggers();
+        test4();
 
     }
 
@@ -44,6 +44,25 @@ public class TerminatorTest {
 //            System.out.println("max="+checker.getMaxValue());
 //            System.out.println("stable="+checker.getStableIterations());
 //            System.out.println("converge="+checker.isConverged());
+        }
+    }
+
+    private static void test3(){
+        Terminator terminator = new Terminator();
+        for (int i=0;i<10;i++){
+            terminator.add(0);
+            System.out.println("i="+i);
+            System.out.println(terminator.shouldTerminate());
+        }
+    }
+
+
+    private static void test4(){
+        Terminator terminator = new Terminator();
+        for (int i=0;i<10;i++){
+            terminator.add(-1);
+            System.out.println("i="+i);
+            System.out.println(terminator.shouldTerminate());
         }
     }
 

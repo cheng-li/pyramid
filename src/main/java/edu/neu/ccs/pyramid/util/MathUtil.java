@@ -155,4 +155,45 @@ public class MathUtil {
         }
         return sum;
     }
+
+    /**
+     * exponentiate scores and normalize
+     * @param scores
+     * @return probabilities
+     */
+    public static double[] softmax(double[] scores){
+        double[] probVector = new double[scores.length];
+        double logDenominator = MathUtil.logSumExp(scores);
+        for (int k=0;k<scores.length;k++){
+            double logNumerator = scores[k];
+            double pro = Math.exp(logNumerator-logDenominator);
+            probVector[k]=pro;
+        }
+        return probVector;
+    }
+
+    /**
+     *
+     * @param probabilities
+     * @return scores that can produce the given probabilities after softmax
+     */
+    public static double[] inverseSoftMax(double[] probabilities){
+        int len = probabilities.length;
+        // cannot compute log(0), using log(1E-10) instead
+        for (int i=0;i<len;i++){
+            if (probabilities[i]==0){
+                probabilities[i]=1E-10;
+            }
+        }
+        double[] logs = new double[len];
+        for (int i=0;i<len;i++){
+            logs[i] = Math.log(probabilities[i]);
+        }
+        double average = MathUtil.arraySum(logs)/len;
+        double[] scores = new double[len];
+        for (int i=0;i<len;i++){
+            scores[i] = logs[i] - average;
+        }
+        return scores;
+    }
 }

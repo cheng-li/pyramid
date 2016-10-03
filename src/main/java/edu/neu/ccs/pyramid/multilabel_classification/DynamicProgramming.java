@@ -12,16 +12,16 @@ import java.util.Set;
  */
 public class DynamicProgramming {
 
-    public PriorityQueue<Candidate> dp;
+    private PriorityQueue<Candidate> queue;
 
-    public double[][] probs;
+    private double[][] probs;
 
-    public double[][] logProbs;
+    private double[][] logProbs;
 
     /**
      * number of labels;
      */
-    public int numLabels;
+    private int numLabels;
 
 
     /**
@@ -46,9 +46,9 @@ public class DynamicProgramming {
         this.numLabels = probs.length;
         this.probs = probs;
         this.logProbs = logProbs;
+        cache = new HashSet<>();
 
-
-        dp = new PriorityQueue<>();
+        queue = new PriorityQueue<>();
         Vector vector = new DenseVector(numLabels);
 
         double logProb = 0.0;
@@ -60,8 +60,8 @@ public class DynamicProgramming {
                 logProb += this.logProbs[l][0];
             }
         }
-        dp.add(new Candidate(vector, logProb));
-        cache = new HashSet<>();
+        queue.add(new Candidate(vector, logProb));
+
         cache.add(vector);
     }
 
@@ -75,9 +75,9 @@ public class DynamicProgramming {
         this.numLabels = probs.length;
         this.probs = probs;
         this.logProbs = logProbs;
+        cache = new HashSet<>();
 
-
-        dp = new PriorityQueue<>();
+        queue = new PriorityQueue<>();
         Vector vector = new DenseVector(numLabels);
 
         double logProb = 0.0;
@@ -89,9 +89,13 @@ public class DynamicProgramming {
                 logProb += this.logProbs[l][0];
             }
         }
-        dp.add(new Candidate(vector, logProb));
-        cache = new HashSet<>();
+        queue.add(new Candidate(vector, logProb));
+
         cache.add(vector);
+    }
+
+    public PriorityQueue<Candidate> getQueue() {
+        return queue;
     }
 
     /**
@@ -100,33 +104,32 @@ public class DynamicProgramming {
      * @return
      */
     public double nextHighestProb() {
-        if (dp.size() > 0) {
-            return dp.peek().probability;
+        if (queue.size() > 0) {
+            return queue.peek().probability;
         }
         return 0;
     }
 
     /**
-     * calculate the current the highest log probability of the
-     * first element in the queue.
+     * calculate the highest log probability
      * @return
      */
     public double highestLogProb() {
-        if (dp.size() > 0) {
-            return dp.peek().logProbability;
+        if (queue.size() > 0) {
+            return queue.peek().logProbability;
         }
         return Double.NEGATIVE_INFINITY;
     }
 
     /**
      * find the next vector with highest probability.
-     * And update the queue with flipping every label.
+     * And update the queue by flipping every label.
      * @return
      */
     public Vector nextHighestVector() {
-        if (dp.size() > 0) {
-            flipLabels(dp.peek());
-            return dp.poll().vector;
+        if (queue.size() > 0) {
+            flipLabels(queue.peek());
+            return queue.poll().vector;
         }
 
         return new DenseVector(numLabels);
@@ -134,9 +137,9 @@ public class DynamicProgramming {
 
 
     public Candidate nextHighest(){
-        if (dp.size() > 0) {
-            flipLabels(dp.peek());
-            return dp.poll();
+        if (queue.size() > 0) {
+            flipLabels(queue.peek());
+            return queue.poll();
         }
         Vector vector = new DenseVector(numLabels);
         Candidate candidate = new Candidate(vector, Double.NEGATIVE_INFINITY);
@@ -170,7 +173,7 @@ public class DynamicProgramming {
             if (cache.contains(flipVector)) {
                 continue;
             }
-            dp.add(new Candidate(flipVector, logProb));
+            queue.add(new Candidate(flipVector, logProb));
             cache.add(flipVector);
         }
     }
@@ -193,7 +196,7 @@ public class DynamicProgramming {
     }
 
     public String toString() {
-        return dp.toString();
+        return queue.toString();
     }
 
 
