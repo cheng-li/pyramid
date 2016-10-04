@@ -16,10 +16,12 @@ import edu.neu.ccs.pyramid.multilabel_classification.MLScorer;
 import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -135,6 +137,50 @@ public class CBMUtilityOptimizer {
         }
     }
 
+
+
+    private  void updateTargets(int dataPointIndex){
+        double[] probs = probabilities[dataPointIndex];
+        double[] product = new double[probs.length];
+        double[] s = this.scores[dataPointIndex];
+        for (int j=0;j<probs.length;j++){
+            product[j] = probs[j]*s[j];
+        }
+
+        double denominator = MathUtil.arraySum(product);
+        for (int j=0;j<probs.length;j++){
+            targets[dataPointIndex][j] = product[j]/denominator;
+        }
+    }
+
+
+    private void updateTargets(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateTargets()");
+        }
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(this::updateTargets);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateTargets()");
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public void setPriorVarianceMultiClass(double priorVarianceMultiClass) {
         this.priorVarianceMultiClass = priorVarianceMultiClass;
     }
@@ -208,10 +254,27 @@ public class CBMUtilityOptimizer {
                 .forEach(this::updateGamma);
     }
 
+
     private void updateGamma(int n) {
         Vector x = dataSet.getRow(n);
-        MultiLabel y = dataSet.getMultiLabels()[n];
-        double[] posterior = cbm.posteriorMembership(x, y);
+        BMDistribution bmDistribution = cbm.computeBM(x);
+        // size = combination * components
+        List<double[]> logPosteriors = new ArrayList<>();
+        for (int c=0;c<combinations.size();c++){
+            MultiLabel combination = combinations.get(c);
+            double[] pos = bmDistribution.logPosteriorMembership(combination);
+            logPosteriors.add(pos);
+        }
+
+        double[] sums = new double[cbm.numComponents];
+        for (int k=0;k<cbm.numComponents;k++){
+            double sum = 0;
+            for (int c=0;c<combinations.size();c++){
+                sum += targets[n][c]*logPosteriors.get(c)[k];
+            }
+            sums[k] = sum;
+        }
+        double[] posterior = MathUtil.softmax(sums);
         for (int k=0; k<cbm.numComponents; k++) {
             gammas[n][k] = posterior[k];
             gammasT[k][n] = posterior[k];

@@ -49,6 +49,7 @@ public class BMDistribution {
         return sum;
     }
 
+    // p(z=k|y)
     double[] posteriorMembership(MultiLabel y){
         double[] logNumerator = new double[numComponents];
         for (int k=0;k<numComponents;k++){
@@ -58,6 +59,20 @@ public class BMDistribution {
         double[] membership = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             membership[k] = Math.exp(logNumerator[k]-logDenominator);
+        }
+        return membership;
+    }
+
+    // log p(z=k|y)
+    double[] logPosteriorMembership(MultiLabel y){
+        double[] logNumerator = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            logNumerator[k] = logProportions[k] + logYGivenComponent(y, k);
+        }
+        double logDenominator = MathUtil.logSumExp(logNumerator);
+        double[] membership = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            membership[k] = logNumerator[k]-logDenominator;
         }
         return membership;
     }
