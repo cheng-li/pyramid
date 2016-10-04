@@ -93,11 +93,12 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @param assignments
      * @return
      */
-    public List<Double> predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments){
+    private double[] predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments){
         BMDistribution bmDistribution = computeBM(x);
-        List<Double> probs = new ArrayList<>();
-        for (MultiLabel multiLabel: assignments){
-            probs.add(bmDistribution.logProbability(multiLabel));
+        double[] probs = new double[assignments.size()];
+        for (int c=0;c<assignments.size();c++){
+            MultiLabel multiLabel = assignments.get(c);
+            probs[c]= bmDistribution.logProbability(multiLabel);
         }
         return probs;
     }
@@ -108,9 +109,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @param assignments
      * @return
      */
-    public List<Double> predictAssignmentProbs(Vector vector, List<MultiLabel> assignments){
-        List<Double> logProbs = predictLogAssignmentProbs(vector, assignments);
-        return logProbs.stream().map(Math::exp).collect(Collectors.toList());
+    public double[] predictAssignmentProbs(Vector vector, List<MultiLabel> assignments){
+        double[] logProbs = predictLogAssignmentProbs(vector, assignments);
+        return Arrays.stream(logProbs).map(Math::exp).toArray();
     }
 
 
