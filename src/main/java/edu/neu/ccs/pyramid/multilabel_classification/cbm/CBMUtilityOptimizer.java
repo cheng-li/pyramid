@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -98,6 +99,9 @@ public class CBMUtilityOptimizer {
         this.targets = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.probabilities = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.updateProbabilities();
+        if (logger.isDebugEnabled()){
+            logger.debug("finish constructor");
+        }
     }
 
     private void updateProbabilities(int dataPointIndex){
@@ -143,8 +147,15 @@ public class CBMUtilityOptimizer {
 
 
     private void updateBinaryTargets(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateBinaryTargets()");
+        }
         IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .forEach(this::updateBinaryTarget);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateBinaryTargets()");
+        }
+//        System.out.println(Arrays.deepToString(binaryTargetsDistributions));
     }
 
     private void updateBinaryTarget(int dataPointIndex){
@@ -219,8 +230,15 @@ public class CBMUtilityOptimizer {
 
 
     private void updateGamma() {
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateGamma()");
+        }
         IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .forEach(this::updateGamma);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateGamma()");
+        }
+//        System.out.println("gamma="+Arrays.deepToString(gammas));
     }
 
 
@@ -252,7 +270,13 @@ public class CBMUtilityOptimizer {
 
 
     private void updateBinaryClassifiers() {
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateBinaryClassifiers()");
+        }
         IntStream.range(0, cbm.numComponents).forEach(this::updateBinaryClassifiers);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateBinaryClassifiers()");
+        }
     }
 
     //todo pay attention to parallelism
@@ -291,6 +315,8 @@ public class CBMUtilityOptimizer {
 
     private void updateBinaryLogisticRegression(int componentIndex, int labelIndex){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
+        System.out.println("weights="+Arrays.toString(gammasT[componentIndex]));
+//        System.out.println("target distribution="+Arrays.deepToString(binaryTargetsDistributions[labelIndex]));
         // no parallelism
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex],
                 dataSet, gammasT[componentIndex], binaryTargetsDistributions[labelIndex], priorVarianceBinary, false);
@@ -314,6 +340,9 @@ public class CBMUtilityOptimizer {
     }
 
     private void updateMultiClassClassifier(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateMultiClassClassifier()");
+        }
         String type = cbm.getMultiClassClassifierType();
         switch (type){
             case "lr":
@@ -327,6 +356,9 @@ public class CBMUtilityOptimizer {
                 break;
             default:
                 throw new IllegalArgumentException("unknown type: " + cbm.getMultiClassClassifierType());
+        }
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateMultiClassClassifier()");
         }
     }
 

@@ -90,10 +90,11 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
             yQueue.remove();
             rhoQueue.remove();
         }
+        double value = function.getValue();
+        terminator.add(value);
         if (logger.isDebugEnabled()){
-            logger.debug("finish one iteration");
+            logger.debug("finish one iteration. loss = "+value);
         }
-        terminator.add(function.getValue());
     }
 
     Vector findDirection(){

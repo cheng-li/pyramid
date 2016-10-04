@@ -207,7 +207,13 @@ public class CBMOptimizer {
     }
 
     private void updateBinaryClassifiers() {
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateBinaryClassifiers");
+        }
         IntStream.range(0, cbm.numComponents).forEach(this::updateBinaryClassifiers);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateBinaryClassifiers");
+        }
     }
 
     //todo pay attention to parallelism
@@ -269,6 +275,9 @@ public class CBMOptimizer {
     }
 
     private void updateMultiClassClassifier(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateMultiClassClassifier()");
+        }
         String type = cbm.getMultiClassClassifierType();
         switch (type){
             case "lr":
@@ -282,6 +291,9 @@ public class CBMOptimizer {
                 break;
             default:
                 throw new IllegalArgumentException("unknown type: " + cbm.getMultiClassClassifierType());
+        }
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateMultiClassClassifier()");
         }
     }
 
