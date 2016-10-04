@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.ElasticNetLogistic
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticLoss;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Entropy;
@@ -42,10 +43,6 @@ public class CBMUtilityOptimizer {
     // format [#labels][#data][2]
     // to be fit by binary classifiers
     private double[][][] binaryTargetsDistributions;
-    private boolean isParallel = true;
-
-    // for deterministic annealing
-    private double temperature = 1;
 
     // lr parameters
     // regularization for multiClassClassifier
@@ -81,34 +78,14 @@ public class CBMUtilityOptimizer {
     public CBMUtilityOptimizer(CBM cbm, MultiLabelClfDataSet dataSet, MLScorer mlScorer) {
         this.cbm = cbm;
         this.dataSet = dataSet;
+        this.combinations = DataSetUtil.gatherMultiLabels(dataSet);
         this.terminator = new Terminator();
         this.terminator.setGoal(Terminator.Goal.MINIMIZE);
 
         this.gammas = new double[dataSet.getNumDataPoints()][cbm.getNumComponents()];
         this.gammasT = new double[cbm.getNumComponents()][dataSet.getNumDataPoints()];
-        double average = 1.0/ cbm.getNumComponents();
-        for (int n=0;n<dataSet.getNumDataPoints();n++){
-            for (int k = 0; k< cbm.getNumComponents(); k++){
-                gammas[n][k] = average;
-                gammasT[k][n] = average;
-            }
-        }
 
-        //todo
         this.binaryTargetsDistributions = new double[cbm.getNumClasses()][dataSet.getNumDataPoints()][2];
-        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
-            // first mark all labels as negative
-            for (int l=0;l<cbm.getNumClasses(); l++){
-                this.binaryTargetsDistributions[l][n][0] = 1;
-            }
-            MultiLabel multiLabel = dataSet.getMultiLabels()[n];
-            for (int l: multiLabel.getMatchedLabels()){
-                this.binaryTargetsDistributions[l][n][0] = 0;
-                this.binaryTargetsDistributions[l][n][1] = 1;
-            }
-        }
-
-
         this.scores = new double[dataSet.getNumDataPoints()][combinations.size()];
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int j=0;j<combinations.size();j++){
@@ -165,19 +142,26 @@ public class CBMUtilityOptimizer {
     }
 
 
+    private void updateBinaryTargets(){
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(this::updateBinaryTarget);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
+    private void updateBinaryTarget(int dataPointIndex){
+        double[] comProb = targets[dataPointIndex];
+        double[] marginals = new double[cbm.getNumClasses()];
+        for (int c=0;c<comProb.length;c++){
+            MultiLabel multiLabel = combinations.get(c);
+            double prob = comProb[c];
+            for (int l: multiLabel.getMatchedLabels()){
+                marginals[l] += prob;
+            }
+        }
+        for (int l=0;l<cbm.getNumClasses();l++){
+            binaryTargetsDistributions[l][dataPointIndex][0] = 1-marginals[l];
+            binaryTargetsDistributions[l][dataPointIndex][1] = marginals[l];
+        }
+    }
 
 
 
@@ -213,14 +197,6 @@ public class CBMUtilityOptimizer {
         this.numIterationsMultiClass = numIterationsMultiClass;
     }
 
-    public double getTemperature() {
-        return temperature;
-    }
-
-    public void setTemperature(double temperature) {
-        this.temperature = temperature;
-    }
-
     public void optimize() {
         while (true) {
             iterate();
@@ -231,22 +207,15 @@ public class CBMUtilityOptimizer {
     }
 
     public void iterate() {
-        eStep();
-        mStep();
-        this.terminator.add(getObjective());
-    }
-
-    private void eStep(){
-        if (logger.isDebugEnabled()){
-            logger.debug("start E step");
-        }
+        updateTargets();
+        updateBinaryTargets();
         updateGamma();
-
-        if (logger.isDebugEnabled()){
-            logger.debug("finish E step");
-            logger.debug("objective = "+getObjective());
-        }
+        updateMultiClassClassifier();
+        updateBinaryClassifiers();
+        this.terminator.add(objective());
     }
+
+
 
 
     private void updateGamma() {
@@ -281,17 +250,6 @@ public class CBMUtilityOptimizer {
         }
     }
 
-    void mStep() {
-        if (logger.isDebugEnabled()){
-            logger.debug("start M step");
-        }
-        updateBinaryClassifiers();
-        updateMultiClassClassifier();
-        if (logger.isDebugEnabled()){
-            logger.debug("finish M step");
-            logger.debug("objective = "+getObjective());
-        }
-    }
 
     private void updateBinaryClassifiers() {
         IntStream.range(0, cbm.numComponents).forEach(this::updateBinaryClassifiers);
@@ -417,10 +375,55 @@ public class CBMUtilityOptimizer {
 //    }
 
 
-    //TODO: have to modify the objectives by introducing L1 regularization part
-    public double getObjective() {
-        return multiClassClassifierObj() + binaryObj() +(1-temperature)*getEntropy();
+
+    private double objective(int dataPointIndex){
+        double sum = 0;
+        double[] p = probabilities[dataPointIndex];
+        double[] s = scores[dataPointIndex];
+        for (int j=0;j<p.length;j++){
+            sum += p[j]*s[j];
+        }
+        return -Math.log(sum);
     }
+
+    public double objective(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start objective()");
+        }
+        double obj= IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(this::objective).sum();
+        if (logger.isDebugEnabled()){
+            logger.debug("finish obj");
+        }
+        double penalty =  penalty();
+        if (logger.isDebugEnabled()){
+            logger.debug("finish penalty");
+        }
+        if (logger.isDebugEnabled()){
+            logger.debug("finish objective()");
+        }
+        return obj+penalty;
+    }
+
+    // regularization
+    private double penalty(){
+        double sum = 0;
+        LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression) cbm.multiClassClassifier,
+                dataSet, gammas, priorVarianceMultiClass, true);
+        sum += logisticLoss.penaltyValue();
+        for (int k=0;k<cbm.numComponents;k++){
+            for (int l=0;l<cbm.getNumClasses();l++){
+                sum += new LogisticLoss((LogisticRegression) cbm.binaryClassifiers[k][l],
+                        dataSet, gammasT[k], binaryTargetsDistributions[l], priorVarianceBinary, true).penaltyValue();
+            }
+        }
+        return sum;
+    }
+
+//    //TODO: use direct obj
+//    public double getObjective() {
+//        return multiClassClassifierObj() + binaryObj() +(1-temperature)*getEntropy();
+//    }
 
 //    private double getMStepObjective() {
 //        KLLogisticLoss logisticLoss =  new KLLogisticLoss(bmmClassifier.multiClassClassifier,
