@@ -70,3 +70,5 @@ To compile and package the project from the source code, simply run the `mvn cle
 
 ## Feedback
 We welcome your feedback on the package. To ask questions, request new features or report bugs, please contact Cheng Li  via chengli.email@gmail.com.
+
+Answers to some commonly asked questions can be found in [FAQ](https://github.com/cheng-li/pyramid/wiki/FAQ).
