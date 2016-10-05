@@ -20,6 +20,9 @@ public class KLDivergence {
         for (int i=0;i<trueDistribution.length;i++){
             if (trueDistribution[i]==0){
                 r += 0;
+            } else if (estimatedDistribution[i]==0){
+                r = Double.POSITIVE_INFINITY;
+                break;
             } else {
                 r += trueDistribution[i]* (Math.log(trueDistribution[i])-Math.log(estimatedDistribution[i]));
             }

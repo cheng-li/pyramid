@@ -123,9 +123,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             predicted[k] = probabilityMatrixKByN[k][dataPointIndex];
         }
         double v =  weights[dataPointIndex]* KLDivergence.kl(targetDistributions[dataPointIndex], predicted);
-        if (Double.isNaN(v)){
-            throw new RuntimeException("KL divergence is NaN for target distribution "+Arrays.toString(targetDistributions[dataPointIndex])+" and prediction "+Arrays.toString(predicted));
-        }
+//        if (Double.isNaN(v)){
+//            throw new RuntimeException("KL divergence is NaN for target distribution "+Arrays.toString(targetDistributions[dataPointIndex])+" and prediction "+Arrays.toString(predicted));
+//        }
         return v;
     }
 
