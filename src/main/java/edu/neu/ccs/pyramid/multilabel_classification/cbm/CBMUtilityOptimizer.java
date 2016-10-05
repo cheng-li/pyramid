@@ -116,6 +116,15 @@ public class CBMUtilityOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("finish updateProbabilities()");
         }
+
+//        // todo check probabilities
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            for (int c=0;c<cbm.numComponents;c++){
+//                if (probabilities[i][c]<0){
+//                    throw new RuntimeException("probability = "+probabilities[i][c]);
+//                }
+//            }
+//        }
     }
 
 
@@ -169,6 +178,12 @@ public class CBMUtilityOptimizer {
             }
         }
         for (int l=0;l<cbm.getNumClasses();l++){
+            // the sum may exceed 1 due to numerical issues
+            // when that happens, the probability of the negative class would be negative
+            // we need to add some protection
+            if (marginals[l]>1){
+                marginals[l]=1;
+            }
             binaryTargetsDistributions[l][dataPointIndex][0] = 1-marginals[l];
             binaryTargetsDistributions[l][dataPointIndex][1] = marginals[l];
         }
@@ -315,8 +330,17 @@ public class CBMUtilityOptimizer {
 
     private void updateBinaryLogisticRegression(int componentIndex, int labelIndex){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
-        System.out.println("weights="+Arrays.toString(gammasT[componentIndex]));
-//        System.out.println("target distribution="+Arrays.deepToString(binaryTargetsDistributions[labelIndex]));
+//        System.out.println("for component "+componentIndex+"  label "+labelIndex);
+//        System.out.println("weights="+Arrays.toString(gammasT[componentIndex]));
+//        System.out.println("binary target distribution="+Arrays.deepToString(binaryTargetsDistributions[labelIndex]));
+//        double posProb = 0;
+//        double negProb = 0;
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            posProb += gammasT[componentIndex][i] * binaryTargetsDistributions[labelIndex][i][1];
+//            negProb += gammasT[componentIndex][i] * binaryTargetsDistributions[labelIndex][i][0];
+//        }
+//        System.out.println("sum pos prob = "+posProb);
+//        System.out.println("sum neg prob = "+negProb);
         // no parallelism
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex],
                 dataSet, gammasT[componentIndex], binaryTargetsDistributions[labelIndex], priorVarianceBinary, false);

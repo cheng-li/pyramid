@@ -28,6 +28,10 @@ public class KLDivergence {
             logger.debug("true distribution = "+ Arrays.toString(trueDistribution));
             logger.debug("estimated distribution = "+ Arrays.toString(estimatedDistribution));
         }
+
+        if (Double.isNaN(r)){
+            throw new RuntimeException("KL divergence between "+Arrays.toString(trueDistribution)+" and "+Arrays.toString(estimatedDistribution)+" is NaN");
+        }
         return r;
     }
 
