@@ -238,6 +238,7 @@ public class CBMUtilityOptimizer {
         updateGamma();
         updateMultiClassClassifier();
         updateBinaryClassifiers();
+        updateProbabilities();
         this.terminator.add(objective());
     }
 
