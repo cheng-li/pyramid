@@ -4,13 +4,15 @@ import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.SpanNotNgram;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.search.SearchHit;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test17();
+        test19();
 
     }
 
@@ -265,6 +267,98 @@ public class ESIndexTest {
 
         Ngram ngram = index.analyze("Story of a man who has unnatural feelings for a pig man test","my_analyzer");
         System.out.println(ngram);
+        index.close();
+    }
+
+
+    static void test18() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("ohsumed_20000")
+                .build();
+
+//        String q = "{\"term\": {\"id\": 1}}";
+//        String q = "{" +
+//                "    \"match_all\": {}" +
+//                "  }";
+//        String q = "{" +
+//                "    \"filtered\": {" +
+//                "      \"query\": {" +
+//                "        \"match_all\": {}" +
+//                "      }," +
+//                "      \"filter\": {" +
+//                "        \"term\": {" +
+//                "          \"split\": \"train\"" +
+//                "        }" +
+//                "      }" +
+//                "    }" +
+//                "  }";
+        String q = "{\n" +
+                "    \"bool\": {\n" +
+                "      \"should\": [\n" +
+                "        {\n" +
+                "          \"constant_score\": {\n" +
+                "            \"query\": {\n" +
+                "              \"match\": {\n" +
+                "                \"body\": \"repeated\"\n" +
+                "              }\n" +
+                "            }\n" +
+                "          }\n" +
+                "        },\n" +
+                "                {\n" +
+                "          \"constant_score\": {\n" +
+                "            \"query\": {\n" +
+                "              \"match\": {\n" +
+                "                \"body\": \"cyclophosphamide\"\n" +
+                "              }\n" +
+                "            }\n" +
+                "          }\n" +
+                "        },\n" +
+                "                        {\n" +
+                "          \"constant_score\": {\n" +
+                "            \"query\": {\n" +
+                "              \"match\": {\n" +
+                "                \"body\": \"cycles\"\n" +
+                "              }\n" +
+                "            }\n" +
+                "          }\n" +
+                "        },\n" +
+                "                                {\n" +
+                "          \"constant_score\": {\n" +
+                "            \"query\": {\n" +
+                "              \"match\": {\n" +
+                "                \"body\": \"study\"\n" +
+                "              }\n" +
+                "            }\n" +
+                "          }\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"minimum_should_match\": \"70%\"\n" +
+                "    }\n" +
+                "  }";
+
+
+
+        SearchResponse  response = index.submitQuery(q);
+        for (SearchHit searchHit : response.getHits()) {
+            System.out.println(searchHit.getId()+" "+searchHit.getScore());
+        }
+
+        index.close();
+    }
+
+    static void test19() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("ohsumed_20000")
+                .build();
+
+        List<String> terms = new ArrayList<>();
+        terms.add("repeated");
+        terms.add("cyclophosphamide");
+        terms.add("cycles");
+        terms.add("study");
+        SearchResponse response = index.minimumShouldMatch(terms, "body", 70);
+        System.out.println(response.getHits().getTotalHits());
+        for (SearchHit searchHit : response.getHits()) {
+            System.out.println(searchHit.getId()+" "+searchHit.getScore());
+        }
         index.close();
     }
 
