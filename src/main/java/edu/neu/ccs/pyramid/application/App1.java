@@ -254,6 +254,19 @@ public class App1 {
         return ngrams;
     }
 
+    private static void addCodeDescription(Config config, ESIndex index, FeatureList featureList) throws Exception{
+        String file = config.getString("feature.codeDes.File");
+        List<String> lines = FileUtils.readLines(new File(file));
+        String analyzer = config.getString("feature.codeDes.analyzer");
+        String field = config.getString("feature.codeDes.matchField");
+        int percentage = config.getInt("feature.codeDes.minMatchPercentage");
+        for (String line: lines){
+            List<String> terms = index.analyzeString(line, analyzer);
+            CodeDescription codeDescription = new CodeDescription(terms, percentage, field);
+            featureList.add(codeDescription);
+        }
+    }
+
 
     static void addNgramFeatures(FeatureList featureList, Set<Ngram> ngrams){
         ngrams.stream().forEach(ngram -> {
@@ -429,6 +442,11 @@ public class App1 {
         if (config.getBoolean("feature.useInitialFeatures")){
             addInitialFeatures(config,index,featureList,trainIndexIds);
         }
+
+        if (config.getBoolean("feature.useCodeDescription")){
+            addCodeDescription(config, index, featureList);
+        }
+
 
         Set<Ngram> ngrams = new HashSet<>();
         ngrams.addAll(gather(config,index,trainIndexIds));

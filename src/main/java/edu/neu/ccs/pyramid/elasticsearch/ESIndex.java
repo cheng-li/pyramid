@@ -272,8 +272,7 @@ public class ESIndex {
 
     }
 
-    public SearchResponse minimumShouldMatch(String string, String field, int percentage, String analyzer, String[] ids){
-        List<String> terms = analyzeString(string, analyzer);
+    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, String[] ids){
         StringBuilder sb = new StringBuilder();
         sb.append("{\n" +
                 "    \"filtered\": {\n" +
