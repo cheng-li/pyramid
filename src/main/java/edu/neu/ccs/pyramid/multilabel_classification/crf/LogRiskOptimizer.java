@@ -35,7 +35,7 @@ public class LogRiskOptimizer {
 
 
     public LogRiskOptimizer(MultiLabelClfDataSet dataSet, MLScorer mlScorer, CMLCRF crf, double variance,
-                            boolean expScore, boolean multiplyScore, double scoreMultiplier) {
+                            boolean expScore, boolean multiplyScore, double scoreMultiplier, double power) {
         this.dataSet = dataSet;
         this.variance = variance;
         this.crf = crf;
@@ -56,6 +56,8 @@ public class LogRiskOptimizer {
                 if (multiplyScore){
                     scores[i][j] = scores[i][j]*scoreMultiplier;
                 }
+
+                scores[i][j] = Math.pow(scores[i][j], power);
 
             }
         }
