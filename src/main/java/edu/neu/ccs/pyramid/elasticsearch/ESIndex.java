@@ -311,9 +311,6 @@ public class ESIndex {
         sb.append("]}}}}");
 
 
-
-        System.out.println(sb.toString());
-
         return submitQuery(sb.toString());
 
     }

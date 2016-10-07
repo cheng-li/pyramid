@@ -255,11 +255,11 @@ public class App1 {
     }
 
     private static void addCodeDescription(Config config, ESIndex index, FeatureList featureList) throws Exception{
-        String file = config.getString("feature.codeDes.File");
+        String file = config.getString("feature.codeDesc.File");
         List<String> lines = FileUtils.readLines(new File(file));
-        String analyzer = config.getString("feature.codeDes.analyzer");
-        String field = config.getString("feature.codeDes.matchField");
-        int percentage = config.getInt("feature.codeDes.minMatchPercentage");
+        String analyzer = config.getString("feature.codeDesc.analyzer");
+        String field = config.getString("feature.codeDesc.matchField");
+        int percentage = config.getInt("feature.codeDesc.minMatchPercentage");
         for (String line: lines){
             List<String> terms = index.analyzeString(line, analyzer);
             CodeDescription codeDescription = new CodeDescription(terms, percentage, field);
