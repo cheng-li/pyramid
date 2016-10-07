@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test19();
+        test20();
 
     }
 
@@ -355,6 +355,21 @@ public class ESIndexTest {
         terms.add("cycles");
         terms.add("study");
         SearchResponse response = index.minimumShouldMatch(terms, "body", 70);
+        System.out.println(response.getHits().getTotalHits());
+        for (SearchHit searchHit : response.getHits()) {
+            System.out.println(searchHit.getId()+" "+searchHit.getScore());
+        }
+        index.close();
+    }
+
+
+    static void test20() throws Exception{
+        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("ohsumed_20000")
+                .build();
+
+        String string = "repeated cyclophosphamide cycles study";
+        String[] ids = {"AVYcLfPVDpWfZwAC_rp3", "AVYcLfbpDpWfZwAC_rt_"};
+        SearchResponse response = index.minimumShouldMatch(string, "body", 70, "english", ids);
         System.out.println(response.getHits().getTotalHits());
         for (SearchHit searchHit : response.getHits()) {
             System.out.println(searchHit.getId()+" "+searchHit.getScore());
