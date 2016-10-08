@@ -37,6 +37,8 @@ public class App3 {
                 "feature.addExternalNgrams","feature.externalNgramFile","feature.analyzer",
                 "feature.filterNgramsByKeyWords","feature.filterNgrams.keyWordsFile",
                 "feature.filterNgramsByRegex", "feature.filterNgrams.regex",
+                "feature.useCodeDescription", "feature.codeDesc.File", "feature.codeDesc.analyzer",
+                "feature.codeDesc.matchField", "feature.codeDesc.minMatchPercentage",
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.labelFilter","index.labelFilter.prefix",
                 "index.featureFieldPrefix","index.ngramExtractionFields",

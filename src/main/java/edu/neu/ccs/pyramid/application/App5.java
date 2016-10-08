@@ -251,10 +251,10 @@ public class App5 {
                 MultiLabel empty = new MultiLabel();
                 if (seen.contains(empty)){
                     cbm.setAllowEmpty(true);
-                    System.out.println("training set contains empty labels, automatically set allow empty = true");
+                    System.out.println("training set contains empty labels, automatically set predict.allowEmpty = true");
                 } else {
                     cbm.setAllowEmpty(false);
-                    System.out.println("training set does not contain empty labels, automatically set allow empty = false");
+                    System.out.println("training set does not contain empty labels, automatically set predict.allowEmpty = false");
                 }
                 break;
             default:
