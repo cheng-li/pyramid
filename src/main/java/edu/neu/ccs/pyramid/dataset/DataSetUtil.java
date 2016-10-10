@@ -436,7 +436,6 @@ public class DataSetUtil {
     /**
      * create a subset with the indices
      * it's fine to have duplicate indices
-     * idTranslator is not saved in sampleData as we may have duplicate extIds
      * @param dataSet
      * @param indices
      * @return
@@ -451,8 +450,11 @@ public class DataSetUtil {
                 .dense(dataSet.isDense())
                 .build();
         MultiLabel[] labels = dataSet.getMultiLabels();
+        IdTranslator idTranslator = new IdTranslator();
         for (int i=0;i<indices.size();i++){
             int indexInOld = indices.get(i);
+            String extId = dataSet.getIdTranslator().toExtId(indexInOld);
+            idTranslator.addData(i, extId);
             Vector oldVector = dataSet.getRow(indexInOld);
             Set<Integer> label = labels[indexInOld].getMatchedLabels();
             //copy label
@@ -463,8 +465,8 @@ public class DataSetUtil {
             }
         }
         sample.setFeatureList(dataSet.getFeatureList());
-
-        //ignore idTranslator as we may have duplicate extIds
+        sample.setIdTranslator(idTranslator);
+        sample.setLabelTranslator(dataSet.getLabelTranslator());
         return sample;
     }
 

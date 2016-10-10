@@ -33,8 +33,10 @@ public class FeatureLoader {
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);
                     } else if (feature instanceof Ngram){
                         loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType);
-                    } else if (feature instanceof SpanNotNgram){
-                        loadSpanNotNgramFeature(index, dataSet, (SpanNotNgram)feature, idTranslator);
+                    } else if (feature instanceof SpanNotNgram) {
+                        loadSpanNotNgramFeature(index, dataSet, (SpanNotNgram) feature, idTranslator);
+                    } else if (feature instanceof CodeDescription) {
+                        loadCodeDesFeature(index, dataSet, feature, idTranslator);
                     } else {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
@@ -200,6 +202,24 @@ public class FeatureLoader {
             });
         }
     }
+
+
+    private static void loadCodeDesFeature(ESIndex index, DataSet dataSet, Feature feature,
+                                           IdTranslator idTranslator){
+        String[] dataIndexIds = idTranslator.getAllExtIds();
+        int featureIndex = feature.getIndex();
+        CodeDescription codeDescription = (CodeDescription)(feature);
+        SearchResponse response = index.minimumShouldMatch(codeDescription.getDescription(), codeDescription.getField(), codeDescription.getPercentage(), dataIndexIds);
+        SearchHit[] hits = response.getHits().getHits();
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            int algorithmId = idTranslator.toIntId(indexId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,score);
+        }
+
+    }
+
 
     public static enum MatchScoreType{
         ES_ORIGINAL, BINARY, FREQUENCY, TFIFL

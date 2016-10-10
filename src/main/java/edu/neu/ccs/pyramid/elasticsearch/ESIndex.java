@@ -233,6 +233,87 @@ public class ESIndex {
         return list;
     }
 
+    public SearchResponse submitQuery(String query){
+        SearchResponse response = client.prepareSearch(this.indexName)
+                .setSize(numDocs).
+                        setHighlighterFilter(false).setTrackScores(false).
+                        setNoFields().setExplain(false).setFetchSource(false)
+                .setQuery(QueryBuilders.wrapperQuery(query)).execute().actionGet();
+        return response;
+    }
+
+
+    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage){
+        StringBuilder sb = new StringBuilder();
+        sb.append("{").append("\"bool\":{\"should\":[");
+        for (int i=0;i<terms.size();i++){
+            String term = terms.get(i);
+            sb.append("{\"constant_score\": {\n" +
+                    "            \"query\": {\n" +
+                    "              \"match\": {");
+            sb.append("\"").append(field).append("\":").append("\"").append(term).append("\"");
+            sb.append("}\n" +
+                    "            }\n" +
+                    "          }\n" +
+                    "        }");
+            if (i!=terms.size()-1){
+                sb.append(",");
+            }
+
+        }
+        sb.append("],\"minimum_should_match\":");
+        sb.append("\"").append(percentage).append("%").append("\"").append("}}");
+        return submitQuery(sb.toString());
+    }
+
+    public SearchResponse minimumShouldMatch(String string, String field, int percentage, String analyzer){
+        List<String> terms = analyzeString(string, analyzer);
+        return minimumShouldMatch(terms, field, percentage);
+
+    }
+
+    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, String[] ids){
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n" +
+                "    \"filtered\": {\n" +
+                "      \"query\": {\n" +
+                "        \"bool\": {");
+
+        sb.append("\"should\":[");
+        for (int i=0;i<terms.size();i++){
+            String term = terms.get(i);
+            sb.append("{\"constant_score\": {\n" +
+                    "            \"query\": {\n" +
+                    "              \"match\": {");
+            sb.append("\"").append(field).append("\":").append("\"").append(term).append("\"");
+            sb.append("}\n" +
+                    "            }\n" +
+                    "          }\n" +
+                    "        }");
+            if (i!=terms.size()-1){
+                sb.append(",");
+            }
+
+        }
+        sb.append("],\"minimum_should_match\":");
+        sb.append("\"").append(percentage).append("%").append("\"").append("}}").append(",");
+
+
+        sb.append("\"filter\": {\n" +
+                "        \"ids\": {\n" +
+                "          \"values\": [");
+        for (int i=0;i<ids.length;i++){
+            sb.append("\"").append(ids[i]).append("\"");
+            if (i!=ids.length-1){
+                sb.append(",");
+            }
+        }
+        sb.append("]}}}}");
+
+
+        return submitQuery(sb.toString());
+
+    }
 
     /**
      * use as an inverted index
@@ -958,6 +1039,25 @@ public class ESIndex {
         }
         ngram.setNgram(sb.toString());
         return ngram;
+
+    }
+
+    /**
+     * analyze the given text using the provided analyzer, return an ngram
+     * @param text
+     * @param analyzer
+     * @return
+     */
+    public List<String> analyzeString(String text, String analyzer){
+        List<AnalyzeResponse.AnalyzeToken> tokens = client.admin().indices().prepareAnalyze(indexName,text).setAnalyzer(analyzer).get().getTokens();
+        List<String> list = new ArrayList<>();
+        for (int i=0;i<tokens.size();i++)
+        {
+            AnalyzeResponse.AnalyzeToken token = tokens.get(i);
+            list.add(token.getTerm());
+
+        }
+        return list;
 
     }
 
