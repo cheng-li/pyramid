@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MLScorer;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,7 @@ public class LogRiskOptimizer {
     private boolean expScore = false;
     private boolean multiplyScore = false;
     private double scoreMultiplier = 1;
+    private Terminator terminator;
 
 
     public LogRiskOptimizer(MultiLabelClfDataSet dataSet, MLScorer mlScorer, CMLCRF crf, double variance,
@@ -64,6 +66,7 @@ public class LogRiskOptimizer {
         this.targets = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.probabilities = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.updateProbabilities();
+        this.terminator = new Terminator();
         if (logger.isDebugEnabled()){
             logger.debug("finish constructor");
         }
@@ -98,6 +101,18 @@ public class LogRiskOptimizer {
         }
     }
 
+
+    public void optimize(){
+
+        while(!terminator.shouldTerminate()){
+            iterate();
+            terminator.add(objective());
+        }
+    }
+
+    public Terminator getTerminator() {
+        return terminator;
+    }
 
     public void iterate(){
         updateTargets();
