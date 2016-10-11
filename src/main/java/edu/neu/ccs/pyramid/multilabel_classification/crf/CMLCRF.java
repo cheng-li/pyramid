@@ -50,7 +50,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     // Since it doesn't depend on features, it can be re-used by all data points
     private double[] combinationLabelPartScores;
 
-    private boolean considerPair = false;
+    private boolean considerPair = true;
 
     private double lossStrength = 1;
 
