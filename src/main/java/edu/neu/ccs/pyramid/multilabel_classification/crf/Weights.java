@@ -5,6 +5,8 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorView;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Rainicy on 12/12/15.
@@ -155,6 +157,22 @@ public class Weights  implements Serializable {
         }
         sb.append('}');
         return sb.toString();
+    }
+
+
+    public List<CRFInspector.PairWeight> printPairWeights(){
+        List<CRFInspector.PairWeight> list = new ArrayList<>();
+        int start = numWeightsForFeatures;
+        for (int l1=0; l1<numClasses; l1++) {
+            for (int l2=l1+1; l2<numClasses; l2++) {
+                list.add(new CRFInspector.PairWeight(l1, l2, false, false, weightVector.get(start)));
+                list.add(new CRFInspector.PairWeight(l1, l2, true, false, weightVector.get(start+1)));
+                list.add(new CRFInspector.PairWeight(l1, l2, false, true, weightVector.get(start+2)));
+                list.add(new CRFInspector.PairWeight(l1, l2, true, true, weightVector.get(start+3)));
+                start += 4;
+            }
+        }
+        return list;
     }
 
     private void writeObject(java.io.ObjectOutputStream out)
