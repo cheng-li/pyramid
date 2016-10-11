@@ -3,12 +3,15 @@ package edu.neu.ccs.pyramid.multilabel_classification.crf;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MLScorer;
+import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -34,6 +37,7 @@ public class LogRiskOptimizer {
     private boolean multiplyScore = false;
     private double scoreMultiplier = 1;
     private Terminator terminator;
+    private String optimizer="LBFGS";
 
 
     public LogRiskOptimizer(MultiLabelClfDataSet dataSet, MLScorer mlScorer, CMLCRF crf, double variance,
@@ -70,8 +74,20 @@ public class LogRiskOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("finish constructor");
         }
+        // todo
+        System.out.println("scores");
+        System.out.println(Arrays.toString(scores[0]));
+        double sum = 0;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            sum += MathUtil.arraySum(scores[i]);
+        }
+        System.out.println("score sum = "+sum);
     }
 
+
+    public void setOptimizer(String optimizer) {
+        this.optimizer = optimizer;
+    }
 
     private void updateProbabilities(int dataPointIndex){
         probabilities[dataPointIndex] = crf.predictCombinationProbs(dataSet.getRow(dataPointIndex));
@@ -106,7 +122,9 @@ public class LogRiskOptimizer {
 
         while(!terminator.shouldTerminate()){
             iterate();
-            terminator.add(objective());
+            double objective = objective();
+            System.out.println("objective = "+objective);
+            terminator.add(objective);
         }
     }
 
@@ -116,6 +134,8 @@ public class LogRiskOptimizer {
 
     public void iterate(){
         updateTargets();
+        System.out.println("after update targets");
+        System.out.println("targets = "+Arrays.toString(targets[0]));
         updateModel();
         updateProbabilities();
     }
@@ -136,8 +156,22 @@ public class LogRiskOptimizer {
             logger.debug("start updateModel()");
         }
         KLLoss klLoss = new KLLoss(crf, dataSet, targets, variance);
-        LBFGS lbfgs = new LBFGS(klLoss);
-        lbfgs.optimize();
+        //todo
+
+        Optimizer opt = null;
+        switch (optimizer){
+            case "LBFGS":
+                opt = new LBFGS(klLoss);
+                break;
+            case "GD":
+                opt = new GradientDescent(klLoss);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown");
+        }
+        opt.optimize();
+
+
         if (logger.isDebugEnabled()){
             logger.debug("finish updateModel()");
         }
