@@ -44,7 +44,7 @@ You will see a welcome message and that means everything is working perfectly.
 
 Windows users please see the [notes](https://github.com/cheng-li/pyramid/wiki/Notes-for-Windows-Users).
 ## **Command Line Usage**
-All algorithms/functions implemented in Pyramid can be run though a simple command, with the following format:
+All algorithms/functions implemented in Pyramid can be run though a simple command, with the following syntax:
 
 `./pyramid <properties_file>`
 
@@ -56,9 +56,9 @@ or
 
 `./pyramid config/cbm.properties`
 
-`pyramid` is a launcher script and `<properties_file>` specifies the name of the algorithm and all necessary parameters, such as the input data, output folder, and learning algorithm hyper parameters. The `<properties_file>` can be specified by either an absolute or a relative path.
+`pyramid` is a launcher script and `<properties_file>` is a file specifying the name of the algorithm and all necessary parameters, such as the input data, output folder, and learning algorithm hyper parameters. The `<properties_file>` can be specified by either an absolute or a relative path.
 
-To run different algorithms, you just need to invoke the program with different properties files. The list of available algorithms and their corresponding properties file templates can be found in the [Wiki](https://github.com/cheng-li/pyramid/wiki).
+To run different algorithms, you just need to invoke the program with different properties files. The list of available algorithms and their corresponding properties file templates can be found in the [Wiki](https://github.com/cheng-li/pyramid/wiki#a-java-machine-learning-library).
  
 
 ## **Building from Source**
@@ -70,3 +70,5 @@ To compile and package the project from the source code, simply run the `mvn cle
 
 ## Feedback
 We welcome your feedback on the package. To ask questions, request new features or report bugs, please contact Cheng Li  via chengli.email@gmail.com.
+
+Answers to some commonly asked questions can be found in [FAQ](https://github.com/cheng-li/pyramid/wiki/FAQ).
