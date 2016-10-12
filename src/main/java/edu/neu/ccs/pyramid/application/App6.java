@@ -21,6 +21,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.MacroF1Predictor;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.util.PrintUtil;
 import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
@@ -119,6 +120,11 @@ public class App6 {
         File serializeModel = new File(output, modelName);
         cmlcrf.serialize(serializeModel);
 
+        MultiLabel[] predictions = cmlcrf.predict(trainSet);
+        File predictionFile = new File(output, "train_predictions.txt");
+        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
+        System.out.println("predictions on the training set are written to "+predictionFile.getAbsolutePath());
+
         if (config.getBoolean("train.generateReports")){
             report(config, trainSet, "trainSet");
         }
@@ -145,6 +151,11 @@ public class App6 {
         }
         System.out.println("test performance:");
         System.out.println(new MLMeasures(predictor,testSet));
+
+        MultiLabel[] predictions = cmlcrf.predict(testSet);
+        File predictionFile = new File(output, "test_predictions.txt");
+        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
+        System.out.println("predictions on the test set are written to "+predictionFile.getAbsolutePath());
 
         report(config, testSet, "testSet");
 
