@@ -365,7 +365,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
         }
 
-        this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
+        this.value = getValueForAllData() + weightSquare/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }

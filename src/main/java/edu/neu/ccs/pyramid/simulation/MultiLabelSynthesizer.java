@@ -490,4 +490,65 @@ public class MultiLabelSynthesizer {
         System.out.println("number of flipped bits = "+numFlipped);
         return dataSet;
     }
+
+
+    /**
+     * y0: w=(0,1)
+     * y1: w=(1,1)
+     * y2: w=(1,0)
+     * y3: w=(1,-1)
+     * @return
+     */
+    public static MultiLabelClfDataSet independent(){
+        int numData = 10000;
+        int numClass = 4;
+        int numFeature = 2;
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        // generate weights
+        Vector[] weights = new Vector[numClass];
+        for (int k=0;k<numClass;k++){
+            Vector vector = new DenseVector(numFeature);
+            weights[k] = vector;
+        }
+
+        weights[0].set(0,0);
+        weights[0].set(1,1);
+
+        weights[1].set(0, 1);
+        weights[1].set(1, 1);
+
+        weights[2].set(0, 1);
+        weights[2].set(1, 0);
+
+        weights[3].set(0,1);
+        weights[3].set(1,-1);
+
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
+            }
+        }
+
+
+        // assign labels
+        for (int i=0;i<numData;i++){
+            for (int k=0;k<numClass;k++){
+                double dot = weights[k].dot(dataSet.getRow(i));
+                double score = dot;
+                if (score>=0){
+                    dataSet.addLabel(i,k);
+                }
+
+            }
+        }
+
+        return dataSet;
+    }
 }

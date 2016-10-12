@@ -314,9 +314,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     // TODO
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CMLCRF{");
-        sb.append('}');
-        return sb.toString();
+        return getWeights().toString();
     }
 
     public static CMLCRF deserialize(File file) throws Exception {
