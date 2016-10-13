@@ -393,7 +393,7 @@ public class CRFF1Loss implements Optimizable.ByGradientValue {
             weightSquare += bmmWeight*bmmWeight;
         }
 
-        this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
+        this.value = getValueForAllData() + weightSquare/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }
