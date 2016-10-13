@@ -67,6 +67,10 @@ public class App6 {
     private static void train(Config config) throws Exception{
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
                 DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+
         CMLCRF cmlcrf = new CMLCRF(trainSet);
         double gaussianVariance = config.getDouble("train.gaussianVariance");
         cmlcrf.setConsiderPair(true);
@@ -102,6 +106,8 @@ public class App6 {
                 System.out.println("training objective = "+optimizer.getTerminator().getLastValue());
                 System.out.println("training performance:");
                 System.out.println(new MLMeasures(predictor,trainSet));
+                System.out.println("test performance:");
+                System.out.println(new MLMeasures(predictor,testSet));
             }
 
             if (optimizer.getTerminator().shouldTerminate()){
@@ -109,6 +115,8 @@ public class App6 {
                 System.out.println("training objective = "+optimizer.getTerminator().getLastValue());
                 System.out.println("training performance:");
                 System.out.println(new MLMeasures(predictor,trainSet));
+                System.out.println("test performance:");
+                System.out.println(new MLMeasures(predictor,testSet));
                 System.out.println("training done!");
                 break;
             }
