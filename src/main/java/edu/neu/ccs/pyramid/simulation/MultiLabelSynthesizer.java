@@ -3,6 +3,9 @@ package edu.neu.ccs.pyramid.simulation;
 import edu.neu.ccs.pyramid.dataset.MLClfDataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
+import edu.neu.ccs.pyramid.multilabel_classification.crf.CMLCRF;
+import edu.neu.ccs.pyramid.multilabel_classification.crf.SamplingPredictor;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.IntegerDistribution;
@@ -10,6 +13,8 @@ import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+
+import java.util.List;
 
 /**
  * Created by chengli on 12/1/15.
@@ -547,6 +552,51 @@ public class MultiLabelSynthesizer {
                 }
 
             }
+        }
+
+        return dataSet;
+    }
+
+
+    public static MultiLabelClfDataSet crfSample(){
+        int numData = 10000;
+        int numClass = 4;
+        int numFeature = 2;
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        List<MultiLabel> support = Enumerator.enumerate(numClass);
+        CMLCRF cmlcrf = new CMLCRF(numClass, numFeature, support);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,1);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,1);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-1);
+
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
+            }
+        }
+
+        SamplingPredictor samplingPredictor = new SamplingPredictor(cmlcrf);
+
+        // assign labels
+        for (int i=0;i<numData;i++){
+            MultiLabel label = samplingPredictor.predict(dataSet.getRow(i));
+            dataSet.setLabels(i, label);
         }
 
         return dataSet;

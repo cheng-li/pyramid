@@ -75,13 +75,13 @@ public class LogRiskOptimizer {
             logger.debug("finish constructor");
         }
         // todo
-        System.out.println("scores");
-        System.out.println(Arrays.toString(scores[0]));
+//        System.out.println("scores");
+//        System.out.println(Arrays.toString(scores[0]));
         double sum = 0;
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             sum += MathUtil.arraySum(scores[i]);
         }
-        System.out.println("score sum = "+sum);
+//        System.out.println("score sum = "+sum);
     }
 
 
@@ -122,9 +122,6 @@ public class LogRiskOptimizer {
 
         while(!terminator.shouldTerminate()){
             iterate();
-            double objective = objective();
-            System.out.println("objective = "+objective);
-            terminator.add(objective);
         }
     }
 
@@ -134,9 +131,16 @@ public class LogRiskOptimizer {
 
     public void iterate(){
         updateTargets();
-        System.out.println("after update targets");
-        System.out.println("targets = "+Arrays.toString(targets[0]));
         updateModel();
+        updateProbabilities();
+        double objective = objective();
+        System.out.println("objective = "+objective);
+        terminator.add(objective);
+    }
+
+    public void iteratePartial(){
+        updateTargets();
+        updateModelPartial();
         updateProbabilities();
     }
 
@@ -174,6 +178,33 @@ public class LogRiskOptimizer {
 
         if (logger.isDebugEnabled()){
             logger.debug("finish updateModel()");
+        }
+    }
+
+    private void updateModelPartial(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateModelPartial()");
+        }
+        KLLoss klLoss = new KLLoss(crf, dataSet, targets, variance);
+        //todo
+
+        Optimizer opt = null;
+        switch (optimizer){
+            case "LBFGS":
+                opt = new LBFGS(klLoss);
+                break;
+            case "GD":
+                opt = new GradientDescent(klLoss);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown");
+        }
+        opt.getTerminator().setMaxIteration(10);
+        opt.optimize();
+
+
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateModelPartial()");
         }
     }
 

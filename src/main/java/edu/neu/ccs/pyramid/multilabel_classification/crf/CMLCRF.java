@@ -77,6 +77,21 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         this.featureList = dataSet.getFeatureList();
     }
 
+
+    public CMLCRF(int numClasses, int numFeatures, List<MultiLabel> supportCombinations) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        this.weights = new Weights(numClasses, numFeatures);
+
+        //todo
+        this.supportCombinations = supportCombinations;
+        this.numSupports = supportCombinations.size();
+
+
+        this.combinationLabelPartScores = new double[supportCombinations.size()];
+        updateCombLabelPartScores();
+    }
+
     public double getLossStrength() {
         return lossStrength;
     }
