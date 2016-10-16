@@ -36,6 +36,10 @@ public class SequentialSparseMLClfDataSet extends SequentialSparseDataSet implem
         this.multiLabels[dataPointIndex].addLabel(classIndex);
     }
 
+    @Override
+    public void setLabels(int dataPointIndex, MultiLabel multiLabel) {
+        multiLabels[dataPointIndex] = multiLabel;
+    }
 
     @Override
     public String toString() {

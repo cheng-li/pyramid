@@ -34,6 +34,10 @@ public class SparseMLClfDataSet extends SparseDataSet implements MultiLabelClfDa
         this.multiLabels[dataPointIndex].addLabel(classIndex);
     }
 
+    @Override
+    public void setLabels(int dataPointIndex, MultiLabel multiLabel) {
+        multiLabels[dataPointIndex] = multiLabel;
+    }
 
     @Override
     public String toString() {
