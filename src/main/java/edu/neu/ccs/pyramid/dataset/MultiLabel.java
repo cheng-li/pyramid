@@ -109,6 +109,16 @@ public class MultiLabel implements Serializable{
         return false;
     }
 
+    //todo test
+    public boolean isSubsetOf(MultiLabel superSet){
+        for (int i = labels.nextSetBit(0); i >= 0; i = labels.nextSetBit(i+1)) {
+            if (!superSet.matchClass(i)){
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
