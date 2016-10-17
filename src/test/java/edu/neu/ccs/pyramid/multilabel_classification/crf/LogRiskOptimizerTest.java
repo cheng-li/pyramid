@@ -14,7 +14,7 @@ import edu.neu.ccs.pyramid.simulation.MultiLabelSynthesizer;
  */
 public class LogRiskOptimizerTest {
     public static void main(String[] args) {
-        test3();
+        test4();
     }
 
     private static void test1(){
@@ -103,16 +103,16 @@ public class LogRiskOptimizerTest {
         CMLCRF cmlcrf = new CMLCRF(train);
 
         cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,10);
 
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,1);
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,10);
 
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,10);
         cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
 
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,1);
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,-10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-10);
 
 
 
@@ -148,11 +148,14 @@ public class LogRiskOptimizerTest {
         System.out.println("test with F1 predictor");
         System.out.println(new MLMeasures(plugInF1,test));
 
+        System.out.println(cmlcrf);
+
+        System.out.println(fOptimizer.objectiveDetail());
 
         while (!fOptimizer.getTerminator().shouldTerminate()) {
             System.out.println("------------");
             fOptimizer.iterate();
-            System.out.println(fOptimizer.getTerminator().getLastValue());
+            System.out.println(fOptimizer.objectiveDetail());
             System.out.println("training performance acc");
             System.out.println(new MLMeasures(cmlcrf, train));
             System.out.println("test performance acc");
@@ -161,7 +164,83 @@ public class LogRiskOptimizerTest {
             System.out.println(new MLMeasures(plugInF1, train));
             System.out.println("test performance f1");
             System.out.println(new MLMeasures(plugInF1, test));
+            System.out.println(cmlcrf);
         }
-        System.out.println(cmlcrf);
     }
+
+    private static void test4(){
+        MultiLabelClfDataSet train = MultiLabelSynthesizer.crfArgmaxHide();
+        MultiLabelClfDataSet test = MultiLabelSynthesizer.crfArgmaxHide();
+        CMLCRF cmlcrf = new CMLCRF(train);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,-10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-10);
+
+
+
+        MLScorer fScorer = new FScorer();
+        MLScorer accScorer = new AccScorer();
+
+        SubsetAccPredictor plugInAcc = new SubsetAccPredictor(cmlcrf);
+
+        LogRiskOptimizer fOptimizer = new LogRiskOptimizer(train, fScorer, cmlcrf, 1, false, false, 1, 1);
+        InstanceF1Predictor plugInF1 = new InstanceF1Predictor(cmlcrf);
+
+        System.out.println(cmlcrf);
+        System.out.println("training performance acc");
+        System.out.println(new MLMeasures(cmlcrf, train));
+        System.out.println("test performance acc");
+        System.out.println(new MLMeasures(cmlcrf, test));
+        System.out.println("training performance f1");
+        System.out.println(new MLMeasures(plugInF1, train));
+        System.out.println("test performance f1");
+        System.out.println(new MLMeasures(plugInF1, test));
+
+        System.out.println(fOptimizer.objectiveDetail());
+
+
+
+        LogRiskOptimizer accOptimizer = new LogRiskOptimizer(train, accScorer, cmlcrf, 1, false, false, 1, 1);
+        accOptimizer.iterate();
+        System.out.println("after ML estimation");
+        System.out.println("training with Acc predictor");
+        System.out.println(new MLMeasures(plugInAcc,train));
+
+        System.out.println("training with F1 predictor");
+        System.out.println(new MLMeasures(plugInF1,train));
+        System.out.println("test with Acc predictor");
+        System.out.println(new MLMeasures(plugInAcc,test));
+        System.out.println("test with F1 predictor");
+        System.out.println(new MLMeasures(plugInF1,test));
+
+        System.out.println(cmlcrf);
+
+        System.out.println(fOptimizer.objectiveDetail());
+
+        while (!fOptimizer.getTerminator().shouldTerminate()) {
+            System.out.println("------------");
+            fOptimizer.iterate();
+            System.out.println(fOptimizer.objectiveDetail());
+            System.out.println("training performance acc");
+            System.out.println(new MLMeasures(cmlcrf, train));
+            System.out.println("test performance acc");
+            System.out.println(new MLMeasures(cmlcrf, test));
+            System.out.println("training performance f1");
+            System.out.println(new MLMeasures(plugInF1, train));
+            System.out.println("test performance f1");
+            System.out.println(new MLMeasures(plugInF1, test));
+            System.out.println(cmlcrf);
+        }
+    }
+
+
 }

@@ -238,6 +238,17 @@ public class LogRiskOptimizer {
         return obj+penalty;
     }
 
+    public String objectiveDetail(){
+        double obj= IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(this::objective).sum();
+        double penalty =  penalty();
+        StringBuilder sb = new StringBuilder();
+        sb.append("empirical loss = "+obj).append("\n");
+        sb.append("regularization penalty = "+penalty).append("\n");
+        sb.append("total objective = "+(obj+penalty)).append("\n");
+        return sb.toString();
+    }
+
     // regularization
     private double penalty(){
         KLLoss klLoss = new KLLoss(crf, dataSet, targets, variance);

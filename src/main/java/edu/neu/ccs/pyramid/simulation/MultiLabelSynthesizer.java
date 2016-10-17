@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.CMLCRF;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.SamplingPredictor;
+import edu.neu.ccs.pyramid.multilabel_classification.crf.SubsetAccPredictor;
 import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.IntegerDistribution;
@@ -572,16 +573,16 @@ public class MultiLabelSynthesizer {
         CMLCRF cmlcrf = new CMLCRF(numClass, numFeature, support);
 
         cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,10);
 
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,1);
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,10);
 
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,10);
         cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
 
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,1);
-        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,-10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-10);
 
 
         // generate features
@@ -598,6 +599,102 @@ public class MultiLabelSynthesizer {
             MultiLabel label = samplingPredictor.predict(dataSet.getRow(i));
             dataSet.setLabels(i, label);
         }
+
+        return dataSet;
+    }
+
+    public static MultiLabelClfDataSet crfArgmax(){
+        int numData = 10000;
+        int numClass = 4;
+        int numFeature = 2;
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        List<MultiLabel> support = Enumerator.enumerate(numClass);
+        CMLCRF cmlcrf = new CMLCRF(numClass, numFeature, support);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,-10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-10);
+
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
+            }
+        }
+
+        SubsetAccPredictor predictor = new SubsetAccPredictor(cmlcrf);
+
+        // assign labels
+        for (int i=0;i<numData;i++){
+            MultiLabel label = predictor.predict(dataSet.getRow(i));
+            dataSet.setLabels(i, label);
+        }
+
+        return dataSet;
+    }
+
+    public static MultiLabelClfDataSet crfArgmaxHide(){
+        int numData = 10000;
+        int numClass = 4;
+        int numFeature = 2;
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        List<MultiLabel> support = Enumerator.enumerate(numClass);
+        CMLCRF cmlcrf = new CMLCRF(numClass, numFeature, support);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,-10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-10);
+
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
+            }
+        }
+
+        SubsetAccPredictor predictor = new SubsetAccPredictor(cmlcrf);
+
+        // assign labels
+        for (int i=0;i<numData;i++){
+            MultiLabel label = predictor.predict(dataSet.getRow(i));
+            dataSet.setLabels(i, label);
+        }
+
+
+        // hide one feature
+        for (int i=0;i<numData;i++){
+            dataSet.setFeatureValue(i,0,0);
+
+        }
+
 
         return dataSet;
     }
