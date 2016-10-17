@@ -302,7 +302,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         double[] scores = predictCombinationScores(vector);
         int predictedCombination = ArgMax.argMax(scores);
 
-        return this.supportCombinations.get(predictedCombination);
+        return this.supportCombinations.get(predictedCombination).copy();
     }
 
     @Override

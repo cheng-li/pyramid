@@ -698,4 +698,65 @@ public class MultiLabelSynthesizer {
 
         return dataSet;
     }
+
+    public static MultiLabelClfDataSet crfArgmaxDrop(){
+        int numData = 10000;
+        int numClass = 4;
+        int numFeature = 2;
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
+                .numClasses(numClass)
+                .numDataPoints(numData)
+                .build();
+
+        List<MultiLabel> support = Enumerator.enumerate(numClass);
+        CMLCRF cmlcrf = new CMLCRF(numClass, numFeature, support);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,10);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,-10);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-10);
+
+
+        // generate features
+        for (int i=0;i<numData;i++){
+            for (int j=0;j<numFeature;j++){
+                dataSet.setFeatureValue(i,j,Sampling.doubleUniform(-1, 1));
+            }
+        }
+
+        SubsetAccPredictor predictor = new SubsetAccPredictor(cmlcrf);
+
+
+        // drop labels
+        double[] alphas = {1, 0.9, 0.8, 0.7};
+
+        // assign labels
+        for (int i=0;i<numData;i++){
+//            System.out.println(dataSet.getRow(i));
+            MultiLabel label = predictor.predict(dataSet.getRow(i)).copy();
+//            System.out.println(label);
+
+            for (int l=0;l<numClass;l++){
+                if (Math.random()>alphas[l] && label.matchClass(l)){
+//                    System.out.println("drop");
+                    label.removeLabel(l);
+                }
+            }
+
+            dataSet.setLabels(i, label);
+        }
+
+
+
+
+        return dataSet;
+    }
 }

@@ -96,7 +96,7 @@ public class NoiseOptimizer {
                 if (labels.matchClass(l)){
                     prod *= alphas[l];
                 } else {
-                    prod *= (alphas[l]);
+                    prod *= (1-alphas[l]);
                 }
             }
             transformProbs[dataPoint][comIndex] = prod;
@@ -159,13 +159,23 @@ public class NoiseOptimizer {
 
     public void iterate(){
         updateTargets();
+        System.out.println("finish updateTargets ");
+        System.out.println("objective = "+objective());
         updateAlphas();
+        System.out.println("finish updateAlphas ");
+        System.out.println("objective = "+objective());
         updateTransformProbs();
+        System.out.println("finish updateTransformProbs ");
+        System.out.println("objective = "+objective());
         updateModel();
+        System.out.println("finish updateModel ");
+        System.out.println("objective = "+objective());
         updateProbabilities();
+        System.out.println("finish updateProbabilities ");
         double objective = objective();
         System.out.println("objective = "+objective);
         terminator.add(objective);
+        System.out.println("alphas = "+Arrays.toString(alphas));
     }
 
 

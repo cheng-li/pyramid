@@ -8,7 +8,7 @@ public class MultiLabelTest {
 //        test4();
 //        test5();
 //        test6();
-        test8();
+        test9();
     }
 
     static void test1(){
@@ -62,6 +62,12 @@ public class MultiLabelTest {
 
         System.out.println(multiLabel1.outOfBound(2));
         System.out.println(multiLabel1.outOfBound(3));
+    }
+
+    static void test9(){
+        MultiLabel multiLabel1 = new MultiLabel().addLabel(0).addLabel(2).addLabel(1);
+        MultiLabel multiLabel2 = new MultiLabel().addLabel(0).addLabel(1).addLabel(2);
+        System.out.println(multiLabel1.isSubsetOf(multiLabel2));
     }
 
 }
