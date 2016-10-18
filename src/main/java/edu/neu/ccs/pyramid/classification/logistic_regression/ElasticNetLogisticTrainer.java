@@ -85,9 +85,9 @@ public class ElasticNetLogisticTrainer {
             probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
             classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
         });
+        Weights oldWeights = logisticRegression.getWeights().deepCopy();
         IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs, classScores));
         if (lineSearch) {
-            Weights oldWeights = logisticRegression.getWeights().deepCopy();
             Weights newWeights = logisticRegression.getWeights().deepCopy();
             // infer searchDirection
             Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
