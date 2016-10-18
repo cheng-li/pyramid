@@ -38,6 +38,11 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private double priorGaussianVariance;
 
 
+    // for elasticnet
+    private double regularization;
+    private double l1Ratio;
+
+
 
     public LogisticLoss(LogisticRegression logisticRegression,
                         DataSet dataSet, double[] weights, double[][] targetDistributions,
@@ -74,6 +79,69 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
                         double gaussianPriorVariance, boolean parallel){
         this(logisticRegression,dataSet,defaultTargetDistribution(dataSet),gaussianPriorVariance, parallel);
     }
+
+
+
+    public LogisticLoss(LogisticRegression logisticRegression,
+                        DataSet dataSet, double[][] targetDistributions,
+                        double regularization, double l1Ratio, boolean parallel) {
+        this(logisticRegression,dataSet,defaultWeights(dataSet.getNumDataPoints()),targetDistributions,regularization, l1Ratio, parallel);
+    }
+
+    public LogisticLoss(LogisticRegression logisticRegression,
+                        DataSet dataSet, double[] weights, double[][] targetDistributions,
+                        double regularization, double l1Ratio, boolean parallel) {
+        this.logisticRegression = logisticRegression;
+        this.targetDistributions = targetDistributions;
+        this.isParallel = parallel;
+        numParameters = logisticRegression.getWeights().totalSize();
+        this.dataSet = dataSet;
+        this.weights = weights;
+        this.regularization = regularization;
+        this.l1Ratio = l1Ratio;
+        this.empiricalCounts = new DenseVector(numParameters);
+        this.predictedCounts = new DenseVector(numParameters);
+        this.numClasses = targetDistributions[0].length;
+        this.logProbabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
+        this.updateEmpricalCounts();
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
+        this.isProbabilityCacheValid=false;
+
+    }
+
+    public double getValueEL() {
+        if (isValueCacheValid){
+            return this.value;
+        }
+
+        double kl = kl();
+        if (logger.isDebugEnabled()){
+            logger.debug("kl divergence = "+kl);
+        }
+        this.value =  kl/dataSet.getNumDataPoints() + penaltyValueEL();
+        this.isValueCacheValid = true;
+        return this.value;
+    }
+
+    private double penaltyValueEL(int classIndex) {
+        Vector vector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
+        double normCombination = (1-l1Ratio)*0.5*Math.pow(vector.norm(2),2) +
+                l1Ratio*vector.norm(1);
+        return regularization * normCombination;
+    }
+
+    public double penaltyValueEL(){
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, numClasses).parallel();
+        } else {
+            intStream = IntStream.range(0, numClasses);
+        }
+        return intStream.mapToDouble(this::penaltyValueEL).sum();
+    }
+
+
 
 
     public Vector getParameters(){
