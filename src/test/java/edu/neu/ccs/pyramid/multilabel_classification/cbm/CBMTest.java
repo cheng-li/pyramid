@@ -21,7 +21,7 @@ public class CBMTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+        test4();
     }
 
     private static void test1() throws Exception{
@@ -196,9 +196,9 @@ public class CBMTest {
     }
 
     private static void test4() throws Exception{
-        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/train"),
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "flags/data_sets/train"),
                 DataSetType.ML_CLF_SPARSE, true);
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/test"),
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "flags/data_sets/test"),
                 DataSetType.ML_CLF_SPARSE, true);
         int numComponents = 4;
         CBM cbm = CBM.getBuilder()
@@ -206,15 +206,15 @@ public class CBMTest {
                 .setNumFeatures(dataSet.getNumFeatures())
                 .setNumComponents(numComponents)
                 .setBinaryClassifierType("lr")
-                .setMultiClassClassifierType("boost")
+                .setMultiClassClassifierType("lr")
                 .build();
 
-        cbm.setPredictMode("dynamic");
+//        cbm.setPredictMode("dynamic");
         CBMOptimizer optimizer = new CBMOptimizer(cbm,dataSet);
-        optimizer.setPriorVarianceBinary(10);
-        optimizer.setPriorVarianceMultiClass(10);
+        optimizer.setPriorVarianceBinary(1);
+        optimizer.setPriorVarianceMultiClass(1);
         CBMInitializer.initialize(cbm,dataSet,optimizer);
-        cbm.setNumSample(100);
+//        cbm.setNumSample(100);
         System.out.println("num cluster: " + cbm.numComponents);
 
         System.out.println("after initialization");

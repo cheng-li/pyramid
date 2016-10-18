@@ -2,7 +2,6 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +29,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private int numClasses;
 
     // size = num classes * num data
-    private double[][] probabilityMatrixKByN;
+    private double[][] logProbabilityMatrixKByN;
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
@@ -53,7 +52,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.probabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
+        this.logProbabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
@@ -120,9 +119,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private double kl(int dataPointIndex){
         double[] predicted = new double[numClasses];
         for (int k=0;k<numClasses;k++){
-            predicted[k] = probabilityMatrixKByN[k][dataPointIndex];
+            predicted[k] = logProbabilityMatrixKByN[k][dataPointIndex];
         }
-        return weights[dataPointIndex]* KLDivergence.kl(targetDistributions[dataPointIndex], predicted);
+        return weights[dataPointIndex]* KLDivergence.klGivenPLogQ(targetDistributions[dataPointIndex], predicted);
     }
 
 
@@ -219,27 +218,27 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
-        double[] probs = this.probabilityMatrixKByN[classIndex];
+        double[] logProbs = this.logProbabilityMatrixKByN[classIndex];
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += probs[i]* weights[i];
+                count += Math.exp(logProbs[i])* weights[i];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                count += probs[dataPointIndex]*featureValue* weights[dataPointIndex];
+                count += Math.exp(logProbs[dataPointIndex])*featureValue* weights[dataPointIndex];
             }
         }
         return count;
     }
 
     private void updateClassProbs(int dataPointIndex){
-        double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
+        double[] logProbs = logisticRegression.predictLogClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
-            this.probabilityMatrixKByN[k][dataPointIndex]=probs[k];
+            this.logProbabilityMatrixKByN[k][dataPointIndex]=logProbs[k];
         }
     }
 
