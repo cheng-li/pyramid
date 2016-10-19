@@ -18,19 +18,13 @@ public class Config {
     private Properties properties;
 
     public Config(String configFile) {
-        this.properties = new Properties();
-        try {
-            properties.load(new FileInputStream(configFile));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        this.setString("pyramid.version", Version.getVersion());
+        this(new File(configFile));
     }
 
     public Config(File configFile) {
         this.properties = new Properties();
-        try {
-            properties.load(new FileInputStream(configFile));
+        try( FileInputStream fileInputStream = new FileInputStream(configFile)){
+            properties.load(fileInputStream);
         } catch (IOException e) {
             e.printStackTrace();
         }
