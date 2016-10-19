@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.SafeDivide;
 import edu.neu.ccs.pyramid.multilabel_classification.MLScorer;
 import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
@@ -128,7 +129,8 @@ public class NoiseOptimizer {
                 }
             }
         }
-        alphas[classIndex] = numerator/denominator;
+
+        alphas[classIndex] = SafeDivide.divide(numerator, denominator, 1);
     }
 
     private  void updateTargets(int dataPointIndex){

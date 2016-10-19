@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
+import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.multilabel_classification.AccScorer;
 import edu.neu.ccs.pyramid.multilabel_classification.FScorer;
@@ -8,10 +10,15 @@ import edu.neu.ccs.pyramid.multilabel_classification.MLScorer;
 import edu.neu.ccs.pyramid.simulation.MultiLabelSynthesizer;
 import junit.framework.TestCase;
 
+import java.io.File;
+
 /**
  * Created by chengli on 10/17/16.
  */
 public class NoiseOptimizerTest{
+    private static final Config config = new Config("config/local.properties");
+    private static final String DATASETS = config.getString("input.datasets");
+    private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) {
         test1();
     }
@@ -19,6 +26,10 @@ public class NoiseOptimizerTest{
     private static void test1(){
         MultiLabelClfDataSet train = MultiLabelSynthesizer.crfArgmaxDrop();
         MultiLabelClfDataSet test = MultiLabelSynthesizer.crfArgmax();
+
+        TRECFormat.save(train, new File(TMP, "train"));
+        TRECFormat.save(test, new File(TMP, "test"));
+
         CMLCRF cmlcrf = new CMLCRF(train);
 
         cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
