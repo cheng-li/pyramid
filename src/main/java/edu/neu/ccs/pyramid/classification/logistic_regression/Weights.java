@@ -116,6 +116,9 @@ public class Weights implements Serializable {
      * @return weights for class k, including bias at the beginning
      */
     public Vector getWeightsForClass(int k){
+        if (k>=numClasses){
+            throw new IllegalArgumentException("out of bound");
+        }
         int start = (this.numFeatures+1)*k;
         int length = this.numFeatures +1;
         return new VectorView(this.weightVector,start,length);
@@ -127,6 +130,9 @@ public class Weights implements Serializable {
      * @return weights for class k, no bias
      */
     public Vector getWeightsWithoutBiasForClass(int k){
+        if (k>=numClasses){
+            throw new IllegalArgumentException("out of bound");
+        }
         int start = (this.numFeatures+1)*k + 1;
         int length = this.numFeatures;
         return new VectorView(this.weightVector,start,length);
@@ -138,6 +144,9 @@ public class Weights implements Serializable {
      * @return bias
      */
     public double getBiasForClass(int k){
+        if (k>=numClasses){
+            throw new IllegalArgumentException("out of bound");
+        }
         int start = (this.numFeatures+1)*k;
         return this.weightVector.get(start);
     }
