@@ -604,9 +604,9 @@ public class MultiLabelSynthesizer {
     }
 
     public static MultiLabelClfDataSet crfArgmax(){
-        int numData = 10000;
+        int numData = 1000;
         int numClass = 4;
-        int numFeature = 100;
+        int numFeature = 10;
 
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
                 .numClasses(numClass)
@@ -700,9 +700,9 @@ public class MultiLabelSynthesizer {
     }
 
     public static MultiLabelClfDataSet crfArgmaxDrop(){
-        int numData = 10000;
+        int numData = 1000;
         int numClass = 4;
-        int numFeature = 100;
+        int numFeature = 10;
 
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder().numFeatures(numFeature)
                 .numClasses(numClass)
