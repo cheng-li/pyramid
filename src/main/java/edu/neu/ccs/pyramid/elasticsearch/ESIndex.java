@@ -43,7 +43,7 @@ import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
 /**
  * Created by chengli on 8/20/14.
  */
-public class ESIndex {
+public class ESIndex implements AutoCloseable{
     public static final String STRING_MISSING_VALUE = "MISSING";
 
     private static final Logger logger = LogManager.getLogger();
@@ -572,6 +572,8 @@ public class ESIndex {
         if (this.clientType.equals("node")){
             this.node.close();
         }
+        //todo
+        System.out.println("closed");
     }
 
 
