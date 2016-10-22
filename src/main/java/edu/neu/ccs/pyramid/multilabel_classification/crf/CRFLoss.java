@@ -10,7 +10,9 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -66,7 +68,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // size = num combinations
     private double[] combProbSums;
 
-
+    // for each data point, store the position of the true combination in the support list
+    private int[] labelComIndices;
 
 
 
@@ -99,6 +102,14 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.mapPairToCombination();
         this.combProbSums = new double[numSupport];
 
+        Map<MultiLabel,Integer> map = new HashMap<>();
+        for (int s=0;s< numSupport;s++){
+            map.put(supportedCombinations.get(s),s);
+        }
+        this.labelComIndices = new int[dataSet.getNumDataPoints()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            labelComIndices[i] = map.get(dataSet.getMultiLabels()[i]);
+        }
     }
 
     public void setRegularizeAll(boolean regularizeAll) {
@@ -365,7 +376,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
 
         }
 
-        this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
+        this.value = getValueForAllData() + weightSquare/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }
@@ -391,7 +402,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         // sum logZ(x_n)
         sum += MathUtil.logSumExp(combScoreMatrix[i]);
         // score for the true combination
-        sum -= combScoreMatrix[i][cmlcrf.labelComIndices[i]];
+        sum -= combScoreMatrix[i][labelComIndices[i]];
         return sum;
     }
 

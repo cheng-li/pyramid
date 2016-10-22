@@ -4,12 +4,14 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.PrintUtil;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBMInitializer;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBMOptimizer;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.PluginF1;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -122,6 +124,10 @@ public class App5 {
         }
         File serializeModel = new File(path, "model");
         cbm.serialize(serializeModel);
+        MultiLabel[] predictions = cbm.predict(trainSet);
+        File predictionFile = new File(output, "train_predictions.txt");
+        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
+        System.out.println("predictions on the training set are written to "+predictionFile.getAbsolutePath());
     }
 
     private static void test(Config config) throws Exception{
@@ -176,6 +182,10 @@ public class App5 {
         }
         System.out.println("test performance with "+predictTarget+" optimal predictor:");
         System.out.println(new MLMeasures(classifier,testSet));
+        MultiLabel[] predictions = cbm.predict(testSet);
+        File predictionFile = new File(output, "test_predictions.txt");
+        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
+        System.out.println("predictions on the test set are written to "+predictionFile.getAbsolutePath());
 
     }
 

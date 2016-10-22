@@ -12,7 +12,9 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -75,7 +77,8 @@ public class CRFF1Loss implements Optimizable.ByGradientValue {
     //numSupport* numSupport. e.g., 1-F1 score; format: [true comb index][predict com index]
     private double[][] lossMatrix;
 
-
+    // for each data point, store the position of the true combination in the support list
+    private int[] labelComIndices;
 
 
 
@@ -112,6 +115,15 @@ public class CRFF1Loss implements Optimizable.ByGradientValue {
             for (int q=0;q<numSupport;q++){
                 lossMatrix[k][q] = 1-(new InstanceAverage(numClasses,supportedCombinations.get(k),supportedCombinations.get(q)).getF1());
             }
+        }
+
+        Map<MultiLabel,Integer> map = new HashMap<>();
+        for (int s=0;s< numSupport;s++){
+            map.put(supportedCombinations.get(s),s);
+        }
+        this.labelComIndices = new int[dataSet.getNumDataPoints()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            labelComIndices[i] = map.get(dataSet.getMultiLabels()[i]);
         }
 
     }
@@ -393,7 +405,7 @@ public class CRFF1Loss implements Optimizable.ByGradientValue {
             weightSquare += bmmWeight*bmmWeight;
         }
 
-        this.value = getValueForAllData() + weightSquare/2*gaussianPriorVariance;
+        this.value = getValueForAllData() + weightSquare/(2*gaussianPriorVariance);
         this.isValueCacheValid = true;
         return this.value;
     }
@@ -421,7 +433,7 @@ public class CRFF1Loss implements Optimizable.ByGradientValue {
         // sum logZ(x_n)
         sum += MathUtil.logSumExp(combScoreMatrix[i]);
         // score for the true combination
-        sum -= combScoreMatrix[i][cmlcrf.labelComIndices[i]];
+        sum -= combScoreMatrix[i][labelComIndices[i]];
         return sum;
     }
 
@@ -458,7 +470,7 @@ public class CRFF1Loss implements Optimizable.ByGradientValue {
         }
         //todo
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .forEach(i -> combScoreMatrix[i] = cmlcrf.predictLossAugmentedCombinationScores(cmlcrf.labelComIndices[i],classScoreMatrix[i],lossMatrix));
+                .forEach(i -> combScoreMatrix[i] = cmlcrf.predictLossAugmentedCombinationScores(labelComIndices[i],classScoreMatrix[i],lossMatrix));
         if (logger.isDebugEnabled()){
             logger.debug("finish updateAssignmentScoreMatrix()");
         }

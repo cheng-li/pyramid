@@ -27,7 +27,7 @@ import static edu.neu.ccs.pyramid.dataset.DataSetUtil.gatherMultiLabels;
  * Created by Rainicy on 12/12/15.
  */
 public class CMLCRF implements MultiLabelClassifier, Serializable {
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
     /**
      * Y_1, Y_2,...,Y_L
      */
@@ -43,14 +43,11 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 
     private int numSupports;
 
-    // for each data point, store the position of the true combination in the support list
-    int[] labelComIndices;
-
     // for each combination, store the total score computed based only on labels
     // Since it doesn't depend on features, it can be re-used by all data points
     private double[] combinationLabelPartScores;
 
-    private boolean considerPair = false;
+    private boolean considerPair = true;
 
     private double lossStrength = 1;
 
@@ -68,14 +65,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         this.supportCombinations = gatherMultiLabels(dataSet);
 //        this.supportCombinations = Enumerator.enumerate(dataSet.getNumClasses());
         this.numSupports = supportCombinations.size();
-        Map<MultiLabel,Integer> map = new HashMap<>();
-        for (int s=0;s< numSupports;s++){
-            map.put(supportCombinations.get(s),s);
-        }
-        this.labelComIndices = new int[dataSet.getNumDataPoints()];
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            labelComIndices[i] = map.get(dataSet.getMultiLabels()[i]);
-        }
+
 //
 //        System.out.println("support combinations: " + supportCombinations);
 //        System.out.println("size of support " + this.numSupports);
@@ -314,9 +304,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
     // TODO
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CMLCRF{");
-        sb.append('}');
-        return sb.toString();
+        return getWeights().toString();
     }
 
     public static CMLCRF deserialize(File file) throws Exception {

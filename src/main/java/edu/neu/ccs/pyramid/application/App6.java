@@ -21,6 +21,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.MacroF1Predictor;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.util.PrintUtil;
 import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
@@ -66,6 +67,10 @@ public class App6 {
     private static void train(Config config) throws Exception{
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
                 DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+
         CMLCRF cmlcrf = new CMLCRF(trainSet);
         double gaussianVariance = config.getDouble("train.gaussianVariance");
         cmlcrf.setConsiderPair(true);
@@ -101,6 +106,8 @@ public class App6 {
                 System.out.println("training objective = "+optimizer.getTerminator().getLastValue());
                 System.out.println("training performance:");
                 System.out.println(new MLMeasures(predictor,trainSet));
+                System.out.println("test performance:");
+                System.out.println(new MLMeasures(predictor,testSet));
             }
 
             if (optimizer.getTerminator().shouldTerminate()){
@@ -108,6 +115,8 @@ public class App6 {
                 System.out.println("training objective = "+optimizer.getTerminator().getLastValue());
                 System.out.println("training performance:");
                 System.out.println(new MLMeasures(predictor,trainSet));
+                System.out.println("test performance:");
+                System.out.println(new MLMeasures(predictor,testSet));
                 System.out.println("training done!");
                 break;
             }
@@ -118,6 +127,11 @@ public class App6 {
         (new File(output)).mkdirs();
         File serializeModel = new File(output, modelName);
         cmlcrf.serialize(serializeModel);
+
+        MultiLabel[] predictions = cmlcrf.predict(trainSet);
+        File predictionFile = new File(output, "train_predictions.txt");
+        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
+        System.out.println("predictions on the training set are written to "+predictionFile.getAbsolutePath());
 
         if (config.getBoolean("train.generateReports")){
             report(config, trainSet, "trainSet");
@@ -145,6 +159,11 @@ public class App6 {
         }
         System.out.println("test performance:");
         System.out.println(new MLMeasures(predictor,testSet));
+
+        MultiLabel[] predictions = cmlcrf.predict(testSet);
+        File predictionFile = new File(output, "test_predictions.txt");
+        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
+        System.out.println("predictions on the test set are written to "+predictionFile.getAbsolutePath());
 
         report(config, testSet, "testSet");
 

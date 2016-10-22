@@ -399,7 +399,7 @@ public class KLLoss implements Optimizable.ByGradientValue {
             weightSquare += labelPairVector.dot(labelPairVector);
 
         }
-        return weightSquare/2*gaussianPriorVariance;
+        return weightSquare/(2*gaussianPriorVariance);
     }
 
 

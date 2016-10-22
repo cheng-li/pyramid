@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import edu.neu.ccs.pyramid.util.ListUtil;
+import edu.neu.ccs.pyramid.util.PrintUtil;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -109,7 +111,11 @@ public class MultiLabel implements Serializable{
 
     @Override
     public String toString() {
-        return getMatchedLabels().stream().sorted().collect(Collectors.toList()).toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append(ListUtil.toSimpleString(getMatchedLabels().stream().sorted().collect(Collectors.toList())));
+        sb.append("}");
+        return sb.toString();
     }
 
     public String toStringWithExtLabels(LabelTranslator labelTranslator){
