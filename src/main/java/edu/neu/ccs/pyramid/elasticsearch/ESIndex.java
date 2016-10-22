@@ -572,8 +572,7 @@ public class ESIndex implements AutoCloseable{
         if (this.clientType.equals("node")){
             this.node.close();
         }
-        //todo
-        System.out.println("closed");
+        System.out.println("index closed");
     }
 
 

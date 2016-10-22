@@ -532,7 +532,6 @@ public class App1 {
             default:
                 throw new IllegalArgumentException("unknown split mode");
         }
-        index.close();
         createDataSet(config, index, indexIds,config.getString("output.testFolder"));
     }
 
