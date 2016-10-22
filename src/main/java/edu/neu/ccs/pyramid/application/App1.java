@@ -35,30 +35,25 @@ public class App1 {
         }
 
         Config config = new Config(args[0]);
+        main(config);
+    }
+
+    public static void main(Config config) throws Exception{
         System.out.println(config);
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        if (config.getBoolean("createTrainSet")){
-            createTrainSet(config);
+        try (MultiLabelIndex index = loadIndex(config)){
+            if (config.getBoolean("createTrainSet")){
+                createTrainSet(config, index);
+            }
+
+            if (config.getBoolean("createTestSet")){
+                createTestSet(config, index);
+            }
         }
 
-        if (config.getBoolean("createTestSet")){
-            createTestSet(config);
-        }
-    }
 
-    public static void main(Config config) throws Exception{
-        File output = new File(config.getString("output.folder"));
-        output.mkdirs();
-
-        if (config.getBoolean("createTrainSet")){
-            createTrainSet(config);
-        }
-
-        if (config.getBoolean("createTestSet")){
-            createTestSet(config);
-        }
     }
 
     static MultiLabelIndex loadIndex(Config config) throws Exception{
@@ -415,11 +410,10 @@ public class App1 {
 //        System.out.println("time spent on generating distributions = "+stopWatch);
 //    }
     
-    static void generateMetaData(Config config) throws Exception{
+    static void generateMetaData(Config config, MultiLabelIndex index) throws Exception{
         System.out.println("generating meta data");
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
-        MultiLabelIndex index = loadIndex(config);
         String[] trainIndexIds;
         String splitMode = config.getString("index.splitMode");
         switch (splitMode) {
@@ -476,18 +470,17 @@ public class App1 {
                 bufferedWriter.newLine();
             }
         }
-
-        index.close();
         System.out.println("meta data generated");
+
+
     }
 
-    static void createDataSet(Config config, String[] indexIds, String datasetName) throws Exception{
+    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName) throws Exception{
 //        String splitValueAll = splitListToString(splitValues);
 
 
         System.out.println("creating data set "+datasetName);
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
-        MultiLabelIndex index = loadIndex(config);
         IdTranslator idTranslator = loadIdTranslator(indexIds);
         String archive = config.getString("output.folder");
         LabelTranslator trainLabelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
@@ -501,19 +494,18 @@ public class App1 {
         File dataFile = new File(new File(archive,"data_sets"),datasetName);
 
         TRECFormat.save(dataSet,dataFile);
-        index.close();
         System.out.println("data set "+datasetName+" created");
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.writeValue(new File(dataFile,"data_config.json"),config);
 
+
     }
 
-    static void createTrainSet(Config config) throws Exception{
-        generateMetaData(config);
+    static void createTrainSet(Config config, MultiLabelIndex index) throws Exception{
+        generateMetaData(config, index);
         String[] indexIds;
         String splitMode = config.getString("index.splitMode");
-        ESIndex index =  loadIndex(config);
         switch (splitMode) {
             case "field":
                 indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
@@ -524,14 +516,12 @@ public class App1 {
             default:
                 throw new IllegalArgumentException("unknown split mode");
         }
-        index.close();
-        createDataSet(config,indexIds,config.getString("output.trainFolder"));
+        createDataSet(config, index, indexIds,config.getString("output.trainFolder"));
     }
 
-    static void createTestSet(Config config) throws Exception{
+    static void createTestSet(Config config, MultiLabelIndex index) throws Exception{
         String[] indexIds;
         String splitMode = config.getString("index.splitMode");
-        ESIndex index =  loadIndex(config);
         switch (splitMode) {
             case "field":
                 indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.test"));
@@ -542,8 +532,7 @@ public class App1 {
             default:
                 throw new IllegalArgumentException("unknown split mode");
         }
-        index.close();
-        createDataSet(config,indexIds,config.getString("output.testFolder"));
+        createDataSet(config, index, indexIds,config.getString("output.testFolder"));
     }
 
 //    public static String splitListToString(List<String> splitValues){
