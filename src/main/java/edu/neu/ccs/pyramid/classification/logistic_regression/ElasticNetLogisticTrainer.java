@@ -85,9 +85,9 @@ public class ElasticNetLogisticTrainer {
             probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
             classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
         });
+        Weights oldWeights = logisticRegression.getWeights().deepCopy();
         IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs, classScores));
         if (lineSearch) {
-            Weights oldWeights = logisticRegression.getWeights().deepCopy();
             Weights newWeights = logisticRegression.getWeights().deepCopy();
             // infer searchDirection
             Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
@@ -134,7 +134,8 @@ public class ElasticNetLogisticTrainer {
             }
 
             realLabels[i] = classScore + frac;
-            instanceWeights[i] = weights[i]*tmpP;
+            instanceWeights[i] = weights[i]*tmpP/numDataPoints;
+//            instanceWeights[i] = weights[i]*tmpP;
         });
 
         // in glmnet algorithm:
@@ -207,7 +208,7 @@ public class ElasticNetLogisticTrainer {
             realLabels[i] = classScore + frac;
             // TODO: why divided by numDataPoints?
 //            instanceWeights[i] = (weights[i]*prob*(1-prob))/numDataPoints;
-            instanceWeights[i] = weights[i]*tmpP;
+            instanceWeights[i] = (weights[i]*tmpP)/numDataPoints;
         });
 
         Weights oldWeights = logisticRegression.getWeights().deepCopy();
@@ -243,13 +244,12 @@ public class ElasticNetLogisticTrainer {
             Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(numDataPoints);
             lineSearch(searchDirection, gradient);
             updatePredictedCounts();
+            updateClassProbMatrix();
         }
 
         if (logger.isDebugEnabled()){
             logger.debug("loss after optimization of one class = " + loss());
         }
-
-        updateClassProbMatrix();
     }
 
 
