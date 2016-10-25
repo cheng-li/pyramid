@@ -25,13 +25,19 @@ public class ElasticNetLinearRegOptimizer {
     private DataSet dataSet;
     private double[] labels;
     double[] instanceWeights;
+    double sumWeights;
 
-    public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights) {
+    public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights, double sumWeights) {
         this.linearRegression = linearRegression;
         this.dataSet = dataSet;
         this.labels = labels;
         this.instanceWeights = instanceWeights;
         this.terminator = new Terminator();
+        this.sumWeights = sumWeights;
+    }
+
+    public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights) {
+        this(linearRegression, dataSet, labels, instanceWeights, Arrays.stream(instanceWeights).parallel().sum());
     }
 
     public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels) {
@@ -67,19 +73,45 @@ public class ElasticNetLinearRegOptimizer {
     /**
      * weighted least square fit by coordinate descent
      */
+//    public void optimize(){
+//        double[] scores = new double[dataSet.getNumDataPoints()];
+//        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
+//            scores[i] = linearRegression.predict(dataSet.getRow(i)));
+//
+//        double lastLoss = loss(linearRegression,scores,labels,instanceWeights);
+//        if (logger.isDebugEnabled()){
+//            logger.debug("initial loss = "+lastLoss);
+//        }
+//
+//        while(true){
+//            iterate(scores);
+//            double loss = loss(linearRegression,scores,labels,instanceWeights);
+//            if (logger.isDebugEnabled()){
+//                logger.debug("loss = "+loss);
+//            }
+//            terminator.add(loss);
+//            if (terminator.shouldTerminate()){
+//                if (logger.isDebugEnabled()){
+//                    logger.debug("final loss = "+loss);
+//                }
+//                break;
+//            }
+//        }
+//    }
+
     public void optimize(){
         double[] scores = new double[dataSet.getNumDataPoints()];
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
             scores[i] = linearRegression.predict(dataSet.getRow(i)));
 
-        double lastLoss = loss(linearRegression,scores,labels,instanceWeights);
+        double lastLoss = loss(linearRegression,scores,labels,instanceWeights, sumWeights);
         if (logger.isDebugEnabled()){
             logger.debug("initial loss = "+lastLoss);
         }
 
         while(true){
             iterate(scores);
-            double loss = loss(linearRegression,scores,labels,instanceWeights);
+            double loss = loss(linearRegression,scores,labels,instanceWeights,sumWeights);
             if (logger.isDebugEnabled()){
                 logger.debug("loss = "+loss);
             }
@@ -93,13 +125,36 @@ public class ElasticNetLinearRegOptimizer {
         }
     }
 
+
     /**
      * one cycle of coordinate descent
      */
+//    private void iterate(double[] scores){
+//        double totalWeight = Arrays.stream(instanceWeights).parallel().sum();
+//        // if no weight at all, only minimize the penalty
+//        if (totalWeight==0){
+//            // if there is a penalty
+//            if (regularization>0){
+//                for (int j=0;j<dataSet.getNumFeatures();j++){
+//                    linearRegression.getWeights().setWeight(j,0);
+//                }
+//            }
+//            return;
+//        }
+//        double oldBias = linearRegression.getWeights().getBias();
+//        double newBias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
+//        instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/totalWeight;
+//        linearRegression.getWeights().setBias(newBias);
+//        //update scores
+//        double difference = newBias - oldBias;
+//        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
+//        for (int j=0;j<dataSet.getNumFeatures();j++){
+//            optimizeOneFeature(scores,j);
+//        }
+//    }
     private void iterate(double[] scores){
-        double totalWeight = Arrays.stream(instanceWeights).parallel().sum();
         // if no weight at all, only minimize the penalty
-        if (totalWeight==0){
+        if (sumWeights==0){
             // if there is a penalty
             if (regularization>0){
                 for (int j=0;j<dataSet.getNumFeatures();j++){
@@ -110,16 +165,51 @@ public class ElasticNetLinearRegOptimizer {
         }
         double oldBias = linearRegression.getWeights().getBias();
         double newBias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
-        instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/totalWeight;
+                instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/sumWeights;
         linearRegression.getWeights().setBias(newBias);
         //update scores
         double difference = newBias - oldBias;
-        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
+        if (difference != 0) {
+            IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
+        }
         for (int j=0;j<dataSet.getNumFeatures();j++){
             optimizeOneFeature(scores,j);
         }
     }
 
+    // TODO: Bugs!
+//    private void optimizeOneFeature(double[] scores, int featureIndex){
+//        double oldCoeff = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
+//        double fit = 0;
+//        double denominator = 0;
+//        Vector featureColumn = dataSet.getColumn(featureIndex);
+//        for (Vector.Element element: featureColumn.nonZeroes()){
+//            int i = element.index();
+//            double x = element.get();
+//            double partialResidual = labels[i] - scores[i] + x*oldCoeff;
+//            fit += instanceWeights[i]*x*partialResidual;
+//            denominator += x*x*instanceWeights[i];
+//        }
+//        double numerator = softThreshold(fit);
+//        denominator += regularization*(1-l1Ratio);
+//        // if denominator = 0, this feature is useless, assign 0 to the coefficient
+//        double newCoeff = 0;
+//        if (denominator!=0){
+//            newCoeff = numerator/denominator;
+//        }
+//
+//
+//        linearRegression.getWeights().setWeight(featureIndex,newCoeff);
+//        //update scores
+//        double difference = newCoeff - oldCoeff;
+//        if (difference!=0){
+//            for (Vector.Element element: featureColumn.nonZeroes()){
+//                int i = element.index();
+//                double x = element.get();
+//                scores[i] = scores[i] +  difference*x;
+//            }
+//        }
+//    }
     private void optimizeOneFeature(double[] scores, int featureIndex){
         double oldCoeff = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
         double fit = 0;
@@ -129,11 +219,13 @@ public class ElasticNetLinearRegOptimizer {
             int i = element.index();
             double x = element.get();
             double partialResidual = labels[i] - scores[i] + x*oldCoeff;
-            fit += instanceWeights[i]*x*partialResidual;
-            denominator += x*x*instanceWeights[i];
+            double tmp = instanceWeights[i]*x;
+            fit += tmp*partialResidual;
+            denominator += x*tmp;
         }
+        fit /= sumWeights;
         double numerator = softThreshold(fit);
-        denominator += regularization*(1-l1Ratio);
+        denominator = denominator/sumWeights + regularization*(1-l1Ratio);
         // if denominator = 0, this feature is useless, assign 0 to the coefficient
         double newCoeff = 0;
         if (denominator!=0){
@@ -154,14 +246,20 @@ public class ElasticNetLinearRegOptimizer {
     }
 
 
-    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
+//    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
+//        double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
+//                0.5 * instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
+//                .sum();
+//        double penalty = penalty(linearRegression);
+//        return mse + penalty;
+//    }
+    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights, double sumWeights){
         double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
-                0.5 * instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
+                instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
                 .sum();
         double penalty = penalty(linearRegression);
-        return mse + penalty;
+        return mse/(2*sumWeights) + penalty;
     }
-
 
     private double penalty(LinearRegression linearRegression){
         Vector vector = linearRegression.getWeights().getWeightsWithoutBias();
@@ -185,12 +283,19 @@ public class ElasticNetLinearRegOptimizer {
     }
 
     // todo double check: what's the meaning of weight; what happens if default weight = 1; how will that affect hyper parameters?
+//    private static double[] defaultWeights(int numData){
+//        double[] weights = new double[numData];
+//        double weight = 1.0/numData;
+//        Arrays.fill(weights,weight);
+//        return weights;
+//    }
     private static double[] defaultWeights(int numData){
         double[] weights = new double[numData];
-        double weight = 1.0/numData;
+        double weight = 1.0;
         Arrays.fill(weights,weight);
         return weights;
     }
+
 
 
 
