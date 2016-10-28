@@ -25,6 +25,29 @@ import java.util.stream.IntStream;
 public class CBMInspector {
     private static BasicMatrix.Factory<PrimitiveMatrix> factory = PrimitiveMatrix.FACTORY;
 
+
+
+    public static String topLabels(CBM cbm, Vector vector, double probabilityThreshold){
+        double[] marginals = cbm.predictClassProbs(vector);
+        List<Pair<Integer, Double>> list = new ArrayList<>();
+        Comparator<Pair<Integer, Double>> comparator = Comparator.comparing(Pair::getSecond);
+        for (int l=0;l<cbm.getNumClasses();l++){
+            list.add(new Pair<>(l, marginals[l]));
+        }
+
+        List<Pair<Integer, Double>> sorted = list.stream().filter(pair->pair.getSecond()>=probabilityThreshold)
+                .sorted(comparator.reversed()).collect(Collectors.toList());
+        StringBuilder sb = new StringBuilder();
+        for (int i=0;i<sorted.size();i++){
+            Pair<Integer, Double> pair = sorted.get(i);
+            sb.append(pair.getFirst()).append(":").append(pair.getSecond());
+            if (i!=sorted.size()-1){
+                sb.append(", ");
+            }
+        }
+        return sb.toString();
+    }
+
     public static Weights getMean(CBM bmm, int label){
         int numClusters = bmm.getNumComponents();
         int length = ((LogisticRegression)bmm.getBinaryClassifiers()[0][0]).getWeights().getAllWeights().size();

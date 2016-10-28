@@ -4,21 +4,22 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
 import edu.neu.ccs.pyramid.util.PrintUtil;
 import edu.neu.ccs.pyramid.util.Serialization;
-import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
-import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBMInitializer;
-import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBMOptimizer;
 import edu.neu.ccs.pyramid.util.Pair;
-import edu.neu.ccs.pyramid.multilabel_classification.cbm.PluginF1;
 import org.apache.commons.io.FileUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 /**
@@ -122,50 +123,56 @@ public class App5 {
             cbm.serialize(serializeModel);
 
         }
+        System.out.println("training done!");
+
         File serializeModel = new File(path, "model");
         cbm.serialize(serializeModel);
-        MultiLabel[] predictions = cbm.predict(trainSet);
-        File predictionFile = new File(output, "train_predictions.txt");
-        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
-        System.out.println("predictions on the training set are written to "+predictionFile.getAbsolutePath());
+
+
+        Serialization.serialize(support, Paths.get(output, "model", "support").toFile());
+
+        System.out.println();
+        System.out.println("generating reports for training set");
+        System.out.println("training performance with "+predictTarget+" optimal predictor:");
+        System.out.println(new MLMeasures(classifier,trainSet));
+        report(config, cbm, classifier, trainSet, "train");
+        System.out.println("reports generated");
+        System.out.println();
+
+
     }
 
     private static void test(Config config) throws Exception{
-
-
         String matrixType = config.getString("input.matrixType");
 
-        MultiLabelClfDataSet trainSet;
         MultiLabelClfDataSet testSet;
 
         switch (matrixType){
             case "sparse_random":
-                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                        DataSetType.ML_CLF_SPARSE, true);
                 testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
                         DataSetType.ML_CLF_SPARSE, true);
                 break;
             case "sparse_sequential":
-                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                        DataSetType.ML_CLF_SEQ_SPARSE, true);
                 testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
                         DataSetType.ML_CLF_SEQ_SPARSE, true);
                 break;
             case "dense":
-                trainSet= TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                        DataSetType.ML_CLF_DENSE, true);
                 testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
                         DataSetType.ML_CLF_DENSE, true);
                 break;
             default:
                 throw new IllegalArgumentException("unknown type");
         }
+
         String output = config.getString("output");
         String modelName = "model";
         File path = Paths.get(output, modelName).toFile();
         CBM cbm = (CBM) Serialization.deserialize(new File(path, "model"));
+
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(path, "support"));
+
         PluginF1 pluginF1 = new PluginF1(cbm);
-        List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
+
         pluginF1.setSupport(support);
 
         String predictTarget = config.getString("predict.target");
@@ -180,23 +187,51 @@ public class App5 {
             default:
                 throw new IllegalArgumentException("predictTarget can be subsetAccuracy or instanceFMeasure");
         }
+
+        System.out.println();
+        System.out.println("generating reports for test set");
         System.out.println("test performance with "+predictTarget+" optimal predictor:");
         System.out.println(new MLMeasures(classifier,testSet));
-        MultiLabel[] predictions = cbm.predict(testSet);
-        File predictionFile = new File(output, "test_predictions.txt");
-        FileUtils.writeStringToFile(predictionFile, PrintUtil.toMutipleLines(predictions));
-        System.out.println("predictions on the test set are written to "+predictionFile.getAbsolutePath());
+        report(config, cbm, classifier, testSet, "test");
+        System.out.println("reports generated");
+        System.out.println();
+    }
+
+
+    private static void report(Config config, CBM cbm, MultiLabelClassifier predictor,
+                               MultiLabelClfDataSet dataSet, String folderName) throws Exception{
+        String output = config.getString("output");
+        Paths.get(output, "reports", folderName).toFile().mkdirs();
+        MultiLabel[] predictions = predictor.predict(dataSet);
+        double[] setProbs = IntStream.range(0, predictions.length).parallel().
+                mapToDouble(i->cbm.predictAssignmentProb(dataSet.getRow(i),predictions[i])).toArray();
+        File predictionFile = Paths.get(output,"reports", folderName,"predictions.txt").toFile();
+        try (BufferedWriter br = new BufferedWriter(new FileWriter(predictionFile))){
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                br.write(predictions[i].toString());
+                br.write(":");
+                br.write(""+setProbs[i]);
+                br.newLine();
+            }
+        }
+        System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+
+        File labelProbFile = Paths.get(output, "reports", folderName, "label_probabilities.txt").toFile();
+        double labelProbThreshold = config.getDouble("report.labelProbThreshold");
+
+        try (BufferedWriter br = new BufferedWriter(new FileWriter(labelProbFile))){
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                br.write(CBMInspector.topLabels(cbm, dataSet.getRow(i), labelProbThreshold));
+                br.newLine();
+            }
+        }
+
+        System.out.println("individual label probabilities are saved to "+labelProbFile.getAbsolutePath());
 
     }
 
     private static CBMOptimizer getOptimizer(Config config, CBM cbm, MultiLabelClfDataSet trainSet){
         CBMOptimizer optimizer = new CBMOptimizer(cbm,trainSet);
-
-//        optimizer.setLineSearch(config.getBoolean("elasticnet.lineSearch"));
-//        optimizer.setRegularizationBinary(config.getDouble("elasticnet.binaryRegularization"));
-//        optimizer.setRegularizationMultiClass(config.getDouble("elasticnet.multiClassRegularization"));
-//        optimizer.setL1RatioBinary(config.getDouble("elasticnet.binaryL1Ratio"));
-//        optimizer.setL1RatioMultiClass(config.getDouble("elasticnet.multiClassL1Ratio"));
 
         optimizer.setPriorVarianceMultiClass(config.getDouble("lr.multiClassVariance"));
         optimizer.setPriorVarianceBinary(config.getDouble("lr.binaryVariance"));
