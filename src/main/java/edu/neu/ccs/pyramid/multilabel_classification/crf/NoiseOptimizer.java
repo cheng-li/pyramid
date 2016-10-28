@@ -181,6 +181,28 @@ public class NoiseOptimizer {
     }
 
 
+    public void iteratePartial(int modelIterations){
+        updateTargets();
+        System.out.println("finish updateTargets ");
+        System.out.println("objective = "+objective());
+        updateAlphas();
+        System.out.println("finish updateAlphas ");
+        System.out.println("objective = "+objective());
+        updateTransformProbs();
+        System.out.println("finish updateTransformProbs ");
+        System.out.println("objective = "+objective());
+        updateModelPartial(modelIterations);
+        System.out.println("finish updateModel ");
+        System.out.println("objective = "+objective());
+        updateProbabilities();
+        System.out.println("finish updateProbabilities ");
+        double objective = objective();
+        System.out.println("objective = "+objective);
+        terminator.add(objective);
+        System.out.println("alphas = "+Arrays.toString(alphas));
+    }
+
+
 
     private void updateTargets(){
         if (logger.isDebugEnabled()){
@@ -219,7 +241,9 @@ public class NoiseOptimizer {
         }
     }
 
-    private void updateModelPartial(){
+
+
+    private void updateModelPartial(int modelIterations){
         if (logger.isDebugEnabled()){
             logger.debug("start updateModelPartial()");
         }
@@ -237,7 +261,7 @@ public class NoiseOptimizer {
             default:
                 throw new IllegalArgumentException("unknown");
         }
-        opt.getTerminator().setMaxIteration(10);
+        opt.getTerminator().setMaxIteration(modelIterations);
         opt.optimize();
 
 
