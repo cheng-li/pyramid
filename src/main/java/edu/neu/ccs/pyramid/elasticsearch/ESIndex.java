@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
 import org.apache.lucene.search.similarities.DefaultSimilarity;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
@@ -26,6 +27,9 @@ import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.node.Node;
@@ -272,49 +276,78 @@ public class ESIndex implements AutoCloseable{
 
     }
 
-    //todo fix
-    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, String[] ids){
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n" +
-                "    \"filtered\": {\n" +
-                "      \"query\": {\n" +
-                "        \"bool\": {");
+//    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, String[] ids){
+//        StringBuilder sb = new StringBuilder();
+//        sb.append("{\n" +
+//                "    \"filtered\": {\n" +
+//                "      \"query\": {\n" +
+//                "        \"bool\": {");
+//
+//        sb.append("\"should\":[");
+//        for (int i=0;i<terms.size();i++){
+//            String term = terms.get(i);
+//            sb.append("{\"constant_score\": {\n" +
+//                    "            \"query\": {\n" +
+//                    "              \"match\": {");
+//            sb.append("\"").append(field).append("\":").append("\"").append(term).append("\"");
+//            sb.append("}\n" +
+//                    "            }\n" +
+//                    "          }\n" +
+//                    "        }");
+//            if (i!=terms.size()-1){
+//                sb.append(",");
+//            }
+//
+//        }
+//        sb.append("],\"minimum_should_match\":");
+//        sb.append("\"").append(percentage).append("%").append("\"").append("}}").append(",");
+//
+//
+//        sb.append("\"filter\": {\n" +
+//                "        \"ids\": {\n" +
+//                "          \"values\": [");
+//        for (int i=0;i<ids.length;i++){
+//            sb.append("\"").append(ids[i]).append("\"");
+//            if (i!=ids.length-1){
+//                sb.append(",");
+//            }
+//        }
+//        sb.append("]}}}}");
+//
+//
+//        return submitQuery(sb.toString());
+//
+//    }
 
-        sb.append("\"should\":[");
-        for (int i=0;i<terms.size();i++){
-            String term = terms.get(i);
-            sb.append("{\"constant_score\": {\n" +
-                    "            \"query\": {\n" +
-                    "              \"match\": {");
-            sb.append("\"").append(field).append("\":").append("\"").append(term).append("\"");
-            sb.append("}\n" +
-                    "            }\n" +
-                    "          }\n" +
-                    "        }");
-            if (i!=terms.size()-1){
-                sb.append(",");
-            }
 
+    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, int size, String docFilter){
+
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        for (String term: terms){
+            queryBuilder.should(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery(field, term)));
         }
-        sb.append("],\"minimum_should_match\":");
-        sb.append("\"").append(percentage).append("%").append("\"").append("}}").append(",");
+        queryBuilder.minimumShouldMatch(""+percentage+"%");
 
+        //debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//
+//        builder.startObject();
+//        queryBuilder.toXContent(builder, ToXContent.EMPTY_PARAMS);
+//        builder.endObject();
+//        System.out.println(builder.string());
 
-        sb.append("\"filter\": {\n" +
-                "        \"ids\": {\n" +
-                "          \"values\": [");
-        for (int i=0;i<ids.length;i++){
-            sb.append("\"").append(ids[i]).append("\"");
-            if (i!=ids.length-1){
-                sb.append(",");
-            }
-        }
-        sb.append("]}}}}");
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(queryBuilder, FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(docFilter))))
+                .execute().actionGet();
 
-
-        return submitQuery(sb.toString());
+        return response;
 
     }
+
+
+
 
     /**
      * use as an inverted index
