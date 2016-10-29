@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test21();
+        test22();
 
     }
 
@@ -363,24 +363,24 @@ public class ESIndexTest {
     }
 
 
-    static void test20() throws Exception{
-        try(ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("ohsumed_20000")
-                .build()){
-            List<String> terms = new ArrayList<>();
-            terms.add("repeated");
-            terms.add("cyclophosphamide");
-            terms.add("cycles");
-            terms.add("study");
-            String[] ids = {"AVYcLfPVDpWfZwAC_rp3", "AVYcLfbpDpWfZwAC_rt_"};
-            SearchResponse response = index.minimumShouldMatch(terms, "body", 70, ids);
-            System.out.println(response.getHits().getTotalHits());
-            for (SearchHit searchHit : response.getHits()) {
-                System.out.println(searchHit.getId()+" "+searchHit.getScore());
-            }
-            double a = 0/0;
-        }
-
-    }
+//    static void test20() throws Exception{
+//        try(ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("ohsumed_20000")
+//                .build()){
+//            List<String> terms = new ArrayList<>();
+//            terms.add("repeated");
+//            terms.add("cyclophosphamide");
+//            terms.add("cycles");
+//            terms.add("study");
+//            String[] ids = {"AVYcLfPVDpWfZwAC_rp3", "AVYcLfbpDpWfZwAC_rt_"};
+//            SearchResponse response = index.minimumShouldMatch(terms, "body", 70, ids);
+//            System.out.println(response.getHits().getTotalHits());
+//            for (SearchHit searchHit : response.getHits()) {
+//                System.out.println(searchHit.getId()+" "+searchHit.getScore());
+//            }
+//            double a = 0/0;
+//        }
+//
+//    }
 
 
     static void test21() throws Exception{
@@ -396,6 +396,19 @@ public class ESIndexTest {
             for (SearchHit searchHit : response.getHits()) {
                 System.out.println(searchHit.getId()+" "+searchHit.getScore());
             }
+        }
+    }
+
+
+    static void test22() throws Exception{
+        try(ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build()){
+            List<String> terms = new ArrayList<>();
+            terms.add("repeated");
+            terms.add("cyclophosphamide");
+            terms.add("cycles");
+            terms.add("study");
+            index.minimumShouldMatch(terms,"body", 70,10, null );
         }
     }
 

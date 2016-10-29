@@ -29,7 +29,7 @@ public class FeatureLoader {
                     } else if (feature instanceof Ngram){
                         loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType, docFilter);
                     } else if (feature instanceof CodeDescription) {
-                        loadCodeDesFeature(index, dataSet, feature, idTranslator);
+                        loadCodeDesFeature(index, dataSet, feature, idTranslator, docFilter);
                     } else {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
@@ -194,11 +194,11 @@ public class FeatureLoader {
 
 
     private static void loadCodeDesFeature(ESIndex index, DataSet dataSet, Feature feature,
-                                           IdTranslator idTranslator){
+                                           IdTranslator idTranslator, String docFilter){
         String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
         CodeDescription codeDescription = (CodeDescription)(feature);
-        SearchResponse response = index.minimumShouldMatch(codeDescription.getDescription(), codeDescription.getField(), codeDescription.getPercentage(), dataIndexIds);
+        SearchResponse response = index.minimumShouldMatch(codeDescription.getDescription(), codeDescription.getField(), codeDescription.getPercentage(), idTranslator.numData(), docFilter);
         SearchHit[] hits = response.getHits().getHits();
         for (SearchHit hit: hits){
             String indexId = hit.getId();

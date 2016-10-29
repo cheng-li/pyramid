@@ -42,8 +42,6 @@ public class App3 {
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.labelFilter","index.labelFilter.prefix",
                 "index.featureFieldPrefix","index.ngramExtractionFields",
-                "index.splitMode",
-                "index.splitField","index.splitField.train","index.splitField.test",
                 "index.splitQuery.train","index.splitQuery.test",
                 "index.ngramMatchScoreType","createTrainSet","createTestSet"};
 
