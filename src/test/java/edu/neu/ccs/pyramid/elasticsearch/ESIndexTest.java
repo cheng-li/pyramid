@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 
 public class ESIndexTest {
     public static void main(String[] args) throws Exception{
-        test20();
+        test21();
 
     }
 
@@ -179,22 +179,22 @@ public class ESIndexTest {
     }
 
 
-    static void test14() throws Exception{
-        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
-                .build();
-
-        Ngram ngram1 = new Ngram();
-        ngram1.setInOrder(true);
-        ngram1.setNgram("really nice");
-        ngram1.setField("body");
-        ngram1.setSlop(0);
-
-        String[] ids = IntStream.range(0,500000).mapToObj(i-> ""+i).toArray(String[]::new);
-        SearchResponse searchResponse = index.spanNearFrequency(ngram1, ids);
-        System.out.println(searchResponse);
-
-        index.close();
-    }
+//    static void test14() throws Exception{
+//        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+//                .build();
+//
+//        Ngram ngram1 = new Ngram();
+//        ngram1.setInOrder(true);
+//        ngram1.setNgram("really nice");
+//        ngram1.setField("body");
+//        ngram1.setSlop(0);
+//
+//        String[] ids = IntStream.range(0,500000).mapToObj(i-> ""+i).toArray(String[]::new);
+//        SearchResponse searchResponse = index.spanNearFrequency(ngram1, ids);
+//        System.out.println(searchResponse);
+//
+//        index.close();
+//    }
 
     static void test15() throws Exception{
         ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
@@ -380,6 +380,23 @@ public class ESIndexTest {
             double a = 0/0;
         }
 
+    }
+
+
+    static void test21() throws Exception{
+        try(ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("imdb")
+                .build()){
+            Ngram ngram1 = new Ngram();
+            ngram1.setInOrder(true);
+            ngram1.setNgram("really nice");
+            ngram1.setField("body");
+            ngram1.setSlop(0);
+            String filterQuery = "{\"filtered\":{\"query\":{\"match_all\":{}},\"filter\":{\"term\":{\"split\":\"train\"}}}}";
+            SearchResponse response = index.spanNear(ngram1, filterQuery, 10);
+            for (SearchHit searchHit : response.getHits()) {
+                System.out.println(searchHit.getId()+" "+searchHit.getScore());
+            }
+        }
     }
 
 }

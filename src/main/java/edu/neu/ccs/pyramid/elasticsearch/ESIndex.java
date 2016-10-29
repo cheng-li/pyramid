@@ -272,6 +272,7 @@ public class ESIndex implements AutoCloseable{
 
     }
 
+    //todo fix
     public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, String[] ids){
         StringBuilder sb = new StringBuilder();
         sb.append("{\n" +
@@ -322,7 +323,44 @@ public class ESIndex implements AutoCloseable{
      * @return
      * @throws Exception
      */
-    public List<String> termFilter(String field, String term, String[] ids) throws Exception{
+//    public List<String> termFilter(String field, String term, String[] ids) throws Exception{
+//        StopWatch stopWatch=null;
+//        if(logger.isDebugEnabled()){
+//            stopWatch = new StopWatch();
+//            stopWatch.start();
+//        }
+//
+//        /**
+//         * setSize() has a huge impact on performance, the smaller the faster
+//         */
+//
+//        TermFilterBuilder termFilterBuilder = new TermFilterBuilder(field, term);
+//        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+//
+//
+//        idsFilterBuilder.addIds(ids);
+//
+//
+//        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+//                setHighlighterFilter(false).setTrackScores(false).
+//                setNoFields().setExplain(false).setFetchSource(false).
+//                setQuery(QueryBuilders.constantScoreQuery(
+//                        FilterBuilders.andFilter(termFilterBuilder,
+//                                idsFilterBuilder))).
+//                execute().actionGet();
+//        List<String> list = new ArrayList<>(response.getHits().getHits().length);
+//        for (SearchHit searchHit : response.getHits()) {
+//            list.add(searchHit.getId());
+//        }
+//        if(logger.isDebugEnabled()){
+//            logger.debug("time spent on termFilter() for " + term + " = " + stopWatch+
+//                    " There are "+list.size()+" matched docs");
+//        }
+//        return list;
+//    }
+
+
+    public List<String> termFilter(String field, String term, String filterQuery, int size) throws Exception{
         StopWatch stopWatch=null;
         if(logger.isDebugEnabled()){
             stopWatch = new StopWatch();
@@ -334,18 +372,15 @@ public class ESIndex implements AutoCloseable{
          */
 
         TermFilterBuilder termFilterBuilder = new TermFilterBuilder(field, term);
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
 
 
-        idsFilterBuilder.addIds(ids);
 
-
-        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(QueryBuilders.constantScoreQuery(
                         FilterBuilders.andFilter(termFilterBuilder,
-                                idsFilterBuilder))).
+                                FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(filterQuery))))).
                 execute().actionGet();
         List<String> list = new ArrayList<>(response.getHits().getHits().length);
         for (SearchHit searchHit : response.getHits()) {
@@ -807,7 +842,33 @@ public class ESIndex implements AutoCloseable{
     }
 
 
-    public SearchResponse spanNear(Ngram ngram, String[] ids){
+//    public SearchResponse spanNear(Ngram ngram, String[] ids){
+//        String field = ngram.getField();
+//        int slop = ngram.getSlop();
+//        boolean inOrder = ngram.isInOrder();
+//        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+//        for (String term: ngram.getTerms()){
+//            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+//        }
+//        queryBuilder.inOrder(inOrder);
+//        queryBuilder.slop(slop);
+//
+//        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+//        idsFilterBuilder.addIds(ids);
+//
+//        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+//                setHighlighterFilter(false).setTrackScores(false).
+//                setNoFields().setExplain(false).setFetchSource(false).
+//                setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
+//                        .execute().actionGet();
+//
+//
+//        return response;
+//
+//    }
+
+
+    public SearchResponse spanNear(Ngram ngram, String filterQuery, int size){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -818,20 +879,52 @@ public class ESIndex implements AutoCloseable{
         queryBuilder.inOrder(inOrder);
         queryBuilder.slop(slop);
 
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
-        idsFilterBuilder.addIds(ids);
 
-        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
-                        .execute().actionGet();
+                setQuery(QueryBuilders.filteredQuery(queryBuilder, FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(filterQuery))))
+         .execute().actionGet();
 
         return response;
 
     }
 
-    public SearchResponse spanNearFrequency(Ngram ngram, String[] ids){
+//    public SearchResponse spanNearFrequency(Ngram ngram, String[] ids){
+//        String field = ngram.getField();
+//        int slop = ngram.getSlop();
+//        boolean inOrder = ngram.isInOrder();
+//        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+//        for (String term: ngram.getTerms()){
+//            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+//        }
+//        queryBuilder.inOrder(inOrder);
+//        queryBuilder.slop(slop);
+//
+//        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+//        idsFilterBuilder.addIds(ids);
+//
+//
+//        //todo: hanle ngram frequency properly
+//        Map<String,Object> params = new HashMap<>();
+//        params.put("field",ngram.getField());
+//        params.put("term",ngram.getTerms()[0]);
+//
+//        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+//                setHighlighterFilter(false).setTrackScores(false).
+//                setNoFields().setExplain(false).setFetchSource(false).
+//                setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder),
+//                        ScoreFunctionBuilders.scriptFunction("getTF","groovy",params))
+//                        .boostMode(CombineFunction.REPLACE))
+//                        .execute().actionGet();
+//
+//        return response;
+//
+//    }
+
+
+    public SearchResponse spanNearFrequency(Ngram ngram, String filterQuery, int size){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -841,9 +934,6 @@ public class ESIndex implements AutoCloseable{
         }
         queryBuilder.inOrder(inOrder);
         queryBuilder.slop(slop);
-
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
-        idsFilterBuilder.addIds(ids);
 
 
         //todo: hanle ngram frequency properly
@@ -851,13 +941,13 @@ public class ESIndex implements AutoCloseable{
         params.put("field",ngram.getField());
         params.put("term",ngram.getTerms()[0]);
 
-        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder),
+                setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.filteredQuery(queryBuilder, FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(filterQuery))),
                         ScoreFunctionBuilders.scriptFunction("getTF","groovy",params))
                         .boostMode(CombineFunction.REPLACE))
-                        .execute().actionGet();
+                .execute().actionGet();
 
         return response;
 

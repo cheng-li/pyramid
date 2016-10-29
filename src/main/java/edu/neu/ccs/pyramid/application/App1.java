@@ -274,7 +274,8 @@ public class App1 {
     static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
                                          FeatureList featureList,
                                          IdTranslator idTranslator, int totalDim,
-                                         LabelTranslator labelTranslator) throws Exception{
+                                         LabelTranslator labelTranslator,
+                                         String docFilter) throws Exception{
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
@@ -315,7 +316,7 @@ public class App1 {
                 throw new IllegalArgumentException("unknown ngramMatchScoreType");
         }
 
-        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator, matchScoreType);
+        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator, matchScoreType, docFilter);
 
         dataSet.setIdTranslator(idTranslator);
         dataSet.setLabelTranslator(labelTranslator);
@@ -416,6 +417,7 @@ public class App1 {
         metaDataFolder.mkdirs();
         String[] trainIndexIds;
         String splitMode = config.getString("index.splitMode");
+        //todo disable field as split mode
         switch (splitMode) {
             case "field":
                 trainIndexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
@@ -475,7 +477,7 @@ public class App1 {
 
     }
 
-    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName) throws Exception{
+    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName, String docFilter) throws Exception{
 //        String splitValueAll = splitListToString(splitValues);
 
 
@@ -488,7 +490,7 @@ public class App1 {
 
         FeatureList featureList = (FeatureList)Serialization.deserialize(new File(metaDataFolder,"feature_list.ser"));
 
-        MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator);
+        MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator, docFilter);
         dataSet.setFeatureList(featureList);
 
         File dataFile = new File(new File(archive,"data_sets"),datasetName);
@@ -516,7 +518,7 @@ public class App1 {
             default:
                 throw new IllegalArgumentException("unknown split mode");
         }
-        createDataSet(config, index, indexIds,config.getString("output.trainFolder"));
+        createDataSet(config, index, indexIds,config.getString("output.trainFolder"), config.getString("index.splitQuery.train"));
     }
 
     static void createTestSet(Config config, MultiLabelIndex index) throws Exception{
@@ -532,7 +534,7 @@ public class App1 {
             default:
                 throw new IllegalArgumentException("unknown split mode");
         }
-        createDataSet(config, index, indexIds,config.getString("output.testFolder"));
+        createDataSet(config, index, indexIds,config.getString("output.testFolder"), config.getString("index.splitQuery.test"));
     }
 
 //    public static String splitListToString(List<String> splitValues){
