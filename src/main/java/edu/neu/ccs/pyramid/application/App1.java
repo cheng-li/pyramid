@@ -74,15 +74,6 @@ public class App1 {
         return index;
     }
 
-    static String[] getDocsForSplitFromField(Config config, ESIndex index, List<String> splitValues) throws Exception{
-        String splitField = config.getString("index.splitField");
-        Set<String> docs = new HashSet<>();
-        for (String value: splitValues){
-            docs.addAll(index.termFilter(splitField,value));
-        }
-        String[] ids = docs.toArray(new String[docs.size()]);
-        return ids;
-    }
 
     static String[] getDocsForSplitFromQuery(ESIndex index, String query){
         List<String> docs = index.matchStringQuery(query);
@@ -416,18 +407,9 @@ public class App1 {
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
         String[] trainIndexIds;
-        String splitMode = config.getString("index.splitMode");
-        //todo disable field as split mode
-        switch (splitMode) {
-            case "field":
-                trainIndexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
-                break;
-            case "query":
-                trainIndexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
-                break;
-            default:
-                throw new IllegalArgumentException("unknown split mode");
-        }
+
+        trainIndexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
+
 
 
         LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(config, index, trainIndexIds);
@@ -506,34 +488,12 @@ public class App1 {
 
     static void createTrainSet(Config config, MultiLabelIndex index) throws Exception{
         generateMetaData(config, index);
-        String[] indexIds;
-        String splitMode = config.getString("index.splitMode");
-        switch (splitMode) {
-            case "field":
-                indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
-                break;
-            case "query":
-                indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
-                break;
-            default:
-                throw new IllegalArgumentException("unknown split mode");
-        }
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
         createDataSet(config, index, indexIds,config.getString("output.trainFolder"), config.getString("index.splitQuery.train"));
     }
 
     static void createTestSet(Config config, MultiLabelIndex index) throws Exception{
-        String[] indexIds;
-        String splitMode = config.getString("index.splitMode");
-        switch (splitMode) {
-            case "field":
-                indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.test"));
-                break;
-            case "query":
-                indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.test"));
-                break;
-            default:
-                throw new IllegalArgumentException("unknown split mode");
-        }
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.test"));
         createDataSet(config, index, indexIds,config.getString("output.testFolder"), config.getString("index.splitQuery.test"));
     }
 
@@ -586,6 +546,7 @@ public class App1 {
         String regex = config.getString("feature.filterNgrams.regex");
         return ngrams.parallelStream().filter(ngram->!ngram.getNgram().matches(regex)).collect(Collectors.toSet());
     }
+
 
 
 }
