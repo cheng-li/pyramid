@@ -17,11 +17,6 @@ import java.util.stream.IntStream;
  */
 public class FeatureLoader {
 
-    public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
-                                    IdTranslator idTranslator, String docFilter){
-        loadFeatures(index, dataSet, features, idTranslator, MatchScoreType.ES_ORIGINAL, docFilter);
-
-    }
 
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter){
@@ -91,7 +86,6 @@ public class FeatureLoader {
 
     private static void loadNgramFeatureOriginal(ESIndex index, DataSet dataSet, Ngram feature,
                                                  IdTranslator idTranslator, String docFilter){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
         SearchResponse response = index.spanNear(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
@@ -105,7 +99,6 @@ public class FeatureLoader {
 
     private static void loadNgramFeatureFrequency(ESIndex index, DataSet dataSet, Ngram feature,
                                                   IdTranslator idTranslator, String docFilter){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
         SearchResponse response = index.spanNearFrequency(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
@@ -121,7 +114,6 @@ public class FeatureLoader {
     // field storing the length of the body field should be called body_field_length
     private static void loadNgramFeatureTFIFL(ESIndex index, DataSet dataSet, Ngram feature,
                                               IdTranslator idTranslator, String docFilter){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
         SearchResponse response = index.spanNearFrequency(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
@@ -139,7 +131,6 @@ public class FeatureLoader {
 
     public static void loadNgramFeatureBinary(ESIndex index, DataSet dataSet, Ngram feature,
                                               IdTranslator idTranslator, String docFilter){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
         SearchResponse response = index.spanNear(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
