@@ -124,6 +124,15 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return pro;
     }
 
+    // log p(y_l=1) and log p(y_l=0)
+    public double[] predictLogClassProbs(Vector vector, int classIndex){
+        double score = predictClassScore(vector,classIndex);
+        double[] scores = new double[2];
+        scores[0] = 0;
+        scores[1] = score;
+        return MathUtil.logSoftmax(scores);
+    }
+
     @Override
     public double[] predictClassProbs(Vector vector) {
         return IntStream.range(0,numClasses)

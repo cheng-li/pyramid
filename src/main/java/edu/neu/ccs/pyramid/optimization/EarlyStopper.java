@@ -15,6 +15,7 @@ public class EarlyStopper {
     private int patience = 5;
     private int patienceUses = 0;
     private boolean shouldStop = false;
+    private int minimumIterations = 20;
 
     public EarlyStopper(Goal goal, int patience) {
         this.goal = goal;
@@ -28,7 +29,9 @@ public class EarlyStopper {
         this.iterations = new ArrayList<>();
     }
 
-
+    public void setMinimumIterations(int minimumIterations) {
+        this.minimumIterations = minimumIterations;
+    }
 
     public void add(int iteration, double value){
 
@@ -39,7 +42,7 @@ public class EarlyStopper {
             if (better){
                 updateWithProgress(iteration, value);
             } else {
-                updateWithoutProgress();
+                updateWithoutProgress(iteration);
             }
         }
     }
@@ -76,9 +79,9 @@ public class EarlyStopper {
         patienceUses = 0;
     }
 
-    private void updateWithoutProgress(){
+    private void updateWithoutProgress(int iteration){
         patienceUses += 1;
-        if (patienceUses>=patience){
+        if (patienceUses>=patience && iteration>=minimumIterations){
             shouldStop = true;
         }
     }
