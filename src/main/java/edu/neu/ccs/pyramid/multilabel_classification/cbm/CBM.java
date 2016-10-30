@@ -37,6 +37,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
     private String predictMode = "dynamic";
 
+    private List<MultiLabel> support;
+
     // parameters
     // format: [numComponents][numLabels]
     ProbabilityEstimator[][] binaryClassifiers;
@@ -115,6 +117,13 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
 
 
     public MultiLabel predict(Vector vector) {
+        switch (predictMode) {
+            case "support":
+                return predictBySupport(vector);
+            case "marginal":
+                return predictByMarginals(vector);
+        }
+
 
         // new a BMMPredictor
         CBMPredictor CBMPredictor = new CBMPredictor(vector, multiClassClassifier, binaryClassifiers, numComponents, numLabels);
@@ -130,12 +139,24 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
                 return CBMPredictor.predictByGreedy();
             case "hard":
                 return CBMPredictor.predictByHardAssignment();
-            case "marginal":
-                return predictByMarginals(vector);
             default:
                 throw new RuntimeException("Unknown predictMode: " + predictMode);
         }
 
+    }
+
+    private MultiLabel predictBySupport(Vector vector) {
+        List<Double> supportLogProbs = predictLogAssignmentProbs(vector, support);
+        MultiLabel pred = new MultiLabel();
+        double maxLogProb = Double.NEGATIVE_INFINITY;
+        for (int i=0; i<supportLogProbs.size(); i++) {
+            double logProb = supportLogProbs.get(i);
+            if (logProb > maxLogProb) {
+                maxLogProb = logProb;
+                pred = support.get(i);
+            }
+        }
+        return pred;
     }
 
     /**
@@ -244,6 +265,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
         private int numClasses;
         private int numComponents;
         private int numFeatures;
+        private List<MultiLabel> support;
         private String binaryClassifierType= "lr";
         private String multiClassClassifierType = "lr";
 
@@ -275,6 +297,11 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
             return this;
         }
 
+        public Builder setSupport(List<MultiLabel> support) {
+            this.support = support;
+            return this;
+        }
+
         public CBM build(){
             CBM CBM = new CBM();
             CBM.numLabels = numClasses;
@@ -282,6 +309,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
             CBM.numFeatures = numFeatures;
             CBM.binaryClassifierType = binaryClassifierType;
             CBM.multiClassClassifierType = multiClassClassifierType;
+            CBM.support = support;
 
             switch (binaryClassifierType){
                 case "lr":
