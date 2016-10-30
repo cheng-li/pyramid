@@ -55,7 +55,7 @@ public class EarlyStopper {
         return shouldStop;
     }
 
-    public static enum Goal{
+    public enum Goal{
         MAXIMIZE, MINIMIZE
     }
 
@@ -84,6 +84,21 @@ public class EarlyStopper {
         if (patienceUses>=patience && iteration>=minimumIterations){
             shouldStop = true;
         }
+    }
+
+    public String history(){
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i=0;i<iterations.size();i++){
+            stringBuilder.append(iterations.get(i)).append(":");
+            stringBuilder.append(values.get(i));
+            if (iterations.get(i)==bestIteration){
+                stringBuilder.append("[best]");
+            }
+            if (i!=iterations.size()-1){
+                stringBuilder.append(", ");
+            }
+        }
+        return stringBuilder.toString();
     }
 
 

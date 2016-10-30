@@ -43,14 +43,19 @@ public class App1 {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        try (MultiLabelIndex index = loadIndex(config)){
-            if (config.getBoolean("createTrainSet")){
+        if (config.getBoolean("createTrainSet")){
+            try (MultiLabelIndex index = loadIndex(config)){
                 createTrainSet(config, index);
             }
 
-            if (config.getBoolean("createTestSet")){
+        }
+
+
+        if (config.getBoolean("createTestSet")){
+            try (MultiLabelIndex index = loadIndex(config)){
                 createTestSet(config, index);
             }
+
         }
 
 

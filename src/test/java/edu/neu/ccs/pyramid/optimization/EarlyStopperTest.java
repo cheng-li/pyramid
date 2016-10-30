@@ -8,7 +8,7 @@ import junit.framework.TestCase;
 public class EarlyStopperTest {
 
     public static void main(String[] args) {
-        test2();
+        test3();
     }
 
 
@@ -32,6 +32,7 @@ public class EarlyStopperTest {
             System.out.println(earlyStopper.shouldStop());
             System.out.println(earlyStopper.getBestIteration());
         }
+        System.out.println(earlyStopper.history());
     }
 
 
@@ -44,6 +45,7 @@ public class EarlyStopperTest {
             System.out.println(earlyStopper.shouldStop());
             System.out.println(earlyStopper.getBestIteration());
         }
+        System.out.println(earlyStopper.history());
     }
 
 }

@@ -133,12 +133,17 @@ public class App2 {
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
 
+        boolean earlyStop = config.getBoolean("train.earlyStop");
+
         List<EarlyStopper> earlyStoppers = new ArrayList<>();
-        for (int l=0;l<numClasses;l++){
-            EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE, config.getInt("train.earlyStop.patience"));
-            earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
-            earlyStoppers.add(earlyStopper);
+        if (earlyStop){
+            for (int l=0;l<numClasses;l++){
+                EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE, config.getInt("train.earlyStop.patience"));
+                earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
+                earlyStoppers.add(earlyStopper);
+            }
         }
+
 
 
 
@@ -146,6 +151,7 @@ public class App2 {
 
         System.out.println("trainer initialized");
 
+        int numLabelsLeftToTrain = numClasses;
 
         int progressInterval = config.getInt("train.showProgress.interval");
         for (int i=1;i<=numIterations;i++){
@@ -158,25 +164,46 @@ public class App2 {
             if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
                 System.out.println("test set performance");
                 System.out.println(new MLMeasures(boosting,testSet));
-                for (int l=0;l<numClasses;l++){
-                    EarlyStopper earlyStopper = earlyStoppers.get(l);
-                    if (!earlyStopper.shouldStop()){
-                        double kl = KL(boosting, testSet, l);
-                        earlyStopper.add(i,kl);
-                        if (earlyStopper.shouldStop()){
-                            System.out.println("training for label "+l+" (+"+dataSet.getLabelTranslator().toExtLabel(l)+") should stop now!");
-                            System.out.println("the best number of training iterations is "+earlyStopper.getBestIteration());
-                            trainer.setShouldStop(l);
+                if (earlyStop){
+                    for (int l=0;l<numClasses;l++){
+                        EarlyStopper earlyStopper = earlyStoppers.get(l);
+                        if (!earlyStopper.shouldStop()){
+                            double kl = KL(boosting, testSet, l);
+                            earlyStopper.add(i,kl);
+                            if (earlyStopper.shouldStop()){
+                                System.out.println("training for label "+l+" ("+dataSet.getLabelTranslator().toExtLabel(l)+") should stop now");
+                                System.out.println("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
+                                trainer.setShouldStop(l);
+                                numLabelsLeftToTrain -= 1;
+                                System.out.println("the number of labels left to be trained on = "+numLabelsLeftToTrain);
+                            }
                         }
                     }
                 }
+
+            }
+            if (numLabelsLeftToTrain==0){
+                System.out.println("all label training finished");
+                break;
             }
         }
+        System.out.println("training done");
         File serializedModel =  new File(output,modelName);
         //todo pick best models
 
         boosting.serialize(serializedModel);
         System.out.println(stopWatch);
+
+        if (earlyStop){
+            for (int l=0;l<numClasses;l++){
+                System.out.println("----------------------------------------------------");
+                System.out.println("test performance history for label "+l+": "+earlyStoppers.get(l).history());
+                System.out.println("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
+            }
+        }
+
+
+
 
     }
 
