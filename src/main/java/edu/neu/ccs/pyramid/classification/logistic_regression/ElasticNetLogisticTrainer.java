@@ -147,6 +147,9 @@ public class ElasticNetLogisticTrainer {
         ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights, sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
+//        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights);
+//        linearRegTrainer.setRegularization((sumWeights/Arrays.stream(instanceWeights).parallel().sum())*this.regularization);
+//        linearRegTrainer.setL1Ratio(this.l1Ratio);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }
@@ -220,7 +223,7 @@ public class ElasticNetLogisticTrainer {
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon
-        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights,sumWeights);
+        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights, sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
         if (logger.isDebugEnabled()){
