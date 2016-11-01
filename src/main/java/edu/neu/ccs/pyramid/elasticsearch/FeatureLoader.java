@@ -17,26 +17,19 @@ import java.util.stream.IntStream;
  */
 public class FeatureLoader {
 
-    public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
-                                    IdTranslator idTranslator){
-        loadFeatures(index, dataSet, features, idTranslator, MatchScoreType.ES_ORIGINAL);
-
-    }
 
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
-                                    IdTranslator idTranslator, MatchScoreType matchScoreType){
+                                    IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter){
         ProgressBar progressBar = new ProgressBar(features.size());
         IntStream.range(0,features.size()).parallel()
                 .forEach(i-> {
                     Feature feature = features.get(i);
                     if (feature instanceof CategoricalFeature){
-                        loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator);
+                        loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator, docFilter);
                     } else if (feature instanceof Ngram){
-                        loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType);
-                    } else if (feature instanceof SpanNotNgram) {
-                        loadSpanNotNgramFeature(index, dataSet, (SpanNotNgram) feature, idTranslator);
+                        loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType, docFilter);
                     } else if (feature instanceof CodeDescription) {
-                        loadCodeDesFeature(index, dataSet, feature, idTranslator);
+                        loadCodeDesFeature(index, dataSet, feature, idTranslator, docFilter);
                     } else {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
@@ -48,14 +41,14 @@ public class FeatureLoader {
     }
 
     public static void loadCategoricalFeature(ESIndex index, DataSet dataSet, CategoricalFeature feature,
-                                              IdTranslator idTranslator){
+                                              IdTranslator idTranslator, String docFilter){
         String[] dataIndexIds = idTranslator.getAllExtIds();
         String variableName = feature.getVariableName();
         int featureIndex = feature.getIndex();
 
         List<String> matchedIds = null;
         try {
-            matchedIds = index.termFilter(variableName,feature.getCategory(),dataIndexIds);
+            matchedIds = index.termFilter(variableName,feature.getCategory(),docFilter,idTranslator.numData());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -74,28 +67,27 @@ public class FeatureLoader {
     }
 
     public static void loadNgramFeature(ESIndex index, DataSet dataSet, Ngram feature,
-                                        IdTranslator idTranslator, MatchScoreType matchScoreType){
+                                        IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter){
         switch (matchScoreType){
             case ES_ORIGINAL:
-                loadNgramFeatureOriginal(index, dataSet, feature, idTranslator);
+                loadNgramFeatureOriginal(index, dataSet, feature, idTranslator, docFilter);
                 break;
             case BINARY:
-                loadNgramFeatureBinary(index, dataSet, feature, idTranslator);
+                loadNgramFeatureBinary(index, dataSet, feature, idTranslator, docFilter);
                 break;
             case FREQUENCY:
-                loadNgramFeatureFrequency(index, dataSet, feature, idTranslator);
+                loadNgramFeatureFrequency(index, dataSet, feature, idTranslator, docFilter);
                 break;
             case TFIFL:
-                loadNgramFeatureTFIFL(index, dataSet, feature, idTranslator);
+                loadNgramFeatureTFIFL(index, dataSet, feature, idTranslator, docFilter);
         }
     }
 
 
     private static void loadNgramFeatureOriginal(ESIndex index, DataSet dataSet, Ngram feature,
-                                                 IdTranslator idTranslator){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+                                                 IdTranslator idTranslator, String docFilter){
         int featureIndex = feature.getIndex();
-        SearchResponse response = index.spanNear(feature, dataIndexIds);
+        SearchResponse response = index.spanNear(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
         for (SearchHit hit: hits){
             String indexId = hit.getId();
@@ -106,10 +98,9 @@ public class FeatureLoader {
     }
 
     private static void loadNgramFeatureFrequency(ESIndex index, DataSet dataSet, Ngram feature,
-                                                  IdTranslator idTranslator){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+                                                  IdTranslator idTranslator, String docFilter){
         int featureIndex = feature.getIndex();
-        SearchResponse response = index.spanNearFrequency(feature, dataIndexIds);
+        SearchResponse response = index.spanNearFrequency(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
         for (SearchHit hit: hits){
             String indexId = hit.getId();
@@ -122,10 +113,9 @@ public class FeatureLoader {
     // term frequency inverse field length
     // field storing the length of the body field should be called body_field_length
     private static void loadNgramFeatureTFIFL(ESIndex index, DataSet dataSet, Ngram feature,
-                                              IdTranslator idTranslator){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+                                              IdTranslator idTranslator, String docFilter){
         int featureIndex = feature.getIndex();
-        SearchResponse response = index.spanNearFrequency(feature, dataIndexIds);
+        SearchResponse response = index.spanNearFrequency(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
         String field = feature.getField();
         String lengthField = field+"_"+"field_length";
@@ -140,10 +130,9 @@ public class FeatureLoader {
     }
 
     public static void loadNgramFeatureBinary(ESIndex index, DataSet dataSet, Ngram feature,
-                                              IdTranslator idTranslator){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+                                              IdTranslator idTranslator, String docFilter){
         int featureIndex = feature.getIndex();
-        SearchResponse response = index.spanNear(feature, dataIndexIds);
+        SearchResponse response = index.spanNear(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
         for (SearchHit hit: hits){
             String indexId = hit.getId();
@@ -156,35 +145,35 @@ public class FeatureLoader {
         }
     }
 
-    public static void loadSpanNotNgramFeature(ESIndex index, DataSet dataSet, SpanNotNgram feature,
-                                        IdTranslator idTranslator){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+//    public static void loadSpanNotNgramFeature(ESIndex index, DataSet dataSet, SpanNotNgram feature,
+//                                        IdTranslator idTranslator){
+//        String[] dataIndexIds = idTranslator.getAllExtIds();
+//
+//        int featureIndex = feature.getIndex();
+//
+//        SearchResponse response = index.spanNot(feature, dataIndexIds);
+//        SearchHit[] hits = response.getHits().getHits();
+//        for (SearchHit hit: hits){
+//            String indexId = hit.getId();
+//            float score = hit.getScore();
+//            int algorithmId = idTranslator.toIntId(indexId);
+//            dataSet.setFeatureValue(algorithmId,featureIndex,score);
+//        }
+//    }
 
-        int featureIndex = feature.getIndex();
-
-        SearchResponse response = index.spanNot(feature, dataIndexIds);
-        SearchHit[] hits = response.getHits().getHits();
-        for (SearchHit hit: hits){
-            String indexId = hit.getId();
-            float score = hit.getScore();
-            int algorithmId = idTranslator.toIntId(indexId);
-            dataSet.setFeatureValue(algorithmId,featureIndex,score);
-        }
-    }
-
-    public static Vector loadNgramFeature(ESIndex index, Ngram feature, IdTranslator idTranslator ){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
-        SearchResponse response = index.spanNear(feature, dataIndexIds);
-        SearchHit[] hits = response.getHits().getHits();
-        Vector vector = new RandomAccessSparseVector(idTranslator.numData());
-        for (SearchHit hit: hits){
-            String indexId = hit.getId();
-            float score = hit.getScore();
-            int algorithmId = idTranslator.toIntId(indexId);
-            vector.set(algorithmId,score);
-        }
-        return vector;
-    }
+//    public static Vector loadNgramFeature(ESIndex index, Ngram feature, IdTranslator idTranslator ){
+//        String[] dataIndexIds = idTranslator.getAllExtIds();
+//        SearchResponse response = index.spanNear(feature, dataIndexIds);
+//        SearchHit[] hits = response.getHits().getHits();
+//        Vector vector = new RandomAccessSparseVector(idTranslator.numData());
+//        for (SearchHit hit: hits){
+//            String indexId = hit.getId();
+//            float score = hit.getScore();
+//            int algorithmId = idTranslator.toIntId(indexId);
+//            vector.set(algorithmId,score);
+//        }
+//        return vector;
+//    }
 
 
     public static void loadNumericalFeature(ESIndex index, DataSet dataSet, Feature feature,
@@ -205,11 +194,11 @@ public class FeatureLoader {
 
 
     private static void loadCodeDesFeature(ESIndex index, DataSet dataSet, Feature feature,
-                                           IdTranslator idTranslator){
+                                           IdTranslator idTranslator, String docFilter){
         String[] dataIndexIds = idTranslator.getAllExtIds();
         int featureIndex = feature.getIndex();
         CodeDescription codeDescription = (CodeDescription)(feature);
-        SearchResponse response = index.minimumShouldMatch(codeDescription.getDescription(), codeDescription.getField(), codeDescription.getPercentage(), dataIndexIds);
+        SearchResponse response = index.minimumShouldMatch(codeDescription.getDescription(), codeDescription.getField(), codeDescription.getPercentage(), idTranslator.numData(), docFilter);
         SearchHit[] hits = response.getHits().getHits();
         for (SearchHit hit: hits){
             String indexId = hit.getId();

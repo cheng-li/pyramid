@@ -43,14 +43,19 @@ public class App1 {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        try (MultiLabelIndex index = loadIndex(config)){
-            if (config.getBoolean("createTrainSet")){
+        if (config.getBoolean("createTrainSet")){
+            try (MultiLabelIndex index = loadIndex(config)){
                 createTrainSet(config, index);
             }
 
-            if (config.getBoolean("createTestSet")){
+        }
+
+
+        if (config.getBoolean("createTestSet")){
+            try (MultiLabelIndex index = loadIndex(config)){
                 createTestSet(config, index);
             }
+
         }
 
 
@@ -74,15 +79,6 @@ public class App1 {
         return index;
     }
 
-    static String[] getDocsForSplitFromField(Config config, ESIndex index, List<String> splitValues) throws Exception{
-        String splitField = config.getString("index.splitField");
-        Set<String> docs = new HashSet<>();
-        for (String value: splitValues){
-            docs.addAll(index.termFilter(splitField,value));
-        }
-        String[] ids = docs.toArray(new String[docs.size()]);
-        return ids;
-    }
 
     static String[] getDocsForSplitFromQuery(ESIndex index, String query){
         List<String> docs = index.matchStringQuery(query);
@@ -274,7 +270,8 @@ public class App1 {
     static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
                                          FeatureList featureList,
                                          IdTranslator idTranslator, int totalDim,
-                                         LabelTranslator labelTranslator) throws Exception{
+                                         LabelTranslator labelTranslator,
+                                         String docFilter) throws Exception{
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
@@ -315,7 +312,7 @@ public class App1 {
                 throw new IllegalArgumentException("unknown ngramMatchScoreType");
         }
 
-        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator, matchScoreType);
+        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator, matchScoreType, docFilter);
 
         dataSet.setIdTranslator(idTranslator);
         dataSet.setLabelTranslator(labelTranslator);
@@ -415,17 +412,9 @@ public class App1 {
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
         String[] trainIndexIds;
-        String splitMode = config.getString("index.splitMode");
-        switch (splitMode) {
-            case "field":
-                trainIndexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
-                break;
-            case "query":
-                trainIndexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
-                break;
-            default:
-                throw new IllegalArgumentException("unknown split mode");
-        }
+
+        trainIndexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
+
 
 
         LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(config, index, trainIndexIds);
@@ -475,7 +464,7 @@ public class App1 {
 
     }
 
-    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName) throws Exception{
+    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName, String docFilter) throws Exception{
 //        String splitValueAll = splitListToString(splitValues);
 
 
@@ -488,7 +477,7 @@ public class App1 {
 
         FeatureList featureList = (FeatureList)Serialization.deserialize(new File(metaDataFolder,"feature_list.ser"));
 
-        MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator);
+        MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator, docFilter);
         dataSet.setFeatureList(featureList);
 
         File dataFile = new File(new File(archive,"data_sets"),datasetName);
@@ -504,35 +493,13 @@ public class App1 {
 
     static void createTrainSet(Config config, MultiLabelIndex index) throws Exception{
         generateMetaData(config, index);
-        String[] indexIds;
-        String splitMode = config.getString("index.splitMode");
-        switch (splitMode) {
-            case "field":
-                indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.train"));
-                break;
-            case "query":
-                indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
-                break;
-            default:
-                throw new IllegalArgumentException("unknown split mode");
-        }
-        createDataSet(config, index, indexIds,config.getString("output.trainFolder"));
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
+        createDataSet(config, index, indexIds,config.getString("output.trainFolder"), config.getString("index.splitQuery.train"));
     }
 
     static void createTestSet(Config config, MultiLabelIndex index) throws Exception{
-        String[] indexIds;
-        String splitMode = config.getString("index.splitMode");
-        switch (splitMode) {
-            case "field":
-                indexIds = getDocsForSplitFromField(config, index, config.getStrings("index.splitField.test"));
-                break;
-            case "query":
-                indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.test"));
-                break;
-            default:
-                throw new IllegalArgumentException("unknown split mode");
-        }
-        createDataSet(config, index, indexIds,config.getString("output.testFolder"));
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.test"));
+        createDataSet(config, index, indexIds,config.getString("output.testFolder"), config.getString("index.splitQuery.test"));
     }
 
 //    public static String splitListToString(List<String> splitValues){
@@ -584,6 +551,7 @@ public class App1 {
         String regex = config.getString("feature.filterNgrams.regex");
         return ngrams.parallelStream().filter(ngram->!ngram.getNgram().matches(regex)).collect(Collectors.toSet());
     }
+
 
 
 }

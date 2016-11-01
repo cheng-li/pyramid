@@ -37,6 +37,8 @@ public class IMLGBTrainer {
 //    private FloatGradientMatrix gradientMatrix;
     private IMLGradientBoosting boosting;
 
+    private boolean[] shouldStop;
+
 
     public IMLGBTrainer(IMLGBConfig config,
                         IMLGradientBoosting boosting) {
@@ -58,19 +60,34 @@ public class IMLGBTrainer {
 //        this.gradientMatrix = new FloatGradientMatrix(numDataPoints,numClasses, FloatGradientMatrix.Objective.MAXIMIZE);
         List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
         boosting.setAssignments(assignments);
+        this.shouldStop = new boolean[numClasses];
+    }
+
+    public void setShouldStop(int classIndex){
+        shouldStop[classIndex] = true;
+        if (logger.isDebugEnabled()){
+            logger.debug("class "+classIndex+" is set to stop");
+        }
     }
 
     public void iterate(){
         for (int k=0;k<this.boosting.getNumClasses();k++){
-            /**
-             * parallel by feature
-             */
-            Regressor regressor = this.fitClassK(k);
-            this.boosting.addRegressor(regressor, k);
-            /**
-             * parallel by data
-             */
-            this.updateStagedClassScores(regressor,k);
+
+            if (!shouldStop[k]){
+                if (logger.isDebugEnabled()){
+                    logger.debug("updating class "+k);
+                }
+                /**
+                 * parallel by feature
+                 */
+                Regressor regressor = this.fitClassK(k);
+                this.boosting.addRegressor(regressor, k);
+                /**
+                 * parallel by data
+                 */
+                this.updateStagedClassScores(regressor,k);
+            }
+
         }
     }
 

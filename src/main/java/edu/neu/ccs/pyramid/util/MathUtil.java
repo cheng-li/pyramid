@@ -179,6 +179,21 @@ public class MathUtil {
         return probVector;
     }
 
+
+    /**
+     * exponentiate scores and normalize and take log
+     * @param scores
+     * @return probabilities
+     */
+    public static double[] logSoftmax(double[] scores){
+        double[] logProbVector = new double[scores.length];
+        double logDenominator = MathUtil.logSumExp(scores);
+        for (int k=0;k<scores.length;k++){
+            logProbVector[k]=scores[k]- logDenominator;
+        }
+        return logProbVector;
+    }
+
     /**
      *
      * @param probabilities

@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
 import org.apache.lucene.search.similarities.DefaultSimilarity;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
@@ -26,6 +27,9 @@ import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.node.Node;
@@ -272,48 +276,78 @@ public class ESIndex implements AutoCloseable{
 
     }
 
-    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, String[] ids){
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n" +
-                "    \"filtered\": {\n" +
-                "      \"query\": {\n" +
-                "        \"bool\": {");
+//    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, String[] ids){
+//        StringBuilder sb = new StringBuilder();
+//        sb.append("{\n" +
+//                "    \"filtered\": {\n" +
+//                "      \"query\": {\n" +
+//                "        \"bool\": {");
+//
+//        sb.append("\"should\":[");
+//        for (int i=0;i<terms.size();i++){
+//            String term = terms.get(i);
+//            sb.append("{\"constant_score\": {\n" +
+//                    "            \"query\": {\n" +
+//                    "              \"match\": {");
+//            sb.append("\"").append(field).append("\":").append("\"").append(term).append("\"");
+//            sb.append("}\n" +
+//                    "            }\n" +
+//                    "          }\n" +
+//                    "        }");
+//            if (i!=terms.size()-1){
+//                sb.append(",");
+//            }
+//
+//        }
+//        sb.append("],\"minimum_should_match\":");
+//        sb.append("\"").append(percentage).append("%").append("\"").append("}}").append(",");
+//
+//
+//        sb.append("\"filter\": {\n" +
+//                "        \"ids\": {\n" +
+//                "          \"values\": [");
+//        for (int i=0;i<ids.length;i++){
+//            sb.append("\"").append(ids[i]).append("\"");
+//            if (i!=ids.length-1){
+//                sb.append(",");
+//            }
+//        }
+//        sb.append("]}}}}");
+//
+//
+//        return submitQuery(sb.toString());
+//
+//    }
 
-        sb.append("\"should\":[");
-        for (int i=0;i<terms.size();i++){
-            String term = terms.get(i);
-            sb.append("{\"constant_score\": {\n" +
-                    "            \"query\": {\n" +
-                    "              \"match\": {");
-            sb.append("\"").append(field).append("\":").append("\"").append(term).append("\"");
-            sb.append("}\n" +
-                    "            }\n" +
-                    "          }\n" +
-                    "        }");
-            if (i!=terms.size()-1){
-                sb.append(",");
-            }
 
+    public SearchResponse minimumShouldMatch(List<String> terms, String field, int percentage, int size, String docFilter){
+
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        for (String term: terms){
+            queryBuilder.should(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery(field, term)));
         }
-        sb.append("],\"minimum_should_match\":");
-        sb.append("\"").append(percentage).append("%").append("\"").append("}}").append(",");
+        queryBuilder.minimumShouldMatch(""+percentage+"%");
 
+        //debug
+//        XContentBuilder builder = XContentFactory.jsonBuilder();
+//
+//        builder.startObject();
+//        queryBuilder.toXContent(builder, ToXContent.EMPTY_PARAMS);
+//        builder.endObject();
+//        System.out.println(builder.string());
 
-        sb.append("\"filter\": {\n" +
-                "        \"ids\": {\n" +
-                "          \"values\": [");
-        for (int i=0;i<ids.length;i++){
-            sb.append("\"").append(ids[i]).append("\"");
-            if (i!=ids.length-1){
-                sb.append(",");
-            }
-        }
-        sb.append("]}}}}");
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
+                setHighlighterFilter(false).setTrackScores(false).
+                setNoFields().setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.filteredQuery(queryBuilder, FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(docFilter))))
+                .execute().actionGet();
 
-
-        return submitQuery(sb.toString());
+        return response;
 
     }
+
+
+
 
     /**
      * use as an inverted index
@@ -322,7 +356,44 @@ public class ESIndex implements AutoCloseable{
      * @return
      * @throws Exception
      */
-    public List<String> termFilter(String field, String term, String[] ids) throws Exception{
+//    public List<String> termFilter(String field, String term, String[] ids) throws Exception{
+//        StopWatch stopWatch=null;
+//        if(logger.isDebugEnabled()){
+//            stopWatch = new StopWatch();
+//            stopWatch.start();
+//        }
+//
+//        /**
+//         * setSize() has a huge impact on performance, the smaller the faster
+//         */
+//
+//        TermFilterBuilder termFilterBuilder = new TermFilterBuilder(field, term);
+//        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+//
+//
+//        idsFilterBuilder.addIds(ids);
+//
+//
+//        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+//                setHighlighterFilter(false).setTrackScores(false).
+//                setNoFields().setExplain(false).setFetchSource(false).
+//                setQuery(QueryBuilders.constantScoreQuery(
+//                        FilterBuilders.andFilter(termFilterBuilder,
+//                                idsFilterBuilder))).
+//                execute().actionGet();
+//        List<String> list = new ArrayList<>(response.getHits().getHits().length);
+//        for (SearchHit searchHit : response.getHits()) {
+//            list.add(searchHit.getId());
+//        }
+//        if(logger.isDebugEnabled()){
+//            logger.debug("time spent on termFilter() for " + term + " = " + stopWatch+
+//                    " There are "+list.size()+" matched docs");
+//        }
+//        return list;
+//    }
+
+
+    public List<String> termFilter(String field, String term, String filterQuery, int size) throws Exception{
         StopWatch stopWatch=null;
         if(logger.isDebugEnabled()){
             stopWatch = new StopWatch();
@@ -334,18 +405,15 @@ public class ESIndex implements AutoCloseable{
          */
 
         TermFilterBuilder termFilterBuilder = new TermFilterBuilder(field, term);
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
 
 
-        idsFilterBuilder.addIds(ids);
 
-
-        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
                 setQuery(QueryBuilders.constantScoreQuery(
                         FilterBuilders.andFilter(termFilterBuilder,
-                                idsFilterBuilder))).
+                                FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(filterQuery))))).
                 execute().actionGet();
         List<String> list = new ArrayList<>(response.getHits().getHits().length);
         for (SearchHit searchHit : response.getHits()) {
@@ -807,7 +875,33 @@ public class ESIndex implements AutoCloseable{
     }
 
 
-    public SearchResponse spanNear(Ngram ngram, String[] ids){
+//    public SearchResponse spanNear(Ngram ngram, String[] ids){
+//        String field = ngram.getField();
+//        int slop = ngram.getSlop();
+//        boolean inOrder = ngram.isInOrder();
+//        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+//        for (String term: ngram.getTerms()){
+//            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+//        }
+//        queryBuilder.inOrder(inOrder);
+//        queryBuilder.slop(slop);
+//
+//        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+//        idsFilterBuilder.addIds(ids);
+//
+//        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+//                setHighlighterFilter(false).setTrackScores(false).
+//                setNoFields().setExplain(false).setFetchSource(false).
+//                setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
+//                        .execute().actionGet();
+//
+//
+//        return response;
+//
+//    }
+
+
+    public SearchResponse spanNear(Ngram ngram, String filterQuery, int size){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -818,20 +912,52 @@ public class ESIndex implements AutoCloseable{
         queryBuilder.inOrder(inOrder);
         queryBuilder.slop(slop);
 
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
-        idsFilterBuilder.addIds(ids);
 
-        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
-                        .execute().actionGet();
+                setQuery(QueryBuilders.filteredQuery(queryBuilder, FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(filterQuery))))
+         .execute().actionGet();
 
         return response;
 
     }
 
-    public SearchResponse spanNearFrequency(Ngram ngram, String[] ids){
+//    public SearchResponse spanNearFrequency(Ngram ngram, String[] ids){
+//        String field = ngram.getField();
+//        int slop = ngram.getSlop();
+//        boolean inOrder = ngram.isInOrder();
+//        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
+//        for (String term: ngram.getTerms()){
+//            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+//        }
+//        queryBuilder.inOrder(inOrder);
+//        queryBuilder.slop(slop);
+//
+//        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
+//        idsFilterBuilder.addIds(ids);
+//
+//
+//        //todo: hanle ngram frequency properly
+//        Map<String,Object> params = new HashMap<>();
+//        params.put("field",ngram.getField());
+//        params.put("term",ngram.getTerms()[0]);
+//
+//        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+//                setHighlighterFilter(false).setTrackScores(false).
+//                setNoFields().setExplain(false).setFetchSource(false).
+//                setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder),
+//                        ScoreFunctionBuilders.scriptFunction("getTF","groovy",params))
+//                        .boostMode(CombineFunction.REPLACE))
+//                        .execute().actionGet();
+//
+//        return response;
+//
+//    }
+
+
+    public SearchResponse spanNearFrequency(Ngram ngram, String filterQuery, int size){
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
@@ -841,9 +967,6 @@ public class ESIndex implements AutoCloseable{
         }
         queryBuilder.inOrder(inOrder);
         queryBuilder.slop(slop);
-
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(documentType);
-        idsFilterBuilder.addIds(ids);
 
 
         //todo: hanle ngram frequency properly
@@ -851,13 +974,13 @@ public class ESIndex implements AutoCloseable{
         params.put("field",ngram.getField());
         params.put("term",ngram.getTerms()[0]);
 
-        SearchResponse response = client.prepareSearch(indexName).setSize(ids.length).
+        SearchResponse response = client.prepareSearch(indexName).setSize(size).
                 setHighlighterFilter(false).setTrackScores(false).
                 setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder),
+                setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.filteredQuery(queryBuilder, FilterBuilders.queryFilter(QueryBuilders.wrapperQuery(filterQuery))),
                         ScoreFunctionBuilders.scriptFunction("getTF","groovy",params))
                         .boostMode(CombineFunction.REPLACE))
-                        .execute().actionGet();
+                .execute().actionGet();
 
         return response;
 

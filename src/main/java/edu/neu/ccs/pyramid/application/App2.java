@@ -14,11 +14,13 @@ import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.MacroFMeasureTuner;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
+import edu.neu.ccs.pyramid.optimization.EarlyStopper;
 import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.io.IOException;
@@ -105,7 +107,6 @@ public class App2 {
         }
 
 
-        int[] activeFeatures = IntStream.range(0, dataSet.getNumFeatures()).toArray();
 
         int numClasses = dataSet.getNumClasses();
         System.out.println("number of class = "+numClasses);
@@ -131,27 +132,78 @@ public class App2 {
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
+
+        boolean earlyStop = config.getBoolean("train.earlyStop");
+
+        List<EarlyStopper> earlyStoppers = new ArrayList<>();
+        if (earlyStop){
+            for (int l=0;l<numClasses;l++){
+                EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE, config.getInt("train.earlyStop.patience"));
+                earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
+                earlyStoppers.add(earlyStopper);
+            }
+        }
+
+
+
+
+
+
         System.out.println("trainer initialized");
-        //todo make it better
-//        trainer.setActiveFeatures(activeFeatures);
+
+        int numLabelsLeftToTrain = numClasses;
 
         int progressInterval = config.getInt("train.showProgress.interval");
-        for (int i=0;i<numIterations;i++){
+        for (int i=1;i<=numIterations;i++){
             System.out.println("iteration "+i);
             trainer.iterate();
-            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations-1)){
+            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
                 System.out.println("training set performance");
                 System.out.println(new MLMeasures(boosting,dataSet));
             }
-            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations-1)){
+            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
                 System.out.println("test set performance");
                 System.out.println(new MLMeasures(boosting,testSet));
+                if (earlyStop){
+                    for (int l=0;l<numClasses;l++){
+                        EarlyStopper earlyStopper = earlyStoppers.get(l);
+                        if (!earlyStopper.shouldStop()){
+                            double kl = KL(boosting, testSet, l);
+                            earlyStopper.add(i,kl);
+                            if (earlyStopper.shouldStop()){
+                                System.out.println("training for label "+l+" ("+dataSet.getLabelTranslator().toExtLabel(l)+") should stop now");
+                                System.out.println("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
+                                trainer.setShouldStop(l);
+                                numLabelsLeftToTrain -= 1;
+                                System.out.println("the number of labels left to be trained on = "+numLabelsLeftToTrain);
+                            }
+                        }
+                    }
+                }
+
+            }
+            if (numLabelsLeftToTrain==0){
+                System.out.println("all label training finished");
+                break;
             }
         }
+        System.out.println("training done");
         File serializedModel =  new File(output,modelName);
+        //todo pick best models
 
         boosting.serialize(serializedModel);
         System.out.println(stopWatch);
+
+        if (earlyStop){
+            for (int l=0;l<numClasses;l++){
+                System.out.println("----------------------------------------------------");
+                System.out.println("test performance history for label "+l+": "+earlyStoppers.get(l).history());
+                System.out.println("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
+            }
+        }
+
+
+
 
     }
 
@@ -366,6 +418,27 @@ public class App2 {
         }
 
         System.out.println("reports generated");
+    }
+
+
+
+    private static double KL(IMLGradientBoosting boosting, Vector vector, MultiLabel multiLabel, int classIndex){
+        double[] p = new double[2];
+        if (multiLabel.matchClass(classIndex)){
+            p[0] = 0;
+            p[1] = 1;
+        } else {
+            p[0] = 1;
+            p[1] = 0;
+        }
+        double[] logQ = boosting.predictLogClassProbs(vector, classIndex);
+        return KLDivergence.klGivenPLogQ(p, logQ);
+    }
+
+    private static double KL(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, int classIndex){
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i->KL(boosting, dataSet.getRow(i), dataSet.getMultiLabels()[i], classIndex))
+                .average().getAsDouble();
     }
 
 

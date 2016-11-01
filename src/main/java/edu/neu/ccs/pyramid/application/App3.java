@@ -42,8 +42,6 @@ public class App3 {
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","index.labelField","index.labelFilter","index.labelFilter.prefix",
                 "index.featureFieldPrefix","index.ngramExtractionFields",
-                "index.splitMode",
-                "index.splitField","index.splitField.train","index.splitField.test",
                 "index.splitQuery.train","index.splitQuery.test",
                 "index.ngramMatchScoreType","createTrainSet","createTestSet"};
 
@@ -57,6 +55,7 @@ public class App3 {
         String[] same = {"output.folder","train","test","tune","predict.target","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf",
         "train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
+                "train.earlyStop.patience","train.earlyStop.minIterations","train.earlyStop",
                 "train.showProgress.interval","train.generateReports","tune.data","tune.FMeasure.beta",
         "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit"};
 
