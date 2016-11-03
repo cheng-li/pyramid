@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.optimization;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.xpath.operations.And;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,8 @@ public class Terminator {
     private double relativeEpsilon = 0.001;
     /**
      * absolute threshold for big change;
-     * both have to apply in order to terminate
+     * if operation = and: both have to apply in order to terminate
+     * if operation = or: if any applies then terminate
      * for small values, relativeEpsilon is more picky
      * for big values, absoluteEpsilon is more picky
      */
@@ -40,6 +42,7 @@ public class Terminator {
     private Goal goal = Goal.UNDEFINED;
     private boolean allowNaN = false;
     private boolean allowInfinite = false;
+    private Operation operation = Operation.AND;
 
     public Terminator() {
         this.history = new ArrayList<>();
@@ -69,11 +72,25 @@ public class Terminator {
             double previous = history.get(history.size()-2);
             boolean condition1 = Math.abs(value-previous) <= relativeEpsilon*Math.abs(previous);
             boolean condition2 = Math.abs(value-previous) <= absoluteEpsilon;
-            if (condition1&&condition2){
-                stableCounter += 1;
-            } else {
-                stableCounter = 0;
+
+            switch (operation){
+                case AND:
+                    if (condition1&&condition2){
+                        stableCounter += 1;
+                    } else {
+                        stableCounter = 0;
+                    }
+                    break;
+                case OR:
+                    if (condition1||condition2){
+                        stableCounter += 1;
+                    } else {
+                        stableCounter = 0;
+                    }
+                    break;
             }
+
+
         }
         if (logger.isDebugEnabled()){
             logger.debug("iteration = "+history.size());
@@ -163,6 +180,10 @@ public class Terminator {
         this.absoluteEpsilon = absoluteEpsilon;
     }
 
+    public void setOperation(Operation operation) {
+        this.operation = operation;
+    }
+
     public Terminator setMaxStableIterations(int maxStableIterations) {
         this.maxStableIterations = maxStableIterations;
         return this;
@@ -228,5 +249,9 @@ public class Terminator {
 
     public enum Goal{
         MINIMIZE, MAXIMIZE,UNDEFINED
+    }
+
+    public enum Operation{
+        AND, OR
     }
 }
