@@ -4,6 +4,8 @@ import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
+import java.util.stream.IntStream;
+
 /**
  * Created by chengli on 5/12/16.
  */
@@ -11,9 +13,8 @@ public class MacroFMeasureTuner {
 
     public static double[] tuneThresholds(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet dataSet, double beta){
         double[] thresholds = new double[multiLabelClassifier.getNumClasses()];
-        for (int k=0;k<multiLabelClassifier.getNumClasses();k++){
-            thresholds[k] = tuneThreshold(multiLabelClassifier,dataSet,k,beta);
-        }
+        IntStream.range(0, multiLabelClassifier.getNumClasses()).parallel()
+                .forEach(k->thresholds[k] = tuneThreshold(multiLabelClassifier,dataSet,k,beta));
         return thresholds;
     }
 

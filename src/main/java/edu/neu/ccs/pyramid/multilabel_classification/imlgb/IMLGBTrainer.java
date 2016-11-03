@@ -70,6 +70,10 @@ public class IMLGBTrainer {
         }
     }
 
+    public boolean[] getShouldStop() {
+        return shouldStop;
+    }
+
     public void iterate(){
         for (int k=0;k<this.boosting.getNumClasses();k++){
 

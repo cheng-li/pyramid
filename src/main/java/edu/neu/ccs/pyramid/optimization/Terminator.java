@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.optimization;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.xpath.operations.And;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,8 @@ public class Terminator {
     private double relativeEpsilon = 0.001;
     /**
      * absolute threshold for big change;
-     * both have to apply in order to terminate
+     * if operation = and: both have to apply in order to terminate
+     * if operation = or: if any applies then terminate
      * for small values, relativeEpsilon is more picky
      * for big values, absoluteEpsilon is more picky
      */
@@ -40,6 +42,8 @@ public class Terminator {
     private Goal goal = Goal.UNDEFINED;
     private boolean allowNaN = false;
     private boolean allowInfinite = false;
+    private Operation operation = Operation.AND;
+    private int minIterations = 0;
 
     public Terminator() {
         this.history = new ArrayList<>();
@@ -69,11 +73,25 @@ public class Terminator {
             double previous = history.get(history.size()-2);
             boolean condition1 = Math.abs(value-previous) <= relativeEpsilon*Math.abs(previous);
             boolean condition2 = Math.abs(value-previous) <= absoluteEpsilon;
-            if (condition1&&condition2){
-                stableCounter += 1;
-            } else {
-                stableCounter = 0;
+
+            switch (operation){
+                case AND:
+                    if (condition1&&condition2){
+                        stableCounter += 1;
+                    } else {
+                        stableCounter = 0;
+                    }
+                    break;
+                case OR:
+                    if (condition1||condition2){
+                        stableCounter += 1;
+                    } else {
+                        stableCounter = 0;
+                    }
+                    break;
             }
+
+
         }
         if (logger.isDebugEnabled()){
             logger.debug("iteration = "+history.size());
@@ -111,6 +129,9 @@ public class Terminator {
 
     public boolean shouldTerminate(){
         boolean ter = false;
+        if (history.size() < minIterations){
+            return false;
+        }
         switch (mode){
             case STANDARD:
                 ter = isConverged()||(history.size() >= maxIteration)|| forceTerminated;
@@ -159,12 +180,23 @@ public class Terminator {
         return absoluteEpsilon;
     }
 
-    public void setAbsoluteEpsilon(double absoluteEpsilon) {
+    public Terminator setAbsoluteEpsilon(double absoluteEpsilon) {
         this.absoluteEpsilon = absoluteEpsilon;
+        return this;
+    }
+
+    public  Terminator setOperation(Operation operation) {
+        this.operation = operation;
+        return this;
     }
 
     public Terminator setMaxStableIterations(int maxStableIterations) {
         this.maxStableIterations = maxStableIterations;
+        return this;
+    }
+
+    public Terminator setMinIterations(int minIterations) {
+        this.minIterations = minIterations;
         return this;
     }
 
@@ -228,5 +260,9 @@ public class Terminator {
 
     public enum Goal{
         MINIMIZE, MAXIMIZE,UNDEFINED
+    }
+
+    public enum Operation{
+        AND, OR
     }
 }
