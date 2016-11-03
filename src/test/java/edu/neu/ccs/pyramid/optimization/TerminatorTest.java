@@ -13,7 +13,7 @@ public class TerminatorTest {
 //        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
 //        loggerConfig.setLevel(Level.DEBUG);
 //        ctx.updateLoggers();
-        test4();
+        test5();
 
     }
 
@@ -63,6 +63,23 @@ public class TerminatorTest {
             terminator.add(-1);
             System.out.println("i="+i);
             System.out.println(terminator.shouldTerminate());
+        }
+    }
+
+
+    private static void test5(){
+        double[] values = {0.7669981505409946, 0.6415236184089685, 0.5906735004985358, 0.5675810963719775, 0.5558207429347681, 0.5490789783365411, 0.5449951105476735, 0.5418769777171393, 0.5393013738198549};
+        Terminator checker = new Terminator().setAbsoluteEpsilon(0.1).setRelativeEpsilon(0.1).setOperation(Terminator.Operation.OR)
+                .setMaxStableIterations(2);
+        for (double value: values){
+            checker.add(value);
+//            System.out.println("iteration " + checker.getNumIterations());
+            System.out.println("his="+checker.getHistory());
+//            System.out.println("min="+checker.getMinValue());
+//            System.out.println("max="+checker.getMaxValue());
+            System.out.println("stable="+checker.getStableIterations());
+            System.out.println("converge="+checker.isConverged());
+            System.out.println("should terminate = "+checker.shouldTerminate());
         }
     }
 

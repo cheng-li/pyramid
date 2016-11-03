@@ -15,6 +15,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.MacroFMeasureTuner;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
+import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
@@ -136,11 +137,24 @@ public class App2 {
         boolean earlyStop = config.getBoolean("train.earlyStop");
 
         List<EarlyStopper> earlyStoppers = new ArrayList<>();
+        List<Terminator> terminators = new ArrayList<>();
+
         if (earlyStop){
             for (int l=0;l<numClasses;l++){
                 EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE, config.getInt("train.earlyStop.patience"));
                 earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
                 earlyStoppers.add(earlyStopper);
+            }
+
+
+            for (int l=0;l<numClasses;l++){
+                Terminator terminator = new Terminator();
+                terminator.setMaxStableIterations(config.getInt("train.earlyStop.patience"))
+                        .setMinIterations(config.getInt("train.earlyStop.minIterations")/config.getInt("train.showProgress.interval"))
+                        .setAbsoluteEpsilon(config.getDouble("train.earlyStop.absoluteChange"))
+                        .setRelativeEpsilon(config.getDouble("train.earlyStop.relativeChange"))
+                        .setOperation(Terminator.Operation.OR);
+                terminators.add(terminator);
             }
         }
 
@@ -167,10 +181,12 @@ public class App2 {
                 if (earlyStop){
                     for (int l=0;l<numClasses;l++){
                         EarlyStopper earlyStopper = earlyStoppers.get(l);
-                        if (!earlyStopper.shouldStop()){
+                        Terminator terminator = terminators.get(l);
+                        if (!trainer.getShouldStop()[l]){
                             double kl = KL(boosting, testSet, l);
                             earlyStopper.add(i,kl);
-                            if (earlyStopper.shouldStop()){
+                            terminator.add(kl);
+                            if (earlyStopper.shouldStop() || terminator.shouldTerminate()){
                                 System.out.println("training for label "+l+" ("+dataSet.getLabelTranslator().toExtLabel(l)+") should stop now");
                                 System.out.println("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
                                 trainer.setShouldStop(l);

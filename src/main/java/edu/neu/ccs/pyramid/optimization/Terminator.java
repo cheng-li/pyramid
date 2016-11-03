@@ -43,6 +43,7 @@ public class Terminator {
     private boolean allowNaN = false;
     private boolean allowInfinite = false;
     private Operation operation = Operation.AND;
+    private int minIterations = 0;
 
     public Terminator() {
         this.history = new ArrayList<>();
@@ -128,6 +129,9 @@ public class Terminator {
 
     public boolean shouldTerminate(){
         boolean ter = false;
+        if (history.size() < minIterations){
+            return false;
+        }
         switch (mode){
             case STANDARD:
                 ter = isConverged()||(history.size() >= maxIteration)|| forceTerminated;
@@ -176,16 +180,23 @@ public class Terminator {
         return absoluteEpsilon;
     }
 
-    public void setAbsoluteEpsilon(double absoluteEpsilon) {
+    public Terminator setAbsoluteEpsilon(double absoluteEpsilon) {
         this.absoluteEpsilon = absoluteEpsilon;
+        return this;
     }
 
-    public void setOperation(Operation operation) {
+    public  Terminator setOperation(Operation operation) {
         this.operation = operation;
+        return this;
     }
 
     public Terminator setMaxStableIterations(int maxStableIterations) {
         this.maxStableIterations = maxStableIterations;
+        return this;
+    }
+
+    public Terminator setMinIterations(int minIterations) {
+        this.minIterations = minIterations;
         return this;
     }
 
