@@ -17,16 +17,21 @@ public class MekaFormat {
 
     public static MultiLabelClfDataSet loadMLClfDataset(String fileName, int numFeatures, int numClasses, String dataMode) throws IOException {
 
-        if (dataMode.equals("sparse")) {
-            return loadMLClfDataset(new File(fileName), numFeatures, numClasses);
-        } else if (dataMode.equals("dense")) {
-            return loadMLClfDatasetDense(new File(fileName), numFeatures, numClasses);
-        } else if (dataMode.equals("pre.dense")) {
-            return loadMLClfDatasetPreDense(new File(fileName), numFeatures, numClasses);
-        } else {
-            throw new RuntimeException("not acceptable data mode: " + dataMode);
+        switch (dataMode) {
+            case "sparse":
+                return loadMLClfDataset(new File(fileName), numFeatures, numClasses);
+            case "pre.sparse":
+                return loadMLClfDatasetPre(new File(fileName), numFeatures, numClasses);
+            case "dense":
+                return loadMLClfDatasetDense(new File(fileName), numFeatures, numClasses);
+            case "pre.dense":
+                return loadMLClfDatasetPreDense(new File(fileName), numFeatures, numClasses);
+            default:
+                throw new RuntimeException("not acceptable data mode: " + dataMode);
         }
     }
+
+
 
     private static MultiLabelClfDataSet loadMLClfDatasetPreDense(File file, int numFeatures, int numClasses) throws IOException {
         int numData = 0;
@@ -236,6 +241,106 @@ public class MekaFormat {
                         double valueDouble = Double.parseDouble(value);
                         int indexInt = Integer.parseInt(index);
                         dataSet.setFeatureValue(dataCount,indexInt,valueDouble);
+                    } else {
+                        throw new RuntimeException("Index not found in the line: " + line);
+                    }
+                }
+                dataCount++;
+            }
+        }
+        br.close();
+        return dataSet;
+    }
+
+    /**
+     * labels show before features in "@ATTRIBUTE".
+     * @param file
+     * @param numFeatures
+     * @param numClasses
+     * @return
+     * @throws IOException
+     */
+    private static MultiLabelClfDataSet loadMLClfDatasetPre(File file, int numFeatures, int numClasses) throws IOException {
+        int numData = 0;
+        Map<String, String> labelMap = new HashMap<>();
+        Map<String, String> featureMap = new HashMap<>();
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        int labelCount = 0;
+        while((line=br.readLine()) != null) {
+            if (labelCount < numClasses) {
+                if (line.startsWith("@attribute")) {
+                    String[] splitLine = line.split(" ");
+                    String labelName = splitLine[1];
+                    String labelIndex = Integer.toString(labelCount);
+                    labelMap.put(labelIndex, labelName);
+                    labelCount++;
+                }
+            }
+            else {
+                if (line.startsWith("@attribute")) {
+                    String[] splitLine = line.split(" ");
+                    String featureName = splitLine[1];
+                    String featureIndex = Integer.toString(labelCount);
+                    featureMap.put(featureIndex, featureName);
+                    labelCount++;
+                } else if ((line.startsWith("{")) && line.endsWith("}")) {
+                    numData++;
+                }
+            }
+        }
+        br.close();
+        return loadMLClfDatasetPre(file, numClasses, numFeatures, numData, labelMap, featureMap);
+    }
+
+    private static MultiLabelClfDataSet loadMLClfDatasetPre(File file, int numClasses, int numFeatures, int numData,
+                                                         Map<String, String> labelMap, Map<String, String> featureMap) throws IOException {
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numData).numClasses(numClasses).numFeatures(numFeatures)
+                .build();
+
+        // set features
+        List<Feature> featureList = new LinkedList<>();
+        for (int m=0; m<numFeatures; m++) {
+            String featureIndex = Integer.toString(m+numClasses);
+            String featureName = featureMap.get(featureIndex);
+            Feature feature = new Feature();
+            feature.setIndex(m);
+            feature.setName(featureName);
+            featureList.add(feature);
+        }
+        dataSet.setFeatureList(new FeatureList(featureList));
+        // set Label
+        Map<Integer, String> labelIndexMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : labelMap.entrySet()) {
+            String labelString = entry.getKey();
+            String labelName = entry.getValue();
+            labelIndexMap.put(Integer.parseInt(labelString), labelName);
+        }
+        LabelTranslator labelTranslator = new LabelTranslator(labelIndexMap);
+        dataSet.setLabelTranslator(labelTranslator);
+
+        // create feature matrix
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        int dataCount = 0;
+        while((line=br.readLine()) != null) {
+            if ((line.startsWith("{")) && (line.endsWith("}"))) {
+                line = line.substring(1,line.length()-1);
+                String[] indexValues = line.split(",");
+                for (String indexValue : indexValues) {
+                    String[] indexValuePair = indexValue.split(" ");
+                    String index = indexValuePair[0];
+                    String value = indexValuePair[1];
+                    if (labelMap.containsKey(index)) {
+                        double valueDouble = Double.parseDouble(value);
+                        if (valueDouble == 1.0) {
+                            dataSet.addLabel(dataCount, Integer.parseInt(index));
+                        }
+                    } else if (featureMap.containsKey(index)) {
+                        double valueDouble = Double.parseDouble(value);
+                        int indexInt = Integer.parseInt(index);
+                        dataSet.setFeatureValue(dataCount,indexInt-numClasses,valueDouble);
                     } else {
                         throw new RuntimeException("Index not found in the line: " + line);
                     }

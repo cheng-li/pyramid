@@ -37,6 +37,10 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private boolean isParallel = false;
     private double priorGaussianVariance;
 
+    // for elasticnet
+    private double regularization;
+    private double l1Ratio;
+
 
 
     public LogisticLoss(LogisticRegression logisticRegression,
@@ -60,6 +64,34 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
     }
 
+    public LogisticLoss(LogisticRegression logisticRegression,
+                        DataSet dataSet, double[] weights, double[][] targetDistributions,
+                        double regularization, double l1Ratio, boolean parallel) {
+        this.logisticRegression = logisticRegression;
+        this.targetDistributions = targetDistributions;
+        this.isParallel = parallel;
+        numParameters = logisticRegression.getWeights().totalSize();
+        this.dataSet = dataSet;
+        this.weights = weights;
+        this.regularization = regularization;
+        this.l1Ratio = l1Ratio;
+        this.empiricalCounts = new DenseVector(numParameters);
+        this.predictedCounts = new DenseVector(numParameters);
+        this.numClasses = targetDistributions[0].length;
+        this.logProbabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
+        this.updateEmpricalCounts();
+        this.isValueCacheValid=false;
+        this.isGradientCacheValid=false;
+        this.isProbabilityCacheValid=false;
+
+    }
+
+
+    public LogisticLoss(LogisticRegression logisticRegression,
+                        DataSet dataSet, double[][] targetDistributions,
+                        double regularization, double l1Ratio, boolean parallel) {
+        this(logisticRegression,dataSet,defaultWeights(dataSet.getNumDataPoints()),targetDistributions,regularization, l1Ratio, parallel);
+    }
 
 
     public LogisticLoss(LogisticRegression logisticRegression,
@@ -103,6 +135,21 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         return this.value;
     }
 
+    public double getValueEL() {
+        if (isValueCacheValid){
+            return this.value;
+        }
+
+        double kl = kl();
+        if (logger.isDebugEnabled()){
+            logger.debug("kl divergence = "+kl);
+        }
+        this.value =  kl/dataSet.getNumDataPoints() + penaltyValueEL();
+        this.isValueCacheValid = true;
+        return this.value;
+    }
+
+
     private double kl(){
         if (!isProbabilityCacheValid){
             updateClassProbMatrix();
@@ -125,6 +172,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
 
+
+
     private double penaltyValue(int classIndex){
         double square = 0;
         Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
@@ -142,6 +191,26 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         }
         return intStream.mapToDouble(this::penaltyValue).sum();
     }
+
+    private double penaltyValueEL(int classIndex) {
+        Vector vector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
+        double normCombination = (1-l1Ratio)*0.5*Math.pow(vector.norm(2),2) +
+                l1Ratio*vector.norm(1);
+        return regularization * normCombination;
+    }
+
+
+    // total penalty
+    public double penaltyValueEL(){
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, numClasses).parallel();
+        } else {
+            intStream = IntStream.range(0, numClasses);
+        }
+        return intStream.mapToDouble(this::penaltyValueEL).sum();
+    }
+
 
 
     public Vector getGradient(){
