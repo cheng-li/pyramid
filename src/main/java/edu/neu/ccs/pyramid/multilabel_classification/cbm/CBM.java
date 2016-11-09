@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.classification.Classifier.ProbabilityEstimator;
+import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -161,6 +162,22 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
             if (probs[l]>0.5){
                 prediction.addLabel(l);
             }
+        }
+        return prediction;
+    }
+
+    /**
+     * sort marginals, and keep top few
+     * @param vector
+     * @param top
+     * @return
+     */
+    public MultiLabel predictByMarginals(Vector vector, int top){
+        double[] probs = predictClassProbs(vector);
+        int[] sortedIndices = ArgSort.argSortDescending(probs);
+        MultiLabel prediction = new MultiLabel();
+        for (int i=0;i<top;i++){
+            prediction.addLabel(sortedIndices[i]);
         }
         return prediction;
     }
