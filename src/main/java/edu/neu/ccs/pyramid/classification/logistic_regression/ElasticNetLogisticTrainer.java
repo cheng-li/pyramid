@@ -37,6 +37,7 @@ public class ElasticNetLogisticTrainer {
     private double[][] targets;
     // instances weights
     private double[] weights;
+    private double sumWeights;
     private double regularization;
     private double l1Ratio;
     // relative threshold
@@ -135,6 +136,7 @@ public class ElasticNetLogisticTrainer {
 
             realLabels[i] = classScore + frac;
             instanceWeights[i] = weights[i]*tmpP;
+//            instanceWeights[i] = weights[i]*tmpP;
         });
 
         // in glmnet algorithm:
@@ -142,9 +144,12 @@ public class ElasticNetLogisticTrainer {
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon
-        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights);
+        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights, sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
+//        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights);
+//        linearRegTrainer.setRegularization((sumWeights/Arrays.stream(instanceWeights).parallel().sum())*this.regularization);
+//        linearRegTrainer.setL1Ratio(this.l1Ratio);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }
@@ -207,7 +212,7 @@ public class ElasticNetLogisticTrainer {
             realLabels[i] = classScore + frac;
             // TODO: why divided by numDataPoints?
 //            instanceWeights[i] = (weights[i]*prob*(1-prob))/numDataPoints;
-            instanceWeights[i] = weights[i]*tmpP;
+            instanceWeights[i] = (weights[i]*tmpP);
         });
 
         Weights oldWeights = logisticRegression.getWeights().deepCopy();
@@ -218,7 +223,7 @@ public class ElasticNetLogisticTrainer {
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon
-        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights);
+        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights, sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
         if (logger.isDebugEnabled()){
@@ -243,13 +248,12 @@ public class ElasticNetLogisticTrainer {
             Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(numDataPoints);
             lineSearch(searchDirection, gradient);
             updatePredictedCounts();
+            updateClassProbMatrix();
         }
 
         if (logger.isDebugEnabled()){
             logger.debug("loss after optimization of one class = " + loss());
         }
-
-        updateClassProbMatrix();
     }
 
 
@@ -277,12 +281,14 @@ public class ElasticNetLogisticTrainer {
         // negativeLogLikelihood should be multiplied by weights
         double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets, weights) * -1;
         double penalty = penalty();
-        return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
+//        return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
+        return negativeLogLikelihood/sumWeights + penalty;
     }
 
     private double loss(double penalty){
         double negativeLogLikelihood = logisticRegression.dataSetLogLikelihood(dataSet, targets, weights) * -1;
-        return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
+//        return negativeLogLikelihood/dataSet.getNumDataPoints() + penalty;
+        return negativeLogLikelihood/sumWeights + penalty;
     }
 
 
@@ -420,6 +426,7 @@ public class ElasticNetLogisticTrainer {
         private double[][] targets;
         // N
         private double[] weights;
+        private double sumWeights;
         private int numClasses;
 
         // when p>>N, logistic regression with 0 regularization is ill-defined
@@ -443,6 +450,7 @@ public class ElasticNetLogisticTrainer {
             this.targets = targs;
             this.weights = new double[dataSet.getNumDataPoints()];
             Arrays.fill(this.weights, 1);
+            this.sumWeights = Arrays.stream(weights).parallel().sum();
         }
 
         public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
@@ -456,6 +464,7 @@ public class ElasticNetLogisticTrainer {
             this.targets = targets;
             this.weights = new double[dataSet.getNumDataPoints()];
             Arrays.fill(this.weights, 1);
+            this.sumWeights = Arrays.stream(weights).parallel().sum();
         }
 
         public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, double[][] targets,
@@ -465,6 +474,7 @@ public class ElasticNetLogisticTrainer {
             this.numClasses = numClasses;
             this.targets = targets;
             this.weights = weights;
+            this.sumWeights = Arrays.stream(weights).parallel().sum();
         }
 
 
@@ -507,6 +517,7 @@ public class ElasticNetLogisticTrainer {
             trainer.dataSet = dataSet;
             trainer.targets = targets;
             trainer.weights = weights;
+            trainer.sumWeights = sumWeights;
             trainer.numClasses = numClasses;
             trainer.regularization = this.regularization;
             trainer.l1Ratio = this.l1Ratio;
