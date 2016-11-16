@@ -119,7 +119,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
     public MultiLabel predict(Vector vector) {
 
         // new a BMMPredictor
-        CBMPredictor CBMPredictor = new CBMPredictor(vector, multiClassClassifier, binaryClassifiers, numComponents, numLabels);
+        CBMPredictor CBMPredictor = new CBMPredictor(computeBM(vector));
         CBMPredictor.setNumSamples(numSample);
         CBMPredictor.setAllowEmpty(allowEmpty);
         // samples methods

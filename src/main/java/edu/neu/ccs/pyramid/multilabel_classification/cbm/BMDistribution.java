@@ -15,13 +15,13 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/1/16.
  */
 public class BMDistribution {
-    private int numLabels;
-    private int numComponents;
+    int numLabels;
+    int numComponents;
     // log(z=k)
-    private double[] logProportions;
+    double[] logProportions;
     // log p(y_l=1|z=k)
     // size = num components * num classes * 2
-    private double[][][] logClassProbs;
+    double[][][] logClassProbs;
 
 
     BMDistribution(CBM cbm, Vector x) {
@@ -35,6 +35,20 @@ public class BMDistribution {
             }
         }
     }
+
+    BMDistribution(CBMS cbms, Vector x) {
+        this.numLabels = cbms.numLabels;
+        this.numComponents = cbms.numComponents;
+        this.logProportions = cbms.multiClassClassifier.predictLogClassProbs(x);
+        this.logClassProbs = new double[numComponents][numLabels][2];
+        for (int k = 0; k< numComponents; k++){
+            Vector augmented = cbms.augment(x, k);
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = cbms.getBinaryClassifiers()[l].predictClassProbs(augmented);
+            }
+        }
+    }
+
 
     // log p(y|z=k)
     private double logYGivenComponent(MultiLabel y, int k){

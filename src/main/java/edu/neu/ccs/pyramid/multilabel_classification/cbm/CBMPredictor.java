@@ -64,28 +64,21 @@ public class CBMPredictor {
      * prediction allows empty or not.
      */
     private boolean allowEmpty = false;
+    
 
-    /**
-     * default
-     * @param vector
-     * @param multiNomialClassifiers
-     * @param binaryClassifiers
-     * @param numClusters
-     * @param numLabels
-     */
-    public CBMPredictor(Vector vector, Classifier.ProbabilityEstimator multiNomialClassifiers,
-                        Classifier.ProbabilityEstimator[][] binaryClassifiers, int numClusters, int numLabels) {
-        this.numClusters = numClusters;
-        this.numLabels = numLabels;
+
+    public CBMPredictor(BMDistribution bmDistribution) {
+        this.numClusters = bmDistribution.numComponents;
+        this.numLabels = bmDistribution.numLabels;
         this.logisticProb = new double[numClusters];
-        this.logisticLogProb = multiNomialClassifiers.predictLogClassProbs(vector);
+        this.logisticLogProb = bmDistribution.logProportions;
         this.probs = new double[numClusters][numLabels][2];
         this.logProbs = new double[numClusters][numLabels][2];
 
         for (int k=0; k<numClusters; k++) {
             this.logisticProb[k] = Math.exp(this.logisticLogProb[k]);
             for (int l = 0; l < numLabels; l++) {
-                logProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+                logProbs[k][l] = bmDistribution.logClassProbs[k][l];
                 for (int i=0; i<2; i++) {
                     probs[k][l][i] = Math.exp(logProbs[k][l][i]);
                 }
