@@ -2,14 +2,12 @@ package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
-import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.ArgSort;
 import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
@@ -23,7 +21,6 @@ public class CBMS implements MultiLabelClassifier.ClassProbEstimator, Serializab
     private static final long serialVersionUID = 2L;
     int numLabels;
     int numComponents;
-    private int numFeatures;
     private int numSample = 100;
     private boolean allowEmpty = false;
 
