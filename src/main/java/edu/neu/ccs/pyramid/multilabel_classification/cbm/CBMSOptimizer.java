@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Terminator;
@@ -17,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -30,20 +32,11 @@ public class CBMSOptimizer {
 
     // format [#data][#components]
     double[][] gammas;
-    // format [#components][#data]
-    double[][] gammasT;
 
-    // format [#labels][#data][2]
-    // to be fit by binary classifiers
-    private double[][][] targetsDistributions;
     private boolean isParallel = true;
 
     // for deterministic annealing
     private double temperature = 1;
-
-
-    // if hard assignment or soft assignment
-    private boolean hardAssignment = false;
 
 
 
@@ -68,28 +61,7 @@ public class CBMSOptimizer {
         this.terminator.setGoal(Terminator.Goal.MINIMIZE);
 
         this.gammas = new double[dataSet.getNumDataPoints()][cbms.getNumComponents()];
-        this.gammasT = new double[cbms.getNumComponents()][dataSet.getNumDataPoints()];
-        double average = 1.0/ cbms.getNumComponents();
-        for (int n=0;n<dataSet.getNumDataPoints();n++){
-            for (int k = 0; k< cbms.getNumComponents(); k++){
-                gammas[n][k] = average;
-                gammasT[k][n] = average;
-            }
-        }
 
-
-        this.targetsDistributions = new double[cbms.getNumClasses()][dataSet.getNumDataPoints()][2];
-        for (int n=0; n<dataSet.getNumDataPoints(); n++) {
-            // first mark all labels as negative
-            for (int l = 0; l< cbms.getNumClasses(); l++){
-                this.targetsDistributions[l][n][0] = 1;
-            }
-            MultiLabel multiLabel = dataSet.getMultiLabels()[n];
-            for (int l: multiLabel.getMatchedLabels()){
-                this.targetsDistributions[l][n][0] = 0;
-                this.targetsDistributions[l][n][1] = 1;
-            }
-        }
 
         this.augmentedData = DataSetBuilder.getBuilder().numDataPoints(dataSet.getNumDataPoints()*numComponents)
                 .numFeatures(dataSet.getNumFeatures()+numComponents)
@@ -157,6 +129,7 @@ public class CBMSOptimizer {
 
     public void iterate() {
         eStep();
+        System.out.println("gamma = "+ Arrays.toString(gammas[0]));
         mStep();
         this.terminator.add(getObjective());
     }
@@ -185,7 +158,6 @@ public class CBMSOptimizer {
         double[] posterior = cbms.posteriorMembership(x, y);
         for (int k = 0; k< cbms.numComponents; k++) {
             gammas[n][k] = posterior[k];
-            gammasT[k][n] = posterior[k];
         }
     }
 
@@ -205,26 +177,27 @@ public class CBMSOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("start updateBinaryClassifiers");
         }
-        IntStream.range(0, cbms.numComponents).forEach(this::updateBinaryClassifiers);
+        IntStream.range(0, cbms.numLabels).forEach(l -> updateBinaryBoosting(l));
         if (logger.isDebugEnabled()){
             logger.debug("finish updateBinaryClassifiers");
         }
     }
 
     //todo pay attention to parallelism
-    private void updateBinaryClassifiers(int component){
-        IntStream.range(0, cbms.numLabels).forEach(l -> updateBinaryBoosting(l));
 
-    }
 
     private void updateBinaryBoosting(int labelIndex){
+//        System.out.println("updating binary boosting for class + "+labelIndex);
         double[][] targets = new double[augmentedData.getNumDataPoints()][2];
+        int[] binaryLabels = new int[augmentedData.getNumDataPoints()];
+
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             MultiLabel multiLabel = dataSet.getMultiLabels()[i];
             boolean match = multiLabel.matchClass(labelIndex);
             for (int k=0;k<numComponents;k++){
                 if (match){
                     targets[i*numComponents+k][1]=1;
+                    binaryLabels[i*numComponents+k]=1;
                 } else {
                     targets[i*numComponents+k][0]=1;
                 }
@@ -237,6 +210,9 @@ public class CBMSOptimizer {
                 weights[i*numComponents+k] = gammas[i][k];
             }
         }
+//        System.out.println("for label "+labelIndex);
+//        System.out.println("targets = "+Arrays.deepToString(targets));
+//        System.out.println("weights = "+Arrays.toString(weights));
 
 
 
@@ -248,11 +224,14 @@ public class CBMSOptimizer {
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(2));
 
-        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,dataSet, regTreeFactory,
+        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,augmentedData, regTreeFactory,
                 weights,targets);
         optimizer.setShrinkage(shrinkage);
         optimizer.initialize();
         optimizer.iterate(numIterations);
+//        System.out.println("training accu = "+ Accuracy.accuracy(binaryLabels, boost.predict(augmentedData)));
+
+
     }
 
 

@@ -44,7 +44,7 @@ public class BMDistribution {
         for (int k = 0; k< numComponents; k++){
             Vector augmented = cbms.augment(x, k);
             for (int l=0;l<numLabels;l++){
-                logClassProbs[k][l] = cbms.getBinaryClassifiers()[l].predictClassProbs(augmented);
+                logClassProbs[k][l] = cbms.getBinaryClassifiers()[l].predictLogClassProbs(augmented);
             }
         }
     }

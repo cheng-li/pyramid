@@ -120,22 +120,7 @@ public class CBMS implements MultiLabelClassifier.ClassProbEstimator, Serializab
         CBMPredictor CBMPredictor = new CBMPredictor(computeBM(vector));
         CBMPredictor.setNumSamples(numSample);
         CBMPredictor.setAllowEmpty(allowEmpty);
-        // samples methods
-        switch (predictMode) {
-            case "sampling":
-                return CBMPredictor.predictBySampling();
-            case "dynamic":
-                return CBMPredictor.predictByDynamic();
-            case "greedy":
-                return CBMPredictor.predictByGreedy();
-            case "hard":
-                return CBMPredictor.predictByHardAssignment();
-            case "marginal":
-                return predictByMarginals(vector);
-            default:
-                throw new RuntimeException("Unknown predictMode: " + predictMode);
-        }
-
+        return CBMPredictor.predictByDynamic();
     }
 
     /**
