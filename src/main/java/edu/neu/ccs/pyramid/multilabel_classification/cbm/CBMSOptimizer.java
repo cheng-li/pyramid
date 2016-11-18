@@ -129,7 +129,6 @@ public class CBMSOptimizer {
 
     public void iterate() {
         eStep();
-        System.out.println("gamma = "+ Arrays.toString(gammas[0]));
         mStep();
         this.terminator.add(getObjective());
     }
