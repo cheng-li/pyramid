@@ -145,7 +145,6 @@
                     <descriptors>
                         <descriptor>src/assembly/bin.xml</descriptor>
                     </descriptors>
-                    <finalName>pyramid-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/releases/</outputDirectory>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
