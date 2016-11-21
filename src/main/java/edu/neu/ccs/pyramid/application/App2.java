@@ -23,7 +23,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -302,13 +304,12 @@ public class App2 {
             List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                     .mapToObj(i->IMLGBInspector.simplePredictionAnalysis(boosting,pluginPredictor,dataSet,i,probThreshold))
                     .collect(Collectors.toList());
-            StringBuilder sb = new StringBuilder();
-            for (int i=0;i<dataSet.getNumDataPoints();i++){
-                String str = strs.get(i);
-                sb.append(str);
-
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(csv))){
+                for (int i=0;i<dataSet.getNumDataPoints();i++){
+                    String str = strs.get(i);
+                    bw.write(str);
+                }
             }
-            FileUtils.writeStringToFile(csv,sb.toString(),false);
             System.out.println("finish generating simple CSV report");
         }
 
