@@ -129,14 +129,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
             logger.debug("start method getGradient()");
         }
         // O(NdL)
-        //        cmlcrf.updateCombLabelPartScores();
-        System.out.println("labelPairScores: " + Arrays.toString(cmlcrf.getCombinationLabelPartScores()));
-        try {
-            System.in.read();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         updateClassScoreMatrix();
         updateAssignmentScoreMatrix();
         updateAssignmentProbMatrix();
