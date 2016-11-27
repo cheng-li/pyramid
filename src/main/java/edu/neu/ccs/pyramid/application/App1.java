@@ -43,11 +43,12 @@ public class App1 {
     }
 
     public static void main(Config config) throws Exception{
-        String logFile = config.getString("out.log");
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
         if (!logFile.isEmpty()){
             new File(logFile).getParentFile().mkdirs();
             //todo should append?
-            FileHandler fileHandler = new FileHandler(logFile, true);
+            fileHandler = new FileHandler(logFile, true);
             java.util.logging.Formatter formatter = new SimpleFormatter();
             fileHandler.setFormatter(formatter);
             logger.addHandler(fileHandler);
@@ -71,6 +72,11 @@ public class App1 {
             }
 
         }
+
+        if (fileHandler!=null){
+            fileHandler.close();
+        }
+
 
 
     }

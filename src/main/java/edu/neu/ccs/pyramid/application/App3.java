@@ -29,7 +29,7 @@ public class App3 {
 
     private static Config createApp1Config(Config config){
         Config app1Config = new Config();
-        String[] same = {"output.folder","output.trainFolder","output.testFolder",
+        String[] same = {"output.folder","output.trainFolder","output.testFolder","output.log",
                 "feature.useInitialFeatures","feature.categFeature.filter",
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
                 "feature.missingValue","feature.generateDistribution",
@@ -51,7 +51,7 @@ public class App3 {
 
     private static Config createApp2Config(Config config){
         Config app2Config = new Config();
-        String[] same = {"output.folder","train","test","tune","predict.target","train.warmStart","train.usePrior",
+        String[] same = {"output.folder","output.log", "train","test","tune","predict.target","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf",
         "train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
                 "train.earlyStop.patience","train.earlyStop.minIterations","train.earlyStop",
