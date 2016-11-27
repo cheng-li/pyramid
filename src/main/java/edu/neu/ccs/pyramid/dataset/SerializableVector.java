@@ -15,10 +15,12 @@ import java.io.Serializable;
 public class SerializableVector implements Serializable{
     private static final long serialVersionUID = 1L;
     private Type type;
+    private int size;
     private transient Vector vector;
 
     public SerializableVector(Vector vector) {
         this.vector = vector;
+        this.size = vector.size();
         if (vector instanceof DenseVector){
             type = Type.DENSE;
         } else if (vector instanceof RandomAccessSparseVector){
@@ -36,7 +38,7 @@ public class SerializableVector implements Serializable{
     private void writeObject(java.io.ObjectOutputStream out)
             throws IOException {
 
-        out.writeObject(type);
+            out.defaultWriteObject();
         if (type==Type.DENSE){
             double[] values = new double[vector.size()];
             for (int i=0;i<values.length;i++){
@@ -62,21 +64,21 @@ public class SerializableVector implements Serializable{
 
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException{
-        type = (Type)in.readObject();
+        in.defaultReadObject();
         if (type==Type.DENSE){
             double[] values = (double[])in.readObject();
             vector = new DenseVector(values);
         } else if (type==Type.SPARSE_RANDOM){
             int[] indices = (int[])in.readObject();
             double[] values = (double[])in.readObject();
-            vector = new RandomAccessSparseVector();
+            vector = new RandomAccessSparseVector(size);
             for (int i=0;i<indices.length;i++){
                 vector.set(indices[i],values[i]);
             }
         } else if (type==Type.SPARSE_SEQUENTIAL){
             int[] indices = (int[])in.readObject();
             double[] values = (double[])in.readObject();
-            vector = new SequentialAccessSparseVector();
+            vector = new SequentialAccessSparseVector(size);
             for (int i=0;i<indices.length;i++){
                 vector.set(indices[i],values[i]);
             }

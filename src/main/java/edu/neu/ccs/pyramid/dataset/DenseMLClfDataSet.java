@@ -1,6 +1,10 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import org.apache.mahout.math.DenseVector;
+
+import java.io.IOException;
+
 /**
  * Created by chengli on 9/27/14.
  */
@@ -70,5 +74,37 @@ public class DenseMLClfDataSet extends DenseDataSet implements MultiLabelClfData
     @Override
     public void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        out.defaultWriteObject();
+        SerializableVector[] serFeatureRows = new SerializableVector[featureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            serFeatureRows[i] = new SerializableVector(featureRows[i]);
+        }
+        SerializableVector[] serFeatureColumns = new SerializableVector[featureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            serFeatureColumns[i] = new SerializableVector(featureColumns[i]);
+        }
+        out.writeObject(serFeatureRows);
+        out.writeObject(serFeatureColumns);
+    }
+
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        in.defaultReadObject();
+        SerializableVector[] serFeatureRows = (SerializableVector[])in.readObject();
+        featureRows = new DenseVector[serFeatureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            featureRows[i] = (DenseVector) serFeatureRows[i].getVector();
+        }
+
+        SerializableVector[] serFeatureColumns = (SerializableVector[])in.readObject();
+        featureColumns = new DenseVector[serFeatureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            featureColumns[i] = (DenseVector) serFeatureColumns[i].getVector();
+        }
     }
 }
