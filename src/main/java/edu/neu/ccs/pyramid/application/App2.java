@@ -353,7 +353,7 @@ public class App2 {
         }
 
 
-        boolean rulesToJson = true;
+        boolean rulesToJson = config.getBoolean("report.showPredictionDetail");
         if (rulesToJson){
             logger.info("start writing rules to json");
             int ruleLimit = config.getInt("report.rule.limit");

@@ -57,7 +57,8 @@ public class App3 {
                 "train.earlyStop.patience","train.earlyStop.minIterations","train.earlyStop",
                 "train.earlyStop.absoluteChange", "train.earlyStop.relativeChange",
                 "train.showProgress.interval","train.generateReports","tune.data","tune.FMeasure.beta",
-        "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit"};
+        "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit",
+                "report.showPredictionDetail"};
 
         Config.copy(config,app2Config,same);
 
