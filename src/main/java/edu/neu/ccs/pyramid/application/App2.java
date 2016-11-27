@@ -32,6 +32,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -40,6 +43,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 6/13/15.
  */
 public class App2 {
+    private static final Logger logger = Logger.getLogger(App2.class.getName());
 
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
@@ -51,14 +55,25 @@ public class App2 {
     }
 
     public static void main(Config config) throws Exception{
-        System.out.println(config);
+        String logFile = config.getString("out.log");
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            FileHandler fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+        }
+
+        
+        logger.info(config.toString());
 
         new File(config.getString("output.folder")).mkdirs();
 
         if (config.getBoolean("train")){
             train(config);
             if (config.getString("predict.target").equals("macroFMeasure")){
-                System.out.println("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
+                logger.info("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
                         "Reports will be generated after tuning.");
             } else {
                 if (config.getBoolean("train.generateReports")){
@@ -112,7 +127,7 @@ public class App2 {
 
 
         int numClasses = dataSet.getNumClasses();
-        System.out.println("number of class = "+numClasses);
+        logger.info("number of class = "+numClasses);
         IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(dataSet)
 //                .dataSamplingRate(dataSamplingRate)
 //                .featureSamplingRate(featureSamplingRate)
@@ -130,8 +145,8 @@ public class App2 {
             boosting  = new IMLGradientBoosting(numClasses);
         }
 
-        System.out.println("During training, the performance is reported using Hamming loss optimal predictor");
-        System.out.println("initialing trainer");
+        logger.info("During training, the performance is reported using Hamming loss optimal predictor");
+        logger.info("initialing trainer");
 
         IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
@@ -165,21 +180,21 @@ public class App2 {
 
 
 
-        System.out.println("trainer initialized");
+        logger.info("trainer initialized");
 
         int numLabelsLeftToTrain = numClasses;
 
         int progressInterval = config.getInt("train.showProgress.interval");
         for (int i=1;i<=numIterations;i++){
-            System.out.println("iteration "+i);
+            logger.info("iteration "+i);
             trainer.iterate();
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
-                System.out.println("training set performance");
-                System.out.println(new MLMeasures(boosting,dataSet));
+                logger.info("training set performance");
+                logger.info(new MLMeasures(boosting,dataSet).toString());
             }
             if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
-                System.out.println("test set performance");
-                System.out.println(new MLMeasures(boosting,testSet));
+                logger.info("test set performance");
+                logger.info(new MLMeasures(boosting,testSet).toString());
                 if (earlyStop){
                     for (int l=0;l<numClasses;l++){
                         EarlyStopper earlyStopper = earlyStoppers.get(l);
@@ -189,11 +204,11 @@ public class App2 {
                             earlyStopper.add(i,kl);
                             terminator.add(kl);
                             if (earlyStopper.shouldStop() || terminator.shouldTerminate()){
-                                System.out.println("training for label "+l+" ("+dataSet.getLabelTranslator().toExtLabel(l)+") should stop now");
-                                System.out.println("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
+                                logger.info("training for label "+l+" ("+dataSet.getLabelTranslator().toExtLabel(l)+") should stop now");
+                                logger.info("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
                                 trainer.setShouldStop(l);
                                 numLabelsLeftToTrain -= 1;
-                                System.out.println("the number of labels left to be trained on = "+numLabelsLeftToTrain);
+                                logger.info("the number of labels left to be trained on = "+numLabelsLeftToTrain);
                             }
                         }
                     }
@@ -201,22 +216,22 @@ public class App2 {
 
             }
             if (numLabelsLeftToTrain==0){
-                System.out.println("all label training finished");
+                logger.info("all label training finished");
                 break;
             }
         }
-        System.out.println("training done");
+        logger.info("training done");
         File serializedModel =  new File(output,modelName);
         //todo pick best models
 
         boosting.serialize(serializedModel);
-        System.out.println(stopWatch);
+        logger.info(stopWatch.toString());
 
         if (earlyStop){
             for (int l=0;l<numClasses;l++){
-                System.out.println("----------------------------------------------------");
-                System.out.println("test performance history for label "+l+": "+earlyStoppers.get(l).history());
-                System.out.println("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
+                logger.info("----------------------------------------------------");
+                logger.info("test performance history for label "+l+": "+earlyStoppers.get(l).history());
+                logger.info("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
             }
         }
 
@@ -226,7 +241,7 @@ public class App2 {
     }
 
     static void tuneForMacroF(Config config) throws Exception{
-        System.out.println("start tuning for macro F measure");
+        logger.info("start tuning for macro F measure");
         String output = config.getString("output.folder");
         String modelName = "model_app3";
         double beta = config.getDouble("tune.FMeasure.beta");
@@ -249,12 +264,12 @@ public class App2 {
         double[] thresholds = MacroFMeasureTuner.tuneThresholds(boosting,dataSet,beta);
         TunedMarginalClassifier  tunedMarginalClassifier = new TunedMarginalClassifier(boosting,thresholds);
         Serialization.serialize(tunedMarginalClassifier, new File(output,"predictor_macro_f"));
-        System.out.println("finish tuning for macro F measure");
+        logger.info("finish tuning for macro F measure");
 
     }
 
     static void report(Config config, String dataName) throws Exception{
-        System.out.println("generating reports for data set "+dataName);
+        logger.info("generating reports for data set "+dataName);
         String output = config.getString("output.folder");
         String modelName = "model_app3";
         File analysisFolder = new File(new File(output,"reports_app3"),dataName+"_reports");
@@ -292,13 +307,13 @@ public class App2 {
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
 
-        System.out.println("performance on dataset "+dataName);
-        System.out.println(mlMeasures);
+        logger.info("performance on dataset "+dataName);
+        logger.info(mlMeasures.toString());
 
 
         boolean simpleCSV = true;
         if (simpleCSV){
-            System.out.println("start generating simple CSV report");
+            logger.info("start generating simple CSV report");
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
             List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
@@ -310,7 +325,7 @@ public class App2 {
                     bw.write(str);
                 }
             }
-            System.out.println("finish generating simple CSV report");
+            logger.info("finish generating simple CSV report");
         }
 
 
@@ -320,7 +335,7 @@ public class App2 {
             topFeaturesToJson = true;
         }
         if (topFeaturesToJson){
-            System.out.println("start writing top features");
+            logger.info("start writing top features");
             Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
             int limit = config.getInt("report.topFeatures.limit");
             List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
@@ -329,13 +344,13 @@ public class App2 {
             ObjectMapper mapper = new ObjectMapper();
             String file = "top_features.json";
             mapper.writeValue(new File(analysisFolder,file), topFeaturesList);
-            System.out.println("finish writing top features");
+            logger.info("finish writing top features");
         }
 
 
         boolean rulesToJson = true;
         if (rulesToJson){
-            System.out.println("start writing rules to json");
+            logger.info("start writing rules to json");
             int ruleLimit = config.getInt("report.rule.limit");
             int numDocsPerFile = config.getInt("report.numDocsPerFile");
             int numFiles = (int)Math.ceil((double)dataSet.getNumDataPoints()/numDocsPerFile);
@@ -357,16 +372,16 @@ public class App2 {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                System.out.println("progress = "+ Progress.percentage(i+1,numFiles));
+                logger.info("progress = "+ Progress.percentage(i+1,numFiles));
             });
 
-            System.out.println("finish writing rules to json");
+            logger.info("finish writing rules to json");
         }
 
 
         boolean dataInfoToJson = true;
         if (dataInfoToJson){
-            System.out.println("start writing data info to json");
+            logger.info("start writing data info to json");
             Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
                     .collect(Collectors.toSet());
 
@@ -397,27 +412,27 @@ public class App2 {
 
             jsonGenerator.writeEndObject();
             jsonGenerator.close();
-            System.out.println("finish writing data info to json");
+            logger.info("finish writing data info to json");
         }
 
 
         boolean modelConfigToJson = true;
         if (modelConfigToJson){
-            System.out.println("start writing model config to json");
+            logger.info("start writing model config to json");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
-            System.out.println("finish writing model config to json");
+            logger.info("finish writing model config to json");
         }
 
         boolean dataConfigToJson = true;
         if (dataConfigToJson){
-            System.out.println("start writing data config to json");
+            logger.info("start writing data config to json");
             File dataConfigFile = Paths.get(config.getString("input.folder"),
                     "data_sets",dataName,"data_config.json").toFile();
             if (dataConfigFile.exists()){
                 FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
             }
-            System.out.println("finish writing data config to json");
+            logger.info("finish writing data config to json");
         }
 
         boolean performanceToJson = true;
@@ -428,13 +443,13 @@ public class App2 {
 
         boolean individualPerformance = true;
         if (individualPerformance){
-            System.out.println("start writing individual label performance to json");
+            logger.info("start writing individual label performance to json");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
-            System.out.println("finish writing individual label performance to json");
+            logger.info("finish writing individual label performance to json");
         }
 
-        System.out.println("reports generated");
+        logger.info("reports generated");
     }
 
 

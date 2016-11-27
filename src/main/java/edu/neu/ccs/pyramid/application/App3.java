@@ -1,10 +1,9 @@
 package edu.neu.ccs.pyramid.application;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 
 import java.io.File;
-import java.nio.file.Paths;
+
 
 /**
  * a wrapper that chains App1 and App2
