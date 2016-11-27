@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,9 @@ import java.util.stream.Collectors;
  * Created by chengli on 6/12/15.
  */
 public class App1 {
+
     public static void main(String[] args) throws Exception{
+
         if (args.length !=1){
             throw new IllegalArgumentException("Please specify a properties file.");
         }
@@ -39,29 +42,47 @@ public class App1 {
     }
 
     public static void main(Config config) throws Exception{
-        System.out.println(config);
+        Logger logger = Logger.getAnonymousLogger();
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
+        }
+        
+        logger.info(config.toString());
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
         if (config.getBoolean("createTrainSet")){
-            try (MultiLabelIndex index = loadIndex(config)){
-                createTrainSet(config, index);
+            try (MultiLabelIndex index = loadIndex(config, logger)){
+                createTrainSet(config, index, logger);
             }
 
         }
 
 
         if (config.getBoolean("createTestSet")){
-            try (MultiLabelIndex index = loadIndex(config)){
-                createTestSet(config, index);
+            try (MultiLabelIndex index = loadIndex(config, logger)){
+                createTestSet(config, index, logger);
             }
 
         }
 
+        if (fileHandler!=null){
+            fileHandler.close();
+        }
+
+
 
     }
 
-    static MultiLabelIndex loadIndex(Config config) throws Exception{
+    static MultiLabelIndex loadIndex(Config config, Logger logger) throws Exception{
         MultiLabelIndex.Builder builder = new MultiLabelIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
@@ -74,8 +95,8 @@ public class App1 {
             builder.addHostsAndPorts(hosts,ports);
         }
         MultiLabelIndex index = builder.build();
-        System.out.println("index loaded");
-        System.out.println("there are "+index.getNumDocs()+" documents in the index.");
+        logger.info("index loaded");
+        logger.info("there are "+index.getNumDocs()+" documents in the index.");
         return index;
     }
 
@@ -105,7 +126,7 @@ public class App1 {
     }
 
     static void addInitialFeatures(Config config, ESIndex index, FeatureList featureList,
-                                   String[] ids) throws Exception{
+                                   String[] ids, Logger logger) throws Exception{
         String featureFieldPrefix = config.getString("index.featureFieldPrefix");
         Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
 
@@ -113,7 +134,7 @@ public class App1 {
         List<String> featureFields = allFields.stream().
                 filter(field -> matchPrefixes(field,prefixes)).
                 collect(Collectors.toList());
-        System.out.println("all possible initial features:"+featureFields);
+        logger.info("all possible initial features:"+featureFields);
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);
@@ -140,7 +161,7 @@ public class App1 {
                     int numCategories = group.size();
                     if (numCategories> ids.length*threshold){
                         toAdd=false;
-                        System.out.println("field "+field+" has too many categories "
+                        logger.info("field "+field+" has too many categories "
                                 +"("+numCategories+"), omitted.");
                     }
                 }
@@ -179,7 +200,7 @@ public class App1 {
     }
 
     static Set<Ngram> gather(Config config, ESIndex index,
-                             String[] ids) throws Exception{
+                             String[] ids, Logger logger) throws Exception{
 
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
@@ -192,10 +213,10 @@ public class App1 {
         for (String field: fields){
             for (int n: ns){
                 for (int slop:slops){
-                    System.out.println("gathering "+n+ "-grams from field "+field+" with slop "+slop+" and minDf "+minDf);
+                    logger.info("gathering "+n+ "-grams from field "+field+" with slop "+slop+" and minDf "+minDf);
                     NgramTemplate template = new NgramTemplate(field,n,slop);
                     Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index, ids, template, minDf);
-                    System.out.println("gathered "+ngrams.elementSet().size()+ " ngrams");
+                    logger.info("gathered "+ngrams.elementSet().size()+ " ngrams");
                     int newCounter = 0;
                     for (Multiset.Entry<Ngram> entry: ngrams.entrySet()){
                         Ngram ngram = entry.getElement();
@@ -205,11 +226,11 @@ public class App1 {
                             newCounter += 1;
                         }
                     }
-                    System.out.println(newCounter+" are really new");
+                    logger.info(newCounter+" are really new");
                 }
             }
         }
-        System.out.println("there are "+allNgrams.elementSet().size()+" ngrams in total");
+        logger.info("there are "+allNgrams.elementSet().size()+" ngrams in total");
 //        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(metaDataFolder,"all_ngrams.txt")));
 //        for (Multiset.Entry<Ngram> ngramEntry: allNgrams.entrySet()){
 //            bufferedWriter.write(ngramEntry.getElement().toString());
@@ -227,7 +248,7 @@ public class App1 {
         return allNgrams.elementSet();
     }
 
-    private static List<Ngram> addNgramFromFile(Config config, ESIndex index) throws IOException {
+    private static List<Ngram> addNgramFromFile(Config config, ESIndex index, Logger logger) throws IOException {
         List<Ngram> ngrams = new ArrayList<>();
         String externalNgramFile = config.getString("feature.externalNgramFile");
         List<String> lines = FileUtils.readLines(new File(externalNgramFile));
@@ -240,8 +261,8 @@ public class App1 {
                 ngrams.add(ngram);
             }
         }
-        System.out.println("ngrams collected from file "+externalNgramFile);
-        System.out.println(ngrams);
+        logger.info("ngrams collected from file "+externalNgramFile);
+        logger.info(ngrams.toString());
         return ngrams;
     }
 
@@ -320,30 +341,33 @@ public class App1 {
     }
 
 
-    static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds) throws Exception{
+    static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds,
+                                                    Logger logger) throws Exception{
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
         if (config.getBoolean("index.labelFilter")){
             String prefix = config.getString("index.labelFilter.prefix");
             buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
         }
-        System.out.println("there are "+buckets.size()+" classes in the training set.");
+        logger.info("there are "+buckets.size()+" classes in the training set.");
         List<String> labels = new ArrayList<>();
-        System.out.println("label distribution in training set:");
+        logger.info("label distribution in training set:");
+        StringBuilder stringBuilder = new StringBuilder();
         for (Terms.Bucket bucket: buckets){
-            System.out.print(bucket.getKey());
-            System.out.print(":");
-            System.out.print(bucket.getDocCount());
-            System.out.print(", ");
+            stringBuilder.append(bucket.getKey());
+            stringBuilder.append(":");
+            stringBuilder.append(bucket.getDocCount());
+            stringBuilder.append(", ");
             labels.add(bucket.getKey());
         }
-        System.out.println();
+        logger.info(stringBuilder.toString());
 
         LabelTranslator labelTranslator = new LabelTranslator(labels);
-//        System.out.println(labelTranslator);
+//        logger.info(labelTranslator);
         return labelTranslator;
     }
 
-    static LabelTranslator loadAugmentedLabelTranslator(Config config, MultiLabelIndex index, String[] testIndexIds, LabelTranslator trainLabelTranslator){
+    static LabelTranslator loadAugmentedLabelTranslator(Config config, MultiLabelIndex index, String[] testIndexIds,
+                                                        LabelTranslator trainLabelTranslator, Logger logger){
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
             extLabels.add(trainLabelTranslator.toExtLabel(i));
@@ -355,20 +379,21 @@ public class App1 {
             buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
         }
         List<String> newLabels = new ArrayList<>();
-        System.out.println("label distribution in data set:");
+        logger.info("label distribution in data set:");
+        StringBuilder stringBuilder = new StringBuilder();
         for (Terms.Bucket bucket: buckets){
-            System.out.print(bucket.getKey());
-            System.out.print(":");
-            System.out.print(bucket.getDocCount());
-            System.out.print(", ");
+            stringBuilder.append(bucket.getKey());
+            stringBuilder.append(":");
+            stringBuilder.append(bucket.getDocCount());
+            stringBuilder.append(", ");
             if (!extLabels.contains(bucket.getKey())){
                 extLabels.add(bucket.getKey());
                 newLabels.add(bucket.getKey());
             }
         }
-        System.out.println();
+        logger.info(stringBuilder.toString());
         if (!newLabels.isEmpty()){
-            System.out.println("WARNING: found new labels in data set: "+newLabels);
+            logger.warning("found new labels in data set: "+newLabels);
         }
         return new LabelTranslator(extLabels);
     }
@@ -385,7 +410,7 @@ public class App1 {
 //        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
 //        metaDataFolder.mkdirs();
 //
-//        System.out.println("generating ngram distributions");
+//        logger.info("generating ngram distributions");
 //        StopWatch stopWatch = new StopWatch();
 //        stopWatch.start();
 //        File file = new File(metaDataFolder,"all_ngrams.ser");
@@ -403,12 +428,12 @@ public class App1 {
 //        }
 //
 //        bufferedWriter.close();
-//        System.out.println("done");
-//        System.out.println("time spent on generating distributions = "+stopWatch);
+//        logger.info("done");
+//        logger.info("time spent on generating distributions = "+stopWatch);
 //    }
     
-    static void generateMetaData(Config config, MultiLabelIndex index) throws Exception{
-        System.out.println("generating meta data");
+    static void generateMetaData(Config config, MultiLabelIndex index, Logger logger) throws Exception{
+        logger.info("generating meta data");
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
         String[] trainIndexIds;
@@ -417,13 +442,13 @@ public class App1 {
 
 
 
-        LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(config, index, trainIndexIds);
+        LabelTranslator trainLabelTranslator = loadTrainLabelTranslator(config, index, trainIndexIds, logger);
         Serialization.serialize(trainLabelTranslator,new File(metaDataFolder,"label_translator.ser"));
         FileUtils.writeStringToFile(new File(metaDataFolder,"label_translator.txt"),trainLabelTranslator.toString());
 
         FeatureList featureList = new FeatureList();
         if (config.getBoolean("feature.useInitialFeatures")){
-            addInitialFeatures(config,index,featureList,trainIndexIds);
+            addInitialFeatures(config,index,featureList,trainIndexIds, logger);
         }
 
         if (config.getBoolean("feature.useCodeDescription")){
@@ -432,7 +457,7 @@ public class App1 {
 
 
         Set<Ngram> ngrams = new HashSet<>();
-        ngrams.addAll(gather(config,index,trainIndexIds));
+        ngrams.addAll(gather(config,index,trainIndexIds, logger));
 
         if (config.getBoolean("feature.filterNgramsByKeyWords")){
             ngrams = keywordsFilter(config,index,ngrams);
@@ -443,7 +468,7 @@ public class App1 {
         }
 
         if (config.getBoolean("feature.addExternalNgrams")){
-            ngrams.addAll(addNgramFromFile(config, index));
+            ngrams.addAll(addNgramFromFile(config, index, logger));
         }
 //        if (config.getBoolean("feature.generateDistribution")){
 //            getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
@@ -459,21 +484,22 @@ public class App1 {
                 bufferedWriter.newLine();
             }
         }
-        System.out.println("meta data generated");
+        logger.info("meta data generated");
 
 
     }
 
-    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName, String docFilter) throws Exception{
+    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName,
+                              String docFilter, Logger logger) throws Exception{
 //        String splitValueAll = splitListToString(splitValues);
 
 
-        System.out.println("creating data set "+datasetName);
+        logger.info("creating data set "+datasetName);
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         IdTranslator idTranslator = loadIdTranslator(indexIds);
         String archive = config.getString("output.folder");
         LabelTranslator trainLabelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
-        LabelTranslator labelTranslator = loadAugmentedLabelTranslator(config, index, indexIds, trainLabelTranslator);
+        LabelTranslator labelTranslator = loadAugmentedLabelTranslator(config, index, indexIds, trainLabelTranslator, logger);
 
         FeatureList featureList = (FeatureList)Serialization.deserialize(new File(metaDataFolder,"feature_list.ser"));
 
@@ -483,7 +509,7 @@ public class App1 {
         File dataFile = new File(new File(archive,"data_sets"),datasetName);
 
         TRECFormat.save(dataSet,dataFile);
-        System.out.println("data set "+datasetName+" created");
+        logger.info("data set "+datasetName+" created");
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.writeValue(new File(dataFile,"data_config.json"),config);
@@ -491,15 +517,17 @@ public class App1 {
 
     }
 
-    static void createTrainSet(Config config, MultiLabelIndex index) throws Exception{
-        generateMetaData(config, index);
+    static void createTrainSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
+        generateMetaData(config, index, logger);
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
-        createDataSet(config, index, indexIds,config.getString("output.trainFolder"), config.getString("index.splitQuery.train"));
+        createDataSet(config, index, indexIds,config.getString("output.trainFolder"),
+                config.getString("index.splitQuery.train"), logger);
     }
 
-    static void createTestSet(Config config, MultiLabelIndex index) throws Exception{
+    static void createTestSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.test"));
-        createDataSet(config, index, indexIds,config.getString("output.testFolder"), config.getString("index.splitQuery.test"));
+        createDataSet(config, index, indexIds,config.getString("output.testFolder"),
+                config.getString("index.splitQuery.test"), logger);
     }
 
 //    public static String splitListToString(List<String> splitValues){

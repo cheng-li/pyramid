@@ -1,10 +1,12 @@
 package edu.neu.ccs.pyramid.application;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 
 import java.io.File;
-import java.nio.file.Paths;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
 
 /**
  * a wrapper that chains App1 and App2
@@ -17,7 +19,24 @@ public class App3 {
         }
 
         Config config = new Config(args[0]);
-        System.out.println(config);
+        Logger logger = Logger.getAnonymousLogger();
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
+        }
+
+        logger.info(config.toString());
+        if (fileHandler!=null){
+            fileHandler.close();
+        }
+
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
@@ -30,7 +49,7 @@ public class App3 {
 
     private static Config createApp1Config(Config config){
         Config app1Config = new Config();
-        String[] same = {"output.folder","output.trainFolder","output.testFolder",
+        String[] same = {"output.folder","output.trainFolder","output.testFolder","output.log",
                 "feature.useInitialFeatures","feature.categFeature.filter",
                 "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
                 "feature.missingValue","feature.generateDistribution",
@@ -52,13 +71,14 @@ public class App3 {
 
     private static Config createApp2Config(Config config){
         Config app2Config = new Config();
-        String[] same = {"output.folder","train","test","tune","predict.target","train.warmStart","train.usePrior",
+        String[] same = {"output.folder","output.log", "train","test","tune","predict.target","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf",
         "train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
                 "train.earlyStop.patience","train.earlyStop.minIterations","train.earlyStop",
                 "train.earlyStop.absoluteChange", "train.earlyStop.relativeChange",
                 "train.showProgress.interval","train.generateReports","tune.data","tune.FMeasure.beta",
-        "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit"};
+        "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit",
+                "report.showPredictionDetail"};
 
         Config.copy(config,app2Config,same);
 
