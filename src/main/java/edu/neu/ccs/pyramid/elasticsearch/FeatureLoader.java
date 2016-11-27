@@ -20,7 +20,7 @@ public class FeatureLoader {
 
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter){
-        ProgressBar progressBar = new ProgressBar(features.size());
+//        ProgressBar progressBar = new ProgressBar(features.size());
         IntStream.range(0,features.size()).parallel()
                 .forEach(i-> {
                     Feature feature = features.get(i);
@@ -34,10 +34,10 @@ public class FeatureLoader {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
 
-                    progressBar.incrementAndPrint();
+//                    progressBar.incrementAndPrint();
                 }
                 );
-        System.out.println();
+//        System.out.println();
     }
 
     public static void loadCategoricalFeature(ESIndex index, DataSet dataSet, CategoricalFeature feature,

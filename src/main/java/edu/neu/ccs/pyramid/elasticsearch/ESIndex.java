@@ -640,7 +640,6 @@ public class ESIndex implements AutoCloseable{
         if (this.clientType.equals("node")){
             this.node.close();
         }
-        System.out.println("index closed");
     }
 
 

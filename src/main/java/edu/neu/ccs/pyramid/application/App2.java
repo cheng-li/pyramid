@@ -43,7 +43,7 @@ import java.util.stream.IntStream;
  * Created by chengli on 6/13/15.
  */
 public class App2 {
-    private static final Logger logger = Logger.getLogger(App2.class.getName());
+
 
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
@@ -55,6 +55,7 @@ public class App2 {
     }
 
     public static void main(Config config) throws Exception{
+        Logger logger = Logger.getAnonymousLogger();
         String logFile = config.getString("output.log");
         FileHandler fileHandler = null;
         if (!logFile.isEmpty()){
@@ -64,6 +65,7 @@ public class App2 {
             java.util.logging.Formatter formatter = new SimpleFormatter();
             fileHandler.setFormatter(formatter);
             logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
         }
 
         
@@ -72,13 +74,13 @@ public class App2 {
         new File(config.getString("output.folder")).mkdirs();
 
         if (config.getBoolean("train")){
-            train(config);
+            train(config, logger);
             if (config.getString("predict.target").equals("macroFMeasure")){
                 logger.info("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
                         "Reports will be generated after tuning.");
             } else {
                 if (config.getBoolean("train.generateReports")){
-                    report(config,config.getString("input.trainData"));
+                    report(config,config.getString("input.trainData"), logger);
                 }
 
             }
@@ -86,14 +88,14 @@ public class App2 {
         }
 
         if (config.getBoolean("tune")){
-            tuneForMacroF(config);
+            tuneForMacroF(config, logger);
             if (config.getBoolean("train.generateReports")){
-                report(config,config.getString("input.trainData"));
+                report(config,config.getString("input.trainData"), logger);
             }
         }
 
         if (config.getBoolean("test")){
-            report(config,config.getString("input.testData"));
+            report(config,config.getString("input.testData"), logger);
         }
 
         if (fileHandler!=null){
@@ -109,7 +111,7 @@ public class App2 {
         return dataSet;
     }
 
-    static void train(Config config) throws Exception{
+    static void train(Config config, Logger logger) throws Exception{
         String output = config.getString("output.folder");
         int numIterations = config.getInt("train.numIterations");
         int numLeaves = config.getInt("train.numLeaves");
@@ -245,7 +247,7 @@ public class App2 {
 
     }
 
-    static void tuneForMacroF(Config config) throws Exception{
+    static void tuneForMacroF(Config config, Logger logger) throws Exception{
         logger.info("start tuning for macro F measure");
         String output = config.getString("output.folder");
         String modelName = "model_app3";
@@ -273,7 +275,7 @@ public class App2 {
 
     }
 
-    static void report(Config config, String dataName) throws Exception{
+    static void report(Config config, String dataName, Logger logger) throws Exception{
         logger.info("generating reports for data set "+dataName);
         String output = config.getString("output.folder");
         String modelName = "model_app3";
