@@ -36,7 +36,8 @@ public class CMLCRFTest {
 //        test5();
 //        test6();
 
-        test7();
+//        test7();
+        test8();
     }
 
     public static void test2() throws Exception {
@@ -389,5 +390,65 @@ public class CMLCRFTest {
         System.out.println("\ntraining time: " + TimeUnit.NANOSECONDS.toSeconds(trainTime) + " sec.");
 
     }
+
+    private static void test8() throws Exception {
+
+        System.out.println(config);
+
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        // loading or save model infos.
+        String output = config.getString("output");
+        String modelName = config.getString("modelName");
+
+        CMLCRF cmlcrf = new CMLCRF(trainSet);
+        BlockwiseCD blockwiseCD = new BlockwiseCD(cmlcrf, trainSet, config.getDouble("l1Ratio"), config.getDouble("regularization"));
+
+        MultiLabel[] predTrain;
+        MultiLabel[] predTest;
+        for (int i=0; i < config.getInt("numRounds"); i++) {
+            blockwiseCD.iterate();
+            predTrain = cmlcrf.predict(trainSet);
+            predTest = cmlcrf.predict(testSet);
+            System.out.print("iter: " + String.format("%04d", i));
+            System.out.print("\tobjective: " + String.format("%.4f", blockwiseCD.getValue()));
+            System.out.print("\tTrain acc: " + String.format("%.4f", Accuracy.accuracy(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTrain overlap " + String.format("%.4f", Overlap.overlap(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTrain F1 " + String.format("%.4f", FMeasure.f1(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTest acc: " + String.format("%.4f", Accuracy.accuracy(testSet.getMultiLabels(), predTest)));
+            System.out.print("\tTest overlap " + String.format("%.4f", Overlap.overlap(testSet.getMultiLabels(), predTest)));
+            System.out.println("\tTest F1 " + String.format("%.4f", FMeasure.f1(testSet.getMultiLabels(), predTest)));
+        }
+
+
+        System.out.println();
+        System.out.println();
+        System.out.println("--------------------------------Results-----------------------------\n");
+        MLMeasures measures = new MLMeasures(cmlcrf, trainSet);
+        System.out.println("========== Train ==========\n");
+        System.out.println(measures);
+
+        System.out.println("========== Test ==========\n");
+        long startTimePred = System.nanoTime();
+        MultiLabel[] preds = cmlcrf.predict(testSet);
+        long stopTimePred = System.nanoTime();
+        long predTime = stopTimePred - startTimePred;
+        System.out.println("\nprediction time: " + TimeUnit.NANOSECONDS.toSeconds(predTime) + " sec.");
+        System.out.println(new MLMeasures(cmlcrf, testSet));
+        System.out.println("\n\n");
+        InstanceF1Predictor pluginF1 = new InstanceF1Predictor(cmlcrf);
+        System.out.println("Plugin F1");
+        System.out.println(new MLMeasures(pluginF1, testSet));
+
+        if (config.getBoolean("saveModel")) {
+            (new File(output)).mkdirs();
+            File serializeModel = new File(output, modelName);
+            cmlcrf.serialize(serializeModel);
+        }
+    }
 }
+
 

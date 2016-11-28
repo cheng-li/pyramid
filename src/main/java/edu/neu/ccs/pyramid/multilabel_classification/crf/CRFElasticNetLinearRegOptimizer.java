@@ -26,6 +26,7 @@ public class CRFElasticNetLinearRegOptimizer {
         this.labels = labels;
         this.instanceWeights = instanceWeights;
         this.terminator = new Terminator();
+        this.terminator.setAllowNaN(true);
         this.sumWeights = sumWeights;
     }
 

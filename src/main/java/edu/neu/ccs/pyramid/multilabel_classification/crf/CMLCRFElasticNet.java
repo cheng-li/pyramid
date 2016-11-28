@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.SequentialSparseDataSet;
 import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
@@ -28,6 +30,8 @@ public class CMLCRFElasticNet {
     private int numWeightsForFeatures;
     private int numWeightsForLabelPairs;
     private double value;
+    private Vector empiricalCounts;
+    private Vector predictedCounts;
     private int[] parameterToL1;
     private int[] parameterToL2;
     private int[] parameterToClass;
@@ -40,6 +44,10 @@ public class CMLCRFElasticNet {
 
     // numDataPoints by numClasses;
     private double[][] classScoreMatrix;
+
+    // numDataPoints by numClasses;
+    private double[][] classProbMatrix;
+
 
     // numDataPoints by numCombinations
     private double[][] combProbMatrix;
@@ -58,6 +66,14 @@ public class CMLCRFElasticNet {
     // size = numSupport * (for each support, label-label feature is non-zero index, starting from 0)
     private List<List<Integer>> combinationToLabelPair;
 
+    //for each label pair (index), map to the list of matched combinations (index)
+    // number of pairs * variable length
+    private List<List<Integer>> labelPairToCombination;
+
+    // for each combination, store the sum of probabilities over all data points
+    // size = num combinations
+    private double[] combProbSums;
+
     public CMLCRFElasticNet (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double l1Ratio, double regularization) {
         this.l1Ratio = l1Ratio;
         this.regularization = regularization;
@@ -75,16 +91,27 @@ public class CMLCRFElasticNet {
         this.numWeightsForFeatures = cmlcrf.getWeights().getNumWeightsForFeatures();
         this.numWeightsForLabelPairs = cmlcrf.getWeights().getNumWeightsForLabels();
         this.classScoreMatrix = new double[numData][numClasses];
+        this.classProbMatrix = new double[numData][numClasses];
         this.combScoreMatrix = new double[numData][numSupport];
         this.combProbMatrix = new double[numData][numSupport];
         this.isValueCacheValid = false;
+        this.empiricalCounts = new DenseVector(numParameters);
+        this.predictedCounts = new DenseVector(numParameters);
         this.initCache();
+        this.updateEmpiricalCounts();
         this.combinationToLabelPair = new ArrayList<>(numSupport);
         for (int i=0;i< numSupport;i++) {
             combinationToLabelPair.add(new LinkedList<>());
         }
+        this.labelPairToCombination = new ArrayList<>(numWeightsForLabelPairs);
+        for (int i=0;i< numWeightsForLabelPairs;i++){
+            labelPairToCombination.add(new ArrayList<>());
+        }
         this.mapCombinattionToPair();
+        this.mapPairToCombination();
 
+
+        this.combProbSums = new double[numSupport];
 
         Map<MultiLabel,Integer> map = new HashMap<>();
         for (int s=0;s< numSupport;s++){
@@ -114,12 +141,26 @@ public class CMLCRFElasticNet {
         cmlcrf.updateCombLabelPartScores();
         updateAssignmentScoreMatrix();
         updateAssignmentProbMatrix();
+        updateCombProbSums();
+        updatePredictedCounts();
+        updateClassProbMatrix();
         // update for each support label set
+        Vector accumulateWeights = new SequentialAccessSparseVector(numParameters);
+        Vector oldWeights = cmlcrf.getWeights().deepCopy().getAllWeights();
         for (int l=0; l<numSupport; l++) {
 //            System.out.println("label: " + supportedCombinations.get(l));
             DataSet newData = expandData(l);
             iterateForOneComb(newData, l);
+            accumulateWeights = accumulateWeights.plus(cmlcrf.getWeights().getAllWeights());
+            cmlcrf.getWeights().setWeightVector(oldWeights);
         }
+        // lineSearch
+        if (true) {
+            Vector searchDirection = accumulateWeights;
+            Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(numData);
+            lineSearch(searchDirection, gradient);
+        }
+
         this.terminator.add(getValue());
     }
 
@@ -232,6 +273,36 @@ public class CMLCRFElasticNet {
 
     }
 
+    private void mapPairToCombination(){
+        IntStream.range(0, numWeightsForLabelPairs).parallel().forEach(this::mapPairToCombination);
+    }
+
+
+    private void mapPairToCombination(int position) {
+        List<Integer> list = labelPairToCombination.get(position);
+        int l1 = parameterToL1[position];
+        int l2 = parameterToL2[position];
+        int featureCase = position % 4;
+        for (int c=0; c< numSupport; c++) {
+            switch (featureCase) {
+                // both l1, l2 equal 0;
+                case 0:
+                    if (!comContainsLabel[c][l1] && !comContainsLabel[c][l2]) list.add(c);
+                    break;
+                // l1 = 1; l2 = 0;
+                case 1: if (comContainsLabel[c][l1] && !comContainsLabel[c][l2]) list.add(c);
+                    break;
+                // l1 = 0; l2 = 1;
+                case 2: if (!comContainsLabel[c][l1] && comContainsLabel[c][l2]) list.add(c);
+                    break;
+                // l1 = 1; l2 = 1;mapPairToCombination
+                case 3: if (comContainsLabel[c][l1] && comContainsLabel[c][l2]) list.add(c);
+                    break;
+                default: throw new RuntimeException("feature case :" + featureCase + " failed.");
+            }
+        }
+    }
+
     private void mapCombinattionToPair() {
         IntStream.range(0, numSupport).forEach(this::mapCombinattionToPair);
     }
@@ -305,4 +376,163 @@ public class CMLCRFElasticNet {
         return sum;
     }//check
 
+    private void updateEmpiricalCounts(){
+        IntStream intStream;
+        if (isParallel){
+            intStream = IntStream.range(0, numParameters).parallel();
+        } else {
+            intStream = IntStream.range(0, numParameters);
+        }
+        intStream.forEach(this::calEmpiricalCount);
+    }
+
+    private void calEmpiricalCount(int parameterIndex) {
+        if (parameterIndex < numWeightsForFeatures) {
+            this.empiricalCounts.set(parameterIndex, calEmpiricalCountForFeature(parameterIndex));
+        } else if(parameterIndex <numWeightsForFeatures+ numWeightsForLabelPairs) {
+            this.empiricalCounts.set(parameterIndex, calEmpiricalCountForLabelPair(parameterIndex));
+        }
+    }
+
+    private double calEmpiricalCountForLabelPair(int parameterIndex) {
+        double empiricalCount = 0.0;
+        int start = parameterIndex - numWeightsForFeatures;
+        int l1 = parameterToL1[start];
+        int l2 = parameterToL2[start];
+        int featureCase = start % 4;
+        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+            MultiLabel label = dataSet.getMultiLabels()[i];
+            switch (featureCase) {
+                // both l1, l2 equal 0;
+                case 0: if (!label.matchClass(l1) && !label.matchClass(l2)) empiricalCount += 1.0;
+                    break;
+                // l1 = 1; l2 = 0;
+                case 1: if (label.matchClass(l1) && !label.matchClass(l2)) empiricalCount += 1.0;
+                    break;
+                // l1 = 0; l2 = 1;
+                case 2: if (!label.matchClass(l1) && label.matchClass(l2)) empiricalCount += 1.0;
+                    break;
+                // l1 = 1; l2 = 1;
+                case 3: if (label.matchClass(l1) && label.matchClass(l2)) empiricalCount += 1.0;
+                    break;
+                default: throw new RuntimeException("feature case :" + featureCase + " failed.");
+            }
+        }
+        return empiricalCount;
+    }
+
+
+    private double calEmpiricalCountForFeature(int parameterIndex) {
+        double empiricalCount = 0.0;
+        int classIndex = parameterToClass[parameterIndex];
+        int featureIndex = parameterToFeature[parameterIndex];
+        if (featureIndex==-1){
+            for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+                if (dataSet.getMultiLabels()[i].matchClass(classIndex)) {
+                    empiricalCount += 1;
+                }
+            }
+        } else{
+            Vector column = dataSet.getColumn(featureIndex);
+            MultiLabel[] multiLabels = dataSet.getMultiLabels();
+            for (Vector.Element element: column.nonZeroes()){
+                int dataIndex = element.index();
+                double featureValue = element.get();
+                if (multiLabels[dataIndex].matchClass(classIndex)){
+                    empiricalCount += featureValue;
+                }
+            }
+        }
+        return empiricalCount;
+    }
+
+    private void updateClassProbMatrix(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i -> classProbMatrix[i] = cmlcrf.calClassProbs(combProbMatrix[i]));
+    }
+
+    private void updatePredictedCounts() {
+        IntStream.range(0, numWeightsForFeatures).parallel()
+                .forEach(i -> predictedCounts.set(i, calPredictedFeatureCounts(i)));
+
+        IntStream.range(numWeightsForFeatures, numParameters).parallel()
+                .forEach(i -> predictedCounts.set(i, calPredictedLabelPairCounts(i)));
+    }
+
+    private double calPredictedLabelPairCounts(int parameterIndex) {
+        double count = 0.0;
+        int pos = parameterIndex - numWeightsForFeatures;
+        for (int matched : labelPairToCombination.get(pos)) {
+            count += combProbSums[matched];
+        }
+
+        return count;
+    }
+
+    private double calPredictedFeatureCounts(int parameterIndex) {
+        double count = 0.0;
+        int classIndex = parameterToClass[parameterIndex];
+        int featureIndex = parameterToFeature[parameterIndex];
+
+        if (featureIndex == -1) {
+            for (int i=0; i<numData; i++) {
+                count += this.classProbMatrix[i][classIndex];
+            }
+        } else {
+            Vector featureColumn = dataSet.getColumn(featureIndex);
+            for (Vector.Element element : featureColumn.nonZeroes()) {
+                int dataPointIndex = element.index();
+                double featureValue = element.get();
+                count += this.classProbMatrix[dataPointIndex][classIndex] * featureValue;
+            }
+        }
+        return count;
+    }
+
+
+    private void updateCombProbSums(int combinationIndex){
+        double sum =0;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            sum += combProbMatrix[i][combinationIndex];
+        }
+        combProbSums[combinationIndex] = sum;
+    }
+
+    private void updateCombProbSums(){
+        IntStream.range(0,numSupport).parallel()
+                .forEach(this::updateCombProbSums);
+    }
+
+    /**
+     * a special back track line search for sufficient decrease with elasticnet penalized model
+     * reference:
+     * An improved glmnet for l1-regularized logistic regression.
+     * @param searchDirection
+     * @return
+     */
+    private void lineSearch(Vector searchDirection, Vector gradient){
+        Vector localSearchDir;
+        double initialStepLength = 1;
+        double shrinkage = 0.5;
+        double c = 1e-4;
+        double stepLength = initialStepLength;
+        Vector start = cmlcrf.getWeights().getAllWeights();
+        double penalty = getPenalty();
+        double value = getValue();
+        double product = gradient.dot(searchDirection);
+
+        localSearchDir = searchDirection;
+
+        while(true){
+            Vector step = localSearchDir.times(stepLength);
+            Vector target = start.plus(step);
+            cmlcrf.getWeights().setWeightVector(target);
+            double targetPenalty = getPenalty();
+            double targetValue = getValue();
+            if (targetValue <= value + c*stepLength*(product + targetPenalty - penalty)){
+                break;
+            }
+            stepLength *= shrinkage;
+        }
+    }
 }
