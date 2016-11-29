@@ -22,6 +22,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -213,12 +214,7 @@ public class SparkCBMOptimizer {
             logger.debug("start updateBinaryClassifiers");
         }
 
-        List<BinaryTask> binaryTaskList = new ArrayList<>();
-        for (int k=0;k<cbm.numComponents;k++){
-            for (int l=0;l<cbm.numLabels;l++){
-                binaryTaskList.add(new BinaryTask(k,l));
-            }
-        }
+
 
         Classifier.ProbabilityEstimator[][] localBinaryClassifiers = cbm.binaryClassifiers;
         double[][] localGammasT  = gammasT;
@@ -226,16 +222,23 @@ public class SparkCBMOptimizer {
         Broadcast<double[][][]> localTargetsBroadcast = targetDisBroadCast;
         double localVariance = priorVarianceBinary;
 
+
+        List<BinaryTask> binaryTaskList = new ArrayList<>();
+        for (int k=0;k<cbm.numComponents;k++){
+            for (int l=0;l<cbm.numLabels;l++){
+                LogisticRegression logisticRegression = (LogisticRegression)localBinaryClassifiers[k][l];
+                double[] weights = localGammasT[k];
+                binaryTaskList.add(new BinaryTask(k,l, logisticRegression, weights));
+            }
+        }
+
         JavaRDD<BinaryTask> binaryTaskRDD = sparkContext.parallelize(binaryTaskList, binaryTaskList.size());
         List<BinaryTaskResult> results = binaryTaskRDD.map(binaryTask-> {
-            int componentIndex = binaryTask.componentIndex;
             int labelIndex = binaryTask.classIndex;
             //todo move this to rdd
             // each element in rdd should contain its full information
-            LogisticRegression logisticRegression = (LogisticRegression)localBinaryClassifiers[componentIndex][labelIndex];
-            double[] weights = localGammasT[componentIndex];
-            return updateBinaryLogisticRegression(binaryTask.componentIndex, binaryTask.classIndex, logisticRegression,
-                    localDataSetBroadcast.value(), weights, localTargetsBroadcast.value()[labelIndex],localVariance);
+            return updateBinaryLogisticRegression(binaryTask.componentIndex, binaryTask.classIndex, binaryTask.logisticRegression,
+                    localDataSetBroadcast.value(), binaryTask.weights, localTargetsBroadcast.value()[labelIndex],localVariance);
 
         })
         .collect();
@@ -287,7 +290,7 @@ public class SparkCBMOptimizer {
 
 
 
-    private BinaryTaskResult updateBinaryLogisticRegression(int componentIndex, int labelIndex, LogisticRegression logisticRegression,
+    private static BinaryTaskResult updateBinaryLogisticRegression(int componentIndex, int labelIndex, LogisticRegression logisticRegression,
                                                             MultiLabelClfDataSet dataSet, double[] weights,
                                                             double[][] targets, double variance){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
@@ -543,18 +546,22 @@ public class SparkCBMOptimizer {
         this.l1RatioMultiClass = l1RatioMultiClass;
     }
 
-    private static class BinaryTask {
-        public BinaryTask(int componentIndex, int classIndex) {
+    private static class BinaryTask implements Serializable{
+        public BinaryTask(int componentIndex, int classIndex, LogisticRegression logisticRegression, double[] weights) {
             this.componentIndex = componentIndex;
             this.classIndex = classIndex;
+            this.logisticRegression = logisticRegression;
+            this.weights = weights;
         }
 
         int componentIndex;
         int classIndex;
+        LogisticRegression logisticRegression;
+        double[] weights;
     }
 
 
-    private static class BinaryTaskResult{
+    private static class BinaryTaskResult implements Serializable{
         public BinaryTaskResult(int componentIndex, int classIndex, Classifier.ProbabilityEstimator binaryClassifier) {
             this.componentIndex = componentIndex;
             this.classIndex = classIndex;
