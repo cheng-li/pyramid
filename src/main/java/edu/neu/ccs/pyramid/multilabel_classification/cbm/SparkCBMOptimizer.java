@@ -220,8 +220,24 @@ public class SparkCBMOptimizer {
             }
         }
 
+        Classifier.ProbabilityEstimator[][] localBinaryClassifiers = cbm.binaryClassifiers;
+        double[][] localGammasT  = gammasT;
+        Broadcast<MultiLabelClfDataSet> localDataSetBroadcast = dataSetBroadCast;
+        Broadcast<double[][][]> localTargetsBroadcast = targetDisBroadCast;
+        double localVariance = priorVarianceBinary;
+
         JavaRDD<BinaryTask> binaryTaskRDD = sparkContext.parallelize(binaryTaskList, binaryTaskList.size());
-        List<BinaryTaskResult> results = binaryTaskRDD.map(binaryTask->updateBinaryLogisticRegression(binaryTask.componentIndex, binaryTask.classIndex))
+        List<BinaryTaskResult> results = binaryTaskRDD.map(binaryTask-> {
+            int componentIndex = binaryTask.componentIndex;
+            int labelIndex = binaryTask.classIndex;
+            //todo move this to rdd
+            // each element in rdd should contain its full information
+            LogisticRegression logisticRegression = (LogisticRegression)localBinaryClassifiers[componentIndex][labelIndex];
+            double[] weights = localGammasT[componentIndex];
+            return updateBinaryLogisticRegression(binaryTask.componentIndex, binaryTask.classIndex, logisticRegression,
+                    localDataSetBroadcast.value(), weights, localTargetsBroadcast.value()[labelIndex],localVariance);
+
+        })
         .collect();
         for (BinaryTaskResult result: results){
             cbm.binaryClassifiers[result.componentIndex][result.classIndex] = result.binaryClassifier;
@@ -268,13 +284,17 @@ public class SparkCBMOptimizer {
 //        optimizer.iterate(numIterations);
 //    }
 
-    private BinaryTaskResult updateBinaryLogisticRegression(int componentIndex, int labelIndex){
+
+
+
+    private BinaryTaskResult updateBinaryLogisticRegression(int componentIndex, int labelIndex, LogisticRegression logisticRegression,
+                                                            MultiLabelClfDataSet dataSet, double[] weights,
+                                                            double[][] targets, double variance){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
         // no parallelism
-        LogisticRegression logisticRegression = (LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex];
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegression,
-                dataSetBroadCast.getValue(), gammasT[componentIndex],
-                targetDisBroadCast.getValue()[labelIndex], priorVarianceBinary, false);
+                dataSet, weights,
+                targets, variance, false);
         //TODO maximum iterations
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(15);
         ridgeLogisticOptimizer.optimize();
