@@ -9,8 +9,8 @@ import org.apache.mahout.math.Vector;
  */
 public class SequentialSparseDataSet extends AbstractDataSet implements DataSet{
 
-    protected SequentialAccessSparseVector[] featureRows;
-    protected SequentialAccessSparseVector[] featureColumns;
+    protected transient SequentialAccessSparseVector[] featureRows;
+    protected transient SequentialAccessSparseVector[] featureColumns;
 
     public SequentialSparseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures,missingValue);
