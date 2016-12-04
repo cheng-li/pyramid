@@ -158,8 +158,8 @@ public class CBMPredictor {
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
-//        int iter = 0;
-//        int maxIter = 1000;
+        int iter = 0;
+        int maxIter = 10;
 
         while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
@@ -195,7 +195,10 @@ public class CBMPredictor {
                 DPs.remove(k);
             }
 
-//            iter++;
+            iter++;
+            if (iter>=maxIter){
+                break;
+            }
         }
 //        System.out.print("maxIter: " + maxIter + "\t" + Math.exp(maxLogProb) + "\t");
 //        System.out.println("maxIter: " + maxIter);
