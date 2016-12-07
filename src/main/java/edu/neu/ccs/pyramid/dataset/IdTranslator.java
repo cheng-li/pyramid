@@ -45,6 +45,11 @@ public class IdTranslator implements Serializable {
         extToInt.put(extId, intId);
     }
 
+    public void addDataWithoutCheck(int intId, String extId){
+        intToExt.put(intId, extId);
+        extToInt.put(extId, intId);
+    }
+
     public int toIntId(String extId){
         return extToInt.get(extId);
     }
