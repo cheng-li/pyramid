@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.eval;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.ArrayList;
@@ -22,6 +23,14 @@ public class AUC {
                 .mapToDouble(i -> probEstimator.predictClassProbs(dataSet.getRow(i))[1])
                 .toArray();
         int[] labels = dataSet.getLabels();
+        return auc(probForOne,labels);
+    }
+
+    public static double auc(Classifier.ProbabilityEstimator probEstimator, DataSet dataSet, int[] labels){
+
+        double[] probForOne = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> probEstimator.predictClassProbs(dataSet.getRow(i))[1])
+                .toArray();
         return auc(probForOne,labels);
     }
 
