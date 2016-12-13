@@ -98,10 +98,14 @@ public class LabelTranslator implements Serializable{
 
     @Override
     public String toString() {
-        return "LabelTranslator{" +
-                "intToExt=" + intToExt +
-                ", extToInt=" + extToInt +
-                '}';
+        final StringBuilder sb = new StringBuilder();
+        for (Map.Entry<Integer, String> entry: intToExt.entrySet()){
+            sb.append(""+entry.getKey());
+            sb.append("=");
+            sb.append(entry.getValue());
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
     public static class Builder{

@@ -104,10 +104,13 @@ public class IdTranslator implements Serializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("IdTranslator{");
-        sb.append("intToExt=").append(intToExt);
-        sb.append(", extToInt=").append(extToInt);
-        sb.append('}');
+        final StringBuilder sb = new StringBuilder();
+        for (Map.Entry<Integer, String> entry: intToExt.entrySet()){
+            sb.append(""+entry.getKey());
+            sb.append("=");
+            sb.append(entry.getValue());
+            sb.append("\n");
+        }
         return sb.toString();
     }
 }
