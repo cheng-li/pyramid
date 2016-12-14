@@ -293,17 +293,21 @@ public class App1 {
                                          IdTranslator idTranslator, int totalDim,
                                          LabelTranslator labelTranslator,
                                          String docFilter) throws Exception{
+
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
+        Config savedConfig = new Config(new File(metaDataFolder, "saved_config"));
+
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(totalDim)
                 .numClasses(numClasses).dense(false)
-                .missingValue(config.getBoolean("feature.missingValue")).build();
+                .missingValue(savedConfig.getBoolean("feature.missingValue")).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
-            if (config.getBoolean("index.labelFilter")){
-                String prefix = config.getString("index.labelFilter.prefix");
+            if (savedConfig.getBoolean("index.labelFilter")){
+                String prefix = savedConfig.getString("index.labelFilter.prefix");
                 extMultiLabel = extMultiLabel.stream().filter(extLabel -> extLabel.startsWith(prefix)).collect(Collectors.toList());
             }
             for (String extLabel: extMultiLabel){
@@ -312,7 +316,7 @@ public class App1 {
             }
         }
 
-        String matchScoreTypeString = config.getString("index.ngramMatchScoreType");
+        String matchScoreTypeString = savedConfig.getString("index.ngramMatchScoreType");
 
         FeatureLoader.MatchScoreType matchScoreType;
 
@@ -484,6 +488,12 @@ public class App1 {
                 bufferedWriter.newLine();
             }
         }
+
+        Config metaConfig = new Config();
+        String[] keys = {"index.labelFilter", "index.labelFilter.prefix", "index.ngramMatchScoreType", "feature.missingValue"};
+        Config.copy(config, metaConfig, keys);
+        metaConfig.store(new File(metaDataFolder, "saved_config"));
+
         logger.info("meta data generated");
 
 
