@@ -49,9 +49,9 @@ public interface MultiLabelClassifier extends Serializable{
 
     LabelTranslator getLabelTranslator();
 
-    public interface ClassScoreEstimator extends MultiLabelClassifier{
-        public double predictClassScore(Vector vector, int k);
-        public default double[] predictClassScores(Vector vector){
+    interface ClassScoreEstimator extends MultiLabelClassifier{
+        double predictClassScore(Vector vector, int k);
+        default double[] predictClassScores(Vector vector){
             return IntStream.range(0,getNumClasses()).mapToDouble(k -> predictClassScore(vector,k))
                     .toArray();
 
@@ -60,7 +60,7 @@ public interface MultiLabelClassifier extends Serializable{
 
 
 
-    public interface ClassProbEstimator extends MultiLabelClassifier{
+    interface ClassProbEstimator extends MultiLabelClassifier{
         double[] predictClassProbs(Vector vector);
 
         /**
@@ -74,8 +74,11 @@ public interface MultiLabelClassifier extends Serializable{
         }
     }
 
-    public interface AssignmentProbEstimator extends MultiLabelClassifier{
-        public double predictAssignmentProb(Vector vector, MultiLabel assignment);
+    interface AssignmentProbEstimator extends MultiLabelClassifier{
+        double predictLogAssignmentProb(Vector vector, MultiLabel assignment);
+        default double predictAssignmentProb(Vector vector, MultiLabel assignment){
+            return Math.exp(predictLogAssignmentProb(vector, assignment));
+        }
     }
 
 }

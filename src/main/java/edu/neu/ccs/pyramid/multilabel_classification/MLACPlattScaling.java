@@ -74,6 +74,12 @@ public class MLACPlattScaling implements MultiLabelClassifier.ClassProbEstimator
     }
 
     @Override
+    public double predictLogAssignmentProb(Vector vector, MultiLabel assignment) {
+        //todo
+        return 0;
+    }
+
+    @Override
     public double predictAssignmentProb(Vector vector, MultiLabel assignment) {
         double[] scores = scoreEstimator.predictClassScores(vector);
         Vector scoreVector = new DenseVector(scores.length);

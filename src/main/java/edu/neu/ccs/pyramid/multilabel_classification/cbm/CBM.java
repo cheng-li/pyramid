@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
  * In Proceedings of the 33rd International Conference on Machine Learning (ICML), 2016.
  * Created by Rainicy on 10/23/15.
  */
-public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializable {
+public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelClassifier.AssignmentProbEstimator, Serializable {
     private static final long serialVersionUID = 2L;
     int numLabels;
     int numComponents;
@@ -80,7 +80,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @param y
      * @return
      */
-    private double predictLogAssignmentProb(Vector x, MultiLabel y){
+    public double predictLogAssignmentProb(Vector x, MultiLabel y){
         BMDistribution bmDistribution = computeBM(x);
         return bmDistribution.logProbability(y);
     }
