@@ -2,12 +2,15 @@ package edu.neu.ccs.pyramid.eval;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 11/11/14.
@@ -68,5 +71,12 @@ public class KLDivergence {
         double[] weights = new double[dataSet.getNumDataPoints()];
         Arrays.fill(weights,1.0);
         return kl(estimator,dataSet,targetDistributions,weights);
+    }
+
+    // total KL
+    public static double kl(MultiLabelClassifier.AssignmentProbEstimator multiLabelClassifier, MultiLabelClfDataSet dataSet){
+        return IntStream.range(0, dataSet.getNumDataPoints())
+                .mapToDouble(i-> multiLabelClassifier.predictLogAssignmentProb(dataSet.getRow(i), dataSet.getMultiLabels()[i]))
+                .sum()*(-1);
     }
 }
