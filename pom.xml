@@ -7,7 +7,7 @@
     <groupId>edu.neu.ccs.pyramid</groupId>
     <artifactId>pyramid</artifactId>
     <packaging>jar</packaging>
-    <version>0.7.12</version>
+    <version>0.7.13</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
