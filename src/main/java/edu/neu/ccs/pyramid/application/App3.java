@@ -61,10 +61,10 @@ public class App3 {
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","train.label.field","train.label.filter","train.label.filter.prefix",
                 "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",
-                "index.splitQuery.train","index.splitQuery.test",
+                "train.splitQuery","test.splitQuery",
                 "train.feature.ngram.matchScoreType","createTrainSet","createTestSet"};
 
-        Config.copy(config,app1Config,same);
+        Config.copyExisting(config,app1Config,same);
         return app1Config;
     }
 
@@ -80,7 +80,7 @@ public class App3 {
         "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit",
                 "report.showPredictionDetail"};
 
-        Config.copy(config,app2Config,same);
+        Config.copyExisting(config,app2Config,same);
 
         app2Config.setString("input.folder",config.getString("output.folder"));
         app2Config.setString("input.trainData",config.getString("output.trainFolder"));

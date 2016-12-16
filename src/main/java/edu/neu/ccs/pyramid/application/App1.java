@@ -96,7 +96,7 @@ public class App1 {
 
         if (trainOrTest.endsWith("test")){
             File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
-            Config savedConfig = new Config(new File(metaDataFolder, "saved_train_config"));
+            Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
             builder.setExtMultiLabelField(savedConfig.getString("train.label.field"));
         }
 
@@ -309,7 +309,7 @@ public class App1 {
                                          String docFilter) throws Exception{
 
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
-        Config savedConfig = new Config(new File(metaDataFolder, "saved_train_config"));
+        Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
 
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
@@ -388,7 +388,7 @@ public class App1 {
                                                         LabelTranslator trainLabelTranslator, Logger logger){
 
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
-        Config savedConfig = new Config(new File(metaDataFolder, "saved_train_config"));
+        Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
 
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
@@ -460,7 +460,7 @@ public class App1 {
         metaDataFolder.mkdirs();
         String[] trainIndexIds;
 
-        trainIndexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
+        trainIndexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
 
 
 
@@ -508,7 +508,7 @@ public class App1 {
         }
 
 
-        config.store(new File(metaDataFolder, "saved_train_config"));
+        config.store(new File(metaDataFolder, "saved_config_app1"));
 
         logger.info("meta data generated");
 
@@ -545,15 +545,15 @@ public class App1 {
 
     static void createTrainSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
         generateMetaData(config, index, logger);
-        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.train"));
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
         createDataSet(config, index, indexIds,config.getString("output.trainFolder"),
-                config.getString("index.splitQuery.train"), logger);
+                config.getString("train.splitQuery"), logger);
     }
 
     static void createTestSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
-        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("index.splitQuery.test"));
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("test.splitQuery"));
         createDataSet(config, index, indexIds,config.getString("output.testFolder"),
-                config.getString("index.splitQuery.test"), logger);
+                config.getString("test.splitQuery"), logger);
     }
 
 //    public static String splitListToString(List<String> splitValues){

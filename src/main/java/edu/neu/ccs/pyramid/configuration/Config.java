@@ -154,6 +154,22 @@ public class Config {
     }
 
     /**
+     * only copy existing keys from the array
+     * @param src
+     * @param des
+     * @param keys
+     */
+    public static void copyExisting(Config src, Config des, String[] keys){
+        for (int i=0;i<keys.length;i++){
+            String key = keys[i];
+            if (src.containsKey(key)){
+                copy(src,des,key);
+            }
+
+        }
+    }
+
+    /**
      * copy all key-value pairs
      * @param src
      * @param des

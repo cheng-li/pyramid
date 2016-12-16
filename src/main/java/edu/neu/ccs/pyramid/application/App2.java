@@ -84,12 +84,16 @@ public class App2 {
                 }
 
             }
+            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
+            config.store(new File(metaDataFolder, "saved_config_app2"));
 
         }
 
         if (config.getBoolean("tune")){
             tuneForMacroF(config, logger);
-            if (config.getBoolean("train.generateReports")){
+            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
+            Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app2"));
+            if (savedConfig.getBoolean("train.generateReports")){
                 report(config,config.getString("input.trainData"), logger);
             }
         }
