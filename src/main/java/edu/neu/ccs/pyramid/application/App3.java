@@ -50,19 +50,19 @@ public class App3 {
     private static Config createApp1Config(Config config){
         Config app1Config = new Config();
         String[] same = {"output.folder","output.trainFolder","output.testFolder","output.log",
-                "feature.useInitialFeatures","feature.categFeature.filter",
-                "feature.categFeature.percentThreshold","feature.ngram.n","feature.ngram.minDf","feature.ngram.slop",
-                "feature.missingValue","feature.generateDistribution",
-                "feature.addExternalNgrams","feature.externalNgramFile","feature.analyzer",
-                "feature.filterNgramsByKeyWords","feature.filterNgrams.keyWordsFile",
-                "feature.filterNgramsByRegex", "feature.filterNgrams.regex",
-                "feature.useCodeDescription", "feature.codeDesc.File", "feature.codeDesc.analyzer",
-                "feature.codeDesc.matchField", "feature.codeDesc.minMatchPercentage",
+                "train.feature.useInitialFeatures","train.feature.categFeature.filter",
+                "train.feature.categFeature.percentThreshold","train.feature.ngram.n","train.feature.ngram.minDf","train.feature.ngram.slop",
+                "train.feature.missingValue","train.feature.generateDistribution",
+                "train.feature.addExternalNgrams","train.feature.externalNgramFile","train.feature.analyzer",
+                "train.feature.filterNgramsByKeyWords","train.feature.filterNgrams.keyWordsFile",
+                "train.feature.filterNgramsByRegex", "train.feature.filterNgrams.regex",
+                "train.feature.useCodeDescription", "train.feature.codeDesc.File", "train.feature.codeDesc.analyzer",
+                "train.feature.codeDesc.matchField", "train.feature.codeDesc.minMatchPercentage",
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
-                "index.hosts","index.ports","index.labelField","index.labelFilter","index.labelFilter.prefix",
-                "index.featureFieldPrefix","index.ngramExtractionFields",
+                "index.hosts","index.ports","train.label.field","train.label.filter","train.label.filter.prefix",
+                "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",
                 "index.splitQuery.train","index.splitQuery.test",
-                "index.ngramMatchScoreType","createTrainSet","createTestSet"};
+                "train.feature.ngram.matchScoreType","createTrainSet","createTestSet"};
 
         Config.copy(config,app1Config,same);
         return app1Config;

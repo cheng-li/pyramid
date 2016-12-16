@@ -60,7 +60,7 @@ public class App1 {
         output.mkdirs();
 
         if (config.getBoolean("createTrainSet")){
-            try (MultiLabelIndex index = loadIndex(config, logger)){
+            try (MultiLabelIndex index = loadIndex(config, logger, "train")){
                 createTrainSet(config, index, logger);
             }
 
@@ -68,7 +68,7 @@ public class App1 {
 
 
         if (config.getBoolean("createTestSet")){
-            try (MultiLabelIndex index = loadIndex(config, logger)){
+            try (MultiLabelIndex index = loadIndex(config, logger, "test")){
                 createTestSet(config, index, logger);
             }
 
@@ -77,18 +77,32 @@ public class App1 {
         if (fileHandler!=null){
             fileHandler.close();
         }
-
-
-
     }
 
-    static MultiLabelIndex loadIndex(Config config, Logger logger) throws Exception{
+    static MultiLabelIndex loadIndex(Config config, Logger logger, String trainOrTest) throws Exception{
+
+
+
         MultiLabelIndex.Builder builder = new MultiLabelIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
                 .setClientType(config.getString("index.clientType"))
-                .setExtMultiLabelField(config.getString("index.labelField"))
+
                 .setDocumentType(config.getString("index.documentType"));
+
+        if (trainOrTest.endsWith("train")){
+            builder.setExtMultiLabelField(config.getString("train.label.field"));
+        }
+
+        if (trainOrTest.endsWith("test")){
+            File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
+            Config savedConfig = new Config(new File(metaDataFolder, "saved_train_config"));
+            builder.setExtMultiLabelField(savedConfig.getString("train.label.field"));
+        }
+
+
+
+
         if (config.getString("index.clientType").equals("transport")){
             String[] hosts = config.getString("index.hosts").split(Pattern.quote(","));
             String[] ports = config.getString("index.ports").split(Pattern.quote(","));
@@ -127,7 +141,7 @@ public class App1 {
 
     static void addInitialFeatures(Config config, ESIndex index, FeatureList featureList,
                                    String[] ids, Logger logger) throws Exception{
-        String featureFieldPrefix = config.getString("index.featureFieldPrefix");
+        String featureFieldPrefix = config.getString("train.feature.featureFieldPrefix");
         Set<String> prefixes = Arrays.stream(featureFieldPrefix.split(",")).map(String::trim).collect(Collectors.toSet());
 
         Set<String> allFields = index.listAllFields();
@@ -156,8 +170,8 @@ public class App1 {
 //                }
                 List<CategoricalFeature> group = expander.expand();
                 boolean toAdd = true;
-                if (config.getBoolean("feature.categFeature.filter")){
-                    double threshold = config.getDouble("feature.categFeature.percentThreshold");
+                if (config.getBoolean("train.feature.categFeature.filter")){
+                    double threshold = config.getDouble("train.feature.categFeature.percentThreshold");
                     int numCategories = group.size();
                     if (numCategories> ids.length*threshold){
                         toAdd=false;
@@ -206,10 +220,10 @@ public class App1 {
         metaDataFolder.mkdirs();
 
         Multiset<Ngram> allNgrams = ConcurrentHashMultiset.create();
-        List<Integer> ns = config.getIntegers("feature.ngram.n");
-        int minDf = config.getInt("feature.ngram.minDf");
-        List<String> fields = config.getStrings("index.ngramExtractionFields");
-        List<Integer> slops = config.getIntegers("feature.ngram.slop");
+        List<Integer> ns = config.getIntegers("train.feature.ngram.n");
+        int minDf = config.getInt("train.feature.ngram.minDf");
+        List<String> fields = config.getStrings("train.feature.ngram.extractionFields");
+        List<Integer> slops = config.getIntegers("train.feature.ngram.slop");
         for (String field: fields){
             for (int n: ns){
                 for (int slop:slops){
@@ -250,10 +264,10 @@ public class App1 {
 
     private static List<Ngram> addNgramFromFile(Config config, ESIndex index, Logger logger) throws IOException {
         List<Ngram> ngrams = new ArrayList<>();
-        String externalNgramFile = config.getString("feature.externalNgramFile");
+        String externalNgramFile = config.getString("train.feature.externalNgramFile");
         List<String> lines = FileUtils.readLines(new File(externalNgramFile));
-        List<String> fields = config.getStrings("index.ngramExtractionFields");
-        String analyzer = config.getString("feature.analyzer");
+        List<String> fields = config.getStrings("train.feature.ngram.extractionFields");
+        String analyzer = config.getString("train.feature.analyzer");
         for (String field: fields){
             for (String line: lines){
                 Ngram ngram = index.analyze(line,analyzer);
@@ -267,11 +281,11 @@ public class App1 {
     }
 
     private static void addCodeDescription(Config config, ESIndex index, FeatureList featureList) throws Exception{
-        String file = config.getString("feature.codeDesc.File");
+        String file = config.getString("train.feature.codeDesc.File");
         List<String> lines = FileUtils.readLines(new File(file));
-        String analyzer = config.getString("feature.codeDesc.analyzer");
-        String field = config.getString("feature.codeDesc.matchField");
-        int percentage = config.getInt("feature.codeDesc.minMatchPercentage");
+        String analyzer = config.getString("train.feature.codeDesc.analyzer");
+        String field = config.getString("train.feature.codeDesc.matchField");
+        int percentage = config.getInt("train.feature.codeDesc.minMatchPercentage");
         for (String line: lines){
             List<String> terms = index.analyzeString(line, analyzer);
             CodeDescription codeDescription = new CodeDescription(terms, percentage, field);
@@ -295,19 +309,19 @@ public class App1 {
                                          String docFilter) throws Exception{
 
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
-        Config savedConfig = new Config(new File(metaDataFolder, "saved_config"));
+        Config savedConfig = new Config(new File(metaDataFolder, "saved_train_config"));
 
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(totalDim)
                 .numClasses(numClasses).dense(false)
-                .missingValue(savedConfig.getBoolean("feature.missingValue")).build();
+                .missingValue(savedConfig.getBoolean("train.feature.missingValue")).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
             List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
-            if (savedConfig.getBoolean("index.labelFilter")){
-                String prefix = savedConfig.getString("index.labelFilter.prefix");
+            if (savedConfig.getBoolean("train.label.filter")){
+                String prefix = savedConfig.getString("train.label.filter.prefix");
                 extMultiLabel = extMultiLabel.stream().filter(extLabel -> extLabel.startsWith(prefix)).collect(Collectors.toList());
             }
             for (String extLabel: extMultiLabel){
@@ -316,7 +330,7 @@ public class App1 {
             }
         }
 
-        String matchScoreTypeString = savedConfig.getString("index.ngramMatchScoreType");
+        String matchScoreTypeString = savedConfig.getString("train.feature.ngram.matchScoreType");
 
         FeatureLoader.MatchScoreType matchScoreType;
 
@@ -347,9 +361,9 @@ public class App1 {
 
     static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds,
                                                     Logger logger) throws Exception{
-        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), trainIndexIds);
-        if (config.getBoolean("index.labelFilter")){
-            String prefix = config.getString("index.labelFilter.prefix");
+        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("train.label.field"), trainIndexIds);
+        if (config.getBoolean("train.label.filter")){
+            String prefix = config.getString("train.label.filter.prefix");
             buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
         }
         logger.info("there are "+buckets.size()+" classes in the training set.");
@@ -372,14 +386,18 @@ public class App1 {
 
     static LabelTranslator loadAugmentedLabelTranslator(Config config, MultiLabelIndex index, String[] testIndexIds,
                                                         LabelTranslator trainLabelTranslator, Logger logger){
+
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
+        Config savedConfig = new Config(new File(metaDataFolder, "saved_train_config"));
+
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
             extLabels.add(trainLabelTranslator.toExtLabel(i));
         }
 
-        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("index.labelField"), testIndexIds);
-        if (config.getBoolean("index.labelFilter")){
-            String prefix = config.getString("index.labelFilter.prefix");
+        Collection<Terms.Bucket> buckets = index.termAggregation(savedConfig.getString("train.label.field"), testIndexIds);
+        if (savedConfig.getBoolean("train.label.filter")){
+            String prefix = savedConfig.getString("train.label.filter.prefix");
             buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
         }
         List<String> newLabels = new ArrayList<>();
@@ -419,7 +437,7 @@ public class App1 {
 //        stopWatch.start();
 //        File file = new File(metaDataFolder,"all_ngrams.ser");
 //        Set<Ngram> ngrams= (Set) Serialization.deserialize(file);
-//        String labelField = config.getString("index.labelField");
+//        String labelField = config.getString("train.label.labelField");
 //        long[] labelDistribution = LabelDistribution.getLabelDistribution(index,labelField,ids,labelTranslator);
 //        List<FeatureDistribution> distributions = ngrams.stream().parallel()
 //                .map(ngram -> new FeatureDistribution(ngram, index, labelField, ids, labelTranslator,labelDistribution))
@@ -451,11 +469,11 @@ public class App1 {
         FileUtils.writeStringToFile(new File(metaDataFolder,"label_translator.txt"),trainLabelTranslator.toString());
 
         FeatureList featureList = new FeatureList();
-        if (config.getBoolean("feature.useInitialFeatures")){
+        if (config.getBoolean("train.feature.useInitialFeatures")){
             addInitialFeatures(config,index,featureList,trainIndexIds, logger);
         }
 
-        if (config.getBoolean("feature.useCodeDescription")){
+        if (config.getBoolean("train.feature.useCodeDescription")){
             addCodeDescription(config, index, featureList);
         }
 
@@ -463,18 +481,18 @@ public class App1 {
         Set<Ngram> ngrams = new HashSet<>();
         ngrams.addAll(gather(config,index,trainIndexIds, logger));
 
-        if (config.getBoolean("feature.filterNgramsByKeyWords")){
+        if (config.getBoolean("train.feature.filterNgramsByKeyWords")){
             ngrams = keywordsFilter(config,index,ngrams);
         }
 
-        if (config.getBoolean("feature.filterNgramsByRegex")){
+        if (config.getBoolean("train.feature.filterNgramsByRegex")){
             ngrams = regexFilter(config,ngrams);
         }
 
-        if (config.getBoolean("feature.addExternalNgrams")){
+        if (config.getBoolean("train.feature.addExternalNgrams")){
             ngrams.addAll(addNgramFromFile(config, index, logger));
         }
-//        if (config.getBoolean("feature.generateDistribution")){
+//        if (config.getBoolean("train.feature.generateDistribution")){
 //            getNgramDistributions(config,index,trainIndexIds,trainLabelTranslator);
 //        }
 
@@ -489,10 +507,8 @@ public class App1 {
             }
         }
 
-        Config metaConfig = new Config();
-        String[] keys = {"index.labelFilter", "index.labelFilter.prefix", "index.ngramMatchScoreType", "feature.missingValue"};
-        Config.copy(config, metaConfig, keys);
-        metaConfig.store(new File(metaDataFolder, "saved_config"));
+
+        config.store(new File(metaDataFolder, "saved_train_config"));
 
         logger.info("meta data generated");
 
@@ -556,9 +572,9 @@ public class App1 {
      * do not filter unigram candidates
      */
     private static Set<Ngram> keywordsFilter(Config config, ESIndex index, Set<Ngram> ngrams) throws IOException {
-        String externalKeywordsFile = config.getString("feature.filterNgrams.keyWordsFile");
+        String externalKeywordsFile = config.getString("train.feature.filterNgrams.keyWordsFile");
         List<String> lines = FileUtils.readLines(new File(externalKeywordsFile));
-        String analyzer = config.getString("feature.analyzer");
+        String analyzer = config.getString("train.feature.analyzer");
         Set<String> keywords = new HashSet<>();
         for (String line: lines){
             keywords.add(index.analyze(line, analyzer).getNgram());
@@ -586,7 +602,7 @@ public class App1 {
      * @return ngrams that do not match the regular expression
      */
     private static Set<Ngram> regexFilter(Config config, Set<Ngram> ngrams){
-        String regex = config.getString("feature.filterNgrams.regex");
+        String regex = config.getString("train.feature.filterNgrams.regex");
         return ngrams.parallelStream().filter(ngram->!ngram.getNgram().matches(regex)).collect(Collectors.toSet());
     }
 
