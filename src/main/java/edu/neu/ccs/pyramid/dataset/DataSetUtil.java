@@ -502,7 +502,7 @@ public class DataSetUtil {
 
 
         for (int j=0;j<numFeatures2;j++){
-            Vector vector = dataSet1.getColumn(j);
+            Vector vector = dataSet2.getColumn(j);
             for (Vector.Element element: vector.nonZeroes()){
                 int i = element.index();
                 double value = element.get();
@@ -574,6 +574,62 @@ public class DataSetUtil {
         dataSet.setFeatureList(dataSet1.getFeatureList());
         dataSet.setLabelTranslator(dataSet1.getLabelTranslator());
         //id translator is not set
+
+        return dataSet;
+    }
+
+    public static MultiLabelClfDataSet concatenateByColumn(MultiLabelClfDataSet dataSet1, MultiLabelClfDataSet dataSet2){
+        int numDataPoints = dataSet1.getNumDataPoints();
+        int numFeatures1 = dataSet1.getNumFeatures();
+        int numFeatures2 = dataSet2.getNumFeatures();
+        int numFeatures = numFeatures1 + numFeatures2;
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(dataSet1.getNumClasses())
+                .dense(dataSet1.isDense())
+                .missingValue(dataSet1.hasMissingValue())
+                .build();
+
+        int featureIndex = 0;
+        for (int j=0;j<numFeatures1;j++){
+            Vector vector = dataSet1.getColumn(j);
+            for (Vector.Element element: vector.nonZeroes()){
+                int i = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(i,featureIndex,value);
+            }
+            featureIndex += 1;
+        }
+
+
+        for (int j=0;j<numFeatures2;j++){
+            Vector vector = dataSet2.getColumn(j);
+            for (Vector.Element element: vector.nonZeroes()){
+                int i = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(i,featureIndex,value);
+            }
+            featureIndex += 1;
+        }
+
+        MultiLabel[] labels = dataSet1.getMultiLabels();
+        for (int i=0;i<numDataPoints;i++){
+            dataSet.setLabels(i,labels[i]);
+        }
+
+        FeatureList featureList = new FeatureList();
+        for (Feature feature: dataSet1.getFeatureList().getAll()){
+            featureList.add(feature);
+        }
+
+        for (Feature feature: dataSet2.getFeatureList().getAll()){
+            featureList.add(feature);
+        }
+
+        dataSet.setFeatureList(featureList);
+
+        dataSet.setLabelTranslator(dataSet1.getLabelTranslator());
+        dataSet.setIdTranslator(dataSet1.getIdTranslator());
 
         return dataSet;
     }
