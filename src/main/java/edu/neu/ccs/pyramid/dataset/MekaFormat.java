@@ -383,6 +383,7 @@ public class MekaFormat {
             }
         }
         br.close();
+        System.out.println("numData: " + numData);
 
         return loadMLClfDataset(file, numClasses, numFeatures, numData, labelMap, featureMap);
 
@@ -422,7 +423,7 @@ public class MekaFormat {
         while((line=br.readLine()) != null) {
             if ((line.startsWith("{")) && (line.endsWith("}"))) {
                 line = line.substring(1,line.length()-1);
-                String[] indexValues = line.split(",");
+                String[] indexValues = line.split(", ");
                 for (String indexValue : indexValues) {
                     String[] indexValuePair = indexValue.split(" ");
                     String index = indexValuePair[0];
@@ -437,7 +438,7 @@ public class MekaFormat {
                         int indexInt = Integer.parseInt(index);
                         dataSet.setFeatureValue(dataCount,indexInt,valueDouble);
                     } else {
-                        throw new RuntimeException("Index not found in the line: " + line);
+                        throw new RuntimeException("Index:" +index + " not found in the line: " + line);
                     }
                 }
                 dataCount++;

@@ -409,7 +409,7 @@ public class CMLCRFTest {
 
         MultiLabel[] predTrain;
         MultiLabel[] predTest;
-        for (int i=0; i < config.getInt("numRounds"); i++) {
+        for (int i=0; i < 10000; i++) {
             blockwiseCD.iterate();
             predTrain = cmlcrf.predict(trainSet);
             predTest = cmlcrf.predict(testSet);

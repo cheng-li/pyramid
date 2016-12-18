@@ -34,7 +34,6 @@ public class BlockwiseCD {
     private int numParameters;
     private int numWeightsForFeatures;
     private int numWeightsForLabelPairs;
-    private Vector gradient;
     private double value;
     private double[] empiricalCounts;
     private int[] parameterToL1;
@@ -78,7 +77,7 @@ public class BlockwiseCD {
     private int numFeatures;
     // labels to parameterIndex
     private int[][] labelPairToParams;
-
+    private double weight;
 
     public BlockwiseCD (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet) {
         this(cmlcrf, dataSet, 0.0, 1.0);
@@ -102,7 +101,6 @@ public class BlockwiseCD {
         this.empiricalCounts = new double[numParameters];
         this.initCache();
         this.updateEmpiricalCounts();
-        this.gradient = new DenseVector(numParameters);
         this.labelPairToCombination = new ArrayList<>();
         for (int i=0;i< numWeightsForLabelPairs;i++){
             labelPairToCombination.add(new ArrayList<>());
@@ -121,6 +119,7 @@ public class BlockwiseCD {
 
         this.terminator = new Terminator();
         this.numFeatures = dataSet.getNumFeatures();
+        this.weight = 1.0/numData;
     }
 
 
@@ -139,15 +138,30 @@ public class BlockwiseCD {
     }
 
     public void iterate() {
-        for (int i=0; i < numWeightsForFeatures; i++) {
+//        updateClassScoreMatrix();
+//        updateAssignmentScoreMatrix();
+//        updateAssignmentProbMatrix();
+//        updateCombProbSums();
+//        updateClassProbMatrix();
+        //        for (int x=0; x<(numFeatures+1); x++) {
+//            updateClassScoreMatrix();
+//            updateAssignmentScoreMatrix();
+//            updateAssignmentProbMatrix();
+//            updateCombProbSums();
+//            updateClassProbMatrix();
+//            for (int l=0; l<numClasses; l++) {
+//                iterateForF(l*(numFeatures+1) + x);
+//            }
+//        }
+        for (int i=0; i<numWeightsForFeatures; i++) {
             updateClassScoreMatrix();
             updateAssignmentScoreMatrix();
             updateAssignmentProbMatrix();
             updateCombProbSums();
             updateClassProbMatrix();
-
             iterateForF(i);
         }
+
 
         for (int i=numWeightsForFeatures; i<numParameters; i++) {
             updateClassScoreMatrix();
@@ -155,18 +169,21 @@ public class BlockwiseCD {
             updateAssignmentProbMatrix();
             updateCombProbSums();
             updateClassProbMatrix();
-
             iterateForLF(i);
         }
     }
 
+    /**
+     * iterate for label-label features.
+     * @param parameterIndex
+     */
     private void iterateForLF(int parameterIndex) {
         int pos = parameterIndex - numWeightsForFeatures;
         double gradientForLabelPair = calGradientForLabelPair(pos);
         double hessiansForLabelPair = calHessiansForLabelPair(pos);
-        double fit = hessiansForLabelPair * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForLabelPair;
+        double fit = this.weight * (hessiansForLabelPair * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForLabelPair);
         double numerator = softThreshold(fit);
-        double denominator = hessiansForLabelPair + regularization * (1-l1Ratio);
+        double denominator = this.weight * hessiansForLabelPair + regularization * (1-l1Ratio);
         double newCoeff = 0;
         if (denominator != 0) {
             newCoeff = numerator / denominator;
@@ -175,14 +192,18 @@ public class BlockwiseCD {
 
     }
 
+    /**
+     * iterate for feature-label features.
+     * @param parameterIndex
+     */
     private void iterateForF(int parameterIndex) {
         int classIndex = parameterToClass[parameterIndex];
         int featureIndex = parameterToFeature[parameterIndex];
         double gradientForFeature = calGradientForFeature(classIndex, featureIndex, parameterIndex);
-        double hessianForFeature = calHessiansForFeature(classIndex, featureIndex);
-        double fit = hessianForFeature * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForFeature;
+        double hessianForFeature =  calHessiansForFeature(classIndex, featureIndex);
+        double fit = this.weight * (hessianForFeature * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForFeature);
         double numerator = softThreshold(fit);
-        double denominator = hessianForFeature + regularization * (1-l1Ratio);
+        double denominator = this.weight * hessianForFeature + regularization * (1-l1Ratio);
         double newCoeff = 0;
         if (denominator != 0) {
             newCoeff = numerator / denominator;
@@ -498,7 +519,6 @@ public class BlockwiseCD {
     }
 
     private void updateClassProbMatrix(){
-
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(i -> classProbMatrix[i] = cmlcrf.calClassProbs(combProbMatrix[i]));
     }

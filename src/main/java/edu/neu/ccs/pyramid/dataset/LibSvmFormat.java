@@ -246,8 +246,8 @@ public class LibSvmFormat {
                 String labels = lineInfo[0];
                 for (String label : labels.split(",")) {
                     int l = Integer.parseInt(label);
-//                    dataSet.addLabel(lineCount, l-1);
-                    dataSet.addLabel(lineCount, l);
+                    dataSet.addLabel(lineCount, l-1);
+//                    dataSet.addLabel(lineCount, l);
                 }
                 // adding feature
                 for (int i=1; i<lineInfo.length; i++) {
