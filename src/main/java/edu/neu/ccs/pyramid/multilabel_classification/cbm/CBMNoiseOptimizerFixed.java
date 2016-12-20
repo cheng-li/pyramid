@@ -21,6 +21,7 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
+import org.apache.xpath.operations.Bool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +92,7 @@ public class CBMNoiseOptimizerFixed {
             for (int j=0;j<combinations.size();j++){
                 MultiLabel truth = dataSet.getMultiLabels()[i];
                 MultiLabel combination = combinations.get(j);
-                double f = classifier.predictLogAssignmentProb(combination.toVector(dataSet.getNumFeatures()), truth);
+                double f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumFeatures()), truth);
                 scores[i][j] = f;
             }
         }
