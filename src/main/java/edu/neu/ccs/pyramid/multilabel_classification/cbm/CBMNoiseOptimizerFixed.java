@@ -92,7 +92,7 @@ public class CBMNoiseOptimizerFixed {
             for (int j=0;j<combinations.size();j++){
                 MultiLabel truth = dataSet.getMultiLabels()[i];
                 MultiLabel combination = combinations.get(j);
-                double f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumFeatures()), truth);
+                double f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumClasses()), truth);
                 scores[i][j] = f;
             }
         }
