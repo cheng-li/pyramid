@@ -180,25 +180,24 @@ public class KLDivergence {
             }
         }
 
-//        System.out.println("LRs for each label:");
-//        CBM cbm = (CBM) multiLabelClassifier;
-//        Classifier.ProbabilityEstimator[] estimators = cbm.getBinaryClassifiers()[0];
-//        for (int i = 0; i < estimators.length; i++) {
-//            System.out.println("LR:" + dataSet.getLabelTranslator().toExtLabel(i));
-//            LogisticRegression lr = (LogisticRegression)estimators[i];
-//            System.out.println(lr);
-////            Vector weight_vec = lr.getWeights().getWeightsWithoutBiasForClass(1);
-////            double[] weights = new double[weight_vec.size()];
-////            for (int j = 0; j < weight_vec.size(); j++) {
-////                weights[j] = weight_vec.get(j);
-////            }
-////
-////            System.out.println("bias:" + lr.getWeights().getBiasForClass(1));
-////            int[] order2 = ArgSort.argSortDescending(weights);
-////            for (int j = 0; j < order2.length; ++j) {
-////                System.out.println(dataSet.getLabelTranslator().toExtLabel(order2[j]) + ":" + weights[order2[j]]);
-////            }
-//        }
+        System.out.println("LRs for each label:");
+        CBM cbm = (CBM) multiLabelClassifier;
+        Classifier.ProbabilityEstimator[] estimators = cbm.getBinaryClassifiers()[0];
+        for (int i = 0; i < estimators.length; i++) {
+            System.out.println("LR:" + dataSet.getLabelTranslator().toExtLabel(i));
+            LogisticRegression lr = (LogisticRegression)estimators[i];
+            Vector weight_vec = lr.getWeights().getWeightsWithoutBiasForClass(1);
+            double[] weights = new double[weight_vec.size()];
+            for (int j = 0; j < weight_vec.size(); j++) {
+                weights[j] = weight_vec.get(j);
+            }
+
+            System.out.println("bias:" + lr.getWeights().getBiasForClass(1));
+            int[] order2 = ArgSort.argSortDescending(weights);
+            for (int j = 0; j < order2.length; ++j) {
+                System.out.println(dataSet.getLabelTranslator().toExtLabel(order2[j]) + ":" + weights[order2[j]]);
+            }
+        }
         System.out.println("---");
 
         return kl;
