@@ -76,7 +76,8 @@ public class CBMNoiseOptimizerFixed {
     // size = [num data][num combination]
     private double[][] scores;
 
-    public CBMNoiseOptimizerFixed(CBM cbm, MultiLabelClfDataSet dataSet, MultiLabelClfDataSet dataSetGroundTruth, MultiLabelClassifier.AssignmentProbEstimator classifier) {
+    public CBMNoiseOptimizerFixed(CBM cbm, MultiLabelClfDataSet dataSet, MultiLabelClfDataSet dataSetGroundTruth, MultiLabelClassifier.AssignmentProbEstimator classifier, Boolean includeFeature) {
+        System.out.println("Enter CBMNoiseOptimizerFixed constructor ...");
         this.cbm = cbm;
         this.dataSet = dataSet;
         this.combinations = DataSetUtil.gatherMultiLabels(dataSetGroundTruth);
@@ -97,14 +98,35 @@ public class CBMNoiseOptimizerFixed {
 //            }
 //        }
 
+        System.out.println("#data points: " + dataSet.getNumDataPoints() + ", #combinations: " + combinations.size());
         IntStream.range(0, dataSet.getNumDataPoints()).forEach(i-> IntStream.range(0,combinations.size()).parallel()
                 .forEach(j->{
+                    // y
                     MultiLabel truth = dataSet.getMultiLabels()[i];
+                    // z
                     MultiLabel combination = combinations.get(j);
-                    double f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumClasses()), truth);
+                    double f = 0.0;
+                    if (!includeFeature) {
+                        f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumClasses()), truth);
+                    } else {
+                        MultiLabel xz = new MultiLabel();
+                        MultiLabel x = new MultiLabel(dataSet.getRow(i));
+                        for (int k = 0; k < dataSet.getNumFeatures(); k++) {
+                            if (x.matchClass(k)) {
+                                xz.addLabel(k);
+                            }
+                        }
+                        for (int k = 0; k < dataSet.getNumClasses(); k++) {
+                            if (combination.matchClass(k)) {
+                                xz.addLabel(k + dataSet.getNumFeatures());
+                            }
+                        }
+                        f = classifier.predictAssignmentProb(
+                                xz.toVector(dataSet.getNumFeatures() + dataSet.getNumClasses()), truth);
+                    }
                     scores[i][j] = f;
                 }));
-        
+        System.out.println("Finished evaluating fixed noise model p(y_n | z) ...");
 
         this.targets = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.probabilities = new double[dataSet.getNumDataPoints()][combinations.size()];
