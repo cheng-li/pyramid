@@ -96,7 +96,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
      * @param assignments
      * @return
      */
-    private double[] predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments){
+    public double[] predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments){
         BMDistribution bmDistribution = computeBM(x);
         double[] probs = new double[assignments.size()];
         for (int c=0;c<assignments.size();c++){

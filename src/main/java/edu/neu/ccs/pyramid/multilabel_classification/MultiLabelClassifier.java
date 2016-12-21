@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -78,6 +79,26 @@ public interface MultiLabelClassifier extends Serializable{
         double predictLogAssignmentProb(Vector vector, MultiLabel assignment);
         default double predictAssignmentProb(Vector vector, MultiLabel assignment){
             return Math.exp(predictLogAssignmentProb(vector, assignment));
+        }
+
+        /**
+         * batch version
+         * can be implemented more efficiently in individual classifiers
+         * @param vector
+         * @param assignments
+         * @return
+         */
+        default double[] predictAssignmentProbs(Vector vector, List<MultiLabel> assignments){
+            return Arrays.stream(predictLogAssignmentProbs(vector, assignments)).map(Math::exp).toArray();
+        }
+
+
+        default double[] predictLogAssignmentProbs(Vector vector, List<MultiLabel> assignments){
+            double[] logProbs = new double[assignments.size()];
+            for (int c=0;c<assignments.size();c++){
+                logProbs[c] = predictLogAssignmentProb(vector, assignments.get(c));
+            }
+            return logProbs;
         }
     }
 
