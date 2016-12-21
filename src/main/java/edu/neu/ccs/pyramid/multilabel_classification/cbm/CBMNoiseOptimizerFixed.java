@@ -88,14 +88,24 @@ public class CBMNoiseOptimizerFixed {
 
         this.binaryTargetsDistributions = new double[cbm.getNumClasses()][dataSet.getNumDataPoints()][2];
         this.scores = new double[dataSet.getNumDataPoints()][combinations.size()];
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int j=0;j<combinations.size();j++){
-                MultiLabel truth = dataSet.getMultiLabels()[i];
-                MultiLabel combination = combinations.get(j);
-                double f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumClasses()), truth);
-                scores[i][j] = f;
-            }
-        }
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            for (int j=0;j<combinations.size();j++){
+//                MultiLabel truth = dataSet.getMultiLabels()[i];
+//                MultiLabel combination = combinations.get(j);
+//                double f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumClasses()), truth);
+//                scores[i][j] = f;
+//            }
+//        }
+
+        IntStream.range(0, dataSet.getNumDataPoints()).forEach(i-> IntStream.range(0,combinations.size()).parallel()
+                .forEach(j->{
+                    MultiLabel truth = dataSet.getMultiLabels()[i];
+                    MultiLabel combination = combinations.get(j);
+                    double f = classifier.predictAssignmentProb(combination.toVector(dataSet.getNumClasses()), truth);
+                    scores[i][j] = f;
+                }));
+        
+
         this.targets = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.probabilities = new double[dataSet.getNumDataPoints()][combinations.size()];
         this.updateProbabilities();
