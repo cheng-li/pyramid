@@ -187,6 +187,25 @@ public class MacroAverage {
         return sb.toString();
     }
 
+
+
+    public String printDetail() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("f1=").append(f1);
+        sb.append(", overlap=").append(overlap);
+        sb.append(", precision=").append(precision);
+        sb.append(", recall=").append(recall);
+        sb.append(", hammingLoss=").append(hammingLoss);
+        sb.append(", binaryAccuracy=").append(binaryAccuracy);
+        sb.append(", labelWisePrecision=").append(Arrays.toString(labelWisePrecision));
+        sb.append(", labelWiseRecall=").append(Arrays.toString(labelWiseRecall));
+        sb.append(", labelWiseOverlap=").append(Arrays.toString(labelWiseOverlap));
+        sb.append(", labelWiseF1=").append(Arrays.toString(labelWiseF1));
+        sb.append(", labelWiseHammingLoss=").append(Arrays.toString(labelWiseHammingLoss));
+        sb.append(", labelWiseAccuracy=").append(Arrays.toString(labelWiseAccuracy));
+        return sb.toString();
+    }
+
     public static class Serializer extends JsonSerializer<MacroAverage> {
         @Override
         public void serialize(MacroAverage macroAverage, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
