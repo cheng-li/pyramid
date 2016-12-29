@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.eval;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
@@ -78,10 +79,14 @@ public class AveragePrecision {
         if (classifier.getNumClasses()!=2){
             throw new IllegalArgumentException("classifier.getNumClasses()!=2");
         }
+        return averagePrecision(classifier, dataSet, dataSet.getLabels());
+    }
+
+    public static double averagePrecision(Classifier.ProbabilityEstimator classifier, DataSet dataSet, int[] labels){
         double[] probs = new double[dataSet.getNumDataPoints()];
         IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .forEach(i->probs[i]= classifier.predictClassProbs(dataSet.getRow(i))[1]);
-        return averagePrecision(dataSet.getLabels(), probs);
+        return averagePrecision(labels, probs);
     }
 
 
