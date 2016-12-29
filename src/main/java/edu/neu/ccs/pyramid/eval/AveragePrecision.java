@@ -1,5 +1,7 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.classification.Classifier;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
@@ -7,6 +9,7 @@ import edu.neu.ccs.pyramid.util.ArgSort;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 /**
  * Created by Rainicy on 8/21/15.
@@ -64,6 +67,23 @@ public class AveragePrecision {
         }
         return averagePrecision(relevance);
     }
+
+    /**
+     * compute average precision for a binary classification task
+     * @param classifier
+     * @param dataSet
+     * @return
+     */
+    public static double averagePrecision(Classifier.ProbabilityEstimator classifier, ClfDataSet dataSet){
+        if (classifier.getNumClasses()!=2){
+            throw new IllegalArgumentException("classifier.getNumClasses()!=2");
+        }
+        double[] probs = new double[dataSet.getNumDataPoints()];
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->probs[i]= classifier.predictClassProbs(dataSet.getRow(i))[1]);
+        return averagePrecision(dataSet.getLabels(), probs);
+    }
+
 
     /**
      * Average Precision based on each data sample. First, calculate the average
