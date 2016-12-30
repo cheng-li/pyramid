@@ -41,6 +41,9 @@ public class AUC {
      * @return
      */
     public static double auc(double[] scores, int[] labels){
+        if (labels.length==0){
+            return 1;
+        }
         Comparator<Pair<Double,Integer>> comparator = Comparator.comparing(Pair::getFirst);
         List<Pair<Double,Integer>> sortedPairs = IntStream.range(0,scores.length).parallel()
                 .mapToObj(i -> new Pair<>(scores[i], labels[i]))

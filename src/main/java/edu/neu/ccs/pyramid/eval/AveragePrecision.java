@@ -37,7 +37,7 @@ public class AveragePrecision {
                 sumPrecisionAtK += relevantSoFar/(i+1);
             }
         }
-        return sumPrecisionAtK/totalRelevant;
+        return SafeDivide.divide(sumPrecisionAtK,totalRelevant, 1);
     }
 
     public static double averagePrecision(int[] relevance){
@@ -51,7 +51,7 @@ public class AveragePrecision {
                 sumPrecisionAtK += relevantSoFar/(i+1);
             }
         }
-        return sumPrecisionAtK/totalRelevant;
+        return SafeDivide.divide(sumPrecisionAtK,totalRelevant, 1);
     }
 
     /**
