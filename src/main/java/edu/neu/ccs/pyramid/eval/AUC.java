@@ -3,9 +3,11 @@ package edu.neu.ccs.pyramid.eval;
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,7 +43,9 @@ public class AUC {
      * @return
      */
     public static double auc(double[] scores, int[] labels){
-        if (labels.length==0){
+        int sum = Arrays.stream(labels).sum();
+        // if only positive or only negative, return 1
+        if (sum ==0 || sum==labels.length){
             return 1;
         }
         Comparator<Pair<Double,Integer>> comparator = Comparator.comparing(Pair::getFirst);
