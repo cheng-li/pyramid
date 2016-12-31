@@ -50,6 +50,16 @@ public class ElasticNetLogisticTrainer {
     private Terminator terminator;
     private boolean lineSearch = true;
 
+    public boolean isActiveSet() {
+        return isActiveSet;
+    }
+
+    public void setActiveSet(boolean activeSet) {
+        isActiveSet = activeSet;
+    }
+
+    private boolean isActiveSet = false;
+
     public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses,
                                      double[][] targets, double[] weights) {
         return new Builder(logisticRegression, dataSet, numClasses, targets, weights);
@@ -220,6 +230,7 @@ public class ElasticNetLogisticTrainer {
         ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights,sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
+        linearRegTrainer.setActiveSet(this.isActiveSet);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }
