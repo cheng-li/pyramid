@@ -136,6 +136,7 @@ public class ElasticNetLinearRegOptimizer {
         // only when activeSet does not change
         boolean shouldTerminate = false;
         while (!shouldTerminate) {
+            int maxIter = 0;
             while (true) {
                 activeSetIterate(scores, activeSet);
                 double loss = loss(linearRegression,scores,labels,instanceWeights,sumWeights);
@@ -143,7 +144,7 @@ public class ElasticNetLinearRegOptimizer {
                     logger.debug("loss = "+loss);
                 }
                 terminator.add(loss);
-                if (terminator.shouldTerminate()){
+                if (terminator.shouldTerminate() || (++maxIter>5)){
                     if (logger.isDebugEnabled()) {
                         logger.debug("final loss = " + loss);
                     }
@@ -153,9 +154,6 @@ public class ElasticNetLinearRegOptimizer {
             iterate(scores);
             List<Integer> latestActiveSet = updateActiveSet();
             shouldTerminate = isActiveSetChanged(activeSet, latestActiveSet);
-            if (shouldTerminate) {
-                break;
-            }
             activeSet = new ArrayList<>(latestActiveSet);
         }
     }

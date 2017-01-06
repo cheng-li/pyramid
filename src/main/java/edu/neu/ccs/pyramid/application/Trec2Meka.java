@@ -24,12 +24,18 @@ public class Trec2Meka {
 
         List<String> trecs = config.getStrings("trec");
         List<String> mekas = config.getStrings("meka");
+        // for label xml information
+        String xmlFile = config.getString("xml");
 
         for (int i=0; i<trecs.size(); i++) {
             MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(trecs.get(i)),
                     DataSetType.ML_CLF_SPARSE, true);
             System.out.println(i + " -- Translating on trecs: " + trecs.get(i));
             MekaFormat.save(dataSet, mekas.get(i), config);
+
+            if (i==0) {
+                MekaFormat.saveXML(dataSet, xmlFile);
+            }
         }
     }
 }
