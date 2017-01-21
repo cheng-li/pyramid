@@ -22,7 +22,7 @@ public class DirWalker {
                 addFile(new File(file,subNode),list);
             }
         } else {
-            if (!file.getName().equals(".DS_Store"))
+            if (!file.getName().endsWith(".DS_Store"))
             list.add(file);
         }
     }
