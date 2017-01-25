@@ -12,6 +12,15 @@ public class VectorsTest {
         double[] d = {1,2,5};
         Vector v = new DenseVector(d);
         System.out.println(Vectors.concatenate(v,4.5));
+
+        test2();
+    }
+
+    private static void test2(){
+        double[] d = {1,2,3};
+        Vector v = new DenseVector(d);
+        double[] a = {7,4,5,6};
+        System.out.println(Vectors.concatenate(v,a));
     }
 
 }

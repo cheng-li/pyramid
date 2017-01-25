@@ -32,6 +32,30 @@ public class Vectors {
         return con;
     }
 
+    public static Vector concatenate(Vector vector, double[] numbers){
+        Vector con = null;
+        if (vector instanceof DenseVector){
+            con = new DenseVector(vector.size()+numbers.length);
+        }
+        if (vector instanceof RandomAccessSparseVector){
+            con = new RandomAccessSparseVector(vector.size()+numbers.length);
+        }
+
+        if (vector instanceof SequentialAccessSparseVector){
+            con = new SequentialAccessSparseVector(vector.size()+numbers.length);
+        }
+
+        for (Vector.Element nonZeros: vector.nonZeroes()){
+            int index = nonZeros.index();
+            double value = nonZeros.get();
+            con.set(index, value);
+        }
+        for (int i=0;i<numbers.length;i++){
+            con.set(i+vector.size(), numbers[i]);
+        }
+        return con;
+    }
+
 
     public static double dot(Vector vector1, Vector vector2){
         if (vector1.size()!=vector2.size()){
