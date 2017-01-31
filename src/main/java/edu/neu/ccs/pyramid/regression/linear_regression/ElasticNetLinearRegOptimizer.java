@@ -33,8 +33,6 @@ public class ElasticNetLinearRegOptimizer {
         return isActiveSet;
     }
 
-    private List<Integer> activeSet;
-
     public void setActiveSet(boolean activeSet) {
         isActiveSet = activeSet;
     }
@@ -133,11 +131,12 @@ public class ElasticNetLinearRegOptimizer {
         }
 
         // initialize iterations
-        FullIterate(scores);
+        iterate(scores);
+        List<Integer> activeSet = updateActiveSet();
         // only when activeSet does not change
         boolean shouldTerminate = false;
         while (!shouldTerminate) {
-            int maxIter = 1;
+            int maxIter = 0;
             while (true) {
                 activeSetIterate(scores, activeSet);
                 double loss = loss(linearRegression,scores,labels,instanceWeights,sumWeights);
@@ -145,96 +144,17 @@ public class ElasticNetLinearRegOptimizer {
                     logger.debug("loss = "+loss);
                 }
                 terminator.add(loss);
-                if (++maxIter>5){
+                if (terminator.shouldTerminate() || (++maxIter>5)){
                     if (logger.isDebugEnabled()) {
                         logger.debug("final loss = " + loss);
                     }
                     break;
                 }
             }
-            List<Integer> lastActiveSet = new ArrayList<>(activeSet);
-            FullIterate(scores);
-            shouldTerminate = isActiveSetChanged(activeSet, lastActiveSet);
-
-            if (terminator.shouldTerminate()) {
-                break;
-            }
-        }
-    }
-
-    private void FullIterate(double[] scores) {
-        // if no weight at all, only minimize the penalty
-        if (sumWeights==0){
-            // if there is a penalty
-            if (regularization>0){
-                for (int j=0;j<dataSet.getNumFeatures();j++){
-                    linearRegression.getWeights().setWeight(j,0);
-                }
-            }
-            return;
-        }
-        double oldBias = linearRegression.getWeights().getBias();
-        double newBias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
-                instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/sumWeights;
-        linearRegression.getWeights().setBias(newBias);
-        //update scores
-        double difference = newBias - oldBias;
-        if (difference != 0) {
-            IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
-        }
-        activeSet = new ArrayList<>();
-        for (int j=0;j<dataSet.getNumFeatures();j++){
-            optimizeOneFeatureForActiveSet(scores,j);
-        }
-
-    }
-
-    private void optimizeOneFeatureForActiveSet(double[] scores, int featureIndex) {
-        double oldCoeff = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
-        double fit = 0;
-        double denominator = 0;
-        Vector featureColumn = dataSet.getColumn(featureIndex);
-//        for (Vector.Element element: featureColumn.nonZeroes()){
-//            int i = element.index();
-//            double x = element.get();
-//            double partialResidual = labels[i] - scores[i] + x*oldCoeff;
-//            double tmp = instanceWeights[i]*x;
-//            fit += tmp*partialResidual;
-//            denominator += x*tmp;
-//        }
-        // dense updating
-        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            double x = featureColumn.get(i);
-            double partialResidual = labels[i] - scores[i] + x*oldCoeff;
-            double tmp = instanceWeights[i]*x;
-            fit += tmp*partialResidual;
-            denominator += x*tmp;
-        }
-        fit /= sumWeights;
-        double numerator = softThreshold(fit);
-        double newCoeff = 0;
-        if (numerator != 0) {
-            denominator = denominator/sumWeights + regularization*(1-l1Ratio);
-            // if denominator = 0, this feature is useless, assign 0 to the coefficient
-            if (denominator!=0){
-                newCoeff = numerator/denominator;
-            }
-            activeSet.add(featureIndex);
-        }
-
-        linearRegression.getWeights().setWeight(featureIndex,newCoeff);
-        //update scores
-        double difference = newCoeff - oldCoeff;
-        if (difference!=0){
-//            for (Vector.Element element: featureColumn.nonZeroes()){
-//                int i = element.index();
-//                double x = element.get();
-//                scores[i] = scores[i] +  difference*x;
-//            }
-            for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-                double x = featureColumn.get(i);
-                scores[i] = scores[i] +  difference*x;
-            }
+            iterate(scores);
+            List<Integer> latestActiveSet = updateActiveSet();
+            shouldTerminate = isActiveSetChanged(activeSet, latestActiveSet);
+            activeSet = new ArrayList<>(latestActiveSet);
         }
     }
 
@@ -242,8 +162,8 @@ public class ElasticNetLinearRegOptimizer {
         if (activeSet.size() != latestActiveSet.size()) {
             return false;
         }
-//        Collections.sort(activeSet);
-//        Collections.sort(latestActiveSet);
+        Collections.sort(activeSet);
+        Collections.sort(latestActiveSet);
         for (int i=0; i<activeSet.size(); i++) {
             if (!activeSet.get(i).equals(latestActiveSet.get(i))) {
                 return false;
@@ -253,13 +173,13 @@ public class ElasticNetLinearRegOptimizer {
     }
 
 
-//    private List<Integer> updateActiveSet() {
-//        List<Integer> activeSet = new ArrayList<>();
-//        for (Vector.Element element : linearRegression.getWeights().getWeightsWithoutBias().nonZeroes()) {
-//            activeSet.add(element.index());
-//        }
-//        return activeSet;
-//    }
+    private List<Integer> updateActiveSet() {
+        List<Integer> activeSet = new ArrayList<>();
+        for (Vector.Element element : linearRegression.getWeights().getWeightsWithoutBias().nonZeroes()) {
+            activeSet.add(element.index());
+        }
+        return activeSet;
+    }
 
     private void normalOptimize() {
         double[] scores = new double[dataSet.getNumDataPoints()];
@@ -360,7 +280,6 @@ public class ElasticNetLinearRegOptimizer {
         if (difference != 0) {
             IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
         }
-
         for (int j=0;j<dataSet.getNumFeatures();j++){
             optimizeOneFeature(scores,j);
         }
@@ -405,17 +324,9 @@ public class ElasticNetLinearRegOptimizer {
         double fit = 0;
         double denominator = 0;
         Vector featureColumn = dataSet.getColumn(featureIndex);
-//        for (Vector.Element element: featureColumn.nonZeroes()){
-//            int i = element.index();
-//            double x = element.get();
-//            double partialResidual = labels[i] - scores[i] + x*oldCoeff;
-//            double tmp = instanceWeights[i]*x;
-//            fit += tmp*partialResidual;
-//            denominator += x*tmp;
-//        }
-        // dense updating
-        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            double x = featureColumn.get(i);
+        for (Vector.Element element: featureColumn.nonZeroes()){
+            int i = element.index();
+            double x = element.get();
             double partialResidual = labels[i] - scores[i] + x*oldCoeff;
             double tmp = instanceWeights[i]*x;
             fit += tmp*partialResidual;
@@ -435,20 +346,16 @@ public class ElasticNetLinearRegOptimizer {
         //update scores
         double difference = newCoeff - oldCoeff;
         if (difference!=0){
-//            for (Vector.Element element: featureColumn.nonZeroes()){
-//                int i = element.index();
-//                double x = element.get();
-//                scores[i] = scores[i] +  difference*x;
-//            }
-            for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-                double x = featureColumn.get(i);
+            for (Vector.Element element: featureColumn.nonZeroes()){
+                int i = element.index();
+                double x = element.get();
                 scores[i] = scores[i] +  difference*x;
             }
         }
     }
 
 
-//    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
+    //    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
 //        double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
 //                0.5 * instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
 //                .sum();
