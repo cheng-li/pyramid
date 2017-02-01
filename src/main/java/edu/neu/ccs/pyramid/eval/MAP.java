@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -43,5 +44,10 @@ public class MAP {
             sum += averagePrecision;
         }
         return sum/labels.size();
+    }
+
+    public static double map(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
+        List<Integer> labels = IntStream.range(0, dataSet.getNumClasses()).boxed().collect(Collectors.toList());
+        return map(classifier, dataSet, labels);
     }
 }
