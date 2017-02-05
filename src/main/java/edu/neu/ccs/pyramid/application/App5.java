@@ -241,6 +241,8 @@ public class App5 {
         optimizer.setShrinkageMultiClass(config.getDouble("boost.shrinkageMultiClass"));
         optimizer.setNumLeavesBinary(config.getInt("boost.numLeavesBinary"));
         optimizer.setNumLeavesMultiClass(config.getInt("boost.numLeavesMultiClass"));
+        optimizer.setNoiseGammaLabel(config.getDouble("noiseGammaLabel"));
+        optimizer.setNoiseGammaSet(config.getDouble("noiseGammaSet"));
 
         return optimizer;
     }
