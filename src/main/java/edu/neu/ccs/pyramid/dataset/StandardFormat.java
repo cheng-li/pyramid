@@ -120,6 +120,8 @@ public class StandardFormat {
         int numDataPoints = dataSet.getNumDataPoints();
         int numFeatures = dataSet.getNumFeatures();
         int numClasses = dataSet.getNumClasses();
+        featureFile.getParentFile().mkdirs();
+        labelFile.getParentFile().mkdirs();
         try(
                 BufferedWriter bw1 = new BufferedWriter(new FileWriter(featureFile));
         ){

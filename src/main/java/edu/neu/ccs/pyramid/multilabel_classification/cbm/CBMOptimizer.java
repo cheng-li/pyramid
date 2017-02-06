@@ -329,6 +329,7 @@ public class CBMOptimizer {
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
         double[] instanceWeights = new double[dataSet.getNumDataPoints()];
         for (int i=0;i<dataSet.getNumDataPoints();i++){
+            //todo do not multiply by noiseSetWeight ?
             instanceWeights[i] = gammasT[componentIndex][i] * noiseSetWeights[i] * noiseLabelWeights[i][labelIndex];
         }
         // no parallelism
