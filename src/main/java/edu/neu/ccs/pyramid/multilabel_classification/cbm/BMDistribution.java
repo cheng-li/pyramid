@@ -24,6 +24,7 @@ public class BMDistribution {
     double[][][] logClassProbs;
 
 
+
     BMDistribution(CBM cbm, Vector x) {
         this.numLabels = cbm.numLabels;
         this.numComponents = cbm.numComponents;
@@ -63,11 +64,39 @@ public class BMDistribution {
         return sum;
     }
 
+
+    // log p(y|z=k)
+    private double logYGivenComponent(MultiLabel y, int k, double[] noiseLabelWeight){
+        double sum = 0.0;
+        for (int l=0; l< numLabels; l++) {
+            if (y.matchClass(l)) {
+                sum += noiseLabelWeight[l] * logClassProbs[k][l][1];
+            } else {
+                sum += noiseLabelWeight[l] * logClassProbs[k][l][0];
+            }
+        }
+        return sum;
+    }
+
     // p(z=k|y)
     double[] posteriorMembership(MultiLabel y){
         double[] logNumerator = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             logNumerator[k] = logProportions[k] + logYGivenComponent(y, k);
+        }
+        double logDenominator = MathUtil.logSumExp(logNumerator);
+        double[] membership = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            membership[k] = Math.exp(logNumerator[k]-logDenominator);
+        }
+        return membership;
+    }
+
+    // p(z=k|y)
+    double[] posteriorMembership(MultiLabel y, double[] noiseLabelWeight){
+        double[] logNumerator = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            logNumerator[k] = logProportions[k] + logYGivenComponent(y, k, noiseLabelWeight);
         }
         double logDenominator = MathUtil.logSumExp(logNumerator);
         double[] membership = new double[numComponents];

@@ -266,7 +266,7 @@ public class CBMOptimizer {
     private void updateGamma(int n) {
         Vector x = dataSet.getRow(n);
         MultiLabel y = dataSet.getMultiLabels()[n];
-        double[] posterior = cbm.posteriorMembership(x, y);
+        double[] posterior = cbm.posteriorMembership(x, y, noiseLabelWeights[n]);
         for (int k=0; k<cbm.numComponents; k++) {
             gammas[n][k] = posterior[k];
             gammasT[k][n] = posterior[k];
