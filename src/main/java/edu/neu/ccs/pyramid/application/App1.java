@@ -11,6 +11,9 @@ import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
+import edu.neu.ccs.pyramid.feature_extraction.StumpSelector;
+import edu.neu.ccs.pyramid.util.BoundedBlockPriorityQueue;
+import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
@@ -19,6 +22,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.*;
 import java.util.regex.Pattern;
@@ -546,6 +550,10 @@ public class App1 {
     static void createTrainSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
         generateMetaData(config, index, logger);
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
+
+        ngramSelection(config, index, config.getString("train.splitQuery"), logger);
+
+
         createDataSet(config, index, indexIds,config.getString("output.trainFolder"),
                 config.getString("train.splitQuery"), logger);
     }
@@ -606,6 +614,104 @@ public class App1 {
         return ngrams.parallelStream().filter(ngram->!ngram.getNgram().matches(regex)).collect(Collectors.toSet());
     }
 
+
+    /**
+     *
+     * @return into 2d arrary: num label * num data
+     */
+    private static double[][] loadLabels(Config config, MultiLabelIndex index,
+                                         IdTranslator idTranslator,
+                                         LabelTranslator labelTranslator){
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
+        Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
+
+        int numDataPoints = idTranslator.numData();
+        int numClasses = labelTranslator.getNumClasses();
+        double[][] labels = new double[numClasses][numDataPoints];
+        for(int i=0;i<numDataPoints;i++){
+            String dataIndexId = idTranslator.toExtId(i);
+            List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
+            if (savedConfig.getBoolean("train.label.filter")){
+                String prefix = savedConfig.getString("train.label.filter.prefix");
+                extMultiLabel = extMultiLabel.stream().filter(extLabel -> extLabel.startsWith(prefix)).collect(Collectors.toList());
+            }
+            for (String extLabel: extMultiLabel){
+                int intLabel = labelTranslator.toIntLabel(extLabel);
+                labels[intLabel][i] = 1;
+            }
+        }
+        return labels;
+    }
+
+    private static void ngramSelection(Config config, MultiLabelIndex index,
+                                       String docFilter,
+                                       Logger logger)throws Exception{
+
+        logger.info("start ngram selection");
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
+        FeatureLoader.MatchScoreType matchScoreType;
+        String matchScoreTypeString = config.getString("train.feature.ngram.matchScoreType");
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
+        IdTranslator idTranslator = loadIdTranslator(indexIds);
+        LabelTranslator labelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
+
+        switch (matchScoreTypeString){
+            case "es_original":
+                matchScoreType= FeatureLoader.MatchScoreType.ES_ORIGINAL;
+                break;
+            case "binary":
+                matchScoreType= FeatureLoader.MatchScoreType.BINARY;
+                break;
+            case "frequency":
+                matchScoreType= FeatureLoader.MatchScoreType.FREQUENCY;
+                break;
+            case "tfifl":
+                matchScoreType= FeatureLoader.MatchScoreType.TFIFL;
+                break;
+            default:
+                throw new IllegalArgumentException("unknown ngramMatchScoreType");
+        }
+
+        double[][] labels = loadLabels(config, index, idTranslator, labelTranslator);
+        int numLabels = labels.length;
+        int toKeep = config.getInt("train.feature.ngram.selectPerLabel");
+        List<BoundedBlockPriorityQueue<Pair<Ngram, Double>>> queues = new ArrayList<>();
+        Comparator<Pair<Ngram, Double>> comparator = Comparator.comparing(p->p.getSecond());
+        for (int l=0;l<numLabels;l++){
+            queues.add(new BoundedBlockPriorityQueue<>(toKeep, comparator));
+        }
+
+        FeatureList featureList = (FeatureList)Serialization.deserialize(new File(metaDataFolder,"feature_list.ser"));
+
+        featureList.getAll().stream().parallel()
+                .filter(feature->feature instanceof Ngram).map(feature->(Ngram)feature)
+                .filter(ngram -> ngram.getN()>1 )
+                .forEach(ngram ->{
+                    double[] scores = StumpSelector.scores(index, labels, ngram, idTranslator, matchScoreType, docFilter);
+                    for (int l=0;l<numLabels;l++){
+                        queues.get(l).add(new Pair<>(ngram, scores[l]));
+                    }
+                });
+
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int l=0;l<numLabels;l++){
+            stringBuilder.append("-------------------------").append("\n");
+            stringBuilder.append(labelTranslator.toExtLabel(l)).append(":").append("\n");
+            BoundedBlockPriorityQueue<Pair<Ngram, Double>> queue = queues.get(l);
+            while(queue.size()>0){
+                stringBuilder.append(queue.poll().getFirst().getNgram()).append(", ");
+            }
+            stringBuilder.append("\n");
+        }
+
+        File selectionFile = new File(metaDataFolder,"selected_ngrams.txt");
+
+        FileUtils.writeStringToFile(selectionFile, stringBuilder.toString());
+
+        logger.info("finish ngram selection");
+        logger.info("selected ngrams are written to "+selectionFile.getAbsolutePath());
+
+    }
 
 
 }

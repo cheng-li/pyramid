@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 
 /**
+ * keep the max N items
  * Created by chengli on 2/7/17.
  */
 public class BoundedBlockPriorityQueue<E> {
@@ -27,6 +28,14 @@ public class BoundedBlockPriorityQueue<E> {
         } else {
             queue.add(e);
         }
+    }
+
+    public E poll(){
+        return queue.poll();
+    }
+
+    public int size(){
+        return queue.size();
     }
 
     @Override

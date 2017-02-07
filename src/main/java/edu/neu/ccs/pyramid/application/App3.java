@@ -62,7 +62,9 @@ public class App3 {
                 "index.hosts","index.ports","train.label.field","train.label.filter","train.label.filter.prefix",
                 "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",
                 "train.splitQuery","test.splitQuery",
-                "train.feature.ngram.matchScoreType","createTrainSet","createTestSet"};
+                "train.feature.ngram.matchScoreType","createTrainSet","createTestSet",
+                "train.feature.ngram.selectPerLabel"
+        };
 
         Config.copyExisting(config,app1Config,same);
         return app1Config;
