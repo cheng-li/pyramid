@@ -222,6 +222,10 @@ public class CBMOptimizer {
         this.temperature = temperature;
     }
 
+    public double[][] getNoiseLabelWeights() {
+        return noiseLabelWeights;
+    }
+
     public void optimize() {
         while (true) {
             iterate();

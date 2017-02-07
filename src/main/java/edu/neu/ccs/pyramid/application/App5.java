@@ -140,6 +140,14 @@ public class App5 {
         System.out.println();
 
 
+        double[][] noiseLabelWeights = optimizer.getNoiseLabelWeights();
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i=0;i<trainSet.getNumDataPoints();i++){
+            stringBuilder.append(PrintUtil.printWithIndex(noiseLabelWeights[i])).append("\n");
+        }
+        File weightFile = Paths.get(output, "reports", "weights").toFile();
+        FileUtils.writeStringToFile(weightFile, stringBuilder.toString());
+
     }
 
     private static void test(Config config) throws Exception{
@@ -227,6 +235,9 @@ public class App5 {
         }
 
         System.out.println("individual label probabilities are saved to "+labelProbFile.getAbsolutePath());
+
+
+
 
     }
 
