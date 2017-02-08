@@ -21,7 +21,7 @@ public class FeatureLoader {
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
                                     IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter){
 //        ProgressBar progressBar = new ProgressBar(features.size());
-        IntStream.range(0,features.size()).parallel()
+        IntStream.range(0,features.size())/* TODO Revert -> .parallel()*/
                 .forEach(i-> {
                     Feature feature = features.get(i);
                     if (feature instanceof CategoricalFeature){

@@ -21,14 +21,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
-import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.common.base.Preconditions;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Maps;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 
@@ -43,7 +40,6 @@ public class Visualizer {
     private final VisualizerConfig config;
 
     public Visualizer(VisualizerConfig config) {
-        Preconditions.checkNotNull(config);
         this.config = config;
     }
 
@@ -254,11 +250,11 @@ public class Visualizer {
             String keys = fields;
             oneRow.put("text",  new HashMap<String, Map<String, Object>>());
             oneRow.put("others", new HashMap<String, Map<String, Object>>());
-            for (String key : ((Map<String, Object>)res.getContext().get("_source")).keySet()) {
+            for (String key : ((Map<String, Object>)res.getSourceAsMap()).keySet()) {
                 if (keys.equals(key)) {
-                    ((Map<String, Object>) oneRow.get("text")).put(key, ((String)((Map<String, Object>)res.getContext().get("_source")).get(key)).replace("<", "&lt").replace(">", "&gt"));
+                    ((Map<String, Object>) oneRow.get("text")).put(key, ((String)((Map<String, Object>)res.getSourceAsMap()).get(key)).replace("<", "&lt").replace(">", "&gt"));
                 } else {
-                    ((Map<String, Object>) oneRow.get("others")).put(key, ((String)((Map<String, Object>)res.getContext().get("_source")).get(key)));
+                    ((Map<String, Object>) oneRow.get("others")).put(key, ((String)((Map<String, Object>)res.getSourceAsMap()).get(key)));
                 }
             }
                     

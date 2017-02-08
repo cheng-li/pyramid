@@ -1,23 +1,23 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
-import java.util.*;
-
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 
 /**
  * Created by chengli on 10/12/14.
@@ -33,12 +33,13 @@ public class MultiLabelIndex extends ESIndex{
 
     public SearchResponse matchForClass(String phrase, String extLabel){
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
-                setHighlighterFilter(false).setTrackScores(false).
-                setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(bodyField, phrase)
-                                .operator(MatchQueryBuilder.Operator.AND).analyzer("whitespace"),
-                        FilterBuilders.termFilter(this.extMultiLabelField, extLabel))).
-                execute().actionGet();
+                setTrackScores(false).
+                setFetchSource(false).setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.boolQuery()
+                		.should(QueryBuilders.matchQuery(bodyField, phrase)
+                				.operator(Operator.AND).analyzer("whitespace"))
+                		.must(QueryBuilders.matchQuery(this.extMultiLabelField, extLabel)))
+                .execute().actionGet();
 
         //        debug
 //        XContentBuilder builder = XContentFactory.jsonBuilder();
@@ -146,19 +147,26 @@ public class MultiLabelIndex extends ESIndex{
                 /**
                  * don't hold data
                  */
-                Node node = nodeBuilder().client(true).
-                        clusterName(clusterName).node();
-                esIndex.node = node;
-                esIndex.client = node.client();
+            	
+            	Settings settings = Settings.builder()
+                        .put("cluster.name", clusterName)
+                        .put("node.data", false)
+                        .build();
+            	
+                esIndex.client = new PreBuiltTransportClient(settings);
+                //TODO Check ?
+                ((TransportClient)esIndex.client)
+                .addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress("127.0.0.1",
+                        9300)));
             } else {
-                Settings settings = ImmutableSettings.settingsBuilder()
+                Settings settings = Settings.builder()
                         .put("cluster.name", clusterName).build();
 
-                esIndex.client = new TransportClient(settings);
+                esIndex.client = new PreBuiltTransportClient(settings);
                 for (int i=0;i<this.hosts.size();i++){
                     ((TransportClient)esIndex.client)
-                            .addTransportAddress(new InetSocketTransportAddress(this.hosts.get(i),
-                                    this.ports.get(i)));
+                            .addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(this.hosts.get(i),
+                                    this.ports.get(i))));
                 }
             }
             esIndex.numDocs = esIndex.fetchNumDocs();

@@ -14,6 +14,7 @@ import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -159,7 +160,7 @@ public class App1 {
                 expander.putSetting("source","field");
 
                 Collection<org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket> buckets= index.termAggregation(field,ids);
-                Set<String> categories = buckets.stream().map(Terms.Bucket::getKey).collect(Collectors.toSet());
+                Set<String> categories = buckets.stream().map(Terms.Bucket::getKeyAsString).collect(Collectors.toSet());
 
                 for (String category: categories){
                     expander.addCategory(category);
@@ -364,7 +365,7 @@ public class App1 {
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("train.label.field"), trainIndexIds);
         if (config.getBoolean("train.label.filter")){
             String prefix = config.getString("train.label.filter.prefix");
-            buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
+            buckets = buckets.stream().filter(bucket -> bucket.getKeyAsString().startsWith(prefix)).collect(Collectors.toList());
         }
         logger.info("there are "+buckets.size()+" classes in the training set.");
         List<String> labels = new ArrayList<>();
@@ -375,7 +376,7 @@ public class App1 {
             stringBuilder.append(":");
             stringBuilder.append(bucket.getDocCount());
             stringBuilder.append(", ");
-            labels.add(bucket.getKey());
+            labels.add(bucket.getKeyAsString());
         }
         logger.info(stringBuilder.toString());
 
@@ -398,7 +399,7 @@ public class App1 {
         Collection<Terms.Bucket> buckets = index.termAggregation(savedConfig.getString("train.label.field"), testIndexIds);
         if (savedConfig.getBoolean("train.label.filter")){
             String prefix = savedConfig.getString("train.label.filter.prefix");
-            buckets = buckets.stream().filter(bucket -> bucket.getKey().startsWith(prefix)).collect(Collectors.toList());
+            buckets = buckets.stream().filter(bucket -> bucket.getKeyAsString().startsWith(prefix)).collect(Collectors.toList());
         }
         List<String> newLabels = new ArrayList<>();
         logger.info("label distribution in data set:");
@@ -409,8 +410,8 @@ public class App1 {
             stringBuilder.append(bucket.getDocCount());
             stringBuilder.append(", ");
             if (!extLabels.contains(bucket.getKey())){
-                extLabels.add(bucket.getKey());
-                newLabels.add(bucket.getKey());
+                extLabels.add(bucket.getKeyAsString());
+                newLabels.add(bucket.getKeyAsString());
             }
         }
         logger.info(stringBuilder.toString());

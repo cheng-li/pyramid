@@ -10,10 +10,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,9 +65,9 @@ public class VisualizerConfig {
         this.resourcesDir = new File(config.getString("resources.dir"));
         
         checkFileExists(classFile);
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = Settings.builder()
                 .put("cluster.name", "fijielasticsearch").build();
-        this.client =    new TransportClient(settings);
+        this.client =    new PreBuiltTransportClient(settings);
         /*
         this.client = new TransportClient()
                 .addTransportAddress(new InetSocketTransportAddress("127.0.0.1", 9200));*/

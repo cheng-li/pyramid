@@ -50,20 +50,21 @@ public class FeatureDistribution implements Serializable{
         String field = ngram.getField();
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
-        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery();
-        for (String term: ngram.getTerms()){
-            queryBuilder.clause(new SpanTermQueryBuilder(field, term));
+        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery(new SpanTermQueryBuilder(field, ngram.getTerms()[0]), slop);
+        for (int i  = 1; i < ngram.getTerms().length; i++){
+            queryBuilder.addClause(new SpanTermQueryBuilder(field, ngram.getTerms()[i]));
         }
         queryBuilder.inOrder(inOrder);
-        queryBuilder.slop(slop);
 
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(index.getDocumentType());
+        IdsQueryBuilder idsFilterBuilder = new IdsQueryBuilder(index.getDocumentType());
         idsFilterBuilder.addIds(ids);
 
         SearchResponse response = index.getClient().prepareSearch(index.getIndexName()).setSize(0).
-                setHighlighterFilter(false).setTrackScores(false).
-                setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(queryBuilder, idsFilterBuilder))
+                setTrackScores(false).
+                setFetchSource(false).setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.boolQuery()
+                					  .must(idsFilterBuilder)
+                					  .should(queryBuilder))
                 .addAggregation(terms("agg").field(labelField).size(Integer.MAX_VALUE))
                 .execute().actionGet();
 
@@ -73,7 +74,7 @@ public class FeatureDistribution implements Serializable{
         Collection<Terms.Bucket> buckets = terms.getBuckets();
 
         for (Terms.Bucket bucket: buckets){
-            String extLabel = bucket.getKey();
+            String extLabel = (String) bucket.getKey();
             long count = bucket.getDocCount();
             int classIndex = labelTranslator.toIntLabel(extLabel);
             this.occurInEach[classIndex] = count;
@@ -91,12 +92,11 @@ public class FeatureDistribution implements Serializable{
         String field1 = include.getField();
         int slop1 = include.getSlop();
         boolean inOrder1 = include.isInOrder();
-        SpanNearQueryBuilder queryBuilder1 = QueryBuilders.spanNearQuery();
-        for (String term: include.getTerms()){
-            queryBuilder1.clause(new SpanTermQueryBuilder(field1, term));
+        SpanNearQueryBuilder queryBuilder1 = QueryBuilders.spanNearQuery(new SpanTermQueryBuilder(field1, include.getTerms()[0]), slop1);
+        for (int i = 1; i < include.getTerms().length; i++){
+            queryBuilder1.addClause(new SpanTermQueryBuilder(field1, include.getTerms()[i]));
         }
         queryBuilder1.inOrder(inOrder1);
-        queryBuilder1.slop(slop1);
 
 
         Ngram exclude = ngram.getExclude();
@@ -104,27 +104,28 @@ public class FeatureDistribution implements Serializable{
         String field2 = exclude.getField();
         int slop2 = exclude.getSlop();
         boolean inOrder2 = exclude.isInOrder();
-        SpanNearQueryBuilder queryBuilder2 = QueryBuilders.spanNearQuery();
-        for (String term: exclude.getTerms()){
-            queryBuilder2.clause(new SpanTermQueryBuilder(field2, term));
+        SpanNearQueryBuilder queryBuilder2 = QueryBuilders.spanNearQuery(new SpanTermQueryBuilder(field2, exclude.getTerms()[0]), slop2);
+        for (int i = 1; i < exclude.getTerms().length; i++){
+            queryBuilder2.addClause(new SpanTermQueryBuilder(field2, exclude.getTerms()[i]));
         }
         queryBuilder2.inOrder(inOrder2);
-        queryBuilder2.slop(slop2);
 
         int pre = ngram.getPre();
         int post = ngram.getPost();
 
-        SpanNotQueryBuilder spanNotQueryBuilder = QueryBuilders.spanNotQuery().include(queryBuilder1)
-                .exclude(queryBuilder2);
+        SpanNotQueryBuilder spanNotQueryBuilder = new SpanNotQueryBuilder(queryBuilder1, queryBuilder2);
         //todo upgrade to 1.5
 //                .pre(pre).post(post);
-        IdsFilterBuilder idsFilterBuilder = new IdsFilterBuilder(index.getDocumentType());
+        IdsQueryBuilder idsFilterBuilder = new IdsQueryBuilder(index.getDocumentType());
         idsFilterBuilder.addIds(ids);
 
         SearchResponse response = index.getClient().prepareSearch(index.getIndexName()).setSize(0).
-                setHighlighterFilter(false).setTrackScores(false).
-                setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(spanNotQueryBuilder, idsFilterBuilder))
+                setTrackScores(false).
+                setFetchSource(false).setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders
+                		.boolQuery()
+                		.must(idsFilterBuilder)
+                		.should(spanNotQueryBuilder))
                 .addAggregation(terms("agg").field(labelField).size(Integer.MAX_VALUE))
                 .execute().actionGet();
 
@@ -135,7 +136,7 @@ public class FeatureDistribution implements Serializable{
         Collection<Terms.Bucket> buckets = terms.getBuckets();
 
         for (Terms.Bucket bucket: buckets){
-            String extLabel = bucket.getKey();
+            String extLabel = (String) bucket.getKey();
             long count = bucket.getDocCount();
             int classIndex = labelTranslator.toIntLabel(extLabel);
             this.occurInEach[classIndex] = count;

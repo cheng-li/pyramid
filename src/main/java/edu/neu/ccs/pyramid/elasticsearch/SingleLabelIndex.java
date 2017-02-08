@@ -1,25 +1,24 @@
 package edu.neu.ccs.pyramid.elasticsearch;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 
 /**
  * Created by chengli on 10/12/14.
@@ -35,7 +34,7 @@ public class SingleLabelIndex extends ESIndex{
     }
 
     public int getLabel(String id){
-        GetResponse response = client.prepareGet(indexName, documentType, id).setFields(this.labelField)
+        GetResponse response = client.prepareGet(indexName, documentType, id). setStoredFields(this.labelField)
                 .execute()
                 .actionGet();
         if (logger.isDebugEnabled()){
@@ -45,7 +44,7 @@ public class SingleLabelIndex extends ESIndex{
     }
 
     public String getExtLabel(String id){
-        GetResponse response = client.prepareGet(indexName, documentType, id).setFields(this.extLabelField)
+        GetResponse response = client.prepareGet(indexName, documentType, id).setStoredFields(this.extLabelField)
                 .execute()
                 .actionGet();
         return (String) response.getField(this.extLabelField).getValue();
@@ -64,12 +63,15 @@ public class SingleLabelIndex extends ESIndex{
                                               int slop,
                                               String labelField, int label){
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
-                setHighlighterFilter(false).setTrackScores(false).
-                setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchPhraseQuery(bodyField, phrase)
-                                .slop(slop).analyzer("whitespace"),
-                        FilterBuilders.termFilter(labelField, label))).
-                execute().actionGet();
+                setTrackScores(false).
+                setFetchSource(false).setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.boolQuery()
+                					  .filter(QueryBuilders.termQuery(labelField, label))
+                					  .must(QueryBuilders.matchPhraseQuery(bodyField, phrase)
+                                                         .slop(slop).analyzer("whitespace")))
+                .execute()
+                .actionGet();
+                
 
         //        debug
 //        XContentBuilder builder = XContentFactory.jsonBuilder();
@@ -92,21 +94,23 @@ public class SingleLabelIndex extends ESIndex{
 
     //todo only match train ids
     public long DFForClass(String bodyField, String phrase,
-                           MatchQueryBuilder.Operator operator,
+                           Operator operator,
                            String labelField, int label) {
+    	
         SearchResponse response = this.matchForClass(bodyField,phrase,operator,labelField,label);
         return response.getHits().getTotalHits();
     }
 
     public SearchResponse matchForClass(String bodyField, String phrase,
-                                        MatchQueryBuilder.Operator operator,
+                                        Operator operator,
                                         String labelField, int label){
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
-                setHighlighterFilter(false).setTrackScores(false).
-                setNoFields().setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchQuery(bodyField,phrase)
-                                .operator(operator).analyzer("whitespace"),
-                        FilterBuilders.termFilter(labelField,label))).
+                setTrackScores(false).
+                setExplain(false).setFetchSource(false).
+                setQuery(QueryBuilders.boolQuery()
+  					  .filter(QueryBuilders.termQuery(labelField, label))
+  					  .must(QueryBuilders.matchPhraseQuery(bodyField, phrase)
+                                           .analyzer("whitespace"))).
                 execute().actionGet();
 
         //        debug
@@ -205,19 +209,21 @@ public class SingleLabelIndex extends ESIndex{
                 /**
                  * don't hold data
                  */
-                Node node = nodeBuilder().client(true).
-                        clusterName(clusterName).node();
+            	Settings settings = Settings.builder()
+                        .put("cluster.name", clusterName)
+                        .put("node.data", false)
+                        .build();
+                Node node = new Node(settings);
                 esIndex.node = node;
                 esIndex.client = node.client();
             } else {
-                Settings settings = ImmutableSettings.settingsBuilder()
+                Settings settings = Settings.builder()
                         .put("cluster.name", clusterName).build();
 
-                esIndex.client = new TransportClient(settings);
+                esIndex.client = new PreBuiltTransportClient(settings);
                 for (int i=0;i<this.hosts.size();i++){
                     ((TransportClient)esIndex.client)
-                            .addTransportAddress(new InetSocketTransportAddress(this.hosts.get(i),
-                                    this.ports.get(i)));
+                    		.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(this.hosts.get(i), this.ports.get(i))));
                 }
             }
             esIndex.numDocs = esIndex.fetchNumDocs();
