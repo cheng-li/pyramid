@@ -952,6 +952,7 @@ public class ESIndex implements AutoCloseable{
     		throw new IllegalArgumentException("no terms for span");
     	}
         String field = ngram.getField();
+        
         int slop = ngram.getSlop();
         boolean inOrder = ngram.isInOrder();
         SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery(new SpanTermQueryBuilder(field, ngram.getTerms()[0]), slop);
@@ -965,7 +966,8 @@ public class ESIndex implements AutoCloseable{
                 setFetchSource(false).setExplain(false).setFetchSource(false)
                 .setQuery(QueryBuilders.boolQuery()
   					  .filter(QueryBuilders.wrapperQuery(filterQuery))
-  					  .must(queryBuilder))
+  					  .must(ngram.getTerms().length > 1 ? 
+  							  queryBuilder : QueryBuilders.matchPhraseQuery(field, ngram.getTerms()[0]).slop(slop)))
          .execute().actionGet();
 
         return response;
