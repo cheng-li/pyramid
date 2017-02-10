@@ -121,6 +121,13 @@ public class App5 {
 
             File serializeModel = new File(path,  "iter." + i + ".model");
             cbm.serialize(serializeModel);
+            double[][] noiseLabelWeights = optimizer.getNoiseLabelWeights();
+            StringBuilder stringBuilder = new StringBuilder();
+            for (int n=0;n<trainSet.getNumDataPoints();n++){
+                stringBuilder.append(PrintUtil.printWithIndex(noiseLabelWeights[n])).append("\n");
+            }
+            File weightFile = Paths.get(output, "reports", "weights_iter"+i).toFile();
+            FileUtils.writeStringToFile(weightFile, stringBuilder.toString());
 
         }
         System.out.println("training done!");
@@ -140,13 +147,7 @@ public class App5 {
         System.out.println();
 
 
-        double[][] noiseLabelWeights = optimizer.getNoiseLabelWeights();
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i=0;i<trainSet.getNumDataPoints();i++){
-            stringBuilder.append(PrintUtil.printWithIndex(noiseLabelWeights[i])).append("\n");
-        }
-        File weightFile = Paths.get(output, "reports", "weights").toFile();
-        FileUtils.writeStringToFile(weightFile, stringBuilder.toString());
+
 
     }
 
