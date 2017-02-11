@@ -108,9 +108,13 @@ public class App5 {
                 throw new IllegalArgumentException("predictTarget can be subsetAccuracy or instanceFMeasure");
         }
 
+        double gamma = 0;
+        double maxGamma=config.getDouble("maxGamma");
         for (int i=1;i<=numIterations;i++){
             System.out.println("=================================================");
             System.out.println("iteration : "+i );
+            System.out.println("gamma = "+gamma);
+            optimizer.setNoiseGammaLabel(gamma);
             optimizer.iterate();
             System.out.println("loss: "+optimizer.getTerminator().getLastValue());
 
@@ -128,6 +132,10 @@ public class App5 {
             }
             File weightFile = Paths.get(output, "reports", "weights_iter"+i).toFile();
             FileUtils.writeStringToFile(weightFile, stringBuilder.toString());
+            gamma += config.getDouble("gammaIncreasePerIter");
+            if (gamma> maxGamma){
+                gamma = maxGamma;
+            }
 
         }
         System.out.println("training done!");
@@ -253,8 +261,7 @@ public class App5 {
         optimizer.setShrinkageMultiClass(config.getDouble("boost.shrinkageMultiClass"));
         optimizer.setNumLeavesBinary(config.getInt("boost.numLeavesBinary"));
         optimizer.setNumLeavesMultiClass(config.getInt("boost.numLeavesMultiClass"));
-        optimizer.setNoiseGammaLabel(config.getDouble("noiseGammaLabel"));
-        optimizer.setNoiseGammaSet(config.getDouble("noiseGammaSet"));
+        optimizer.setParameterUpdatesPerIter(config.getInt("lr.paraUpdatesPerIter"));
 
         return optimizer;
     }
