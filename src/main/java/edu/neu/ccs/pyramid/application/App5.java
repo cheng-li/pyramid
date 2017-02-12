@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
+import edu.neu.ccs.pyramid.util.ListUtil;
 import edu.neu.ccs.pyramid.util.PrintUtil;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -110,6 +112,12 @@ public class App5 {
 
         double gamma = 0;
         double maxGamma=config.getDouble("maxGamma");
+        List<Double> trainAcc = new ArrayList<>();
+        List<Double> testAcc = new ArrayList<>();
+        List<Double> trainF1 = new ArrayList<>();
+        List<Double> testF1 = new ArrayList<>();
+        List<Double> trainMap = new ArrayList<>();
+        List<Double> testMap = new ArrayList<>();
         for (int i=1;i<=numIterations;i++){
             System.out.println("=================================================");
             System.out.println("iteration : "+i );
@@ -119,9 +127,20 @@ public class App5 {
             System.out.println("loss: "+optimizer.getTerminator().getLastValue());
 
             System.out.println("training performance with "+predictTarget+" optimal predictor:");
-            System.out.println(new MLMeasures(classifier,trainSet));
+            MLMeasures trainMeasures = new MLMeasures(classifier,trainSet);
+            System.out.println(trainMeasures);
+
+            trainAcc.add(trainMeasures.getInstanceAverage().getAccuracy());
+            trainF1.add(trainMeasures.getInstanceAverage().getF1());
+            trainMap.add(MAP.map(cbm,trainSet));
+
             System.out.println("test performance with "+predictTarget+" optimal predictor:");
-            System.out.println(new MLMeasures(classifier,testSet));
+            MLMeasures testMeasures = new MLMeasures(classifier,testSet);
+            System.out.println(testMeasures);
+
+            testAcc.add(testMeasures.getInstanceAverage().getAccuracy());
+            testF1.add(testMeasures.getInstanceAverage().getF1());
+            testMap.add(MAP.map(cbm, testSet));
 
             File serializeModel = new File(path,  "iter." + i + ".model");
             cbm.serialize(serializeModel);
@@ -154,7 +173,14 @@ public class App5 {
         System.out.println("reports generated");
         System.out.println();
 
+        FileUtils.writeStringToFile(Paths.get(output,"reports","train_acc").toFile(), ListUtil.toSimpleString(trainAcc));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","train_f1").toFile(), ListUtil.toSimpleString(trainF1));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","train_map").toFile(), ListUtil.toSimpleString(trainMap));
 
+
+        FileUtils.writeStringToFile(Paths.get(output,"reports","test_acc").toFile(), ListUtil.toSimpleString(testAcc));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","test_f1").toFile(), ListUtil.toSimpleString(testF1));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","test_map").toFile(), ListUtil.toSimpleString(testMap));
 
 
     }
