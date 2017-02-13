@@ -131,7 +131,9 @@ public class App5 {
             System.out.println(trainMeasures);
 
             trainAcc.add(trainMeasures.getInstanceAverage().getAccuracy());
-            trainF1.add(trainMeasures.getInstanceAverage().getF1());
+//            trainF1.add(trainMeasures.getInstanceAverage().getF1());
+            // use F1 predictor for F1
+            trainF1.add(new MLMeasures(pluginF1, trainSet).getInstanceAverage().getF1());
             trainMap.add(MAP.map(cbm,trainSet));
 
             System.out.println("test performance with "+predictTarget+" optimal predictor:");
@@ -139,7 +141,7 @@ public class App5 {
             System.out.println(testMeasures);
 
             testAcc.add(testMeasures.getInstanceAverage().getAccuracy());
-            testF1.add(testMeasures.getInstanceAverage().getF1());
+            testF1.add(new MLMeasures(pluginF1, testSet).getInstanceAverage().getF1());
             testMap.add(MAP.map(cbm, testSet));
 
             File serializeModel = new File(path,  "iter." + i + ".model");
