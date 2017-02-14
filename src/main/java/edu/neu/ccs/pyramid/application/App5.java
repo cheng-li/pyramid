@@ -110,8 +110,10 @@ public class App5 {
                 throw new IllegalArgumentException("predictTarget can be subsetAccuracy or instanceFMeasure");
         }
 
-        double gamma = 0;
-        double maxGamma=config.getDouble("maxGamma");
+        double gammaLabel = 0;
+        double maxGammaLabel=config.getDouble("maxGammaLabel");
+        double gammaSet = 0;
+        double maxGammaSet=config.getDouble("maxGammaSet");
         List<Double> trainAcc = new ArrayList<>();
         List<Double> testAcc = new ArrayList<>();
         List<Double> trainF1 = new ArrayList<>();
@@ -123,8 +125,11 @@ public class App5 {
         for (int i=1;i<=numIterations;i++){
             System.out.println("=================================================");
             System.out.println("iteration : "+i );
-            System.out.println("gamma = "+gamma);
-            optimizer.setNoiseGammaLabel(gamma);
+            System.out.println("gamma label = "+gammaLabel);
+            System.out.println("gamma set = "+gammaSet);
+            //todo
+//            optimizer.setNoiseGammaLabel(gamma);
+            optimizer.setNoiseGammaSet(gammaLabel);
             optimizer.iterate();
             System.out.println("loss: "+optimizer.getTerminator().getLastValue());
 
@@ -154,11 +159,21 @@ public class App5 {
             for (int n=0;n<trainSet.getNumDataPoints();n++){
                 stringBuilder.append(PrintUtil.printWithIndex(noiseLabelWeights[n])).append("\n");
             }
-            File weightFile = Paths.get(output, "reports", "weights_iter"+i).toFile();
+            File weightFile = Paths.get(output, "reports", "weights_label_iter"+i).toFile();
             FileUtils.writeStringToFile(weightFile, stringBuilder.toString());
-            gamma += config.getDouble("gammaIncreasePerIter");
-            if (gamma> maxGamma){
-                gamma = maxGamma;
+
+            double[] noiseSetWeights = optimizer.getNoiseSetWeights();
+
+            FileUtils.writeStringToFile(Paths.get(output, "reports", "weights_set_iter"+i).toFile(), PrintUtil.toMutipleLines(noiseSetWeights));
+
+            gammaLabel += config.getDouble("gammaLabelIncreasePerIter");
+            if (gammaLabel> maxGammaLabel){
+                gammaLabel = maxGammaLabel;
+            }
+
+            gammaSet += config.getDouble("gammaSetIncreasePerIter");
+            if (gammaSet> maxGammaSet){
+                gammaSet = maxGammaSet;
             }
 
         }
