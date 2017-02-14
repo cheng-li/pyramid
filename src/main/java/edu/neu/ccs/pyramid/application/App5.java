@@ -130,6 +130,7 @@ public class App5 {
             //todo
 //            optimizer.setNoiseGammaLabel(gamma);
             optimizer.setNoiseGammaSet(gammaLabel);
+            optimizer.setNoiseGammaSet(gammaSet);
             optimizer.iterate();
             System.out.println("loss: "+optimizer.getTerminator().getLastValue());
 
