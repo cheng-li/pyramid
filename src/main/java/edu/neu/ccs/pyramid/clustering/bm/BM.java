@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.clustering.bm;
 
+import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -160,7 +161,8 @@ public class BM implements Serializable{
         final StringBuilder sb = new StringBuilder("BMM{");
         sb.append("numClusters=").append(numClusters);
         sb.append(", dimension=").append(dimension).append("\n");
-        for (int k=0;k<numClusters;k++){
+        int[] sortedComponents = ArgSort.argSortDescending(mixtureCoefficients);
+        for (int k:sortedComponents){
             sb.append("cluster ").append(k).append(":\n");
             sb.append("proportion = ").append(mixtureCoefficients[k]).append("\n");
             sb.append("probabilities = ").append("[");
@@ -174,7 +176,7 @@ public class BM implements Serializable{
 //                }
             }
             Comparator<Pair<String,Double>> comparator = Comparator.comparing(Pair::getSecond);
-            List<Pair<String,Double>> sorted = pairs.stream()
+            List<Pair<String,Double>> sorted = pairs.stream().sorted(comparator.reversed())
                     .collect(Collectors.toList());
             for (int d=0;d<dimension;d++){
                 Pair<String,Double> pair = sorted.get(d);
