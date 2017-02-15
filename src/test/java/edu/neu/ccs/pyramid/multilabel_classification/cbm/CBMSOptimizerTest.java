@@ -29,7 +29,7 @@ public class CBMSOptimizerTest  {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/test"),
                 DataSetType.ML_CLF_DENSE, true);
         int numComponents = 25;
-        CBMS cbms = new CBMS(dataSet.getNumClasses(), numComponents);
+        CBMS cbms = new CBMS(dataSet.getNumClasses(), numComponents, dataSet.getNumFeatures());
         Set<MultiLabel> seen = DataSetUtil.gatherMultiLabels(dataSet).stream().collect(Collectors.toSet());
         MultiLabel empty = new MultiLabel();
         if (seen.contains(empty)){

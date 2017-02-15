@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.feature.FeatureList;
@@ -32,16 +33,19 @@ public class CBMS implements MultiLabelClassifier.ClassProbEstimator, Serializab
     Classifier.ProbabilityEstimator multiClassClassifier;
 
 
-    public CBMS(int numLabels, int numComponents) {
+    public CBMS(int numLabels, int numComponents, int numFeatures) {
         this.numLabels = numLabels;
         this.numComponents = numComponents;
-        this.binaryClassifiers = new LKBoost[numLabels];
+//        this.binaryClassifiers = new LKBoost[numLabels];
+        this.binaryClassifiers = new LogisticRegression[numLabels];
         for (int l=0;l<numLabels;l++){
-            binaryClassifiers[l] = new LKBoost(2);
+//            binaryClassifiers[l] = new LKBoost(2);
+            binaryClassifiers[l] = new LogisticRegression(2, numFeatures+numComponents);
         }
 
 
-        this.multiClassClassifier = new LKBoost(numComponents);
+//        this.multiClassClassifier = new LKBoost(numComponents);
+        this.multiClassClassifier = new LogisticRegression(numComponents,numFeatures);
     }
 
     Vector augment(Vector x, int k){

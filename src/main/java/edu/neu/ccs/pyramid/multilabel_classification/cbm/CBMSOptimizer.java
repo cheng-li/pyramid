@@ -4,6 +4,8 @@ import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBOutputCalculator;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
@@ -51,7 +53,11 @@ public class CBMSOptimizer {
     private DataSet augmentedData;
     private int numComponents;
 
-
+    // lr parameters
+    // regularization for multiClassClassifier
+    private double priorVarianceMultiClass =1;
+    // regularization for binary logisticRegression
+    private double priorVarianceBinary =1;
 
     public CBMSOptimizer(CBMS cbms, MultiLabelClfDataSet dataSet) {
         this.cbms = cbms;
@@ -84,7 +90,13 @@ public class CBMSOptimizer {
 
     }
 
+    public void setPriorVarianceMultiClass(double priorVarianceMultiClass) {
+        this.priorVarianceMultiClass = priorVarianceMultiClass;
+    }
 
+    public void setPriorVarianceBinary(double priorVarianceBinary) {
+        this.priorVarianceBinary = priorVarianceBinary;
+    }
 
     public void setNumLeavesBinary(int numLeavesBinary) {
         this.numLeavesBinary = numLeavesBinary;
@@ -176,7 +188,7 @@ public class CBMSOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("start updateBinaryClassifiers");
         }
-        IntStream.range(0, cbms.numLabels).forEach(l -> updateBinaryBoosting(l));
+        IntStream.range(0, cbms.numLabels).forEach(l -> updateBinaryLogisticRegression(l));
         if (logger.isDebugEnabled()){
             logger.debug("finish updateBinaryClassifiers");
         }
@@ -235,11 +247,60 @@ public class CBMSOptimizer {
 
 
 
+
+    private void updateBinaryLogisticRegression(int labelIndex){
+
+        double[][] targets = new double[augmentedData.getNumDataPoints()][2];
+
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            boolean match = multiLabel.matchClass(labelIndex);
+            for (int k=0;k<numComponents;k++){
+                if (match){
+                    targets[i*numComponents+k][1]=1;
+                } else {
+                    targets[i*numComponents+k][0]=1;
+                }
+            }
+        }
+
+        double[] weights = new double[augmentedData.getNumDataPoints()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            for (int k=0;k<numComponents;k++){
+                weights[i*numComponents+k] = gammas[i][k];
+            }
+        }
+
+        RidgeLogisticOptimizer ridgeLogisticOptimizer;
+
+        // no parallelism
+        ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbms.binaryClassifiers[labelIndex],
+                augmentedData, weights, targets, priorVarianceBinary, false);
+        //TODO maximum iterations
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(5);
+        ridgeLogisticOptimizer.optimize();
+//        if (logger.isDebugEnabled()){
+//            logger.debug("for cluster "+clusterIndex+" label "+labelIndex+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
+//        }
+    }
+
+
+    private void updateMultiClassLR() {
+        // parallel
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbms.multiClassClassifier,
+                dataSet, gammas, priorVarianceMultiClass, true);
+        //TODO maximum iterations
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(5);
+        ridgeLogisticOptimizer.optimize();
+    }
+
     private void updateMultiClassClassifier(){
         if (logger.isDebugEnabled()){
             logger.debug("start updateMultiClassClassifier()");
         }
-        updateMultiClassBoost();
+//        updateMultiClassBoost();
+        updateMultiClassLR();
     }
 
 
