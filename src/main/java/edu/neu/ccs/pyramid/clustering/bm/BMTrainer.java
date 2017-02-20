@@ -27,11 +27,11 @@ public class BMTrainer {
     BM bm;
     Terminator terminator;
 
-    public BMTrainer(DataSet dataSet, int numClusters) {
+    public BMTrainer(DataSet dataSet, int numClusters, long randomSeed) {
         this.numClusters = numClusters;
         this.dataSet = dataSet;
         this.gammas = new double[dataSet.getNumDataPoints()][numClusters];
-        this.bm = new BM(numClusters,dataSet.getNumFeatures());
+        this.bm = new BM(numClusters,dataSet.getNumFeatures(), randomSeed);
         this.terminator = new Terminator();
         this.terminator.setAbsoluteEpsilon(0.1);
     }

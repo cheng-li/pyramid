@@ -8,6 +8,7 @@ import org.apache.mahout.math.VectorView;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by chengli on 12/7/14.
@@ -31,9 +32,9 @@ public class Weights implements Serializable {
             this.numFeatures = numFeatures;
             this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
             this.serializableWeights = new double[(numFeatures + 1)*numClasses];
-            UniformRealDistribution uniform = new UniformRealDistribution(-0.5,0.5);
+            Random randomGenerator = new Random(0L);
             for (int i=0; i<weightVector.size(); i++) {
-                double p = uniform.sample();
+                double p = randomGenerator.nextDouble()-0.5;
                 weightVector.set(i,p);
                 serializableWeights[i] = p;
             }

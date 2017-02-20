@@ -6,14 +6,13 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.RandomGeneratorFactory;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -36,13 +35,15 @@ public class BM implements Serializable{
     double[] mixtureCoefficients;
     List<String> names;
 
-    public BM(int numClusters, int dimension) {
+    public BM(int numClusters, int dimension, long randomSeed) {
         this.numClusters = numClusters;
         this.dimension = dimension;
         this.distributions = new BernoulliDistribution[numClusters][dimension];
         this.mixtureCoefficients = new double[numClusters];
         Arrays.fill(mixtureCoefficients,1.0/numClusters);
-        UniformRealDistribution uniform = new UniformRealDistribution(0.25,0.75);
+        Random random = new Random(randomSeed);
+        RandomGenerator randomGenerator = RandomGeneratorFactory.createRandomGenerator(random);
+        UniformRealDistribution uniform = new UniformRealDistribution(randomGenerator, 0.25,0.75);
         for (int k=0;k<numClusters;k++){
             for (int d=0;d<dimension;d++){
                 double p = uniform.sample();

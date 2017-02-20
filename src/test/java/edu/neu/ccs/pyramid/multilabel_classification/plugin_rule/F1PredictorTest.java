@@ -17,7 +17,7 @@ public class F1PredictorTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test1();
+        test4();
     }
 
 
@@ -73,5 +73,28 @@ public class F1PredictorTest {
 //        System.out.println("test set performance");
 //        System.out.println(new MLMeasures(pluginF1,testSet));
 //    }
+
+
+    private static void test4(){
+        List<MultiLabel> multiLabelList = new ArrayList<>();
+        MultiLabel multiLabel1 = new MultiLabel();
+        multiLabel1.addLabel(0);
+        MultiLabel multiLabel2 = new MultiLabel();
+        multiLabel2.addLabel(1);
+        MultiLabel multiLabel3 = new MultiLabel();
+        multiLabel3.addLabel(2);
+        multiLabelList.add(multiLabel1);
+        multiLabelList.add(multiLabel2);
+        multiLabelList.add(multiLabel3);
+        List<Double> probs = new ArrayList<>();
+        probs.add(0.5);
+        probs.add(0.4);
+        probs.add(0.1);
+
+//        Matrix p = F1Predictor.getPMatrix(2,multiLabelList,probs);
+//        Matrix delta = F1Predictor.getDeltaMatrix(p);
+        System.out.println(GeneralF1Predictor.predict(3,multiLabelList,probs));
+
+    }
 
 }
