@@ -14,9 +14,9 @@ import org.apache.commons.io.FileUtils;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -162,6 +162,18 @@ public class App5 {
             }
             File weightFile = Paths.get(output, "reports", "weights_label_iter"+i).toFile();
             FileUtils.writeStringToFile(weightFile, stringBuilder.toString());
+
+            List<Confidence> confidenceList = new ArrayList<>();
+            for (int n=0;n<noiseLabelWeights.length;n++){
+                for (int l=0;l<noiseLabelWeights[0].length;l++){
+                    confidenceList.add(new Confidence(n,l,noiseLabelWeights[n][l]));
+                }
+            }
+            Comparator<Confidence> confidenceComparator = Comparator.comparing(c->c.weight);
+
+            List<Confidence> sorted = confidenceList.stream().sorted(confidenceComparator).collect(Collectors.toList());
+            File weightSortedFile = Paths.get(output, "reports", "sorted_weights_label_iter"+i).toFile();
+            FileUtils.writeStringToFile(weightSortedFile, sorted.toString());
 
             double[] noiseSetWeights = optimizer.getNoiseSetWeights();
 
@@ -418,6 +430,27 @@ public class App5 {
                 throw new IllegalArgumentException("unknown value for train.warmStart");
         }
         return pair;
+    }
+
+
+    private static class Confidence{
+        int dataIndex;
+        int labelIndex;
+        double weight;
+
+        public Confidence(int dataIndex, int labelIndex, double weight) {
+            this.dataIndex = dataIndex;
+            this.labelIndex = labelIndex;
+            this.weight = weight;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("(").append(dataIndex).append(", ").append(labelIndex).append(")")
+                    .append(":").append(weight);
+            return sb.toString();
+        }
     }
 
 
