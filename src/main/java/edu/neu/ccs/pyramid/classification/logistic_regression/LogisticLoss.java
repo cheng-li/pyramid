@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.util.Vectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -177,7 +178,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private double penaltyValue(int classIndex){
         double square = 0;
         Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
-        square += weightVector.dot(weightVector);
+        square += Vectors.dot(weightVector, weightVector);
+//        square += weightVector.dot(weightVector);
         return square/(2*priorGaussianVariance);
     }
 
