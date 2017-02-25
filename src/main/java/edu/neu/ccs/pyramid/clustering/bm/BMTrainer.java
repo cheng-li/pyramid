@@ -56,10 +56,10 @@ public class BMTrainer {
         eStep();
         mStep();
         double objective = getObjective();
-        double exactObjective = exactObjective();
         if (logger.isDebugEnabled()){
             logger.debug("finish one EM iteration");
             logger.debug("objective = "+ objective);
+            double exactObjective = exactObjective();
             logger.debug("exact objective = "+ exactObjective);
         }
         terminator.add(getObjective());
@@ -69,7 +69,7 @@ public class BMTrainer {
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
-        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(this::updateGamma);
+        updateGamma();
         if (logger.isDebugEnabled()){
             logger.debug("finish E step");
             logger.debug("objective = "+ getObjective());
@@ -80,7 +80,8 @@ public class BMTrainer {
         if (logger.isDebugEnabled()){
             logger.debug("start M step");
         }
-        IntStream.range(0,numClusters).parallel().forEach(this::updateCluster);
+        IntStream.range(0,numClusters).forEach(this::updateCluster);
+        bm.updateLogClusterConditioinalForEmpty();
         if (logger.isDebugEnabled()){
             logger.debug("finish M step");
             logger.debug("objective = "+ getObjective());
@@ -101,23 +102,28 @@ public class BMTrainer {
      * @param k cluster index
      */
     private void updateCluster(int k){
-        double nk = 0;
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            nk += gammas[i][k];
-        }
-        Vector average = new DenseVector(dataSet.getNumFeatures());
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            average = average.plus(dataSet.getRow(i).times(gammas[i][k]));
-        }
-        average = average.divide(nk);
-//        if (logger.isDebugEnabled()){
-//            logger.debug("average vector = "+average);
-//        }
-        for (int d=0;d<dataSet.getNumFeatures();d++){
-            bm.distributions[k][d] = new BernoulliDistribution(average.get(d));
-        }
+        final double effectiveTotal = IntStream.range(0, dataSet.getNumDataPoints())
+                .mapToDouble(i-> gammas[i][k]).sum();
 
-        bm.mixtureCoefficients[k] = nk/dataSet.getNumDataPoints();
+        IntStream.range(0, dataSet.getNumFeatures()).parallel()
+                .forEach(d-> {
+                    double sum = weightedSum(k, d);
+                    double average = sum/effectiveTotal;
+                    bm.distributions[k][d] = new BernoulliDistribution(average);
+                });
+
+        bm.mixtureCoefficients[k] = effectiveTotal/dataSet.getNumDataPoints();
+        bm.logMixtureCoefficients[k] = Math.log(bm.mixtureCoefficients[k]);
+    }
+
+    private double weightedSum(int clusterIndex, int dimensionIndex){
+        Vector column = dataSet.getColumn(dimensionIndex);
+        double sum = 0;
+        for (Vector.Element nonzero: column.nonZeroes()){
+            int i = nonzero.index();
+            sum += gammas[i][clusterIndex];
+        }
+        return sum;
     }
 
 
@@ -136,14 +142,11 @@ public class BMTrainer {
     private void updateGamma(int n){
         Vector feature = dataSet.getRow(n);
         int numClusters = bm.getNumClusters();
-        double[] logPis = new double[numClusters];
-        for (int k=0;k<numClusters;k++){
-            logPis[k] = Math.log(bm.mixtureCoefficients[k]);
-        }
+
         double[] logClusterConditionalProbs = bm.clusterConditionalLogProbArr(feature);
         double[] logNumerators = new double[numClusters];
         for (int k=0;k<numClusters;k++){
-            logNumerators[k] = logPis[k] + logClusterConditionalProbs[k];
+            logNumerators[k] = bm.logMixtureCoefficients[k] + logClusterConditionalProbs[k];
         }
         double logDenominator = MathUtil.logSumExp(logNumerators);
         for (int k=0;k<numClusters;k++){
@@ -171,14 +174,11 @@ public class BMTrainer {
      */
     private double exactObjective(int i){
         Vector feature = dataSet.getRow(i);
-        double[] logPis = new double[numClusters];
-        for (int k=0;k<numClusters;k++){
-            logPis[k] = Math.log(bm.mixtureCoefficients[k]);
-        }
+
         double[] logClusterConditionalProbs = bm.clusterConditionalLogProbArr(feature);
         double[] scores = new double[numClusters];
         for (int k=0;k<numClusters;k++){
-            scores[k] = logPis[k] + logClusterConditionalProbs[k];
+            scores[k] = bm.logMixtureCoefficients[k] + logClusterConditionalProbs[k];
         }
 
         return -1*MathUtil.logSumExp(scores);
@@ -210,6 +210,7 @@ public class BMTrainer {
         int dim = dataSet.getNumFeatures();
         for (int l=0;l<dim;l++){
             double mu = distributions[cluster][l].getP();
+            //todo
             double value = dataSet.getRow(dataPoint).get(l);
             // unstable if compute directly
             if (value==1){
