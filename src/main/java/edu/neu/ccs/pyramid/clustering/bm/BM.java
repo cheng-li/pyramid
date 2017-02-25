@@ -36,8 +36,8 @@ public class BM implements Serializable{
     double[] logMixtureCoefficients;
     // the log probability of the empty vector in each cluster
     // size = num clusters
-    double[] logClusterConditioinalForEmpty;
-    List<String> names;
+    private double[] logClusterConditioinalForEmpty;
+    private List<String> names;
 
     public BM(int numClusters, int dimension, long randomSeed) {
         this.numClusters = numClusters;
@@ -85,7 +85,7 @@ public class BM implements Serializable{
         return logProb;
     }
 
-    private double computeLogClusterConditioinalForEmpty(int clusterIndex){
+    private double computeLogClusterConditionalForEmpty(int clusterIndex){
         double logProb = 0.0;
         for (int l=0;l< dimension;l++){
             BernoulliDistribution distribution = distributions[clusterIndex][l];
@@ -96,7 +96,7 @@ public class BM implements Serializable{
 
     void updateLogClusterConditioinalForEmpty(){
         IntStream.range(0, numClusters)
-                .forEach(k->logClusterConditioinalForEmpty[k] = computeLogClusterConditioinalForEmpty(k));
+                .forEach(k->logClusterConditioinalForEmpty[k] = computeLogClusterConditionalForEmpty(k));
     }
 
     /**

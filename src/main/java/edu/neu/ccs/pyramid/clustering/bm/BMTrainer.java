@@ -48,7 +48,6 @@ public class BMTrainer {
     }
 
 
-
     void iterate(){
         if (logger.isDebugEnabled()){
             logger.debug("start one EM iteration");
@@ -88,14 +87,6 @@ public class BMTrainer {
         }
     }
 
-    private double getEntropy(){
-        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(this::getEntropy).sum();
-    }
-
-    private double getEntropy(int i){
-        return Entropy.entropy(gammas[i]);
-    }
 
     /**
      *
@@ -156,8 +147,7 @@ public class BMTrainer {
 
 
     /**
-     * interestingly, the exact objective (not bound) is easy to evaluate
-     * use Bishop Eq 9.51 as objective;
+     * the exact objective (not bound) is easy to evaluate
      * negative log likelihood, to be minimized
      * @return
      */
@@ -166,90 +156,90 @@ public class BMTrainer {
                 .sum();
     }
 
-
     /**
      *
      * @param i data point
      * @return
      */
     private double exactObjective(int i){
-        Vector feature = dataSet.getRow(i);
-
-        double[] logClusterConditionalProbs = bm.clusterConditionalLogProbArr(feature);
-        double[] scores = new double[numClusters];
-        for (int k=0;k<numClusters;k++){
-            scores[k] = bm.logMixtureCoefficients[k] + logClusterConditionalProbs[k];
-        }
-
-        return -1*MathUtil.logSumExp(scores);
-    }
-
-    private double bernoulliObj(){
-        double res =  IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(this::bernoulliObj).sum();
-//        if (logger.isDebugEnabled()){
-//            logger.debug("bernoulli objective = "+res);
-//        }
-        return res;
-    }
-
-    private double bernoulliObj(int dataPoint){
-        double res = 0;
-        for (int k = 0; k< bm.getNumClusters(); k++){
-            res += bernoulliObj(dataPoint,k);
-        }
-        return res;
-    }
-
-    private double bernoulliObj(int dataPoint, int cluster){
-        if (gammas[dataPoint][cluster]<1E-10){
-            return 0;
-        }
-        double sum = 0;
-        BernoulliDistribution[][] distributions = bm.distributions;
-        int dim = dataSet.getNumFeatures();
-        for (int l=0;l<dim;l++){
-            double mu = distributions[cluster][l].getP();
-            //todo
-            double value = dataSet.getRow(dataPoint).get(l);
-            // unstable if compute directly
-            if (value==1){
-                if (mu==0){
-                    throw new RuntimeException("value=1 and mu=0, gamma nk = "+gammas[dataPoint][cluster]);
-                }
-                sum += Math.log(mu);
-
-            } else {
-                // label == 0
-                if (mu==1){
-                    throw new RuntimeException("value=0 and mu=1, gamma nk"+gammas[dataPoint][cluster]);
-                }
-                sum += Math.log(1-mu);
-            }
-        }
-        return -1*gammas[dataPoint][cluster]*sum;
+        return -1*bm.logProbability(dataSet.getRow(i));
     }
 
 
-    private double klDivergence(){
-        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(this::klDivergence).sum();
-    }
-
-    private double klDivergence(int i){
-        return KLDivergence.kl(gammas[i], bm.mixtureCoefficients);
-    }
-
-    private double getMStepObjective(){
-        return klDivergence() + getEntropy() + bernoulliObj();
-    }
-
-    /**
-     * the entropy term gets canceled
-     * @return
-     */
     private double getObjective(){
-        return klDivergence() + bernoulliObj();
+        return exactObjective();
     }
+
+    // the part below computes the bound; since the exact obj is easy to compute, there is no need to compute the bound
+
+//    private double getMStepObjective(){
+//        return klDivergence() + getEntropy() + bernoulliObj();
+//    }
+//
+//    private double bernoulliObj(){
+//        double res =  IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+//                .mapToDouble(this::bernoulliObj).sum();
+////        if (logger.isDebugEnabled()){
+////            logger.debug("bernoulli objective = "+res);
+////        }
+//        return res;
+//    }
+//
+//    private double bernoulliObj(int dataPoint){
+//        double res = 0;
+//        for (int k = 0; k< bm.getNumClusters(); k++){
+//            res += bernoulliObj(dataPoint,k);
+//        }
+//        return res;
+//    }
+//
+//    @Deprecated
+//    private double bernoulliObj(int dataPoint, int cluster){
+//        if (gammas[dataPoint][cluster]<1E-10){
+//            return 0;
+//        }
+//        double sum = 0;
+//        BernoulliDistribution[][] distributions = bm.distributions;
+//        int dim = dataSet.getNumFeatures();
+//        for (int l=0;l<dim;l++){
+//            double mu = distributions[cluster][l].getP();
+//            //todo
+//            double value = dataSet.getRow(dataPoint).get(l);
+//            // unstable if compute directly
+//            if (value==1){
+//                if (mu==0){
+//                    throw new RuntimeException("value=1 and mu=0, gamma nk = "+gammas[dataPoint][cluster]);
+//                }
+//                sum += Math.log(mu);
+//
+//            } else {
+//                // label == 0
+//                if (mu==1){
+//                    throw new RuntimeException("value=0 and mu=1, gamma nk"+gammas[dataPoint][cluster]);
+//                }
+//                sum += Math.log(1-mu);
+//            }
+//        }
+//        return -1*gammas[dataPoint][cluster]*sum;
+//    }
+//
+//
+//    private double klDivergence(){
+//        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+//                .mapToDouble(this::klDivergence).sum();
+//    }
+//
+//    private double klDivergence(int i){
+//        return KLDivergence.kl(gammas[i], bm.mixtureCoefficients);
+//    }
+//
+//    private double getEntropy(){
+//        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+//                .mapToDouble(this::getEntropy).sum();
+//    }
+//
+//    private double getEntropy(int i){
+//        return Entropy.entropy(gammas[i]);
+//    }
 
 }
