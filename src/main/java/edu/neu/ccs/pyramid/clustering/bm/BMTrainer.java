@@ -48,7 +48,7 @@ public class BMTrainer {
     }
 
 
-    void iterate(){
+    public void iterate(){
         if (logger.isDebugEnabled()){
             logger.debug("start one EM iteration");
         }
@@ -64,7 +64,7 @@ public class BMTrainer {
         terminator.add(getObjective());
     }
 
-    private void eStep(){
+    public void eStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
@@ -75,7 +75,7 @@ public class BMTrainer {
         }
     }
 
-    private void mStep(){
+    public  void mStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start M step");
         }
@@ -100,6 +100,10 @@ public class BMTrainer {
                 .forEach(d-> {
                     double sum = weightedSum(k, d);
                     double average = sum/effectiveTotal;
+                    // it may happen that average = 1.0000000000000022, for numerical reasons
+                    if (average>=1){
+                        average = 0.9999;
+                    }
                     bm.distributions[k][d] = new BernoulliDistribution(average);
                 });
 
@@ -166,7 +170,7 @@ public class BMTrainer {
     }
 
 
-    private double getObjective(){
+    public double getObjective(){
         return exactObjective();
     }
 
