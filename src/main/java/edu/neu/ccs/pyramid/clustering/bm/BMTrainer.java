@@ -47,6 +47,9 @@ public class BMTrainer {
         return this.bm;
     }
 
+    public BM getBm() {
+        return bm;
+    }
 
     public void iterate(){
         if (logger.isDebugEnabled()){
