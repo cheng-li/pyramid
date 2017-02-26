@@ -63,7 +63,7 @@ public class App3 {
                 "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",
                 "train.splitQuery","test.splitQuery",
                 "train.feature.ngram.matchScoreType","createTrainSet","createTestSet",
-                "train.feature.ngram.selectPerLabel"
+                "train.feature.ngram.selection", "train.feature.ngram.selectPerLabel"
         };
 
         Config.copyExisting(config,app1Config,same);

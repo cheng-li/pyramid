@@ -462,6 +462,9 @@ public class App1 {
         logger.info("generating meta data");
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
+
+        config.store(new File(metaDataFolder, "saved_config_app1"));
+
         String[] trainIndexIds;
 
         trainIndexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
@@ -512,7 +515,13 @@ public class App1 {
         }
 
 
-        config.store(new File(metaDataFolder, "saved_config_app1"));
+        if (config.getBoolean("train.feature.ngram.selection")){
+            ngramSelection(config, index, config.getString("train.splitQuery"), logger);
+        }
+
+
+
+
 
         logger.info("meta data generated");
 
@@ -550,9 +559,6 @@ public class App1 {
     static void createTrainSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
         generateMetaData(config, index, logger);
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
-
-        ngramSelection(config, index, config.getString("train.splitQuery"), logger);
-
 
         createDataSet(config, index, indexIds,config.getString("output.trainFolder"),
                 config.getString("train.splitQuery"), logger);
@@ -693,13 +699,16 @@ public class App1 {
                     }
                 });
 
+        Set<Ngram> kept = new HashSet<>();
         StringBuilder stringBuilder = new StringBuilder();
         for (int l=0;l<numLabels;l++){
             stringBuilder.append("-------------------------").append("\n");
             stringBuilder.append(labelTranslator.toExtLabel(l)).append(":").append("\n");
             BoundedBlockPriorityQueue<Pair<Ngram, Double>> queue = queues.get(l);
             while(queue.size()>0){
-                stringBuilder.append(queue.poll().getFirst().getNgram()).append(", ");
+                Ngram ngram = queue.poll().getFirst();
+                kept.add(ngram);
+                stringBuilder.append(ngram.getNgram()).append(", ");
             }
             stringBuilder.append("\n");
         }
@@ -710,6 +719,34 @@ public class App1 {
 
         logger.info("finish ngram selection");
         logger.info("selected ngrams are written to "+selectionFile.getAbsolutePath());
+
+        // after feature selection, overwrite the feature_list.ser file; rename old files
+
+        FeatureList selectedFeatures = new FeatureList();
+        for (Feature feature: featureList.getAll()){
+            if (!(feature instanceof Ngram)){
+                selectedFeatures.add(feature);
+            }
+            if ((feature instanceof Ngram) && ((Ngram)feature).getN()==1){
+                selectedFeatures.add(feature);
+            }
+
+            if ((feature instanceof Ngram) && ((Ngram)feature).getN()>1 && kept.contains(feature)){
+                selectedFeatures.add(feature);
+            }
+        }
+
+        FileUtils.copyFile(new File(metaDataFolder,"feature_list.ser"), new File(metaDataFolder,"feature_list_all.ser"));
+        FileUtils.copyFile(new File(metaDataFolder,"feature_list.txt"), new File(metaDataFolder,"feature_list_all.txt"));
+
+        Serialization.serialize(selectedFeatures,new File(metaDataFolder,"feature_list.ser"));
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(metaDataFolder,"feature_list.txt")))
+        ){
+            for (Feature feature: selectedFeatures.getAll()){
+                bufferedWriter.write(feature.toString());
+                bufferedWriter.newLine();
+            }
+        }
 
     }
 
