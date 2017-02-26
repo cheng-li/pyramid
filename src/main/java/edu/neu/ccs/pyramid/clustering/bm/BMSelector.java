@@ -57,6 +57,8 @@ public class BMSelector {
         DataSet dataSet = DataSetBuilder.getBuilder()
                 .numDataPoints(multiLabels.length)
                 .numFeatures(numClasses)
+                // use sparse format to speed up computation
+                .dense(false)
                 .build();
         for (int i=0;i<multiLabels.length;i++){
             MultiLabel multiLabel = multiLabels[i];
