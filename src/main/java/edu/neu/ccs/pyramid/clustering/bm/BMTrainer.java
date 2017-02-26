@@ -48,6 +48,10 @@ public class BMTrainer {
     }
 
 
+    public BM getBm() {
+        return bm;
+    }
+
     public void iterate(){
         if (logger.isDebugEnabled()){
             logger.debug("start one EM iteration");
