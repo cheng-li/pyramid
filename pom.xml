@@ -94,6 +94,11 @@
             <version>2.0.2</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.kennycason</groupId>
+            <artifactId>kumo</artifactId>
+            <version>1.8</version>
+        </dependency>
     </dependencies>
 
     <build>
