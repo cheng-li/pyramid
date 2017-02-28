@@ -19,6 +19,7 @@ public class AugmentedLR implements Serializable{
     private int numFeatures;
     private int numComponents;
     // size = num features + num components + 1
+    // assuming the last number is the global bias
     private transient Vector weights;
 
     public AugmentedLR(int numFeatures, int numComponents) {
@@ -78,7 +79,7 @@ public class AugmentedLR implements Serializable{
         return logProbs;
     }
 
-    private double[] logAugmentedProbs(Vector featureVector){
+    double[] logAugmentedProbs(Vector featureVector){
         double[] scores = augmentedScores(featureVector);
         return logAugmentedProbs(scores);
     }
