@@ -1,18 +1,39 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
+import edu.neu.ccs.pyramid.dataset.SerializableVector;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Vectors;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+
+import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * binary logistic regression on augmented vector (x,z)
  * Created by chengli on 2/28/17.
  */
-public class AugmentedLR {
+public class AugmentedLR implements Serializable{
+    private static final long serialVersionUID = 1L;
+
     private int numFeatures;
     private int numComponents;
     // size = num features + num components + 1
-    private Vector weights;
+    private transient Vector weights;
+
+    public AugmentedLR(int numFeatures, int numComponents) {
+        this.numFeatures = numFeatures;
+        this.numComponents = numComponents;
+        this.weights = new DenseVector(numFeatures + numComponents +1);
+    }
+
+    Vector getWeights() {
+        return weights;
+    }
+
+    void setWeights(Vector weights) {
+        this.weights = weights;
+    }
 
     private double getWeightForComponent(int k){
         return weights.get(numFeatures+k);
@@ -60,6 +81,22 @@ public class AugmentedLR {
     private double[] logAugmentedProbs(Vector featureVector){
         double[] scores = augmentedScores(featureVector);
         return logAugmentedProbs(scores);
+    }
+
+
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeInt(numFeatures);
+        out.writeInt(numComponents);
+        SerializableVector serializableVector = new SerializableVector(weights);
+        out.writeObject(serializableVector);
+
+    }
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        numFeatures = in.readInt();
+        numComponents = in.readInt();
+        weights = ((SerializableVector)in.readObject()).getVector();
     }
 
 
