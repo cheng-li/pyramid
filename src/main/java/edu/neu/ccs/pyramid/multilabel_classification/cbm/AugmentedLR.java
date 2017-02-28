@@ -28,7 +28,11 @@ public class AugmentedLR implements Serializable{
         this.weights = new DenseVector(numFeatures + numComponents +1);
     }
 
-    Vector getWeights() {
+    public int getNumComponents() {
+        return numComponents;
+    }
+
+    Vector getAllWeights() {
         return weights;
     }
 
@@ -44,8 +48,12 @@ public class AugmentedLR implements Serializable{
         return weights.get(weights.size()-1);
     }
 
-    private Vector featureWeights(){
+    Vector featureWeights(){
         return weights.viewPart(0, numFeatures);
+    }
+
+    Vector getWeightsWithoutBias(){
+        return weights.viewPart(0, numFeatures+numComponents);
     }
 
     /**
@@ -71,15 +79,16 @@ public class AugmentedLR implements Serializable{
         return scores;
     }
 
-    private double[] logAugmentedProbs(double[] augmentedScores){
-        double[] logProbs = new double[numComponents];
+    private double[][] logAugmentedProbs(double[] augmentedScores){
+        double[][] logProbs = new double[numComponents][2];
         for (int k=0;k<numComponents;k++){
-            logProbs[k] = MathUtil.logSigmoid(augmentedScores[k]);
+            double[] s = {0, augmentedScores[k]};
+            logProbs[k] = MathUtil.softmax(s);
         }
         return logProbs;
     }
 
-    double[] logAugmentedProbs(Vector featureVector){
+    double[][] logAugmentedProbs(Vector featureVector){
         double[] scores = augmentedScores(featureVector);
         return logAugmentedProbs(scores);
     }
