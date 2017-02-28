@@ -88,6 +88,8 @@ public class MathUtil {
         return Math.log(sum) + maxElement;
     }
 
+
+
     /**
      * calculate log(exp(x1)+exp(x2)+...)
      * @return
@@ -193,6 +195,16 @@ public class MathUtil {
         }
         return logProbVector;
     }
+
+
+
+    public static double logSigmoid(double score){
+        double[] arr = {0, score};
+        return logSoftmax(arr)[1];
+    }
+
+
+
 
     /**
      *
