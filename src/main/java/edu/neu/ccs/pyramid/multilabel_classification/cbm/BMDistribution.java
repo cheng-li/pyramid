@@ -42,12 +42,15 @@ public class BMDistribution {
         this.numComponents = cbms.numComponents;
         this.logProportions = cbms.multiClassClassifier.predictLogClassProbs(x);
         this.logClassProbs = new double[numComponents][numLabels][2];
-        for (int k = 0; k< numComponents; k++){
-            Vector augmented = cbms.augment(x, k);
-            for (int l=0;l<numLabels;l++){
-                logClassProbs[k][l] = cbms.getBinaryClassifiers()[l].predictLogClassProbs(augmented);
+        for (int l=0;l<numLabels;l++){
+            AugmentedLR augmentedLR = cbms.getBinaryClassifiers()[l];
+            double[][] lp = augmentedLR.logAugmentedProbs(x);
+            for (int k=0;k<numComponents;k++){
+                logClassProbs[k][l][0] = lp[k][0];
+                logClassProbs[k][l][1] = lp[k][1];
             }
         }
+
     }
 
 

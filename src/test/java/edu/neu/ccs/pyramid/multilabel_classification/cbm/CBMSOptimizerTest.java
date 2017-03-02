@@ -41,7 +41,9 @@ public class CBMSOptimizerTest  {
         }
 
         CBMSOptimizer optimizer = new CBMSOptimizer(cbms, dataSet);
-        optimizer.setNumLeavesBinary(2);
+        optimizer.setPriorVarianceBinary(1);
+        optimizer.setPriorVarianceMultiClass(1);
+        optimizer.setRegularizeAll(false);
         CBMSInitializer.initialize(cbms, dataSet,optimizer);
         System.out.println("after initialization");
         System.out.println("training performance");
@@ -50,8 +52,12 @@ public class CBMSOptimizerTest  {
         System.out.println(new MLMeasures(cbms, testSet));
 
         for (int i=1;i<=50;i++){
-            optimizer.iterate();
             System.out.println("iteration "+i);
+            optimizer.eStep();
+            System.out.println("after E");
+            System.out.println("objective = "+optimizer.getObjective());
+            optimizer.mStep();
+            System.out.println("after M");
             System.out.println("objective = "+optimizer.getObjective());
 //            System.out.println(Arrays.toString(cbms.predictClassProbs(dataSet.getRow(0))));
 //            System.out.println(cbms.getBinaryClassifiers()[0]);

@@ -13,6 +13,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.eval.Entropy;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
+import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
@@ -41,53 +42,26 @@ public class CBMSOptimizer {
     private double temperature = 1;
 
 
-
-    // boosting parameters
-    private int numLeavesBinary = 2;
-    private int numLeavesMultiClass = 2;
-    private double shrinkageBinary = 0.1;
-    private double shrinkageMultiClass = 0.1;
-    private int numIterationsBinary = 20;
-    private int numIterationsMultiClass = 20;
-
-    private DataSet augmentedData;
-    private int numComponents;
-
     // lr parameters
     // regularization for multiClassClassifier
     private double priorVarianceMultiClass =1;
     // regularization for binary logisticRegression
     private double priorVarianceBinary =1;
 
+
+    private boolean regularizeAll = false;
+
     public CBMSOptimizer(CBMS cbms, MultiLabelClfDataSet dataSet) {
         this.cbms = cbms;
-        this.numComponents = cbms.numComponents;
         this.dataSet = dataSet;
         this.terminator = new Terminator();
         this.terminator.setGoal(Terminator.Goal.MINIMIZE);
 
         this.gammas = new double[dataSet.getNumDataPoints()][cbms.getNumComponents()];
+    }
 
-
-        this.augmentedData = DataSetBuilder.getBuilder().numDataPoints(dataSet.getNumDataPoints()*numComponents)
-                .numFeatures(dataSet.getNumFeatures()+numComponents)
-                .dense(dataSet.isDense())
-                .build();
-        int dataIndex = 0;
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            Vector oldRow = dataSet.getRow(i);
-            for (int k=0;k<numComponents;k++){
-                for (int j=0;j<dataSet.getNumFeatures();j++){
-                    augmentedData.setFeatureValue(dataIndex, j, oldRow.get(j));
-                }
-
-                augmentedData.setFeatureValue(dataIndex, dataSet.getNumFeatures()+k, 1);
-
-                dataIndex += 1;
-            }
-        }
-
-
+    public void setRegularizeAll(boolean regularizeAll) {
+        this.regularizeAll = regularizeAll;
     }
 
     public void setPriorVarianceMultiClass(double priorVarianceMultiClass) {
@@ -98,29 +72,7 @@ public class CBMSOptimizer {
         this.priorVarianceBinary = priorVarianceBinary;
     }
 
-    public void setNumLeavesBinary(int numLeavesBinary) {
-        this.numLeavesBinary = numLeavesBinary;
-    }
 
-    public void setNumLeavesMultiClass(int numLeavesMultiClass) {
-        this.numLeavesMultiClass = numLeavesMultiClass;
-    }
-
-    public void setShrinkageBinary(double shrinkageBinary) {
-        this.shrinkageBinary = shrinkageBinary;
-    }
-
-    public void setShrinkageMultiClass(double shrinkageMultiClass) {
-        this.shrinkageMultiClass = shrinkageMultiClass;
-    }
-
-    public void setNumIterationsBinary(int numIterationsBinary) {
-        this.numIterationsBinary = numIterationsBinary;
-    }
-
-    public void setNumIterationsMultiClass(int numIterationsMultiClass) {
-        this.numIterationsMultiClass = numIterationsMultiClass;
-    }
 
     public double getTemperature() {
         return temperature;
@@ -145,7 +97,7 @@ public class CBMSOptimizer {
         this.terminator.add(getObjective());
     }
 
-    private void eStep(){
+    void eStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
@@ -188,7 +140,7 @@ public class CBMSOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("start updateBinaryClassifiers");
         }
-        IntStream.range(0, cbms.numLabels).forEach(l -> updateBinaryLogisticRegression(l));
+        IntStream.range(0, cbms.numLabels).parallel().forEach(l -> updateBinaryLogisticRegression(l));
         if (logger.isDebugEnabled()){
             logger.debug("finish updateBinaryClassifiers");
         }
@@ -197,94 +149,14 @@ public class CBMSOptimizer {
     //todo pay attention to parallelism
 
 
-    private void updateBinaryBoosting(int labelIndex){
-//        System.out.println("updating binary boosting for class + "+labelIndex);
-        double[][] targets = new double[augmentedData.getNumDataPoints()][2];
-        int[] binaryLabels = new int[augmentedData.getNumDataPoints()];
-
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
-            boolean match = multiLabel.matchClass(labelIndex);
-            for (int k=0;k<numComponents;k++){
-                if (match){
-                    targets[i*numComponents+k][1]=1;
-                    binaryLabels[i*numComponents+k]=1;
-                } else {
-                    targets[i*numComponents+k][0]=1;
-                }
-            }
-        }
-
-        double[] weights = new double[augmentedData.getNumDataPoints()];
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int k=0;k<numComponents;k++){
-                weights[i*numComponents+k] = gammas[i][k];
-            }
-        }
-//        System.out.println("for label "+labelIndex);
-//        System.out.println("targets = "+Arrays.deepToString(targets));
-//        System.out.println("weights = "+Arrays.toString(weights));
-
-
-
-        int numIterations = numIterationsBinary;
-        double shrinkage = shrinkageBinary;
-        LKBoost boost = (LKBoost)this.cbms.binaryClassifiers[labelIndex];
-        RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setMaxNumLeaves(numLeavesBinary);
-        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(2));
-
-        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost,augmentedData, regTreeFactory,
-                weights,targets);
-        optimizer.setShrinkage(shrinkage);
-        optimizer.initialize();
-        optimizer.iterate(numIterations);
-//        System.out.println("training accu = "+ Accuracy.accuracy(binaryLabels, boost.predict(augmentedData)));
-
-
-    }
-
-
-
-
     private void updateBinaryLogisticRegression(int labelIndex){
-
-        double[][] targets = new double[augmentedData.getNumDataPoints()][2];
-
-
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
-            boolean match = multiLabel.matchClass(labelIndex);
-            for (int k=0;k<numComponents;k++){
-                if (match){
-                    targets[i*numComponents+k][1]=1;
-                } else {
-                    targets[i*numComponents+k][0]=1;
-                }
-            }
-        }
-
-        double[] weights = new double[augmentedData.getNumDataPoints()];
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int k=0;k<numComponents;k++){
-                weights[i*numComponents+k] = gammas[i][k];
-            }
-        }
-
-        RidgeLogisticOptimizer ridgeLogisticOptimizer;
-
-        // no parallelism
-        ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbms.binaryClassifiers[labelIndex],
-                augmentedData, weights, targets, priorVarianceBinary, false);
-        //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(5);
-        ridgeLogisticOptimizer.optimize();
-//        if (logger.isDebugEnabled()){
-//            logger.debug("for cluster "+clusterIndex+" label "+labelIndex+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
-//        }
+        AugmentedLRLoss loss = new AugmentedLRLoss(dataSet, labelIndex, gammas,
+                cbms.getBinaryClassifiers()[labelIndex],priorVarianceBinary, regularizeAll);
+        LBFGS lbfgs = new LBFGS(loss);
+        //todo
+        lbfgs.getTerminator().setMaxIteration(10);
+        lbfgs.optimize();
     }
-
 
     private void updateMultiClassLR() {
         // parallel
@@ -299,27 +171,8 @@ public class CBMSOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("start updateMultiClassClassifier()");
         }
-//        updateMultiClassBoost();
         updateMultiClassLR();
     }
-
-
-    private void updateMultiClassBoost() {
-        int numComponents = cbms.numComponents;
-        int numIterations = numIterationsMultiClass;
-        double shrinkage = shrinkageMultiClass;
-        LKBoost boost = (LKBoost)this.cbms.multiClassClassifier;
-        RegTreeConfig regTreeConfig = new RegTreeConfig()
-                .setMaxNumLeaves(numLeavesMultiClass);
-        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        regTreeFactory.setLeafOutputCalculator(new LKBOutputCalculator(numComponents));
-
-        LKBoostOptimizer optimizer = new LKBoostOptimizer(boost, dataSet, regTreeFactory, gammas);
-        optimizer.setShrinkage(shrinkage);
-        optimizer.initialize();
-        optimizer.iterate(numIterations);
-    }
-
 
 
 
@@ -344,51 +197,18 @@ public class CBMSOptimizer {
     }
 
 
-
-    private double binaryObj(int classIndex){
-        return binaryBoostObj(classIndex);
+    private double binaryObj(int labelIndex){
+        AugmentedLRLoss loss = new AugmentedLRLoss(dataSet, labelIndex, gammas,
+                cbms.getBinaryClassifiers()[labelIndex],priorVarianceBinary, regularizeAll);
+        return loss.getValue();
     }
 
-
-
-    private double binaryBoostObj(int classIndex){
-        double[][] targets = new double[augmentedData.getNumDataPoints()][2];
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
-            boolean match = multiLabel.matchClass(classIndex);
-            for (int k=0;k<numComponents;k++){
-                if (match){
-                    targets[i*numComponents+k][1]=1;
-                } else {
-                    targets[i*numComponents+k][0]=1;
-                }
-            }
-        }
-
-        double[] weights = new double[augmentedData.getNumDataPoints()];
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int k=0;k<numComponents;k++){
-                weights[i*numComponents+k] = gammas[i][k];
-            }
-        }
-
-        Classifier.ProbabilityEstimator estimator = cbms.binaryClassifiers[classIndex];
-
-        return KLDivergence.kl(estimator, augmentedData, targets, weights);
-    }
 
     private double multiClassClassifierObj(){
-        return multiClassBoostObj();
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbms.multiClassClassifier,
+                dataSet, gammas, priorVarianceMultiClass, true);
+        return ridgeLogisticOptimizer.getFunction().getValue();
     }
-
-
-
-    private double multiClassBoostObj(){
-        Classifier.ProbabilityEstimator estimator = cbms.multiClassClassifier;
-        double[][] targets = gammas;
-        return KLDivergence.kl(estimator,dataSet,targets);
-    }
-
 
 
     public Terminator getTerminator() {

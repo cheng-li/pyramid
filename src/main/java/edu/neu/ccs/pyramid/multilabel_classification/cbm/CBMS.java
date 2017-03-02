@@ -29,7 +29,7 @@ public class CBMS implements MultiLabelClassifier.ClassProbEstimator, Serializab
 
     // parameters
     // format: [numLabels]
-    Classifier.ProbabilityEstimator[] binaryClassifiers;
+    AugmentedLR[] binaryClassifiers;
     Classifier.ProbabilityEstimator multiClassClassifier;
 
 
@@ -37,10 +37,10 @@ public class CBMS implements MultiLabelClassifier.ClassProbEstimator, Serializab
         this.numLabels = numLabels;
         this.numComponents = numComponents;
 //        this.binaryClassifiers = new LKBoost[numLabels];
-        this.binaryClassifiers = new LogisticRegression[numLabels];
+        this.binaryClassifiers = new AugmentedLR[numLabels];
         for (int l=0;l<numLabels;l++){
 //            binaryClassifiers[l] = new LKBoost(2);
-            binaryClassifiers[l] = new LogisticRegression(2, numFeatures+numComponents);
+            binaryClassifiers[l] = new AugmentedLR(numFeatures, numComponents);
         }
 
 
@@ -48,15 +48,6 @@ public class CBMS implements MultiLabelClassifier.ClassProbEstimator, Serializab
         this.multiClassClassifier = new LogisticRegression(numComponents,numFeatures);
     }
 
-    Vector augment(Vector x, int k){
-        Vector augmented = new DenseVector(x.size()+numComponents);
-        for (int d=0;d<x.size();d++){
-            augmented.set(d,x.get(d));
-        }
-
-        augmented.set(x.size()+k,1);
-        return augmented;
-    }
 
     @Override
     public int getNumClasses() {
@@ -207,7 +198,7 @@ public class CBMS implements MultiLabelClassifier.ClassProbEstimator, Serializab
     }
 
 
-    public Classifier.ProbabilityEstimator[] getBinaryClassifiers() {
+    public AugmentedLR[] getBinaryClassifiers() {
         return binaryClassifiers;
     }
 
