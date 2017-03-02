@@ -83,7 +83,7 @@ public class AugmentedLR implements Serializable{
         double[][] logProbs = new double[numComponents][2];
         for (int k=0;k<numComponents;k++){
             double[] s = {0, augmentedScores[k]};
-            logProbs[k] = MathUtil.softmax(s);
+            logProbs[k] = MathUtil.logSoftmax(s);
         }
         return logProbs;
     }

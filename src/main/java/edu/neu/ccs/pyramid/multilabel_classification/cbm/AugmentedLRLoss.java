@@ -68,6 +68,10 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
         this.isProbabilityCacheValid = false;
     }
 
+    public void setRegularizeAll(boolean regularizeAll) {
+        this.regularizeAll = regularizeAll;
+    }
+
     @Override
     public Vector getParameters() {
         return augmentedLR.getAllWeights();
@@ -225,18 +229,18 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
 
     private Vector penaltyGradient(){
         Vector weightsVector = augmentedLR.getAllWeights();
-        Vector penalty = new DenseVector(weightsVector.size());
+        Vector penaltyGradient = new DenseVector(weightsVector.size());
 
         if (regularizeAll){
             for (int d=0;d<numFeatures+numComponents;d++){
-                penalty.set(d, weightsVector.get(d)/priorGaussianVariance);
+                penaltyGradient.set(d, weightsVector.get(d)/priorGaussianVariance);
             }
         } else {
             for (int d=0;d<numFeatures;d++){
-                penalty.set(d, weightsVector.get(d)/priorGaussianVariance);
+                penaltyGradient.set(d, weightsVector.get(d)/priorGaussianVariance);
             }
         }
-        return penalty;
+        return penaltyGradient;
     }
 
     private void updateGradient(){
