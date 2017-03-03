@@ -4,6 +4,11 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import junit.framework.TestCase;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import java.io.File;
 import java.util.Arrays;
@@ -20,6 +25,11 @@ public class CBMSOptimizerTest  {
 
 
     public static void main(String[] args) throws Exception{
+//        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+//        Configuration config = ctx.getConfiguration();
+//        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+//        loggerConfig.setLevel(Level.DEBUG);
+//        ctx.updateLoggers();
         test1();
     }
 
@@ -28,7 +38,7 @@ public class CBMSOptimizerTest  {
                 DataSetType.ML_CLF_DENSE, true);
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/test"),
                 DataSetType.ML_CLF_DENSE, true);
-        int numComponents = 25;
+        int numComponents = 50;
         CBMS cbms = new CBMS(dataSet.getNumClasses(), numComponents, dataSet.getNumFeatures());
         Set<MultiLabel> seen = DataSetUtil.gatherMultiLabels(dataSet).stream().collect(Collectors.toSet());
         MultiLabel empty = new MultiLabel();
@@ -43,7 +53,7 @@ public class CBMSOptimizerTest  {
         CBMSOptimizer optimizer = new CBMSOptimizer(cbms, dataSet);
         optimizer.setPriorVarianceBinary(1);
         optimizer.setPriorVarianceMultiClass(1);
-        optimizer.setRegularizeAll(false);
+        optimizer.setRegularizeAll(true);
         CBMSInitializer.initialize(cbms, dataSet,optimizer);
         System.out.println("after initialization");
         System.out.println("training performance");
@@ -56,9 +66,14 @@ public class CBMSOptimizerTest  {
             optimizer.eStep();
             System.out.println("after E");
             System.out.println("objective = "+optimizer.getObjective());
+            System.out.println("multi-class obj = "+optimizer.multiClassClassifierObj());
+            System.out.println("binary obj = "+optimizer.binaryObj());
             optimizer.mStep();
             System.out.println("after M");
             System.out.println("objective = "+optimizer.getObjective());
+            System.out.println("multi-class obj = "+optimizer.multiClassClassifierObj());
+            System.out.println("binary obj = "+optimizer.binaryObj());
+//            System.out.println(Arrays.toString(optimizer.gammas[0]));
 //            System.out.println(Arrays.toString(cbms.predictClassProbs(dataSet.getRow(0))));
 //            System.out.println(cbms.getBinaryClassifiers()[0]);
 //            System.out.println(cbms.predictByMarginals(dataSet.getRow(0)));

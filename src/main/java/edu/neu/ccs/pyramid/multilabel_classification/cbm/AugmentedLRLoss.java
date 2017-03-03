@@ -42,6 +42,7 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
     private boolean isProbabilityCacheValid;
+
     private double priorGaussianVariance;
 
     private boolean regularizeAll;
@@ -80,6 +81,10 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
     @Override
     public void setParameters(Vector parameters) {
         augmentedLR.setWeights(parameters);
+        this.isGradientCacheValid=false;
+        this.isValueCacheValid=false;
+        this.isValueCacheValid=false;
+        this.isProbabilityCacheValid=false;
     }
 
     @Override
@@ -87,6 +92,7 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
         if (isValueCacheValid){
             return this.value;
         }
+        // the value does not depend on expected probability, so we do not update it
         double nll = computeNLL();
         this.value =  nll+penalty();
         this.isValueCacheValid = true;
@@ -98,6 +104,7 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
             return this.gradient;
         }
         updateProbs();
+        updateExpectedProbs();
         updatePredictedCounts();
         updateGradient();
         this.isGradientCacheValid = true;
@@ -154,8 +161,6 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
         for (int i=0;i<numData;i++){
             logProbs[i] = augmentedLR.logAugmentedProbs(dataSet.getRow(i));
         }
-
-        updateExpectedProbs();
 
         this.isProbabilityCacheValid = true;
     }
@@ -263,9 +268,9 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
         int label = binaryLabels[i];
         for (int k=0;k<numComponents;k++){
             if (label==1){
-                sum += logProbs[i][k][1];
+                sum += gammas[i][k]*logProbs[i][k][1];
             } else {
-                sum += logProbs[i][k][0];
+                sum += gammas[i][k]*logProbs[i][k][0];
             }
         }
         return -1*sum;

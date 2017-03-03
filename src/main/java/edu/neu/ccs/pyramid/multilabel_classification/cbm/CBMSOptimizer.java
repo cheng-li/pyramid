@@ -38,8 +38,8 @@ public class CBMSOptimizer {
 
     private boolean isParallel = true;
 
-    // for deterministic annealing
-    private double temperature = 1;
+//    // for deterministic annealing
+//    private double temperature = 1;
 
 
     // lr parameters
@@ -74,13 +74,13 @@ public class CBMSOptimizer {
 
 
 
-    public double getTemperature() {
-        return temperature;
-    }
-
-    public void setTemperature(double temperature) {
-        this.temperature = temperature;
-    }
+//    public double getTemperature() {
+//        return temperature;
+//    }
+//
+//    public void setTemperature(double temperature) {
+//        this.temperature = temperature;
+//    }
 
     public void optimize() {
         while (true) {
@@ -140,7 +140,9 @@ public class CBMSOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug("start updateBinaryClassifiers");
         }
-        IntStream.range(0, cbms.numLabels).parallel().forEach(l -> updateBinaryLogisticRegression(l));
+        IntStream.range(0, cbms.numLabels)
+                .parallel()
+                .forEach(this::updateBinaryLogisticRegression);
         if (logger.isDebugEnabled()){
             logger.debug("finish updateBinaryClassifiers");
         }
@@ -155,6 +157,7 @@ public class CBMSOptimizer {
         LBFGS lbfgs = new LBFGS(loss);
         //todo
         lbfgs.getTerminator().setMaxIteration(10);
+        lbfgs.getTerminator().setGoal(Terminator.Goal.MINIMIZE);
         lbfgs.optimize();
     }
 
@@ -163,7 +166,7 @@ public class CBMSOptimizer {
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbms.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(5);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
         ridgeLogisticOptimizer.optimize();
     }
 
@@ -178,7 +181,8 @@ public class CBMSOptimizer {
 
     //TODO: have to modify the objectives by introducing L1 regularization part
     public double getObjective() {
-        return multiClassClassifierObj() + binaryObj() +(1-temperature)*getEntropy();
+        return multiClassClassifierObj() + binaryObj();
+//                +(1-temperature)*getEntropy();
     }
 
 
@@ -192,7 +196,7 @@ public class CBMSOptimizer {
     }
 
 
-    private double binaryObj(){
+    double binaryObj(){
         return IntStream.range(0, cbms.numLabels).mapToDouble(this::binaryObj).sum();
     }
 
@@ -204,7 +208,7 @@ public class CBMSOptimizer {
     }
 
 
-    private double multiClassClassifierObj(){
+    double multiClassClassifierObj(){
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbms.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
         return ridgeLogisticOptimizer.getFunction().getValue();
@@ -219,15 +223,4 @@ public class CBMSOptimizer {
         return gammas;
     }
 
-    public double[][] getPIs() {
-        double[][] PIs = new double[dataSet.getNumDataPoints()][cbms.getNumComponents()];
-
-        for (int n=0; n<PIs.length; n++) {
-            double[] logProbs = cbms.multiClassClassifier.predictLogClassProbs(dataSet.getRow(n));
-            for (int k=0; k<PIs[n].length; k++) {
-                PIs[n][k] = Math.exp(logProbs[k]);
-            }
-        }
-        return PIs;
-    }
 }
