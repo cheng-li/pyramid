@@ -38,6 +38,7 @@ public class CBMSOptimizer {
 
     private boolean isParallel = true;
 
+
 //    // for deterministic annealing
 //    private double temperature = 1;
 
@@ -48,8 +49,7 @@ public class CBMSOptimizer {
     // regularization for binary logisticRegression
     private double priorVarianceBinary =1;
 
-
-    private boolean regularizeAll = false;
+    private double componentWeightsVariance=1;
 
     public CBMSOptimizer(CBMS cbms, MultiLabelClfDataSet dataSet) {
         this.cbms = cbms;
@@ -60,8 +60,9 @@ public class CBMSOptimizer {
         this.gammas = new double[dataSet.getNumDataPoints()][cbms.getNumComponents()];
     }
 
-    public void setRegularizeAll(boolean regularizeAll) {
-        this.regularizeAll = regularizeAll;
+
+    public void setComponentWeightsVariance(double componentWeightsVariance) {
+        this.componentWeightsVariance = componentWeightsVariance;
     }
 
     public void setPriorVarianceMultiClass(double priorVarianceMultiClass) {
@@ -153,7 +154,7 @@ public class CBMSOptimizer {
 
     private void updateBinaryLogisticRegression(int labelIndex){
         AugmentedLRLoss loss = new AugmentedLRLoss(dataSet, labelIndex, gammas,
-                cbms.getBinaryClassifiers()[labelIndex],priorVarianceBinary, regularizeAll);
+                cbms.getBinaryClassifiers()[labelIndex],priorVarianceBinary, componentWeightsVariance);
         LBFGS lbfgs = new LBFGS(loss);
         //todo
         lbfgs.getTerminator().setMaxIteration(10);
@@ -203,7 +204,7 @@ public class CBMSOptimizer {
 
     private double binaryObj(int labelIndex){
         AugmentedLRLoss loss = new AugmentedLRLoss(dataSet, labelIndex, gammas,
-                cbms.getBinaryClassifiers()[labelIndex],priorVarianceBinary, regularizeAll);
+                cbms.getBinaryClassifiers()[labelIndex],priorVarianceBinary, componentWeightsVariance);
         return loss.getValue();
     }
 

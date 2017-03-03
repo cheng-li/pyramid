@@ -38,7 +38,7 @@ public class AugmentedLRLossTest {
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             gammas[i][0]=1;
         }
-        AugmentedLRLoss loss = new AugmentedLRLoss(dataSet, 0, gammas, augmentedLR, 1, false);
+        AugmentedLRLoss loss = new AugmentedLRLoss(dataSet, 0, gammas, augmentedLR, 1, 1);
         LBFGS lbfgs = new LBFGS(loss);
 
         for (int i=0;i<100;i++){

@@ -43,18 +43,20 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
     private boolean isValueCacheValid;
     private boolean isProbabilityCacheValid;
 
-    private double priorGaussianVariance;
+    private double featureWeightVariance;
 
-    private boolean regularizeAll;
+    private double componentWeightVariance;
+
+
 
 
     public AugmentedLRLoss(MultiLabelClfDataSet dataSet, int labelIndex, double[][] gammas,
-                           AugmentedLR augmentedLR, double priorGaussianVariance, boolean regularizeAll) {
+                           AugmentedLR augmentedLR, double featureWeightVariance, double componentWeightVariance) {
         this.dataSet = dataSet;
         this.gammas = gammas;
         this.augmentedLR = augmentedLR;
-        this.priorGaussianVariance = priorGaussianVariance;
-        this.regularizeAll = regularizeAll;
+        this.featureWeightVariance = featureWeightVariance;
+        this.componentWeightVariance = componentWeightVariance;
         this.binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(),labelIndex);
         this.numFeatures = dataSet.getNumFeatures();
         this.numComponents = augmentedLR.getNumComponents();
@@ -69,9 +71,6 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
         this.isProbabilityCacheValid = false;
     }
 
-    public void setRegularizeAll(boolean regularizeAll) {
-        this.regularizeAll = regularizeAll;
-    }
 
     @Override
     public Vector getParameters() {
@@ -219,31 +218,26 @@ public class AugmentedLRLoss implements Optimizable.ByGradientValue{
     }
 
     private double penalty(){
-        double square;
-        if (regularizeAll){
-            Vector weights = augmentedLR.getWeightsWithoutBias();
-            square = Vectors.dot(weights, weights);
-        } else {
-            // only penalize feature weights
-            Vector weights = augmentedLR.featureWeights();
-            square = Vectors.dot(weights, weights);
-        }
-        return square/(2*priorGaussianVariance);
+        double sum = 0;
+        Vector featureWeight = augmentedLR.featureWeights();
+        sum += Vectors.dot(featureWeight, featureWeight)/(2* featureWeightVariance);
+        Vector componentWeight = augmentedLR.componentWeights();
+        sum += Vectors.dot(componentWeight, componentWeight)/(2* componentWeightVariance);
+        return sum;
     }
 
 
     private Vector penaltyGradient(){
-        Vector weightsVector = augmentedLR.getAllWeights();
-        Vector penaltyGradient = new DenseVector(weightsVector.size());
+        Vector featureWeights = augmentedLR.featureWeights();
+        Vector componentWeights = augmentedLR.componentWeights();
+        Vector penaltyGradient = new DenseVector(augmentedLR.getAllWeights().size());
 
-        if (regularizeAll){
-            for (int d=0;d<numFeatures+numComponents;d++){
-                penaltyGradient.set(d, weightsVector.get(d)/priorGaussianVariance);
-            }
-        } else {
-            for (int d=0;d<numFeatures;d++){
-                penaltyGradient.set(d, weightsVector.get(d)/priorGaussianVariance);
-            }
+        for (int d=0;d<numFeatures;d++){
+            penaltyGradient.set(d, featureWeights.get(d)/ featureWeightVariance);
+        }
+
+        for (int k=0;k<numComponents;k++){
+            penaltyGradient.set(numFeatures+k, componentWeights.get(k)/componentWeightVariance);
         }
         return penaltyGradient;
     }

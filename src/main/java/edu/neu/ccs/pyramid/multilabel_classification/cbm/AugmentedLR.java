@@ -52,6 +52,10 @@ public class AugmentedLR implements Serializable{
         return weights.viewPart(0, numFeatures);
     }
 
+    Vector componentWeights(){
+        return weights.viewPart(numFeatures, numComponents);
+    }
+
     Vector getWeightsWithoutBias(){
         return weights.viewPart(0, numFeatures+numComponents);
     }

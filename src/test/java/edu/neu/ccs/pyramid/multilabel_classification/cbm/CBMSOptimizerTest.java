@@ -53,7 +53,7 @@ public class CBMSOptimizerTest  {
         CBMSOptimizer optimizer = new CBMSOptimizer(cbms, dataSet);
         optimizer.setPriorVarianceBinary(1);
         optimizer.setPriorVarianceMultiClass(1);
-        optimizer.setRegularizeAll(true);
+        optimizer.setComponentWeightsVariance(10);
         CBMSInitializer.initialize(cbms, dataSet,optimizer);
         System.out.println("after initialization");
         System.out.println("training performance");
