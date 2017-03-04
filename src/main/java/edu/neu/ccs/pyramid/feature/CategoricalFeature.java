@@ -1,12 +1,19 @@
 package edu.neu.ccs.pyramid.feature;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.neu.ccs.pyramid.feature.Feature;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
  * Created by chengli on 3/4/15.
  */
+@JsonSerialize(using = CategoricalFeature.Serializer.class)
 public class CategoricalFeature extends Feature {
     // red
     private String category;
@@ -59,5 +66,19 @@ public class CategoricalFeature extends Feature {
         sb.append(", categoryIndexMap=").append(categoryIndexMap);
         sb.append('}');
         return sb.toString();
+    }
+
+
+    public static class Serializer extends JsonSerializer<CategoricalFeature> {
+        @Override
+        public void serialize(CategoricalFeature feature, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("name",feature.name);
+            jsonGenerator.writeStringField("type","categorical");
+            jsonGenerator.writeStringField("variable",feature.variableName);
+            jsonGenerator.writeNumberField("numCategories",feature.numCategories);
+            jsonGenerator.writeStringField("category",feature.category);
+            jsonGenerator.writeEndObject();
+        }
     }
 }

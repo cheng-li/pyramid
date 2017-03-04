@@ -52,7 +52,7 @@ public class App3 {
         String[] same = {"output.folder","output.trainFolder","output.testFolder","output.log",
                 "train.feature.useInitialFeatures","train.feature.categFeature.filter",
                 "train.feature.categFeature.percentThreshold","train.feature.ngram.n","train.feature.ngram.minDf","train.feature.ngram.slop",
-                "train.feature.missingValue","train.feature.generateDistribution",
+                "train.feature.missingValue",
                 "train.feature.addExternalNgrams","train.feature.externalNgramFile","train.feature.analyzer",
                 "train.feature.filterNgramsByKeyWords","train.feature.filterNgrams.keyWordsFile",
                 "train.feature.filterNgramsByRegex", "train.feature.filterNgrams.regex",

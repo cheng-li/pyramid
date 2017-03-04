@@ -119,9 +119,9 @@ public class Ngram extends Feature {
         @Override
         public void serialize(Ngram feature, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeNumberField("index", feature.index);
-            jsonGenerator.writeStringField("name", feature.name);
-            jsonGenerator.writeStringField("ngram",feature.ngram);
+//            jsonGenerator.writeNumberField("index", feature.index);
+            jsonGenerator.writeStringField("name", feature.ngram);
+            jsonGenerator.writeStringField("type","ngram");
             jsonGenerator.writeStringField("field",feature.field);
             jsonGenerator.writeNumberField("slop", feature.slop);
             jsonGenerator.writeBooleanField("inOrder",feature.inOrder);

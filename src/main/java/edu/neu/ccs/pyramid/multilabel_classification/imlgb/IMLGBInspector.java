@@ -60,56 +60,56 @@ public class IMLGBInspector {
     }
 
 
-    public static TopFeatures topFeatures(IMLGradientBoosting boosting,  int classIndex, int limit,Collection<FeatureDistribution> inputDistributions){
-        Map<Feature,Double> totalContributions = new HashMap<>();
-        List<Regressor> regressors = boosting.getRegressors(classIndex);
-        List<RegressionTree> trees = regressors.stream().filter(regressor ->
-                regressor instanceof RegressionTree)
-                .map(regressor -> (RegressionTree) regressor)
-                .collect(Collectors.toList());
-        for (RegressionTree tree: trees){
-            Map<Feature,Double> contributions = RegTreeInspector.featureImportance(tree);
-            for (Map.Entry<Feature,Double> entry: contributions.entrySet()){
-                Feature feature = entry.getKey();
-                Double contribution = entry.getValue();
-                double oldValue = totalContributions.getOrDefault(feature,0.0);
-                double newValue = oldValue+contribution;
-                totalContributions.put(feature,newValue);
-            }
-        }
-        Comparator<Map.Entry<Feature,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
-        List<Feature> list = totalContributions.entrySet().stream().sorted(comparator.reversed()).limit(limit)
-                .map(Map.Entry::getKey).collect(Collectors.toList());
-        TopFeatures topFeatures = new TopFeatures();
-        topFeatures.setTopFeatures(list);
-        topFeatures.setClassIndex(classIndex);
-        LabelTranslator labelTranslator = boosting.getLabelTranslator();
-        topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
-
-        List<FeatureDistribution> featureDistributions = new ArrayList<>();
-
-
-//        for (Feature feature: list){
-//            feature.clearIndex();
+//    public static TopFeatures topFeatures(IMLGradientBoosting boosting,  int classIndex, int limit,Collection<FeatureDistribution> inputDistributions){
+//        Map<Feature,Double> totalContributions = new HashMap<>();
+//        List<Regressor> regressors = boosting.getRegressors(classIndex);
+//        List<RegressionTree> trees = regressors.stream().filter(regressor ->
+//                regressor instanceof RegressionTree)
+//                .map(regressor -> (RegressionTree) regressor)
+//                .collect(Collectors.toList());
+//        for (RegressionTree tree: trees){
+//            Map<Feature,Double> contributions = RegTreeInspector.featureImportance(tree);
+//            for (Map.Entry<Feature,Double> entry: contributions.entrySet()){
+//                Feature feature = entry.getKey();
+//                Double contribution = entry.getValue();
+//                double oldValue = totalContributions.getOrDefault(feature,0.0);
+//                double newValue = oldValue+contribution;
+//                totalContributions.put(feature,newValue);
+//            }
 //        }
-
-        for (Feature feature: list){
-            if (feature instanceof Ngram){
-                FeatureDistribution featureDistribution = null;
-                for (FeatureDistribution distribution: inputDistributions){
-                    distribution.getFeature().setIndex(feature.getIndex());
-                    if (distribution.getFeature().equals(feature)){
-                        featureDistribution = distribution;
-                        break;
-                    }
-                }
-                featureDistributions.add(featureDistribution);
-            }
-        }
-
-        topFeatures.setFeatureDistributions(featureDistributions);
-        return topFeatures;
-    }
+//        Comparator<Map.Entry<Feature,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
+//        List<Feature> list = totalContributions.entrySet().stream().sorted(comparator.reversed()).limit(limit)
+//                .map(Map.Entry::getKey).collect(Collectors.toList());
+//        TopFeatures topFeatures = new TopFeatures();
+//        topFeatures.setTopFeatures(list);
+//        topFeatures.setClassIndex(classIndex);
+//        LabelTranslator labelTranslator = boosting.getLabelTranslator();
+//        topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
+//
+//        List<FeatureDistribution> featureDistributions = new ArrayList<>();
+//
+//
+////        for (Feature feature: list){
+////            feature.clearIndex();
+////        }
+//
+//        for (Feature feature: list){
+//            if (feature instanceof Ngram){
+//                FeatureDistribution featureDistribution = null;
+//                for (FeatureDistribution distribution: inputDistributions){
+//                    distribution.getFeature().setIndex(feature.getIndex());
+//                    if (distribution.getFeature().equals(feature)){
+//                        featureDistribution = distribution;
+//                        break;
+//                    }
+//                }
+//                featureDistributions.add(featureDistribution);
+//            }
+//        }
+//
+//        topFeatures.setFeatureDistributions(featureDistributions);
+//        return topFeatures;
+//    }
 
 
     public static Map<List<Integer>, Double> countPathMatches(IMLGradientBoosting boosting, DataSet dataSet, int classIndex){
