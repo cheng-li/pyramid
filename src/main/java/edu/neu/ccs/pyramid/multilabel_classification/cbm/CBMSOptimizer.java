@@ -98,7 +98,7 @@ public class CBMSOptimizer {
         this.terminator.add(getObjective());
     }
 
-    void eStep(){
+    public void eStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
@@ -125,7 +125,7 @@ public class CBMSOptimizer {
         }
     }
 
-    void mStep() {
+    public void mStep() {
         if (logger.isDebugEnabled()){
             logger.debug("start M step");
         }

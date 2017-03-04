@@ -661,6 +661,17 @@ public class DataSetUtil {
         return sampleData(dataSet,keep);
     }
 
+
+    public static List<ClfDataSet> partitionToBatches(ClfDataSet dataSet, int numBatches){
+        List<ClfDataSet> batches = new ArrayList<>();
+        for (int i=1;i<=numBatches;i++){
+            Set<Integer> index = new HashSet<>();
+            index.add(i);
+            batches.add(sampleByFold(dataSet, numBatches, index));
+        }
+        return batches;
+    }
+
     public static MultiLabelClfDataSet sampleByFold(MultiLabelClfDataSet dataSet, int numFolds, Set<Integer> foldIndices){
         for (int fold: foldIndices){
             boolean con = fold>=1 && fold<=numFolds;
@@ -679,6 +690,16 @@ public class DataSetUtil {
         }
 
         return sampleData(dataSet,keep);
+    }
+
+    public static List<MultiLabelClfDataSet> partitionToBatches(MultiLabelClfDataSet dataSet, int numBatches){
+        List<MultiLabelClfDataSet> batches = new ArrayList<>();
+        for (int i=1;i<=numBatches;i++){
+            Set<Integer> index = new HashSet<>();
+            index.add(i);
+            batches.add(sampleByFold(dataSet, numBatches, index));
+        }
+        return batches;
     }
 
 
