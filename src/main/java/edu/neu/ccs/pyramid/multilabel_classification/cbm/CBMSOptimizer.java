@@ -51,6 +51,10 @@ public class CBMSOptimizer {
 
     private double componentWeightsVariance=1;
 
+    // in each M step
+    private int numMultiClassParaUpdates = 10;
+    private int numBinaryParaUpdates = 10;
+
     public CBMSOptimizer(CBMS cbms, MultiLabelClfDataSet dataSet) {
         this.cbms = cbms;
         this.dataSet = dataSet;
@@ -60,6 +64,14 @@ public class CBMSOptimizer {
         this.gammas = new double[dataSet.getNumDataPoints()][cbms.getNumComponents()];
     }
 
+
+    public void setNumMultiClassParaUpdates(int numMultiClassParaUpdates) {
+        this.numMultiClassParaUpdates = numMultiClassParaUpdates;
+    }
+
+    public void setNumBinaryParaUpdates(int numBinaryParaUpdates) {
+        this.numBinaryParaUpdates = numBinaryParaUpdates;
+    }
 
     public void setComponentWeightsVariance(double componentWeightsVariance) {
         this.componentWeightsVariance = componentWeightsVariance;
@@ -95,7 +107,8 @@ public class CBMSOptimizer {
     public void iterate() {
         eStep();
         mStep();
-        this.terminator.add(getObjective());
+        // do not compute objective by default
+//        this.terminator.add(getObjective());
     }
 
     public void eStep(){
@@ -157,7 +170,7 @@ public class CBMSOptimizer {
                 cbms.getBinaryClassifiers()[labelIndex],priorVarianceBinary, componentWeightsVariance);
         LBFGS lbfgs = new LBFGS(loss);
         //todo
-        lbfgs.getTerminator().setMaxIteration(10);
+        lbfgs.getTerminator().setMaxIteration(numBinaryParaUpdates);
         lbfgs.getTerminator().setGoal(Terminator.Goal.MINIMIZE);
         lbfgs.optimize();
     }
@@ -167,7 +180,7 @@ public class CBMSOptimizer {
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbms.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(10);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(numMultiClassParaUpdates);
         ridgeLogisticOptimizer.optimize();
     }
 
@@ -198,7 +211,7 @@ public class CBMSOptimizer {
 
 
     double binaryObj(){
-        return IntStream.range(0, cbms.numLabels).mapToDouble(this::binaryObj).sum();
+        return IntStream.range(0, cbms.numLabels).parallel().mapToDouble(this::binaryObj).sum();
     }
 
 
