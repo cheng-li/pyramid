@@ -51,6 +51,11 @@ public class BMTrainer {
         return bm;
     }
 
+
+    public double[][] getGammas() {
+        return gammas;
+    }
+
     public void iterate(){
         if (logger.isDebugEnabled()){
             logger.debug("start one EM iteration");

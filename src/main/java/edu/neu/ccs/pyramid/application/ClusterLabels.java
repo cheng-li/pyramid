@@ -12,19 +12,14 @@ import edu.neu.ccs.pyramid.clustering.bm.BM;
 import edu.neu.ccs.pyramid.clustering.bm.BMTrainer;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.util.ArgSort;
-import edu.neu.ccs.pyramid.util.BernoulliDistribution;
-import edu.neu.ccs.pyramid.util.Pair;
-import edu.neu.ccs.pyramid.util.Serialization;
+import edu.neu.ccs.pyramid.util.*;
 import org.apache.commons.io.FileUtils;
 
 import java.awt.*;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -94,6 +89,16 @@ public class ClusterLabels {
         Serialization.serialize(bm, new File(output, "model"));
 
         FileUtils.writeStringToFile(new File(output, "model_parameters.txt"), bm.toString());
+        //todo remove?
+        double[][] gammas = trainer.getGammas();
+        StringBuilder sb = new StringBuilder();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            int numContributedComponents = (int)Arrays.stream(gammas[i]).filter(d->d>1E-5).count();
+            sb.append(PrintUtil.toSimpleString(gammas[i])).append("\t")
+                    .append("contributed=").append(numContributedComponents).append("\n");
+
+        }
+        FileUtils.writeStringToFile(new File(output, "gammas.txt"), sb.toString());
     }
 
 

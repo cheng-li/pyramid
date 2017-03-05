@@ -44,6 +44,22 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         this.weights = new Weights(numClasses, numFeatures, weightVector);
     }
 
+    /**
+     * a logistic regression that gives p(y=k|x) = prior p(y=k)
+     * @param numClasses
+     * @param numFeatures
+     * @param priorProbabilities
+     */
+    public LogisticRegression(int numClasses, int numFeatures, double[] priorProbabilities) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        this.weights = new Weights(numClasses, numFeatures);
+        double[] scores = MathUtil.inverseSoftMax(priorProbabilities);
+        for (int l=0;l<numClasses;l++){
+            weights.setBiasForClass(scores[l],l);
+        }
+    }
+
 
     public Weights getWeights() {
         return weights;

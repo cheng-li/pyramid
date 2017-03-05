@@ -152,6 +152,16 @@ public class Weights implements Serializable {
         return this.weightVector.get(start);
     }
 
+
+
+    public void setBiasForClass(double bias, int k){
+        if (k>=numClasses){
+            throw new IllegalArgumentException("out of bound");
+        }
+        int start = (this.numFeatures+1)*k;
+        this.weightVector.set(start, bias);
+    }
+
     private void writeObject(java.io.ObjectOutputStream out)
             throws IOException {
         for (int i=0;i<serializableWeights.length;i++){

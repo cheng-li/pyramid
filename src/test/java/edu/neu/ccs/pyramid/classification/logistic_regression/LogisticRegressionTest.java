@@ -13,8 +13,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
 
 import java.io.File;
+import java.util.Arrays;
 
 public class LogisticRegressionTest {
     private static final Config config = new Config("config/local.properties");
@@ -27,8 +30,8 @@ public class LogisticRegressionTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.DEBUG);
         ctx.updateLoggers();
-        test3();
-
+//        test3();
+        test5();
     }
 
     private static void test1() throws Exception{
@@ -86,6 +89,27 @@ public class LogisticRegressionTest {
         System.out.println("train: "+Accuracy.accuracy(logisticRegression,dataSet));
         System.out.println("test: "+Accuracy.accuracy(logisticRegression,testSet));
 
+    }
+
+
+    private static void test4() {
+        double[] prior = {0.3, 0.7};
+        LogisticRegression logisticRegression = new LogisticRegression(2, 10, prior);
+        Vector vector = new DenseVector(10);
+        for (int d=0;d<10;d++){
+            vector.set(d, Math.random());
+        }
+        System.out.println(Arrays.toString(logisticRegression.predictClassProbs(vector)));
+    }
+
+    private static void test5() {
+        double[] prior = {0.1, 0.2, 0.7};
+        LogisticRegression logisticRegression = new LogisticRegression(3, 10, prior);
+        Vector vector = new DenseVector(10);
+        for (int d=0;d<10;d++){
+            vector.set(d, Math.random());
+        }
+        System.out.println(Arrays.toString(logisticRegression.predictClassProbs(vector)));
     }
 
 }
