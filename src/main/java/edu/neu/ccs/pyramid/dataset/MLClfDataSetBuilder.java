@@ -9,6 +9,7 @@ public class MLClfDataSetBuilder {
     private boolean dense = true;
     private boolean missingValue = false;
     private int numClasses = -1;
+    private Density density = Density.DENSE;
 
     public static MLClfDataSetBuilder getBuilder(){
         return new MLClfDataSetBuilder();
@@ -24,8 +25,14 @@ public class MLClfDataSetBuilder {
         return this;
     }
 
+    @Deprecated
     public MLClfDataSetBuilder dense(boolean dense) {
         this.dense = dense;
+        return this;
+    }
+
+    public MLClfDataSetBuilder density(Density density) {
+        this.density = density;
         return this;
     }
 
@@ -53,11 +60,18 @@ public class MLClfDataSetBuilder {
         }
 
         MultiLabelClfDataSet dataSet;
-        if (dense){
-            dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
-        } else {
-            dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+        switch (density){
+            case DENSE:
+                dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+                break;
+            case SPARSE_RANDOM:
+                dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+                break;
+            case SPARSE_SEQUENTIAL:
+                dataSet = new SequentialSparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+                break;
         }
+
         return dataSet;
     }
 
