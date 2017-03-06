@@ -25,7 +25,7 @@ public class BMSelector {
             System.out.println("fitting BM model "+i);
             BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
             BM bm = trainer.train();
-            double objective = trainer.terminator.getLastValue();
+            double objective = trainer.getObjective();
             if (objective < bestObjective){
                 bestObjective = objective;
                 best = bm;
@@ -44,7 +44,7 @@ public class BMSelector {
             System.out.println("fitting BM model "+i);
             BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
             BM bm = trainer.train();
-            double objective = trainer.terminator.getLastValue();
+            double objective = trainer.getObjective();
             if (objective < bestObjective){
                 bestObjective = objective;
                 best = trainer;

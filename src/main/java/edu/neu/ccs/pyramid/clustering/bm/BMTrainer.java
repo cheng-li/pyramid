@@ -25,24 +25,28 @@ public class BMTrainer {
     double[][] gammas;
     int numClusters;
     BM bm;
-    Terminator terminator;
+//    Terminator terminator;
 
     public BMTrainer(DataSet dataSet, int numClusters, long randomSeed) {
         this.numClusters = numClusters;
         this.dataSet = dataSet;
         this.gammas = new double[dataSet.getNumDataPoints()][numClusters];
         this.bm = new BM(numClusters,dataSet.getNumFeatures(), randomSeed);
-        this.terminator = new Terminator();
-        this.terminator.setAbsoluteEpsilon(0.1);
+//        this.terminator = new Terminator();
+//        this.terminator.setAbsoluteEpsilon(0.1);
+//        this.terminator.setMaxIteration(200);
     }
 
     public BM train(){
-        while (true){
+        for (int i=0;i<200;i++){
             iterate();
-            if (terminator.shouldTerminate()){
-                break;
-            }
         }
+//        while (true){
+//            iterate();
+//            if (terminator.shouldTerminate()){
+//                break;
+//            }
+//        }
 
         return this.bm;
     }
@@ -62,14 +66,14 @@ public class BMTrainer {
         }
         eStep();
         mStep();
-        double objective = getObjective();
-        if (logger.isDebugEnabled()){
-            logger.debug("finish one EM iteration");
-            logger.debug("objective = "+ objective);
-            double exactObjective = exactObjective();
-            logger.debug("exact objective = "+ exactObjective);
-        }
-        terminator.add(getObjective());
+//        double objective = getObjective();
+//        if (logger.isDebugEnabled()){
+//            logger.debug("finish one EM iteration");
+//            logger.debug("objective = "+ objective);
+////            double exactObjective = exactObjective();
+////            logger.debug("exact objective = "+ exactObjective);
+//        }
+//        terminator.add(getObjective());
     }
 
     public void eStep(){
@@ -101,7 +105,7 @@ public class BMTrainer {
      * @param k cluster index
      */
     private void updateCluster(int k){
-        final double effectiveTotal = IntStream.range(0, dataSet.getNumDataPoints())
+        final double effectiveTotal = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i-> gammas[i][k]).sum();
 
         IntStream.range(0, dataSet.getNumFeatures()).parallel()

@@ -338,12 +338,13 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
 
             switch (binaryClassifierType){
                 case "lr":
-                    CBM.binaryClassifiers = new LogisticRegression[numComponents][numClasses];
-                    for (int k = 0; k< numComponents; k++) {
-                        for (int l=0; l<numClasses; l++) {
-                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
-                        }
-                    }
+                    CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];
+                    //// TODO: 3/5/17
+//                    for (int k = 0; k< numComponents; k++) {
+//                        for (int l=0; l<numClasses; l++) {
+//                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
+//                        }
+//                    }
                     break;
                 case "boost":
                     CBM.binaryClassifiers = new LKBoost[numComponents][numClasses];

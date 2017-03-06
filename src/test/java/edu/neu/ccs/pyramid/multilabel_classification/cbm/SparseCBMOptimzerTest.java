@@ -27,7 +27,7 @@ public class SparseCBMOptimzerTest {
         MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "scene/test"),
                 DataSetType.ML_CLF_DENSE, true);
 
-        int numComponents = 20;
+        int numComponents = 10;
         CBM cbm = CBM.getBuilder()
                 .setNumClasses(dataSet.getNumClasses())
                 .setNumFeatures(dataSet.getNumFeatures())
