@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import org.apache.mahout.math.Vector;
 
 import java.util.stream.IntStream;
 
@@ -8,6 +10,7 @@ import java.util.stream.IntStream;
  * Based on
  * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
  * Advances in Neural Information Processing Systems. 2015.
+ * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/3/16.
  */
 public class InstanceAverage {
@@ -29,29 +32,23 @@ public class InstanceAverage {
     public InstanceAverage(MLConfusionMatrix confusionMatrix) {
         int numClasses = confusionMatrix.getNumClasses();
         int numDataPoints = confusionMatrix.getNumDataPoints();
-        MLConfusionMatrix.Entry[][] entries = confusionMatrix.getEntries();
+        DataSet entries = confusionMatrix.getEntries();
         double[] tpArray = new double[numDataPoints];
         double[] tnArray = new double[numDataPoints];
         double[] fpArray = new double[numDataPoints];
         double[] fnArray = new double[numDataPoints];
         IntStream.range(0, numDataPoints).parallel().forEach(i->{
-            for (int l=0;l<numClasses;l++){
-                MLConfusionMatrix.Entry entry = entries[i][l];
-                switch (entry){
-                    case TP:
-                        tpArray[i] += 1;
-                        break;
-                    case FP:
-                        fpArray[i] += 1;
-                        break;
-                    case TN:
-                        tnArray[i] += 1;
-                        break;
-                    case FN:
-                        fnArray[i] += 1;
-                        break;
+            for (Vector.Element element: entries.getRow(i).nonZeroes()){
+                double v = element.get();
+                if (v==1){
+                    tpArray[i] += 1;
+                } else if (v==2){
+                    fnArray[i] += 1;
+                } else if (v==3){
+                    fpArray[i] += 1;
                 }
             }
+            tnArray[i]  = numClasses - entries.getRow(i).getNumNonZeroElements();
             tpArray[i] /= numClasses;
             tnArray[i] /= numClasses;
             fpArray[i] /= numClasses;
@@ -80,7 +77,7 @@ public class InstanceAverage {
                 .average().getAsDouble();
 
         accuracy = IntStream.range(0,numDataPoints).parallel()
-                .filter(i->correct(entries[i])).count()/(double)numDataPoints;
+                .filter(i->correct(entries.getRow(i))).count()/(double)numDataPoints;
 
     }
 
@@ -114,10 +111,10 @@ public class InstanceAverage {
      * @param dataEntry a row
      * @return
      */
-    private boolean correct(MLConfusionMatrix.Entry[] dataEntry){
-        for (int l=0;l<dataEntry.length;l++){
-            MLConfusionMatrix.Entry entry = dataEntry[l];
-            if (entry== MLConfusionMatrix.Entry.FP || entry== MLConfusionMatrix.Entry.FN){
+    private boolean correct(Vector dataEntry){
+        for (Vector.Element element: dataEntry.nonZeroes()){
+            double v = element.get();
+            if (v==2||v==3){
                 return false;
             }
         }
