@@ -59,7 +59,7 @@ public class MLClfDataSetBuilder {
             throw new RuntimeException("numClasses<=0");
         }
 
-        MultiLabelClfDataSet dataSet;
+        MultiLabelClfDataSet dataSet = null;
         switch (density){
             case DENSE:
                 dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);

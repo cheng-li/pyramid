@@ -27,6 +27,10 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
         }
     }
 
+    @Override
+    public Density density() {
+        return Density.DENSE;
+    }
 
     @Override
     public Vector getColumn(int featureIndex) {

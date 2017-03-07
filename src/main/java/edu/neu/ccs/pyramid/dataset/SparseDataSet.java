@@ -23,6 +23,10 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
         }
     }
 
+    @Override
+    public Density density() {
+        return Density.SPARSE_RANDOM;
+    }
 
     @Override
     public Vector getColumn(int featureIndex) {

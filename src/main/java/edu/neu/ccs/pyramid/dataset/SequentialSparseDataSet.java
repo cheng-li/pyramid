@@ -24,6 +24,10 @@ public class SequentialSparseDataSet extends AbstractDataSet implements DataSet{
         }
     }
 
+    @Override
+    public Density density() {
+        return Density.SPARSE_SEQUENTIAL;
+    }
 
     @Override
     public Vector getColumn(int featureIndex) {
