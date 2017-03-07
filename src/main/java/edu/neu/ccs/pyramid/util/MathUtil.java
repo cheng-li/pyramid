@@ -211,4 +211,20 @@ public class MathUtil {
         }
         return scores;
     }
+
+    /**
+     *
+     * @param prob
+     * @return score that can produce the given probability after sigmoid
+     */
+    public static double inverseSigmoid(double prob){
+        double p  = prob;
+        if (p==0){
+            p=1E-10;
+        }
+        if (p==1){
+            p=0.9999;
+        }
+        return -Math.log(1/p-1);
+    }
 }

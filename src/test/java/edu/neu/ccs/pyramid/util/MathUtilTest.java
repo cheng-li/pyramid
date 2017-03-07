@@ -9,7 +9,7 @@ import java.util.Arrays;
  */
 public class MathUtilTest{
     public static void main(String[] args) {
-        test4();
+        test5();
     }
 
     private static void test1(){
@@ -31,5 +31,16 @@ public class MathUtilTest{
         double[] s = {-5,5};
         System.out.println(Arrays.toString(MathUtil.softmax(s)));
     }
+
+    private static void test5(){
+        System.out.println(MathUtil.inverseSigmoid(0));
+        System.out.println(MathUtil.inverseSigmoid(1));
+        System.out.println(MathUtil.inverseSigmoid(0.5));
+        System.out.println(MathUtil.inverseSigmoid(0.1));
+        System.out.println(MathUtil.inverseSigmoid(0.9));
+        System.out.println(MathUtil.inverseSigmoid(1.0/1000000));
+    }
+
+
 
 }
