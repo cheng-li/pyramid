@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.eval;
 
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import org.apache.mahout.math.Vector;
 
@@ -10,19 +9,21 @@ import java.util.stream.IntStream;
 
 /**
  * multi-label confusion matrix
+ * use sparse matrix to avoid storing TN explicitly
+ * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/2/16.
  */
 public class MLConfusionMatrix {
     private int numClasses;
     private int numDataPoints;
     //[numData][numClasses]
-    private Entry[][] entries;
+    private DataSet entries;
 
     public int getNumClasses() {
         return numClasses;
     }
 
-    public Entry[][] getEntries() {
+    public DataSet getEntries() {
         return entries;
     }
 
@@ -34,23 +35,25 @@ public class MLConfusionMatrix {
         this.numClasses = numClasses;
         this.numDataPoints = trueLabels.length;
         int numData = trueLabels.length;
-        this.entries = new Entry[numData][numClasses];
-        IntStream.range(0,numData).parallel().forEach(i->{
+        this.entries = DataSetBuilder.getBuilder().numDataPoints(numDataPoints)
+                .numFeatures(numClasses).density(Density.SPARSE_RANDOM).build();
+        IntStream.range(0,numData).forEach(i->{
             MultiLabel label = trueLabels[i];
             MultiLabel prediction = predictions[i];
             Vector labelVector = label.toVector(numClasses);
             Vector predVector = prediction.toVector(numClasses);
+            //todo speed up this by looking at non-zeros
             for (int l=0;l<numClasses;l++){
                 double labelMatch = labelVector.get(l);
                 double prediMatch = predVector.get(l);
                 if (labelMatch==1&&prediMatch==1){
-                    entries[i][l]=Entry.TP;
+                    entries.setFeatureValue(i,l,1);
                 } else if (labelMatch==1&&prediMatch==0){
-                    entries[i][l]=Entry.FN;
+                    entries.setFeatureValue(i,l,2);
                 } else if (labelMatch==0&&prediMatch==0){
-                    entries[i][l]=Entry.TN;
+                    // do nothing
                 } else {
-                    entries[i][l]=Entry.FP;
+                    entries.setFeatureValue(i,l,3);
                 }
             }
         });
@@ -69,16 +72,5 @@ public class MLConfusionMatrix {
         this(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
     }
 
-    public enum Entry{
-        TP, TN, FP, FN
-    }
 
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("MLConfusionMatrix{");
-        sb.append("numClasses=").append(numClasses);
-        sb.append(", entries=").append(Arrays.deepToString(entries));
-        sb.append('}');
-        return sb.toString();
-    }
 }

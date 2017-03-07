@@ -25,4 +25,6 @@ public interface DataSet extends Serializable{
     void setFeatureList(FeatureList featureList);
     void setIdTranslator(IdTranslator idTranslator);
 
+    Density density();
+
 }

@@ -38,7 +38,8 @@ public class BMTrainer {
     }
 
     public BM train(){
-        for (int i=0;i<200;i++){
+        //todo change back
+        for (int i=0;i<10;i++){
             iterate();
         }
 //        while (true){

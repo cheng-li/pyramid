@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import org.apache.mahout.math.Vector;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -15,6 +17,7 @@ import java.util.stream.IntStream;
  * Based on
  * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
  * Advances in Neural Information Processing Systems. 2015.
+ * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/24/16.
  */
 @JsonSerialize(using = MacroAverage.Serializer.class)
@@ -45,7 +48,7 @@ public class MacroAverage {
     public MacroAverage(MLConfusionMatrix confusionMatrix) {
         this.numClasses = confusionMatrix.getNumClasses();
         int numDataPoints = confusionMatrix.getNumDataPoints();
-        MLConfusionMatrix.Entry[][] entries = confusionMatrix.getEntries();
+        DataSet entries = confusionMatrix.getEntries();
         this.labelWiseTP = new int[numClasses];
         this.labelWiseTN = new int[numClasses];
         this.labelWiseFP = new int[numClasses];
@@ -60,23 +63,19 @@ public class MacroAverage {
 
 
         IntStream.range(0,numClasses).parallel().forEach(l->{
-            for (int i=0;i<numDataPoints;i++){
-                MLConfusionMatrix.Entry entry = entries[i][l];
-                switch (entry){
-                    case TP:
-                        labelWiseTP[l] += 1;
-                        break;
-                    case FP:
-                        labelWiseFP[l] += 1;
-                        break;
-                    case TN:
-                        labelWiseTN[l] += 1;
-                        break;
-                    case FN:
-                        labelWiseFN[l] += 1;
-                        break;
+            Vector vector = entries.getColumn(l);
+            for (Vector.Element element: vector.nonZeroes()){
+                double v = element.get();
+                if (v==1){
+                    labelWiseTP[l] += 1;
+                } else if (v==2){
+                    labelWiseFN[l] += 1;
+                } else if (v==3){
+                    labelWiseFP[l] += 1;
                 }
             }
+            labelWiseTN[l] = numDataPoints - vector.getNumNonZeroElements();
+
             double tp = ((double) labelWiseTP[l])/numDataPoints;
             double tn = ((double) labelWiseTN[l])/numDataPoints;
             double fp = ((double) labelWiseFP[l])/numDataPoints;

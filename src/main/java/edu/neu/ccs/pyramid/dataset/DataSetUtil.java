@@ -446,7 +446,7 @@ public class DataSetUtil {
                 .numDataPoints(indices.size())
                 .numFeatures(dataSet.getNumFeatures())
                 .missingValue(dataSet.hasMissingValue())
-                .dense(dataSet.isDense())
+                .density(dataSet.density())
                 .build();
         MultiLabel[] labels = dataSet.getMultiLabels();
         IdTranslator idTranslator = new IdTranslator();
