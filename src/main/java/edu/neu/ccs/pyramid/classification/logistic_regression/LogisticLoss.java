@@ -292,6 +292,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         return count;
     }
 
+    //todo optimize for dense dataset
     private double calPredictedCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);

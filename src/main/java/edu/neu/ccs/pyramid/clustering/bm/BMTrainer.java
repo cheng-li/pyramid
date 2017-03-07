@@ -26,6 +26,7 @@ public class BMTrainer {
     int numClusters;
     BM bm;
 //    Terminator terminator;
+    int numIterations=200;
 
     public BMTrainer(DataSet dataSet, int numClusters, long randomSeed) {
         this.numClusters = numClusters;
@@ -39,7 +40,7 @@ public class BMTrainer {
 
     public BM train(){
         //todo change back
-        for (int i=0;i<10;i++){
+        for (int i=0;i<numIterations;i++){
             iterate();
         }
 //        while (true){

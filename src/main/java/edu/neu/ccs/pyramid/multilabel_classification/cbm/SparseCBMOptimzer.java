@@ -35,7 +35,6 @@ public class SparseCBMOptimzer {
 
 
     // for the current component
-    private MultiLabelClfDataSet activeDataset;
     private double[] activeGammas;
     private double activeThreshold = 1E-5;
     private double weightedTotal;
@@ -49,6 +48,7 @@ public class SparseCBMOptimzer {
     public SparseCBMOptimzer(CBM cbm, MultiLabelClfDataSet dataSet) {
         this.cbm = cbm;
         this.dataSet = dataSet;
+        this.gammas = new double[dataSet.getNumDataPoints()][cbm.numComponents];
     }
 
     public void setNumMulticlassUpdates(int numMulticlassUpdates) {
@@ -78,7 +78,7 @@ public class SparseCBMOptimzer {
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(50);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(numMulticlassUpdates);
         ridgeLogisticOptimizer.optimize();
     }
 
@@ -112,23 +112,33 @@ public class SparseCBMOptimzer {
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
 
 
-        int[] binaryLabels = DataSetUtil.toBinaryLabels(activeDataset.getMultiLabels(), labelIndex);
+        int[] binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(), labelIndex);
         // no parallelism
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex],
-                activeDataset, binaryLabels, activeGammas, priorVarianceBinary, true);
+                dataSet, binaryLabels, activeGammas, priorVarianceBinary, true);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(50);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(numBinaryUpdates);
         ridgeLogisticOptimizer.optimize();
     }
 
     private void updateEffectiveData(int componentIndex){
         System.out.println("computing active dataset for component "+componentIndex);
-        List<Integer> active = IntStream.range(0,dataSet.getNumDataPoints()).filter(i->gammas[i][componentIndex]>activeThreshold)
-                .boxed().collect(Collectors.toList());
-        activeDataset = DataSetUtil.sampleData(dataSet, active);
-        activeGammas = active.stream().mapToDouble(i->gammas[i][componentIndex]).toArray();
-        weightedTotal = MathUtil.arraySum(activeGammas);
-        System.out.println("raw number of data in active dataset = "+ activeDataset.getNumDataPoints());
+
+
+        activeGammas = new double[dataSet.getNumDataPoints()];
+        weightedTotal = 0;
+        int counter = 0;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            double v = gammas[i][componentIndex];
+            if (v>activeThreshold){
+                activeGammas[i]=v;
+                weightedTotal += v;
+                counter += 1;
+            } else {
+                activeGammas[i]=0;
+            }
+        }
+        System.out.println("raw number of data in active dataset = "+ counter);
         System.out.println("weighted number of data in active dataset = "+weightedTotal);
     }
 
