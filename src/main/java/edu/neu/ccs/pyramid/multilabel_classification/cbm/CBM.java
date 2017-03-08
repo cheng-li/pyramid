@@ -96,9 +96,9 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
      * @return
      */
     public List<Double> predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments){
-//         BMDistribution bmDistribution = computeBM(x);
+         BMDistribution bmDistribution = computeBM(x);
         // support prediction within each component
-        BMDistribution bmDistribution = new BMDistribution(this, x, assignments);
+//        BMDistribution bmDistribution = new BMDistribution(this, x, assignments);
         List<Double> probs = new ArrayList<>();
         for (MultiLabel multiLabel: assignments){
             probs.add(bmDistribution.logProbability(multiLabel));
@@ -217,6 +217,10 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, Serializabl
     }
     public void setAllowEmpty(boolean allowEmpty) {
         this.allowEmpty = allowEmpty;
+    }
+
+    public boolean getAllowEmpty() {
+        return this.allowEmpty;
     }
 
 

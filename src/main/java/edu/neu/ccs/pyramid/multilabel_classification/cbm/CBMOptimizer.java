@@ -266,7 +266,7 @@ public class CBMOptimizer {
                 .setLineSearch(lineSearch).build();
         //TODO: maximum iterations
         elasticNetLogisticTrainer.setActiveSet(false);
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(5);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(2);
         elasticNetLogisticTrainer.optimize();
     }
 
@@ -295,7 +295,7 @@ public class CBMOptimizer {
                 .setLineSearch(lineSearch).build();
         // TODO: maximum iterations
         elasticNetLogisticTrainer.setActiveSet(false);
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(5);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(2);
         elasticNetLogisticTrainer.optimize();
     }
 
