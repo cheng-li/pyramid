@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.optimization;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -25,6 +26,12 @@ public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
         this.updatedEmbeddingMatrix = Q;
         this.alpha = a;
         this.beta = b;
+
+        System.out.println("Init SupervisedEmbeddingLoss loss function ...");
+    }
+
+    public DataSet getUpdatedEmbeddingMatrix() {
+        return this.updatedEmbeddingMatrix;
     }
 
     public Vector getParameters() {
@@ -70,6 +77,7 @@ public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
                 loss += this.beta * (p_sq - d_sq) * (p_sq - d_sq);
             }
         }
+        System.out.println("loss=" + loss);
         return loss;
     }
 
@@ -78,9 +86,10 @@ public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
         int numData = this.updatedEmbeddingMatrix.getNumDataPoints();
         int numFeatures = this.updatedEmbeddingMatrix.getNumFeatures();
         int vecSize = numData * numFeatures;
-        Vector gradient = new DenseVector(vecSize);
+        Vector finalGradient = new DenseVector(vecSize);
 
         for (int i = 0; i < numData; i++) {
+            Vector gradient = new DenseVector(numFeatures);
             Vector q_i = this.updatedEmbeddingMatrix.getRow(i);
             Vector q_i_orig = this.embeddingMatrix.getRow(i);
             gradient = gradient.plus(q_i.minus(q_i_orig).times(2.0 * this.alpha));
@@ -102,7 +111,11 @@ public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
                 }
                 gradient = gradient.plus(tmp.times(4.0 * this.beta * (p_sq - d_sq)));
             }
+
+            for (int j = 0; j < numFeatures; j++) {
+                finalGradient.set(i * numFeatures + j, gradient.get(j));
+            }
         }
-        return gradient;
+        return finalGradient;
     }
 }

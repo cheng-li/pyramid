@@ -1223,6 +1223,7 @@ public class DataSetUtil {
                     clfDataSet.setFeatureValue(i, j, featureValue);
                 }
                 i += 1;
+                line = br.readLine();
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -1230,5 +1231,21 @@ public class DataSetUtil {
             e.printStackTrace();
         }
         return clfDataSet;
+    }
+
+    public static void saveFeatureMatrixToCSV(String filename, DataSet dataSet) throws IOException {
+        FileWriter writer = new FileWriter(filename);
+        for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
+            StringBuilder sb = new StringBuilder();
+            for (int j = 0; j < dataSet.getNumFeatures(); j++) {
+                if (j != 0) {
+                    sb.append(",");
+                }
+                sb.append(dataSet.getRow(i).get(j));
+            }
+            sb.append("\n");
+            writer.append(sb.toString());
+        }
+        writer.close();
     }
 }
