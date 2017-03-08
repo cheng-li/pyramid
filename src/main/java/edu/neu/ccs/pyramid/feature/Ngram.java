@@ -130,6 +130,16 @@ public class Ngram extends Feature {
     }
 
     @Override
+    public String simpleString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ngram);
+        if (slop!=0){
+            sb.append("(").append("slop ").append(slop).append(")");
+        }
+        return sb.toString();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

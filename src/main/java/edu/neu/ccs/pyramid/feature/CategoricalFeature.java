@@ -68,6 +68,12 @@ public class CategoricalFeature extends Feature {
         return sb.toString();
     }
 
+    @Override
+    public String simpleString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append("[").append(variableName).append("]").append("(").append("categorical").append(")");
+        return sb.toString();
+    }
 
     public static class Serializer extends JsonSerializer<CategoricalFeature> {
         @Override

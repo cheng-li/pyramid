@@ -247,7 +247,30 @@ public class App2 {
             }
         }
 
+        boolean topFeaturesToFile = true;
 
+        if (topFeaturesToFile){
+            logger.info("start writing top features");
+            int limit = config.getInt("report.topFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
+                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit)).collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = "top_features.json";
+            mapper.writeValue(new File(output,file), topFeaturesList);
+
+            StringBuilder sb = new StringBuilder();
+            for (int l=0;l<boosting.getNumClasses();l++){
+                sb.append("-------------------------").append("\n");
+                sb.append(dataSet.getLabelTranslator().toExtLabel(l)).append(":").append("\n");
+                for (Feature feature: topFeaturesList.get(l).getTopFeatures()){
+                    sb.append(feature.simpleString()).append(", ");
+                }
+                sb.append("\n");
+            }
+            FileUtils.writeStringToFile(new File(output, "top_features.txt"), sb.toString());
+
+            logger.info("finish writing top features");
+        }
 
 
     }
@@ -341,18 +364,7 @@ public class App2 {
         }
 
 
-        boolean topFeaturesToFile = true;
 
-        if (topFeaturesToFile){
-            logger.info("start writing top features");
-            int limit = config.getInt("report.topFeatures.limit");
-            List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
-                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit)).collect(Collectors.toList());
-            ObjectMapper mapper = new ObjectMapper();
-            String file = "top_features.json";
-            mapper.writeValue(new File(analysisFolder,file), topFeaturesList);
-            logger.info("finish writing top features");
-        }
 
 
         boolean rulesToJson = config.getBoolean("report.showPredictionDetail");

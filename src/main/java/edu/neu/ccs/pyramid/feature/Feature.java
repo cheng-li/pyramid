@@ -74,6 +74,12 @@ public class Feature implements Serializable{
         return sb.toString();
     }
 
+    public String simpleString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append("(").append("numerical").append(")");
+        return sb.toString();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
