@@ -77,7 +77,6 @@ public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
                 loss += this.beta * (p_sq - d_sq) * (p_sq - d_sq);
             }
         }
-        System.out.println("loss=" + loss);
         return loss;
     }
 
