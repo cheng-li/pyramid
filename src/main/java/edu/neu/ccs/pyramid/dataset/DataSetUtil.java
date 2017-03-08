@@ -9,7 +9,6 @@ import edu.neu.ccs.pyramid.util.Translator;
 import org.apache.mahout.math.*;
 import org.apache.mahout.math.Vector;
 
-
 import java.io.*;
 import java.util.*;
 import java.util.Arrays;
@@ -1208,5 +1207,28 @@ public class DataSetUtil {
         System.out.println("---------------------------------------------------------------");
         System.out.println();
         System.out.println();
+    }
+
+    public static DataSet loadFeatureMatrixFromCSV(String filename, int numData, int numFeatures) {
+        // Number of class doesn't really matter, we only care about feature matrix.
+        ClfDataSet clfDataSet = new DenseClfDataSet(numData, numFeatures, false, 2);
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(filename));
+            int i = 0;
+            String line = br.readLine();
+            while (line != null) {
+                String[] lineSplit = line.split(",");
+                for (int j = 0; j < numFeatures; j++) {
+                    double featureValue = Double.parseDouble(lineSplit[j]);
+                    clfDataSet.setFeatureValue(i, j, featureValue);
+                }
+                i += 1;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return clfDataSet;
     }
 }
