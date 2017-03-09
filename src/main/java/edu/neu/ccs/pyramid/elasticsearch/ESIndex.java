@@ -821,7 +821,8 @@ public class ESIndex implements AutoCloseable{
         SearchResponse response = client.prepareSearch(indexName).setSize(this.numDocs).
                 setTrackScores(false).
                 setFetchSource(false).setExplain(false).setFetchSource(false).
-                setQuery(queryBuilder)
+                setQuery(ngram.getTerms().length > 1 ? 
+						  queryBuilder : QueryBuilders.matchPhraseQuery(field, ngram.getTerms()[0]).slop(slop))
                 .execute().actionGet();
 
         return response;
@@ -912,7 +913,8 @@ public class ESIndex implements AutoCloseable{
         SearchResponse response = client.prepareSearch(indexName).setSize(size)
                 .setTrackScores(false)
                 .setFetchSource(false).setExplain(false).setFetchSource(false).
-                setQuery(queryBuilder)
+                setQuery(ngram.getTerms().length > 1 ? 
+						  queryBuilder : QueryBuilders.matchPhraseQuery(field, ngram.getTerms()[0]).slop(slop))
                 .execute().actionGet();
         System.out.println(response.getHits().getTotalHits());
 
@@ -1033,7 +1035,8 @@ public class ESIndex implements AutoCloseable{
                 setFetchSource(false).setExplain(false).setFetchSource(false).
                 setQuery(QueryBuilders.functionScoreQuery(
                 		QueryBuilders.boolQuery()
-                		             .must(queryBuilder)
+                		             .must(ngram.getTerms().length > 1 ? 
+                 							  queryBuilder : QueryBuilders.matchPhraseQuery(field, ngram.getTerms()[0]).slop(slop))
                 		             .filter(QueryBuilders.wrapperQuery(filterQuery)),
                 		new ScriptScoreFunctionBuilder(new Script("getTF", ScriptType.FILE, "groovy", params)))             
                         .boostMode(CombineFunction.REPLACE))
