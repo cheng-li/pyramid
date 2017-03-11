@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.clustering.bm;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
+import edu.neu.ccs.pyramid.dataset.Density;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -59,7 +60,7 @@ public class BMSelector {
                 .numDataPoints(multiLabels.length)
                 .numFeatures(numClasses)
                 // use sparse format to speed up computation
-                .dense(false)
+                .density(Density.SPARSE_RANDOM)
                 .build();
         for (int i=0;i<multiLabels.length;i++){
             MultiLabel multiLabel = multiLabels[i];
@@ -79,7 +80,7 @@ public class BMSelector {
                 .numDataPoints(multiLabels.length)
                 .numFeatures(numClasses)
                 // use sparse format to speed up computation
-                .dense(false)
+                .density(Density.SPARSE_RANDOM)
                 .build();
         for (int i=0;i<multiLabels.length;i++){
             MultiLabel multiLabel = multiLabels[i];
