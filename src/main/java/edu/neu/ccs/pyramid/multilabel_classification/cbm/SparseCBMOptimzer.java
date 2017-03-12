@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
 import java.util.List;
@@ -85,22 +86,27 @@ public class SparseCBMOptimzer {
     public void updateAllBinary(){
         for (int k=0;k<cbm.getNumComponents();k++){
             updateEffectiveData(k);
-            for (int l=0;l<cbm.getNumClasses();l++){
-                updateBinaryLogisticRegression(k,l);
-            }
+            final int com = k;
+            IntStream.range(0, cbm.getNumClasses()).parallel()
+                    .forEach(l->updateBinaryLogisticRegression(com,l));
         }
     }
 
     private void updateBinaryLogisticRegression(int componentIndex, int labelIndex){
-        System.out.println("--------------------");
-        System.out.println("for component "+componentIndex+", label "+labelIndex);
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+
         double effectivePositives = effectivePositives(componentIndex, labelIndex);
-        System.out.println("effective positives = "+effectivePositives);
+        StringBuilder sb = new StringBuilder();
+        sb.append("for component ").append(componentIndex).append(", label ").append(labelIndex);
+        sb.append(", effective positives = ").append(effectivePositives);
         if (effectivePositives<=1){
             double positiveProb = prior(componentIndex, labelIndex);
             double[] probs = {1-positiveProb, positiveProb};
             cbm.binaryClassifiers[componentIndex][labelIndex] = new PriorProbClassifier(probs);
-            System.out.println("skip, use prior = "+positiveProb);
+            sb.append(", skip, use prior = ").append(positiveProb);
+            sb.append(", time spent = "+stopWatch.toString());
+            System.out.println(sb.toString());
             return;
         }
 
@@ -108,17 +114,17 @@ public class SparseCBMOptimzer {
             cbm.binaryClassifiers[componentIndex][labelIndex] = new LogisticRegression(2, dataSet.getNumFeatures());
         }
 
-
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
-
 
         int[] binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(), labelIndex);
         // no parallelism
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex],
-                dataSet, binaryLabels, activeGammas, priorVarianceBinary, true);
+                dataSet, binaryLabels, activeGammas, priorVarianceBinary, false);
         //TODO maximum iterations
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(numBinaryUpdates);
         ridgeLogisticOptimizer.optimize();
+        sb.append(", time spent = "+stopWatch.toString());
+        System.out.println(sb.toString());
     }
 
     private void updateEffectiveData(int componentIndex){
