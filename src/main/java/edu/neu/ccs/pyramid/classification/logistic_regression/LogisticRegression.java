@@ -177,6 +177,10 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     }
 
 
+    public void truncateByThreshold(double threshold){
+        weights.truncateByThreshold(threshold);
+    }
+
 
     public static LogisticRegression deserialize(File file) throws Exception{
         try(

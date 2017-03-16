@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
+import edu.neu.ccs.pyramid.dataset.SerializableVector;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -21,28 +22,22 @@ public class Weights implements Serializable {
      * vector is not serializable
      */
     private transient Vector weightVector;
-    /**
-     * serialize this array instead
-     */
-    private double[] serializableWeights;
+
 
     public Weights(int numClasses, int numFeatures, boolean random) {
         if (random) {
             this.numClasses = numClasses;
             this.numFeatures = numFeatures;
             this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
-            this.serializableWeights = new double[(numFeatures + 1)*numClasses];
             Random randomGenerator = new Random(0L);
             for (int i=0; i<weightVector.size(); i++) {
                 double p = randomGenerator.nextDouble()-0.5;
                 weightVector.set(i,p);
-                serializableWeights[i] = p;
             }
         } else {
             this.numClasses = numClasses;
             this.numFeatures = numFeatures;
             this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
-            this.serializableWeights = new double[(numFeatures + 1)*numClasses];
         }
 
     }
@@ -51,7 +46,6 @@ public class Weights implements Serializable {
         this.numClasses = numClasses;
         this.numFeatures = numFeatures;
         this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
-        this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
     public Weights(int numClasses, int numFeatures, Vector weightVector) {
@@ -61,7 +55,6 @@ public class Weights implements Serializable {
             throw new IllegalArgumentException("weightVector.size()!=(numFeatures + 1)*numClasses");
         }
         this.weightVector = weightVector;
-        this.serializableWeights = new double[(numFeatures + 1)*numClasses];
     }
 
     public void setWeightVector(Vector weightVector) {
@@ -109,6 +102,21 @@ public class Weights implements Serializable {
 
     public int totalSize(){
         return weightVector.size();
+    }
+
+    /**
+     * truncate the weights below the threshold to 0
+     * @param threshold
+     */
+    void truncateByThreshold(double threshold){
+        for (int k=0;k<numClasses;k++){
+            Vector vector  = getWeightsWithoutBiasForClass(k);
+            for (int d=0;d<vector.size();d++){
+                if (Math.abs(vector.get(d))<threshold){
+                    vector.set(d,0);
+                }
+            }
+        }
     }
 
     /**
@@ -164,22 +172,32 @@ public class Weights implements Serializable {
 
     private void writeObject(java.io.ObjectOutputStream out)
             throws IOException {
-        for (int i=0;i<serializableWeights.length;i++){
-            serializableWeights[i] = weightVector.get(i);
-        }
         out.writeInt(numClasses);
         out.writeInt(numFeatures);
-        out.writeObject(serializableWeights);
+        int numNonZeros = weightVector.getNumNonZeroElements();
+        int[] indices = new int[numNonZeros];
+        double[] values = new double[numNonZeros];
+        int i=0;
+        for (Vector.Element element: weightVector.nonZeroes()){
+            int index = element.index();
+            double v = element.get();
+            indices[i] = index;
+            values[i] = v;
+            i += 1;
+        }
+        out.writeObject(indices);
+        out.writeObject(values);
 
     }
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException{
         numClasses = in.readInt();
         numFeatures = in.readInt();
-        serializableWeights = (double[])in.readObject();
+        int[] indices = (int[])in.readObject();
+        double[] values = (double[])in.readObject();
         weightVector = new DenseVector((numFeatures + 1)*numClasses);
-        for (int i=0;i<serializableWeights.length;i++){
-            weightVector.set(i,serializableWeights[i]);
+        for (int i=0;i<indices.length;i++){
+            weightVector.set(indices[i],values[i]);
         }
     }
 
