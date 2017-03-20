@@ -383,6 +383,11 @@ public class App1 {
         }
         logger.info(stringBuilder.toString());
 
+        String labelOrder = config.getString("train.label.order");
+        if (labelOrder.equals("alphabetical")){
+            Collections.sort(labels);
+        }
+
         LabelTranslator labelTranslator = new LabelTranslator(labels);
 //        logger.info(labelTranslator);
         return labelTranslator;
