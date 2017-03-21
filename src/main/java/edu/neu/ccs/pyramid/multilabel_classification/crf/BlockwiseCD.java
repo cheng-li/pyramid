@@ -2,32 +2,38 @@ package edu.neu.ccs.pyramid.multilabel_classification.crf;
 
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
- * Created by Rainicy on 12/13/15.
+ * Blockwise Coordiante Descent for CRF
+ * see:
+ * "Efficient Learning of Sparse Conditional Random Fields for Supervised
+ * Sequence Labelling
+ * by Nataliya Sokolovska et al."
+ *
+ * Created by Rainicy on 11/27/16.
  */
-public class CRFLoss implements Optimizable.ByGradientValue {
-    private static final Logger logger = LogManager.getLogger();
+public class BlockwiseCD {
+
     private CMLCRF cmlcrf;
     private List<MultiLabel> supportedCombinations;
     private int numSupport;
     private MultiLabelClfDataSet dataSet;
-    private double gaussianPriorVariance;
+    private double regularization;
+    private double l1Ratio;
     private int numClasses;
     private int numParameters;
     private int numWeightsForFeatures;
     private int numWeightsForLabelPairs;
-    private Vector gradient;
     private double value;
     private double[] empiricalCounts;
     private int[] parameterToL1;
@@ -38,8 +44,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // size num combination* num classes
     private boolean[][] comContainsLabel;
     private boolean isParallel = true;
-    private boolean isGradientCacheValid = false;
-    private boolean isValueCacheValid = false;
 
     // numDataPoints by numClasses;
     private double[][] classScoreMatrix;
@@ -59,8 +63,6 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // number of pairs * variable length
     private List<List<Integer>> labelPairToCombination;
 
-    // if true, regularize all weights
-    private boolean regularizeAll = false;
 
     // for each combination, store the sum of probabilities over all data points
     // size = num combinations
@@ -69,17 +71,26 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     // for each data point, store the position of the true combination in the support list
     private int[] labelComIndices;
 
+    // terminator when converge
+    private Terminator terminator;
+    // features for dataset
+    private int numFeatures;
+    // labels to parameterIndex
+    private int[][] labelPairToParams;
+    private double weight;
 
-
-
-    public CRFLoss (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double gaussianPriorVariance) {
+    public BlockwiseCD (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet) {
+        this(cmlcrf, dataSet, 0.0, 1.0);
+    }
+    public BlockwiseCD (CMLCRF cmlcrf, MultiLabelClfDataSet dataSet, double l1Ratio, double regularization) {
         this.cmlcrf = cmlcrf;
         this.supportedCombinations = cmlcrf.getSupportCombinations();
         this.numSupport = cmlcrf.getNumSupports();
         this.dataSet = dataSet;
         this.numData = dataSet.getNumDataPoints();
         this.numClasses = dataSet.getNumClasses();
-        this.gaussianPriorVariance = gaussianPriorVariance;
+        this.l1Ratio = l1Ratio;
+        this.regularization = regularization;
         this.numParameters = cmlcrf.getWeights().totalSize();
         this.numWeightsForFeatures = cmlcrf.getWeights().getNumWeightsForFeatures();
         this.numWeightsForLabelPairs = cmlcrf.getWeights().getNumWeightsForLabels();
@@ -87,12 +98,9 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         this.classProbMatrix = new double[numData][numClasses];
         this.combScoreMatrix = new double[numData][numSupport];
         this.combProbMatrix = new double[numData][numSupport];
-        this.isGradientCacheValid = false;
-        this.isValueCacheValid = false;
         this.empiricalCounts = new double[numParameters];
         this.initCache();
         this.updateEmpiricalCounts();
-        this.gradient = new DenseVector(numParameters);
         this.labelPairToCombination = new ArrayList<>();
         for (int i=0;i< numWeightsForLabelPairs;i++){
             labelPairToCombination.add(new ArrayList<>());
@@ -108,136 +116,233 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             labelComIndices[i] = map.get(dataSet.getMultiLabels()[i]);
         }
+
+        this.terminator = new Terminator();
+        this.numFeatures = dataSet.getNumFeatures();
+        this.weight = 1.0/numData;
     }
 
-    public void setRegularizeAll(boolean regularizeAll) {
-        this.regularizeAll = regularizeAll;
+
+    public void optimize() {
+        int iter = 1;
+        while (true) {
+            iterate();
+            double loss = getValue();
+            terminator.add(loss);
+            System.out.println(iter + ": " + loss);
+            if(terminator.shouldTerminate()) {
+                break;
+            }
+            iter++;
+        }
     }
 
+    public void iterate() {
+//        updateClassScoreMatrix();
+//        updateAssignmentScoreMatrix();
+//        updateAssignmentProbMatrix();
+//        updateCombProbSums();
+//        updateClassProbMatrix();
+        //        for (int x=0; x<(numFeatures+1); x++) {
+//            updateClassScoreMatrix();
+//            updateAssignmentScoreMatrix();
+//            updateAssignmentProbMatrix();
+//            updateCombProbSums();
+//            updateClassProbMatrix();
+//            for (int l=0; l<numClasses; l++) {
+//                iterateForF(l*(numFeatures+1) + x);
+//            }
+//        }
+        for (int i=0; i<numWeightsForFeatures; i++) {
+            updateClassScoreMatrix();
+            updateAssignmentScoreMatrix();
+            updateAssignmentProbMatrix();
+            updateCombProbSums();
+            updateClassProbMatrix();
+            iterateForF(i);
+        }
 
+
+        for (int i=numWeightsForFeatures; i<numParameters; i++) {
+            updateClassScoreMatrix();
+            updateAssignmentScoreMatrix();
+            updateAssignmentProbMatrix();
+            updateCombProbSums();
+            updateClassProbMatrix();
+            iterateForLF(i);
+        }
+    }
 
     /**
-     * gradient of log likelihood
-     * @return
+     * iterate for label-label features.
+     * @param parameterIndex
      */
-    @Override
-    public Vector getGradient() {
-        if (isGradientCacheValid) {
-            return this.gradient;
+    private void iterateForLF(int parameterIndex) {
+        int pos = parameterIndex - numWeightsForFeatures;
+        double gradientForLabelPair = calGradientForLabelPair(pos);
+        double hessiansForLabelPair = calHessiansForLabelPair(pos);
+        double fit = this.weight * (hessiansForLabelPair * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForLabelPair);
+        double numerator = softThreshold(fit);
+        double denominator = this.weight * hessiansForLabelPair + regularization * (1-l1Ratio);
+        double newCoeff = 0;
+        if (denominator != 0) {
+            newCoeff = numerator / denominator;
         }
-        if (logger.isDebugEnabled()){
-            logger.debug("start method getGradient()");
+        cmlcrf.getWeights().getAllWeights().set(parameterIndex, newCoeff);
+
+    }
+
+    /**
+     * iterate for feature-label features.
+     * @param parameterIndex
+     */
+    private void iterateForF(int parameterIndex) {
+        int classIndex = parameterToClass[parameterIndex];
+        int featureIndex = parameterToFeature[parameterIndex];
+        double gradientForFeature = calGradientForFeature(classIndex, featureIndex, parameterIndex);
+        double hessianForFeature =  calHessiansForFeature(classIndex, featureIndex);
+        double fit = this.weight * (hessianForFeature * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForFeature);
+        double numerator = softThreshold(fit);
+        double denominator = this.weight * hessianForFeature + regularization * (1-l1Ratio);
+        double newCoeff = 0;
+        if (denominator != 0) {
+            newCoeff = numerator / denominator;
         }
-        // O(NdL)
+        cmlcrf.getWeights().getAllWeights().set(parameterIndex, newCoeff);
+    }
+
+//    public void iterate() {
+//        // update for each class: 1,...,L
+////        System.out.println(cmlcrf.getWeights());
+//        for (int l=0; l<numClasses; l++) {
+//            iterateForL(l);
+//        }
+//    }
+
+    /**
+     * iterate for all parameters involving class l.
+     * e.g. l=1, update w_1^1,...,w_m^1, w_{1,2},...,w_{1,L}
+     */
+    private void iterateForL(int l) {
         updateClassScoreMatrix();
         updateAssignmentScoreMatrix();
         updateAssignmentProbMatrix();
         updateCombProbSums();
         updateClassProbMatrix();
-        updateGradient();
-        this.isGradientCacheValid = true;
-        if (logger.isDebugEnabled()){
-            logger.debug("finish method getGradient()");
+        //update the gradients and hessians for class l;
+        for (int m=-1; m<numFeatures; m++){
+            int parameterIndex = l*(numFeatures+1) + m + 1;
+            double gradientForFeature = calGradientForFeature(l, m, parameterIndex);
+            double hessianForFeature = calHessiansForFeature(l, m);
+            double fit = hessianForFeature * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForFeature;
+            double numerator = softThreshold(fit);
+            double denominator = hessianForFeature + regularization * (1-l1Ratio);
+            double newCoeff = 0;
+            if (denominator != 0) {
+                newCoeff = numerator / denominator;
+            }
+            cmlcrf.getWeights().getAllWeights().set(parameterIndex, newCoeff);
         }
-        return this.gradient;
-    }
-
-
-
-
-    private void updateGradient() {
-        if (logger.isDebugEnabled()){
-            logger.debug("start method updateGradient()");
-        }
-
-        updatedFeatureLabelGradient();
-        if (cmlcrf.considerPair()){
-            updateLabelLabelGradient();
-        }
-
-
-        if (logger.isDebugEnabled()){
-            logger.debug("finish method updateGradient()");
-        }
-    }
-
-
-    private void updatedFeatureLabelGradient(){
-        if (logger.isDebugEnabled()){
-            logger.debug("start method updatedFeatureLabelGradient()");
-        }
-        IntStream.range(0,numWeightsForFeatures).parallel()
-                .forEach(i -> gradient.set(i,calGradientForFeature(i)));
-        if (logger.isDebugEnabled()){
-            logger.debug("finish method updatedFeatureLabelGradient()");
+        int numLabelPair = numClasses - l - 1;
+        if (numLabelPair > 0) {
+            for (int l2 = l+1; l2 < numClasses; l2++) {
+                for (int pos=labelPairToParams[l][l2]; pos<labelPairToParams[l][l2]+4; pos++) {
+                    double gradientForLabelPair = calGradientForLabelPair(pos);
+                    double hessiansForLabelPair = calHessiansForLabelPair(pos);
+                    int parameterIndex = pos + numWeightsForFeatures;
+                    double fit = hessiansForLabelPair * cmlcrf.getWeights().getWeightForIndex(parameterIndex) - gradientForLabelPair;
+                    double numerator = softThreshold(fit);
+                    double denominator = hessiansForLabelPair + regularization * (1-l1Ratio);
+                    double newCoeff = 0;
+                    if (denominator != 0) {
+                        newCoeff = numerator / denominator;
+                    }
+                    cmlcrf.getWeights().getAllWeights().set(parameterIndex, newCoeff);
+                }
+            }
         }
     }
 
+    private static double softThreshold(double z, double gamma){
+        if (z>0 && gamma < Math.abs(z)){
+            return z-gamma;
+        }
+        if (z<0 && gamma < Math.abs(z)){
+            return z+gamma;
+        }
+        return 0;
+    }
 
-    private void updateLabelLabelGradient(){
-        if (logger.isDebugEnabled()){
-            logger.debug("start method updateLabelLabelGradient()");
-        }
-        IntStream.range(numWeightsForFeatures,numWeightsForFeatures+numWeightsForLabelPairs).parallel()
-                .forEach(i -> gradient.set(i,calGradientForLabelPair(i)));
-        if (logger.isDebugEnabled()){
-            logger.debug("finish method updateLabelLabelGradient()");
-        }
+    private double softThreshold(double z){
+        return softThreshold(z, regularization*l1Ratio);
     }
 
 
-    private double calGradientForLabelPair(int parameterIndex) {
+    private double calGradientForLabelPair(int pos) {
         double count = 0.0;
-        int pos = parameterIndex - numWeightsForFeatures;
         for (int matched: labelPairToCombination.get(pos)){
-            count += combProbSums[matched];
+            count -= combProbSums[matched];
         }
 
-//        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-//            double[] probs = this.combProbMatrix[i];
-//            for (int matched: labelPairToCombination.get(pos)){
-//                count += probs[matched];
-//            }
-//        }
-        count -= this.empiricalCounts[parameterIndex];
-        if (regularizeAll){
-            count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+        count += this.empiricalCounts[pos+numWeightsForFeatures];
+        return count;
+    }
+
+    private double calHessiansForLabelPair(int pos) {
+        double count = 0.0;
+        for (int matched : labelPairToCombination.get(pos)) {
+            count -= combProbSums[matched];
+        }
+
+        for (int i=0; i<numData; i++) {
+            double[] probs = this.combProbMatrix[i];
+            double matchedSum = 0.0;
+            for (int matched : labelPairToCombination.get(pos)) {
+                matchedSum += probs[matched];
+            }
+            count += Math.pow(matchedSum,2);
         }
         return count;
     }
 
-
-    // this calculation uses a short cut for equation (4) of
-    // the paper "Collective Multi-Label Classification"
-    // the sum of y can be pushed in and gives the marginal
-    private double calGradientForFeature(int parameterIndex) {
+    // m: featureIndex
+    // l: classIndex
+    private double calHessiansForFeature(int l, int m) {
         double count = 0.0;
-        int classIndex = parameterToClass[parameterIndex];
-        int featureIndex = parameterToFeature[parameterIndex];
-
-        if (featureIndex == -1) {
-            for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-                count += this.classProbMatrix[i][classIndex];
+        if (m == -1) {
+            for (int i=0; i<numData; i++) {
+                count += (Math.pow(this.classProbMatrix[i][l],2) - this.classProbMatrix[i][l]);
             }
         } else {
-            Vector featureColumn = dataSet.getColumn(featureIndex);
-            for (Vector.Element element: featureColumn.nonZeroes()) {
+            Vector featureColumn = dataSet.getColumn(m);
+            for (Vector.Element element : featureColumn.nonZeroes()) {
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                count += this.classProbMatrix[dataPointIndex][classIndex] * featureValue;
+                count += (Math.pow(this.classProbMatrix[dataPointIndex][l]*featureValue, 2) -
+                        this.classProbMatrix[dataPointIndex][l] * Math.pow(featureValue,2));
             }
         }
+        return count;
+    }
 
-        count -= this.empiricalCounts[parameterIndex];
-
-        // regularize
-        if (regularizeAll){
-            count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+    // m: featureIndex
+    // l: classIndex
+    private double calGradientForFeature(int l, int m, int parameterIndex) {
+        double count = 0.0;
+        if (m == -1) {
+            for (int i=0; i<numData; i++) {
+                count -= this.classProbMatrix[i][l];
+            }
         } else {
-            if (featureIndex != -1) {
-                count += cmlcrf.getWeights().getWeightForIndex(parameterIndex)/gaussianPriorVariance;
+            Vector featureColumn = dataSet.getColumn(m);
+            for (Vector.Element element : featureColumn.nonZeroes()) {
+                int dataPointIndex = element.index();
+                double featureValue = element.get();
+                count -= this.classProbMatrix[dataPointIndex][l] * featureValue;
             }
         }
+        count += this.empiricalCounts[parameterIndex];
+
         return count;
     }
 
@@ -318,6 +423,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private void initCache() {
         parameterToL1 = new int[numWeightsForLabelPairs];
         parameterToL2 = new int[numWeightsForLabelPairs];
+        labelPairToParams = new int[numClasses][numClasses];
         int start = 0;
         for (int l1=0; l1<numClasses; l1++) {
             for (int l2=l1+1; l2<numClasses; l2++) {
@@ -329,6 +435,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                 parameterToL2[start+1] = l2;
                 parameterToL2[start+2] = l2;
                 parameterToL2[start+3] = l2;
+                labelPairToParams[l1][l2] = start;
                 start += 4;
             }
         }
@@ -352,32 +459,17 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     /**
      * @return negative log-likelihood
      */
-    @Override
     public double getValue() {
-        if (isValueCacheValid) {
-            return this.value;
-        }
-        double weightSquare = 0.0;
-        for (int k=0; k<numClasses; k++) {
-            Vector weightVector = cmlcrf.getWeights().getWeightsWithoutBiasForClass(k);
-            weightSquare += weightVector.dot(weightVector);
-        }
-
-        if (regularizeAll){
-            for (int k=0; k<numClasses; k++) {
-                double bias = cmlcrf.getWeights().getBiasForClass(k);
-                weightSquare += bias*bias;
-            }
-
-            Vector labelPairVector = cmlcrf.getWeights().getAllLabelPairWeights();
-            weightSquare += labelPairVector.dot(labelPairVector);
-
-        }
-
-        this.value = getValueForAllData() + weightSquare/(2*gaussianPriorVariance);
-        this.isValueCacheValid = true;
+        this.value = getValueForAllData() + getPenalty();
         return this.value;
     }
+
+    private double getPenalty() {
+        Vector vector = cmlcrf.getWeights().getAllWeights();
+        double norm = (1-l1Ratio)*0.5*Math.pow(vector.norm(2),2) + l1Ratio*vector.norm(1);
+        return norm * regularization;
+
+    }//check
 
 
 
@@ -405,83 +497,32 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     }
 
 
-    @Override
     public Vector getParameters() {
         return cmlcrf.getWeights().getAllWeights();
     }
 
-    @Override
-    public void setParameters(Vector parameters) {
-        this.cmlcrf.getWeights().setWeightVector(parameters);
-        this.isValueCacheValid = false;
-        this.isGradientCacheValid = false;
-        this.cmlcrf.updateCombLabelPartScores();
-    }
-
-
 
     private void updateClassScoreMatrix(){
-        if (logger.isDebugEnabled()){
-            logger.debug("start updateClassScoreMatrix()");
-        }
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(i-> classScoreMatrix[i] = cmlcrf.predictClassScores(dataSet.getRow(i)));
-        if (logger.isDebugEnabled()){
-            logger.debug("finish updateClassScoreMatrix()");
-        }
     }
 
     private void updateAssignmentScoreMatrix(){
-        if (logger.isDebugEnabled()){
-            logger.debug("start updateAssignmentScoreMatrix()");
-        }
         //todo
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(i -> combScoreMatrix[i] = cmlcrf.predictCombinationScores(classScoreMatrix[i]));
-        if (logger.isDebugEnabled()){
-            logger.debug("finish updateAssignmentScoreMatrix()");
-        }
     }
 
     private void updateAssignmentProbMatrix(){
-        if (logger.isDebugEnabled()){
-            logger.debug("start updateAssignmentProbMatrix()");
-        }
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(i -> combProbMatrix[i] = cmlcrf.predictCombinationProbs(combScoreMatrix[i]));
-        if (logger.isDebugEnabled()){
-            logger.debug("finish updateAssignmentProbMatrix()");
-        }
     }
 
     private void updateClassProbMatrix(){
-        if (logger.isDebugEnabled()){
-            logger.debug("start updateClassProbMatrix()");
-        }
         IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                 .forEach(i -> classProbMatrix[i] = cmlcrf.calClassProbs(combProbMatrix[i]));
-        if (logger.isDebugEnabled()){
-            logger.debug("finish updateClassProbMatrix()");
-        }
     }
 
-
-
-//    double logLikelihood(int dataPoint){
-//        Vector vector = dataSet.getRow(dataPoint);
-//        double[] combinationScores = cmlcrf.predictCombinationScores(vector);
-//        double logDenominator = MathUtil.logSumExp(combinationScores);
-//
-//        double logNumerator = combinationScores[cmlcrf.labelComIndices[dataPoint]];
-//        return logNumerator-logDenominator;
-//    }
-//
-//
-//    double dataSetLogLikelihood(MultiLabelClfDataSet dataSet){
-//        return IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-//                .mapToDouble(i -> logLikelihood(i))
-//                .sum();
-//    }
 
     private void mapPairToCombination(){
         IntStream.range(0, numWeightsForLabelPairs).parallel().forEach(this::mapPairToCombination);
@@ -515,7 +556,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
     private void updateCombProbSums(int combinationIndex){
         double sum =0;
         for (int i=0;i<dataSet.getNumDataPoints();i++){
-            sum += combProbMatrix[i][combinationIndex];
+            double prob = combProbMatrix[i][combinationIndex];
+            sum += prob;
         }
         combProbSums[combinationIndex] = sum;
     }
@@ -525,4 +567,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                 .forEach(this::updateCombProbSums);
     }
 
+
+    public Terminator getTerminator() {
+        return terminator;
+    }
 }

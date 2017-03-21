@@ -102,12 +102,24 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
      * @param assignments
      * @return
      */
-    public double[] predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments){
+
+    public double[] predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments) {
         BMDistribution bmDistribution = computeBM(x);
         double[] probs = new double[assignments.size()];
-        for (int c=0;c<assignments.size();c++){
+        for (int c = 0; c < assignments.size(); c++) {
             MultiLabel multiLabel = assignments.get(c);
-            probs[c]= bmDistribution.logProbability(multiLabel);
+            probs[c] = bmDistribution.logProbability(multiLabel);
+        }
+        return probs;
+    }
+
+    public List<Double> predictLogAssignmentProbsAsList(Vector x, List<MultiLabel> assignments){
+         BMDistribution bmDistribution = computeBM(x);
+        // support prediction within each component
+//        BMDistribution bmDistribution = new BMDistribution(this, x, assignments);
+        List<Double> probs = new ArrayList<>();
+        for (MultiLabel multiLabel: assignments){
+            probs.add(bmDistribution.logProbability(multiLabel));
         }
         return probs;
     }
@@ -240,6 +252,10 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
     }
     public void setAllowEmpty(boolean allowEmpty) {
         this.allowEmpty = allowEmpty;
+    }
+
+    public boolean getAllowEmpty() {
+        return this.allowEmpty;
     }
 
 

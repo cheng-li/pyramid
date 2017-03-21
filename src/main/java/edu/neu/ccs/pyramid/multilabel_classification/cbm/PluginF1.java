@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
@@ -11,6 +12,7 @@ import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,9 +58,9 @@ public class PluginF1 implements PluginPredictor<CBM>{
             case "support":
                 pred =  predictBySupport(vector);
                 break;
-//            case "sampling":
-//                pred =  predictBySampling(vector);
-//                break;
+            case "sampling":
+                pred =  predictBySampling(vector);
+                break;
 //            case "samplingNonEmpty":
 //                pred =  predictBySamplingNonEmpty(vector);
 //                break;
@@ -68,13 +70,14 @@ public class PluginF1 implements PluginPredictor<CBM>{
         return pred;
     }
 
-//    private MultiLabel predictBySampling(Vector vector){
-////        List<MultiLabel> samples = cbm.samples(vector, numSamples);
-//        Pair<List<MultiLabel>, List<Double>> pair = cbm.samples(vector, probMassThreshold);
-//        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
-//    }
-//
-//
+    private MultiLabel predictBySampling(Vector vector){
+        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+        return GeneralF1Predictor.predict(cbm.getNumClasses(), samples);
+//      unique the sample set and apply GFM
+//        List<MultiLabel> uniqueSamples = new ArrayList(new HashSet(samples));
+//        List<Double> probs = cbm.predictAssignmentProbs(vector, uniqueSamples);
+//        return GeneralF1Predictor.predict(cbm.getNumClasses(), uniqueSamples, probs);
+    }
 //    private MultiLabel predictBySamplingNonEmpty(Vector vector){
 //        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
 //        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());

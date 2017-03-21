@@ -299,10 +299,22 @@ public class CMLCRF implements MultiLabelClassifier, MultiLabelClassifier.Assign
 
     @Override
     public MultiLabel predict(Vector vector) {
+//        return predictByArgmax(vector);
         double[] scores = predictCombinationScores(vector);
         int predictedCombination = ArgMax.argMax(scores);
 
         return this.supportCombinations.get(predictedCombination).copy();
+    }
+
+    public MultiLabel predictByArgmax(Vector vector) {
+        double[] scores = predictClassScores(vector);
+        MultiLabel label = new MultiLabel();
+        for (int l=0; l<scores.length; l++) {
+            if (scores[l] > 0) {
+                label.addLabel(l);
+            }
+        }
+        return label;
     }
 
     @Override

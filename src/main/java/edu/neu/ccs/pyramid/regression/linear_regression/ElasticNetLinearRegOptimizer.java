@@ -7,7 +7,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.IntStream;
 
 /**
@@ -26,6 +27,15 @@ public class ElasticNetLinearRegOptimizer {
     private double[] labels;
     double[] instanceWeights;
     double sumWeights;
+    private boolean isActiveSet = false;
+
+    public boolean isActiveSet() {
+        return isActiveSet;
+    }
+
+    public void setActiveSet(boolean activeSet) {
+        isActiveSet = activeSet;
+    }
 
     public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights, double sumWeights) {
         this.linearRegression = linearRegression;
@@ -34,6 +44,7 @@ public class ElasticNetLinearRegOptimizer {
         this.instanceWeights = instanceWeights;
         this.terminator = new Terminator();
         this.sumWeights = sumWeights;
+        this.isActiveSet = false;
     }
 
     public ElasticNetLinearRegOptimizer(LinearRegression linearRegression, DataSet dataSet, double[] labels, double[] instanceWeights) {
@@ -100,9 +111,80 @@ public class ElasticNetLinearRegOptimizer {
 //    }
 
     public void optimize(){
+
+        if (!isActiveSet) {
+            normalOptimize();
+        } else {
+            activeSetOptimize();
+        }
+
+    }
+
+    private void activeSetOptimize() {
         double[] scores = new double[dataSet.getNumDataPoints()];
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
-            scores[i] = linearRegression.predict(dataSet.getRow(i)));
+                scores[i] = linearRegression.predict(dataSet.getRow(i)));
+
+        double lastLoss = loss(linearRegression,scores,labels,instanceWeights, sumWeights);
+        if (logger.isDebugEnabled()){
+            logger.debug("initial loss = "+lastLoss);
+        }
+
+        // initialize iterations
+        iterate(scores);
+        List<Integer> activeSet = updateActiveSet();
+        // only when activeSet does not change
+        boolean shouldTerminate = false;
+        while (!shouldTerminate) {
+            int maxIter = 0;
+            while (true) {
+                activeSetIterate(scores, activeSet);
+                double loss = loss(linearRegression,scores,labels,instanceWeights,sumWeights);
+                if (logger.isDebugEnabled()){
+                    logger.debug("loss = "+loss);
+                }
+                terminator.add(loss);
+                if (terminator.shouldTerminate() || (++maxIter>5)){
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("final loss = " + loss);
+                    }
+                    break;
+                }
+            }
+            iterate(scores);
+            List<Integer> latestActiveSet = updateActiveSet();
+            shouldTerminate = isActiveSetChanged(activeSet, latestActiveSet);
+            activeSet = new ArrayList<>(latestActiveSet);
+        }
+    }
+
+    private boolean isActiveSetChanged(List<Integer> activeSet, List<Integer> latestActiveSet) {
+        if (activeSet.size() != latestActiveSet.size()) {
+            return false;
+        }
+        Collections.sort(activeSet);
+        Collections.sort(latestActiveSet);
+        for (int i=0; i<activeSet.size(); i++) {
+            if (!activeSet.get(i).equals(latestActiveSet.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private List<Integer> updateActiveSet() {
+        List<Integer> activeSet = new ArrayList<>();
+        for (Vector.Element element : linearRegression.getWeights().getWeightsWithoutBias().nonZeroes()) {
+            activeSet.add(element.index());
+        }
+        return activeSet;
+    }
+
+    private void normalOptimize() {
+        double[] scores = new double[dataSet.getNumDataPoints()];
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
+                scores[i] = linearRegression.predict(dataSet.getRow(i)));
 
         double lastLoss = loss(linearRegression,scores,labels,instanceWeights, sumWeights);
         if (logger.isDebugEnabled()){
@@ -152,6 +234,32 @@ public class ElasticNetLinearRegOptimizer {
 //            optimizeOneFeature(scores,j);
 //        }
 //    }
+
+    private void activeSetIterate(double[] scores, List<Integer> activeSet) {
+        // if no weight at all, only minimize the penalty
+        if (sumWeights==0){
+            // if there is a penalty
+            if (regularization>0){
+                for (int j=0;j<dataSet.getNumFeatures();j++){
+                    linearRegression.getWeights().setWeight(j,0);
+                }
+            }
+            return;
+        }
+        double oldBias = linearRegression.getWeights().getBias();
+        double newBias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
+                instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/sumWeights;
+        linearRegression.getWeights().setBias(newBias);
+        //update scores
+        double difference = newBias - oldBias;
+        if (difference != 0) {
+            IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
+        }
+        for (Integer j : activeSet){
+            optimizeOneFeature(scores,j);
+        }
+    }
+
     private void iterate(double[] scores){
         // if no weight at all, only minimize the penalty
         if (sumWeights==0){
@@ -176,6 +284,7 @@ public class ElasticNetLinearRegOptimizer {
             optimizeOneFeature(scores,j);
         }
     }
+
 
     // TODO: Bugs!
 //    private void optimizeOneFeature(double[] scores, int featureIndex){
@@ -246,7 +355,7 @@ public class ElasticNetLinearRegOptimizer {
     }
 
 
-//    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
+    //    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
 //        double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
 //                0.5 * instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
 //                .sum();

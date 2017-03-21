@@ -383,6 +383,7 @@ public class MekaFormat {
             }
         }
         br.close();
+        System.out.println("numData: " + numData);
 
         return loadMLClfDataset(file, numClasses, numFeatures, numData, labelMap, featureMap);
 
@@ -422,7 +423,7 @@ public class MekaFormat {
         while((line=br.readLine()) != null) {
             if ((line.startsWith("{")) && (line.endsWith("}"))) {
                 line = line.substring(1,line.length()-1);
-                String[] indexValues = line.split(",");
+                String[] indexValues = line.split(", ");
                 for (String indexValue : indexValues) {
                     String[] indexValuePair = indexValue.split(" ");
                     String index = indexValuePair[0];
@@ -437,7 +438,7 @@ public class MekaFormat {
                         int indexInt = Integer.parseInt(index);
                         dataSet.setFeatureValue(dataCount,indexInt,valueDouble);
                     } else {
-                        throw new RuntimeException("Index not found in the line: " + line);
+                        throw new RuntimeException("Index:" +index + " not found in the line: " + line);
                     }
                 }
                 dataCount++;
@@ -449,31 +450,36 @@ public class MekaFormat {
 
     public static void save(MultiLabelClfDataSet dataSet, String mekaFile, Config config) throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter(mekaFile));
-
         // writing the header: @relation 'data_name: -C number_classes\n\n'
         String dataName = config.getString("data.name");
-        // starting writing labels
+
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         int numClasses = labelTranslator.getNumClasses();
         bw.write("@relation " + "'" + dataName + ": -C " + numClasses + "'\n\n");
+
+        // starting writing features
+        FeatureList featureList = dataSet.getFeatureList();
+//        Pattern pattern = Pattern.compile("ngram=(.*?), field");
+        for (int i=0; i<featureList.size(); i++) {
+            Feature feature = featureList.get(i);
+//            String featureName = "";
+//            if (feature instanceof Ngram) {
+//                Ngram ngram = (Ngram) feature;
+//                featureName = ngram.getNgram();
+//            }
+//            if (featureName.length() == 0) {
+//                featureName = featureName+"f"+i;
+//            }
+            String featureName = "f" + i;
+            bw.write("@attribute " + featureName + " numeric\n");
+        }
+
+        // starting writing labels
         for (int i=0; i<numClasses; i++) {
             String labelName = labelTranslator.toExtLabel(i);
             bw.write("@attribute " + labelName.replace(" ", "_") + " {0,1}\n");
         }
 
-        // starting writing features
-        FeatureList featureList = dataSet.getFeatureList();
-        Pattern pattern = Pattern.compile("ngram=(.*?), field");
-        for (int i=0; i<featureList.size(); i++) {
-            Feature feature = featureList.get(i);
-            String featureName = "";
-            if (feature instanceof Ngram) {
-                Ngram ngram = (Ngram) feature;
-                featureName = ngram.getNgram();
-            }
-            featureName = featureName+"f"+i;
-            bw.write("@attribute " + featureName + " numeric\n");
-        }
 
         // starting @data
         MultiLabel[] multiLabels = dataSet.getMultiLabels();
@@ -484,15 +490,6 @@ public class MekaFormat {
             Vector rowData = dataSet.getRow(i);
             MultiLabel multiLabel = multiLabels[i];
 
-            //starting with labels index.
-            List<Integer> matchedLabels = multiLabel.getMatchedLabelsOrdered();
-            for (int j=0; j<matchedLabels.size(); j++) {
-                int matchedLabel = matchedLabels.get(j);
-                if (j != 0) {
-                    stringBuffer.append(",");
-                }
-                stringBuffer.append(matchedLabel + " " + "1");
-            }
             // following by feature index
             Map<Integer, Double> sortedKeys = new TreeMap<>();
             for (Vector.Element element : rowData.nonZeroes()) {
@@ -500,18 +497,43 @@ public class MekaFormat {
                 double value = element.get();
                 sortedKeys.put(index, value);
             }
+            int count = 0;
             for (Map.Entry<Integer, Double> entry : sortedKeys.entrySet()) {
                 int index = entry.getKey();
                 double value = entry.getValue();
-//                System.out.println("old index: " + index);
-                index += numClasses;
-//                System.out.println("new index: " + index);
-//                System.in.read();
-                stringBuffer.append("," + index + " " + value);
+                stringBuffer.append(index + " " + value);
+                count++;
+                if (count < sortedKeys.size()) {
+                    stringBuffer.append(",");
+                }
             }
+
+            //starting with labels index.
+            List<Integer> matchedLabels = multiLabel.getMatchedLabelsOrdered();
+            for (int j=0; j<matchedLabels.size(); j++) {
+                int matchedLabel = matchedLabels.get(j) + dataSet.getNumFeatures();
+                stringBuffer.append("," + matchedLabel + " " + "1");
+            }
+
             stringBuffer.append("}\n");
             bw.write(stringBuffer.toString());
         }
+        bw.close();
+    }
+
+    public static void saveXML(MultiLabelClfDataSet dataSet, String xmlFile) throws IOException {
+        BufferedWriter bw = new BufferedWriter(new FileWriter(xmlFile));
+
+        bw.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+        bw.write("<labels xmlns=\"http://mulan.sourceforge.net/labels\">\n");
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+
+        // starting writing labels
+        for (int i=0; i<labelTranslator.getNumClasses(); i++) {
+            String labelName = labelTranslator.toExtLabel(i);
+            bw.write("<label name=\"" + labelName.replace(" ", "_") + "\"></label>\n");
+        }
+        bw.write("</labels>");
         bw.close();
     }
 }

@@ -149,7 +149,7 @@ public class Weights  implements Serializable {
         int start = numWeightsForFeatures;
         for (int l1=0; l1<numClasses; l1++) {
             for (int l2=l1+1; l2<numClasses; l2++) {
-                sb.append("label pair weights: (" +l1 +", " + l2  +")\n");
+                sb.append("label pair weights: (" +l1 +", " + l2  +")\t");
                 sb.append("W(0,0): " + weightVector.get(start) + "\tW(1,0): " + weightVector.get(start+1)+
                 "\tW(0,1): " + weightVector.get(start+2) + "\tW(1,1): "+weightVector.get(start+3));
                 sb.append("\n");
