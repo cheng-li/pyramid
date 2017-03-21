@@ -11,7 +11,7 @@ public class TopFeatures {
     private int classIndex;
     private String className;
     private List<Feature> topFeatures;
-    private List<FeatureDistribution> featureDistributions;
+//    private List<FeatureDistribution> featureDistributions;
 
     public TopFeatures() {
     }
@@ -40,11 +40,11 @@ public class TopFeatures {
         this.topFeatures = topFeatures;
     }
 
-    public List<FeatureDistribution> getFeatureDistributions() {
-        return featureDistributions;
-    }
-
-    public void setFeatureDistributions(List<FeatureDistribution> featureDistributions) {
-        this.featureDistributions = featureDistributions;
-    }
+//    public List<FeatureDistribution> getFeatureDistributions() {
+//        return featureDistributions;
+//    }
+//
+//    public void setFeatureDistributions(List<FeatureDistribution> featureDistributions) {
+//        this.featureDistributions = featureDistributions;
+//    }
 }

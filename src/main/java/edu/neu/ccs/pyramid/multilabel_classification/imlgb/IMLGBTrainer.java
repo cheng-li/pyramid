@@ -4,10 +4,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MLPriorProbClassifier;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
 import edu.neu.ccs.pyramid.regression.Regressor;
-import edu.neu.ccs.pyramid.regression.regression_tree.LeafOutputCalculator;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
-import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
+import edu.neu.ccs.pyramid.regression.regression_tree.*;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -117,10 +114,15 @@ public class IMLGBTrainer {
         if (probs.length!=this.boosting.getNumClasses()){
             throw new IllegalArgumentException("probs.length!=this.numClasses");
         }
-        double average = Arrays.stream(probs).map(Math::log).average().getAsDouble();
+
         for (int k=0;k<this.boosting.getNumClasses();k++){
-            double score = Math.log(probs[k] - average);
-            Regressor constant = new ConstantRegressor(score);
+            double score = MathUtil.inverseSigmoid(probs[k]);
+            // we don't want the prior to be overly strong
+            double soft = Math.sqrt(Math.abs(score));
+            if (score<0){
+                soft = -soft;
+            }
+            Regressor constant = new ConstantRegressor(soft);
             this.boosting.addRegressor(constant, k);
         }
     }
@@ -220,7 +222,7 @@ public class IMLGBTrainer {
         double learningRate = this.config.getLearningRate();
 
 
-        LeafOutputCalculator leafOutputCalculator = new IMLGBLeafOutputCalculator(numClasses);
+        LeafOutputCalculator leafOutputCalculator = new AverageOutputCalculator();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig();
         regTreeConfig.setMaxNumLeaves(this.config.getNumLeaves());

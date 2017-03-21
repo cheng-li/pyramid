@@ -32,7 +32,7 @@ public class BMTrainerTest {
         dataSet.setFeatureValue(1,0,1);
 
         System.out.println("dataset = "+dataSet);
-        BMTrainer trainer = new BMTrainer(dataSet,1);
+        BMTrainer trainer = new BMTrainer(dataSet,1, 0);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
         System.out.println(bm);
@@ -49,7 +49,7 @@ public class BMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMTrainer trainer = new BMTrainer(dataSet,1);
+        BMTrainer trainer = new BMTrainer(dataSet,1, 0);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
         System.out.println(bm);
@@ -65,7 +65,7 @@ public class BMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMTrainer trainer = new BMTrainer(dataSet,2);
+        BMTrainer trainer = new BMTrainer(dataSet,2, 0);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
         System.out.println(bm);
@@ -88,7 +88,7 @@ public class BMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMTrainer trainer = new BMTrainer(dataSet,2);
+        BMTrainer trainer = new BMTrainer(dataSet,2, 0);
         System.out.println(trainer.bm);
         trainer.train();
 //        for (int iter=0;iter<100;iter++){
@@ -121,7 +121,7 @@ public class BMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMTrainer trainer = new BMTrainer(dataSet,3);
+        BMTrainer trainer = new BMTrainer(dataSet,3, 0);
         System.out.println(trainer.bm);
         trainer.train();
 //        for (int iter=0;iter<100;iter++){
@@ -169,7 +169,7 @@ public class BMTrainerTest {
 
 
         System.out.println("dataset = "+dataSet);
-        BMTrainer trainer = new BMTrainer(dataSet,3);
+        BMTrainer trainer = new BMTrainer(dataSet,3, 0);
         System.out.println(trainer.bm);
         BM bm = trainer.train();
 //        for (int iter=0;iter<100;iter++){

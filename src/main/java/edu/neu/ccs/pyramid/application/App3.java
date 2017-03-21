@@ -52,7 +52,7 @@ public class App3 {
         String[] same = {"output.folder","output.trainFolder","output.testFolder","output.log",
                 "train.feature.useInitialFeatures","train.feature.categFeature.filter",
                 "train.feature.categFeature.percentThreshold","train.feature.ngram.n","train.feature.ngram.minDf","train.feature.ngram.slop",
-                "train.feature.missingValue","train.feature.generateDistribution",
+                "train.feature.missingValue",
                 "train.feature.addExternalNgrams","train.feature.externalNgramFile","train.feature.analyzer",
                 "train.feature.filterNgramsByKeyWords","train.feature.filterNgrams.keyWordsFile",
                 "train.feature.filterNgramsByRegex", "train.feature.filterNgrams.regex",
@@ -62,7 +62,11 @@ public class App3 {
                 "index.hosts","index.ports","train.label.field","train.label.filter","train.label.filter.prefix",
                 "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",
                 "train.splitQuery","test.splitQuery",
-                "train.feature.ngram.matchScoreType","createTrainSet","createTestSet"};
+                "train.feature.ngram.matchScoreType","createTrainSet","createTestSet",
+                "train.feature.ngram.selection", "train.feature.ngram.selectPerLabel",
+                "train.label.order"
+
+        };
 
         Config.copyExisting(config,app1Config,same);
         return app1Config;

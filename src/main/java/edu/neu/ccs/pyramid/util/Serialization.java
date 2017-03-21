@@ -7,6 +7,18 @@ import java.io.*;
  */
 public class Serialization {
 
+    public static Object deepCopy(Serializable serializableObj) throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(bos);
+        out.writeObject(serializableObj);
+
+        //De-serialization of object
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(bis);
+        Object copied = in.readObject();
+        return copied;
+    }
+
     public static void serialize(Object object, File file) throws Exception{
         File parent = file.getParentFile();
         if (!parent.exists()){

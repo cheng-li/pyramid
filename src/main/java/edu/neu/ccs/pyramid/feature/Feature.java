@@ -74,6 +74,12 @@ public class Feature implements Serializable{
         return sb.toString();
     }
 
+    public String simpleString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append("(").append("numerical").append(")");
+        return sb.toString();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -100,10 +106,8 @@ public class Feature implements Serializable{
         @Override
         public void serialize(Feature feature, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
             jsonGenerator.writeStartObject();
-            if (feature.isIndexAssigned()){
-                jsonGenerator.writeNumberField("index",feature.getIndex());
-            }
             jsonGenerator.writeStringField("name",feature.name);
+            jsonGenerator.writeStringField("type","numerical");
             jsonGenerator.writeEndObject();
         }
     }

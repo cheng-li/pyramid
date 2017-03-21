@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
@@ -246,7 +247,30 @@ public class App2 {
             }
         }
 
+        boolean topFeaturesToFile = true;
 
+        if (topFeaturesToFile){
+            logger.info("start writing top features");
+            int limit = config.getInt("report.topFeatures.limit");
+            List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
+                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit)).collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = "top_features.json";
+            mapper.writeValue(new File(output,file), topFeaturesList);
+
+            StringBuilder sb = new StringBuilder();
+            for (int l=0;l<boosting.getNumClasses();l++){
+                sb.append("-------------------------").append("\n");
+                sb.append(dataSet.getLabelTranslator().toExtLabel(l)).append(":").append("\n");
+                for (Feature feature: topFeaturesList.get(l).getTopFeatures()){
+                    sb.append(feature.simpleString()).append(", ");
+                }
+                sb.append("\n");
+            }
+            FileUtils.writeStringToFile(new File(output, "top_features.txt"), sb.toString());
+
+            logger.info("finish writing top features");
+        }
 
 
     }
@@ -340,23 +364,7 @@ public class App2 {
         }
 
 
-        boolean topFeaturesToJson = false;
-        File distributionFile = new File(new File(config.getString("input.folder"), "meta_data"),"distributions.ser");
-        if (distributionFile.exists()){
-            topFeaturesToJson = true;
-        }
-        if (topFeaturesToJson){
-            logger.info("start writing top features");
-            Collection<FeatureDistribution> distributions = (Collection) Serialization.deserialize(distributionFile);
-            int limit = config.getInt("report.topFeatures.limit");
-            List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
-                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit, distributions))
-                    .collect(Collectors.toList());
-            ObjectMapper mapper = new ObjectMapper();
-            String file = "top_features.json";
-            mapper.writeValue(new File(analysisFolder,file), topFeaturesList);
-            logger.info("finish writing top features");
-        }
+
 
 
         boolean rulesToJson = config.getBoolean("report.showPredictionDetail");
