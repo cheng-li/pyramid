@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.ArgSort;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -52,6 +53,31 @@ public class Precision {
             }
         }
         return precision(truePositive,falsePositive);
+    }
+
+    /**
+     * https://manikvarma.github.io/downloads/XC/XMLRepository.html#Prabhu14
+     * @param scores
+     * @param groudtruth
+     * @param k
+     * @return
+     */
+    public static double precisionAtK(double[] scores, MultiLabel groudtruth, int k){
+        double total = 0;
+        int[] top = ArgSort.argSortDescending(scores);
+        for (int r=0;r<k;r++){
+            int l = top[r];
+            if (groudtruth.matchClass(l)){
+                total += 1;
+            }
+        }
+        return total/k;
+    }
+
+    public static double precisionAtK(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet dataSet, int k){
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i-> precisionAtK(multiLabelClassifier.predictClassProbs(dataSet.getRow(i)),dataSet.getMultiLabels()[i],k))
+                .average().getAsDouble();
     }
 
     @Deprecated

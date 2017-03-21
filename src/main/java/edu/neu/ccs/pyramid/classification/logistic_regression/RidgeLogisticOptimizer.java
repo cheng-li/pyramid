@@ -24,6 +24,11 @@ public class RidgeLogisticOptimizer{
         this(logisticRegression,dataSet,labelsToDistributions(labels,logisticRegression.getNumClasses()),gaussianPriorVariance, parallel);
     }
 
+    public RidgeLogisticOptimizer(LogisticRegression logisticRegression, DataSet dataSet,
+                                  int[] labels, double[] weights, double gaussianPriorVariance, boolean parallel) {
+        this(logisticRegression,dataSet,weights, labelsToDistributions(labels,logisticRegression.getNumClasses()),gaussianPriorVariance, parallel);
+    }
+
     /**
      *
      * @param logisticRegression

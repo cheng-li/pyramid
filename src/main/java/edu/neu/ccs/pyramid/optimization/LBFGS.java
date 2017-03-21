@@ -42,6 +42,13 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
     }
 
 
+    private void reset(){
+        this.sQueue = new LinkedList<>();
+        this.yQueue = new LinkedList<>();
+        this.rhoQueue = new LinkedList<>();
+    }
+
+
     public void iterate(){
         if (logger.isDebugEnabled()){
             logger.debug("start one iteration");
@@ -61,6 +68,7 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
         double denominator = y.dot(s);
 
         //todo what to do if denominator is not positive?
+        // round-off errors and an ill-conditioned inverse Hessian
 
         double rho = 0;
         if (denominator>0){
@@ -69,8 +77,13 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
         else {
             terminator.forceTerminate();
             if (logger.isWarnEnabled()){
-                logger.warn("denominator <= 0");
+                logger.warn("denominator <= 0, force to terminate");
             }
+//            if (logger.isWarnEnabled()){
+//                logger.warn("denominator <= 0, give up the current iteration; reset history, and directly jump to next iteration!");
+//            }
+//            reset();
+//            return;
         }
 
 
@@ -90,14 +103,23 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
             yQueue.remove();
             rhoQueue.remove();
         }
+        double value = function.getValue();
+        terminator.add(value);
         if (logger.isDebugEnabled()){
-            logger.debug("finish one iteration");
+            logger.debug("finish one iteration. loss = "+value);
         }
-        terminator.add(function.getValue());
     }
 
     Vector findDirection(){
         Vector g = function.getGradient();
+        // todo
+//        if (rhoQueue.size()==0){
+//            if (logger.isDebugEnabled()){
+//                logger.debug("use negative gradient as search direction");
+//            }
+//            return g.times(-1);
+//        }
+
         //using dense vector is much faster
         Vector q = new DenseVector(g.size());
         q.assign(g);

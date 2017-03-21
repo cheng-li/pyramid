@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.util;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -33,6 +35,37 @@ public class PrintUtil {
 
     public static String toSimpleString(double[] arr){
         return Arrays.toString(arr).replaceAll(Pattern.quote("["),"").replaceAll(Pattern.quote("]"),"");
+    }
+
+    public static String printWithIndex(List<? extends Object> list, int startIndex){
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i=0;i<list.size();i++){
+            sb.append(""+(i+startIndex)).append(":").append(list.get(i));
+            if (i!=list.size()-1){
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    public static String printWithIndex(List<? extends Object> list){
+        return printWithIndex(list, 0);
+    }
+
+
+    public static String printWithIndex(double[] arr){
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i=0;i<arr.length;i++){
+            sb.append(i).append(":").append(arr[i]);
+            if (i!=arr.length-1){
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
 }

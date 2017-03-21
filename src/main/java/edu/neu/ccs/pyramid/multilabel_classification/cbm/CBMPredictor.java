@@ -64,28 +64,21 @@ public class CBMPredictor {
      * prediction allows empty or not.
      */
     private boolean allowEmpty = false;
+    
 
-    /**
-     * default
-     * @param vector
-     * @param multiNomialClassifiers
-     * @param binaryClassifiers
-     * @param numClusters
-     * @param numLabels
-     */
-    public CBMPredictor(Vector vector, Classifier.ProbabilityEstimator multiNomialClassifiers,
-                        Classifier.ProbabilityEstimator[][] binaryClassifiers, int numClusters, int numLabels) {
-        this.numClusters = numClusters;
-        this.numLabels = numLabels;
+
+    public CBMPredictor(BMDistribution bmDistribution) {
+        this.numClusters = bmDistribution.numComponents;
+        this.numLabels = bmDistribution.numLabels;
         this.logisticProb = new double[numClusters];
-        this.logisticLogProb = multiNomialClassifiers.predictLogClassProbs(vector);
+        this.logisticLogProb = bmDistribution.logProportions;
         this.probs = new double[numClusters][numLabels][2];
         this.logProbs = new double[numClusters][numLabels][2];
 
         for (int k=0; k<numClusters; k++) {
             this.logisticProb[k] = Math.exp(this.logisticLogProb[k]);
             for (int l = 0; l < numLabels; l++) {
-                logProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+                logProbs[k][l] = bmDistribution.logClassProbs[k][l];
                 for (int i=0; i<2; i++) {
                     probs[k][l][i] = Math.exp(logProbs[k][l][i]);
                 }
@@ -165,8 +158,8 @@ public class CBMPredictor {
         double maxLogProb = Double.NEGATIVE_INFINITY;
         Vector predVector = new DenseVector(numLabels);
 
-//        int iter = 0;
-//        int maxIter = 1000;
+        int iter = 0;
+        int maxIter = 10;
 
         while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
@@ -202,7 +195,10 @@ public class CBMPredictor {
                 DPs.remove(k);
             }
 
-//            iter++;
+            iter++;
+            if (iter>=maxIter){
+                break;
+            }
         }
 //        System.out.print("maxIter: " + maxIter + "\t" + Math.exp(maxLogProb) + "\t");
 //        System.out.println("maxIter: " + maxIter);

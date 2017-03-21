@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.neu.ccs.pyramid.Version;
+import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.util.*;
@@ -34,6 +35,18 @@ public class Config {
     public Config(){
         this.properties = new Properties();
         this.setString("pyramid.version", Version.getVersion());
+    }
+
+
+    public static Config newConfigFromString(String s) {
+        Config config = new Config();
+        config.properties = new Properties();
+        try {
+            config.properties.load(new StringReader(s));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return config;
     }
 
     public void setInt(String key, int value){
@@ -128,6 +141,11 @@ public class Config {
         ) {
             this.store(bufferedWriter);
         }
+    }
+
+    public void storeOrdered(File file) throws Exception{
+        String s = this.toString();
+        FileUtils.writeStringToFile(file, s);
     }
 
     /**

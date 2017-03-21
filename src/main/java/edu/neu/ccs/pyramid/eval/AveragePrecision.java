@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.classification.Classifier;
+import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
@@ -7,11 +10,84 @@ import edu.neu.ccs.pyramid.util.ArgSort;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 /**
  * Created by Rainicy on 8/21/15.
  */
 public class AveragePrecision {
+
+
+    /**
+     * follows http://web.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+     *
+     * @param relevance the actual relevance of each item in the sorted list; sorted by the estimated relevance,
+     *                  from most relevant to least relevant
+     *
+     * @return
+     */
+    public static double averagePrecision(boolean[] relevance){
+        double totalRelevant = 0;
+        double relevantSoFar = 0;
+        double sumPrecisionAtK = 0;
+        for (int i=0;i<relevance.length;i++){
+            if (relevance[i]){
+                totalRelevant += 1;
+                relevantSoFar += 1;
+                sumPrecisionAtK += relevantSoFar/(i+1);
+            }
+        }
+        return SafeDivide.divide(sumPrecisionAtK,totalRelevant, 1);
+    }
+
+    public static double averagePrecision(int[] relevance){
+        double totalRelevant = 0;
+        double relevantSoFar = 0;
+        double sumPrecisionAtK = 0;
+        for (int i=0;i<relevance.length;i++){
+            if (relevance[i]==1){
+                totalRelevant += 1;
+                relevantSoFar += 1;
+                sumPrecisionAtK += relevantSoFar/(i+1);
+            }
+        }
+        return SafeDivide.divide(sumPrecisionAtK,totalRelevant, 1);
+    }
+
+    /**
+     * sort by scores, and compare against binary labels; bigger score is interpreted as more relevant
+     * @param binaryLabels
+     * @param scores
+     * @return
+     */
+    public static double averagePrecision(int[] binaryLabels, double[] scores){
+        int[] sortedIndices = ArgSort.argSortDescending(scores);
+        int[] relevance = new int[binaryLabels.length];
+        for (int i=0;i<relevance.length;i++){
+            relevance[i] = binaryLabels[sortedIndices[i]];
+        }
+        return averagePrecision(relevance);
+    }
+
+    /**
+     * compute average precision for a binary classification task
+     * @param classifier
+     * @param dataSet
+     * @return
+     */
+    public static double averagePrecision(Classifier.ProbabilityEstimator classifier, ClfDataSet dataSet){
+        if (classifier.getNumClasses()!=2){
+            throw new IllegalArgumentException("classifier.getNumClasses()!=2");
+        }
+        return averagePrecision(classifier, dataSet, dataSet.getLabels());
+    }
+
+    public static double averagePrecision(Classifier.ProbabilityEstimator classifier, DataSet dataSet, int[] labels){
+        double[] probs = new double[dataSet.getNumDataPoints()];
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->probs[i]= classifier.predictClassProbs(dataSet.getRow(i))[1]);
+        return averagePrecision(labels, probs);
+    }
 
 
     /**

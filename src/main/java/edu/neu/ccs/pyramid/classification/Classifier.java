@@ -22,10 +22,11 @@ public interface Classifier extends Serializable{
 
     int  getNumClasses();
 
-    default int[] predict(ClfDataSet dataSet){
+    default int[] predict(DataSet dataSet){
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel().
                 map(i -> predict(dataSet.getRow(i))).toArray();
     }
+
 
     default void serialize(File file) throws Exception{
         File parent = file.getParentFile();

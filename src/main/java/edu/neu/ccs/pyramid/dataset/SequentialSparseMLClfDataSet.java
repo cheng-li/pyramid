@@ -1,5 +1,9 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.SequentialAccessSparseVector;
+
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -36,6 +40,10 @@ public class SequentialSparseMLClfDataSet extends SequentialSparseDataSet implem
         this.multiLabels[dataPointIndex].addLabel(classIndex);
     }
 
+    @Override
+    public void setLabels(int dataPointIndex, MultiLabel multiLabel) {
+        multiLabels[dataPointIndex] = multiLabel;
+    }
 
     @Override
     public String toString() {
@@ -66,5 +74,38 @@ public class SequentialSparseMLClfDataSet extends SequentialSparseDataSet implem
     @Override
     public void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
+    }
+
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        out.defaultWriteObject();
+        SerializableVector[] serFeatureRows = new SerializableVector[featureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            serFeatureRows[i] = new SerializableVector(featureRows[i]);
+        }
+        SerializableVector[] serFeatureColumns = new SerializableVector[featureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            serFeatureColumns[i] = new SerializableVector(featureColumns[i]);
+        }
+        out.writeObject(serFeatureRows);
+        out.writeObject(serFeatureColumns);
+    }
+
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        in.defaultReadObject();
+        SerializableVector[] serFeatureRows = (SerializableVector[])in.readObject();
+        featureRows = new SequentialAccessSparseVector[serFeatureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            featureRows[i] = (SequentialAccessSparseVector) serFeatureRows[i].getVector();
+        }
+
+        SerializableVector[] serFeatureColumns = (SerializableVector[])in.readObject();
+        featureColumns = new SequentialAccessSparseVector[serFeatureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            featureColumns[i] = (SequentialAccessSparseVector) serFeatureColumns[i].getVector();
+        }
     }
 }

@@ -2,9 +2,12 @@ package edu.neu.ccs.pyramid.eval;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +28,14 @@ public class AUC {
         return auc(probForOne,labels);
     }
 
+    public static double auc(Classifier.ProbabilityEstimator probEstimator, DataSet dataSet, int[] labels){
+
+        double[] probForOne = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> probEstimator.predictClassProbs(dataSet.getRow(i))[1])
+                .toArray();
+        return auc(probForOne,labels);
+    }
+
     /**
      * original order, unsorted
      * @param scores
@@ -32,6 +43,11 @@ public class AUC {
      * @return
      */
     public static double auc(double[] scores, int[] labels){
+        int sum = Arrays.stream(labels).sum();
+        // if only positive or only negative, return 1
+        if (sum ==0 || sum==labels.length){
+            return 1;
+        }
         Comparator<Pair<Double,Integer>> comparator = Comparator.comparing(Pair::getFirst);
         List<Pair<Double,Integer>> sortedPairs = IntStream.range(0,scores.length).parallel()
                 .mapToObj(i -> new Pair<>(scores[i], labels[i]))

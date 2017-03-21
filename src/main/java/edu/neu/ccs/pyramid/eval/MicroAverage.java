@@ -1,9 +1,13 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.DataSet;
+import org.apache.mahout.math.Vector;
+
 /**
  * Based on
  * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
  * Advances in Neural Information Processing Systems. 2015.
+ * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/2/16.
  */
 public class MicroAverage {
@@ -22,26 +26,21 @@ public class MicroAverage {
         double tn = 0;
         double fp = 0;
         double fn = 0;
-        MLConfusionMatrix.Entry[][] entries = confusionMatrix.getEntries();
+        DataSet entries = confusionMatrix.getEntries();
         for (int i=0;i<numDataPoints;i++){
-            for (int l=0;l<numClasses;l++){
-                MLConfusionMatrix.Entry entry = entries[i][l];
-                switch (entry){
-                    case TP:
-                        tp += 1;
-                        break;
-                    case FP:
-                        fp += 1;
-                        break;
-                    case TN:
-                        tn += 1;
-                        break;
-                    case FN:
-                        fn += 1;
-                        break;
+            for (Vector.Element element: entries.getRow(i).nonZeroes()){
+                double v = element.get();
+                if (v==1){
+                    tp += 1;
+                } else if (v==2){
+                    fn += 1;
+                } else if (v==3){
+                    fp += 1;
                 }
             }
         }
+
+        tn = numDataPoints*numClasses-tp-fp-fn;
 
         precision = Precision.precision(tp,fp);
         recall = Recall.recall(tp,fn);

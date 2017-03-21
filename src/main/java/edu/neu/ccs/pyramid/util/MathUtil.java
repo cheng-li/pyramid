@@ -1,6 +1,13 @@
 package edu.neu.ccs.pyramid.util;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by chengli on 8/14/14.
@@ -80,6 +87,8 @@ public class MathUtil {
         }
         return Math.log(sum) + maxElement;
     }
+
+
 
     /**
      * calculate log(exp(x1)+exp(x2)+...)
@@ -187,6 +196,16 @@ public class MathUtil {
         return logProbVector;
     }
 
+
+
+    public static double logSigmoid(double score){
+        double[] arr = {0, score};
+        return logSoftmax(arr)[1];
+    }
+
+
+
+
     /**
      *
      * @param probabilities
@@ -212,6 +231,7 @@ public class MathUtil {
         return scores;
     }
 
+
     /**
      *
      * @param prob
@@ -227,4 +247,48 @@ public class MathUtil {
         }
         return -Math.log(1/p-1);
     }
+
+    public static double median(double[] arr){
+        DescriptiveStatistics stats = new DescriptiveStatistics(arr);
+        return stats.getPercentile(50);
+    }
+
+    public static double sign(double d){
+        if (d>0){
+            return 1;
+        } else if (d<0){
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    // todo: this is a naive implementation
+    // see https://en.wikipedia.org/wiki/Weighted_median for a better algorithm
+    public static double weightedMedian(double[] scores, double[] weights){
+        List<Pair<Double,Double>> pairs = new ArrayList<>();
+        for (int i=0;i<scores.length;i++){
+            pairs.add(new Pair<>(scores[i], weights[i]));
+        }
+
+        Comparator<Pair<Double,Double>> comparator = Comparator.comparing(pair-> pair.getFirst());
+
+        List<Pair<Double,Double>> sorted = pairs.stream().sorted(comparator).collect(Collectors.toList());
+
+        double totalWeight = MathUtil.arraySum(weights);
+        double sum = 0;
+
+        for (Pair<Double, Double> aSorted : sorted) {
+            sum += aSorted.getSecond();
+            if (sum >= totalWeight / 2) {
+                return aSorted.getFirst();
+            }
+        }
+
+        // should not happen
+        return Double.NaN;
+    }
+
+
+
 }

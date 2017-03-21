@@ -18,4 +18,14 @@ public interface Regressor extends Serializable {
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel().
                 mapToDouble(i -> predict(dataSet.getRow(i))).toArray();
     }
+
+
+    default double[] predict(DataSet dataSet, boolean parallel){
+        IntStream intStream = IntStream.range(0, dataSet.getNumDataPoints());
+        if (parallel){
+            intStream = intStream.parallel();
+        }
+        return intStream.mapToDouble(i -> predict(dataSet.getRow(i))).toArray();
+    }
+
 }

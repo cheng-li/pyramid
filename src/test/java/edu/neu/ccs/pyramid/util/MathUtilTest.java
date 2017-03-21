@@ -9,7 +9,9 @@ import java.util.Arrays;
  */
 public class MathUtilTest{
     public static void main(String[] args) {
-        test5();
+
+        test6();
+
     }
 
     private static void test1(){
@@ -33,14 +35,23 @@ public class MathUtilTest{
     }
 
     private static void test5(){
+
         System.out.println(MathUtil.inverseSigmoid(0));
         System.out.println(MathUtil.inverseSigmoid(1));
         System.out.println(MathUtil.inverseSigmoid(0.5));
         System.out.println(MathUtil.inverseSigmoid(0.1));
         System.out.println(MathUtil.inverseSigmoid(0.9));
         System.out.println(MathUtil.inverseSigmoid(1.0/1000000));
+
+        double[] s = {1,2,3,4,5,10,100};
+        System.out.println(MathUtil.median(s));
     }
 
+    private static void test6(){
+        double[] s = {1,2,3,4,5};
+        double[] w = {0.1, 0.5, 0.1, 0.1, 0.2};
+        System.out.println(MathUtil.weightedMedian(s, w));
+    }
 
 
 }

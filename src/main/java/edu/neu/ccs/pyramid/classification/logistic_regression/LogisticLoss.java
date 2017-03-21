@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.util.Vectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -164,6 +165,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
     private double kl(int dataPointIndex){
+        if (weights[dataPointIndex]==0){
+            return 0;
+        }
         double[] predicted = new double[numClasses];
         for (int k=0;k<numClasses;k++){
             predicted[k] = logProbabilityMatrixKByN[k][dataPointIndex];
@@ -177,7 +181,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private double penaltyValue(int classIndex){
         double square = 0;
         Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
-        square += weightVector.dot(weightVector);
+        square += Vectors.dot(weightVector, weightVector);
+//        square += weightVector.dot(weightVector);
         return square/(2*priorGaussianVariance);
     }
 
@@ -263,6 +268,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         intStream.forEach(i -> this.predictedCounts.set(i, calPredictedCount(i)));
     }
 
+    // todo for dense matrix, store a sparse instance weights vector to skip zeros
     private double calEmpricalCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
@@ -276,13 +282,17 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
-                double featureValue = element.get();
-                count += featureValue*targetDistributions[dataPointIndex][classIndex]* weights[dataPointIndex];
+                if (weights[dataPointIndex]!=0){
+                    double featureValue = element.get();
+                    count += featureValue*targetDistributions[dataPointIndex][classIndex]* weights[dataPointIndex];
+                }
+
             }
         }
         return count;
     }
 
+    //todo optimize for dense dataset
     private double calPredictedCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
@@ -291,20 +301,28 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += Math.exp(logProbs[i])* weights[i];
+                if (weights[i]!=0){
+                    count += Math.exp(logProbs[i])* weights[i];
+                }
+
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
-                double featureValue = element.get();
-                count += Math.exp(logProbs[dataPointIndex])*featureValue* weights[dataPointIndex];
+                if (weights[dataPointIndex]!=0){
+                    double featureValue = element.get();
+                    count += Math.exp(logProbs[dataPointIndex])*featureValue* weights[dataPointIndex];
+                }
             }
         }
         return count;
     }
 
     private void updateClassProbs(int dataPointIndex){
+        if (weights[dataPointIndex]==0){
+            return;
+        }
         double[] logProbs = logisticRegression.predictLogClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
             this.logProbabilityMatrixKByN[k][dataPointIndex]=logProbs[k];

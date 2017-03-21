@@ -8,8 +8,8 @@ import org.apache.mahout.math.Vector;
  * Created by chengli on 8/4/14.
  */
 public class SparseDataSet extends AbstractDataSet implements DataSet{
-    protected RandomAccessSparseVector[] featureRows;
-    protected RandomAccessSparseVector[] featureColumns;
+    protected transient RandomAccessSparseVector[] featureRows;
+    protected transient RandomAccessSparseVector[] featureColumns;
 
     public SparseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
         super(numDataPoints,numFeatures,missingValue);
@@ -23,6 +23,10 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
         }
     }
 
+    @Override
+    public Density density() {
+        return Density.SPARSE_RANDOM;
+    }
 
     @Override
     public Vector getColumn(int featureIndex) {

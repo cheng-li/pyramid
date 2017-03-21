@@ -15,13 +15,14 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/1/16.
  */
 public class BMDistribution {
-    private int numLabels;
-    private int numComponents;
+    int numLabels;
+    int numComponents;
     // log(z=k)
-    private double[] logProportions;
+    double[] logProportions;
     // log p(y_l=1|z=k)
     // size = num components * num classes * 2
-    private double[][][] logClassProbs;
+    double[][][] logClassProbs;
+
 
 
     BMDistribution(CBM cbm, Vector x) {
@@ -36,6 +37,23 @@ public class BMDistribution {
         }
     }
 
+    BMDistribution(CBMS cbms, Vector x) {
+        this.numLabels = cbms.numLabels;
+        this.numComponents = cbms.numComponents;
+        this.logProportions = cbms.multiClassClassifier.predictLogClassProbs(x);
+        this.logClassProbs = new double[numComponents][numLabels][2];
+        for (int l=0;l<numLabels;l++){
+            AugmentedLR augmentedLR = cbms.getBinaryClassifiers()[l];
+            double[][] lp = augmentedLR.logAugmentedProbs(x);
+            for (int k=0;k<numComponents;k++){
+                logClassProbs[k][l][0] = lp[k][0];
+                logClassProbs[k][l][1] = lp[k][1];
+            }
+        }
+
+    }
+
+
     // log p(y|z=k)
     private double logYGivenComponent(MultiLabel y, int k){
         double sum = 0.0;
@@ -49,6 +67,21 @@ public class BMDistribution {
         return sum;
     }
 
+
+    // log p(y|z=k)
+    private double logYGivenComponent(MultiLabel y, int k, double[] noiseLabelWeight){
+        double sum = 0.0;
+        for (int l=0; l< numLabels; l++) {
+            if (y.matchClass(l)) {
+                sum += noiseLabelWeight[l] * logClassProbs[k][l][1];
+            } else {
+                sum += noiseLabelWeight[l] * logClassProbs[k][l][0];
+            }
+        }
+        return sum;
+    }
+
+    // p(z=k|y)
     double[] posteriorMembership(MultiLabel y){
         double[] logNumerator = new double[numComponents];
         for (int k=0;k<numComponents;k++){
@@ -58,6 +91,34 @@ public class BMDistribution {
         double[] membership = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             membership[k] = Math.exp(logNumerator[k]-logDenominator);
+        }
+        return membership;
+    }
+
+    // p(z=k|y)
+    double[] posteriorMembership(MultiLabel y, double[] noiseLabelWeight){
+        double[] logNumerator = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            logNumerator[k] = logProportions[k] + logYGivenComponent(y, k, noiseLabelWeight);
+        }
+        double logDenominator = MathUtil.logSumExp(logNumerator);
+        double[] membership = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            membership[k] = Math.exp(logNumerator[k]-logDenominator);
+        }
+        return membership;
+    }
+
+    // log p(z=k|y)
+    double[] logPosteriorMembership(MultiLabel y){
+        double[] logNumerator = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            logNumerator[k] = logProportions[k] + logYGivenComponent(y, k);
+        }
+        double logDenominator = MathUtil.logSumExp(logNumerator);
+        double[] membership = new double[numComponents];
+        for (int k=0;k<numComponents;k++){
+            membership[k] = logNumerator[k]-logDenominator;
         }
         return membership;
     }

@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
+import edu.neu.ccs.pyramid.util.ListUtil;
 import edu.neu.ccs.pyramid.util.PrintUtil;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -13,8 +14,9 @@ import org.apache.commons.io.FileUtils;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -108,19 +110,84 @@ public class App5 {
                 throw new IllegalArgumentException("predictTarget can be subsetAccuracy or instanceFMeasure");
         }
 
+        double gammaLabel = 0;
+        double maxGammaLabel=config.getDouble("maxGammaLabel");
+        double gammaSet = 0;
+        double maxGammaSet=config.getDouble("maxGammaSet");
+        List<Double> trainAcc = new ArrayList<>();
+        List<Double> testAcc = new ArrayList<>();
+        List<Double> trainF1 = new ArrayList<>();
+        List<Double> trainGFMF1 = new ArrayList<>();
+        List<Double> testF1 = new ArrayList<>();
+        List<Double> trainMap = new ArrayList<>();
+        List<Double> testMap = new ArrayList<>();
+        List<Double> testGFMF1 = new ArrayList<>();
         for (int i=1;i<=numIterations;i++){
             System.out.println("=================================================");
             System.out.println("iteration : "+i );
+            System.out.println("gamma label = "+gammaLabel);
+            System.out.println("gamma set = "+gammaSet);
+            //todo
+//            optimizer.setNoiseGammaLabel(gamma);
+            optimizer.setNoiseGammaLabel(gammaLabel);
+            optimizer.setNoiseGammaSet(gammaSet);
             optimizer.iterate();
             System.out.println("loss: "+optimizer.getTerminator().getLastValue());
 
             System.out.println("training performance with "+predictTarget+" optimal predictor:");
-            System.out.println(new MLMeasures(classifier,trainSet));
+            MLMeasures trainMeasures = new MLMeasures(classifier,trainSet);
+            System.out.println(trainMeasures);
+
+            trainAcc.add(trainMeasures.getInstanceAverage().getAccuracy());
+            trainF1.add(trainMeasures.getInstanceAverage().getF1());
+
+            trainGFMF1.add(new MLMeasures(pluginF1, trainSet).getInstanceAverage().getF1());
+            trainMap.add(MAP.map(cbm,trainSet));
+
             System.out.println("test performance with "+predictTarget+" optimal predictor:");
-            System.out.println(new MLMeasures(classifier,testSet));
+            MLMeasures testMeasures = new MLMeasures(classifier,testSet);
+            System.out.println(testMeasures);
+
+            testAcc.add(testMeasures.getInstanceAverage().getAccuracy());
+            testF1.add(testMeasures.getInstanceAverage().getF1());
+            testGFMF1.add(new MLMeasures(pluginF1, testSet).getInstanceAverage().getF1());
+            testMap.add(MAP.map(cbm, testSet));
 
             File serializeModel = new File(path,  "iter." + i + ".model");
             cbm.serialize(serializeModel);
+            double[][] noiseLabelWeights = optimizer.getNoiseLabelWeights();
+            StringBuilder stringBuilder = new StringBuilder();
+            for (int n=0;n<trainSet.getNumDataPoints();n++){
+                stringBuilder.append(PrintUtil.printWithIndex(noiseLabelWeights[n])).append("\n");
+            }
+            File weightFile = Paths.get(output, "reports", "weights_label_iter"+i).toFile();
+            FileUtils.writeStringToFile(weightFile, stringBuilder.toString());
+
+            List<Confidence> confidenceList = new ArrayList<>();
+            for (int n=0;n<noiseLabelWeights.length;n++){
+                for (int l=0;l<noiseLabelWeights[0].length;l++){
+                    confidenceList.add(new Confidence(n,l,noiseLabelWeights[n][l]));
+                }
+            }
+            Comparator<Confidence> confidenceComparator = Comparator.comparing(c->c.weight);
+
+            List<Confidence> sorted = confidenceList.stream().sorted(confidenceComparator).collect(Collectors.toList());
+            File weightSortedFile = Paths.get(output, "reports", "sorted_weights_label_iter"+i).toFile();
+            FileUtils.writeStringToFile(weightSortedFile, sorted.toString());
+
+            double[] noiseSetWeights = optimizer.getNoiseSetWeights();
+
+            FileUtils.writeStringToFile(Paths.get(output, "reports", "weights_set_iter"+i).toFile(), PrintUtil.toMutipleLines(noiseSetWeights));
+
+            gammaLabel += config.getDouble("gammaLabelIncreasePerIter");
+            if (gammaLabel> maxGammaLabel){
+                gammaLabel = maxGammaLabel;
+            }
+
+            gammaSet += config.getDouble("gammaSetIncreasePerIter");
+            if (gammaSet> maxGammaSet){
+                gammaSet = maxGammaSet;
+            }
 
         }
         System.out.println("training done!");
@@ -138,6 +205,17 @@ public class App5 {
         report(config, cbm, classifier, trainSet, "train");
         System.out.println("reports generated");
         System.out.println();
+
+        FileUtils.writeStringToFile(Paths.get(output,"reports","train_acc").toFile(), ListUtil.toSimpleString(trainAcc));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","train_f1").toFile(), ListUtil.toSimpleString(trainF1));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","train_gfmf1").toFile(), ListUtil.toSimpleString(trainGFMF1));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","train_map").toFile(), ListUtil.toSimpleString(trainMap));
+
+
+        FileUtils.writeStringToFile(Paths.get(output,"reports","test_acc").toFile(), ListUtil.toSimpleString(testAcc));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","test_f1").toFile(), ListUtil.toSimpleString(testF1));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","test_gfmf1").toFile(), ListUtil.toSimpleString(testGFMF1));
+        FileUtils.writeStringToFile(Paths.get(output,"reports","test_map").toFile(), ListUtil.toSimpleString(testMap));
 
 
     }
@@ -228,6 +306,9 @@ public class App5 {
 
         System.out.println("individual label probabilities are saved to "+labelProbFile.getAbsolutePath());
 
+
+
+
     }
 
     private static CBMOptimizer getOptimizer(Config config, CBM cbm, MultiLabelClfDataSet trainSet){
@@ -241,6 +322,7 @@ public class App5 {
         optimizer.setShrinkageMultiClass(config.getDouble("boost.shrinkageMultiClass"));
         optimizer.setNumLeavesBinary(config.getInt("boost.numLeavesBinary"));
         optimizer.setNumLeavesMultiClass(config.getInt("boost.numLeavesMultiClass"));
+        optimizer.setParameterUpdatesPerIter(config.getInt("lr.paraUpdatesPerIter"));
 
         return optimizer;
     }
@@ -348,6 +430,27 @@ public class App5 {
                 throw new IllegalArgumentException("unknown value for train.warmStart");
         }
         return pair;
+    }
+
+
+    private static class Confidence{
+        int dataIndex;
+        int labelIndex;
+        double weight;
+
+        public Confidence(int dataIndex, int labelIndex, double weight) {
+            this.dataIndex = dataIndex;
+            this.labelIndex = labelIndex;
+            this.weight = weight;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("(").append(dataIndex).append(", ").append(labelIndex).append(")")
+                    .append(":").append(weight);
+            return sb.toString();
+        }
     }
 
 

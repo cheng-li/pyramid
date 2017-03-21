@@ -277,7 +277,7 @@ public class TRECFormat {
             String line = null;
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                String[] lineSplit = line.split("\\s+");
                 int label = Integer.parseInt(lineSplit[0]);
                 dataSet.setLabel(dataIndex,label);
                 for (int i=1;i<lineSplit.length;i++){
@@ -303,7 +303,7 @@ public class TRECFormat {
             String line = null;
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                String[] lineSplit = line.split("\\s+");
                 // the line is not just a space
                 if (lineSplit.length>=1){
                     String multiLabelString = null;
@@ -347,7 +347,7 @@ public class TRECFormat {
             String line = null;
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                String[] lineSplit = line.split("\\s+");
                 double label = Double.parseDouble(lineSplit[0]);
                 dataSet.setLabel(dataIndex,label);
                 for (int i=1;i<lineSplit.length;i++){

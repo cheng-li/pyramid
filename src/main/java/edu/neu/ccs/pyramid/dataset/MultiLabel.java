@@ -32,6 +32,15 @@ public class MultiLabel implements Serializable{
         }
     }
 
+
+    public MultiLabel copy(){
+        MultiLabel c= new MultiLabel();
+        for (int i = labels.nextSetBit(0); i >= 0; i = labels.nextSetBit(i+1)) {
+            c.addLabel(i);
+        }
+        return c;
+    }
+
     /**
      * return binary vector
      * @param length
@@ -107,6 +116,16 @@ public class MultiLabel implements Serializable{
             }
         }
         return false;
+    }
+
+    //todo test
+    public boolean isSubsetOf(MultiLabel superSet){
+        for (int i = labels.nextSetBit(0); i >= 0; i = labels.nextSetBit(i+1)) {
+            if (!superSet.matchClass(i)){
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

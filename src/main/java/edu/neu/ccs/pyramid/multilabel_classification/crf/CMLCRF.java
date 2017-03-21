@@ -26,7 +26,7 @@ import static edu.neu.ccs.pyramid.dataset.DataSetUtil.gatherMultiLabels;
  * " Proceedings of the 14th ACM international conference on Information and knowledge management. ACM, 2005.
  * Created by Rainicy on 12/12/15.
  */
-public class CMLCRF implements MultiLabelClassifier, Serializable {
+public class CMLCRF implements MultiLabelClassifier, MultiLabelClassifier.AssignmentProbEstimator, Serializable {
     private static final long serialVersionUID = 3L;
     /**
      * Y_1, Y_2,...,Y_L
@@ -75,6 +75,21 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
 //        System.out.println("done with updating combined label part scores.");
         this.labelTranslator = dataSet.getLabelTranslator();
         this.featureList = dataSet.getFeatureList();
+    }
+
+
+    public CMLCRF(int numClasses, int numFeatures, List<MultiLabel> supportCombinations) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        this.weights = new Weights(numClasses, numFeatures);
+
+        //todo
+        this.supportCombinations = supportCombinations;
+        this.numSupports = supportCombinations.size();
+
+
+        this.combinationLabelPartScores = new double[supportCombinations.size()];
+        updateCombLabelPartScores();
     }
 
     public double getLossStrength() {
@@ -287,7 +302,7 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         double[] scores = predictCombinationScores(vector);
         int predictedCombination = ArgMax.argMax(scores);
 
-        return this.supportCombinations.get(predictedCombination);
+        return this.supportCombinations.get(predictedCombination).copy();
     }
 
     @Override
@@ -344,4 +359,18 @@ public class CMLCRF implements MultiLabelClassifier, Serializable {
         serialize(file1);
     }
 
+    // this may return negative infinity if assignment is not seen before
+    // todo speed up
+    @Override
+    public double predictLogAssignmentProb(Vector vector, MultiLabel assignment) {
+        double res = Double.NEGATIVE_INFINITY;
+        double[] logComProbs = predictLogCombinationProbs(vector);
+        for (int c=0;c<numSupports;c++){
+            if (supportCombinations.get(c).equals(assignment)){
+                res = logComProbs[c];
+                break;
+            }
+        }
+        return res;
+    }
 }

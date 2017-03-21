@@ -16,7 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -79,6 +78,15 @@ public class CBMOptimizer {
     private int numIterationsBinary = 20;
     private int numIterationsMultiClass = 20;
 
+    private double noiseGammaSet = 0;
+    private double[] noiseSetWeights;
+    private double[] jointProbs;
+    private double noiseGammaLabel = 0;
+    private double[][] noiseLabelWeights;
+    private double[][] marginals;
+
+    private int parameterUpdatesPerIter = 10;
+
 
 
     public CBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
@@ -110,6 +118,70 @@ public class CBMOptimizer {
                 this.targetsDistributions[l][n][1] = 1;
             }
         }
+        this.jointProbs = new double[dataSet.getNumDataPoints()];
+        this.noiseSetWeights = new double[dataSet.getNumDataPoints()];
+        this.marginals = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        this.noiseLabelWeights = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+    }
+
+    private void updateJointProbs(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i-> jointProbs[i] = cbm.predictAssignmentProb(dataSet.getRow(i),dataSet.getMultiLabels()[i]));
+    }
+
+    private void updateSetWeights(){
+        double total = 0;
+        double n = dataSet.getNumDataPoints();
+        for (int i = 0; i< jointProbs.length; i++){
+            total += Math.pow(jointProbs[i], noiseGammaSet);
+        }
+
+        for (int i = 0; i< jointProbs.length; i++){
+            // multiply by n to make it compatible with vanilla lr
+            noiseSetWeights[i] = n*Math.pow(jointProbs[i], noiseGammaSet)/total;
+        }
+    }
+
+    private void updateMarginals(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i-> {
+                    double[] predictedMarginals = cbm.predictClassProbs(dataSet.getRow(i));
+                    for (int l=0;l<dataSet.getNumClasses();l++){
+                        if (dataSet.getMultiLabels()[i].matchClass(l)){
+                            marginals[i][l] = predictedMarginals[l];
+                        } else {
+                            marginals[i][l] = 1- predictedMarginals[l];
+                        }
+                    }
+                });
+    }
+
+    private void updateLabelWeights(){
+        double total = 0;
+        double n = dataSet.getNumDataPoints();
+        double numLabels = dataSet.getNumClasses();
+
+
+        for (int i=0;i<n;i++){
+            for (int l=0;l<numLabels;l++){
+                total += Math.pow(marginals[i][l], noiseGammaLabel);
+            }
+        }
+
+        for (int i=0;i<n;i++){
+            for (int l=0;l<numLabels;l++){
+                noiseLabelWeights[i][l] = n*numLabels*Math.pow(marginals[i][l],noiseGammaLabel)/total;
+            }
+        }
+    }
+
+
+    public void setNoiseGammaSet(double noiseGammaSet) {
+        this.noiseGammaSet = noiseGammaSet;
+    }
+
+    public void setNoiseGammaLabel(double noiseGammaLabel) {
+        this.noiseGammaLabel = noiseGammaLabel;
     }
 
     public void setPriorVarianceMultiClass(double priorVarianceMultiClass) {
@@ -144,12 +216,25 @@ public class CBMOptimizer {
         this.numIterationsMultiClass = numIterationsMultiClass;
     }
 
+    public void setParameterUpdatesPerIter(int parameterUpdatesPerIter) {
+        this.parameterUpdatesPerIter = parameterUpdatesPerIter;
+    }
+
     public double getTemperature() {
         return temperature;
     }
 
     public void setTemperature(double temperature) {
         this.temperature = temperature;
+    }
+
+    public double[][] getNoiseLabelWeights() {
+        return noiseLabelWeights;
+    }
+
+
+    public double[] getNoiseSetWeights() {
+        return noiseSetWeights;
     }
 
     public void optimize() {
@@ -162,6 +247,10 @@ public class CBMOptimizer {
     }
 
     public void iterate() {
+        updateJointProbs();
+        updateSetWeights();
+        updateMarginals();
+        updateLabelWeights();
         eStep();
         mStep();
         this.terminator.add(getObjective());
@@ -188,7 +277,7 @@ public class CBMOptimizer {
     private void updateGamma(int n) {
         Vector x = dataSet.getRow(n);
         MultiLabel y = dataSet.getMultiLabels()[n];
-        double[] posterior = cbm.posteriorMembership(x, y);
+        double[] posterior = cbm.posteriorMembership(x, y, noiseLabelWeights[n]);
         for (int k=0; k<cbm.numComponents; k++) {
             gammas[n][k] = posterior[k];
             gammasT[k][n] = posterior[k];
@@ -208,7 +297,13 @@ public class CBMOptimizer {
     }
 
     private void updateBinaryClassifiers() {
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateBinaryClassifiers");
+        }
         IntStream.range(0, cbm.numComponents).forEach(this::updateBinaryClassifiers);
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateBinaryClassifiers");
+        }
     }
 
     //todo pay attention to parallelism
@@ -247,11 +342,16 @@ public class CBMOptimizer {
 
     private void updateBinaryLogisticRegression(int componentIndex, int labelIndex){
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
+        double[] instanceWeights = new double[dataSet.getNumDataPoints()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            //todo do not multiply by noiseSetWeight ?
+            instanceWeights[i] = gammasT[componentIndex][i] *noiseSetWeights[i] * noiseLabelWeights[i][labelIndex];
+        }
         // no parallelism
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[componentIndex][labelIndex],
-                dataSet, gammasT[componentIndex], targetsDistributions[labelIndex], priorVarianceBinary, false);
+                dataSet, instanceWeights, targetsDistributions[labelIndex], priorVarianceBinary, false);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(15);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(parameterUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
 //        if (logger.isDebugEnabled()){
 //            logger.debug("for cluster "+clusterIndex+" label "+labelIndex+" history= "+ridgeLogisticOptimizer.getOptimizer().getTerminator().getHistory());
@@ -265,11 +365,14 @@ public class CBMOptimizer {
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
         //TODO: maximum iterations
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(15);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(10);
         elasticNetLogisticTrainer.optimize();
     }
 
     private void updateMultiClassClassifier(){
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateMultiClassClassifier()");
+        }
         String type = cbm.getMultiClassClassifierType();
         switch (type){
             case "lr":
@@ -283,6 +386,9 @@ public class CBMOptimizer {
                 break;
             default:
                 throw new IllegalArgumentException("unknown type: " + cbm.getMultiClassClassifierType());
+        }
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateMultiClassClassifier()");
         }
     }
 
@@ -300,9 +406,9 @@ public class CBMOptimizer {
     private void updateMultiClassLR() {
         // parallel
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.multiClassClassifier,
-                dataSet, gammas, priorVarianceMultiClass, true);
+                dataSet, noiseSetWeights, gammas, priorVarianceMultiClass, true);
         //TODO maximum iterations
-        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(15);
+        ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(parameterUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
     }
 

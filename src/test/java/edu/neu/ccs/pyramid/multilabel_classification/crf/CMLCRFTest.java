@@ -6,12 +6,14 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.CMLCRF;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.CRFLoss;
 import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.simulation.MultiLabelSynthesizer;
 
 import java.io.File;
 import java.util.Arrays;
@@ -25,13 +27,14 @@ public class CMLCRFTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test1();
+//        test1();
 //        test2();
 
 //        test3();
 //        test4();
 //        test5();
 //        test6();
+        test7();
     }
 
     public static void test2() throws Exception {
@@ -305,5 +308,46 @@ public class CMLCRFTest {
 
 
 
+    }
+
+
+    private static void test7(){
+        MultiLabelClfDataSet train = MultiLabelSynthesizer.independentNoise();
+        MultiLabelClfDataSet test = MultiLabelSynthesizer.independent();
+        CMLCRF cmlcrf = new CMLCRF(train);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,1);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,1);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-1);
+
+        CRFLoss crfLoss = new CRFLoss(cmlcrf,train,1);
+
+        System.out.println(cmlcrf);
+        System.out.println("initial loss = "+crfLoss.getValue());
+        System.out.println("training performance");
+        System.out.println(new MLMeasures(cmlcrf, train));
+        System.out.println("test performance");
+        System.out.println(new MLMeasures(cmlcrf, test));
+
+
+        LBFGS optimizer = new LBFGS(crfLoss);
+        while (!optimizer.getTerminator().shouldTerminate()) {
+            System.out.println("------------");
+            optimizer.iterate();
+            System.out.println(optimizer.getTerminator().getLastValue());
+            System.out.println("training performance");
+            System.out.println(new MLMeasures(cmlcrf, train));
+            System.out.println("test performance");
+            System.out.println(new MLMeasures(cmlcrf, test));
+        }
+        System.out.println(cmlcrf);
     }
 }

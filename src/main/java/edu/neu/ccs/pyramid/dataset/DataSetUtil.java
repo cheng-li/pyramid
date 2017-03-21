@@ -9,7 +9,6 @@ import edu.neu.ccs.pyramid.util.Translator;
 import org.apache.mahout.math.*;
 import org.apache.mahout.math.Vector;
 
-
 import java.io.*;
 import java.util.*;
 import java.util.Arrays;
@@ -447,7 +446,7 @@ public class DataSetUtil {
                 .numDataPoints(indices.size())
                 .numFeatures(dataSet.getNumFeatures())
                 .missingValue(dataSet.hasMissingValue())
-                .dense(dataSet.isDense())
+                .density(dataSet.density())
                 .build();
         MultiLabel[] labels = dataSet.getMultiLabels();
         IdTranslator idTranslator = new IdTranslator();
@@ -502,7 +501,7 @@ public class DataSetUtil {
 
 
         for (int j=0;j<numFeatures2;j++){
-            Vector vector = dataSet1.getColumn(j);
+            Vector vector = dataSet2.getColumn(j);
             for (Vector.Element element: vector.nonZeroes()){
                 int i = element.index();
                 double value = element.get();
@@ -578,6 +577,62 @@ public class DataSetUtil {
         return dataSet;
     }
 
+    public static MultiLabelClfDataSet concatenateByColumn(MultiLabelClfDataSet dataSet1, MultiLabelClfDataSet dataSet2){
+        int numDataPoints = dataSet1.getNumDataPoints();
+        int numFeatures1 = dataSet1.getNumFeatures();
+        int numFeatures2 = dataSet2.getNumFeatures();
+        int numFeatures = numFeatures1 + numFeatures2;
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(dataSet1.getNumClasses())
+                .dense(dataSet1.isDense())
+                .missingValue(dataSet1.hasMissingValue())
+                .build();
+
+        int featureIndex = 0;
+        for (int j=0;j<numFeatures1;j++){
+            Vector vector = dataSet1.getColumn(j);
+            for (Vector.Element element: vector.nonZeroes()){
+                int i = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(i,featureIndex,value);
+            }
+            featureIndex += 1;
+        }
+
+
+        for (int j=0;j<numFeatures2;j++){
+            Vector vector = dataSet2.getColumn(j);
+            for (Vector.Element element: vector.nonZeroes()){
+                int i = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(i,featureIndex,value);
+            }
+            featureIndex += 1;
+        }
+
+        MultiLabel[] labels = dataSet1.getMultiLabels();
+        for (int i=0;i<numDataPoints;i++){
+            dataSet.setLabels(i,labels[i]);
+        }
+
+        FeatureList featureList = new FeatureList();
+        for (Feature feature: dataSet1.getFeatureList().getAll()){
+            featureList.add(feature);
+        }
+
+        for (Feature feature: dataSet2.getFeatureList().getAll()){
+            featureList.add(feature);
+        }
+
+        dataSet.setFeatureList(featureList);
+
+        dataSet.setLabelTranslator(dataSet1.getLabelTranslator());
+        dataSet.setIdTranslator(dataSet1.getIdTranslator());
+
+        return dataSet;
+    }
+
     /**
      *
      * @param dataSet
@@ -605,6 +660,17 @@ public class DataSetUtil {
         return sampleData(dataSet,keep);
     }
 
+
+    public static List<ClfDataSet> partitionToBatches(ClfDataSet dataSet, int numBatches){
+        List<ClfDataSet> batches = new ArrayList<>();
+        for (int i=1;i<=numBatches;i++){
+            Set<Integer> index = new HashSet<>();
+            index.add(i);
+            batches.add(sampleByFold(dataSet, numBatches, index));
+        }
+        return batches;
+    }
+
     public static MultiLabelClfDataSet sampleByFold(MultiLabelClfDataSet dataSet, int numFolds, Set<Integer> foldIndices){
         for (int fold: foldIndices){
             boolean con = fold>=1 && fold<=numFolds;
@@ -623,6 +689,16 @@ public class DataSetUtil {
         }
 
         return sampleData(dataSet,keep);
+    }
+
+    public static List<MultiLabelClfDataSet> partitionToBatches(MultiLabelClfDataSet dataSet, int numBatches){
+        List<MultiLabelClfDataSet> batches = new ArrayList<>();
+        for (int i=1;i<=numBatches;i++){
+            Set<Integer> index = new HashSet<>();
+            index.add(i);
+            batches.add(sampleByFold(dataSet, numBatches, index));
+        }
+        return batches;
     }
 
 
@@ -1131,5 +1207,45 @@ public class DataSetUtil {
         System.out.println("---------------------------------------------------------------");
         System.out.println();
         System.out.println();
+    }
+
+    public static DataSet loadFeatureMatrixFromCSV(String filename, int numData, int numFeatures) {
+        // Number of class doesn't really matter, we only care about feature matrix.
+        ClfDataSet clfDataSet = new DenseClfDataSet(numData, numFeatures, false, 2);
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(filename));
+            int i = 0;
+            String line = br.readLine();
+            while (line != null) {
+                String[] lineSplit = line.split(",");
+                for (int j = 0; j < numFeatures; j++) {
+                    double featureValue = Double.parseDouble(lineSplit[j]);
+                    clfDataSet.setFeatureValue(i, j, featureValue);
+                }
+                i += 1;
+                line = br.readLine();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return clfDataSet;
+    }
+
+    public static void saveFeatureMatrixToCSV(String filename, DataSet dataSet) throws IOException {
+        FileWriter writer = new FileWriter(filename);
+        for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
+            StringBuilder sb = new StringBuilder();
+            for (int j = 0; j < dataSet.getNumFeatures(); j++) {
+                if (j != 0) {
+                    sb.append(",");
+                }
+                sb.append(dataSet.getRow(i).get(j));
+            }
+            sb.append("\n");
+            writer.append(sb.toString());
+        }
+        writer.close();
     }
 }

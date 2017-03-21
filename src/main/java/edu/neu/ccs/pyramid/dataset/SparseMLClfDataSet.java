@@ -1,5 +1,10 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
+
+import java.io.IOException;
+
 /**
  * Created by chengli on 9/27/14.
  */
@@ -34,6 +39,10 @@ public class SparseMLClfDataSet extends SparseDataSet implements MultiLabelClfDa
         this.multiLabels[dataPointIndex].addLabel(classIndex);
     }
 
+    @Override
+    public void setLabels(int dataPointIndex, MultiLabel multiLabel) {
+        multiLabels[dataPointIndex] = multiLabel;
+    }
 
     @Override
     public String toString() {
@@ -64,5 +73,37 @@ public class SparseMLClfDataSet extends SparseDataSet implements MultiLabelClfDa
     @Override
     public void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        out.defaultWriteObject();
+        SerializableVector[] serFeatureRows = new SerializableVector[featureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            serFeatureRows[i] = new SerializableVector(featureRows[i]);
+        }
+        SerializableVector[] serFeatureColumns = new SerializableVector[featureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            serFeatureColumns[i] = new SerializableVector(featureColumns[i]);
+        }
+        out.writeObject(serFeatureRows);
+        out.writeObject(serFeatureColumns);
+    }
+
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        in.defaultReadObject();
+        SerializableVector[] serFeatureRows = (SerializableVector[])in.readObject();
+        featureRows = new RandomAccessSparseVector[serFeatureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            featureRows[i] = (RandomAccessSparseVector) serFeatureRows[i].getVector();
+        }
+
+        SerializableVector[] serFeatureColumns = (SerializableVector[])in.readObject();
+        featureColumns = new RandomAccessSparseVector[serFeatureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            featureColumns[i] = (RandomAccessSparseVector) serFeatureColumns[i].getVector();
+        }
     }
 }

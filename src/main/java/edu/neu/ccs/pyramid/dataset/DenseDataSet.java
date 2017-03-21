@@ -4,13 +4,15 @@ package edu.neu.ccs.pyramid.dataset;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.io.IOException;
+
 /**
  * Created by chengli on 8/7/14.
  */
 class DenseDataSet extends AbstractDataSet implements DataSet{
 
-    protected DenseVector[] featureRows;
-    protected DenseVector[] featureColumns;
+    protected transient DenseVector[] featureRows;
+    protected transient DenseVector[] featureColumns;
 
 
     DenseDataSet(int numDataPoints, int numFeatures, boolean missingValue) {
@@ -25,6 +27,10 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
         }
     }
 
+    @Override
+    public Density density() {
+        return Density.DENSE;
+    }
 
     @Override
     public Vector getColumn(int featureIndex) {
@@ -49,6 +55,39 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
     @Override
     public boolean isDense() {
         return true;
+    }
+
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        out.defaultWriteObject();
+        SerializableVector[] serFeatureRows = new SerializableVector[featureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            serFeatureRows[i] = new SerializableVector(featureRows[i]);
+        }
+        SerializableVector[] serFeatureColumns = new SerializableVector[featureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            serFeatureColumns[i] = new SerializableVector(featureColumns[i]);
+        }
+        out.writeObject(serFeatureRows);
+        out.writeObject(serFeatureColumns);
+    }
+
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        in.defaultReadObject();
+        SerializableVector[] serFeatureRows = (SerializableVector[])in.readObject();
+        featureRows = new DenseVector[serFeatureRows.length];
+        for (int i=0;i<featureRows.length;i++){
+            featureRows[i] = (DenseVector) serFeatureRows[i].getVector();
+        }
+
+        SerializableVector[] serFeatureColumns = (SerializableVector[])in.readObject();
+        featureColumns = new DenseVector[serFeatureColumns.length];
+        for (int i=0;i<featureColumns.length;i++){
+            featureColumns[i] = (DenseVector) serFeatureColumns[i].getVector();
+        }
     }
 
 

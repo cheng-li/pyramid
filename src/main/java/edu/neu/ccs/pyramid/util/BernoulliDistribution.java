@@ -15,7 +15,7 @@ public class BernoulliDistribution implements Serializable{
 
     public BernoulliDistribution(double p) {
         if (p<0||p>1){
-            throw new IllegalArgumentException("p should be within 0 and 1");
+            throw new IllegalArgumentException("p should be within 0 and 1. Given p = "+p);
         }
         this.p = p;
         this.logP = Math.log(p);

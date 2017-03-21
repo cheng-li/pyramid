@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
+import edu.neu.ccs.pyramid.dataset.SerializableVector;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -8,6 +9,7 @@ import org.apache.mahout.math.VectorView;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by chengli on 12/7/14.
@@ -27,9 +29,9 @@ public class Weights implements Serializable {
             this.numClasses = numClasses;
             this.numFeatures = numFeatures;
             this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
-            UniformRealDistribution uniform = new UniformRealDistribution(-0.5,0.5);
+            Random randomGenerator = new Random(0L);
             for (int i=0; i<weightVector.size(); i++) {
-                double p = uniform.sample();
+                double p = randomGenerator.nextDouble()-0.5;
                 weightVector.set(i,p);
             }
         } else {
@@ -103,6 +105,21 @@ public class Weights implements Serializable {
     }
 
     /**
+     * truncate the weights below the threshold to 0
+     * @param threshold
+     */
+    void truncateByThreshold(double threshold){
+        for (int k=0;k<numClasses;k++){
+            Vector vector  = getWeightsWithoutBiasForClass(k);
+            for (int d=0;d<vector.size();d++){
+                if (Math.abs(vector.get(d))<threshold){
+                    vector.set(d,0);
+                }
+            }
+        }
+    }
+
+    /**
      *
      * @param k class index
      * @return weights for class k, including bias at the beginning
@@ -141,6 +158,16 @@ public class Weights implements Serializable {
         }
         int start = (this.numFeatures+1)*k;
         return this.weightVector.get(start);
+    }
+
+
+
+    public void setBiasForClass(double bias, int k){
+        if (k>=numClasses){
+            throw new IllegalArgumentException("out of bound");
+        }
+        int start = (this.numFeatures+1)*k;
+        this.weightVector.set(start, bias);
     }
 
     private void writeObject(java.io.ObjectOutputStream out)

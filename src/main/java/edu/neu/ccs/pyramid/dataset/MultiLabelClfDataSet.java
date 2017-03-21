@@ -16,6 +16,8 @@ public interface MultiLabelClfDataSet extends DataSet{
         }
     }
 
+    void setLabels(int dataPointIndex, MultiLabel multiLabel);
+
     int getNumClasses();
 
     LabelTranslator getLabelTranslator();
