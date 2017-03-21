@@ -1248,4 +1248,15 @@ public class DataSetUtil {
         }
         writer.close();
     }
+
+
+     public static double[][] labelsToDistributions(int[] labels, int numClass){
+        int numData = labels.length;
+        double[][] distribution = new double[numData][numClass];
+        for (int i=0;i<numData;i++){
+            int label = labels[i];
+            distribution[i][label] = 1;
+        }
+        return distribution;
+    }
 }

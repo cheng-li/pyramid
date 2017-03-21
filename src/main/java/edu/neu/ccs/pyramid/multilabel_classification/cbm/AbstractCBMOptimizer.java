@@ -1,7 +1,9 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
+import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
@@ -18,22 +20,48 @@ public abstract class AbstractCBMOptimizer {
 
     // format [#data][#components]
     protected double[][] gammas;
-    // format [#components][#data]
-    protected double[][] gammasT;
+
+
+    // if the effective number of positive instances for the label is smaller than the threshold, skip the binary model
+    // set threshold = 0 if we don't want to skip any
+    protected double skipLabelThreshold = 1.0;
+
+    // if gamma_i^k is smaller than this threshold, skip it when training binary classifiers in component k
+    // set threshold = 0 if we don't want to skip any
+    protected double skipDataThreshold = 1E-5;
+
+
+    protected int multiclassUpdatesPerIter = 20;
+    protected int binaryUpdatesPerIter = 20;
 
     public AbstractCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         this.cbm = cbm;
         this.dataSet = dataSet;
 
         this.gammas = new double[dataSet.getNumDataPoints()][cbm.getNumComponents()];
-        this.gammasT = new double[cbm.getNumComponents()][dataSet.getNumDataPoints()];
         double average = 1.0/ cbm.getNumComponents();
         for (int n=0;n<dataSet.getNumDataPoints();n++){
             for (int k = 0; k< cbm.getNumComponents(); k++){
                 gammas[n][k] = average;
-                gammasT[k][n] = average;
             }
         }
+    }
+
+
+    public void setMulticlassUpdatesPerIter(int multiclassUpdatesPerIter) {
+        this.multiclassUpdatesPerIter = multiclassUpdatesPerIter;
+    }
+
+    public void setBinaryUpdatesPerIter(int binaryUpdatesPerIter) {
+        this.binaryUpdatesPerIter = binaryUpdatesPerIter;
+    }
+
+    public void setSkipLabelThreshold(double skipLabelThreshold) {
+        this.skipLabelThreshold = skipLabelThreshold;
+    }
+
+    public void setSkipDataThreshold(double skipDataThreshold) {
+        this.skipDataThreshold = skipDataThreshold;
     }
 
     public void iterate() {
@@ -64,7 +92,6 @@ public abstract class AbstractCBMOptimizer {
         double[] posterior = cbm.posteriorMembership(x, y);
         for (int k=0; k<cbm.numComponents; k++) {
             gammas[n][k] = posterior[k];
-            gammasT[k][n] = posterior[k];
         }
     }
 
@@ -92,15 +119,83 @@ public abstract class AbstractCBMOptimizer {
 
     //todo pay attention to parallelism
     protected void updateBinaryClassifiers(int component){
-        IntStream.range(0, cbm.numLabels).parallel().forEach(l-> updateBinaryClassifier(component,l));
+
+        if (logger.isDebugEnabled()){
+            logger.debug("computing active dataset for component" +component);
+        }
+
+        // skip small gammas
+        double[] activeGammas = new double[dataSet.getNumDataPoints()];
+        double weightedTotal = 0;
+        int counter = 0;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            double v = gammas[i][component];
+            if (v>= skipDataThreshold){
+                activeGammas[i]=v;
+                weightedTotal += v;
+                counter += 1;
+            } else {
+                activeGammas[i]=0;
+            }
+        }
+
+        if (logger.isDebugEnabled()){
+            logger.debug("raw number of data in active dataset = "+ counter);
+            logger.debug("weighted number of data in active dataset = "+weightedTotal);
+        }
+
+        IntStream.range(0, cbm.numLabels).parallel().forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeGammas));
     }
 
-    abstract protected void updateBinaryClassifier(int component, int label);
 
+    protected void skipOrUpdateBinaryClassifier(int component, int label, double[] activeGammas){
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
 
-    protected abstract  void updateMultiClassClassifier();
+        double effectivePositives = effectivePositives(component, label);
+        StringBuilder sb = new StringBuilder();
+        sb.append("for component ").append(component).append(", label ").append(label);
+        sb.append(", effective positives = ").append(effectivePositives);
+        if (effectivePositives<skipLabelThreshold){
+            double positiveProb = prior(component, label);
+            double[] probs = {1-positiveProb, positiveProb};
+            cbm.binaryClassifiers[component][label] = new PriorProbClassifier(probs);
+            sb.append(", skip, use prior = ").append(positiveProb);
+            sb.append(", time spent = ").append(stopWatch.toString());
+            if (logger.isDebugEnabled()){
+                logger.debug(sb.toString());
+            }
+            return;
+        }
 
+        updateBinaryClassifier(component, label, activeGammas);
+    }
 
+    abstract protected void updateBinaryClassifier(int component, int label, double[] activeGammas);
+
+    protected abstract void updateMultiClassClassifier();
+
+    protected double effectivePositives(int componentIndex, int labelIndex){
+        double sum = 0;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            if (dataSet.getMultiLabels()[i].matchClass(labelIndex)){
+                sum += gammas[i][componentIndex];
+            }
+        }
+        return sum;
+    }
+
+    protected double prior(int componentIndex, int labelIndex){
+        double positives = 0;
+        double total = 0;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            total += gammas[i][componentIndex];
+            if (dataSet.getMultiLabels()[i].matchClass(labelIndex)){
+                positives += gammas[i][componentIndex];
+            }
+        }
+        return positives/total;
+    }
 
     //******************** for debugging *****************************
 
@@ -117,7 +212,7 @@ public abstract class AbstractCBMOptimizer {
         return IntStream.range(0, cbm.numLabels).parallel().mapToDouble(l->binaryObj(component,l)).sum();
     }
 
-    protected abstract double binaryObj(int clusterIndex, int classIndex);
+    protected abstract double binaryObj(int component, int classIndex);
 
     protected abstract double multiClassClassifierObj();
 
