@@ -37,6 +37,19 @@ public class GBRegressor {
         }
     }
 
+    public static void main(Config config) throws Exception{
+
+        System.out.println(config);
+
+        if (config.getBoolean("train")){
+            train(config);
+        }
+
+        if (config.getBoolean("test")){
+            test(config);
+        }
+    }
+
     private static void train(Config config) throws Exception{
         String sparsity = config.getString("input.matrixType");
         DataSetType dataSetType = null;
