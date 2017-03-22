@@ -1,8 +1,11 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
+import edu.neu.ccs.pyramid.clustering.bm.BM;
+import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,7 +50,6 @@ public abstract class AbstractCBMOptimizer {
         }
     }
 
-
     public void setMulticlassUpdatesPerIter(int multiclassUpdatesPerIter) {
         this.multiclassUpdatesPerIter = multiclassUpdatesPerIter;
     }
@@ -62,6 +64,11 @@ public abstract class AbstractCBMOptimizer {
 
     public void setSkipDataThreshold(double skipDataThreshold) {
         this.skipDataThreshold = skipDataThreshold;
+    }
+
+    public void initialize(){
+        gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
+        mStep();
     }
 
     public void iterate() {
