@@ -206,7 +206,6 @@ public abstract class AbstractCBMOptimizer {
 
     //******************** for debugging *****************************
 
-    //TODO: have to modify the objectives by introducing L1 regularization part
     public double getObjective() {
         return multiClassClassifierObj() + binaryObj();
     }

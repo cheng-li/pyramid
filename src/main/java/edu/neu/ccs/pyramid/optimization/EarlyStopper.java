@@ -1,12 +1,15 @@
 package edu.neu.ccs.pyramid.optimization;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by chengli on 10/29/16.
  */
-public class EarlyStopper {
+public class EarlyStopper implements Serializable{
+    private static final long serialVersionUID = 1L;
+
     private List<Double> values;
     private List<Integer> iterations;
     private double bestValue;
@@ -53,6 +56,10 @@ public class EarlyStopper {
 
     public boolean shouldStop() {
         return shouldStop;
+    }
+
+    public double getBestValue() {
+        return bestValue;
     }
 
     public enum Goal{

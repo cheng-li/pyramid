@@ -122,6 +122,7 @@ public class App5 {
         List<Double> trainMap = new ArrayList<>();
         List<Double> testMap = new ArrayList<>();
         List<Double> testGFMF1 = new ArrayList<>();
+        //todo fix start iteration
         for (int i=1;i<=numIterations;i++){
             System.out.println("=================================================");
             System.out.println("iteration : "+i );
