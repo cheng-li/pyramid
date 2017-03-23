@@ -1209,8 +1209,10 @@ public class DataSetUtil {
         System.out.println();
     }
 
+    /**
+     * Load CSV (without header) feature matrix into a DataSet, which means label does not matter.
+     */
     public static DataSet loadFeatureMatrixFromCSV(String filename, int numData, int numFeatures) {
-        // Number of class doesn't really matter, we only care about feature matrix.
         ClfDataSet clfDataSet = new DenseClfDataSet(numData, numFeatures, false, 2);
         try {
             BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -1233,6 +1235,9 @@ public class DataSetUtil {
         return clfDataSet;
     }
 
+    /**
+     * Save DataSet feature matrix into a CSV (without header).
+     */
     public static void saveFeatureMatrixToCSV(String filename, DataSet dataSet) throws IOException {
         FileWriter writer = new FileWriter(filename);
         for (int i = 0; i < dataSet.getNumDataPoints(); i++) {
