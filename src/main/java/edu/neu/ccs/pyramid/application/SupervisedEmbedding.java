@@ -33,8 +33,8 @@ public class SupervisedEmbedding {
 
         // All possible config:
         //   inputTransform
-        //   inputDistance
         //   inputEmbedding
+        //   inputProjection
         //   numEmbedding
         //   sizeEmbedding
         //   outputEmbedding
@@ -45,16 +45,16 @@ public class SupervisedEmbedding {
         DataSet transform = DataSetUtil.loadFeatureMatrixFromCSV(
                 config.getString("inputTransform"), config.getInt("sizeEmbedding"), 2);
         System.out.println(transform.getMetaInfo());
-        DataSet distance = DataSetUtil.loadFeatureMatrixFromCSV(
-                config.getString("inputDistance"), config.getInt("numEmbedding"), config.getInt("numEmbedding"));
-        System.out.println(distance.getMetaInfo());
         DataSet embedding = DataSetUtil.loadFeatureMatrixFromCSV(
                 config.getString("inputEmbedding"), config.getInt("numEmbedding"), config.getInt("sizeEmbedding"));
         System.out.println(embedding.getMetaInfo());
+        DataSet projection = DataSetUtil.loadFeatureMatrixFromCSV(
+                config.getString("inputProjection"), config.getInt("numEmbedding"), 2);
+        System.out.println(projection.getMetaInfo());
         System.out.println("==========================================\n");
 
         SupervisedEmbeddingLoss function = new SupervisedEmbeddingLoss(
-                distance, transform, embedding, config.getDouble("alpha"), config.getDouble("beta"));
+                transform, embedding, projection, config.getDouble("alpha"), config.getDouble("beta"));
         GradientDescent gd = new GradientDescent(function);
         for (int i = 0; i < config.getInt("numIter"); i++) {
             gd.iterate();

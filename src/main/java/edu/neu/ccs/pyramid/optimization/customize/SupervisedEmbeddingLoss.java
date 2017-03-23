@@ -21,8 +21,8 @@ public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
     private Double alpha;
     private Double beta;
 
-    public SupervisedEmbeddingLoss(DataSet D, DataSet T, DataSet Q, Double a, Double b) {
-        this.distance = D;
+    public SupervisedEmbeddingLoss(DataSet T, DataSet Q, DataSet P, Double a, Double b) {
+        this.distance = new DenseClfDataSet(Q.getNumDataPoints(), Q.getNumDataPoints(), false, 2);
         this.transform = T;
         this.embedding = Q;
         this.updatedEmbedding = Q;
@@ -30,6 +30,18 @@ public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
         this.alpha = a;
         this.beta = b;
 
+
+        int numData = Q.getNumDataPoints();
+        for (int i = 0; i < numData; i++) {
+            double pi_x = P.getRow(i).get(0);
+            double pi_y = P.getRow(i).get(1);
+            for (int j = 0; j < numData; j++) {
+                double pj_x = P.getRow(j).get(0);
+                double pj_y = P.getRow(j).get(1);
+                double d = Math.sqrt((pi_x - pj_x) * (pi_x - pj_x) + (pi_y - pj_y) * (pi_y - pj_y));
+                this.distance.setFeatureValue(i, j, d);
+            }
+        }
         this.updateProjection(Q);
 
         System.out.println("SupervisedEmbeddingLoss loss function initialized ...");
