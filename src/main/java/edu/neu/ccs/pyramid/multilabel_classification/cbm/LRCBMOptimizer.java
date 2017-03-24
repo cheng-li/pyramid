@@ -59,11 +59,17 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
 
     @Override
     protected void updateMultiClassClassifier() {
+        if (logger.isDebugEnabled()){
+            logger.debug("start updateMultiClassClassifier");
+        }
         // parallel
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(multiclassUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
+        if (logger.isDebugEnabled()){
+            logger.debug("finish updateMultiClassClassifier");
+        }
     }
 
     // todo deal with prior classifier

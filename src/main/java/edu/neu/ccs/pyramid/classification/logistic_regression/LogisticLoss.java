@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import edu.neu.ccs.pyramid.util.Vectors;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -258,6 +259,10 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
     private void updatePredictedCounts(){
+        StopWatch stopWatch = new StopWatch();
+        if (logger.isDebugEnabled()){
+            stopWatch.start();
+        }
         IntStream intStream;
         if (isParallel){
             intStream = IntStream.range(0,numParameters).parallel();
@@ -266,6 +271,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         }
 
         intStream.forEach(i -> this.predictedCounts.set(i, calPredictedCount(i)));
+        if (logger.isDebugEnabled()){
+            logger.debug("time spent on updatePredictedCounts = "+stopWatch);
+        }
     }
 
     // todo for dense matrix, store a sparse instance weights vector to skip zeros

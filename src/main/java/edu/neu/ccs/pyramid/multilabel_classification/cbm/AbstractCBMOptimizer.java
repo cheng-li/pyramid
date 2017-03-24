@@ -3,8 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.clustering.bm.BM;
 import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +36,8 @@ public abstract class AbstractCBMOptimizer {
     protected int multiclassUpdatesPerIter = 20;
     protected int binaryUpdatesPerIter = 20;
 
+    protected DataSet labelMatrix;
+
     public AbstractCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         this.cbm = cbm;
         this.dataSet = dataSet;
@@ -46,6 +47,17 @@ public abstract class AbstractCBMOptimizer {
         for (int n=0;n<dataSet.getNumDataPoints();n++){
             for (int k = 0; k< cbm.getNumComponents(); k++){
                 gammas[n][k] = average;
+            }
+        }
+        this.labelMatrix = DataSetBuilder.getBuilder()
+                .numDataPoints(dataSet.getNumDataPoints())
+                .numFeatures(dataSet.getNumClasses())
+                .density(Density.SPARSE_RANDOM)
+                .build();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l: multiLabel.getMatchedLabels()){
+                labelMatrix.setFeatureValue(i,l,1);
             }
         }
     }
@@ -135,37 +147,53 @@ public abstract class AbstractCBMOptimizer {
         // skip small gammas
         double[] activeGammas = new double[dataSet.getNumDataPoints()];
         double weightedTotal = 0;
+        double thresholdedWeightedTotal = 0;
         int counter = 0;
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             double v = gammas[i][component];
+            weightedTotal += v;
             if (v>= skipDataThreshold){
                 activeGammas[i]=v;
-                weightedTotal += v;
+                thresholdedWeightedTotal += v;
                 counter += 1;
-            } else {
-                activeGammas[i]=0;
             }
         }
 
         if (logger.isDebugEnabled()){
-            logger.debug("raw number of data in active dataset = "+ counter);
-            logger.debug("weighted number of data in active dataset = "+weightedTotal);
+            logger.debug("number of active data  = "+ counter);
+            logger.debug("total weight  = "+weightedTotal);
+            logger.debug("total weight of active data  = "+thresholdedWeightedTotal);
         }
 
-        IntStream.range(0, cbm.numLabels).parallel().forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeGammas));
+        // to please lambda
+        final double totalWeight = weightedTotal;
+        IntStream.range(0, cbm.numLabels).parallel()
+                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeGammas, totalWeight));
     }
 
 
-    protected void skipOrUpdateBinaryClassifier(int component, int label, double[] activeGammas){
+    protected void skipOrUpdateBinaryClassifier(int component, int label, double[] activeGammas, double totalWeight){
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
         double effectivePositives = effectivePositives(component, label);
-        double positiveProb = prior(component, label);
+        double positiveProb = effectivePositives/totalWeight;
+
         StringBuilder sb = new StringBuilder();
         sb.append("for component ").append(component).append(", label ").append(label);
         sb.append(", weighted positives = ").append(effectivePositives);
         sb.append(", positive fraction = "+positiveProb);
+
+
+        if (positiveProb==0){
+            positiveProb=1.0E-50;
+        }
+
+        // it be happen that p >1 for numerical reasons
+        if (positiveProb>=1){
+            positiveProb=0.9999;
+        }
+
         if (positiveProb<skipLabelThreshold || positiveProb>1-skipLabelThreshold){
             double[] probs = {1-positiveProb, positiveProb};
             cbm.binaryClassifiers[component][label] = new PriorProbClassifier(probs);
@@ -187,27 +215,17 @@ public abstract class AbstractCBMOptimizer {
 
     protected abstract void updateMultiClassClassifier();
 
-    protected double effectivePositives(int componentIndex, int labelIndex){
+    private double effectivePositives(int componentIndex, int labelIndex){
         double sum = 0;
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            if (dataSet.getMultiLabels()[i].matchClass(labelIndex)){
-                sum += gammas[i][componentIndex];
-            }
+        Vector labelColumn = labelMatrix.getColumn(labelIndex);
+        for (Vector.Element element: labelColumn.nonZeroes()){
+            int dataIndex = element.index();
+            sum += gammas[dataIndex][componentIndex];
         }
         return sum;
     }
 
-    protected double prior(int componentIndex, int labelIndex){
-        double positives = 0;
-        double total = 0;
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            total += gammas[i][componentIndex];
-            if (dataSet.getMultiLabels()[i].matchClass(labelIndex)){
-                positives += gammas[i][componentIndex];
-            }
-        }
-        return positives/total;
-    }
+
 
     //******************** for debugging *****************************
 
@@ -229,6 +247,16 @@ public abstract class AbstractCBMOptimizer {
 
     public double[][] getGammas() {
         return gammas;
+    }
+
+    private void checkGamma(){
+        for (int i=0;i<gammas.length;i++){
+            for (int k=0;k<gammas[0].length;k++){
+                if (Double.isNaN(gammas[i][k])){
+                    throw new RuntimeException("gamma "+i+" "+k+" is NaN");
+                }
+            }
+        }
     }
 
 
