@@ -7,4 +7,8 @@ public interface Optimizer {
     void optimize();
     double getFinalObjective();
     Terminator getTerminator();
+
+    interface Iterative extends Optimizer{
+        void iterate();
+    }
 }

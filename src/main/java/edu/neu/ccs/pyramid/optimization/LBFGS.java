@@ -18,7 +18,7 @@ import java.util.LinkedList;
  * Formula 2.7
  * Created by chengli on 12/9/14.
  */
-public class LBFGS extends GradientValueOptimizer implements Optimizer{
+public class LBFGS extends GradientValueOptimizer implements Optimizer.Iterative {
     private static final Logger logger = LogManager.getLogger();
     private BackTrackingLineSearcher lineSearcher;
     /**

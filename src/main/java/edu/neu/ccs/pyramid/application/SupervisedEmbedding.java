@@ -4,7 +4,11 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.optimization.GradientDescent;
+import edu.neu.ccs.pyramid.optimization.LBFGS;
+import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.optimization.customize.SupervisedEmbeddingLoss;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -55,12 +59,31 @@ public class SupervisedEmbedding {
 
         SupervisedEmbeddingLoss function = new SupervisedEmbeddingLoss(
                 transform, embedding, projection, config.getDouble("alpha"), config.getDouble("beta"));
-        GradientDescent gd = new GradientDescent(function);
-        for (int i = 0; i < config.getInt("numIter"); i++) {
-            gd.iterate();
-            System.out.println("loss=" + function.getValue());
+
+        Optimizer.Iterative optimizer = null;
+        if (config.getString("optimizer").equals("gd")) {
+            optimizer = new GradientDescent(function);
+        } else if (config.getString("optimizer").equals("lbfgs")) {
+            optimizer = new LBFGS(function);
+        } else {
+            System.out.println("Error: optimizer " + config.getString("optimizer") + " not supported!");
+            System.exit(0);
+        }
+        optimizer.getTerminator().setOperation(Terminator.Operation.OR);
+        optimizer.getTerminator().setAbsoluteEpsilon(0.001);
+        optimizer.getTerminator().setRelativeEpsilon(0.1);
+        optimizer.getTerminator().setMaxStableIterations(5);
+        optimizer.getTerminator().setMaxIteration(config.getInt("numIter"));
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        int i = 0;
+        while (!optimizer.getTerminator().shouldTerminate()) {
+            optimizer.iterate();
+            System.out.println("iter=" + (i++) + ", loss=" + function.getValue() + ", time=" + stopWatch);
         }
         System.out.println("==========================================\n");
+        System.out.println("finished updating ... \n");
 
         DataSet finalEmbedding = function.getUpdatedEmbedding();
         DataSetUtil.saveFeatureMatrixToCSV(config.getString("outputEmbedding"), finalEmbedding);
