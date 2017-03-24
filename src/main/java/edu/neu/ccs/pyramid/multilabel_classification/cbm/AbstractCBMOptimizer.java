@@ -25,9 +25,9 @@ public abstract class AbstractCBMOptimizer {
     protected double[][] gammas;
 
 
-    // if the effective number of positive instances for the label is smaller than the threshold, skip the binary model
+    // if the fraction of positive labels < threshold, or > 1-threshold,  skip the binary model, use prior probability
     // set threshold = 0 if we don't want to skip any
-    protected double skipLabelThreshold = 1.0;
+    protected double skipLabelThreshold = 1E-5;
 
     // if gamma_i^k is smaller than this threshold, skip it when training binary classifiers in component k
     // set threshold = 0 if we don't want to skip any
@@ -68,6 +68,7 @@ public abstract class AbstractCBMOptimizer {
 
     public void initialize(){
         gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
+        System.out.println("performing M step");
         mStep();
     }
 
@@ -83,7 +84,7 @@ public abstract class AbstractCBMOptimizer {
         updateGamma();
         if (logger.isDebugEnabled()){
             logger.debug("finish E step");
-            logger.debug("objective = "+getObjective());
+//            logger.debug("objective = "+getObjective());
         }
     }
 
@@ -110,7 +111,7 @@ public abstract class AbstractCBMOptimizer {
         updateMultiClassClassifier();
         if (logger.isDebugEnabled()){
             logger.debug("finish M step");
-            logger.debug("objective = "+getObjective());
+//            logger.debug("objective = "+getObjective());
         }
     }
 
@@ -128,7 +129,7 @@ public abstract class AbstractCBMOptimizer {
     protected void updateBinaryClassifiers(int component){
 
         if (logger.isDebugEnabled()){
-            logger.debug("computing active dataset for component" +component);
+            logger.debug("computing active dataset for component " +component);
         }
 
         // skip small gammas
@@ -160,11 +161,12 @@ public abstract class AbstractCBMOptimizer {
         stopWatch.start();
 
         double effectivePositives = effectivePositives(component, label);
+        double positiveProb = prior(component, label);
         StringBuilder sb = new StringBuilder();
         sb.append("for component ").append(component).append(", label ").append(label);
-        sb.append(", effective positives = ").append(effectivePositives);
-        if (effectivePositives<skipLabelThreshold){
-            double positiveProb = prior(component, label);
+        sb.append(", weighted positives = ").append(effectivePositives);
+        sb.append(", positive fraction = "+positiveProb);
+        if (positiveProb<skipLabelThreshold || positiveProb>1-skipLabelThreshold){
             double[] probs = {1-positiveProb, positiveProb};
             cbm.binaryClassifiers[component][label] = new PriorProbClassifier(probs);
             sb.append(", skip, use prior = ").append(positiveProb);
@@ -175,6 +177,9 @@ public abstract class AbstractCBMOptimizer {
             return;
         }
 
+        if (logger.isDebugEnabled()){
+            logger.debug(sb.toString());
+        }
         updateBinaryClassifier(component, label, activeGammas);
     }
 

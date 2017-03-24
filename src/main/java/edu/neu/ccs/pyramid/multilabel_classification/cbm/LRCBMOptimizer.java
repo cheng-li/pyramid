@@ -66,6 +66,7 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
         ridgeLogisticOptimizer.optimize();
     }
 
+    // todo deal with prior classifier
     @Override
     protected double binaryObj(int component, int classIndex) {
         int[] binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(), classIndex);
