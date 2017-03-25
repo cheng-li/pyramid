@@ -10,6 +10,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
 /**
@@ -145,7 +147,8 @@ public abstract class AbstractCBMOptimizer {
         }
 
         // skip small gammas
-        double[] activeGammas = new double[dataSet.getNumDataPoints()];
+        List<Double> activeGammasList = new ArrayList<>();
+        List<Integer> activeIndices = new ArrayList<>();
         double weightedTotal = 0;
         double thresholdedWeightedTotal = 0;
         int counter = 0;
@@ -153,26 +156,37 @@ public abstract class AbstractCBMOptimizer {
             double v = gammas[i][component];
             weightedTotal += v;
             if (v>= skipDataThreshold){
-                activeGammas[i]=v;
+                activeGammasList.add(v);
+                activeIndices.add(i);
                 thresholdedWeightedTotal += v;
                 counter += 1;
             }
         }
 
+        double[] activeGammas = activeGammasList.stream().mapToDouble(a->a).toArray();
+
         if (logger.isDebugEnabled()){
             logger.debug("number of active data  = "+ counter);
             logger.debug("total weight  = "+weightedTotal);
             logger.debug("total weight of active data  = "+thresholdedWeightedTotal);
+            logger.debug("creating active dataset");
+        }
+
+
+        MultiLabelClfDataSet activeDataSet = DataSetUtil.sampleData(dataSet, activeIndices);
+        if (logger.isDebugEnabled()){
+            logger.debug("active dataset created");
         }
 
         // to please lambda
         final double totalWeight = weightedTotal;
         IntStream.range(0, cbm.numLabels).parallel()
-                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeGammas, totalWeight));
+                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
     }
 
 
-    protected void skipOrUpdateBinaryClassifier(int component, int label, double[] activeGammas, double totalWeight){
+    protected void skipOrUpdateBinaryClassifier(int component, int label, MultiLabelClfDataSet activeDataSet,
+                                                double[] activeGammas, double totalWeight){
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
@@ -208,10 +222,10 @@ public abstract class AbstractCBMOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug(sb.toString());
         }
-        updateBinaryClassifier(component, label, activeGammas);
+        updateBinaryClassifier(component, label, activeDataSet, activeGammas);
     }
 
-    abstract protected void updateBinaryClassifier(int component, int label, double[] activeGammas);
+    abstract protected void updateBinaryClassifier(int component, int label, MultiLabelClfDataSet activeDataset, double[] activeGammas);
 
     protected abstract void updateMultiClassClassifier();
 

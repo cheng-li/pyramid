@@ -224,13 +224,24 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
 
     public Vector getGradient(){
+        StopWatch stopWatch = null;
+        if (logger.isDebugEnabled()){
+            stopWatch = new StopWatch();
+            stopWatch.start();
+        }
         if (isGradientCacheValid){
+            if (logger.isDebugEnabled()){
+                logger.debug("time spent on getGradient = "+stopWatch);
+            }
             return this.gradient;
         }
         updateClassProbMatrix();
         updatePredictedCounts();
         updateGradient();
         this.isGradientCacheValid = true;
+        if (logger.isDebugEnabled()){
+            logger.debug("time spent on getGradient = "+stopWatch);
+        }
         return this.gradient;
     }
 
@@ -305,7 +316,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
     //todo optimize for dense dataset
-    // find a way to only iterate over non-zero weight instances
+    // todo find a way to only iterate over non-zero weight instances
     private double calPredictedCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
@@ -325,7 +336,6 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
                 int dataPointIndex = element.index();
                 if (weights[dataPointIndex]!=0){
                     double featureValue = element.get();
-                    //todo
                     count += probs[dataPointIndex]*featureValue* weights[dataPointIndex];
                 }
             }

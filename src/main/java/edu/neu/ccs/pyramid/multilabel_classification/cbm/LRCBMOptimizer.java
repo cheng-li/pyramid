@@ -35,20 +35,20 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
     }
 
     @Override
-    protected void updateBinaryClassifier(int component, int label, double[] activeGammas) {
+    protected void updateBinaryClassifier(int component, int label, MultiLabelClfDataSet activeDataset, double[] activeGammas) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
         if (cbm.binaryClassifiers[component][label] == null || cbm.binaryClassifiers[component][label] instanceof PriorProbClassifier){
-            cbm.binaryClassifiers[component][label] = new LogisticRegression(2, dataSet.getNumFeatures());
+            cbm.binaryClassifiers[component][label] = new LogisticRegression(2, activeDataset.getNumFeatures());
         }
 
         RidgeLogisticOptimizer ridgeLogisticOptimizer;
 
-        int[] binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(), label);
+        int[] binaryLabels = DataSetUtil.toBinaryLabels(activeDataset.getMultiLabels(), label);
         // no parallelism
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[component][label],
-                dataSet, binaryLabels, activeGammas, priorVarianceBinary, false);
+                activeDataset, binaryLabels, activeGammas, priorVarianceBinary, false);
 
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(binaryUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
