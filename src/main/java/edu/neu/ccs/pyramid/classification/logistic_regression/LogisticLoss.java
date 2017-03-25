@@ -31,7 +31,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private int numClasses;
 
     // size = num classes * num data
-    private double[][] logProbabilityMatrixKByN;
+    private double[][] logProbabilityMatrix;
+    // also store probabilities to avoid doing exponentiation
+    private double[][] probabilityMatrix;
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
@@ -58,7 +60,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.logProbabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
+        this.logProbabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
+        this.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
@@ -80,7 +83,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.logProbabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
+        this.logProbabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
+        this.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
@@ -171,7 +175,7 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         }
         double[] predicted = new double[numClasses];
         for (int k=0;k<numClasses;k++){
-            predicted[k] = logProbabilityMatrixKByN[k][dataPointIndex];
+            predicted[k] = logProbabilityMatrix[k][dataPointIndex];
         }
         return weights[dataPointIndex]* KLDivergence.klGivenPLogQ(targetDistributions[dataPointIndex], predicted);
     }
@@ -301,16 +305,17 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
     //todo optimize for dense dataset
+    // find a way to only iterate over non-zero weight instances
     private double calPredictedCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
-        double[] logProbs = this.logProbabilityMatrixKByN[classIndex];
+        double[] probs = this.probabilityMatrix[classIndex];
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
                 if (weights[i]!=0){
-                    count += Math.exp(logProbs[i])* weights[i];
+                    count += probs[i]* weights[i];
                 }
 
             }
@@ -320,7 +325,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
                 int dataPointIndex = element.index();
                 if (weights[dataPointIndex]!=0){
                     double featureValue = element.get();
-                    count += Math.exp(logProbs[dataPointIndex])*featureValue* weights[dataPointIndex];
+                    //todo
+                    count += probs[dataPointIndex]*featureValue* weights[dataPointIndex];
                 }
             }
         }
@@ -333,11 +339,14 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         }
         double[] logProbs = logisticRegression.predictLogClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
-            this.logProbabilityMatrixKByN[k][dataPointIndex]=logProbs[k];
+            this.logProbabilityMatrix[k][dataPointIndex]=logProbs[k];
+            this.probabilityMatrix[k][dataPointIndex] = Math.exp(logProbs[k]);
         }
     }
 
     private void updateClassProbMatrix(){
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         IntStream intStream;
         if (isParallel){
             intStream = IntStream.range(0,dataSet.getNumDataPoints()).parallel();
@@ -346,6 +355,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         }
         intStream.forEach(this::updateClassProbs);
         this.isProbabilityCacheValid = true;
+        if (logger.isDebugEnabled()){
+            logger.debug("time spent on updateClassProbMatrix = "+stopWatch);
+        }
     }
 
 
