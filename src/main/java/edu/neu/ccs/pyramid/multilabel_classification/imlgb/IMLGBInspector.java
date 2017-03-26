@@ -2,9 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.feature.Feature;
-import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
-import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
@@ -251,7 +249,7 @@ public class IMLGBInspector {
             DynamicProgramming dp = new DynamicProgramming(classProbs);
             for (int c=0;c<labelSetLimit;c++){
                 DynamicProgramming.Candidate candidate = dp.nextHighest();
-                MultiLabel multiLabel = new MultiLabel(candidate.getVector());
+                MultiLabel multiLabel = candidate.getMultiLabel();
                 double setProb = candidate.getProbability();
                 MultiLabelPredictionAnalysis.LabelSetProbInfo labelSetProbInfo = new MultiLabelPredictionAnalysis.LabelSetProbInfo(multiLabel, setProb, labelTranslator);
                 labelSetRanking.add(labelSetProbInfo);

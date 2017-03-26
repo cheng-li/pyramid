@@ -157,12 +157,13 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         CBMPredictor.setAllowEmpty(allowEmpty);
         // samples methods
         switch (predictMode) {
-            case "sampling":
-                return CBMPredictor.predictBySampling();
+            //todo fix
+//            case "sampling":
+//                return CBMPredictor.predictBySampling();
             case "dynamic":
                 return CBMPredictor.predictByDynamic();
-            case "greedy":
-                return CBMPredictor.predictByGreedy();
+//            case "greedy":
+//                return CBMPredictor.predictByGreedy();
             case "hard":
                 return CBMPredictor.predictByHardAssignment();
             default:

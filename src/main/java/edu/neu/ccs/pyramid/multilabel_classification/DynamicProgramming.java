@@ -1,11 +1,10 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.HashSet;
-import java.util.PriorityQueue;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Rainicy on 11/27/15.
@@ -27,7 +26,12 @@ public class DynamicProgramming {
     /**
      * cache for the Vectors, we had returned so far.
      */
-    private Set<Vector> cache;
+    private Set<MultiLabel> cache;
+
+    /**
+     * labels with probabilities between 0 and 1
+     */
+    private List<Integer> uncertainLabels;
 
     /**
      *
@@ -36,11 +40,15 @@ public class DynamicProgramming {
     public DynamicProgramming(double[] probabilities){
         double[][] probs = new double[probabilities.length][2];
         double[][] logProbs = new double[probabilities.length][2];
+        this.uncertainLabels = new ArrayList<>();
         for (int l=0;l<probabilities.length;l++){
             probs[l][0] = 1-probabilities[l];
             probs[l][1] = probabilities[l];
             logProbs[l][0] = Math.log(probs[l][0]);
             logProbs[l][1] = Math.log(probs[l][1]);
+            if (probabilities[l]!=0 && probabilities[l]!=1){
+                uncertainLabels.add(l);
+            }
         }
 
         this.numLabels = probs.length;
@@ -49,20 +57,20 @@ public class DynamicProgramming {
         cache = new HashSet<>();
 
         queue = new PriorityQueue<>();
-        Vector vector = new DenseVector(numLabels);
+        MultiLabel multiLabel = new MultiLabel();
 
         double logProb = 0.0;
         for (int l=0; l<numLabels; l++) {
             if (this.probs[l][1] >= 0.5) {
-                vector.set(l, 1.0);
+                multiLabel.addLabel(l);
                 logProb += this.logProbs[l][1];
             } else {
                 logProb += this.logProbs[l][0];
             }
         }
-        queue.add(new Candidate(vector, logProb));
+        queue.add(new Candidate(multiLabel, logProb));
 
-        cache.add(vector);
+        cache.add(multiLabel);
     }
 
     /**
@@ -72,26 +80,36 @@ public class DynamicProgramming {
      * @param logProbs
      */
     public DynamicProgramming(double[][] probs, double[][] logProbs){
+
+
         this.numLabels = probs.length;
         this.probs = probs;
         this.logProbs = logProbs;
         cache = new HashSet<>();
 
         queue = new PriorityQueue<>();
-        Vector vector = new DenseVector(numLabels);
+        MultiLabel multiLabel = new MultiLabel();
+
+        this.uncertainLabels = new ArrayList<>();
+        for (int l=0;l<numLabels;l++){
+            double p = probs[l][1];
+            if (p!=0 && p!=1){
+                uncertainLabels.add(l);
+            }
+        }
 
         double logProb = 0.0;
         for (int l=0; l<numLabels; l++) {
             if (this.probs[l][1] >= 0.5) {
-                vector.set(l, 1.0);
+                multiLabel.addLabel(l);
                 logProb += this.logProbs[l][1];
             } else {
                 logProb += this.logProbs[l][0];
             }
         }
-        queue.add(new Candidate(vector, logProb));
+        queue.add(new Candidate(multiLabel, logProb));
 
-        cache.add(vector);
+        cache.add(multiLabel);
     }
 
     public PriorityQueue<Candidate> getQueue() {
@@ -122,17 +140,17 @@ public class DynamicProgramming {
     }
 
     /**
-     * find the next vector with highest probability.
+     * find the next multiLabel with highest probability.
      * And update the queue by flipping every label.
      * @return
      */
-    public Vector nextHighestVector() {
+    public MultiLabel nextHighestVector() {
         if (queue.size() > 0) {
             flipLabels(queue.peek());
-            return queue.poll().vector;
+            return queue.poll().multiLabel;
         }
 
-        return new DenseVector(numLabels);
+        return new MultiLabel();
     }
 
 
@@ -141,14 +159,14 @@ public class DynamicProgramming {
             flipLabels(queue.peek());
             return queue.poll();
         }
-        Vector vector = new DenseVector(numLabels);
-        Candidate candidate = new Candidate(vector, Double.NEGATIVE_INFINITY);
+        MultiLabel multiLabel = new MultiLabel();
+        Candidate candidate = new Candidate(multiLabel, Double.NEGATIVE_INFINITY);
         return candidate;
     }
 
 
     /**
-     * flip each bit in given vector, and calculate its
+     * flip each bit in given multiLabel, and calculate its
      * log probability, if it is not cached yet, put it into
      * the max queue.
      * @param data
@@ -156,30 +174,28 @@ public class DynamicProgramming {
     private void flipLabels(Candidate data) {
 
         double prevlogProb = data.logProbability;
-        Vector vector = data.vector;
-
-        for (int l=0; l<numLabels; l++) {
-            DenseVector flipVector = new DenseVector((DenseVector) vector,false);
+        MultiLabel multiLabel = data.multiLabel;
+        // only flip uncertain labels
+        for (int l: uncertainLabels) {
+            MultiLabel flipped = multiLabel.copy();
+            flipped.flipLabel(l);
             double logProb;
-            if (flipVector.get(l) == 0.0) {
-                flipVector.set(l, 1.0);
+            if (flipped.matchClass(l)){
                 logProb = prevlogProb - this.logProbs[l][0] + this.logProbs[l][1];
             } else {
-                flipVector.set(l, 0.0);
-
                 logProb = prevlogProb - this.logProbs[l][1] + this.logProbs[l][0];
             }
 
-            if (cache.contains(flipVector)) {
-                continue;
+            if (!cache.contains(flipped)) {
+                queue.add(new Candidate(flipped, logProb));
+                cache.add(flipped);
             }
-            queue.add(new Candidate(flipVector, logProb));
-            cache.add(flipVector);
+
         }
     }
 
     /**
-     * given a vector, return the cluster probability.
+     * given a multiLabel, return the cluster probability.
      * @param vector
      * @return
      */
@@ -201,18 +217,18 @@ public class DynamicProgramming {
 
 
     public class Candidate implements Comparable<Candidate> {
-        private final Vector vector;
+        private final MultiLabel multiLabel;
         private final double logProbability;
         private final double probability;
 
-        Candidate(Vector vector, double logProbability) {
-            this.vector = vector;
+        Candidate(MultiLabel multiLabel, double logProbability) {
+            this.multiLabel = multiLabel;
             this.logProbability = logProbability;
             this.probability = Math.exp(logProbability);
         }
 
-        public Vector getVector() {
-            return vector;
+        public MultiLabel getMultiLabel() {
+            return multiLabel;
         }
 
         public double getLogProbability() {
@@ -229,7 +245,7 @@ public class DynamicProgramming {
         }
 
         public String toString() {
-            return "prob: " + String.format("%.3f", Math.exp(logProbability)) + "\tvetcor: " + vector;
+            return "prob: " + String.format("%.3f", Math.exp(logProbability)) + "\tvetcor: " + multiLabel;
         }
     }
 }
