@@ -111,7 +111,7 @@ public abstract class AbstractCBMOptimizer {
     protected void updateGamma(int n) {
         Vector x = dataSet.getRow(n);
         MultiLabel y = dataSet.getMultiLabels()[n];
-        double[] posterior = cbm.posteriorMembership(x, y);
+        double[] posterior = cbm.posteriorMembershipShortCircuit(x, y);
         for (int k=0; k<cbm.numComponents; k++) {
             gammas[n][k] = posterior[k];
         }

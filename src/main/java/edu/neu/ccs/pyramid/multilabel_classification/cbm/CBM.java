@@ -70,6 +70,12 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
     }
 
 
+    double[] posteriorMembershipShortCircuit(Vector x, MultiLabel y){
+        ShortCircuitPosterior shortCircuitPosterior = new ShortCircuitPosterior(this,x,y);
+        return shortCircuitPosterior.posteriorMembership();
+    }
+
+
     double[] posteriorMembership(Vector x, MultiLabel y, double[] noiseLabelWeights){
         BMDistribution bmDistribution = computeBM(x);
         return bmDistribution.posteriorMembership(y, noiseLabelWeights);

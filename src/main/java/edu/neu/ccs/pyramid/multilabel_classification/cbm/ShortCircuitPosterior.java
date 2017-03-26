@@ -24,6 +24,7 @@ public class ShortCircuitPosterior {
         this.numLabels = cbm.numLabels;
         this.y = y;
         this.x = x;
+        this.cbm = cbm;
         this.numComponents = cbm.numComponents;
         this.logProportions = cbm.multiClassClassifier.predictLogClassProbs(x);
         this.logClassProbs = new double[numComponents][numLabels][2];
