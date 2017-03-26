@@ -199,13 +199,13 @@ public abstract class AbstractCBMOptimizer {
         sb.append(", positive fraction = "+positiveProb);
 
 
-        if (positiveProb==0){
-            positiveProb=1.0E-50;
-        }
+//        if (positiveProb==0){
+//            positiveProb=1.0E-50;
+//        }
 
         // it be happen that p >1 for numerical reasons
         if (positiveProb>=1){
-            positiveProb=0.9999;
+            positiveProb=1;
         }
 
         if (positiveProb<skipLabelThreshold || positiveProb>1-skipLabelThreshold){
