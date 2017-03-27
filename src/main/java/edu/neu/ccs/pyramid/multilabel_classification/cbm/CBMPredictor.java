@@ -332,6 +332,10 @@ public class CBMPredictor {
                 } else {
                     logProb += logProbs[k][l][0];
                 }
+                // short circuit
+                if (logProb==Double.NEGATIVE_INFINITY){
+                    break;
+                }
             }
             probArr[k] = logProb;
         }
