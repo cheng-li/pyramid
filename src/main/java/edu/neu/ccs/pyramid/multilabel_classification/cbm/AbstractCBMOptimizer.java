@@ -174,8 +174,10 @@ public abstract class AbstractCBMOptimizer {
 
 
         MultiLabelClfDataSet activeDataSet = DataSetUtil.sampleData(dataSet, activeIndices);
+        int activeFeatures = (int) IntStream.range(0, activeDataSet.getNumFeatures()).filter(j->activeDataSet.getColumn(j).getNumNonZeroElements()>0).count();
         if (logger.isDebugEnabled()){
             logger.debug("active dataset created");
+            logger.debug("number of active features = "+activeFeatures);
         }
 
         // to please lambda
