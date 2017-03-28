@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -40,6 +41,30 @@ public class BMDistribution {
         for (int k = 0; k< numComponents; k++){
             for (int l=0;l<numLabels;l++){
                 logClassProbs[k][l] = cbm.binaryClassifiers[k][l].predictLogClassProbs(x);
+            }
+        }
+    }
+
+
+    /**
+     * skip components with small contributions
+     * @param cbm
+     * @param x
+     * @param threshold
+     */
+    BMDistribution(CBM cbm, Vector x, double threshold) {
+        this.numLabels = cbm.numLabels;
+
+        double[] allLogProportions = cbm.multiClassClassifier.predictLogClassProbs(x);
+        double logThreshold = Math.log(threshold);
+        List<Integer> activeComponents = IntStream.range(0, allLogProportions.length).filter(k->allLogProportions[k]>=logThreshold)
+                .boxed().collect(Collectors.toList());
+        this.numComponents = activeComponents.size();
+        this.logProportions = activeComponents.stream().mapToDouble(k->allLogProportions[k]).toArray();
+        this.logClassProbs = new double[numComponents][numLabels][2];
+        for (int k = 0; k< numComponents; k++){
+            for (int l=0;l<numLabels;l++){
+                logClassProbs[k][l] = cbm.binaryClassifiers[activeComponents.get(k)][l].predictLogClassProbs(x);
             }
         }
     }
