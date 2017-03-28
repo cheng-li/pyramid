@@ -121,6 +121,8 @@ public class Ngram extends Feature {
             jsonGenerator.writeStartObject();
 //            jsonGenerator.writeNumberField("index", feature.index);
             jsonGenerator.writeStringField("name", feature.ngram);
+            jsonGenerator.writeNumberField("index", feature.index);
+            jsonGenerator.writeStringField("ngram",feature.ngram);
             jsonGenerator.writeStringField("type","ngram");
             jsonGenerator.writeStringField("field",feature.field);
             jsonGenerator.writeNumberField("slop", feature.slop);
