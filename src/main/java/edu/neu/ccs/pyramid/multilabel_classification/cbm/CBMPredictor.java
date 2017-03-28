@@ -157,7 +157,7 @@ public class CBMPredictor {
         }
 
         double maxLogProb = Double.NEGATIVE_INFINITY;
-        MultiLabel bestMultiLabel = null;
+        MultiLabel bestMultiLabel = new MultiLabel();
 
         int iter = 0;
         int maxIter = 10;

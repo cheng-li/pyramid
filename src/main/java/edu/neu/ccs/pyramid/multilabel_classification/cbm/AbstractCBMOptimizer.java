@@ -4,6 +4,8 @@ import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.clustering.bm.BM;
 import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.util.ArgMax;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
@@ -149,19 +151,26 @@ public abstract class AbstractCBMOptimizer {
         // skip small gammas
         List<Double> activeGammasList = new ArrayList<>();
         List<Integer> activeIndices = new ArrayList<>();
+        double[] gammasForComponent = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(i->gammas[i][component]).toArray();
+        int maxIndex = ArgMax.argMax(gammasForComponent);
+
         double weightedTotal = 0;
         double thresholdedWeightedTotal = 0;
         int counter = 0;
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             double v = gammas[i][component];
             weightedTotal += v;
-            if (v>= skipDataThreshold){
+            if (v>= skipDataThreshold || i==maxIndex){
                 activeGammasList.add(v);
                 activeIndices.add(i);
                 thresholdedWeightedTotal += v;
                 counter += 1;
             }
         }
+
+        //todo deal with empty components
+
+
 
         double[] activeGammas = activeGammasList.stream().mapToDouble(a->a).toArray();
 
@@ -174,8 +183,10 @@ public abstract class AbstractCBMOptimizer {
 
 
         MultiLabelClfDataSet activeDataSet = DataSetUtil.sampleData(dataSet, activeIndices);
+        int activeFeatures = (int) IntStream.range(0, activeDataSet.getNumFeatures()).filter(j->activeDataSet.getColumn(j).getNumNonZeroElements()>0).count();
         if (logger.isDebugEnabled()){
             logger.debug("active dataset created");
+            logger.debug("number of active features = "+activeFeatures);
         }
 
         // to please lambda
