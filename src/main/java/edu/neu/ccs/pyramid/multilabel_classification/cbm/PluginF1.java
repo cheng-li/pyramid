@@ -26,6 +26,8 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private List<MultiLabel> support;
     private double probMassThreshold = 0.95;
 
+    private double piThreshold = 0.1;
+
     public PluginF1(CBM model) {
         this.cbm = model;
     }
@@ -49,6 +51,10 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     public void setSupport(List<MultiLabel> support) {
         this.support = support;
+    }
+
+    public void setProbMassThreshold(double probMassThreshold) {
+        this.probMassThreshold = probMassThreshold;
     }
 
     @Override
@@ -84,7 +90,7 @@ public class PluginF1 implements PluginPredictor<CBM>{
 //    }
 
     private MultiLabel predictBySupport(Vector vector){
-        double[] probs = cbm.predictAssignmentProbs(vector,support);
+        double[] probs = cbm.predictAssignmentProbs(vector,support, piThreshold);
         return GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
     }
 
