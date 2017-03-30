@@ -142,6 +142,52 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
     }
 
 
+    /**
+     * for single assignment, compute log assignment probability
+     * @param x
+     * @param y
+     * @return
+     */
+    public double predictLogAssignmentProb(Vector x, MultiLabel y, double piThreshold){
+        BMDistribution bmDistribution = new BMDistribution(this,x, piThreshold);
+        return bmDistribution.logProbability(y);
+    }
+
+    public double predictAssignmentProb(Vector vector, MultiLabel assignment, double piThreshold){
+        return Math.exp(predictLogAssignmentProb(vector,assignment, piThreshold));
+    }
+
+
+    /**
+     * for batch jobs, use this to save computation
+     * @param x
+     * @param assignments
+     * @return
+     */
+
+    public double[] predictLogAssignmentProbs(Vector x, List<MultiLabel> assignments, double piThreshold) {
+        BMDistribution bmDistribution = new BMDistribution(this,x, piThreshold);
+        double[] probs = new double[assignments.size()];
+        for (int c = 0; c < assignments.size(); c++) {
+            MultiLabel multiLabel = assignments.get(c);
+            probs[c] = bmDistribution.logProbability(multiLabel);
+        }
+        return probs;
+    }
+
+
+    /**
+     * for batch jobs, use this to save computation
+     * @param vector
+     * @param assignments
+     * @return
+     */
+    public double[] predictAssignmentProbs(Vector vector, List<MultiLabel> assignments, double piThreshold){
+        double[] logProbs = predictLogAssignmentProbs(vector, assignments, piThreshold);
+        return Arrays.stream(logProbs).map(Math::exp).toArray();
+    }
+
+
     public MultiLabel predict(Vector vector) {
         switch (predictMode) {
             case "support":
@@ -193,7 +239,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
      * @return
      */
     public double[] predictClassProbs(Vector vector){
-        BMDistribution bmDistribution = computeBM(vector);
+        //todo threshold
+        BMDistribution bmDistribution = new BMDistribution(this, vector, 0.1);
         return bmDistribution.marginals();
     }
 
