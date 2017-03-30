@@ -40,7 +40,8 @@ public class CBMSF1Predictor implements PluginPredictor<CBMS> {
 
     private MultiLabel predictBySupport(Vector vector){
         double[] probs = cbm.predictAssignmentProbs(vector,support);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        return generalF1Predictor.predict(cbm.getNumClasses(),support,probs);
     }
 
 

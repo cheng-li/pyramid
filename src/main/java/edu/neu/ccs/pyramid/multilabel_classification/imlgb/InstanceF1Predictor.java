@@ -30,6 +30,7 @@ public class InstanceF1Predictor implements PluginPredictor<IMLGradientBoosting>
     public MultiLabel predict(Vector vector) {
         double[] probs = imlGradientBoosting.predictAllAssignmentProbsWithConstraint(vector);
         List<Double> probList = Arrays.stream(probs).mapToObj(a->a).collect(Collectors.toList());
-        return GeneralF1Predictor.predict(imlGradientBoosting.getNumClasses(),imlGradientBoosting.getAssignments(),probList);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        return generalF1Predictor.predict(imlGradientBoosting.getNumClasses(),imlGradientBoosting.getAssignments(),probList);
     }
 }

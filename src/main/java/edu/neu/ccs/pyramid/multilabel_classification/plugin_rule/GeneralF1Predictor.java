@@ -5,6 +5,7 @@ import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.eval.InstanceAverage;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
+import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
 import org.apache.mahout.math.DenseMatrix;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
  * Created by chengli on 4/5/16.
  */
 public class GeneralF1Predictor {
+    // max label set size
+    //todo set
+    private int maxSize = 15;
 
     /**
      *
@@ -34,9 +38,8 @@ public class GeneralF1Predictor {
      * @param probabilities associated probabilities
      * @return
      */
-    public static MultiLabel predict(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
-        Matrix p = getPMatrix(numClasses, multiLabels, probabilities);
-        Matrix delta = getDeltaMatrix(p);
+    public MultiLabel predict(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
+        double[][] p = getPMatrix(numClasses, multiLabels, probabilities);
         double zeroProb = 0;
         for (int i=0;i<multiLabels.size();i++){
             if (multiLabels.get(i).getMatchedLabels().size()==0){
@@ -44,10 +47,10 @@ public class GeneralF1Predictor {
                 break;
             }
         }
-        return predictByDeltaMatrix(delta,zeroProb).getFirst();
+        return predictWithPMatrix(p, zeroProb);
     }
 
-    public static MultiLabel predict(int numClasses, List<MultiLabel> multiLabels, double[] probabilities){
+    public MultiLabel predict(int numClasses, List<MultiLabel> multiLabels, double[] probabilities){
         List<Double> p = Arrays.stream(probabilities).mapToObj(a->a).collect(Collectors.toList());
         return predict(numClasses,multiLabels,p);
     }
@@ -59,7 +62,7 @@ public class GeneralF1Predictor {
      * @param samples sampled multi-labels; can have duplicates; their empirical probabilities will be estimated
      * @return
      */
-    public static MultiLabel predict(int numClasses, List<MultiLabel> samples){
+    public MultiLabel predict(int numClasses, List<MultiLabel> samples){
         Multiset<MultiLabel> multiset = ConcurrentHashMultiset.create();
         for (MultiLabel multiLabel: samples){
             multiset.add(multiLabel);
@@ -75,100 +78,75 @@ public class GeneralF1Predictor {
         return predict(numClasses,uniqueOnes,probs);
     }
 
-    /**
-     *
-     * @param deltaMatrix
-     * @param zeroProbability
-     * @return best multi-label and F1
-     */
-    private static Pair<MultiLabel,Double> predictByDeltaMatrix(Matrix deltaMatrix, double zeroProbability){
-        int numClasses = deltaMatrix.numCols();
-        MultiLabel pred = null;
-        double maxValue = Double.NEGATIVE_INFINITY;
-        for (int k=1;k<=numClasses;k++){
-            List<Pair<Integer,Double>> column = new ArrayList<>();
 
-            for (int i=1;i<=numClasses;i++){
-                column.add(new Pair<>(i-1,deltaMatrix.get(i-1,k-1)));
-            }
 
-            Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
-            List<Pair<Integer,Double>> sorted = column.stream().sorted(comparator.reversed())
-                    .collect(Collectors.toList());
-            MultiLabel multiLabel = new MultiLabel();
-            double value = 0;
-            for (int l=0;l<k;l++){
-                multiLabel.addLabel(sorted.get(l).getFirst());
-                value += sorted.get(l).getSecond();
-            }
-
-            if (value > maxValue){
-                maxValue = value;
-                pred = multiLabel;
+    public MultiLabel predictWithPMatrix(double[][] pMatrix, double zeroProbability){
+        int numLabels = pMatrix.length;
+        int min = Math.min(maxSize, numLabels);
+        MultiLabel best = new MultiLabel();
+        double bestScore = zeroProbability;
+        for (int k=1;k<=min;k++){
+            double[] deltaVector = getDeltaVector(pMatrix, k);
+            Pair<MultiLabel, Double> innerBest = bestWithLengthK(deltaVector, k);
+            if (innerBest.getSecond()>bestScore){
+                bestScore = innerBest.getSecond();
+                best = innerBest.getFirst();
             }
         }
-
-        if (zeroProbability > maxValue){
-            pred = new MultiLabel();
-            maxValue = zeroProbability;
-        }
-
-        return new Pair<>(pred,maxValue);
+        return best;
     }
 
-    private static Matrix getDeltaMatrix(Matrix pMatrix){
-        int size = pMatrix.numRows();
-        DenseMatrix wMatrix = new DenseMatrix(size,size);
-        for (int s=1;s<=size;s++){
-            for (int k=1;k<=size;k++){
-                wMatrix.set(s-1,k-1,2.0/(s+k));
-            }
+    private Pair<MultiLabel, Double> bestWithLengthK(double[] deltaVector, int k){
+        int[] sortedIndcies = ArgSort.argSortDescending(deltaVector);
+        MultiLabel multiLabel = new MultiLabel();
+        double score = 0;
+        for (int i=0;i<k;i++){
+            int label = sortedIndcies[i];
+            multiLabel.addLabel(label);
+            score += deltaVector[label];
         }
-        return pMatrix.times(wMatrix);
+        return new Pair<>(multiLabel, score);
     }
-
 
     /**
      *
-     * @param pMatrix access: matrix[l][s-1] = score for label l (0~L-1), size s (1~L)
-     * @return
+     * @param pMatrix
+     * @param size k
+     * @return delta_ik i=0,1...,L for a fixed k
      */
-    public static MultiLabel predict(Matrix pMatrix, double zeroProbability){
-        Matrix deltaMatrix = getDeltaMatrix(pMatrix);
-        return predictByDeltaMatrix(deltaMatrix,zeroProbability).getFirst();
+    private double[] getDeltaVector(double[][] pMatrix, int size){
+        int numLabels = pMatrix.length;
+        int min = Math.min(maxSize, numLabels);
+        double[] d = new double[numLabels];
+        for (int i=0;i<numLabels;i++){
+            double sum = 0;
+            for (int s=1;s<=min;s++){
+                sum += 2*pMatrix[i][s-1]/(s+size);
+            }
+            d[i] = sum;
+        }
+        return d;
     }
 
-    private static Matrix getPMatrix(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
-        DenseMatrix pMatrix = new DenseMatrix(numClasses,numClasses);
+
+    private double[][] getPMatrix(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
+        int min = Math.min(maxSize, numClasses);
+        double[][] pMatrix = new double[numClasses][min];
         for (int j=0;j<multiLabels.size();j++){
             MultiLabel multiLabel = multiLabels.get(j);
             double prob = probabilities.get(j);
             int s = multiLabel.getMatchedLabels().size();
-            for (int i: multiLabel.getMatchedLabels()){
-                double old = pMatrix.get(i,s-1);
-                pMatrix.set(i,s-1,old+prob);
+            if (s<=maxSize){
+                for (int i: multiLabel.getMatchedLabels()){
+                    double old = pMatrix[i][s-1];
+                    pMatrix[i][s-1]=old+prob;
+                }
             }
+
         }
         return pMatrix;
     }
 
-
-    public static Matrix getPMatrix(int numClasses, List<MultiLabel> samples){
-        Multiset<MultiLabel> multiset = ConcurrentHashMultiset.create();
-        for (MultiLabel multiLabel: samples){
-            multiset.add(multiLabel);
-        }
-
-        int sampleSize = samples.size();
-        List<MultiLabel> uniqueOnes = new ArrayList<>();
-        List<Double> probs = new ArrayList<>();
-        for (Multiset.Entry<MultiLabel> entry: multiset.entrySet()){
-            uniqueOnes.add(entry.getElement());
-            probs.add((double)entry.getCount()/sampleSize);
-        }
-        Matrix p = getPMatrix(numClasses, uniqueOnes, probs);
-        return p;
-    }
 
     public static MultiLabel exhaustiveSearch(int numClasses, Matrix lossMatrix, List<Double> probabilities){
         double bestScore = Double.POSITIVE_INFINITY;
@@ -189,15 +167,15 @@ public class GeneralF1Predictor {
         }
         return multiLabel;
     }
-
-    public static Matrix getTruePMatrix(int numClasses, MultiLabel trueMultiLabel){
-        int s = trueMultiLabel.getNumMatchedLabels();
-        DenseMatrix pMatrix = new DenseMatrix(numClasses,numClasses);
-        for (int l: trueMultiLabel.getMatchedLabels()){
-            pMatrix.set(l,s-1,1);
-        }
-        return  pMatrix;
-    }
+//
+//    public static Matrix getTruePMatrix(int numClasses, MultiLabel trueMultiLabel){
+//        int s = trueMultiLabel.getNumMatchedLabels();
+//        DenseMatrix pMatrix = new DenseMatrix(numClasses,numClasses);
+//        for (int l: trueMultiLabel.getMatchedLabels()){
+//            pMatrix.set(l,s-1,1);
+//        }
+//        return  pMatrix;
+//    }
 
     /**
      * the expected F1 of the target combination under the estimated joint

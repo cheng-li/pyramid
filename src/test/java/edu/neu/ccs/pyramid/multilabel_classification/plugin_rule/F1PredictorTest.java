@@ -17,7 +17,7 @@ public class F1PredictorTest {
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
-        test4();
+        test2();
     }
 
 
@@ -30,7 +30,8 @@ public class F1PredictorTest {
         probs.add(0.4);
 //        Matrix p = F1Predictor.getPMatrix(2,multiLabelList,probs);
 //        Matrix delta = F1Predictor.getDeltaMatrix(p);
-        System.out.println(GeneralF1Predictor.predict(2,multiLabelList,probs));
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        System.out.println(generalF1Predictor.predict(2,multiLabelList,probs));
 
     }
 
@@ -39,7 +40,8 @@ public class F1PredictorTest {
         Matrix matrix = LossMatrixGenerator.matrix(numLabels,"f1");
         List<MultiLabel> multiLabels = Enumerator.enumerate(numLabels);
         List<Double> dis = LossMatrixGenerator.sampleDistribution(numLabels);
-        MultiLabel pred = GeneralF1Predictor.predict(numLabels,multiLabels,dis);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        MultiLabel pred = generalF1Predictor.predict(numLabels,multiLabels,dis);
         MultiLabel search = GeneralF1Predictor.exhaustiveSearch(numLabels,matrix,dis);
         System.out.println("pred = "+pred);
         System.out.println("search = "+search);
@@ -93,7 +95,8 @@ public class F1PredictorTest {
 
 //        Matrix p = F1Predictor.getPMatrix(2,multiLabelList,probs);
 //        Matrix delta = F1Predictor.getDeltaMatrix(p);
-        System.out.println(GeneralF1Predictor.predict(3,multiLabelList,probs));
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        System.out.println(generalF1Predictor.predict(3,multiLabelList,probs));
 
     }
 

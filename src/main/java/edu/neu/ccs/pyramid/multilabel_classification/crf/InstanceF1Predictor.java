@@ -23,15 +23,16 @@ public class InstanceF1Predictor implements PluginPredictor<CMLCRF> {
     public MultiLabel predict(Vector vector) {
         List<MultiLabel> supports = cmlcrf.getSupportCombinations();
         double[] probs = cmlcrf.predictCombinationProbs(vector);
-        return GeneralF1Predictor.predict(numClasses, supports, probs);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        return generalF1Predictor.predict(numClasses, supports, probs);
     }
 
     public GeneralF1Predictor.Analysis showPredictBySupport(Vector vector, MultiLabel truth){
 //        System.out.println("support procedure");
         List<MultiLabel> support = cmlcrf.getSupportCombinations();
         double[] probs = cmlcrf.predictCombinationProbs(vector);
-
-        MultiLabel prediction =  GeneralF1Predictor.predict(cmlcrf.getNumClasses(),support,probs);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        MultiLabel prediction =  generalF1Predictor.predict(cmlcrf.getNumClasses(),support,probs);
         GeneralF1Predictor.Analysis analysis = GeneralF1Predictor.showSupportPrediction(support,probs, truth, prediction, cmlcrf.getNumClasses());
         return analysis;
     }

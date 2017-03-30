@@ -78,7 +78,8 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     private MultiLabel predictBySampling(Vector vector){
         List<MultiLabel> samples = cbm.samples(vector, numSamples);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(), samples);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        return generalF1Predictor.predict(cbm.getNumClasses(), samples);
 //      unique the sample set and apply GFM
 //        List<MultiLabel> uniqueSamples = new ArrayList(new HashSet(samples));
 //        List<Double> probs = cbm.predictAssignmentProbs(vector, uniqueSamples);
@@ -91,7 +92,8 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     private MultiLabel predictBySupport(Vector vector){
         double[] probs = cbm.predictAssignmentProbs(vector,support, piThreshold);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        return generalF1Predictor.predict(cbm.getNumClasses(),support,probs);
     }
 
 
@@ -141,7 +143,8 @@ public class PluginF1 implements PluginPredictor<CBM>{
     public GeneralF1Predictor.Analysis showPredictBySupport(Vector vector, MultiLabel truth){
 //        System.out.println("support procedure");
         double[] probArray = cbm.predictAssignmentProbs(vector,support);
-        MultiLabel prediction =  GeneralF1Predictor.predict(cbm.getNumClasses(),support,probArray);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        MultiLabel prediction =  generalF1Predictor.predict(cbm.getNumClasses(),support,probArray);
         GeneralF1Predictor.Analysis analysis = GeneralF1Predictor.showSupportPrediction(support,probArray, truth, prediction, cbm.getNumClasses());
         return analysis;
     }
@@ -152,8 +155,5 @@ public class PluginF1 implements PluginPredictor<CBM>{
         return cbm;
     }
 
-    public Matrix getPMatrix(Vector vector){
-        List<MultiLabel> samples = cbm.samples(vector, numSamples);
-        return GeneralF1Predictor.getPMatrix(cbm.getNumClasses(),samples);
-    }
+
 }
