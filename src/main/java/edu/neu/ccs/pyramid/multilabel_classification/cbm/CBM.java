@@ -378,12 +378,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
                     }
                     break;
                 case "elasticnet":
-                    CBM.binaryClassifiers = new LogisticRegression[numComponents][numClasses];
-                    for (int k = 0; k< numComponents; k++) {
-                        for (int l=0; l<numClasses; l++) {
-                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
-                        }
-                    }
+                    CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];
                     break;
                 default:
                     throw new IllegalArgumentException("binaryClassifierType can be lr or boost. Given: "+binaryClassifierType);

@@ -46,8 +46,8 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
 
-
-
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(2);
+        elasticNetLogisticTrainer.optimize();
         if (logger.isDebugEnabled()){
             logger.debug("time spent on updating component "+component+" label "+label+" = "+stopWatch);
         }
