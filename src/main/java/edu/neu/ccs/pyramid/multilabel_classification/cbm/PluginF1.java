@@ -10,10 +10,7 @@ import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -24,9 +21,9 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private String predictionMode = "support";
     private int numSamples = 1000;
     private List<MultiLabel> support;
-    private double probMassThreshold = 0.95;
 
-    private double piThreshold = 0.1;
+
+    private double piThreshold = 0.001;
 
     private int maxSize = 20;
 
@@ -59,8 +56,9 @@ public class PluginF1 implements PluginPredictor<CBM>{
         this.support = support;
     }
 
-    public void setProbMassThreshold(double probMassThreshold) {
-        this.probMassThreshold = probMassThreshold;
+
+    public void setPiThreshold(double piThreshold) {
+        this.piThreshold = piThreshold;
     }
 
     @Override

@@ -60,6 +60,8 @@ public class BMDistribution {
         List<Integer> activeComponents = IntStream.range(0, allLogProportions.length).filter(k->allLogProportions[k]>=logThreshold)
                 .boxed().collect(Collectors.toList());
         this.numComponents = activeComponents.size();
+        //todo
+//        System.out.println("active components = "+numComponents);
         this.logProportions = activeComponents.stream().mapToDouble(k->allLogProportions[k]).toArray();
         this.logClassProbs = new double[numComponents][numLabels][2];
         for (int k = 0; k< numComponents; k++){
@@ -67,6 +69,7 @@ public class BMDistribution {
                 logClassProbs[k][l] = cbm.binaryClassifiers[activeComponents.get(k)][l].predictLogClassProbs(x);
             }
         }
+//        System.out.println(this.toString());
     }
 
 
@@ -212,7 +215,10 @@ public class BMDistribution {
         for (int k=0;k<numComponents;k++){
             logPs[k] = logProportions[k] + logYGivenComponent(y, k);
         }
-        return MathUtil.logSumExp(logPs);
+        double logP = MathUtil.logSumExp(logPs);
+//        System.out.println("log Ps = "+Arrays.toString(logPs));
+//        System.out.println("log probability = "+logP);
+        return logP;
     }
 
     double probability(MultiLabel y){
@@ -264,5 +270,16 @@ public class BMDistribution {
             list.add(multiLabel);
         }
         return list;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("BMDistribution{");
+        sb.append("numLabels=").append(numLabels);
+        sb.append(", numComponents=").append(numComponents);
+        sb.append(", logProportions=").append(Arrays.toString(logProportions));
+        sb.append(", logClassProbs=").append(Arrays.deepToString(logClassProbs));
+        sb.append('}');
+        return sb.toString();
     }
 }

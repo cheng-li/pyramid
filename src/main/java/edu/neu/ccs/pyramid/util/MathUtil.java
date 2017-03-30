@@ -75,12 +75,17 @@ public class MathUtil {
      * @return
      */
     public static double logSumExp(double[] arr){
-        double maxElement = arr[0];
+        double maxElement = Double.NEGATIVE_INFINITY;
         for (double number: arr){
             if (number > maxElement){
                 maxElement = number;
             }
         }
+
+        if (maxElement==Double.NEGATIVE_INFINITY){
+            return Double.NEGATIVE_INFINITY;
+        }
+
         double sum = 0;
         for (double number: arr){
             sum += Math.exp(number - maxElement);
