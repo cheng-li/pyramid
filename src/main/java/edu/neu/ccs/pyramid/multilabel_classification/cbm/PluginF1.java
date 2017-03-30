@@ -28,6 +28,12 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     private double piThreshold = 0.1;
 
+    private int maxSize = 20;
+
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+    }
+
     public PluginF1(CBM model) {
         this.cbm = model;
     }
@@ -79,6 +85,7 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private MultiLabel predictBySampling(Vector vector){
         List<MultiLabel> samples = cbm.samples(vector, numSamples);
         GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        generalF1Predictor.setMaxSize(maxSize);
         return generalF1Predictor.predict(cbm.getNumClasses(), samples);
 //      unique the sample set and apply GFM
 //        List<MultiLabel> uniqueSamples = new ArrayList(new HashSet(samples));
@@ -93,6 +100,7 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private MultiLabel predictBySupport(Vector vector){
         double[] probs = cbm.predictAssignmentProbs(vector,support, piThreshold);
         GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        generalF1Predictor.setMaxSize(maxSize);
         return generalF1Predictor.predict(cbm.getNumClasses(),support,probs);
     }
 

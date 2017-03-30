@@ -29,7 +29,11 @@ import java.util.stream.Collectors;
 public class GeneralF1Predictor {
     // max label set size
     //todo set
-    private int maxSize = 15;
+    private int maxSize = 20;
+
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+    }
 
     /**
      *

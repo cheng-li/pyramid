@@ -36,11 +36,12 @@ public class F1PredictorTest {
     }
 
     private static void test2(){
-        int numLabels = 3;
+        int numLabels = 5;
         Matrix matrix = LossMatrixGenerator.matrix(numLabels,"f1");
         List<MultiLabel> multiLabels = Enumerator.enumerate(numLabels);
         List<Double> dis = LossMatrixGenerator.sampleDistribution(numLabels);
         GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        generalF1Predictor.setMaxSize(3);
         MultiLabel pred = generalF1Predictor.predict(numLabels,multiLabels,dis);
         MultiLabel search = GeneralF1Predictor.exhaustiveSearch(numLabels,matrix,dis);
         System.out.println("pred = "+pred);
