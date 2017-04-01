@@ -28,6 +28,7 @@ public class AccPredictor implements PluginPredictor<CBM> {
     public MultiLabel predict(Vector vector) {
         BMDistribution bmDistribution = new BMDistribution(cbm, vector, componentContributionThreshold);
         CBMPredictor cbmPredictor = new CBMPredictor(bmDistribution);
+        cbmPredictor.setAllowEmpty(cbm.getAllowEmpty());
         return cbmPredictor.predictByDynamic();
     }
 }
