@@ -84,7 +84,9 @@ public abstract class AbstractCBMOptimizer {
 
     public void initialize(){
         gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
-        System.out.println("performing M step");
+        if (logger.isDebugEnabled()){
+            logger.debug("performing M step");
+        }
         mStep();
     }
 
