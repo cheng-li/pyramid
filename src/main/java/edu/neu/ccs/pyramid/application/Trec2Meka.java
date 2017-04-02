@@ -31,7 +31,7 @@ public class Trec2Meka {
             MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(trecs.get(i)),
                     DataSetType.ML_CLF_SPARSE, true);
             System.out.println(i + " -- Translating on trecs: " + trecs.get(i));
-            MekaFormat.save(dataSet, mekas.get(i), config);
+            MekaFormat.save(dataSet, mekas.get(i), config.getString("data.name"));
 
             if (i==0) {
                 MekaFormat.saveXML(dataSet, xmlFile);

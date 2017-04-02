@@ -1304,4 +1304,15 @@ public class DataSetUtil {
         }
         return distribution;
     }
+
+    public static List<Integer> unobservedLabels(MultiLabelClfDataSet dataSet){
+        boolean[] check = new boolean[dataSet.getNumClasses()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l:multiLabel.getMatchedLabels()){
+                check[l]=true;
+            }
+        }
+        return IntStream.range(0, dataSet.getNumClasses()).filter(l-> !check[l]).boxed().sorted().collect(Collectors.toList());
+    }
 }
