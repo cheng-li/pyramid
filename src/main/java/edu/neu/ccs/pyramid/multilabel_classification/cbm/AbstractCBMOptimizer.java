@@ -40,6 +40,11 @@ public abstract class AbstractCBMOptimizer {
     protected int multiclassUpdatesPerIter = 20;
     protected int binaryUpdatesPerIter = 20;
 
+    protected double smoothingStrength =1;
+
+    // number of positives for all labels
+    private int[] positiveCounts;
+
     protected DataSet labelMatrix;
 
     public AbstractCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
@@ -53,6 +58,7 @@ public abstract class AbstractCBMOptimizer {
                 gammas[n][k] = average;
             }
         }
+
         this.labelMatrix = DataSetBuilder.getBuilder()
                 .numDataPoints(dataSet.getNumDataPoints())
                 .numFeatures(dataSet.getNumClasses())
@@ -64,6 +70,17 @@ public abstract class AbstractCBMOptimizer {
                 labelMatrix.setFeatureValue(i,l,1);
             }
         }
+
+        positiveCounts = new int[dataSet.getNumClasses()];
+        for (int l=0;l<dataSet.getNumClasses();l++){
+            positiveCounts[l] = labelMatrix.getColumn(l).getNumNonZeroElements();
+        }
+
+
+    }
+
+    public void setSmoothingStrength(double smoothingStrength) {
+        this.smoothingStrength = smoothingStrength;
     }
 
     public void setMulticlassUpdatesPerIter(int multiclassUpdatesPerIter) {
@@ -204,12 +221,19 @@ public abstract class AbstractCBMOptimizer {
         stopWatch.start();
 
         double effectivePositives = effectivePositives(component, label);
-        double positiveProb = effectivePositives/totalWeight;
+
+        double nonSmoothedPositiveProb = effectivePositives/totalWeight;
+
+        // smooth the component-wise label fraction with global label fraction
+
+        double smoothedPositiveProb = (effectivePositives+smoothingStrength*positiveCounts[label])/(totalWeight+smoothingStrength*dataSet.getNumDataPoints());
 
         StringBuilder sb = new StringBuilder();
         sb.append("for component ").append(component).append(", label ").append(label);
         sb.append(", weighted positives = ").append(effectivePositives);
-        sb.append(", positive fraction = "+positiveProb);
+        sb.append(", non-smoothed positive fraction = "+(effectivePositives/totalWeight));
+        sb.append(", global positive fraction = "+((double)positiveCounts[label]/dataSet.getNumDataPoints()));
+        sb.append(", smoothed positive fraction = "+smoothedPositiveProb);
 
 
 //        if (positiveProb==0){
@@ -217,14 +241,14 @@ public abstract class AbstractCBMOptimizer {
 //        }
 
         // it be happen that p >1 for numerical reasons
-        if (positiveProb>=1){
-            positiveProb=1;
+        if (smoothedPositiveProb>=1){
+            smoothedPositiveProb=1;
         }
 
-        if (positiveProb<skipLabelThreshold || positiveProb>1-skipLabelThreshold){
-            double[] probs = {1-positiveProb, positiveProb};
+        if (nonSmoothedPositiveProb<skipLabelThreshold || nonSmoothedPositiveProb>1-skipLabelThreshold){
+            double[] probs = {1-smoothedPositiveProb, smoothedPositiveProb};
             cbm.binaryClassifiers[component][label] = new PriorProbClassifier(probs);
-            sb.append(", skip, use prior = ").append(positiveProb);
+            sb.append(", skip, use prior = ").append(smoothedPositiveProb);
             sb.append(", time spent = ").append(stopWatch.toString());
             if (logger.isDebugEnabled()){
                 logger.debug(sb.toString());
