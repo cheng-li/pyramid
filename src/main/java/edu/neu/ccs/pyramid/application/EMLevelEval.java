@@ -45,7 +45,9 @@ public class EMLevelEval {
 
         System.out.println("the distribution of predicted label for a given true label");
         for (int l=0;l<test.getNumClasses();l++){
-            System.out.println("for true label "+l);
+
+            System.out.println("for true label "+test.getLabelTranslator().toExtLabel(l));
+
             truthToPred(test.getLabels(),roundedPred, l, test.getNumClasses(), test.getLabelTranslator());
         }
 
@@ -53,7 +55,9 @@ public class EMLevelEval {
 
         System.out.println("the distribution of true label for a given predicted label");
         for (int l=0;l<test.getNumClasses();l++){
-            System.out.println("for predicted label "+l);
+
+            System.out.println("for predicted label "+test.getLabelTranslator().toExtLabel(l));
+
             predToTruth(test.getLabels(),roundedPred, l, test.getNumClasses(), test.getLabelTranslator());
         }
 

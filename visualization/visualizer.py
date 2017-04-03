@@ -1876,7 +1876,7 @@ def main(argv):
 
     esIndex = config1["index.indexName"]
     classNumber = config2["numClassesInModel"]
-    fields = config1["index.ngramExtractionFields"]
+    fields = config1["train.feature.ngram.extractionFields"]
     start = time.time()
     parseAll(jsonFile, directoryName, fileName, fields, classFile)
     end = time.time()
