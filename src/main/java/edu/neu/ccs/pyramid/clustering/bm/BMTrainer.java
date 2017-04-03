@@ -110,7 +110,8 @@ public class BMTrainer {
      */
     private void updateCluster(int k){
 
-        final double effectiveTotal = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+        final double effectiveTotal = IntStream.range(0, dataSet.getNumDataPoints())
+                .parallel()
                 .mapToDouble(i-> gammas[i][k]).sum();
 
         IntStream.range(0, dataSet.getNumFeatures()).parallel()
