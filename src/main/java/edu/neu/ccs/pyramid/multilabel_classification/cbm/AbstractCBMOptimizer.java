@@ -40,7 +40,7 @@ public abstract class AbstractCBMOptimizer {
     protected int multiclassUpdatesPerIter = 20;
     protected int binaryUpdatesPerIter = 20;
 
-    protected double smoothingStrength =1;
+    protected double smoothingStrength =0.0001;
 
     // number of positives for all labels
     private int[] positiveCounts;
