@@ -176,7 +176,7 @@ public class BMDistribution {
     }
 
     // p(z=k|y)
-    double[] posteriorMembership(MultiLabel y){
+    public double[] posteriorMembership(MultiLabel y){
         double[] logNumerator = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             logNumerator[k] = logProportions[k] + logYGivenComponent(y, k);

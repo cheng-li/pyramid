@@ -2,10 +2,24 @@ package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 /**
+ * The posterior is a relative notion. It is hard to set a absolute threshold. It could happen that all ProbYGivenComponent(k) are small
+    We wish to find large logProportions[k] + logYGivenComponent(k)
+ in the softmax function, any item smaller than the max value by more than 20 will be mapped to almost 0
+ we use this to prune some components
+
+ double[] posteriorMembership(){
+ double[] logNumerator = new double[numComponents];
+ for (int k=0;k<numComponents;k++){
+ logNumerator[k] = logProportions[k] + logYGivenComponent(k);
+ }
+ return MathUtil.softmax(logNumerator);
+ }
+ We check components in decreasing logProportions.
  * Created by chengli on 3/25/17.
  */
 public class ShortCircuitPosterior {
@@ -13,36 +27,48 @@ public class ShortCircuitPosterior {
     int numComponents;
     // log(z=k)
     double[] logProportions;
-    // log p(y_l=1|z=k)
-    // size = num components * num classes * 2
-    double[][][] logClassProbs;
+
+    double[] logYGivenComponent;
     MultiLabel y;
     CBM cbm;
     Vector x;
+    double skipThreshold = 30;
 
-    ShortCircuitPosterior(CBM cbm, Vector x, MultiLabel y) {
+    public ShortCircuitPosterior(CBM cbm, Vector x, MultiLabel y) {
         this.numLabels = cbm.numLabels;
         this.y = y;
         this.x = x;
         this.cbm = cbm;
         this.numComponents = cbm.numComponents;
         this.logProportions = cbm.multiClassClassifier.predictLogClassProbs(x);
-        this.logClassProbs = new double[numComponents][numLabels][2];
-        for (int k = 0; k< numComponents; k++){
-            fillBinaryProbs(k);
+        this.logYGivenComponent = new double[numComponents];
+        double max = Double.NEGATIVE_INFINITY;
+        int[] sortedComponents = ArgSort.argSortDescending(logProportions);
+
+
+        for (int k: sortedComponents){
+            if (logProportions[k]>max-skipThreshold){
+                logYGivenComponent[k] = computeLogYGivenComponent(k, max);
+                double s = logProportions[k]+logYGivenComponent[k];
+                if (s>max){
+                    max = s;
+                }
+            }
         }
     }
 
-    private void fillBinaryProbs(int k){
+    // the more terms we add, the smaller the sum is
+    // we can stop the computation when the sum is small enough to conclude that the component is useless
+    private double computeLogYGivenComponent(int k, double max){
+        double sum = 0;
         // try the most likely short circuits first: positive label and prior
         for (int l: y.getMatchedLabels()){
             if (cbm.binaryClassifiers[k][l] instanceof PriorProbClassifier){
                 // cheap
-                logClassProbs[k][l] = cbm.binaryClassifiers[k][l].predictLogClassProbs(x);
-                double logProb = logClassProbs[k][l][1];
+                sum += cbm.binaryClassifiers[k][l].predictLogClassProbs(x)[1];
                 //short circuit
-                if (logProb==Double.NEGATIVE_INFINITY){
-                    return;
+                if (sum + logProportions[k] < max - skipThreshold){
+                    return sum;
                 }
             }
         }
@@ -51,16 +77,16 @@ public class ShortCircuitPosterior {
         for (int l=0;l<numLabels;l++){
             if (cbm.binaryClassifiers[k][l] instanceof PriorProbClassifier){
                 // cheap
-                logClassProbs[k][l] = cbm.binaryClassifiers[k][l].predictLogClassProbs(x);
-                double logProb;
+                double[] logProbs = cbm.binaryClassifiers[k][l].predictLogClassProbs(x);
+
                 if (y.matchClass(l)){
-                    logProb = logClassProbs[k][l][1];
+                    sum += logProbs[1];
                 } else {
-                    logProb = logClassProbs[k][l][0];
+                    sum += logProbs[0];
                 }
                 //short circuit
-                if (logProb==Double.NEGATIVE_INFINITY){
-                    return;
+                if (sum + logProportions[k] < max - skipThreshold){
+                    return sum;
                 }
             }
         }
@@ -69,41 +95,29 @@ public class ShortCircuitPosterior {
         for (int l=0;l<numLabels;l++){
             if (!(cbm.binaryClassifiers[k][l] instanceof PriorProbClassifier)){
                 // expensive
-                logClassProbs[k][l] = cbm.binaryClassifiers[k][l].predictLogClassProbs(x);
-                double logProb;
+                double[] logProbs = cbm.binaryClassifiers[k][l].predictLogClassProbs(x);
+
                 if (y.matchClass(l)){
-                    logProb = logClassProbs[k][l][1];
+                    sum += logProbs[1];
                 } else {
-                    logProb = logClassProbs[k][l][0];
+                    sum += logProbs[0];
                 }
-
-                if (logProb==Double.NEGATIVE_INFINITY){
-                    return;
+                //short circuit
+                if (sum + logProportions[k] < max - skipThreshold){
+                    return sum;
                 }
-            }
-        }
-    }
-
-    private double logYGivenComponent(int k) {
-        double sum = 0.0;
-        for (int l=0; l< numLabels; l++) {
-            if (y.matchClass(l)) {
-                sum += logClassProbs[k][l][1];
-            } else {
-                sum += logClassProbs[k][l][0];
-            }
-            if (sum==Double.NEGATIVE_INFINITY){
-                break;
             }
         }
         return sum;
     }
 
 
-    double[] posteriorMembership(){
+
+
+    public double[] posteriorMembership(){
         double[] logNumerator = new double[numComponents];
         for (int k=0;k<numComponents;k++){
-            logNumerator[k] = logProportions[k] + logYGivenComponent(k);
+            logNumerator[k] = logProportions[k] + logYGivenComponent[k];
         }
         return MathUtil.softmax(logNumerator);
     }
