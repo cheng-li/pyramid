@@ -70,8 +70,24 @@ public class CBMLR {
             }
 
             Comparator<TuneResult> comparator = Comparator.comparing(res->res.performance);
-            //todo other metrics
-            TuneResult best = tuneResults.stream().max(comparator).get();
+
+            TuneResult best;
+            String predictTarget = config.getString("tune.targetMetric");
+            switch (predictTarget){
+                case "instance_set_accuracy":
+                    best = tuneResults.stream().max(comparator).get();
+                    break;
+                case "instance_f1":
+                    best = tuneResults.stream().max(comparator).get();
+                    break;
+                case "instance_hamming_loss":
+                    best = tuneResults.stream().min(comparator).get();
+                    break;
+                default:
+                    throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
+            }
+
+
             System.out.println("---------------------------");
             System.out.println("Hyper parameter tuning done.");
             System.out.println("Time spent on entire hyper parameter tuning = "+stopWatch);
@@ -136,7 +152,7 @@ public class CBMLR {
         optimizer.initialize();
 
         MultiLabelClassifier classifier;
-        String predictTarget = config.getString("predict.targetMetric");
+        String predictTarget = config.getString("tune.targetMetric");
         switch (predictTarget){
             case "instance_set_accuracy":
                 AccPredictor accPredictor = new AccPredictor(cbm);
@@ -150,8 +166,13 @@ public class CBMLR {
                 pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
                 classifier = pluginF1;
                 break;
+            case "instance_hamming_loss":
+                MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
+                marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
+                classifier = marginalPredictor;
+                break;
             default:
-                throw new IllegalArgumentException("predictTarget should be instance_set_accuracy or instance_f1");
+                throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
         }
 
         int interval = config.getInt("tune.monitorInterval");
@@ -180,6 +201,9 @@ public class CBMLR {
                         break;
                     case "instance_f1":
                         earlyStopper.add(iter,validMeasures.getInstanceAverage().getF1());
+                        break;
+                    case "instance_hamming_loss":
+                        earlyStopper.add(iter,validMeasures.getInstanceAverage().getHammingLoss());
                         break;
                     default:
                         throw new IllegalArgumentException("predictTarget should be instance_set_accuracy or instance_f1");
@@ -251,7 +275,7 @@ public class CBMLR {
 
 
         MultiLabelClassifier classifier;
-        String predictTarget = config.getString("predict.targetMetric");
+        String predictTarget = config.getString("tune.targetMetric");
         switch (predictTarget){
             case "instance_set_accuracy":
                 AccPredictor accPredictor = new AccPredictor(cbm);
@@ -265,28 +289,44 @@ public class CBMLR {
                 pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
                 classifier = pluginF1;
                 break;
+            case "instance_hamming_loss":
+                MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
+                marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
+                classifier = marginalPredictor;
+                break;
             default:
-                throw new IllegalArgumentException("predictTarget can be instance_set_accuracy or instance_f1");
+                throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
         }
 
         System.out.println();
-        System.out.println("making predictions on test set");
-        System.out.println("test performance with "+predictTarget+" optimal predictor:");
-        System.out.println(new MLMeasures(classifier,testSet));
-        report(config, cbm, classifier, testSet, "test");
+
+        System.out.println("Making predictions on test set with 3 different predictors designed for different metrics:");
+        reportAccPrediction(config, cbm, testSet);
+        reportF1Prediction(config, cbm, testSet);
+        reportHammingPrediction(config, cbm, testSet);
+        reportGeneral(config, cbm, testSet);
         System.out.println();
     }
 
-
-    private static void report(Config config, CBM cbm, MultiLabelClassifier predictor,
-                               MultiLabelClfDataSet dataSet, String folderName) throws Exception{
+    private static void reportAccPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+        System.out.println("============================================================");
+        System.out.println("Making predictions on test set with the instance_set_accuracy optimal predictor");
         String output = config.getString("output.dir");
-        Paths.get(output, "reports", folderName).toFile().mkdirs();
-        MultiLabel[] predictions = predictor.predict(dataSet);
+        AccPredictor accPredictor = new AccPredictor(cbm);
+        accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
+        MultiLabel[] predictions = accPredictor.predict(dataSet);
+        MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
+        System.out.println("test performance with instance accuracy optimal predictor");
+        System.out.println(mlMeasures);
+        File performanceFile = Paths.get(output,"test_predictions", "instance_accuracy_optimal","performance.txt").toFile();
+        FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
+        System.out.println("test performance is saved to "+performanceFile.toString());
+
+
         // Here we do not use approximation
         double[] setProbs = IntStream.range(0, predictions.length).parallel().
                 mapToDouble(i->cbm.predictAssignmentProb(dataSet.getRow(i),predictions[i])).toArray();
-        File predictionFile = Paths.get(output,"reports", folderName,"predictions.txt").toFile();
+        File predictionFile = Paths.get(output,"test_predictions", "instance_accuracy_optimal","predictions.txt").toFile();
         try (BufferedWriter br = new BufferedWriter(new FileWriter(predictionFile))){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
                 br.write(predictions[i].toString());
@@ -295,9 +335,84 @@ public class CBMLR {
                 br.newLine();
             }
         }
-        System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
 
-        File labelProbFile = Paths.get(output, "reports", folderName, "label_probabilities.txt").toFile();
+        System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+        System.out.println("============================================================");
+    }
+
+
+    private static void reportF1Prediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+        System.out.println("============================================================");
+        System.out.println("Making predictions on test set with the instance_f1 optimal predictor");
+        String output = config.getString("output.dir");
+        PluginF1 pluginF1 = new PluginF1(cbm);
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(output, "support"));
+        pluginF1.setSupport(support);
+        pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
+        MultiLabel[] predictions = pluginF1.predict(dataSet);
+        MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
+        System.out.println("test performance with instance F1 optimal predictor");
+        System.out.println(mlMeasures);
+        File performanceFile = Paths.get(output,"test_predictions", "instance_f1_optimal","performance.txt").toFile();
+        FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
+        System.out.println("test performance is saved to "+performanceFile.toString());
+
+
+        // Here we do not use approximation
+        double[] setProbs = IntStream.range(0, predictions.length).parallel().
+                mapToDouble(i->cbm.predictAssignmentProb(dataSet.getRow(i),predictions[i])).toArray();
+        File predictionFile = Paths.get(output,"test_predictions", "instance_f1_optimal","predictions.txt").toFile();
+        try (BufferedWriter br = new BufferedWriter(new FileWriter(predictionFile))){
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                br.write(predictions[i].toString());
+                br.write(":");
+                br.write(""+setProbs[i]);
+                br.newLine();
+            }
+        }
+
+        System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+        System.out.println("============================================================");
+    }
+
+    private static void reportHammingPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+        System.out.println("============================================================");
+        System.out.println("Making predictions on test set with the instance_hamming_loss optimal predictor");
+        String output = config.getString("output.dir");
+        MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
+        marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
+        MultiLabel[] predictions = marginalPredictor.predict(dataSet);
+        MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
+        System.out.println("test performance with instance Hamming loss optimal predictor");
+        System.out.println(mlMeasures);
+        File performanceFile = Paths.get(output,"test_predictions", "instance_hamming_loss_optimal","performance.txt").toFile();
+        FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
+        System.out.println("test performance is saved to "+performanceFile.toString());
+
+
+        // Here we do not use approximation
+        double[] setProbs = IntStream.range(0, predictions.length).parallel().
+                mapToDouble(i->cbm.predictAssignmentProb(dataSet.getRow(i),predictions[i])).toArray();
+        File predictionFile = Paths.get(output,"test_predictions", "instance_hamming_loss_optimal","predictions.txt").toFile();
+        try (BufferedWriter br = new BufferedWriter(new FileWriter(predictionFile))){
+            for (int i=0;i<dataSet.getNumDataPoints();i++){
+                br.write(predictions[i].toString());
+                br.write(":");
+                br.write(""+setProbs[i]);
+                br.newLine();
+            }
+        }
+
+        System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+        System.out.println("============================================================");
+    }
+
+
+    private static void reportGeneral(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+        System.out.println("============================================================");
+        System.out.println("Printing other predictor-independent metrics");
+        String output = config.getString("output.dir");
+        File labelProbFile = Paths.get(output, "test_predictions",  "label_probabilities.txt").toFile();
         double labelProbThreshold = config.getDouble("report.labelProbThreshold");
 
         try (BufferedWriter br = new BufferedWriter(new FileWriter(labelProbFile))){
@@ -322,7 +437,7 @@ public class CBMLR {
                 .mapToDouble(i->logLikelihoods[i]).average().getAsDouble();
 
 
-        File logLikelihoodFile = Paths.get(output, "reports", folderName, "ground_truth_log_likelihood.txt").toFile();
+        File logLikelihoodFile = Paths.get(output, "test_predictions", "ground_truth_log_likelihood.txt").toFile();
         FileUtils.writeStringToFile(logLikelihoodFile, PrintUtil.toMutipleLines(logLikelihoods));
         System.out.println("individual log likelihood of the test ground truth label set is written to "+logLikelihoodFile.getAbsolutePath());
 
@@ -333,6 +448,9 @@ public class CBMLR {
             System.out.println(ListUtil.toSimpleString(unobservedLabels));
         }
     }
+
+
+
 
     private static LRCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
         LRCBMOptimizer lrcbmOptimizer = new LRCBMOptimizer(cbm, trainSet);
@@ -396,7 +514,7 @@ public class CBMLR {
 
 
     private static EarlyStopper loadNewEarlyStopper(Config config){
-        String earlyStopMetric = config.getString("predict.targetMetric");
+        String earlyStopMetric = config.getString("tune.targetMetric");
         int patience = config.getInt("tune.earlyStop.patience");
         EarlyStopper.Goal earlyStopGoal = null;
         switch (earlyStopMetric){
@@ -406,8 +524,11 @@ public class CBMLR {
             case "instance_f1":
                 earlyStopGoal = EarlyStopper.Goal.MAXIMIZE;
                 break;
+            case "instance_hamming_loss":
+                earlyStopGoal = EarlyStopper.Goal.MINIMIZE;
+                break;
             default:
-                throw new IllegalArgumentException("unsupported predict.targetMetric "+earlyStopMetric);
+                throw new IllegalArgumentException("unsupported tune.targetMetric "+earlyStopMetric);
         }
 
         EarlyStopper earlyStopper = new EarlyStopper(earlyStopGoal,patience);
