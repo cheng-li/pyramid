@@ -72,7 +72,7 @@ public class MicroAverage {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("micro overlap = ").append(overlap).append("\n");
+        sb.append("micro Jaccard index = ").append(overlap).append("\n");
         sb.append("micro Hamming loss = ").append(hammingLoss).append("\n");
         sb.append("micro F1 = ").append(f1).append("\n");
         sb.append("micro precision = ").append(precision).append("\n");

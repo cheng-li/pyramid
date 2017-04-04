@@ -176,12 +176,12 @@ public class MacroAverage {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("macro overlap = ").append(overlap).append("\n");
-        sb.append("macro Hamming loss = ").append(hammingLoss).append("\n");
-        sb.append("macro F1 = ").append(f1).append("\n");
-        sb.append("macro precision = ").append(precision).append("\n");
-        sb.append("macro recall = ").append(recall).append("\n");
-        sb.append("macro binary accuracy = ").append(binaryAccuracy).append("\n");
+        sb.append("label Jaccard Index = ").append(overlap).append("\n");
+        sb.append("label Hamming loss = ").append(hammingLoss).append("\n");
+        sb.append("label F1 = ").append(f1).append("\n");
+        sb.append("label precision = ").append(precision).append("\n");
+        sb.append("label recall = ").append(recall).append("\n");
+        sb.append("label binary accuracy = ").append(binaryAccuracy).append("\n");
 
         return sb.toString();
     }

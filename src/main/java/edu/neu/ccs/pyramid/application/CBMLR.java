@@ -84,7 +84,7 @@ public class CBMLR {
                     best = tuneResults.stream().min(comparator).get();
                     break;
                 default:
-                    throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
+                    throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
             }
 
 
@@ -274,30 +274,6 @@ public class CBMLR {
         CBM cbm = (CBM) Serialization.deserialize(new File(output, "model"));
 
 
-        MultiLabelClassifier classifier;
-        String predictTarget = config.getString("tune.targetMetric");
-        switch (predictTarget){
-            case "instance_set_accuracy":
-                AccPredictor accPredictor = new AccPredictor(cbm);
-                accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
-                classifier = accPredictor;
-                break;
-            case "instance_f1":
-                PluginF1 pluginF1 = new PluginF1(cbm);
-                List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(output, "support"));
-                pluginF1.setSupport(support);
-                pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
-                classifier = pluginF1;
-                break;
-            case "instance_hamming_loss":
-                MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
-                marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
-                classifier = marginalPredictor;
-                break;
-            default:
-                throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
-        }
-
         System.out.println();
 
         System.out.println("Making predictions on test set with 3 different predictors designed for different metrics:");
@@ -410,7 +386,7 @@ public class CBMLR {
 
     private static void reportGeneral(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
         System.out.println("============================================================");
-        System.out.println("Printing other predictor-independent metrics");
+        System.out.println("computing other predictor-independent metrics");
         String output = config.getString("output.dir");
         File labelProbFile = Paths.get(output, "test_predictions",  "label_probabilities.txt").toFile();
         double labelProbThreshold = config.getDouble("report.labelProbThreshold");
