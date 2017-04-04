@@ -286,13 +286,13 @@ public class CBMLR {
 
     private static void reportAccPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
         System.out.println("============================================================");
-        System.out.println("Making predictions on test set with the instance_set_accuracy optimal predictor");
+        System.out.println("Making predictions on test set with the instance set accuracy optimal predictor");
         String output = config.getString("output.dir");
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
         MultiLabel[] predictions = accPredictor.predict(dataSet);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
-        System.out.println("test performance with instance accuracy optimal predictor");
+        System.out.println("test performance with the instance set accuracy optimal predictor");
         System.out.println(mlMeasures);
         File performanceFile = Paths.get(output,"test_predictions", "instance_accuracy_optimal","performance.txt").toFile();
         FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
@@ -319,7 +319,7 @@ public class CBMLR {
 
     private static void reportF1Prediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
         System.out.println("============================================================");
-        System.out.println("Making predictions on test set with the instance_f1 optimal predictor");
+        System.out.println("Making predictions on test set with the instance F1 optimal predictor");
         String output = config.getString("output.dir");
         PluginF1 pluginF1 = new PluginF1(cbm);
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(output, "support"));
@@ -327,7 +327,7 @@ public class CBMLR {
         pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
         MultiLabel[] predictions = pluginF1.predict(dataSet);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
-        System.out.println("test performance with instance F1 optimal predictor");
+        System.out.println("test performance with the instance F1 optimal predictor");
         System.out.println(mlMeasures);
         File performanceFile = Paths.get(output,"test_predictions", "instance_f1_optimal","performance.txt").toFile();
         FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
@@ -353,13 +353,13 @@ public class CBMLR {
 
     private static void reportHammingPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
         System.out.println("============================================================");
-        System.out.println("Making predictions on test set with the instance_hamming_loss optimal predictor");
+        System.out.println("Making predictions on test set with the instance Hamming loss optimal predictor");
         String output = config.getString("output.dir");
         MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
         marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
         MultiLabel[] predictions = marginalPredictor.predict(dataSet);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
-        System.out.println("test performance with instance Hamming loss optimal predictor");
+        System.out.println("test performance with the instance Hamming loss optimal predictor");
         System.out.println(mlMeasures);
         File performanceFile = Paths.get(output,"test_predictions", "instance_hamming_loss_optimal","performance.txt").toFile();
         FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
