@@ -125,7 +125,7 @@ public class InstanceAverage {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("instance subset accuracy = ").append(accuracy).append("\n");
-        sb.append("instance overlap = ").append(overlap).append("\n");
+        sb.append("instance Jaccard index = ").append(overlap).append("\n");
         sb.append("instance Hamming loss = ").append(hammingLoss).append("\n");
         sb.append("instance F1 = ").append(f1).append("\n");
         sb.append("instance precision = ").append(precision).append("\n");

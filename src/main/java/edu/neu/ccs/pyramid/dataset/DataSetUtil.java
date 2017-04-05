@@ -577,6 +577,51 @@ public class DataSetUtil {
         return dataSet;
     }
 
+
+    public static MultiLabelClfDataSet concatenateByRow(MultiLabelClfDataSet dataSet1, MultiLabelClfDataSet dataSet2){
+        int numDataPoints1 = dataSet1.getNumDataPoints();
+        int numDataPoints2 = dataSet2.getNumDataPoints();
+        int numDataPoints = numDataPoints1 + numDataPoints2;
+        int numFeatures = dataSet1.getNumFeatures();
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(dataSet1.getNumClasses())
+                .density(dataSet1.density())
+                .missingValue(dataSet1.hasMissingValue())
+                .build();
+
+
+        int dataIndex = 0;
+        for (int i=0;i<dataSet1.getNumDataPoints();i++){
+            Vector row = dataSet1.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                int j = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(dataIndex,j,value);
+            }
+            dataSet.setLabels(dataIndex,dataSet1.getMultiLabels()[i]);
+            dataIndex+=1;
+        }
+
+        for (int i=0;i<dataSet2.getNumDataPoints();i++){
+            Vector row = dataSet2.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                int j = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(dataIndex,j,value);
+            }
+            dataSet.setLabels(dataIndex,dataSet2.getMultiLabels()[i]);
+            dataIndex+=1;
+        }
+
+        dataSet.setFeatureList(dataSet1.getFeatureList());
+        dataSet.setLabelTranslator(dataSet1.getLabelTranslator());
+        //id translator is not set
+
+        return dataSet;
+    }
+
     public static MultiLabelClfDataSet concatenateByColumn(MultiLabelClfDataSet dataSet1, MultiLabelClfDataSet dataSet2){
         int numDataPoints = dataSet1.getNumDataPoints();
         int numFeatures1 = dataSet1.getNumFeatures();
@@ -1258,5 +1303,16 @@ public class DataSetUtil {
             distribution[i][label] = 1;
         }
         return distribution;
+    }
+
+    public static List<Integer> unobservedLabels(MultiLabelClfDataSet dataSet){
+        boolean[] check = new boolean[dataSet.getNumClasses()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l:multiLabel.getMatchedLabels()){
+                check[l]=true;
+            }
+        }
+        return IntStream.range(0, dataSet.getNumClasses()).filter(l-> !check[l]).boxed().sorted().collect(Collectors.toList());
     }
 }

@@ -45,6 +45,13 @@ public class BMDistribution {
         }
     }
 
+    public double[] getLogProportions() {
+        return logProportions;
+    }
+
+    public double[][][] getLogClassProbs() {
+        return logClassProbs;
+    }
 
     /**
      * skip components with small contributions
@@ -142,7 +149,7 @@ public class BMDistribution {
         return normalizedLogProbs[k][supportId];
     }
 
-    private double logYGivenComponentByDefault(MultiLabel y, int k) {
+    public double logYGivenComponentByDefault(MultiLabel y, int k) {
         double sum = 0.0;
         for (int l=0; l< numLabels; l++) {
             if (y.matchClass(l)) {
@@ -169,7 +176,7 @@ public class BMDistribution {
     }
 
     // p(z=k|y)
-    double[] posteriorMembership(MultiLabel y){
+    public double[] posteriorMembership(MultiLabel y){
         double[] logNumerator = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             logNumerator[k] = logProportions[k] + logYGivenComponent(y, k);
@@ -210,7 +217,7 @@ public class BMDistribution {
         return membership;
     }
 
-    double logProbability(MultiLabel y){
+    public double logProbability(MultiLabel y){
         double[] logPs = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             logPs[k] = logProportions[k] + logYGivenComponent(y, k);

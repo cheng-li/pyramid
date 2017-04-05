@@ -448,10 +448,10 @@ public class MekaFormat {
         return dataSet;
     }
 
-    public static void save(MultiLabelClfDataSet dataSet, String mekaFile, Config config) throws IOException {
+    public static void save(MultiLabelClfDataSet dataSet, String mekaFile, String dataName) throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter(mekaFile));
         // writing the header: @relation 'data_name: -C number_classes\n\n'
-        String dataName = config.getString("data.name");
+
 
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         int numClasses = labelTranslator.getNumClasses();

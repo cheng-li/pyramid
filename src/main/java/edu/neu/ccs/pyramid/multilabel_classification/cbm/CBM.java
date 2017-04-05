@@ -82,7 +82,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
     }
 
     // takes time
-    BMDistribution computeBM(Vector x){
+    public BMDistribution computeBM(Vector x){
         return new BMDistribution(this, x);
     }
 

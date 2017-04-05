@@ -23,7 +23,7 @@ public class BMSelector {
         BM best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
-            System.out.println("fitting BM model "+i);
+//            System.out.println("fitting BM model "+i);
             BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
             BM bm = trainer.train();
             double objective = trainer.getObjective();
@@ -42,7 +42,7 @@ public class BMSelector {
         BMTrainer best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
-            System.out.println("fitting BM model "+i);
+//            System.out.println("fitting BM model "+i);
             BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
             BM bm = trainer.train();
             double objective = trainer.getObjective();
