@@ -231,6 +231,8 @@ public class ElasticNetLogisticTrainer {
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
         linearRegTrainer.setActiveSet(this.isActiveSet);
+        //TODO: no large iterations
+        linearRegTrainer.getTerminator().setMaxIteration(10);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }

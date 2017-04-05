@@ -88,6 +88,28 @@ public abstract class AbstractCBMOptimizer {
         mStep();
     }
 
+    public void randInitialize() {
+        int K = cbm.getNumComponents();
+        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+            double[] dist = new double[K];
+            for (int k=0; k<K; k++) {
+                dist[k] = Math.random();
+            }
+            double sum = MathUtil.arraySum(dist);
+            for (int k=0; k<K; k++) {
+                double value = dist[k]/sum;
+                gammas[i][k] = value;
+            }
+        }
+        System.out.println("performing random M step");
+        mStep();
+    }
+
+    public void averageInitialize() {
+        System.out.println("performing average M step");
+        mStep();
+    }
+
     public void iterate() {
         eStep();
         mStep();

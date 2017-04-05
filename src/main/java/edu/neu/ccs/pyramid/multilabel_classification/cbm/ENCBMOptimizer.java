@@ -22,6 +22,7 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
     private double l1RatioBinary = 0.0;
     private double l1RatioMultiClass = 0.0;
     private boolean lineSearch = true;
+    private boolean activeSet = false;
 
     public ENCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         super(cbm, dataSet);
@@ -45,8 +46,8 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
                 .setRegularization(regularizationBinary)
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
-
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(2);
+        elasticNetLogisticTrainer.setActiveSet(activeSet);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(5);
         elasticNetLogisticTrainer.optimize();
         if (logger.isDebugEnabled()){
             logger.debug("time spent on updating component "+component+" label "+label+" = "+stopWatch);
@@ -65,8 +66,8 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
                 .setRegularization(regularizationMultiClass)
                 .setL1Ratio(l1RatioMultiClass)
                 .setLineSearch(lineSearch).build();
-        elasticNetLogisticTrainer.setActiveSet(false);
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(2);
+        elasticNetLogisticTrainer.setActiveSet(activeSet);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(5);
         elasticNetLogisticTrainer.optimize();
 
         if (logger.isDebugEnabled()) {
@@ -132,5 +133,9 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
 
     public void setLineSearch(boolean lineSearch) {
         this.lineSearch = lineSearch;
+    }
+
+    public void setActiveSet(boolean activeSet) {
+        this.activeSet = activeSet;
     }
 }

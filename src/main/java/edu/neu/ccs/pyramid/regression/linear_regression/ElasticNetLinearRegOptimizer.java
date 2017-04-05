@@ -1,13 +1,13 @@
 package edu.neu.ccs.pyramid.regression.linear_regression;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.optimization.Terminator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -115,6 +115,7 @@ public class ElasticNetLinearRegOptimizer {
         if (!isActiveSet) {
             normalOptimize();
         } else {
+            this.terminator.setMode(Terminator.Mode.FINISH_MAX_ITER);
             activeSetOptimize();
         }
 
@@ -124,59 +125,46 @@ public class ElasticNetLinearRegOptimizer {
         double[] scores = new double[dataSet.getNumDataPoints()];
         IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
                 scores[i] = linearRegression.predict(dataSet.getRow(i)));
-
-        double lastLoss = loss(linearRegression,scores,labels,instanceWeights, sumWeights);
-        if (logger.isDebugEnabled()){
-            logger.debug("initial loss = "+lastLoss);
-        }
-
         // initialize iterations
         iterate(scores);
-        List<Integer> activeSet = updateActiveSet();
+        terminator.add(1.0);
+        BitSet activeSet = updateActiveSet();
         // only when activeSet does not change
         boolean shouldTerminate = false;
         while (!shouldTerminate) {
             int maxIter = 0;
             while (true) {
                 activeSetIterate(scores, activeSet);
-                double loss = loss(linearRegression,scores,labels,instanceWeights,sumWeights);
-                if (logger.isDebugEnabled()){
-                    logger.debug("loss = "+loss);
-                }
-                terminator.add(loss);
+                terminator.add(1.0);
                 if (terminator.shouldTerminate() || (++maxIter>5)){
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("final loss = " + loss);
-                    }
                     break;
                 }
             }
             iterate(scores);
-            List<Integer> latestActiveSet = updateActiveSet();
+            terminator.add(1.0);
+            if (terminator.shouldTerminate()) {
+                break;
+            }
+            BitSet latestActiveSet = updateActiveSet();
             shouldTerminate = isActiveSetChanged(activeSet, latestActiveSet);
-            activeSet = new ArrayList<>(latestActiveSet);
+            activeSet = latestActiveSet;
         }
     }
 
-    private boolean isActiveSetChanged(List<Integer> activeSet, List<Integer> latestActiveSet) {
-        if (activeSet.size() != latestActiveSet.size()) {
+    private boolean isActiveSetChanged(BitSet activeSet, BitSet latestActiveSet) {
+        if (activeSet.cardinality() != latestActiveSet.cardinality()) {
             return false;
         }
-        Collections.sort(activeSet);
-        Collections.sort(latestActiveSet);
-        for (int i=0; i<activeSet.size(); i++) {
-            if (!activeSet.get(i).equals(latestActiveSet.get(i))) {
-                return false;
-            }
+        if (activeSet.equals(latestActiveSet)) {
+            return true;
         }
-        return true;
+        return false;
     }
 
-
-    private List<Integer> updateActiveSet() {
-        List<Integer> activeSet = new ArrayList<>();
+    private BitSet updateActiveSet() {
+        BitSet activeSet = new BitSet();
         for (Vector.Element element : linearRegression.getWeights().getWeightsWithoutBias().nonZeroes()) {
-            activeSet.add(element.index());
+            activeSet.set(element.index());
         }
         return activeSet;
     }
@@ -235,7 +223,7 @@ public class ElasticNetLinearRegOptimizer {
 //        }
 //    }
 
-    private void activeSetIterate(double[] scores, List<Integer> activeSet) {
+    private void activeSetIterate(double[] scores, BitSet activeSet) {
         // if no weight at all, only minimize the penalty
         if (sumWeights==0){
             // if there is a penalty
@@ -255,7 +243,7 @@ public class ElasticNetLinearRegOptimizer {
         if (difference != 0) {
             IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
         }
-        for (Integer j : activeSet){
+        for (int j = activeSet.nextSetBit(0); j >= 0; j = activeSet.nextSetBit(j+1)) {
             optimizeOneFeature(scores,j);
         }
     }
