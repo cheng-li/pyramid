@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.eval.LogLikelihood;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
@@ -83,8 +84,11 @@ public class CBMLR {
                 case "instance_hamming_loss":
                     best = tuneResults.stream().min(comparator).get();
                     break;
+                case "instance_log_likelihood":
+                    best = tuneResults.stream().max(comparator).get();
+                    break;
                 default:
-                    throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
+                    throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1, instance_hamming_loss, instance_log_likelihood");
             }
 
 
@@ -144,7 +148,7 @@ public class CBMLR {
 
 
     private static TuneResult tune(Config config, HyperParameters hyperParameters, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet validSet) throws Exception{
-
+        List<Integer> unobservedLabels = DataSetUtil.unobservedLabels(trainSet);
         CBM cbm = newCBM(config,trainSet, hyperParameters);
         EarlyStopper earlyStopper = loadNewEarlyStopper(config);
 
@@ -170,6 +174,12 @@ public class CBMLR {
                 MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
                 marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
                 classifier = marginalPredictor;
+                break;
+            case "instance_log_likelihood":
+                // acc predictor seems to be the best match for log likelihood
+                AccPredictor accPredictor1 = new AccPredictor(cbm);
+                accPredictor1.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
+                classifier = accPredictor1;
                 break;
             default:
                 throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
@@ -205,8 +215,11 @@ public class CBMLR {
                     case "instance_hamming_loss":
                         earlyStopper.add(iter,validMeasures.getInstanceAverage().getHammingLoss());
                         break;
+                    case "instance_log_likelihood":
+                        earlyStopper.add(iter, LogLikelihood.averageLogLikelihood(cbm, validSet, unobservedLabels));
+                        break;
                     default:
-                        throw new IllegalArgumentException("predictTarget should be instance_set_accuracy or instance_f1");
+                        throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
                 }
 
                 if (earlyStopper.shouldStop()){
@@ -502,6 +515,9 @@ public class CBMLR {
                 break;
             case "instance_hamming_loss":
                 earlyStopGoal = EarlyStopper.Goal.MINIMIZE;
+                break;
+            case "instance_log_likelihood":
+                earlyStopGoal = EarlyStopper.Goal.MAXIMIZE;
                 break;
             default:
                 throw new IllegalArgumentException("unsupported tune.targetMetric "+earlyStopMetric);
