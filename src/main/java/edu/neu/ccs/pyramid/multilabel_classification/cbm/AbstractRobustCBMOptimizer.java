@@ -85,6 +85,18 @@ public abstract class AbstractRobustCBMOptimizer {
 
     }
 
+    public void setNoiseGammaLabel(double noiseGammaLabel) {
+        this.noiseGammaLabel = noiseGammaLabel;
+    }
+
+    public double[][] getNoiseLabelWeights() {
+        return noiseLabelWeights;
+    }
+
+    public double[][] getMarginals() {
+        return marginals;
+    }
+
     public void setSmoothingStrength(double smoothingStrength) {
         this.smoothingStrength = smoothingStrength;
     }
@@ -114,6 +126,8 @@ public abstract class AbstractRobustCBMOptimizer {
     }
 
     public void iterate() {
+        updateMarginals();
+        updateLabelWeights();
         eStep();
         mStep();
     }
