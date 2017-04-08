@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -35,8 +36,8 @@ public abstract class AbstractRobustCBMOptimizer {
     protected double skipDataThreshold = 1E-5;
 
 
-    protected int multiclassUpdatesPerIter = 20;
-    protected int binaryUpdatesPerIter = 20;
+    protected int multiclassUpdatesPerIter = 10;
+    protected int binaryUpdatesPerIter = 10;
 
     protected double smoothingStrength =0.0001;
 
@@ -82,6 +83,9 @@ public abstract class AbstractRobustCBMOptimizer {
 
         this.marginals = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
         this.noiseLabelWeights = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            Arrays.fill(noiseLabelWeights[i],1);
+        }
 
     }
 
@@ -221,7 +225,6 @@ public abstract class AbstractRobustCBMOptimizer {
         }
 
         // skip small gammas
-        List<Double> activeGammasList = new ArrayList<>();
         List<Integer> activeIndices = new ArrayList<>();
         double[] gammasForComponent = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(i->gammas[i][component]).toArray();
         int maxIndex = ArgMax.argMax(gammasForComponent);
@@ -233,18 +236,11 @@ public abstract class AbstractRobustCBMOptimizer {
             double v = gammas[i][component];
             weightedTotal += v;
             if (v>= skipDataThreshold || i==maxIndex){
-                activeGammasList.add(v);
                 activeIndices.add(i);
                 thresholdedWeightedTotal += v;
                 counter += 1;
             }
         }
-
-        //todo deal with empty components
-
-
-
-        double[] activeGammas = activeGammasList.stream().mapToDouble(a->a).toArray();
 
 
         if (logger.isDebugEnabled()){
@@ -265,13 +261,13 @@ public abstract class AbstractRobustCBMOptimizer {
         // to please lambda
         final double totalWeight = weightedTotal;
         IntStream.range(0, cbm.numLabels).parallel()
-                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeIndices, activeDataSet, activeGammas, totalWeight));
+                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeIndices, activeDataSet,  totalWeight));
     }
 
 
     protected void skipOrUpdateBinaryClassifier(int component, int label, List<Integer> activeIndices,
                                                 MultiLabelClfDataSet activeDataSet,
-                                                double[] activeGammas, double totalWeight){
+                                                double totalWeight){
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
