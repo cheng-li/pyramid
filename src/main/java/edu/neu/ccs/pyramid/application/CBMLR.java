@@ -457,7 +457,7 @@ public class CBMLR {
         lrcbmOptimizer.setPriorVarianceBinary(hyperParameters.variance);
         lrcbmOptimizer.setPriorVarianceMultiClass(hyperParameters.variance);
         lrcbmOptimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
-        lrcbmOptimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
+        lrcbmOptimizer.setMulticlassUpdatesPerIter(config.getInt("train.updatesPerIteration"));
         lrcbmOptimizer.setSkipDataThreshold(config.getDouble("train.skipDataThreshold"));
         lrcbmOptimizer.setSkipLabelThreshold(config.getDouble("train.skipLabelThreshold"));
         lrcbmOptimizer.setSmoothingStrength(config.getDouble("train.smoothStrength"));
