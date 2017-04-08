@@ -37,8 +37,8 @@ public abstract class AbstractCBMOptimizer {
     protected double skipDataThreshold = 1E-5;
 
 
-    protected int multiclassUpdatesPerIter = 20;
-    protected int binaryUpdatesPerIter = 20;
+    protected int multiclassUpdatesPerIter = 10;
+    protected int binaryUpdatesPerIter = 10;
 
     protected double smoothingStrength =0.0001;
 
