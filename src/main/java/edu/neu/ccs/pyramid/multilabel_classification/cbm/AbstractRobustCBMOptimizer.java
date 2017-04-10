@@ -129,6 +129,11 @@ public abstract class AbstractRobustCBMOptimizer {
         mStep();
     }
 
+    public void iterateSimple(){
+        eStep();
+        mStep();
+    }
+
     public void iterate() {
         updateMarginals();
         updateLabelWeights();

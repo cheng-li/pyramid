@@ -78,6 +78,10 @@ public abstract class AbstractRecoverCBMOptimizer {
 
     }
 
+    public void setDropProb(double dropProb) {
+        this.dropProb = dropProb;
+    }
+
     public void setSmoothingStrength(double smoothingStrength) {
         this.smoothingStrength = smoothingStrength;
     }
@@ -112,7 +116,7 @@ public abstract class AbstractRecoverCBMOptimizer {
     }
 
 
-    protected void updateGroundTruth(){
+    public void updateGroundTruth(){
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             updateGroundTruth(i);
         }
@@ -120,7 +124,10 @@ public abstract class AbstractRecoverCBMOptimizer {
 
     protected void updateGroundTruth(int dataPoint){
         for (int l=0;l<dataSet.getNumClasses();l++){
-            updateGroundTruth(dataPoint, l);
+            if (!dataSet.getMultiLabels()[dataPoint].matchClass(l)){
+                updateGroundTruth(dataPoint, l);
+            }
+
         }
     }
 
