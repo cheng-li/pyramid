@@ -47,7 +47,7 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
                 .setL1Ratio(l1RatioBinary)
                 .setLineSearch(lineSearch).build();
         elasticNetLogisticTrainer.setActiveSet(activeSet);
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(5);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(this.binaryUpdatesPerIter);
         elasticNetLogisticTrainer.optimize();
         if (logger.isDebugEnabled()){
             logger.debug("time spent on updating component "+component+" label "+label+" = "+stopWatch);
@@ -67,7 +67,7 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
                 .setL1Ratio(l1RatioMultiClass)
                 .setLineSearch(lineSearch).build();
         elasticNetLogisticTrainer.setActiveSet(activeSet);
-        elasticNetLogisticTrainer.getTerminator().setMaxIteration(5);
+        elasticNetLogisticTrainer.getTerminator().setMaxIteration(this.multiclassUpdatesPerIter);
         elasticNetLogisticTrainer.optimize();
 
         if (logger.isDebugEnabled()) {

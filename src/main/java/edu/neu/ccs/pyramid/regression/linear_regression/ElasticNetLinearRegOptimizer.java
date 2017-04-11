@@ -80,41 +80,12 @@ public class ElasticNetLinearRegOptimizer {
     }
 
 
-
-    /**
-     * weighted least square fit by coordinate descent
-     */
-//    public void optimize(){
-//        double[] scores = new double[dataSet.getNumDataPoints()];
-//        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i->
-//            scores[i] = linearRegression.predict(dataSet.getRow(i)));
-//
-//        double lastLoss = loss(linearRegression,scores,labels,instanceWeights);
-//        if (logger.isDebugEnabled()){
-//            logger.debug("initial loss = "+lastLoss);
-//        }
-//
-//        while(true){
-//            iterate(scores);
-//            double loss = loss(linearRegression,scores,labels,instanceWeights);
-//            if (logger.isDebugEnabled()){
-//                logger.debug("loss = "+loss);
-//            }
-//            terminator.add(loss);
-//            if (terminator.shouldTerminate()){
-//                if (logger.isDebugEnabled()){
-//                    logger.debug("final loss = "+loss);
-//                }
-//                break;
-//            }
-//        }
-//    }
-
     public void optimize(){
 
         if (!isActiveSet) {
             normalOptimize();
         } else {
+            // it's for CBM internal updates for now.
             this.terminator.setMode(Terminator.Mode.FINISH_MAX_ITER);
             activeSetOptimize();
         }
@@ -196,33 +167,6 @@ public class ElasticNetLinearRegOptimizer {
     }
 
 
-    /**
-     * one cycle of coordinate descent
-     */
-//    private void iterate(double[] scores){
-//        double totalWeight = Arrays.stream(instanceWeights).parallel().sum();
-//        // if no weight at all, only minimize the penalty
-//        if (totalWeight==0){
-//            // if there is a penalty
-//            if (regularization>0){
-//                for (int j=0;j<dataSet.getNumFeatures();j++){
-//                    linearRegression.getWeights().setWeight(j,0);
-//                }
-//            }
-//            return;
-//        }
-//        double oldBias = linearRegression.getWeights().getBias();
-//        double newBias = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i ->
-//        instanceWeights[i]*(labels[i]-scores[i] + oldBias)).sum()/totalWeight;
-//        linearRegression.getWeights().setBias(newBias);
-//        //update scores
-//        double difference = newBias - oldBias;
-//        IntStream.range(0,dataSet.getNumDataPoints()).parallel().forEach(i -> scores[i] = scores[i] + difference);
-//        for (int j=0;j<dataSet.getNumFeatures();j++){
-//            optimizeOneFeature(scores,j);
-//        }
-//    }
-
     private void activeSetIterate(double[] scores, BitSet activeSet) {
         // if no weight at all, only minimize the penalty
         if (sumWeights==0){
@@ -274,39 +218,6 @@ public class ElasticNetLinearRegOptimizer {
     }
 
 
-    // TODO: Bugs!
-//    private void optimizeOneFeature(double[] scores, int featureIndex){
-//        double oldCoeff = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
-//        double fit = 0;
-//        double denominator = 0;
-//        Vector featureColumn = dataSet.getColumn(featureIndex);
-//        for (Vector.Element element: featureColumn.nonZeroes()){
-//            int i = element.index();
-//            double x = element.get();
-//            double partialResidual = labels[i] - scores[i] + x*oldCoeff;
-//            fit += instanceWeights[i]*x*partialResidual;
-//            denominator += x*x*instanceWeights[i];
-//        }
-//        double numerator = softThreshold(fit);
-//        denominator += regularization*(1-l1Ratio);
-//        // if denominator = 0, this feature is useless, assign 0 to the coefficient
-//        double newCoeff = 0;
-//        if (denominator!=0){
-//            newCoeff = numerator/denominator;
-//        }
-//
-//
-//        linearRegression.getWeights().setWeight(featureIndex,newCoeff);
-//        //update scores
-//        double difference = newCoeff - oldCoeff;
-//        if (difference!=0){
-//            for (Vector.Element element: featureColumn.nonZeroes()){
-//                int i = element.index();
-//                double x = element.get();
-//                scores[i] = scores[i] +  difference*x;
-//            }
-//        }
-//    }
     private void optimizeOneFeature(double[] scores, int featureIndex){
         double oldCoeff = linearRegression.getWeights().getWeightsWithoutBias().get(featureIndex);
         double fit = 0;
@@ -322,6 +233,7 @@ public class ElasticNetLinearRegOptimizer {
         }
         fit /= sumWeights;
         double numerator = softThreshold(fit);
+        // TODO: regularization*(1-l1Ratio): repeated calculations
         denominator = denominator/sumWeights + regularization*(1-l1Ratio);
         // if denominator = 0, this feature is useless, assign 0 to the coefficient
         double newCoeff = 0;
@@ -343,13 +255,6 @@ public class ElasticNetLinearRegOptimizer {
     }
 
 
-    //    private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights){
-//        double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
-//                0.5 * instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
-//                .sum();
-//        double penalty = penalty(linearRegression);
-//        return mse + penalty;
-//    }
     private double loss(LinearRegression linearRegression, double[] scores, double[] labels, double[] instanceWeights, double sumWeights){
         double mse = IntStream.range(0,scores.length).parallel().mapToDouble(i ->
                 instanceWeights[i] * Math.pow(labels[i] - scores[i], 2))
@@ -375,17 +280,12 @@ public class ElasticNetLinearRegOptimizer {
         return 0;
     }
 
+    //TODO: regularization * l1Ratio: repeated calculations
     private double softThreshold(double z){
         return softThreshold(z, regularization*l1Ratio);
     }
 
     // todo double check: what's the meaning of weight; what happens if default weight = 1; how will that affect hyper parameters?
-//    private static double[] defaultWeights(int numData){
-//        double[] weights = new double[numData];
-//        double weight = 1.0/numData;
-//        Arrays.fill(weights,weight);
-//        return weights;
-//    }
     private static double[] defaultWeights(int numData){
         double[] weights = new double[numData];
         double weight = 1.0;
