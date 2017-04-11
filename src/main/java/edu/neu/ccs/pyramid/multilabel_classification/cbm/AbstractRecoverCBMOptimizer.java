@@ -103,10 +103,13 @@ public abstract class AbstractRecoverCBMOptimizer {
     }
 
     public void initialize(){
-        gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
-        if (logger.isDebugEnabled()){
-            logger.debug("performing M step");
+        if (cbm.getNumComponents()>1){
+            gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
+            if (logger.isDebugEnabled()){
+                logger.debug("performing M step");
+            }
         }
+
         mStep();
     }
 
@@ -132,6 +135,7 @@ public abstract class AbstractRecoverCBMOptimizer {
     }
 
     protected void updateGroundTruth(int dataPoint, int label){
+
         double[][] logProbs = new double[cbm.getNumComponents()][2];
         for (int k=0;k<cbm.getNumComponents();k++){
             logProbs[k] = cbm.getBinaryClassifiers()[k][label].predictLogClassProbs(dataSet.getRow(dataPoint));
@@ -148,8 +152,11 @@ public abstract class AbstractRecoverCBMOptimizer {
             currentObj += -logProbs[k][currentGroundTruth]*gammas[dataPoint][k];
         }
 
+
+
         if (currentGroundTruth==1){
             currentObj += -Math.log(dropProb);
+
         }
 
 
@@ -159,13 +166,17 @@ public abstract class AbstractRecoverCBMOptimizer {
             newObj += -logProbs[k][newGroundTruth]*gammas[dataPoint][k];
         }
 
+
+
         if (newGroundTruth==1){
             newObj += -Math.log(dropProb);
+
         }
 
+
         if (newObj < currentObj){
-            System.out.println("flipping ground truth label for class "+label+" for data point "
-                    +dataPoint+" from "+currentGroundTruth+" to "+newGroundTruth);
+            System.out.println("flipping ground truth label for class "+label+"("+dataSet.getLabelTranslator().toExtLabel(label)+") for data point "
+                    +dataPoint+"("+dataSet.getIdTranslator().toExtId(dataPoint)+") from "+currentGroundTruth+" to "+newGroundTruth);
 
             groundTruth.getMultiLabels()[dataPoint].flipLabel(label);
             labelMatrix.setFeatureValue(dataPoint, label, newGroundTruth);

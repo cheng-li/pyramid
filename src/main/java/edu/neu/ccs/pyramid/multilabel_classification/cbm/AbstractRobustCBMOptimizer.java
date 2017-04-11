@@ -122,10 +122,13 @@ public abstract class AbstractRobustCBMOptimizer {
     }
 
     public void initialize(){
-        gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
-        if (logger.isDebugEnabled()){
-            logger.debug("performing M step");
+        if (cbm.numComponents>1){
+            gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
+            if (logger.isDebugEnabled()){
+                logger.debug("performing M step");
+            }
         }
+
         mStep();
     }
 
@@ -141,7 +144,7 @@ public abstract class AbstractRobustCBMOptimizer {
         mStep();
     }
 
-    protected void eStep(){
+    public void eStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
@@ -210,7 +213,7 @@ public abstract class AbstractRobustCBMOptimizer {
         }
     }
 
-    void mStep() {
+    public void mStep() {
         if (logger.isDebugEnabled()){
             logger.debug("start M step");
         }
