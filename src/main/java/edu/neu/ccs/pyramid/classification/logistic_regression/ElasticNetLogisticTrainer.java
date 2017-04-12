@@ -89,33 +89,35 @@ public class ElasticNetLogisticTrainer {
         }
     }
 
-    public void iterate1() {
-        double[][] probs = new double[dataSet.getNumDataPoints()][numClasses];
-        double[][] classScores = new double[dataSet.getNumDataPoints()][numClasses];
-        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(i -> {
-            probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
-            classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
-        });
-        Weights oldWeights = logisticRegression.getWeights().deepCopy();
-        IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs, classScores));
-        if (lineSearch) {
-            Weights newWeights = logisticRegression.getWeights().deepCopy();
-            // infer searchDirection
-            Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
 
-            if (logger.isDebugEnabled()){
-                logger.debug("norm of the search direction = " + searchDirection.norm(2));
-            }
-            // move back to starting point
-            logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
-            // this gradient doesn't include the penalty term, so it is only approximate
-            Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(dataSet.getNumDataPoints());
-            lineSearch(searchDirection, gradient);
-            updateClassProbMatrix();
-            updatePredictedCounts();
-        }
-        terminator.add(getLoss());
-    }
+//TODO: Approximation of iterating all labels the same time
+//    public void iterate1() {
+//        double[][] probs = new double[dataSet.getNumDataPoints()][numClasses];
+//        double[][] classScores = new double[dataSet.getNumDataPoints()][numClasses];
+//        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(i -> {
+//            probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
+//            classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
+//        });
+//        Weights oldWeights = logisticRegression.getWeights().deepCopy();
+//        IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs, classScores));
+//        if (lineSearch) {
+//            Weights newWeights = logisticRegression.getWeights().deepCopy();
+//            // infer searchDirection
+//            Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
+//
+//            if (logger.isDebugEnabled()){
+//                logger.debug("norm of the search direction = " + searchDirection.norm(2));
+//            }
+//            // move back to starting point
+//            logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
+//            // this gradient doesn't include the penalty term, so it is only approximate
+//            Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(dataSet.getNumDataPoints());
+//            lineSearch(searchDirection, gradient);
+//            updateClassProbMatrix();
+//            updatePredictedCounts();
+//        }
+//        terminator.add(getLoss());
+//    }
 
     private void optimizeOneClass(int classIndex, double[][] probs, double[][] classScores) {
         //create weighted least square problem
@@ -193,8 +195,8 @@ public class ElasticNetLogisticTrainer {
         double[] instanceWeights = new double[numDataPoints];
         IntStream.range(0,numDataPoints).parallel().forEach(i ->
         {
-            // TODO: repeated calculations in following two steps.
             double prob = logisticRegression.predictClassProbs(dataSet.getRow(i))[classIndex];
+            // TODO: following is calculated twice.
             double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
             double y = targets[i][classIndex];
             double frac = 0;
@@ -231,6 +233,8 @@ public class ElasticNetLogisticTrainer {
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
         linearRegTrainer.setActiveSet(this.isActiveSet);
+        //TODO: no large iterations
+        linearRegTrainer.getTerminator().setMaxIteration(10);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }
