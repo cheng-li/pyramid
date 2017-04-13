@@ -53,7 +53,7 @@ public class MAP {
     }
 
     public static double instanceMAP(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
-        return IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(i->{
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel().mapToDouble(i->{
             int[] binaryLabels = new int[classifier.getNumClasses()];
             MultiLabel multiLabel = dataSet.getMultiLabels()[i];
             for (int l:multiLabel.getMatchedLabels()) {

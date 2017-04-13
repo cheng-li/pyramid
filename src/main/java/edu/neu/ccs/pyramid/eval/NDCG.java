@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.ArgSort;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.util.FastMath;
@@ -68,7 +71,17 @@ public class NDCG {
         return ndcg(labels,scores,labels.length);
     }
 
-
+    public static double instanceNDCG(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel().mapToDouble(i->{
+            int[] binaryLabels = new int[classifier.getNumClasses()];
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l:multiLabel.getMatchedLabels()) {
+                binaryLabels[l] = 1;
+            }
+            double[] probs = classifier.predictClassProbs(dataSet.getRow(i));
+            return ndcg(binaryLabels, probs);
+        }).average().getAsDouble();
+    }
 
 
 

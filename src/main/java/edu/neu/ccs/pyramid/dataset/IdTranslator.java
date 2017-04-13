@@ -35,12 +35,12 @@ public class IdTranslator implements Serializable {
      * @param intId
      */
     public void addData(int intId, String extId){
-        if (intToExt.containsKey(intId)){
-            throw new IllegalArgumentException(intId+"already exists");
-        }
-        if (extToInt.containsKey(extId)){
-            throw new IllegalArgumentException(extId+"already exists");
-        }
+//        if (intToExt.containsKey(intId)){
+//            throw new IllegalArgumentException(intId+"already exists");
+//        }
+//        if (extToInt.containsKey(extId)){
+//            throw new IllegalArgumentException(extId+"already exists");
+//        }
         intToExt.put(intId, extId);
         extToInt.put(extId, intId);
     }
