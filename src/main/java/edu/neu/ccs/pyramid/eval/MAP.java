@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.eval;
 
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
@@ -49,5 +50,17 @@ public class MAP {
     public static double map(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
         List<Integer> labels = IntStream.range(0, dataSet.getNumClasses()).boxed().collect(Collectors.toList());
         return map(classifier, dataSet, labels);
+    }
+
+    public static double instanceMAP(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
+        return IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(i->{
+            int[] binaryLabels = new int[classifier.getNumClasses()];
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l:multiLabel.getMatchedLabels()) {
+                binaryLabels[l] = 1;
+            }
+            double[] probs = classifier.predictClassProbs(dataSet.getRow(i));
+            return AveragePrecision.averagePrecision(binaryLabels, probs);
+        }).average().getAsDouble();
     }
 }
