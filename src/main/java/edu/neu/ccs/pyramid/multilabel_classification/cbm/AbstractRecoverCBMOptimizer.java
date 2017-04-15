@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -75,7 +76,6 @@ public abstract class AbstractRecoverCBMOptimizer {
 
         List<Integer> all = IntStream.range(0, dataSet.getNumDataPoints()).boxed().collect(Collectors.toList());
         groundTruth = DataSetUtil.sampleData(dataSet, all);
-
     }
 
     public void setDropProb(double dropProb) {
@@ -181,9 +181,6 @@ public abstract class AbstractRecoverCBMOptimizer {
             groundTruth.getMultiLabels()[dataPoint].flipLabel(label);
             labelMatrix.setFeatureValue(dataPoint, label, newGroundTruth);
         }
-
-
-
     }
 
     protected void eStep(){
@@ -374,6 +371,8 @@ public abstract class AbstractRecoverCBMOptimizer {
     public double[][] getGammas() {
         return gammas;
     }
+
+    public MultiLabelClfDataSet getGroundTruth() { return groundTruth; }
 
     private void checkGamma(){
         for (int i=0;i<gammas.length;i++){
