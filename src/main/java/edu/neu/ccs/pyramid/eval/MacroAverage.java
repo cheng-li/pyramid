@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.util.PrintUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.IOException;
@@ -196,12 +197,16 @@ public class MacroAverage {
         sb.append(", recall=").append(recall);
         sb.append(", hammingLoss=").append(hammingLoss);
         sb.append(", binaryAccuracy=").append(binaryAccuracy);
-        sb.append(", labelWisePrecision=").append(Arrays.toString(labelWisePrecision));
-        sb.append(", labelWiseRecall=").append(Arrays.toString(labelWiseRecall));
-        sb.append(", labelWiseOverlap=").append(Arrays.toString(labelWiseOverlap));
-        sb.append(", labelWiseF1=").append(Arrays.toString(labelWiseF1));
-        sb.append(", labelWiseHammingLoss=").append(Arrays.toString(labelWiseHammingLoss));
-        sb.append(", labelWiseAccuracy=").append(Arrays.toString(labelWiseAccuracy));
+        sb.append(", labelWisePrecision=").append(PrintUtil.printWithIndex(labelWisePrecision));
+        sb.append(", labelWiseRecall=").append(PrintUtil.printWithIndex(labelWiseRecall));
+        sb.append(", labelWiseOverlap=").append(PrintUtil.printWithIndex(labelWiseOverlap));
+        sb.append(", labelWiseF1=").append(PrintUtil.printWithIndex(labelWiseF1));
+        sb.append(", labelWiseHammingLoss=").append(PrintUtil.printWithIndex(labelWiseHammingLoss));
+        sb.append(", labelWiseAccuracy=").append(PrintUtil.printWithIndex(labelWiseAccuracy));
+        sb.append(", labelWiseTP=").append(PrintUtil.printWithIndex(labelWiseTP));
+        sb.append(", labelWiseTN=").append(PrintUtil.printWithIndex(labelWiseTN));
+        sb.append(", labelWiseFP=").append(PrintUtil.printWithIndex(labelWiseFP));
+        sb.append(", labelWiseFN=").append(PrintUtil.printWithIndex(labelWiseFN));
         return sb.toString();
     }
 
