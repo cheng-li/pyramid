@@ -369,6 +369,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         private String binaryClassifierType= "lr";
         private String multiClassClassifierType = "lr";
 
+        private boolean dense=false;
+
         private Builder() {
         }
 
@@ -402,6 +404,11 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
             return this;
         }
 
+        public Builder setDense(boolean dense) {
+            this.dense = dense;
+            return this;
+        }
+
         public CBM build(){
             CBM CBM = new CBM();
             CBM.numLabels = numClasses;
@@ -415,11 +422,14 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
                 case "lr":
                     CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];
                     //// TODO: 3/5/17
-//                    for (int k = 0; k< numComponents; k++) {
-//                        for (int l=0; l<numClasses; l++) {
-//                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
-//                        }
-//                    }
+                    if (dense){
+                        for (int k = 0; k< numComponents; k++) {
+                            for (int l=0; l<numClasses; l++) {
+                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
+                            }
+                        }
+                    }
+
                     break;
                 case "boost":
                     CBM.binaryClassifiers = new LKBoost[numComponents][numClasses];
