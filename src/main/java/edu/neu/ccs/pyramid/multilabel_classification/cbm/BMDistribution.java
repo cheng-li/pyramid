@@ -240,7 +240,7 @@ public class BMDistribution {
         return sum;
     }
 
-    double[] marginals(){
+    public double[] marginals(){
         double[] m = new double[numLabels];
         for (int l=0;l<numLabels;l++){
             m[l] = marginal(l);

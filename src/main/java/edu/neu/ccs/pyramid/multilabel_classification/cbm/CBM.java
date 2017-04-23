@@ -86,6 +86,11 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         return new BMDistribution(this, x);
     }
 
+
+    public BMDistribution computeBM(Vector x, double piThreshold){
+        return new BMDistribution(this, x, piThreshold);
+    }
+
     /**
      * for single assignment, compute log assignment probability
      * @param x
