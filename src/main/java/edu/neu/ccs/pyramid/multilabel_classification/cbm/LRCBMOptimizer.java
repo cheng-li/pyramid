@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.optimization.LBFGS;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +22,8 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
     // regularization for binary logisticRegression
     private double priorVarianceBinary =1;
 
+    private double initialStepSize=1;
+
     public LRCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         super(cbm, dataSet);
     }
@@ -32,6 +35,10 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
 
     public void setPriorVarianceBinary(double priorVarianceBinary) {
         this.priorVarianceBinary = priorVarianceBinary;
+    }
+
+    public void setInitialStepSize(double initialStepSize) {
+        this.initialStepSize = initialStepSize;
     }
 
     @Override
@@ -50,6 +57,8 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[component][label],
                 activeDataset, binaryLabels, activeGammas, priorVarianceBinary, false);
 
+        ((LBFGS)ridgeLogisticOptimizer.getOptimizer()).getLineSearcher().setInitialStepLength(initialStepSize);
+
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(binaryUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
         if (logger.isDebugEnabled()){
@@ -65,6 +74,9 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
         // parallel
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
+
+        ((LBFGS)ridgeLogisticOptimizer.getOptimizer()).getLineSearcher().setInitialStepLength(initialStepSize);
+
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(multiclassUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
         if (logger.isDebugEnabled()){
