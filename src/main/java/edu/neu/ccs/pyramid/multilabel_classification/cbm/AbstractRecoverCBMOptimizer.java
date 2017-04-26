@@ -11,6 +11,7 @@ import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -46,7 +47,11 @@ public abstract class AbstractRecoverCBMOptimizer {
 
     protected DataSet labelMatrix;
 
-    private double dropProb = 0.01;
+//    private double dropProb = 0.01;
+
+    private double lambda=0;
+    private double tau=0;
+    private int flipped=0;
 
     public AbstractRecoverCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         this.cbm = cbm;
@@ -78,9 +83,9 @@ public abstract class AbstractRecoverCBMOptimizer {
         groundTruth = DataSetUtil.sampleData(dataSet, all);
     }
 
-    public void setDropProb(double dropProb) {
-        this.dropProb = dropProb;
-    }
+//    public void setDropProb(double dropProb) {
+//        this.dropProb = dropProb;
+//    }
 
     public void setSmoothingStrength(double smoothingStrength) {
         this.smoothingStrength = smoothingStrength;
@@ -120,21 +125,62 @@ public abstract class AbstractRecoverCBMOptimizer {
 
 
     public void updateGroundTruth(){
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            updateGroundTruth(i);
-        }
-    }
-
-    protected void updateGroundTruth(int dataPoint){
-        for (int l=0;l<dataSet.getNumClasses();l++){
-            if (!dataSet.getMultiLabels()[dataPoint].matchClass(l)){
-                updateGroundTruth(dataPoint, l);
+        List<Change> ranked = rank();
+        for (Change change: ranked){
+            int data = change.data;
+            int label = change.label;
+            double estimatedChange = change.change;
+            double realChange = lossChange(data, label);
+            System.out.println("for data "+data+" class "+label+" estimated change = "+estimatedChange+", real change = "+realChange);
+            if (realChange<0){
+                // flip or reset flip
+                groundTruth.getMultiLabels()[data].flipLabel(label);
+                int newGroundTruth = 0;
+                if (groundTruth.getMultiLabels()[data].matchClass(label)){
+                    newGroundTruth = 1;
+                }
+                labelMatrix.setFeatureValue(data, label, newGroundTruth);
+                if (newGroundTruth==1){
+                    flipped += 1;
+                    System.out.println("flip label "+label+" for data "+data+" from 0 to 1. #flips = "+flipped);
+                } else {
+                    flipped -= 1;
+                    System.out.println("reset label "+label+" for data "+data+" from 1 to 0. #flips = "+flipped);
+                }
+            } else {
+                System.out.println("break");
+                break;
             }
-
         }
     }
 
-    protected void updateGroundTruth(int dataPoint, int label){
+//    protected void updateGroundTruth(int dataPoint){
+//        for (int l=0;l<dataSet.getNumClasses();l++){
+//            if (!dataSet.getMultiLabels()[dataPoint].matchClass(l)){
+//                updateGroundTruth(dataPoint, l);
+//            }
+//
+//        }
+//    }
+
+    private List<Change> rank(){
+        List<Change> all = new ArrayList<>();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            for (int l=0;l<dataSet.getNumClasses();l++){
+                Change change = new Change();
+                double c = lossChange(i,l);
+                change.data = i;
+                change.label = l;
+                change.change = c;
+                all.add(change);
+            }
+        }
+        List<Change> sorted = all.stream().sorted(Comparator.comparing(change->change.change)).collect(Collectors.toList());
+        return sorted;
+    }
+
+    // assuming flipped is fixed as the current value
+    protected double lossChange(int dataPoint, int label){
 
         double[][] logProbs = new double[cbm.getNumComponents()][2];
         for (int k=0;k<cbm.getNumComponents();k++){
@@ -153,11 +199,8 @@ public abstract class AbstractRecoverCBMOptimizer {
         }
 
 
+        currentObj += lambda*Math.abs(flipped-tau);
 
-        if (currentGroundTruth==1){
-            currentObj += -Math.log(dropProb);
-
-        }
 
 
         int newGroundTruth = 1-currentGroundTruth;
@@ -169,19 +212,64 @@ public abstract class AbstractRecoverCBMOptimizer {
 
 
         if (newGroundTruth==1){
-            newObj += -Math.log(dropProb);
-
+            newObj += lambda*Math.abs(flipped+1-tau);
+        } else {
+            newObj += lambda*Math.abs(flipped-1-tau);
         }
 
-
-        if (newObj < currentObj){
-            System.out.println("flipping ground truth label for class "+label+"("+dataSet.getLabelTranslator().toExtLabel(label)+") for data point "
-                    +dataPoint+"("+dataSet.getIdTranslator().toExtId(dataPoint)+") from "+currentGroundTruth+" to "+newGroundTruth);
-
-            groundTruth.getMultiLabels()[dataPoint].flipLabel(label);
-            labelMatrix.setFeatureValue(dataPoint, label, newGroundTruth);
-        }
+        return newObj - currentObj;
     }
+
+
+
+//    protected void updateGroundTruth(int dataPoint, int label){
+//
+//        double[][] logProbs = new double[cbm.getNumComponents()][2];
+//        for (int k=0;k<cbm.getNumComponents();k++){
+//            logProbs[k] = cbm.getBinaryClassifiers()[k][label].predictLogClassProbs(dataSet.getRow(dataPoint));
+//        }
+//        //assuming the given label =0
+//
+//        int currentGroundTruth = 0;
+//        if (groundTruth.getMultiLabels()[dataPoint].matchClass(label)){
+//            currentGroundTruth = 1;
+//        }
+//
+//        double currentObj = 0;
+//        for (int k=0;k<cbm.getNumComponents();k++){
+//            currentObj += -logProbs[k][currentGroundTruth]*gammas[dataPoint][k];
+//        }
+//
+//
+//
+//        if (currentGroundTruth==1){
+//            currentObj += -Math.log(dropProb);
+//
+//        }
+//
+//
+//        int newGroundTruth = 1-currentGroundTruth;
+//        double newObj =0;
+//        for (int k=0;k<cbm.getNumComponents();k++){
+//            newObj += -logProbs[k][newGroundTruth]*gammas[dataPoint][k];
+//        }
+//
+//
+//
+//        if (newGroundTruth==1){
+//            newObj += -Math.log(dropProb);
+//
+//        }
+//
+//
+//        if (newObj < currentObj){
+//            System.out.println("flipping ground truth label for class "+label+"("+dataSet.getLabelTranslator().toExtLabel(label)+") for data point "
+//                    +dataPoint+"("+dataSet.getIdTranslator().toExtId(dataPoint)+") from "+currentGroundTruth+" to "+newGroundTruth);
+//
+//            groundTruth.getMultiLabels()[dataPoint].flipLabel(label);
+//            labelMatrix.setFeatureValue(dataPoint, label, newGroundTruth);
+//        }
+//    }
 
     protected void eStep(){
         if (logger.isDebugEnabled()){
@@ -382,5 +470,12 @@ public abstract class AbstractRecoverCBMOptimizer {
                 }
             }
         }
+    }
+
+
+    private static class Change{
+        int data;
+        int label;
+        double change;
     }
 }

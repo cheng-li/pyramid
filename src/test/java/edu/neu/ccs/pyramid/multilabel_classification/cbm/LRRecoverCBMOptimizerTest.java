@@ -42,7 +42,7 @@ public class LRRecoverCBMOptimizerTest  {
         LRRecoverCBMOptimizer optimizer = new LRRecoverCBMOptimizer(cbm, dataSet);
         optimizer.setPriorVarianceBinary(1);
         optimizer.setPriorVarianceMultiClass(1);
-        optimizer.setDropProb(1000);
+//        optimizer.setDropProb(1000);
         optimizer.initialize();
 
         MultiLabel multiLabel1 = new MultiLabel();
