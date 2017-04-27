@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,6 +86,15 @@ public abstract class AbstractRecoverCBMOptimizer {
 //        this.dropProb = dropProb;
 //    }
 
+
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
+    }
+
+    public void setTau(double tau) {
+        this.tau = tau;
+    }
+
     public void setSmoothingStrength(double smoothingStrength) {
         this.smoothingStrength = smoothingStrength;
     }
@@ -129,10 +137,10 @@ public abstract class AbstractRecoverCBMOptimizer {
         for (Change change: ranked){
             int data = change.data;
             int label = change.label;
-            double estimatedChange = change.change;
-            double realChange = lossChange(data, label);
-            System.out.println("for data "+data+" class "+label+" estimated change = "+estimatedChange+", real change = "+realChange);
-            if (realChange<0){
+            double estimatedChange = change.totalChange;
+            Change realChange = lossChange(data, label);
+            System.out.println("for data "+data+" class "+label+" estimated totalChange = "+estimatedChange+", real totalChange = "+realChange.totalChange+", change in NLL="+change.changeInNll+", change in penalty = "+change.changeInPenalty);
+            if (realChange.totalChange<0){
                 // flip or reset flip
                 groundTruth.getMultiLabels()[data].flipLabel(label);
                 int newGroundTruth = 0;
@@ -167,20 +175,18 @@ public abstract class AbstractRecoverCBMOptimizer {
         List<Change> all = new ArrayList<>();
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int l=0;l<dataSet.getNumClasses();l++){
-                Change change = new Change();
-                double c = lossChange(i,l);
-                change.data = i;
-                change.label = l;
-                change.change = c;
-                all.add(change);
+                if (!dataSet.getMultiLabels()[i].matchClass(l)){
+                    Change change = lossChange(i,l);
+                    all.add(change);
+                }
+
             }
         }
-        List<Change> sorted = all.stream().sorted(Comparator.comparing(change->change.change)).collect(Collectors.toList());
+        List<Change> sorted = all.stream().sorted(Comparator.comparing(change->change.totalChange)).collect(Collectors.toList());
         return sorted;
     }
 
-    // assuming flipped is fixed as the current value
-    protected double lossChange(int dataPoint, int label){
+    protected Change lossChange(int dataPoint, int label){
 
         double[][] logProbs = new double[cbm.getNumComponents()][2];
         for (int k=0;k<cbm.getNumComponents();k++){
@@ -193,31 +199,37 @@ public abstract class AbstractRecoverCBMOptimizer {
             currentGroundTruth = 1;
         }
 
-        double currentObj = 0;
+        double currentNll = 0;
         for (int k=0;k<cbm.getNumComponents();k++){
-            currentObj += -logProbs[k][currentGroundTruth]*gammas[dataPoint][k];
+            currentNll += -logProbs[k][currentGroundTruth]*gammas[dataPoint][k];
         }
 
 
-        currentObj += lambda*Math.abs(flipped-tau);
+        double currentPenalty =  lambda*Math.abs(flipped-tau);
 
 
 
         int newGroundTruth = 1-currentGroundTruth;
-        double newObj =0;
+        double newNLL =0;
         for (int k=0;k<cbm.getNumComponents();k++){
-            newObj += -logProbs[k][newGroundTruth]*gammas[dataPoint][k];
+            newNLL += -logProbs[k][newGroundTruth]*gammas[dataPoint][k];
         }
 
 
-
+        double newPenalty;
         if (newGroundTruth==1){
-            newObj += lambda*Math.abs(flipped+1-tau);
+            newPenalty = lambda*Math.abs(flipped+1-tau);
         } else {
-            newObj += lambda*Math.abs(flipped-1-tau);
+            newPenalty = lambda*Math.abs(flipped-1-tau);
         }
 
-        return newObj - currentObj;
+        Change change = new Change();
+        change.changeInNll = newNLL - currentNll;
+        change.changeInPenalty = newPenalty - currentPenalty;
+        change.totalChange = newNLL - currentNll + newPenalty - currentPenalty;
+        change.data = dataPoint;
+        change.label = label;
+        return change;
     }
 
 
@@ -476,6 +488,8 @@ public abstract class AbstractRecoverCBMOptimizer {
     private static class Change{
         int data;
         int label;
-        double change;
+        double totalChange;
+        double changeInNll;
+        double changeInPenalty;
     }
 }
