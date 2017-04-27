@@ -139,7 +139,7 @@ public abstract class AbstractRecoverCBMOptimizer {
             int label = change.label;
             double estimatedChange = change.totalChange;
             Change realChange = lossChange(data, label);
-            System.out.println("for data "+data+" class "+label+" estimated totalChange = "+estimatedChange+", real totalChange = "+realChange.totalChange+", change in NLL="+change.changeInNll+", change in penalty = "+change.changeInPenalty);
+            System.out.println("for data "+data+" class "+label+" estimated totalChange = "+estimatedChange+", real totalChange = "+realChange.totalChange+", change in NLL="+realChange.changeInNll+", change in penalty = "+realChange.changeInPenalty);
             if (realChange.totalChange<0){
                 // flip or reset flip
                 groundTruth.getMultiLabels()[data].flipLabel(label);
