@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 public class GBCBMOptimizer extends AbstractCBMOptimizer{
     private static final Logger logger = LogManager.getLogger();
     private int numLeaves=2;
-    private double shrinkage=0.1;
+    private double shrinkage=1;
 
     public GBCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         super(cbm, dataSet);

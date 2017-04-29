@@ -269,7 +269,7 @@ public class CBMGB {
     }
 
     private static void test(Config config) throws Exception{
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.testData"));
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.testData"));
 
         String output = config.getString("output.dir");
 
@@ -438,6 +438,7 @@ public class CBMGB {
         cbmOptimizer.setSkipDataThreshold(config.getDouble("train.skipDataThreshold"));
         cbmOptimizer.setSkipLabelThreshold(config.getDouble("train.skipLabelThreshold"));
         cbmOptimizer.setSmoothingStrength(config.getDouble("train.smoothStrength"));
+        cbmOptimizer.setShrinkage(config.getDouble("train.shrinkage"));
 
         return cbmOptimizer;
     }
@@ -516,7 +517,7 @@ public class CBMGB {
     private static List<MultiLabelClfDataSet> loadTrainValidData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
         List<MultiLabelClfDataSet> datasets = new ArrayList<>();
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             System.out.println("No external validation data is provided. Use random 20% of the training data for validation.");
@@ -526,7 +527,7 @@ public class CBMGB {
             datasets.add(subTrain);
             datasets.add(validSet);
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.validData"));
             datasets.add(trainSet);
             datasets.add(validSet);
         }
@@ -535,12 +536,12 @@ public class CBMGB {
 
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             return trainSet;
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.validData"));
             return DataSetUtil.concatenateByRow(trainSet, validSet);
         }
 
@@ -562,7 +563,7 @@ public class CBMGB {
 
         Config asConfig(){
             Config config = new Config();
-            config.setDouble("train.numLeaves", numLeaves);
+            config.setInt("train.numLeaves", numLeaves);
             config.setInt("train.iterations", iterations);
             config.setInt("train.numComponents", numComponents);
             return config;
