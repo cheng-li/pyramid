@@ -106,6 +106,13 @@ public class TRECFormat {
         return loadMultiLabelClfDataSet(new File(trecFile),dataSetType, loadSettings);
     }
 
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseRandom(String trecFile) throws IOException, ClassNotFoundException {
+        return loadMultiLabelClfDataSetAutoSparseRandom(new File(trecFile));
+    }
+
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseSequential(String trecFile) throws IOException, ClassNotFoundException {
+        return loadMultiLabelClfDataSetAutoSparseSequential(new File(trecFile));
+    }
 
     public static ClfDataSet loadClfDataSet(File trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
@@ -164,6 +171,25 @@ public class TRECFormat {
         }
 
         return dataSet;
+    }
+
+
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseRandom(File trecFile) throws IOException, ClassNotFoundException {
+        boolean dense = isDense(trecFile);
+        if (dense){
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_DENSE,true);
+        } else {
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_SPARSE,true);
+        }
+    }
+
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseSequential(File trecFile) throws IOException, ClassNotFoundException {
+        boolean dense = isDense(trecFile);
+        if (dense){
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_DENSE,true);
+        } else {
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_SEQ_SPARSE,true);
+        }
     }
 
     public static RegDataSet loadRegDataSet(File trecFile, DataSetType dataSetType,
@@ -268,6 +294,45 @@ public class TRECFormat {
             missingValue = config.getBoolean(TREC_CONFIG_MISSING_VALUE);
         }
         return missingValue;
+    }
+
+    static boolean isDense(File trecFile) throws IOException {
+        int numFeatures = parseNumFeaturess(trecFile);
+        File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
+        int data = 0;
+        double nonZeros = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
+        ) {
+            String line = null;
+
+            while ((line = br.readLine()) != null) {
+                String[] lineSplit = line.split("\\s+");
+                for (int i = 1; i < lineSplit.length; i++) {
+                    String pair = lineSplit[i];
+                    // ignore things after #
+                    if (pair.startsWith("#")) {
+                        break;
+                    }
+                    String[] pairSplit = pair.split(":");
+                    double featureValue = Double.parseDouble(pairSplit[1]);
+                    if (featureValue != 0) {
+                        nonZeros += 1;
+                    }
+                }
+                data += 1;
+                // just use the first 100 to estimate
+                if (data == 100) {
+                    break;
+                }
+            }
+        }
+        double density = nonZeros/(numFeatures*data);
+        if (density>0.3){
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     private static void fillClfDataSet(ClfDataSet dataSet, File trecFile) throws IOException {
