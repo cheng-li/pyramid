@@ -432,12 +432,12 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
 
                     break;
                 case "boost":
-                    CBM.binaryClassifiers = new LKBoost[numComponents][numClasses];
-                    for (int k = 0; k< numComponents; k++) {
-                        for (int l=0; l<numClasses; l++) {
-                            CBM.binaryClassifiers[k][l] = new LKBoost(2);
-                        }
-                    }
+                    CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];
+//                    for (int k = 0; k< numComponents; k++) {
+//                        for (int l=0; l<numClasses; l++) {
+//                            CBM.binaryClassifiers[k][l] = new LKBoost(2);
+//                        }
+//                    }
                     break;
                 case "elasticnet":
                     CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];

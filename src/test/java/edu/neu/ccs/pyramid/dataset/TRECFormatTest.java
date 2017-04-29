@@ -11,7 +11,7 @@ public class TRECFormatTest {
 
     public static void main(String[] args) throws Exception{
 //        test1();
-        test2();
+        test3();
     }
 
     static void test1() throws Exception{
@@ -118,6 +118,11 @@ public class TRECFormatTest {
         MultiLabelClfDataSet loaded = TRECFormat.loadMultiLabelClfDataSet(new File(TMP,"/4labels/test.trec"),DataSetType.ML_CLF_DENSE,true);
         System.out.println(loaded.getMetaInfo());
 //        System.out.println(loaded.toString());
+    }
+
+    private static void test3() throws Exception{
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom("/Users/chengli/Dropbox/Public/pyramid/mlc_data_pyramid/medical/train_test_split/train");
+        System.out.println(dataSet.getMetaInfo());
     }
 
 

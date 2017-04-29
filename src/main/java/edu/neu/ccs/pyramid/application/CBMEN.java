@@ -284,8 +284,7 @@ public class CBMEN {
     }
 
     private static void test(Config config) throws Exception{
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.testData"));
 
         String output = config.getString("output.dir");
 
@@ -537,8 +536,7 @@ public class CBMEN {
     private static List<MultiLabelClfDataSet> loadTrainValidData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
         List<MultiLabelClfDataSet> datasets = new ArrayList<>();
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             System.out.println("No external validation data is provided. Use random 20% of the training data for validation.");
@@ -548,8 +546,7 @@ public class CBMEN {
             datasets.add(subTrain);
             datasets.add(validSet);
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"),
-                    DataSetType.ML_CLF_SEQ_SPARSE, true);
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
             datasets.add(trainSet);
             datasets.add(validSet);
         }
@@ -558,14 +555,12 @@ public class CBMEN {
 
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             return trainSet;
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"),
-                    DataSetType.ML_CLF_SEQ_SPARSE, true);
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
             return DataSetUtil.concatenateByRow(trainSet, validSet);
         }
 
