@@ -1,7 +1,10 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
@@ -22,10 +25,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * CBM with L2 regularized LR base learners
- * Created by chengli on 4/2/17.
+ * CBM with gradient boosting base learners
+ * Created by chengli on 4/29/17.
  */
-public class CBMLR {
+public class CBMGB {
     private static boolean VERBOSE = false;
 
     public static void main(String[] args) throws Exception {
@@ -48,19 +51,19 @@ public class CBMLR {
             stopWatch.start();
             List<TuneResult> tuneResults = new ArrayList<>();
             List<MultiLabelClfDataSet> dataSets = loadTrainValidData(config);
-            List<Double> variances = config.getDoubles("tune.variance.candidates");
+            List<Integer> leaveNums = config.getIntegers("tune.numLeaves.candidates");
             List<Integer> components = config.getIntegers("tune.numComponents.candidates");
-            for (double variance: variances){
+            for (int numLeaves: leaveNums){
                 for (int component: components){
                     StopWatch stopWatch1 = new StopWatch();
                     stopWatch1.start();
                     HyperParameters hyperParameters = new HyperParameters();
                     hyperParameters.numComponents = component;
-                    hyperParameters.variance = variance;
+                    hyperParameters.numLeaves = numLeaves;
                     System.out.println("---------------------------");
                     System.out.println("Trying hyper parameters:");
                     System.out.println("train.numComponents = "+hyperParameters.numComponents);
-                    System.out.println("train.variance = "+hyperParameters.variance);
+                    System.out.println("train.numLeaves = "+hyperParameters.numLeaves);
                     TuneResult tuneResult = tune(config, hyperParameters, dataSets.get(0), dataSets.get(1));
                     System.out.println("Found optimal train.iterations = "+tuneResult.hyperParameters.iterations);
                     System.out.println("Validation performance = "+tuneResult.performance);
@@ -94,7 +97,7 @@ public class CBMLR {
             System.out.println("Best validation performance = "+best.performance);
             System.out.println("Best hyper parameters:");
             System.out.println("train.numComponents = "+best.hyperParameters.numComponents);
-            System.out.println("train.variance = "+best.hyperParameters.variance);
+            System.out.println("train.numLeaves = "+best.hyperParameters.numLeaves);
             System.out.println("train.iterations = "+best.hyperParameters.iterations);
             Config tunedHypers = best.hyperParameters.asConfig();
             tunedHypers.store(new File(config.getString("output.dir"), "tuned_hyper_parameters.properties"));
@@ -115,7 +118,7 @@ public class CBMLR {
                 HyperParameters hyperParameters = new HyperParameters(tunedHypers);
                 System.out.println("Start training with tuned hyper parameters:");
                 System.out.println("train.numComponents = "+hyperParameters.numComponents);
-                System.out.println("train.variance = "+hyperParameters.variance);
+                System.out.println("train.numLeaves = "+hyperParameters.numLeaves);
                 System.out.println("train.iterations = "+hyperParameters.iterations);
 
 
@@ -125,7 +128,7 @@ public class CBMLR {
                 HyperParameters hyperParameters = new HyperParameters(config);
                 System.out.println("Start training with given hyper parameters:");
                 System.out.println("train.numComponents = "+hyperParameters.numComponents);
-                System.out.println("train.variance = "+hyperParameters.variance);
+                System.out.println("train.numLeaves = "+hyperParameters.numLeaves);
                 System.out.println("train.iterations = "+hyperParameters.iterations);
 
                 MultiLabelClfDataSet trainSet = loadTrainData(config);
@@ -148,7 +151,7 @@ public class CBMLR {
         CBM cbm = newCBM(config,trainSet, hyperParameters);
         EarlyStopper earlyStopper = loadNewEarlyStopper(config);
 
-        LRCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
+        GBCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
         optimizer.initialize();
 
         MultiLabelClassifier classifier;
@@ -247,7 +250,7 @@ public class CBMLR {
         stopWatch.start();
         CBM cbm = newCBM(config,trainSet, hyperParameters);
 
-        LRCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
+        GBCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
         System.out.println("Initializing the model");
         optimizer.initialize();
         System.out.println("Initialization done");
@@ -266,7 +269,7 @@ public class CBMLR {
     }
 
     private static void test(Config config) throws Exception{
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.testData"));
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.testData"));
 
         String output = config.getString("output.dir");
 
@@ -427,17 +430,17 @@ public class CBMLR {
 
 
 
-    private static LRCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
-        LRCBMOptimizer lrcbmOptimizer = new LRCBMOptimizer(cbm, trainSet);
-        lrcbmOptimizer.setPriorVarianceBinary(hyperParameters.variance);
-        lrcbmOptimizer.setPriorVarianceMultiClass(hyperParameters.variance);
-        lrcbmOptimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
-        lrcbmOptimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
-        lrcbmOptimizer.setSkipDataThreshold(config.getDouble("train.skipDataThreshold"));
-        lrcbmOptimizer.setSkipLabelThreshold(config.getDouble("train.skipLabelThreshold"));
-        lrcbmOptimizer.setSmoothingStrength(config.getDouble("train.smoothStrength"));
+    private static GBCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
+        GBCBMOptimizer cbmOptimizer = new GBCBMOptimizer(cbm, trainSet);
+        cbmOptimizer.setNumLeaves(hyperParameters.numLeaves);
+        cbmOptimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
+        cbmOptimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
+        cbmOptimizer.setSkipDataThreshold(config.getDouble("train.skipDataThreshold"));
+        cbmOptimizer.setSkipLabelThreshold(config.getDouble("train.skipLabelThreshold"));
+        cbmOptimizer.setSmoothingStrength(config.getDouble("train.smoothStrength"));
+        cbmOptimizer.setShrinkage(config.getDouble("train.shrinkage"));
 
-        return lrcbmOptimizer;
+        return cbmOptimizer;
     }
 
 
@@ -450,8 +453,8 @@ public class CBMLR {
                 .setNumClasses(trainSet.getNumClasses())
                 .setNumFeatures(trainSet.getNumFeatures())
                 .setNumComponents(hyperParameters.numComponents)
-                .setMultiClassClassifierType("lr")
-                .setBinaryClassifierType("lr")
+                .setMultiClassClassifierType("boost")
+                .setBinaryClassifierType("boost")
                 .build();
         String allowEmpty = config.getString("predict.allowEmpty");
         switch (allowEmpty){
@@ -514,7 +517,7 @@ public class CBMLR {
     private static List<MultiLabelClfDataSet> loadTrainValidData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
         List<MultiLabelClfDataSet> datasets = new ArrayList<>();
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             System.out.println("No external validation data is provided. Use random 20% of the training data for validation.");
@@ -524,7 +527,7 @@ public class CBMLR {
             datasets.add(subTrain);
             datasets.add(validSet);
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.validData"));
             datasets.add(trainSet);
             datasets.add(validSet);
         }
@@ -533,19 +536,19 @@ public class CBMLR {
 
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             return trainSet;
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.validData"));
             return DataSetUtil.concatenateByRow(trainSet, validSet);
         }
 
     }
 
     private static class HyperParameters{
-        double variance;
+        int numLeaves;
         int iterations;
         int numComponents;
 
@@ -553,14 +556,14 @@ public class CBMLR {
         }
 
         HyperParameters(Config config) {
-            variance = config.getDouble("train.variance");
+            numLeaves = config.getInt("train.numLeaves");
             iterations = config.getInt("train.iterations");
             numComponents = config.getInt("train.numComponents");
         }
 
         Config asConfig(){
             Config config = new Config();
-            config.setDouble("train.variance", variance);
+            config.setInt("train.numLeaves", numLeaves);
             config.setInt("train.iterations", iterations);
             config.setInt("train.numComponents", numComponents);
             return config;

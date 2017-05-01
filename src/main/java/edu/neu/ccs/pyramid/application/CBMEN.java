@@ -159,7 +159,7 @@ public class CBMEN {
         EarlyStopper earlyStopper = loadNewEarlyStopper(config);
 
         ENCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
-        if (config.getBoolean("random.initial")) {
+        if (config.getBoolean("train.randomInitialize")) {
             optimizer.randInitialize();
         } else {
             optimizer.initialize();
@@ -263,7 +263,7 @@ public class CBMEN {
 
         ENCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
         System.out.println("Initializing the model");
-        if (config.getBoolean("random.initial")) {
+        if (config.getBoolean("train.randomInitialize")) {
             optimizer.randInitialize();
         } else {
             optimizer.initialize();
@@ -284,8 +284,7 @@ public class CBMEN {
     }
 
     private static void test(Config config) throws Exception{
-        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.testData"));
 
         String output = config.getString("output.dir");
 
@@ -446,17 +445,17 @@ public class CBMEN {
     private static ENCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
         ENCBMOptimizer optimizer = new ENCBMOptimizer(cbm, trainSet);
 
-        optimizer.setLineSearch(config.getBoolean("elasticnet.lineSearch"));
+        optimizer.setLineSearch(config.getBoolean("train.elasticnet.lineSearch"));
         optimizer.setRegularizationBinary(hyperParameters.penalty);
         optimizer.setRegularizationMultiClass(hyperParameters.penalty);
         optimizer.setL1RatioBinary(hyperParameters.l1Ratio);
         optimizer.setL1RatioMultiClass(hyperParameters.l1Ratio);
-        optimizer.setActiveSet(config.getBoolean("elasticnet.activeSet"));
+        optimizer.setActiveSet(config.getBoolean("train.elasticnet.activeSet"));
 
-        optimizer.setBinaryUpdatesPerIter(config.getInt("binary.updatesPerIteration"));
-        optimizer.setMulticlassUpdatesPerIter(config.getInt("multiClass.updatesPerIteration"));
-        optimizer.setSkipDataThreshold(config.getDouble("skipDataThreshold"));
-        optimizer.setSkipLabelThreshold(config.getDouble("skipLabelThreshold"));
+        optimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
+        optimizer.setMulticlassUpdatesPerIter(config.getInt("train.updatesPerIteration"));
+        optimizer.setSkipDataThreshold(config.getDouble("train.skipDataThreshold"));
+        optimizer.setSkipLabelThreshold(config.getDouble("train.skipLabelThreshold"));
 //
 
         return optimizer;
@@ -537,8 +536,7 @@ public class CBMEN {
     private static List<MultiLabelClfDataSet> loadTrainValidData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
         List<MultiLabelClfDataSet> datasets = new ArrayList<>();
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             System.out.println("No external validation data is provided. Use random 20% of the training data for validation.");
@@ -548,8 +546,7 @@ public class CBMEN {
             datasets.add(subTrain);
             datasets.add(validSet);
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"),
-                    DataSetType.ML_CLF_SEQ_SPARSE, true);
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
             datasets.add(trainSet);
             datasets.add(validSet);
         }
@@ -558,14 +555,12 @@ public class CBMEN {
 
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
         String validPath = config.getString("input.validData");
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
-                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
 
         if (validPath.isEmpty()){
             return trainSet;
         } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"),
-                    DataSetType.ML_CLF_SEQ_SPARSE, true);
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
             return DataSetUtil.concatenateByRow(trainSet, validSet);
         }
 

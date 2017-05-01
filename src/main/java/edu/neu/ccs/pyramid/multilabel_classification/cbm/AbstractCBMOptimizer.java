@@ -47,6 +47,8 @@ public abstract class AbstractCBMOptimizer {
 
     protected DataSet labelMatrix;
 
+    protected boolean parallelBinaryUpdates =true;
+
     public AbstractCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         this.cbm = cbm;
         this.dataSet = dataSet;
@@ -232,8 +234,14 @@ public abstract class AbstractCBMOptimizer {
 
         // to please lambda
         final double totalWeight = weightedTotal;
-        IntStream.range(0, cbm.numLabels).parallel()
-                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
+        if (parallelBinaryUpdates){
+            IntStream.range(0, cbm.numLabels).parallel()
+                    .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
+        } else {
+            IntStream.range(0, cbm.numLabels)
+                    .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
+        }
+
     }
 
 
