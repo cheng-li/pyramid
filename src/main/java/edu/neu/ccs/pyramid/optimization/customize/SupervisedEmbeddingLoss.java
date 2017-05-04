@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 
 /**
  * Created by yuyuxu on 3/23/17.
+ * Model Iteration 1.
  */
 public class SupervisedEmbeddingLoss implements Optimizable.ByGradientValue {
     private DataSet transform;              // d x 2, transformation matrix
