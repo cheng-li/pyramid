@@ -2,12 +2,9 @@ package edu.neu.ccs.pyramid.optimization.customize;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.util.Serialization;
+import org.apache.commons.math.optimization.VectorialConvergenceChecker;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Created by yuyuxu on 5/1/17.
@@ -28,14 +25,14 @@ public class SupervisedEmbeddingTSNELoss {
     private double omega;       // weight for fourth term
 
     double pdenomi[];           // denominator for p
-    double p[][];               // p_j|i
-    double qdenomi[];           // denominator for q
+    double p[][];               // p[i][j] = p_i|j
+    double qdenomi;             // denominator for q
     double q[][];               // q_ij
-
+    double p_scale[];           // scale term for p_j|i in gradient term
 
     private boolean flagValueCached;
     private boolean flagGradientCached;
-    private boolean flagKLCached;
+    private boolean flagKLVariableCached;
     private double cachedValue;
     private Vector cachedGradient;
 
@@ -53,12 +50,12 @@ public class SupervisedEmbeddingTSNELoss {
         this.gamma = gamma;
         this.omega = omega;
 
-        this.flagKLCached = false;
+        this.flagKLVariableCached = false;
         int numData = X0.getNumDataPoints();
-        pdenomi = new double[numData];
-        p = new double[numData][numData];
-        qdenomi = new double[numData];
-        q = new double[numData][numData];
+        this.pdenomi = new double[numData];
+        this.p = new double[numData][numData];
+        this.q = new double[numData][numData];
+        this.p_scale = new double[numData];
 
         this.flagValueCached = false;
         this.flagGradientCached = false;
@@ -106,10 +103,10 @@ public class SupervisedEmbeddingTSNELoss {
                 this.Y.setFeatureValue(i, j, parameters.get(i * numFeaturesY + j + offset));
             }
         }
-    
+
         this.flagValueCached = false;
         this.flagGradientCached = false;
-        this.flagKLCached = false;
+        this.flagKLVariableCached = false;
     }
 
     public double getValue() {
@@ -117,13 +114,100 @@ public class SupervisedEmbeddingTSNELoss {
             return this.cachedValue;
         }
 
-        this.flagValueCached = true;
-        return this.cachedValue;
+        if (!this.flagKLVariableCached) {
+            updateKLVariables();
+        }
+
+        int numData = this.X.getNumDataPoints();
+        this.cachedValue = 0.0;
+        double firstTermLoss = 0.0;
+        for (int i = 0; i < numData; ++i) {
+            Vector diff = this.X.getRow(i).minus(this.X0.getRow(i));
+            firstTermLoss += diff.dot(diff);
+        }
+        firstTermLoss *= this.alpha;
+        this.cachedValue += firstTermLoss;
+
+        double secondTermLoss = 0.0;
+        for (int i = 0; i < numData; ++i) {
+            Vector diff = this.Y.getRow(i).minus(this.Y0.getRow(i));
+            secondTermLoss += diff.dot(diff);
+        }
+        secondTermLoss *= this.beta;
+        this.cachedValue += secondTermLoss;
+
+        double thirdTermLoss = 0.0;
+        for (int i = 0; i < numData; ++i) {
+            for (int j = 0; j < numData; ++j) {
+                Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
+                Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
+                double diff = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
+                thirdTermLoss += diff * diff;
+            }
+        }
+        thirdTermLoss *= this.gamma;
+        this.cachedValue += thirdTermLoss;
+
+        double klTermLoss = 0.0;
+        for (int i = 0; i < numData; ++i) {
+            for (int j = 0; j < numData; ++j) {
+                double p_ij = (p[i][j] + p[j][i]) * 0.5 / (double)numData;
+                klTermLoss += p_ij * (Math.log(p_ij) - Math.log(q[i][j]));
+            }
+        }
+        klTermLoss *= omega;
+        this.cachedValue += klTermLoss;
+
+        flagValueCached = true;
+        return cachedValue;
     }
 
     public Vector getGradient() {
         if (this.flagGradientCached) {
             return this.cachedGradient;
+        }
+
+        if (!this.flagKLVariableCached) {
+            updateKLVariables();
+        }
+
+        int numData = this.X.getNumDataPoints();
+        int offset = this.X.getNumDataPoints() * this.X.getNumFeatures();
+        for (int i = 0; i < numData; ++i) {
+            Vector firstTermX = this.X.getRow(i).minus(this.X0.getRow(i)).times(2 * this.alpha);
+            Vector secondTermX = new DenseVector(this.X.getNumFeatures());
+            for (int j = 0; j < numData; ++j) {
+                Vector diff = this.X.getRow(i).minus(this.X.getRow(j));
+                double p_ij = (p[i][j] + p[j][i]) * 0.5 / (double)numData;
+                double scale = p[j][i] * (p_scale[i] - Math.log(p_ij) + Math.log(q[i][j])) * this.precision[i]
+                        + p[i][j] * (p_scale[j] - Math.log(p_ij) + Math.log(q[i][j])) * this.precision[j];
+                secondTermX = secondTermX.plus(diff.times(scale));
+            }
+            secondTermX = secondTermX.times(this.omega / (double)numData);
+            Vector gradXi = firstTermX.plus(secondTermX);
+            for (int j = 0; j < this.X.getNumFeatures(); ++j) {
+                this.cachedGradient.set(i * this.X.getNumFeatures() + j, gradXi.get(j));
+            }
+
+            Vector firstTermY = this.Y.getRow(i).minus(this.Y0.getRow(i)).times(2 * this.beta);
+            Vector secondTermY = new DenseVector(this.Y.getNumFeatures());
+            Vector thirdTermY = new DenseVector(this.Y.getNumFeatures());
+            for (int j = 0; j < numData; ++j) {
+                Vector diff = this.Y.getRow(i).minus(this.Y.getRow(j));
+                Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
+                Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
+                double p_ij = (p[i][j] + p[j][i]) * 0.5 / (double)numData;
+                double scaleSecondTerm = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
+                secondTermY = secondTermY.plus(diff.times(scaleSecondTerm));
+                double scaleThirdTerm = (p_ij - q[i][j]) / (1 + diff_proj.dot(diff_proj));
+                thirdTermY = thirdTermY.plus(diff.times(scaleThirdTerm));
+            }
+            secondTermY = secondTermY.times(8 * this.gamma);
+            thirdTermY = thirdTermY.times(4 * this.omega);
+            Vector gradYi = firstTermY.plus(secondTermY).plus(thirdTermY);
+            for (int j = 0; j < this.Y.getNumFeatures(); ++j) {
+                this.cachedGradient.set(i * this.Y.getNumFeatures() + j + offset, gradYi.get(j));
+            }
         }
 
         this.flagGradientCached = true;
@@ -142,5 +226,53 @@ public class SupervisedEmbeddingTSNELoss {
                 pdenomi[i] += Math.exp(-diff.dot(diff) * 0.5 * this.precision[i]);
             }
         }
+
+        for (int i = 0; i < numData; ++i) {
+            for (int j = 0; j < numData; ++j) {
+                if (j == i) {
+                    continue;
+                }
+                Vector diff = this.X.getRow(j).minus(this.X.getRow(i));
+                double diff_magnitude = diff.dot(diff);
+                p[i][j] = Math.exp(-diff_magnitude * 0.5 * this.precision[j]) / pdenomi[j];
+            }
+        }
+
+        qdenomi = 0.0;
+        for (int i = 0; i < numData; ++i) {
+            for (int j = 0; j < numData; ++j) {
+                if (j == i) {
+                    continue;
+                }
+                Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
+                double diff_magnitude = diff.dot(diff);
+                qdenomi += 1.0 / (1 + diff_magnitude);
+            }
+        }
+
+        for (int i = 0; i < numData; ++i) {
+            for (int j = 0; j < numData; ++j) {
+                if (j == i) {
+                    continue;
+                }
+                Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
+                double diff_magnitude = diff.dot(diff);
+                q[i][j] = 1.0 / (1 + diff_magnitude);
+                q[i][j] /= qdenomi;
+            }
+        }
+
+        for (int i = 0; i < numData; ++i) {
+            p_scale[i] = 0.0;
+            for (int j = 0; j < numData; ++j) {
+                if (j == i) {
+                    continue;
+                }
+                double p_ij = (p[j][i] + p[i][j]) * 0.5 / numData;
+                p_scale[i] += (Math.log(p_ij) - Math.log(q[i][j])) * p[j][i];
+            }
+        }
+
+        this.flagKLVariableCached = true;
     }
 }
