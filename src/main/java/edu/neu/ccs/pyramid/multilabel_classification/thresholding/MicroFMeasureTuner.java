@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.eval.MLConfusionMatrix;
 import edu.neu.ccs.pyramid.eval.MicroAverage;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
 import java.util.stream.IntStream;
 
@@ -11,6 +12,14 @@ import java.util.stream.IntStream;
  * Created by chengli on 5/6/17.
  */
 public class MicroFMeasureTuner {
+
+    public static double tuneThreshold(MultiLabelClassifier.ClassProbEstimator classProbEstimator, MultiLabelClfDataSet validationSet){
+        int numData = validationSet.getNumDataPoints();
+        int numClasses = validationSet.getNumClasses();
+        double[][] probabilities = new double[numData][numClasses];
+        IntStream.range(0, numData).parallel().forEach(i->probabilities[i] = classProbEstimator.predictClassProbs(validationSet.getRow(i)));
+        return tuneThreshold(probabilities, validationSet.getMultiLabels());
+    }
 
     public static double tuneThreshold(double[][] probabilities, MultiLabel[] groundTruth){
         double bestThreshold = 0;
