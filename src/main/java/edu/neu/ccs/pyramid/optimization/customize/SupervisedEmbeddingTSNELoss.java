@@ -1,7 +1,9 @@
 package edu.neu.ccs.pyramid.optimization.customize;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.optimization.Optimizable;
 import edu.neu.ccs.pyramid.util.Serialization;
+import edu.stanford.nlp.patterns.Data;
 import org.apache.commons.math.optimization.VectorialConvergenceChecker;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -11,7 +13,7 @@ import org.apache.mahout.math.Vector;
  * Model Iteration 2.
  * Refer write up formula (5).
  */
-public class SupervisedEmbeddingTSNELoss {
+public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue {
     private DataSet X0;         // n x d, initial embedding matrix
     private DataSet Y0;         // n x 2, initial t-sne projection matrix
     private DataSet U;          // n x 2, user provided 2d plots for the data points
@@ -62,6 +64,14 @@ public class SupervisedEmbeddingTSNELoss {
         this.cachedGradient = new DenseVector(
                 this.X.getNumDataPoints() * this.X.getNumFeatures() +
                 this.Y.getNumDataPoints() * this.Y.getNumFeatures());
+    }
+
+    public DataSet getX() {
+        return this.X;
+    }
+
+    public DataSet getY() {
+        return this.Y;
     }
 
     public Vector getParameters() {
@@ -151,11 +161,11 @@ public class SupervisedEmbeddingTSNELoss {
         double klTermLoss = 0.0;
         for (int i = 0; i < numData; ++i) {
             for (int j = 0; j < numData; ++j) {
-                double p_ij = (p[i][j] + p[j][i]) * 0.5 / (double)numData;
-                klTermLoss += p_ij * (Math.log(p_ij) - Math.log(q[i][j]));
+                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
+                klTermLoss += p_ij * (Math.log(p_ij) - Math.log(this.q[i][j]));
             }
         }
-        klTermLoss *= omega;
+        klTermLoss *= this.omega;
         this.cachedValue += klTermLoss;
 
         flagValueCached = true;
@@ -178,9 +188,9 @@ public class SupervisedEmbeddingTSNELoss {
             Vector secondTermX = new DenseVector(this.X.getNumFeatures());
             for (int j = 0; j < numData; ++j) {
                 Vector diff = this.X.getRow(i).minus(this.X.getRow(j));
-                double p_ij = (p[i][j] + p[j][i]) * 0.5 / (double)numData;
-                double scale = p[j][i] * (p_scale[i] - Math.log(p_ij) + Math.log(q[i][j])) * this.precision[i]
-                        + p[i][j] * (p_scale[j] - Math.log(p_ij) + Math.log(q[i][j])) * this.precision[j];
+                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
+                double scale = this.p[j][i] * (this.p_scale[i] - Math.log(p_ij) + Math.log(this.q[i][j])) * this.precision[i]
+                        + this.p[i][j] * (this.p_scale[j] - Math.log(p_ij) + Math.log(this.q[i][j])) * this.precision[j];
                 secondTermX = secondTermX.plus(diff.times(scale));
             }
             secondTermX = secondTermX.times(this.omega / (double)numData);
@@ -196,10 +206,10 @@ public class SupervisedEmbeddingTSNELoss {
                 Vector diff = this.Y.getRow(i).minus(this.Y.getRow(j));
                 Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
                 Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
-                double p_ij = (p[i][j] + p[j][i]) * 0.5 / (double)numData;
+                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
                 double scaleSecondTerm = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
                 secondTermY = secondTermY.plus(diff.times(scaleSecondTerm));
-                double scaleThirdTerm = (p_ij - q[i][j]) / (1 + diff_proj.dot(diff_proj));
+                double scaleThirdTerm = (p_ij - this.q[i][j]) / (1 + diff_proj.dot(diff_proj));
                 thirdTermY = thirdTermY.plus(diff.times(scaleThirdTerm));
             }
             secondTermY = secondTermY.times(8 * this.gamma);
@@ -217,13 +227,13 @@ public class SupervisedEmbeddingTSNELoss {
     private void updateKLVariables() {
         int numData = this.X.getNumDataPoints();
         for (int i = 0; i < numData; ++i) {
-            pdenomi[i] = 0.0;
+            this.pdenomi[i] = 0.0;
             for (int j = 0; j < numData; ++j) {
                 if (j == i) {
                     continue;
                 }
                 Vector diff = this.X.getRow(j).minus(this.X.getRow(i));
-                pdenomi[i] += Math.exp(-diff.dot(diff) * 0.5 * this.precision[i]);
+                this.pdenomi[i] += Math.exp(-diff.dot(diff) * 0.5 * this.precision[i]);
             }
         }
 
@@ -234,11 +244,11 @@ public class SupervisedEmbeddingTSNELoss {
                 }
                 Vector diff = this.X.getRow(j).minus(this.X.getRow(i));
                 double diff_magnitude = diff.dot(diff);
-                p[i][j] = Math.exp(-diff_magnitude * 0.5 * this.precision[j]) / pdenomi[j];
+                this.p[i][j] = Math.exp(-diff_magnitude * 0.5 * this.precision[j]) / this.pdenomi[j];
             }
         }
 
-        qdenomi = 0.0;
+        this.qdenomi = 0.0;
         for (int i = 0; i < numData; ++i) {
             for (int j = 0; j < numData; ++j) {
                 if (j == i) {
@@ -246,7 +256,7 @@ public class SupervisedEmbeddingTSNELoss {
                 }
                 Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
                 double diff_magnitude = diff.dot(diff);
-                qdenomi += 1.0 / (1 + diff_magnitude);
+                this.qdenomi += 1.0 / (1 + diff_magnitude);
             }
         }
 
@@ -257,19 +267,19 @@ public class SupervisedEmbeddingTSNELoss {
                 }
                 Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
                 double diff_magnitude = diff.dot(diff);
-                q[i][j] = 1.0 / (1 + diff_magnitude);
-                q[i][j] /= qdenomi;
+                this.q[i][j] = 1.0 / (1 + diff_magnitude);
+                this.q[i][j] /= this.qdenomi;
             }
         }
 
         for (int i = 0; i < numData; ++i) {
-            p_scale[i] = 0.0;
+            this.p_scale[i] = 0.0;
             for (int j = 0; j < numData; ++j) {
                 if (j == i) {
                     continue;
                 }
-                double p_ij = (p[j][i] + p[i][j]) * 0.5 / numData;
-                p_scale[i] += (Math.log(p_ij) - Math.log(q[i][j])) * p[j][i];
+                double p_ij = (this.p[j][i] + this.p[i][j]) * 0.5 / numData;
+                this.p_scale[i] += (Math.log(p_ij) - Math.log(this.q[i][j])) * this.p[j][i];
             }
         }
 
