@@ -1,15 +1,12 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
-import edu.neu.ccs.pyramid.dataset.DenseClfDataSet;
 import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
 import edu.neu.ccs.pyramid.optimization.Terminator;
-import edu.neu.ccs.pyramid.optimization.customize.SupervisedEmbeddingLoss;
 import edu.neu.ccs.pyramid.optimization.customize.SupervisedEmbeddingTSNELoss;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.Level;
@@ -61,9 +58,9 @@ public class SupervisedEmbeddingTSNE {
             String line = br.readLine();
             while (line != null) {
                 precision[i] = Double.parseDouble(line);
+                i += 1;
+                line = br.readLine();
             }
-            i += 1;
-            line = br.readLine();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

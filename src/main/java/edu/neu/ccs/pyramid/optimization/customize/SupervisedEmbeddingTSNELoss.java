@@ -3,10 +3,10 @@ package edu.neu.ccs.pyramid.optimization.customize;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
 import edu.neu.ccs.pyramid.util.Serialization;
-import edu.stanford.nlp.patterns.Data;
-import org.apache.commons.math.optimization.VectorialConvergenceChecker;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+
+import java.util.Arrays;
 
 /**
  * Created by yuyuxu on 5/1/17.
@@ -47,9 +47,13 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         this.Y = (DataSet)Serialization.deepCopy(Y0);
 
         this.precision = precision.clone();
-        this.alpha = alpha;
-        this.beta = beta;
-        this.gamma = gamma;
+//        this.alpha = alpha;
+//        this.beta = beta;
+//        this.gamma = gamma;
+//        this.omega = omega;
+        this.alpha = 1.0 / (double)X0.getNumDataPoints();
+        this.beta = 1.0 / (double)X0.getNumDataPoints();
+        this.gamma = 1.0 / (double)(X0.getNumDataPoints() * X0.getNumDataPoints());
         this.omega = omega;
 
         this.flagKLVariableCached = false;
@@ -137,6 +141,7 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         }
         firstTermLoss *= this.alpha;
         this.cachedValue += firstTermLoss;
+        // System.out.println("getValue firstTermLoss=" + firstTermLoss);
 
         double secondTermLoss = 0.0;
         for (int i = 0; i < numData; ++i) {
@@ -145,10 +150,14 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         }
         secondTermLoss *= this.beta;
         this.cachedValue += secondTermLoss;
+        // System.out.println("getValue secondTermLoss=" + secondTermLoss);
 
         double thirdTermLoss = 0.0;
         for (int i = 0; i < numData; ++i) {
             for (int j = 0; j < numData; ++j) {
+                if (i == j) {
+                    continue;
+                }
                 Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
                 Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
                 double diff = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
@@ -157,16 +166,21 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         }
         thirdTermLoss *= this.gamma;
         this.cachedValue += thirdTermLoss;
+        // System.out.println("getValue thirdTermLoss=" + thirdTermLoss);
 
         double klTermLoss = 0.0;
         for (int i = 0; i < numData; ++i) {
             for (int j = 0; j < numData; ++j) {
+                if (i == j) {
+                    continue;
+                }
                 double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
                 klTermLoss += p_ij * (Math.log(p_ij) - Math.log(this.q[i][j]));
             }
         }
         klTermLoss *= this.omega;
         this.cachedValue += klTermLoss;
+        // System.out.println("getValue klTermLoss=" + klTermLoss);
 
         flagValueCached = true;
         return cachedValue;
@@ -187,10 +201,14 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
             Vector firstTermX = this.X.getRow(i).minus(this.X0.getRow(i)).times(2 * this.alpha);
             Vector secondTermX = new DenseVector(this.X.getNumFeatures());
             for (int j = 0; j < numData; ++j) {
+                if (i == j) {
+                    continue;
+                }
                 Vector diff = this.X.getRow(i).minus(this.X.getRow(j));
                 double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
-                double scale = this.p[j][i] * (this.p_scale[i] - Math.log(p_ij) + Math.log(this.q[i][j])) * this.precision[i]
-                        + this.p[i][j] * (this.p_scale[j] - Math.log(p_ij) + Math.log(this.q[i][j])) * this.precision[j];
+                double p_over_q_ij = Math.log(p_ij) - Math.log(this.q[i][j]);
+                double scale = this.p[j][i] * (this.p_scale[i] - p_over_q_ij) * this.precision[i]
+                        + this.p[i][j] * (this.p_scale[j] - p_over_q_ij) * this.precision[j];
                 secondTermX = secondTermX.plus(diff.times(scale));
             }
             secondTermX = secondTermX.times(this.omega / (double)numData);
@@ -203,12 +221,15 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
             Vector secondTermY = new DenseVector(this.Y.getNumFeatures());
             Vector thirdTermY = new DenseVector(this.Y.getNumFeatures());
             for (int j = 0; j < numData; ++j) {
+                if (i == j) {
+                    continue;
+                }
                 Vector diff = this.Y.getRow(i).minus(this.Y.getRow(j));
                 Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
                 Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
-                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
                 double scaleSecondTerm = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
                 secondTermY = secondTermY.plus(diff.times(scaleSecondTerm));
+                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
                 double scaleThirdTerm = (p_ij - this.q[i][j]) / (1 + diff_proj.dot(diff_proj));
                 thirdTermY = thirdTermY.plus(diff.times(scaleThirdTerm));
             }
@@ -226,6 +247,8 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
 
     private void updateKLVariables() {
         int numData = this.X.getNumDataPoints();
+
+        // denominator for p
         for (int i = 0; i < numData; ++i) {
             this.pdenomi[i] = 0.0;
             for (int j = 0; j < numData; ++j) {
@@ -236,7 +259,9 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
                 this.pdenomi[i] += Math.exp(-diff.dot(diff) * 0.5 * this.precision[i]);
             }
         }
+        // System.out.printf("pdemomi=" + Arrays.toString(this.pdenomi));
 
+        // p[i][j] = p_i|j, non-symmetric
         for (int i = 0; i < numData; ++i) {
             for (int j = 0; j < numData; ++j) {
                 if (j == i) {
@@ -248,6 +273,7 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
             }
         }
 
+        // denominator for q
         this.qdenomi = 0.0;
         for (int i = 0; i < numData; ++i) {
             for (int j = 0; j < numData; ++j) {
@@ -259,7 +285,9 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
                 this.qdenomi += 1.0 / (1 + diff_magnitude);
             }
         }
+        // System.out.printf("qdenomi=" + this.qdenomi);
 
+        // q[i][j] = q_ij, symmetric
         for (int i = 0; i < numData; ++i) {
             for (int j = 0; j < numData; ++j) {
                 if (j == i) {
@@ -272,16 +300,18 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
             }
         }
 
+        // log scale for p
         for (int i = 0; i < numData; ++i) {
             this.p_scale[i] = 0.0;
             for (int j = 0; j < numData; ++j) {
                 if (j == i) {
                     continue;
                 }
-                double p_ij = (this.p[j][i] + this.p[i][j]) * 0.5 / numData;
+                double p_ij = (this.p[j][i] + this.p[i][j]) * 0.5 / (double)numData;
                 this.p_scale[i] += (Math.log(p_ij) - Math.log(this.q[i][j])) * this.p[j][i];
             }
         }
+         // System.out.printf("p_scale=" + Arrays.toString(this.p_scale));
 
         this.flagKLVariableCached = true;
     }
