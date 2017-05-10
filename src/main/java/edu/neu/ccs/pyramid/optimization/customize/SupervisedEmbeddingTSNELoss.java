@@ -7,6 +7,9 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by yuyuxu on 5/1/17.
@@ -133,57 +136,49 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         }
 
         int numData = this.X.getNumDataPoints();
-        this.cachedValue = 0.0;
-        double firstTermLoss = 0.0;
-        for (int i = 0; i < numData; ++i) {
-            Vector diff = this.X.getRow(i).minus(this.X0.getRow(i));
-            firstTermLoss += diff.dot(diff);
-        }
-        firstTermLoss *= this.alpha;
-        this.cachedValue += firstTermLoss;
-        // System.out.println("getValue firstTermLoss=" + firstTermLoss);
+        this.cachedValue = IntStream.range(0, numData)
+                .parallel()
+                .mapToDouble(this::updateValue).sum();
+        this.flagValueCached = true;
 
-        double secondTermLoss = 0.0;
-        for (int i = 0; i < numData; ++i) {
-            Vector diff = this.Y.getRow(i).minus(this.Y0.getRow(i));
-            secondTermLoss += diff.dot(diff);
-        }
-        secondTermLoss *= this.beta;
-        this.cachedValue += secondTermLoss;
-        // System.out.println("getValue secondTermLoss=" + secondTermLoss);
+        return this.cachedValue;
+    }
+
+    private double updateValue(int i) {
+        int numData = this.X.getNumDataPoints();
+        double res = 0.0;
+
+        // first term
+        Vector diff1 = this.X.getRow(i).minus(this.X0.getRow(i));
+        res += diff1.dot(diff1) * this.alpha;
+
+        // second term
+        Vector diff2 = this.Y.getRow(i).minus(this.Y0.getRow(i));
+        res += diff2.dot(diff2) * this.beta;
 
         double thirdTermLoss = 0.0;
-        for (int i = 0; i < numData; ++i) {
-            for (int j = 0; j < numData; ++j) {
-                if (i == j) {
-                    continue;
-                }
-                Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
-                Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
-                double diff = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
-                thirdTermLoss += diff * diff;
+        for (int j = 0; j < numData; ++j) {
+            if (i == j) {
+                continue;
             }
+            Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
+            Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
+            double diff = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
+            thirdTermLoss += diff * diff;
         }
-        thirdTermLoss *= this.gamma;
-        this.cachedValue += thirdTermLoss;
-        // System.out.println("getValue thirdTermLoss=" + thirdTermLoss);
+        res += thirdTermLoss * this.gamma;
 
         double klTermLoss = 0.0;
-        for (int i = 0; i < numData; ++i) {
-            for (int j = 0; j < numData; ++j) {
-                if (i == j) {
-                    continue;
-                }
-                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
-                klTermLoss += p_ij * (Math.log(p_ij) - Math.log(this.q[i][j]));
+        for (int j = 0; j < numData; ++j) {
+            if (i == j) {
+                continue;
             }
+            double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double) numData;
+            klTermLoss += p_ij * (Math.log(p_ij) - Math.log(this.q[i][j]));
         }
-        klTermLoss *= this.omega;
-        this.cachedValue += klTermLoss;
-        // System.out.println("getValue klTermLoss=" + klTermLoss);
+        res += klTermLoss * this.omega;
 
-        flagValueCached = true;
-        return cachedValue;
+        return res;
     }
 
     public Vector getGradient() {
@@ -196,48 +191,23 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         }
 
         int numData = this.X.getNumDataPoints();
+        int numFeaturesX = this.X.getNumFeatures();
+        int numFeaturesY = this.Y.getNumFeatures();
         int offset = this.X.getNumDataPoints() * this.X.getNumFeatures();
-        for (int i = 0; i < numData; ++i) {
-            Vector firstTermX = this.X.getRow(i).minus(this.X0.getRow(i)).times(2 * this.alpha);
-            Vector secondTermX = new DenseVector(this.X.getNumFeatures());
-            for (int j = 0; j < numData; ++j) {
-                if (i == j) {
-                    continue;
-                }
-                Vector diff = this.X.getRow(i).minus(this.X.getRow(j));
-                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
-                double p_over_q_ij = Math.log(p_ij) - Math.log(this.q[i][j]);
-                double scale = this.p[j][i] * (this.p_scale[i] - p_over_q_ij) * this.precision[i]
-                        + this.p[i][j] * (this.p_scale[j] - p_over_q_ij) * this.precision[j];
-                secondTermX = secondTermX.plus(diff.times(scale));
+        List<Vector> gradientX = IntStream.range(0, numData)
+                .parallel()
+                .mapToObj(this::updateGradientX).collect(Collectors.toList());
+        List<Vector> gradientY = IntStream.range(0, numData)
+                .parallel()
+                .mapToObj(this::updateGradientY).collect(Collectors.toList());
+        for (int i = 0; i < numData; i++) {
+            for (int j = 0; j < numFeaturesX; j++) {
+                this.cachedGradient.set(i * numFeaturesX + j, gradientX.get(i).get(j));
             }
-            secondTermX = secondTermX.times(this.omega / (double)numData);
-            Vector gradXi = firstTermX.plus(secondTermX);
-            for (int j = 0; j < this.X.getNumFeatures(); ++j) {
-                this.cachedGradient.set(i * this.X.getNumFeatures() + j, gradXi.get(j));
-            }
-
-            Vector firstTermY = this.Y.getRow(i).minus(this.Y0.getRow(i)).times(2 * this.beta);
-            Vector secondTermY = new DenseVector(this.Y.getNumFeatures());
-            Vector thirdTermY = new DenseVector(this.Y.getNumFeatures());
-            for (int j = 0; j < numData; ++j) {
-                if (i == j) {
-                    continue;
-                }
-                Vector diff = this.Y.getRow(i).minus(this.Y.getRow(j));
-                Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
-                Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
-                double scaleSecondTerm = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
-                secondTermY = secondTermY.plus(diff.times(scaleSecondTerm));
-                double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
-                double scaleThirdTerm = (p_ij - this.q[i][j]) / (1 + diff_proj.dot(diff_proj));
-                thirdTermY = thirdTermY.plus(diff.times(scaleThirdTerm));
-            }
-            secondTermY = secondTermY.times(8 * this.gamma);
-            thirdTermY = thirdTermY.times(4 * this.omega);
-            Vector gradYi = firstTermY.plus(secondTermY).plus(thirdTermY);
-            for (int j = 0; j < this.Y.getNumFeatures(); ++j) {
-                this.cachedGradient.set(i * this.Y.getNumFeatures() + j + offset, gradYi.get(j));
+        }
+        for (int i = 0; i < numData; i++) {
+            for (int j = 0; j < numFeaturesY; j++) {
+                this.cachedGradient.set(i * numFeaturesY + j + offset, gradientY.get(i).get(j));
             }
         }
 
@@ -245,74 +215,135 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         return this.cachedGradient;
     }
 
+    public Vector updateGradientX(int i) {
+        int numData = this.X.getNumDataPoints();
+
+        Vector firstTermX = this.X.getRow(i).minus(this.X0.getRow(i)).times(2 * this.alpha);
+        Vector secondTermX = new DenseVector(this.X.getNumFeatures());
+        for (int j = 0; j < numData; ++j) {
+            if (i == j) {
+                continue;
+            }
+            Vector diff = this.X.getRow(i).minus(this.X.getRow(j));
+            double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
+            double p_over_q_ij = Math.log(p_ij) - Math.log(this.q[i][j]);
+            double scale = this.p[j][i] * (this.p_scale[i] - p_over_q_ij) * this.precision[i]
+                    + this.p[i][j] * (this.p_scale[j] - p_over_q_ij) * this.precision[j];
+            secondTermX = secondTermX.plus(diff.times(scale));
+        }
+        secondTermX = secondTermX.times(this.omega / (double)numData);
+        Vector gradient = firstTermX.plus(secondTermX);
+
+        return gradient;
+    }
+
+    public Vector updateGradientY(int i) {
+        int numData = this.Y.getNumDataPoints();
+
+        Vector firstTermY = this.Y.getRow(i).minus(this.Y0.getRow(i)).times(2 * this.beta);
+        Vector secondTermY = new DenseVector(this.Y.getNumFeatures());
+        Vector thirdTermY = new DenseVector(this.Y.getNumFeatures());
+        for (int j = 0; j < numData; ++j) {
+            if (i == j) {
+                continue;
+            }
+            Vector diff = this.Y.getRow(i).minus(this.Y.getRow(j));
+            Vector diff_proj = this.Y.getRow(i).minus(this.Y.getRow(j));
+            Vector diff_user = this.U.getRow(i).minus(this.U.getRow(j));
+            double scaleSecondTerm = diff_proj.dot(diff_proj) - diff_user.dot(diff_user);
+            secondTermY = secondTermY.plus(diff.times(scaleSecondTerm));
+            double p_ij = (this.p[i][j] + this.p[j][i]) * 0.5 / (double)numData;
+            double scaleThirdTerm = (p_ij - this.q[i][j]) / (1 + diff_proj.dot(diff_proj));
+            thirdTermY = thirdTermY.plus(diff.times(scaleThirdTerm));
+        }
+        secondTermY = secondTermY.times(8 * this.gamma);
+        thirdTermY = thirdTermY.times(4 * this.omega);
+        Vector gradient = firstTermY.plus(secondTermY).plus(thirdTermY);
+
+        return gradient;
+    }
+
     private void updateKLVariables() {
         int numData = this.X.getNumDataPoints();
 
         // denominator for p
-        for (int i = 0; i < numData; ++i) {
-            this.pdenomi[i] = 0.0;
-            for (int j = 0; j < numData; ++j) {
-                if (j == i) {
-                    continue;
-                }
-                Vector diff = this.X.getRow(j).minus(this.X.getRow(i));
-                this.pdenomi[i] += Math.exp(-diff.dot(diff) * 0.5 * this.precision[i]);
-            }
-        }
-        // System.out.printf("pdemomi=" + Arrays.toString(this.pdenomi));
+        IntStream.range(0, numData).parallel().forEach(this::updateKLVariablePDenomi);
 
         // p[i][j] = p_i|j, non-symmetric
-        for (int i = 0; i < numData; ++i) {
-            for (int j = 0; j < numData; ++j) {
-                if (j == i) {
-                    continue;
-                }
-                Vector diff = this.X.getRow(j).minus(this.X.getRow(i));
-                double diff_magnitude = diff.dot(diff);
-                this.p[i][j] = Math.exp(-diff_magnitude * 0.5 * this.precision[j]) / this.pdenomi[j];
-            }
-        }
+        IntStream.range(0, numData).parallel().forEach(this::updateKLVariableP);
 
         // denominator for q
-        this.qdenomi = 0.0;
-        for (int i = 0; i < numData; ++i) {
-            for (int j = 0; j < numData; ++j) {
-                if (j == i) {
-                    continue;
-                }
-                Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
-                double diff_magnitude = diff.dot(diff);
-                this.qdenomi += 1.0 / (1 + diff_magnitude);
-            }
-        }
-        // System.out.printf("qdenomi=" + this.qdenomi);
+        this.qdenomi = IntStream.range(0, numData).parallel().mapToDouble(this::updateKLVariableQDenomi).sum();
 
         // q[i][j] = q_ij, symmetric
-        for (int i = 0; i < numData; ++i) {
-            for (int j = 0; j < numData; ++j) {
-                if (j == i) {
-                    continue;
-                }
-                Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
-                double diff_magnitude = diff.dot(diff);
-                this.q[i][j] = 1.0 / (1 + diff_magnitude);
-                this.q[i][j] /= this.qdenomi;
-            }
-        }
+        IntStream.range(0, numData).parallel().forEach(this::updateKLVariableQ);
 
         // log scale for p
-        for (int i = 0; i < numData; ++i) {
-            this.p_scale[i] = 0.0;
-            for (int j = 0; j < numData; ++j) {
-                if (j == i) {
-                    continue;
-                }
-                double p_ij = (this.p[j][i] + this.p[i][j]) * 0.5 / (double)numData;
-                this.p_scale[i] += (Math.log(p_ij) - Math.log(this.q[i][j])) * this.p[j][i];
-            }
-        }
-         // System.out.printf("p_scale=" + Arrays.toString(this.p_scale));
+        IntStream.range(0, numData).parallel().forEach(this::updateKLVariablePScale);
 
         this.flagKLVariableCached = true;
+    }
+
+    private void updateKLVariablePDenomi(int i) {
+        int numData = this.X.getNumDataPoints();
+        this.pdenomi[i] = 0.0;
+        for (int j = 0; j < numData; ++j) {
+            if (j == i) {
+                continue;
+            }
+            Vector diff = this.X.getRow(j).minus(this.X.getRow(i));
+            this.pdenomi[i] += Math.exp(-diff.dot(diff) * 0.5 * this.precision[i]);
+        }
+    }
+
+    private void updateKLVariableP(int i) {
+        int numData = this.X.getNumDataPoints();
+        for (int j = 0; j < numData; ++j) {
+            if (j == i) {
+                continue;
+            }
+            Vector diff = this.X.getRow(j).minus(this.X.getRow(i));
+            double diff_magnitude = diff.dot(diff);
+            this.p[i][j] = Math.exp(-diff_magnitude * 0.5 * this.precision[j]) / this.pdenomi[j];
+        }
+    }
+
+    private double updateKLVariableQDenomi(int i) {
+        int numData = this.X.getNumDataPoints();
+        double res = 0.0;
+        for (int j = 0; j < numData; ++j) {
+            if (j == i) {
+                continue;
+            }
+            Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
+            double diff_magnitude = diff.dot(diff);
+            res += 1.0 / (1 + diff_magnitude);
+        }
+        return res;
+    }
+
+    private void updateKLVariableQ(int i) {
+        int numData = this.X.getNumDataPoints();
+        for (int j = 0; j < numData; ++j) {
+            if (j == i) {
+                continue;
+            }
+            Vector diff = this.Y.getRow(j).minus(this.Y.getRow(i));
+            double diff_magnitude = diff.dot(diff);
+            this.q[i][j] = 1.0 / (1 + diff_magnitude);
+            this.q[i][j] /= this.qdenomi;
+        }
+    }
+
+    private void updateKLVariablePScale(int i) {
+        int numData = this.X.getNumDataPoints();
+        this.p_scale[i] = 0.0;
+        for (int j = 0; j < numData; ++j) {
+            if (j == i) {
+                continue;
+            }
+            double p_ij = (this.p[j][i] + this.p[i][j]) * 0.5 / (double)numData;
+            this.p_scale[i] += (Math.log(p_ij) - Math.log(this.q[i][j])) * this.p[j][i];
+        }
     }
 }
