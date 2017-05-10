@@ -42,7 +42,7 @@ public class SupervisedEmbeddingTSNE {
 
         // All possible config:
         // X0, Y0, U, X, Y
-        // precision, alpha, beta, gamma, omega
+        // precision, alpha, beta, gamma, omega, useDefaultWeights
         // numEmbedding, sizeEmbedding
         // numIter, optimizer
         DataSet X0 = DataSetUtil.loadFeatureMatrixFromCSV(
@@ -67,10 +67,20 @@ public class SupervisedEmbeddingTSNE {
             e.printStackTrace();
         }
 
+
+        int numData = config.getInt("numEmbedding");
+        double alpha = 1.0 / (double)numData;
+        double beta = 1.0 / (double)numData;
+        double gamma = 1.0 / (double)(numData * numData);
+        double omega = 1.0;
+        if (!config.getBoolean("useDefaultWeights")) {
+            alpha = config.getDouble("alpha");
+            beta = config.getDouble("beta");
+            gamma = config.getDouble("gamma");
+            omega = config.getDouble("omega");
+        }
         SupervisedEmbeddingTSNELoss function = new SupervisedEmbeddingTSNELoss(
-                X0, Y0, U,
-                precision, config.getDouble("alpha"), config.getDouble("beta"),
-                config.getDouble("gamma"), config.getDouble("omega"));
+                X0, Y0, U, precision, alpha, beta, gamma, omega);
 
         Optimizer.Iterative optimizer = null;
         if (config.getString("optimizer").equals("gd")) {

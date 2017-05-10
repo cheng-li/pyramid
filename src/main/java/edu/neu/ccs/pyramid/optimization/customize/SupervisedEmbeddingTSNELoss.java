@@ -50,13 +50,9 @@ public class SupervisedEmbeddingTSNELoss implements Optimizable.ByGradientValue 
         this.Y = (DataSet)Serialization.deepCopy(Y0);
 
         this.precision = precision.clone();
-//        this.alpha = alpha;
-//        this.beta = beta;
-//        this.gamma = gamma;
-//        this.omega = omega;
-        this.alpha = 1.0 / (double)X0.getNumDataPoints();
-        this.beta = 1.0 / (double)X0.getNumDataPoints();
-        this.gamma = 1.0 / (double)(X0.getNumDataPoints() * X0.getNumDataPoints());
+        this.alpha = alpha;
+        this.beta = beta;
+        this.gamma = gamma;
         this.omega = omega;
 
         this.flagKLVariableCached = false;
