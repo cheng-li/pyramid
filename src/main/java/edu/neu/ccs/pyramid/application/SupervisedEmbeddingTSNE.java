@@ -83,9 +83,11 @@ public class SupervisedEmbeddingTSNE {
         }
         optimizer.getTerminator().setOperation(Terminator.Operation.OR);
         optimizer.getTerminator().setAbsoluteEpsilon(0.001);
-        optimizer.getTerminator().setRelativeEpsilon(0.1);
-        optimizer.getTerminator().setMaxStableIterations(5);
+        optimizer.getTerminator().setRelativeEpsilon(0.01);
+        optimizer.getTerminator().setMaxStableIterations(10);
         optimizer.getTerminator().setMaxIteration(config.getInt("numIter"));
+        System.out.println("==========================================\n");
+        System.out.println("finished loading data and initializing ... \n");
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
