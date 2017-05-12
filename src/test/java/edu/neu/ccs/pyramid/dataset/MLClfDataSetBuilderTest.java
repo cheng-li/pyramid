@@ -9,8 +9,7 @@ public class MLClfDataSetBuilderTest {
 
     private static void test1(){
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
-                .numDataPoints(10).numFeatures(3).numClasses(4).
-                        dense(true).missingValue(false).build();
+                .numDataPoints(10).numFeatures(3).numClasses(4).missingValue(false).build();
         System.out.println(dataSet.getMetaInfo());
     }
 

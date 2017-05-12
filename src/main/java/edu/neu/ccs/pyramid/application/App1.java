@@ -319,7 +319,8 @@ public class App1 {
         int numClasses = labelTranslator.getNumClasses();
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(totalDim)
-                .numClasses(numClasses).dense(false)
+                .numClasses(numClasses)
+                .density(Density.SPARSE_RANDOM)
                 .missingValue(savedConfig.getBoolean("train.feature.missingValue")).build();
         for(int i=0;i<numDataPoints;i++){
             String dataIndexId = idTranslator.toExtId(i);
