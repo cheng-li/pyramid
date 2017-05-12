@@ -205,7 +205,7 @@ public abstract class AbstractRecoverCBMOptimizer {
         }
 
 
-        double currentPenalty =  lambda*Math.abs(flipped-tau);
+        double currentPenalty =  lambda*Math.abs(flipped-tau*dataSet.getNumDataPoints());
 
 
 
@@ -218,9 +218,9 @@ public abstract class AbstractRecoverCBMOptimizer {
 
         double newPenalty;
         if (newGroundTruth==1){
-            newPenalty = lambda*Math.abs(flipped+1-tau);
+            newPenalty = lambda*Math.abs(flipped+1-tau*dataSet.getNumDataPoints());
         } else {
-            newPenalty = lambda*Math.abs(flipped-1-tau);
+            newPenalty = lambda*Math.abs(flipped-1-tau*dataSet.getNumDataPoints());
         }
 
         Change change = new Change();
