@@ -339,7 +339,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
      * @return
      */
     public List<MultiLabel> samples(Vector x, int numSamples){
-        BMDistribution bmDistribution = computeBM(x);
+        BMDistribution bmDistribution = new BMDistribution(this, x, 0.001);
         return bmDistribution.sample(numSamples);
 
     }

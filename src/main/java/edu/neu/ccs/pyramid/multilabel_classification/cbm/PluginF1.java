@@ -71,9 +71,9 @@ public class PluginF1 implements PluginPredictor<CBM>{
             case "sampling":
                 pred =  predictBySampling(vector);
                 break;
-//            case "samplingNonEmpty":
-//                pred =  predictBySamplingNonEmpty(vector);
-//                break;
+            case "samplingNonEmpty":
+                pred =  predictBySamplingNonEmpty(vector);
+                break;
             default:
                 throw new IllegalArgumentException("unknown mode");
         }
@@ -90,10 +90,15 @@ public class PluginF1 implements PluginPredictor<CBM>{
 //        List<Double> probs = cbm.predictAssignmentProbs(vector, uniqueSamples);
 //        return GeneralF1Predictor.predict(cbm.getNumClasses(), uniqueSamples, probs);
     }
-//    private MultiLabel predictBySamplingNonEmpty(Vector vector){
-//        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
-//        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
-//    }
+
+
+    private MultiLabel predictBySamplingNonEmpty(Vector vector){
+        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+        List<MultiLabel> nonZeros = samples.stream().filter(a->a.getNumMatchedLabels()>0).collect(Collectors.toList());
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        generalF1Predictor.setMaxSize(maxSize);
+        return generalF1Predictor.predict(cbm.getNumClasses(), nonZeros);
+    }
 
     private MultiLabel predictBySupport(Vector vector){
         double[] probs = cbm.predictAssignmentProbs(vector,support, piThreshold);
