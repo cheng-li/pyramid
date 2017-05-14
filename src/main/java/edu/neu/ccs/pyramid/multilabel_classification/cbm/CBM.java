@@ -245,7 +245,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
      */
     public double[] predictClassProbs(Vector vector){
         //todo threshold
-        BMDistribution bmDistribution = new BMDistribution(this, vector, 0.1);
+        BMDistribution bmDistribution = new BMDistribution(this, vector, 0.001);
         return bmDistribution.marginals();
     }
 
