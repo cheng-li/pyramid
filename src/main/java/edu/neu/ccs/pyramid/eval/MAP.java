@@ -48,9 +48,54 @@ public class MAP {
         return sum/labels.size();
     }
 
+    /**
+     * label MAP; marginals are provided by the classifiers
+     * @param classifier
+     * @param dataSet
+     * @return
+     */
     public static double map(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
         List<Integer> labels = IntStream.range(0, dataSet.getNumClasses()).boxed().collect(Collectors.toList());
         return map(classifier, dataSet, labels);
+    }
+
+
+    /**
+     * label MAP
+     * marginals are estimated through support combinations
+     * @param classifier
+     * @param dataSet
+     * @return
+     */
+    public static double mapBySupport(MultiLabelClassifier.AssignmentProbEstimator classifier, MultiLabelClfDataSet dataSet, List<MultiLabel> combinations){
+        if (classifier.getNumClasses()!=dataSet.getNumClasses()){
+            throw new IllegalArgumentException("classifier.getNumClasses()!=dataSet.getNumClasses()");
+        }
+        int numData = dataSet.getNumDataPoints();
+        double[][] probs = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->{
+                    double[] comProbs = classifier.predictAssignmentProbs(dataSet.getRow(i),combinations);
+                    probs[i] = Utils.marginals(combinations, comProbs, classifier.getNumClasses());
+                });
+
+        double sum = 0;
+
+        for (int l=0;l<dataSet.getNumClasses();l++){
+            int[] binaryLabels = new int[numData];
+            double[] marginals = new double[numData];
+            for (int i=0;i<numData;i++){
+                if (dataSet.getMultiLabels()[i].matchClass(l)){
+                    binaryLabels[i] = 1;
+                }
+                marginals[i] = probs[i][l];
+            }
+
+            double averagePrecision = AveragePrecision.averagePrecision(binaryLabels, marginals);
+            sum += averagePrecision;
+        }
+        return sum/dataSet.getNumClasses();
     }
 
     public static double instanceMAP(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
