@@ -123,4 +123,17 @@ public class MAP {
         }).average().getAsDouble();
     }
 
+
+    public static double instanceMAP(double[][] marginals, MultiLabelClfDataSet dataSet){
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel().mapToDouble(i->{
+            int[] binaryLabels = new int[dataSet.getNumClasses()];
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l:multiLabel.getMatchedLabels()) {
+                binaryLabels[l] = 1;
+            }
+            return AveragePrecision.averagePrecision(binaryLabels, marginals[i]);
+        }).average().getAsDouble();
+    }
+
+
 }
