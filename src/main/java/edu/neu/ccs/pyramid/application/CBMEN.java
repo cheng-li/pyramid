@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.eval.MAP;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
@@ -89,6 +90,9 @@ public class CBMEN {
                     break;
                 case "instance_hamming_loss":
                     best = tuneResults.stream().min(comparator).get();
+                    break;
+                case "label_map":
+                    best = tuneResults.stream().max(comparator).get();
                     break;
                 default:
                     throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
@@ -185,6 +189,12 @@ public class CBMEN {
                 marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
                 classifier = marginalPredictor;
                 break;
+
+            case "label_map":
+                AccPredictor accPredictor2 = new AccPredictor(cbm);
+                accPredictor2.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
+                classifier = accPredictor2;
+                break;
             default:
                 throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
         }
@@ -218,6 +228,11 @@ public class CBMEN {
                         break;
                     case "instance_hamming_loss":
                         earlyStopper.add(iter,validMeasures.getInstanceAverage().getHammingLoss());
+                        break;
+                    case "label_map":
+                        List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
+                        double map = MAP.mapBySupport(cbm, validSet,support);
+                        earlyStopper.add(iter,map);
                         break;
                     default:
                         throw new IllegalArgumentException("predictTarget should be instance_set_accuracy or instance_f1");
@@ -523,6 +538,9 @@ public class CBMEN {
                 break;
             case "instance_hamming_loss":
                 earlyStopGoal = EarlyStopper.Goal.MINIMIZE;
+                break;
+            case "label_map":
+                earlyStopGoal = EarlyStopper.Goal.MAXIMIZE;
                 break;
             default:
                 throw new IllegalArgumentException("unsupported tune.targetMetric "+earlyStopMetric);

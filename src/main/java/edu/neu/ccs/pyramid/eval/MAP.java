@@ -43,6 +43,7 @@ public class MAP {
             }
 
             double averagePrecision = AveragePrecision.averagePrecision(binaryLabels, marginals);
+            System.out.println("AP for label "+l+"="+averagePrecision);
             sum += averagePrecision;
         }
         return sum/labels.size();
@@ -93,6 +94,8 @@ public class MAP {
             }
 
             double averagePrecision = AveragePrecision.averagePrecision(binaryLabels, marginals);
+
+            System.out.println("AP for label "+l+"="+averagePrecision);
             sum += averagePrecision;
         }
         return sum/dataSet.getNumClasses();
