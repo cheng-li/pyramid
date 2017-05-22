@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 
 import java.util.List;
 
@@ -8,6 +9,16 @@ import java.util.List;
  * Created by chengli on 5/17/17.
  */
 public class Utils {
+
+    public static int[] countLabels(MultiLabelClfDataSet dataSet){
+        int[] counts = new int[dataSet.getNumClasses()];
+        for (MultiLabel multiLabel: dataSet.getMultiLabels()){
+            for (int l: multiLabel.getMatchedLabels()){
+                counts[l] += 1;
+            }
+        }
+        return counts;
+    }
 
     /**
      *

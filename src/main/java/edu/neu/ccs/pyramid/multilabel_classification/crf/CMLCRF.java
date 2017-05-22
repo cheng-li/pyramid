@@ -11,6 +11,7 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -381,6 +382,23 @@ public class CMLCRF implements MultiLabelClassifier, MultiLabelClassifier.Assign
             if (supportCombinations.get(c).equals(assignment)){
                 res = logComProbs[c];
                 break;
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public double[] predictLogAssignmentProbs(Vector vector, List<MultiLabel> assignments) {
+        double[] logComProbs = predictLogCombinationProbs(vector);
+        double[] res = new double[assignments.size()];
+        Arrays.fill(res,Double.NEGATIVE_INFINITY);
+        for (int i=0;i<assignments.size();i++){
+            MultiLabel assignment = assignments.get(i);
+            for (int c=0;c<numSupports;c++){
+                if (supportCombinations.get(c).equals(assignment)){
+                    res[i] = logComProbs[c];
+                    break;
+                }
             }
         }
         return res;
