@@ -225,15 +225,16 @@ public class App1 {
 
         Multiset<Ngram> allNgrams = ConcurrentHashMultiset.create();
         List<Integer> ns = config.getIntegers("train.feature.ngram.n");
-        int minDf = config.getInt("train.feature.ngram.minDf");
+        double minDf = config.getDouble("train.feature.ngram.minDf");
+        int minDFrequency = (int)Math.floor(ids.length*minDf);
         List<String> fields = config.getStrings("train.feature.ngram.extractionFields");
         List<Integer> slops = config.getIntegers("train.feature.ngram.slop");
         for (String field: fields){
             for (int n: ns){
                 for (int slop:slops){
-                    logger.info("gathering "+n+ "-grams from field "+field+" with slop "+slop+" and minDf "+minDf);
+                    logger.info("gathering "+n+ "-grams from field "+field+" with slop "+slop+" and minDf "+minDf+ ", (actual frequency threshold = "+minDFrequency+")");
                     NgramTemplate template = new NgramTemplate(field,n,slop);
-                    Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index, ids, template, minDf);
+                    Multiset<Ngram> ngrams = NgramEnumerator.gatherNgram(index, ids, template, minDFrequency);
                     logger.info("gathered "+ngrams.elementSet().size()+ " ngrams");
                     int newCounter = 0;
                     for (Multiset.Entry<Ngram> entry: ngrams.entrySet()){
