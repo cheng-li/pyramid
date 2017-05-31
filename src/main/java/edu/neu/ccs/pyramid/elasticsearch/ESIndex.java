@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import com.maoqiuzi.esplugins.psqplugin.PhraseCountQueryBuilder;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1010,36 +1011,17 @@ public class ESIndex implements AutoCloseable{
 
 
     public SearchResponse spanNearFrequency(Ngram ngram, String filterQuery, int size){
-    	if (ngram.getTerms().length == 0) {
-    		throw new IllegalArgumentException("No term for span");
-    	}
-    	
-        String field = ngram.getField();
-        int slop = ngram.getSlop();
-        boolean inOrder = ngram.isInOrder();
-        SpanNearQueryBuilder queryBuilder = QueryBuilders.spanNearQuery(new SpanTermQueryBuilder(field, ngram.getTerms()[0]), slop);
-        for (int i = 1; i <  ngram.getTerms().length; i++){
-            queryBuilder.addClause(new SpanTermQueryBuilder(field, ngram.getTerms()[i]));
+        if (ngram.getTerms().length == 0) {
+            throw new IllegalArgumentException("No term for span");
         }
-        queryBuilder.inOrder(inOrder);
 
+        int slop = ngram.getSlop();
+        PhraseCountQueryBuilder queryBuilder = new PhraseCountQueryBuilder(ngram.getField(), slop, false, ngram.getTerms());
 
-        //todo: hanle ngram frequency properly
-        Map<String,Object> params = new HashMap<>();
-        params.put("field",ngram.getField());
-        params.put("term",ngram.getTerms()[0]);
-        
-        
         SearchResponse response = client.prepareSearch(indexName).setSize(size)
-        		.setTrackScores(false).
-                setFetchSource(false).setExplain(false).setFetchSource(false).
-                setQuery(QueryBuilders.functionScoreQuery(
-                		QueryBuilders.boolQuery()
-                		             .must(ngram.getTerms().length > 1 ? 
-                 							  queryBuilder : QueryBuilders.matchPhraseQuery(field, ngram.getTerms()[0]).slop(slop))
-                		             .filter(QueryBuilders.wrapperQuery(filterQuery)),
-                		new ScriptScoreFunctionBuilder(new Script("getTF", ScriptType.FILE, "groovy", params)))             
-                        .boostMode(CombineFunction.REPLACE))
+                .setTrackScores(false).
+                        setFetchSource(false).setExplain(false).setFetchSource(false).
+                        setQuery(QueryBuilders.boolQuery().must(queryBuilder).filter(QueryBuilders.wrapperQuery(filterQuery)))
                 .execute().actionGet();
 
         return response;
