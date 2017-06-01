@@ -3,13 +3,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <name>pyramid</name>
+    <modules>
+        <module>phrasecountplugin</module>
+    </modules>
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.neu.ccs.pyramid</groupId>
     <artifactId>pyramid</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <version>0.7.15</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <elasticsearch.version>5.0.1</elasticsearch.version>
     </properties>
     <dependencies>
         <dependency>
@@ -40,7 +44,7 @@
         <dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>transport</artifactId>
-			<version>5.0.1</version>
+			<version>${elasticsearch.version}</version>
 		</dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -93,10 +97,15 @@
             <version>1.8</version>
         </dependency>
         <dependency>
-            <groupId>com.maoqiuzi</groupId>
-            <artifactId>phrase-count-query</artifactId>
+            <groupId>edu.neu.ccs.pyramid</groupId>
+            <artifactId>phrase-count-plugin</artifactId>
             <version>1.0</version>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.maoqiuzi</groupId>-->
+            <!--<artifactId>phrase-count-query</artifactId>-->
+            <!--<version>1.0</version>-->
+        <!--</dependency>-->
     </dependencies>
 
     <build>
