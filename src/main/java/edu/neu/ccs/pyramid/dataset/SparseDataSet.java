@@ -1,6 +1,8 @@
 package edu.neu.ccs.pyramid.dataset;
 
 
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
@@ -22,6 +24,19 @@ public class SparseDataSet extends AbstractDataSet implements DataSet{
             this.featureColumns[j] = new RandomAccessSparseVector(numDataPoints);
         }
     }
+
+    public SparseDataSet(int numDataPoints, int numFeatures, boolean missingValue, IdTranslator idTranslator) {
+        super(numDataPoints,numFeatures,missingValue, idTranslator);
+        this.featureRows = new RandomAccessSparseVector[numDataPoints];
+        for (int i=0;i<numDataPoints;i++){
+            this.featureRows[i] = new RandomAccessSparseVector(numFeatures);
+        }
+        this.featureColumns = new RandomAccessSparseVector[numFeatures];
+        for (int j=0;j<numFeatures;j++){
+            this.featureColumns[j] = new RandomAccessSparseVector(numDataPoints);
+        }
+    }
+
 
     @Override
     public Density density() {

@@ -28,6 +28,18 @@ abstract class AbstractDataSet implements DataSet{
         }
     }
 
+    AbstractDataSet(int numDataPoints, int numFeatures, boolean missingValue, IdTranslator idTranslator) {
+        this.numDataPoints = numDataPoints;
+        this.numFeatures = numFeatures;
+        this.missingValue = missingValue;
+        this.idTranslator = idTranslator;
+        this.featureList = new FeatureList();
+        for (int j=0;j<numFeatures;j++){
+            Feature feature = new Feature();
+            featureList.add(feature);
+        }
+    }
+
 
 
     @Override
