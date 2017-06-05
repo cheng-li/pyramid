@@ -248,7 +248,7 @@ public class TRECFormat {
 
     //==========PRIVATE==========
 
-    private static int parseNumDataPoints(File trecFile) throws IOException {
+    static int parseNumDataPoints(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         int numDataPoints;
         try(
@@ -260,7 +260,7 @@ public class TRECFormat {
         return numDataPoints;
     }
 
-    private static int parseNumFeaturess(File trecFile) throws IOException {
+    static int parseNumFeaturess(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         int numFeatures;
         try(
@@ -272,7 +272,7 @@ public class TRECFormat {
         return numFeatures;
     }
 
-    private static int parseNumClasses(File trecFile) throws IOException {
+    static int parseNumClasses(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         int numClasses;
         try(
@@ -284,7 +284,7 @@ public class TRECFormat {
         return numClasses;
     }
 
-    private static boolean parseMissingValue(File trecFile) throws IOException {
+    static boolean parseMissingValue(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         boolean missingValue;
         try(
