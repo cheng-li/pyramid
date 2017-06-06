@@ -5,6 +5,7 @@
     <name>pyramid</name>
     <modules>
         <module>phrasecountplugin</module>
+        <module>core</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.neu.ccs.pyramid</groupId>
