@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <name>pyramid</name>
     <modules>
-        <module>phrasecountplugin</module>
+        <module>phrase-count-plugin</module>
         <module>core</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
@@ -14,7 +14,7 @@
     <version>0.7.15</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <elasticsearch.version>5.0.1</elasticsearch.version>
+        <elasticsearch.version>5.3.1</elasticsearch.version>
     </properties>
 
     <build>
