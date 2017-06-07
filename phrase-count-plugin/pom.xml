@@ -14,10 +14,9 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <elasticsearch.version>5.3.1</elasticsearch.version>
     </properties>
     <build>
-        <finalName>${project.artifactId}-${version}-${elasticsearch.version}</finalName>
+        <finalName>${project.artifactId}-${project.version}-${elasticsearch.version}</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

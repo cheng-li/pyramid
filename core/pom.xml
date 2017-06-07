@@ -97,11 +97,6 @@
             <artifactId>phrase-count-plugin</artifactId>
             <version>1.0</version>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>com.maoqiuzi</groupId>-->
-        <!--<artifactId>phrase-count-query</artifactId>-->
-        <!--<version>1.0</version>-->
-        <!--</dependency>-->
     </dependencies>
 
     <build>
