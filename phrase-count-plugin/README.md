@@ -44,4 +44,4 @@ Explanation:
 - run `./bin/elasticsearch-plugin install file:/path/target-file-name.zip`. The "file:" part is only needed for local zip package.
 
 ## Compatibility
-Should work for Elasticsearch 5.x
+Should work for Elasticsearch from 5.2.x to 5.4.x
