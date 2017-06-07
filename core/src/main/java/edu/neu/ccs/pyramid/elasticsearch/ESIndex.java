@@ -48,7 +48,7 @@ import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.index.query.functionscore.ScriptScoreFunctionBuilder;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptService.ScriptType;
+//import org.elasticsearch.script.ScriptService.ScriptType;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
