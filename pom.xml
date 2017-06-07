@@ -9,7 +9,7 @@
     </modules>
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.neu.ccs.pyramid</groupId>
-    <artifactId>pyramid</artifactId>
+    <artifactId>pyramid-root</artifactId>
     <packaging>pom</packaging>
     <version>0.7.15</version>
     <properties>

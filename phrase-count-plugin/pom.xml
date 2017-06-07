@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>pyramid</artifactId>
+        <artifactId>pyramid-root</artifactId>
         <groupId>edu.neu.ccs.pyramid</groupId>
         <version>0.7.15</version>
     </parent>
