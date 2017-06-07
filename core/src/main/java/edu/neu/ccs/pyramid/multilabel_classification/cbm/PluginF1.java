@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
@@ -9,9 +10,7 @@ import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +21,15 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private String predictionMode = "support";
     private int numSamples = 1000;
     private List<MultiLabel> support;
-    private double probMassThreshold = 0.95;
+
+
+    private double piThreshold = 0.001;
+
+    private int maxSize = 20;
+
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+    }
 
     public PluginF1(CBM model) {
         this.cbm = model;
@@ -49,6 +56,11 @@ public class PluginF1 implements PluginPredictor<CBM>{
         this.support = support;
     }
 
+
+    public void setPiThreshold(double piThreshold) {
+        this.piThreshold = piThreshold;
+    }
+
     @Override
     public MultiLabel predict(Vector vector) {
         MultiLabel pred = null;
@@ -56,9 +68,9 @@ public class PluginF1 implements PluginPredictor<CBM>{
             case "support":
                 pred =  predictBySupport(vector);
                 break;
-//            case "sampling":
-//                pred =  predictBySampling(vector);
-//                break;
+            case "sampling":
+                pred =  predictBySampling(vector);
+                break;
 //            case "samplingNonEmpty":
 //                pred =  predictBySamplingNonEmpty(vector);
 //                break;
@@ -68,21 +80,26 @@ public class PluginF1 implements PluginPredictor<CBM>{
         return pred;
     }
 
-//    private MultiLabel predictBySampling(Vector vector){
-////        List<MultiLabel> samples = cbm.samples(vector, numSamples);
-//        Pair<List<MultiLabel>, List<Double>> pair = cbm.samples(vector, probMassThreshold);
-//        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
-//    }
-//
-//
+    private MultiLabel predictBySampling(Vector vector){
+        List<MultiLabel> samples = cbm.samples(vector, numSamples);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        generalF1Predictor.setMaxSize(maxSize);
+        return generalF1Predictor.predict(cbm.getNumClasses(), samples);
+//      unique the sample set and apply GFM
+//        List<MultiLabel> uniqueSamples = new ArrayList(new HashSet(samples));
+//        List<Double> probs = cbm.predictAssignmentProbs(vector, uniqueSamples);
+//        return GeneralF1Predictor.predict(cbm.getNumClasses(), uniqueSamples, probs);
+    }
 //    private MultiLabel predictBySamplingNonEmpty(Vector vector){
 //        Pair<List<MultiLabel>, List<Double>> pair = cbm.sampleNonEmptySets(vector, probMassThreshold);
 //        return GeneralF1Predictor.predict(cbm.getNumClasses(),pair.getFirst(), pair.getSecond());
 //    }
 
     private MultiLabel predictBySupport(Vector vector){
-        List<Double> probs = cbm.predictAssignmentProbs(vector,support);
-        return GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
+        double[] probs = cbm.predictAssignmentProbs(vector,support, piThreshold);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        generalF1Predictor.setMaxSize(maxSize);
+        return generalF1Predictor.predict(cbm.getNumClasses(),support,probs);
     }
 
 
@@ -131,10 +148,9 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     public GeneralF1Predictor.Analysis showPredictBySupport(Vector vector, MultiLabel truth){
 //        System.out.println("support procedure");
-        List<Double> probs = cbm.predictAssignmentProbs(vector,support);
-        double[] probArray = probs.stream().mapToDouble(a->a).toArray();
-
-        MultiLabel prediction =  GeneralF1Predictor.predict(cbm.getNumClasses(),support,probs);
+        double[] probArray = cbm.predictAssignmentProbs(vector,support);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        MultiLabel prediction =  generalF1Predictor.predict(cbm.getNumClasses(),support,probArray);
         GeneralF1Predictor.Analysis analysis = GeneralF1Predictor.showSupportPrediction(support,probArray, truth, prediction, cbm.getNumClasses());
         return analysis;
     }
@@ -145,8 +161,5 @@ public class PluginF1 implements PluginPredictor<CBM>{
         return cbm;
     }
 
-    public Matrix getPMatrix(Vector vector){
-        List<MultiLabel> samples = cbm.samples(vector, numSamples);
-        return GeneralF1Predictor.getPMatrix(cbm.getNumClasses(),samples);
-    }
+
 }

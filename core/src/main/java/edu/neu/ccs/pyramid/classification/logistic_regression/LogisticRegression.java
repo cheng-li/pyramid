@@ -44,6 +44,22 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         this.weights = new Weights(numClasses, numFeatures, weightVector);
     }
 
+    /**
+     * a logistic regression that gives p(y=k|x) = prior p(y=k)
+     * @param numClasses
+     * @param numFeatures
+     * @param priorProbabilities
+     */
+    public LogisticRegression(int numClasses, int numFeatures, double[] priorProbabilities) {
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        this.weights = new Weights(numClasses, numFeatures);
+        double[] scores = MathUtil.inverseSoftMax(priorProbabilities);
+        for (int l=0;l<numClasses;l++){
+            weights.setBiasForClass(scores[l],l);
+        }
+    }
+
 
     public Weights getWeights() {
         return weights;
@@ -76,8 +92,9 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     public double predictClassScore(Vector dataPoint, int k){
         double score = 0;
         score += this.weights.getBiasForClass(k);
-        score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
-//        score += Vectors.dot(weights.getWeightsWithoutBiasForClass(k),dataPoint);
+        // use our own implementation
+//        score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
+        score += Vectors.dot(weights.getWeightsWithoutBiasForClass(k),dataPoint);
         return score;
     }
 
@@ -159,6 +176,10 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
                 .sum();
     }
 
+
+    public void truncateByThreshold(double threshold){
+        weights.truncateByThreshold(threshold);
+    }
 
 
     public static LogisticRegression deserialize(File file) throws Exception{

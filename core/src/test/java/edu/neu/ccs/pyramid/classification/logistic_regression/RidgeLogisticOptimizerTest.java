@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
 import edu.neu.ccs.pyramid.optimization.*;
+import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.File;
 
@@ -18,7 +19,7 @@ public class RidgeLogisticOptimizerTest {
     public static void main(String[] args) throws Exception{
 //        test1();
 //        test2();
-        test3();
+        test4();
     }
 
     private static void test1() throws Exception{
@@ -108,6 +109,8 @@ public class RidgeLogisticOptimizerTest {
         System.out.println("after initialization");
         System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
         System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         for (int i=0;i<200;i++){
             optimizer.iterate();
             System.out.println("after iteration "+i);
@@ -115,6 +118,47 @@ public class RidgeLogisticOptimizerTest {
 
             System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
             System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
+//            System.out.println(logisticRegression);
+        }
+
+    }
+
+
+    private static void test4() throws Exception{
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/train.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/imdb/3/test.trec"),
+//                DataSetType.CLF_SPARSE, true);
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/train.trec"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "20newsgroup/1/test.trec"),
+                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/train.trec"),
+//                DataSetType.CLF_SPARSE, true);
+//        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "/spam/trec_data/test.trec"),
+//                DataSetType.CLF_SPARSE, true);
+        double variance =1000;
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        double[] weights = new double[dataSet.getNumDataPoints()];
+        for (int i=0;i<weights.length;i++){
+            if (Math.random()<0.1){
+                weights[i] = 0;
+            } else {
+                weights[i] = 1;
+            }
+        }
+        RidgeLogisticOptimizer optimizer = new RidgeLogisticOptimizer(logisticRegression, dataSet, dataSet.getLabels(),weights, variance, true);
+        System.out.println("after initialization");
+        System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
+        System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        for (int i=0;i<20;i++){
+            ((LBFGS)optimizer.getOptimizer()).iterate();
+            System.out.println("after iteration "+i);
+            System.out.println(stopWatch);
+//            System.out.println("train acc = " + Accuracy.accuracy(logisticRegression, dataSet));
+//            System.out.println("test acc = "+Accuracy.accuracy(logisticRegression,testSet));
 //            System.out.println(logisticRegression);
         }
 

@@ -234,7 +234,8 @@ public class LibSvmFormat {
         System.out.println("numFeatures: " + numFeatures);
 
         MultiLabelClfDataSet dataSet = new MLClfDataSetBuilder().numClasses(numClasses)
-                .numFeatures(numFeatures).numDataPoints(numDatapoints).dense(dense).build();
+                .numFeatures(numFeatures).numDataPoints(numDatapoints).
+                        density(Density.SPARSE_RANDOM).build();
 
         try (BufferedReader br = new BufferedReader(new FileReader(libSvmFile));
         ) {
@@ -246,8 +247,8 @@ public class LibSvmFormat {
                 String labels = lineInfo[0];
                 for (String label : labels.split(",")) {
                     int l = Integer.parseInt(label);
-//                    dataSet.addLabel(lineCount, l-1);
-                    dataSet.addLabel(lineCount, l);
+                    dataSet.addLabel(lineCount, l-1);
+//                    dataSet.addLabel(lineCount, l);
                 }
                 // adding feature
                 for (int i=1; i<lineInfo.length; i++) {

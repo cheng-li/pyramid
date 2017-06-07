@@ -83,10 +83,10 @@ def writeRule(docId, line_count, num, rule):
         
         if not check["feature"].has_key("ngram"):
             checkOneRule["name"] = check["feature"]["name"]
-            checkOneRule["index"] = check["feature"]["index"]
+            # checkOneRule["index"] = check["feature"]["index"]
         else:
             checkOneRule["ngram"] = check["feature"]["ngram"]
-            checkOneRule["index"] = check["feature"]["index"]
+            # checkOneRule["index"] = check["feature"]["index"]
             checkOneRule["field"] = check["feature"]["field"]
             checkOneRule["slop"] = check["feature"]["slop"]
             field = checkOneRule["field"]
@@ -1876,7 +1876,7 @@ def main(argv):
 
     esIndex = config1["index.indexName"]
     classNumber = config2["numClassesInModel"]
-    fields = config1["index.ngramExtractionFields"]
+    fields = config1["train.feature.ngram.extractionFields"]
     start = time.time()
     parseAll(jsonFile, directoryName, fileName, fields, classFile)
     end = time.time()

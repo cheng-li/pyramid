@@ -15,6 +15,21 @@ import java.util.stream.Collectors;
  * Created by chengli on 8/20/16.
  */
 public class CRFInspector {
+
+    public static String pairRelations(CMLCRF crf){
+        List<CRFInspector.PairWeight> list = crf.getWeights().printPairWeights();
+        Comparator<PairWeight> comparator = Comparator.comparing(pairWeight -> Math.abs(pairWeight.weight));
+        List<CRFInspector.PairWeight> sorted = list.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        StringBuilder sb = new StringBuilder();
+        LabelTranslator labelTranslator = crf.getLabelTranslator();
+        for (CRFInspector.PairWeight pairWeight: sorted){
+            sb.append(labelTranslator.toExtLabel(pairWeight.label1)).append(":").append(pairWeight.hasLabel1).append(", ").append(labelTranslator.toExtLabel(pairWeight.label2))
+                    .append(":").append(pairWeight.hasLabel2).append("=>").append(pairWeight.weight).append("\n");
+        }
+        return sb.toString();
+    }
+
+
     public static  String simplePredictionAnalysis(CMLCRF crf,
                                                    PluginPredictor<CMLCRF> pluginPredictor,
                                                    MultiLabelClfDataSet dataSet,
@@ -77,5 +92,22 @@ public class CRFInspector {
         }
         sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\n");
         return sb.toString();
+    }
+
+
+    public static class PairWeight{
+        int label1;
+        int label2;
+        boolean hasLabel1;
+        boolean hasLabel2;
+        double weight;
+
+        public PairWeight(int label1, int label2, boolean hasLabel1, boolean hasLabel2, double weight) {
+            this.label1 = label1;
+            this.label2 = label2;
+            this.hasLabel1 = hasLabel1;
+            this.hasLabel2 = hasLabel2;
+            this.weight = weight;
+        }
     }
 }

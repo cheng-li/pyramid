@@ -64,28 +64,21 @@ public class CBMPredictor {
      * prediction allows empty or not.
      */
     private boolean allowEmpty = false;
+    
 
-    /**
-     * default
-     * @param vector
-     * @param multiNomialClassifiers
-     * @param binaryClassifiers
-     * @param numClusters
-     * @param numLabels
-     */
-    public CBMPredictor(Vector vector, Classifier.ProbabilityEstimator multiNomialClassifiers,
-                        Classifier.ProbabilityEstimator[][] binaryClassifiers, int numClusters, int numLabels) {
-        this.numClusters = numClusters;
-        this.numLabels = numLabels;
+
+    public CBMPredictor(BMDistribution bmDistribution) {
+        this.numClusters = bmDistribution.numComponents;
+        this.numLabels = bmDistribution.numLabels;
         this.logisticProb = new double[numClusters];
-        this.logisticLogProb = multiNomialClassifiers.predictLogClassProbs(vector);
+        this.logisticLogProb = bmDistribution.logProportions;
         this.probs = new double[numClusters][numLabels][2];
         this.logProbs = new double[numClusters][numLabels][2];
 
         for (int k=0; k<numClusters; k++) {
             this.logisticProb[k] = Math.exp(this.logisticLogProb[k]);
             for (int l = 0; l < numLabels; l++) {
-                logProbs[k][l] = binaryClassifiers[k][l].predictLogClassProbs(vector);
+                logProbs[k][l] = bmDistribution.logClassProbs[k][l];
                 for (int i=0; i<2; i++) {
                     probs[k][l][i] = Math.exp(logProbs[k][l][i]);
                 }
@@ -93,47 +86,48 @@ public class CBMPredictor {
         }
     }
 
-    public MultiLabel predictByGreedy() {
-        Vector predVector = new DenseVector(numLabels);
-        double prevLogProb;
-        if (allowEmpty) {
-            prevLogProb = logProbYnGivenXnLogisticProb(predVector);
-        } else {
-            prevLogProb = Double.NEGATIVE_INFINITY;
-        }
-
-        Set<Integer> labelSet = IntStream.range(0, numLabels).boxed().collect(Collectors.toSet());
-        while (!labelSet.isEmpty()) {
-            double curLogProb = Double.NEGATIVE_INFINITY;
-            int curLebel=-1;
-            // find the maximum one
-            for (int k : labelSet) {
-                Vector curVector = new DenseVector((DenseVector) predVector, false);
-                curVector.set(k, 1.0);
-                double logProb = logProbYnGivenXnLogisticProb(curVector);
-                if (logProb > curLogProb) {
-                    curLebel = k;
-                    curLogProb = logProb;
-                }
-            }
-
-            if (curLogProb > prevLogProb) {
-                predVector.set(curLebel, 1.0);
-                prevLogProb = curLogProb;
-                labelSet.remove(curLebel);
-            } else {
-                break;
-            }
-        }
-
-        MultiLabel predLabel = new MultiLabel();
-        for (int l=0; l<numLabels; l++) {
-            if (predVector.get(l) == 1.0) {
-                predLabel.addLabel(l);
-            }
-        }
-        return predLabel;
-    }
+    // todo fix
+//    public MultiLabel predictByGreedy() {
+//        Vector predVector = new DenseVector(numLabels);
+//        double prevLogProb;
+//        if (allowEmpty) {
+//            prevLogProb = logProbYnGivenXnLogisticProb(predVector);
+//        } else {
+//            prevLogProb = Double.NEGATIVE_INFINITY;
+//        }
+//
+//        Set<Integer> labelSet = IntStream.range(0, numLabels).boxed().collect(Collectors.toSet());
+//        while (!labelSet.isEmpty()) {
+//            double curLogProb = Double.NEGATIVE_INFINITY;
+//            int curLebel=-1;
+//            // find the maximum one
+//            for (int k : labelSet) {
+//                Vector curVector = new DenseVector((DenseVector) predVector, false);
+//                curVector.set(k, 1.0);
+//                double logProb = logProbYnGivenXnLogisticProb(curVector);
+//                if (logProb > curLogProb) {
+//                    curLebel = k;
+//                    curLogProb = logProb;
+//                }
+//            }
+//
+//            if (curLogProb > prevLogProb) {
+//                predVector.set(curLebel, 1.0);
+//                prevLogProb = curLogProb;
+//                labelSet.remove(curLebel);
+//            } else {
+//                break;
+//            }
+//        }
+//
+//        MultiLabel predLabel = new MultiLabel();
+//        for (int l=0; l<numLabels; l++) {
+//            if (predVector.get(l) == 1.0) {
+//                predLabel.addLabel(l);
+//            }
+//        }
+//        return predLabel;
+//    }
 
     public MultiLabel predictByDynamic() {
         // initialization
@@ -163,10 +157,10 @@ public class CBMPredictor {
         }
 
         double maxLogProb = Double.NEGATIVE_INFINITY;
-        Vector predVector = new DenseVector(numLabels);
+        MultiLabel bestMultiLabel = new MultiLabel();
 
-//        int iter = 0;
-//        int maxIter = 1000;
+        int iter = 0;
+        int maxIter = 10;
 
         while (DPs.size() > 0) {
             List<Integer> removeList = new LinkedList<>();
@@ -175,20 +169,20 @@ public class CBMPredictor {
                 DynamicProgramming dp = entry.getValue();
                 double prob = dp.nextHighestProb();
 
-                Vector candidateY = dp.nextHighestVector();
+                MultiLabel multiLabel = dp.nextHighestVector();
 
                 // whether consider empty prediction
-                if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
+                if ((multiLabel.getNumMatchedLabels()==0) && !allowEmpty) {
                     if (dp.getQueue().size() == 0) {
                         removeList.add(k);
                     }
                     continue;
                 }
 
-                double logProb = logProbYnGivenXnLogisticProb(candidateY);
+                double logProb = logProbYnGivenXnLogisticProb(multiLabel);
 
                 if (logProb >= maxLogProb) {
-                    predVector = candidateY;
+                    bestMultiLabel = multiLabel;
                     maxLogProb = logProb;
 //                    maxIter = iter;
                 }
@@ -202,16 +196,12 @@ public class CBMPredictor {
                 DPs.remove(k);
             }
 
-//            iter++;
-        }
-//        System.out.print("maxIter: " + maxIter + "\t" + Math.exp(maxLogProb) + "\t");
-//        System.out.println("maxIter: " + maxIter);
-        MultiLabel predLabel = new MultiLabel();
-        for (int l=0; l<numLabels; l++) {
-            if (predVector.get(l) == 1.0) {
-                predLabel.addLabel(l);
+            iter++;
+            if (iter>=maxIter){
+                break;
             }
         }
+
 //
 //        // loop break because of maximum iterations
 //        if (iter == maxIter) {
@@ -227,7 +217,7 @@ public class CBMPredictor {
 //        }
 
 
-        return predLabel;
+        return bestMultiLabel;
     }
 
 
@@ -246,47 +236,48 @@ public class CBMPredictor {
         return false;
     }
 
-    /**
-     * predict by sampling.
-     * @return
-     */
-    public MultiLabel predictBySampling() {
-
-        double maxLogProb = Double.NEGATIVE_INFINITY;
-        Vector predVector = new DenseVector(numLabels);
-
-        int[] clusters = IntStream.range(0, numClusters).toArray();
-        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, logisticProb);
-
-        for (int s=0; s<numSample; s++) {
-            int k = enumeratedIntegerDistribution.sample();
-            Vector candidateY = new DenseVector(numLabels);
-
-            for (int l=0; l<numLabels; l++) {
-                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(probs[k][l][1]);
-                candidateY.set(l, bernoulliDistribution.sample());
-            }
-            // whether consider empty prediction
-            if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
-                continue;
-            }
-
-            double logProb = logProbYnGivenXnLogisticProb(candidateY);
-
-            if (logProb >= maxLogProb) {
-                predVector = candidateY;
-                maxLogProb = logProb;
-            }
-        }
-
-        MultiLabel predLabel = new MultiLabel();
-        for (int l=0; l<numLabels; l++) {
-            if (predVector.get(l) == 1.0) {
-                predLabel.addLabel(l);
-            }
-        }
-        return predLabel;
-    }
+    //todo fix
+//    /**
+//     * predict by sampling.
+//     * @return
+//     */
+//    public MultiLabel predictBySampling() {
+//
+//        double maxLogProb = Double.NEGATIVE_INFINITY;
+//        Vector predVector = new DenseVector(numLabels);
+//
+//        int[] clusters = IntStream.range(0, numClusters).toArray();
+//        EnumeratedIntegerDistribution enumeratedIntegerDistribution = new EnumeratedIntegerDistribution(clusters, logisticProb);
+//
+//        for (int s=0; s<numSample; s++) {
+//            int k = enumeratedIntegerDistribution.sample();
+//            Vector candidateY = new DenseVector(numLabels);
+//
+//            for (int l=0; l<numLabels; l++) {
+//                BernoulliDistribution bernoulliDistribution = new BernoulliDistribution(probs[k][l][1]);
+//                candidateY.set(l, bernoulliDistribution.sample());
+//            }
+//            // whether consider empty prediction
+//            if ((candidateY.maxValue() == 0.0) && !allowEmpty) {
+//                continue;
+//            }
+//
+//            double logProb = logProbYnGivenXnLogisticProb(candidateY);
+//
+//            if (logProb >= maxLogProb) {
+//                predVector = candidateY;
+//                maxLogProb = logProb;
+//            }
+//        }
+//
+//        MultiLabel predLabel = new MultiLabel();
+//        for (int l=0; l<numLabels; l++) {
+//            if (predVector.get(l) == 1.0) {
+//                predLabel.addLabel(l);
+//            }
+//        }
+//        return predLabel;
+//    }
 
     /**
      * Predict by hard assignment for just one cluster with maximum prob.
@@ -314,7 +305,7 @@ public class CBMPredictor {
         return predict;
     }
 
-    private double logProbYnGivenXnLogisticProb(Vector Y) {
+    private double logProbYnGivenXnLogisticProb(MultiLabel Y) {
         double[] logPYnk = clusterConditionalLogProbArr(Y);
         double[] sumLog = new double[logisticLogProb.length];
         for (int k=0; k<numClusters; k++) {
@@ -330,16 +321,20 @@ public class CBMPredictor {
      * @param Y
      * @return
      */
-    public double[] clusterConditionalLogProbArr(Vector Y) {
+    public double[] clusterConditionalLogProbArr(MultiLabel Y) {
         double[] probArr = new double[numClusters];
 
         for (int k=0; k<numClusters; k++) {
             double logProb = 0.0;
             for (int l=0; l<numLabels; l++) {
-                if (Y.get(l) == 1.0) {
+                if (Y.matchClass(l)) {
                     logProb += logProbs[k][l][1];
                 } else {
                     logProb += logProbs[k][l][0];
+                }
+                // short circuit
+                if (logProb==Double.NEGATIVE_INFINITY){
+                    break;
                 }
             }
             probArr[k] = logProb;

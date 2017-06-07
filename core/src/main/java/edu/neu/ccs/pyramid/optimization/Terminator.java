@@ -60,6 +60,8 @@ public class Terminator {
             if (logger.isWarnEnabled()){
                 logger.warn("goal = "+goal+", min = "+min+", max = "+max+", current value = "+value);
             }
+//            throw new RuntimeException("goal = "+goal+", min = "+min+", max = "+max+", current value = "+value);
+
         }
 
         this.history.add(value);

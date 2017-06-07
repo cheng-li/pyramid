@@ -5,6 +5,8 @@ import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorView;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Rainicy on 12/12/15.
@@ -138,7 +140,7 @@ public class Weights  implements Serializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Weights{");
+        final StringBuilder sb = new StringBuilder("Weights{\n");
         for (int k=0;k<numClasses;k++){
             sb.append("for class ").append(k).append(":").append("\n");
             sb.append("bias = "+getBiasForClass(k)).append(",");
@@ -147,14 +149,31 @@ public class Weights  implements Serializable {
         int start = numWeightsForFeatures;
         for (int l1=0; l1<numClasses; l1++) {
             for (int l2=l1+1; l2<numClasses; l2++) {
-                sb.append("label pair weights: (" +l1 +", " + l2  +")\n");
+                sb.append("label pair weights: (" +l1 +", " + l2  +")\t");
                 sb.append("W(0,0): " + weightVector.get(start) + "\tW(1,0): " + weightVector.get(start+1)+
                 "\tW(0,1): " + weightVector.get(start+2) + "\tW(1,1): "+weightVector.get(start+3));
+                sb.append("\n");
                 start += 4;
             }
         }
         sb.append('}');
         return sb.toString();
+    }
+
+
+    public List<CRFInspector.PairWeight> printPairWeights(){
+        List<CRFInspector.PairWeight> list = new ArrayList<>();
+        int start = numWeightsForFeatures;
+        for (int l1=0; l1<numClasses; l1++) {
+            for (int l2=l1+1; l2<numClasses; l2++) {
+                list.add(new CRFInspector.PairWeight(l1, l2, false, false, weightVector.get(start)));
+                list.add(new CRFInspector.PairWeight(l1, l2, true, false, weightVector.get(start+1)));
+                list.add(new CRFInspector.PairWeight(l1, l2, false, true, weightVector.get(start+2)));
+                list.add(new CRFInspector.PairWeight(l1, l2, true, true, weightVector.get(start+3)));
+                start += 4;
+            }
+        }
+        return list;
     }
 
     private void writeObject(java.io.ObjectOutputStream out)

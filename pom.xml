@@ -11,12 +11,13 @@
     <groupId>edu.neu.ccs.pyramid</groupId>
     <artifactId>pyramid-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.7.15</version>
+    <version>0.8.4</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <elasticsearch.version>5.3.1</elasticsearch.version>
         <lucene.version>6.4.2</lucene.version>
     </properties>
+
     <!--The elasticsearch version and lucene version should match as follows-->
     <!--V_5_2_0 = new Version(5020099, org.apache.lucene.util.Version.LUCENE_6_4_0);-->
     <!--V_5_2_1 = new Version(5020199, org.apache.lucene.util.Version.LUCENE_6_4_1);-->

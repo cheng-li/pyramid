@@ -50,6 +50,16 @@ public class ElasticNetLogisticTrainer {
     private Terminator terminator;
     private boolean lineSearch = true;
 
+    public boolean isActiveSet() {
+        return isActiveSet;
+    }
+
+    public void setActiveSet(boolean activeSet) {
+        isActiveSet = activeSet;
+    }
+
+    private boolean isActiveSet = false;
+
     public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses,
                                      double[][] targets, double[] weights) {
         return new Builder(logisticRegression, dataSet, numClasses, targets, weights);
@@ -79,33 +89,35 @@ public class ElasticNetLogisticTrainer {
         }
     }
 
-    public void iterate() {
-        double[][] probs = new double[dataSet.getNumDataPoints()][numClasses];
-        double[][] classScores = new double[dataSet.getNumDataPoints()][numClasses];
-        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(i -> {
-            probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
-            classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
-        });
-        Weights oldWeights = logisticRegression.getWeights().deepCopy();
-        IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs, classScores));
-        if (lineSearch) {
-            Weights newWeights = logisticRegression.getWeights().deepCopy();
-            // infer searchDirection
-            Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
 
-            if (logger.isDebugEnabled()){
-                logger.debug("norm of the search direction = " + searchDirection.norm(2));
-            }
-            // move back to starting point
-            logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
-            // this gradient doesn't include the penalty term, so it is only approximate
-            Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(dataSet.getNumDataPoints());
-            lineSearch(searchDirection, gradient);
-            updateClassProbMatrix();
-            updatePredictedCounts();
-        }
-        terminator.add(getLoss());
-    }
+//TODO: Approximation of iterating all labels the same time
+//    public void iterate1() {
+//        double[][] probs = new double[dataSet.getNumDataPoints()][numClasses];
+//        double[][] classScores = new double[dataSet.getNumDataPoints()][numClasses];
+//        IntStream.range(0, dataSet.getNumDataPoints()).parallel().forEach(i -> {
+//            probs[i] = logisticRegression.predictClassProbs(dataSet.getRow(i));
+//            classScores[i] = logisticRegression.predictClassScores(dataSet.getRow(i));
+//        });
+//        Weights oldWeights = logisticRegression.getWeights().deepCopy();
+//        IntStream.range(0,numClasses).parallel().forEach(i -> optimizeOneClass(i, probs, classScores));
+//        if (lineSearch) {
+//            Weights newWeights = logisticRegression.getWeights().deepCopy();
+//            // infer searchDirection
+//            Vector searchDirection = newWeights.getAllWeights().minus(oldWeights.getAllWeights());
+//
+//            if (logger.isDebugEnabled()){
+//                logger.debug("norm of the search direction = " + searchDirection.norm(2));
+//            }
+//            // move back to starting point
+//            logisticRegression.getWeights().setWeightVector(oldWeights.getAllWeights());
+//            // this gradient doesn't include the penalty term, so it is only approximate
+//            Vector gradient = this.predictedCounts.minus(empiricalCounts).divide(dataSet.getNumDataPoints());
+//            lineSearch(searchDirection, gradient);
+//            updateClassProbMatrix();
+//            updatePredictedCounts();
+//        }
+//        terminator.add(getLoss());
+//    }
 
     private void optimizeOneClass(int classIndex, double[][] probs, double[][] classScores) {
         //create weighted least square problem
@@ -147,9 +159,6 @@ public class ElasticNetLogisticTrainer {
         ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights, sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
-//        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights);
-//        linearRegTrainer.setRegularization((sumWeights/Arrays.stream(instanceWeights).parallel().sum())*this.regularization);
-//        linearRegTrainer.setL1Ratio(this.l1Ratio);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }
@@ -164,7 +173,7 @@ public class ElasticNetLogisticTrainer {
     }
 
 
-    public void iterate1(){
+    public void iterate(){
         for (int k=0;k<numClasses;k++){
             optimizeOneClass(k);
         }
@@ -186,18 +195,14 @@ public class ElasticNetLogisticTrainer {
         double[] instanceWeights = new double[numDataPoints];
         IntStream.range(0,numDataPoints).parallel().forEach(i ->
         {
-            // TODO: repeated calculations in following two steps.
             double prob = logisticRegression.predictClassProbs(dataSet.getRow(i))[classIndex];
+            // TODO: following is calculated twice.
             double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
-//            double y = 0;
             double y = targets[i][classIndex];
-//            if (labels[i]==classIndex){
-//                y = 1;
-//            }
             double frac = 0;
             double tmpP = prob*(1-prob);
             // if prob = 0 or prob = 1, weight = 0; doesn't matter how we decide frac; leave it 0
-            if (prob!=0&&prob!=1){
+            if (tmpP!=0){
                 frac = (y-prob)/tmpP;
             }
             // frac is numerically unstable; if it is too big, the weighted least square solver will crash
@@ -210,12 +215,13 @@ public class ElasticNetLogisticTrainer {
             }
 
             realLabels[i] = classScore + frac;
-            // TODO: why divided by numDataPoints?
-//            instanceWeights[i] = (weights[i]*prob*(1-prob))/numDataPoints;
             instanceWeights[i] = (weights[i]*tmpP);
         });
 
-        Weights oldWeights = logisticRegression.getWeights().deepCopy();
+        Weights oldWeights = null;
+        if (lineSearch) {
+            oldWeights = logisticRegression.getWeights().deepCopy();
+        }
 
         // in glmnet algorithm:
         // this correspond to moving towards the search direction with step size 1
@@ -223,9 +229,12 @@ public class ElasticNetLogisticTrainer {
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
                 logisticRegression.getWeights().getWeightsForClass(classIndex));
         // use default epsilon
-        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights, sumWeights);
+        ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights,sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
         linearRegTrainer.setL1Ratio(this.l1Ratio);
+        linearRegTrainer.setActiveSet(this.isActiveSet);
+        //TODO: no large iterations
+        linearRegTrainer.getTerminator().setMaxIteration(10);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }
@@ -366,9 +375,6 @@ public class ElasticNetLogisticTrainer {
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
                 count += targets[i][classIndex];
-//                if (labels[i]==classIndex){
-//                    count +=1;
-//                }
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
@@ -376,10 +382,6 @@ public class ElasticNetLogisticTrainer {
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
                 count += featureValue * targets[dataPointIndex][classIndex];
-//                int label = labels[dataPointIndex];
-//                if (label==classIndex){
-//                    count += featureValue;
-//                }
             }
         }
         return count;

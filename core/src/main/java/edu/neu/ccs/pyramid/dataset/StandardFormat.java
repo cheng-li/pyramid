@@ -120,6 +120,8 @@ public class StandardFormat {
         int numDataPoints = dataSet.getNumDataPoints();
         int numFeatures = dataSet.getNumFeatures();
         int numClasses = dataSet.getNumClasses();
+        featureFile.getParentFile().mkdirs();
+        labelFile.getParentFile().mkdirs();
         try(
                 BufferedWriter bw1 = new BufferedWriter(new FileWriter(featureFile));
         ){
@@ -195,7 +197,7 @@ public class StandardFormat {
     private static int[] parseStandard(File featureFile, File labelFile, String delimiter) throws IOException {
         int numDataPoints=0;
         try(
-                BufferedReader br1 = new BufferedReader((new FileReader(labelFile)));
+                BufferedReader br1 = new BufferedReader((new FileReader(featureFile)));
         ){
             //TODO: make it more robust to empty end lines
             while(br1.readLine()!=null){
@@ -244,17 +246,21 @@ public class StandardFormat {
             }
         }
 
-        try (BufferedReader br2 = new BufferedReader((new FileReader(labelFile)));
-        ){
-            String line2 = null;
-            int k = 0;
-            while((line2=br2.readLine())!=null){
-                String[] line2Split = line2.split(delimiter);
-                double label = Double.parseDouble(line2Split[0]);
-                regDataSet.setLabel(k, label);
-                k += 1;
+        if (labelFile!=null){
+            try (BufferedReader br2 = new BufferedReader((new FileReader(labelFile)));
+            ){
+                String line2 = null;
+                int k = 0;
+                while((line2=br2.readLine())!=null){
+                    String[] line2Split = line2.split(delimiter);
+                    double label = Double.parseDouble(line2Split[0]);
+                    regDataSet.setLabel(k, label);
+                    k += 1;
+                }
             }
         }
+
+
     }
 
     /**

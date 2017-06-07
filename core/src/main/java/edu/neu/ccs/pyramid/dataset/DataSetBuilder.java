@@ -8,6 +8,7 @@ public class DataSetBuilder {
     private int numFeatures = -1;
     private boolean dense = true;
     private boolean missingValue = false;
+    private Density density = Density.DENSE;
 
     public static DataSetBuilder getBuilder(){
         return new DataSetBuilder();
@@ -33,17 +34,26 @@ public class DataSetBuilder {
         return this;
     }
 
-
+    public DataSetBuilder density(Density density) {
+        this.density = density;
+        return this;
+    }
 
     public DataSet build(){
         if (!valid()){
             throw new IllegalArgumentException("Illegal arguments");
         }
-        DataSet dataSet;
-        if (dense){
-            dataSet = new DenseDataSet(numDataPoints,numFeatures,missingValue);
-        } else {
-            dataSet = new SparseDataSet(numDataPoints,numFeatures,missingValue);
+        DataSet dataSet = null;
+        switch (density){
+            case DENSE:
+                dataSet = new DenseDataSet(numDataPoints,numFeatures,missingValue);
+                break;
+            case SPARSE_RANDOM:
+                dataSet = new SparseDataSet(numDataPoints,numFeatures,missingValue);
+                break;
+            case SPARSE_SEQUENTIAL:
+                dataSet = new SequentialSparseDataSet(numDataPoints,numFeatures,missingValue);
+                break;
         }
         return dataSet;
     }

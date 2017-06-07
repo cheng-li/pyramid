@@ -106,6 +106,13 @@ public class TRECFormat {
         return loadMultiLabelClfDataSet(new File(trecFile),dataSetType, loadSettings);
     }
 
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseRandom(String trecFile) throws IOException, ClassNotFoundException {
+        return loadMultiLabelClfDataSetAutoSparseRandom(new File(trecFile));
+    }
+
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseSequential(String trecFile) throws IOException, ClassNotFoundException {
+        return loadMultiLabelClfDataSetAutoSparseSequential(new File(trecFile));
+    }
 
     public static ClfDataSet loadClfDataSet(File trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
@@ -166,6 +173,25 @@ public class TRECFormat {
         return dataSet;
     }
 
+
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseRandom(File trecFile) throws IOException, ClassNotFoundException {
+        boolean dense = isDense(trecFile);
+        if (dense){
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_DENSE,true);
+        } else {
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_SPARSE,true);
+        }
+    }
+
+    public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseSequential(File trecFile) throws IOException, ClassNotFoundException {
+        boolean dense = isDense(trecFile);
+        if (dense){
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_DENSE,true);
+        } else {
+            return loadMultiLabelClfDataSet(trecFile, DataSetType.ML_CLF_SEQ_SPARSE,true);
+        }
+    }
+
     public static RegDataSet loadRegDataSet(File trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
         boolean legalArg = ((dataSetType == DataSetType.REG_DENSE)
@@ -222,7 +248,7 @@ public class TRECFormat {
 
     //==========PRIVATE==========
 
-    private static int parseNumDataPoints(File trecFile) throws IOException {
+    static int parseNumDataPoints(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         int numDataPoints;
         try(
@@ -234,7 +260,7 @@ public class TRECFormat {
         return numDataPoints;
     }
 
-    private static int parseNumFeaturess(File trecFile) throws IOException {
+    static int parseNumFeaturess(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         int numFeatures;
         try(
@@ -246,7 +272,7 @@ public class TRECFormat {
         return numFeatures;
     }
 
-    private static int parseNumClasses(File trecFile) throws IOException {
+    static int parseNumClasses(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         int numClasses;
         try(
@@ -258,7 +284,7 @@ public class TRECFormat {
         return numClasses;
     }
 
-    private static boolean parseMissingValue(File trecFile) throws IOException {
+    static boolean parseMissingValue(File trecFile) throws IOException {
         File configFile = new File(trecFile, TREC_CONFIG_FILE_NAME);
         boolean missingValue;
         try(
@@ -270,6 +296,45 @@ public class TRECFormat {
         return missingValue;
     }
 
+    static boolean isDense(File trecFile) throws IOException {
+        int numFeatures = parseNumFeaturess(trecFile);
+        File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
+        int data = 0;
+        double nonZeros = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
+        ) {
+            String line = null;
+
+            while ((line = br.readLine()) != null) {
+                String[] lineSplit = line.split("\\s+");
+                for (int i = 1; i < lineSplit.length; i++) {
+                    String pair = lineSplit[i];
+                    // ignore things after #
+                    if (pair.startsWith("#")) {
+                        break;
+                    }
+                    String[] pairSplit = pair.split(":");
+                    double featureValue = Double.parseDouble(pairSplit[1]);
+                    if (featureValue != 0) {
+                        nonZeros += 1;
+                    }
+                }
+                data += 1;
+                // just use the first 100 to estimate
+                if (data == 100) {
+                    break;
+                }
+            }
+        }
+        double density = nonZeros/(numFeatures*data);
+        if (density>0.3){
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+
     private static void fillClfDataSet(ClfDataSet dataSet, File trecFile) throws IOException {
         File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
         try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
@@ -277,7 +342,7 @@ public class TRECFormat {
             String line = null;
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                String[] lineSplit = line.split("\\s+");
                 int label = Integer.parseInt(lineSplit[0]);
                 dataSet.setLabel(dataIndex,label);
                 for (int i=1;i<lineSplit.length;i++){
@@ -303,7 +368,7 @@ public class TRECFormat {
             String line = null;
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                String[] lineSplit = line.split("\\s+");
                 // the line is not just a space
                 if (lineSplit.length>=1){
                     String multiLabelString = null;
@@ -347,7 +412,7 @@ public class TRECFormat {
             String line = null;
             int dataIndex = 0;
             while ((line=br.readLine())!=null){
-                String[] lineSplit = line.split(" ");
+                String[] lineSplit = line.split("\\s+");
                 double label = Double.parseDouble(lineSplit[0]);
                 dataSet.setLabel(dataIndex,label);
                 for (int i=1;i<lineSplit.length;i++){

@@ -9,10 +9,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.IntStream;
 
 /**
@@ -497,7 +495,8 @@ public class CRFLoss implements Optimizable.ByGradientValue {
         for (int c=0; c< numSupport; c++) {
             switch (featureCase) {
                 // both l1, l2 equal 0;
-                case 0: if (!comContainsLabel[c][l1] && !comContainsLabel[c][l2]) list.add(c);
+                case 0:
+                    if (!comContainsLabel[c][l1] && !comContainsLabel[c][l2]) list.add(c);
                     break;
                 // l1 = 1; l2 = 0;
                 case 1: if (comContainsLabel[c][l1] && !comContainsLabel[c][l2]) list.add(c);
@@ -505,7 +504,7 @@ public class CRFLoss implements Optimizable.ByGradientValue {
                 // l1 = 0; l2 = 1;
                 case 2: if (!comContainsLabel[c][l1] && comContainsLabel[c][l2]) list.add(c);
                     break;
-                // l1 = 1; l2 = 1;
+                // l1 = 1; l2 = 1;mapPairToCombination
                 case 3: if (comContainsLabel[c][l1] && comContainsLabel[c][l2]) list.add(c);
                     break;
                 default: throw new RuntimeException("feature case :" + featureCase + " failed.");

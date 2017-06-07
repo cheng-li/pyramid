@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
@@ -21,6 +22,13 @@ public class MLMeasures {
     private MacroAverage macroAverage;
     private MicroAverage microAverage;
 
+
+    public MLMeasures(int numClasses, MultiLabel[] truth, MultiLabel[] prediction){
+        this.mlConfusionMatrix = new MLConfusionMatrix(numClasses, truth, prediction);
+        this.instanceAverage = new InstanceAverage(mlConfusionMatrix);
+        this.macroAverage = new MacroAverage(mlConfusionMatrix);
+        this.microAverage = new MicroAverage(mlConfusionMatrix);
+    }
 
     public MLMeasures(MultiLabelClassifier classifier, MultiLabelClfDataSet dataSet){
         this.mlConfusionMatrix = new MLConfusionMatrix(classifier,dataSet);
@@ -67,11 +75,11 @@ public class MLMeasures {
             jsonGenerator.writeNumberField("instance precision",mlMeasures.instanceAverage.getPrecision());
             jsonGenerator.writeNumberField("instance recall",mlMeasures.instanceAverage.getRecall());
 
-            jsonGenerator.writeNumberField("macro overlap",mlMeasures.macroAverage.getOverlap());
-            jsonGenerator.writeNumberField("macro F1",mlMeasures.macroAverage.getF1());
-            jsonGenerator.writeNumberField("macro Hamming loss",mlMeasures.macroAverage.getHammingLoss());
-            jsonGenerator.writeNumberField("macro precision",mlMeasures.macroAverage.getPrecision());
-            jsonGenerator.writeNumberField("macro recall",mlMeasures.macroAverage.getRecall());
+            jsonGenerator.writeNumberField("label overlap",mlMeasures.macroAverage.getOverlap());
+            jsonGenerator.writeNumberField("label F1",mlMeasures.macroAverage.getF1());
+            jsonGenerator.writeNumberField("label Hamming loss",mlMeasures.macroAverage.getHammingLoss());
+            jsonGenerator.writeNumberField("label precision",mlMeasures.macroAverage.getPrecision());
+            jsonGenerator.writeNumberField("label recall",mlMeasures.macroAverage.getRecall());
 
             jsonGenerator.writeNumberField("micro overlap",mlMeasures.microAverage.getOverlap());
             jsonGenerator.writeNumberField("micro F1",mlMeasures.microAverage.getF1());

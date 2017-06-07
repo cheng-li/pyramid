@@ -4,6 +4,8 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.optimization.Optimizable;
+import edu.neu.ccs.pyramid.util.Vectors;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.DenseVector;
@@ -29,7 +31,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private int numClasses;
 
     // size = num classes * num data
-    private double[][] logProbabilityMatrixKByN;
+    private double[][] logProbabilityMatrix;
+    // also store probabilities to avoid doing exponentiation
+    private double[][] probabilityMatrix;
     private double value;
     private boolean isGradientCacheValid;
     private boolean isValueCacheValid;
@@ -56,7 +60,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.logProbabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
+        this.logProbabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
+        this.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
@@ -78,7 +83,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         this.empiricalCounts = new DenseVector(numParameters);
         this.predictedCounts = new DenseVector(numParameters);
         this.numClasses = targetDistributions[0].length;
-        this.logProbabilityMatrixKByN = new double[numClasses][dataSet.getNumDataPoints()];
+        this.logProbabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
+        this.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
         this.updateEmpricalCounts();
         this.isValueCacheValid=false;
         this.isGradientCacheValid=false;
@@ -164,9 +170,12 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
     private double kl(int dataPointIndex){
+        if (weights[dataPointIndex]==0){
+            return 0;
+        }
         double[] predicted = new double[numClasses];
         for (int k=0;k<numClasses;k++){
-            predicted[k] = logProbabilityMatrixKByN[k][dataPointIndex];
+            predicted[k] = logProbabilityMatrix[k][dataPointIndex];
         }
         return weights[dataPointIndex]* KLDivergence.klGivenPLogQ(targetDistributions[dataPointIndex], predicted);
     }
@@ -177,7 +186,8 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     private double penaltyValue(int classIndex){
         double square = 0;
         Vector weightVector = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
-        square += weightVector.dot(weightVector);
+        square += Vectors.dot(weightVector, weightVector);
+//        square += weightVector.dot(weightVector);
         return square/(2*priorGaussianVariance);
     }
 
@@ -214,13 +224,24 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
 
 
     public Vector getGradient(){
+        StopWatch stopWatch = null;
+        if (logger.isDebugEnabled()){
+            stopWatch = new StopWatch();
+            stopWatch.start();
+        }
         if (isGradientCacheValid){
+            if (logger.isDebugEnabled()){
+                logger.debug("time spent on getGradient = "+stopWatch);
+            }
             return this.gradient;
         }
         updateClassProbMatrix();
         updatePredictedCounts();
         updateGradient();
         this.isGradientCacheValid = true;
+        if (logger.isDebugEnabled()){
+            logger.debug("time spent on getGradient = "+stopWatch);
+        }
         return this.gradient;
     }
 
@@ -253,6 +274,10 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
     }
 
     private void updatePredictedCounts(){
+        StopWatch stopWatch = new StopWatch();
+        if (logger.isDebugEnabled()){
+            stopWatch.start();
+        }
         IntStream intStream;
         if (isParallel){
             intStream = IntStream.range(0,numParameters).parallel();
@@ -261,8 +286,12 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         }
 
         intStream.forEach(i -> this.predictedCounts.set(i, calPredictedCount(i)));
+        if (logger.isDebugEnabled()){
+            logger.debug("time spent on updatePredictedCounts = "+stopWatch);
+        }
     }
 
+    // todo for dense matrix, store a sparse instance weights vector to skip zeros
     private double calEmpricalCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
@@ -276,42 +305,58 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
-                double featureValue = element.get();
-                count += featureValue*targetDistributions[dataPointIndex][classIndex]* weights[dataPointIndex];
+                if (weights[dataPointIndex]!=0){
+                    double featureValue = element.get();
+                    count += featureValue*targetDistributions[dataPointIndex][classIndex]* weights[dataPointIndex];
+                }
+
             }
         }
         return count;
     }
 
+    //todo optimize for dense dataset
+    // todo find a way to only iterate over non-zero weight instances
     private double calPredictedCount(int parameterIndex){
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
-        double[] logProbs = this.logProbabilityMatrixKByN[classIndex];
+        double[] probs = this.probabilityMatrix[classIndex];
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += Math.exp(logProbs[i])* weights[i];
+                if (weights[i]!=0){
+                    count += probs[i]* weights[i];
+                }
+
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
-                double featureValue = element.get();
-                count += Math.exp(logProbs[dataPointIndex])*featureValue* weights[dataPointIndex];
+                if (weights[dataPointIndex]!=0){
+                    double featureValue = element.get();
+                    count += probs[dataPointIndex]*featureValue* weights[dataPointIndex];
+                }
             }
         }
         return count;
     }
 
     private void updateClassProbs(int dataPointIndex){
+        if (weights[dataPointIndex]==0){
+            return;
+        }
         double[] logProbs = logisticRegression.predictLogClassProbs(dataSet.getRow(dataPointIndex));
         for (int k=0;k<numClasses;k++){
-            this.logProbabilityMatrixKByN[k][dataPointIndex]=logProbs[k];
+            this.logProbabilityMatrix[k][dataPointIndex]=logProbs[k];
+            this.probabilityMatrix[k][dataPointIndex] = Math.exp(logProbs[k]);
         }
     }
 
     private void updateClassProbMatrix(){
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         IntStream intStream;
         if (isParallel){
             intStream = IntStream.range(0,dataSet.getNumDataPoints()).parallel();
@@ -320,6 +365,9 @@ public class LogisticLoss implements Optimizable.ByGradientValue {
         }
         intStream.forEach(this::updateClassProbs);
         this.isProbabilityCacheValid = true;
+        if (logger.isDebugEnabled()){
+            logger.debug("time spent on updateClassProbMatrix = "+stopWatch);
+        }
     }
 
 

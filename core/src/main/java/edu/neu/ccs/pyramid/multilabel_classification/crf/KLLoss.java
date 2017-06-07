@@ -62,7 +62,7 @@ public class KLLoss implements Optimizable.ByGradientValue {
     private List<List<Integer>> labelPairToCombination;
 
     // if true, regularize all weights
-    private boolean regularizeAll = false;
+    private boolean regularizeAll = true;
 
     // for each combination, store the sum of probabilities over all data points
     // size = num combinations

@@ -2,7 +2,9 @@ package edu.neu.ccs.pyramid.clustering.bm;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
+import edu.neu.ccs.pyramid.dataset.Density;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,10 +23,10 @@ public class BMSelector {
         BM best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
-            System.out.println("fitting BM model "+i);
+//            System.out.println("fitting BM model "+i);
             BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
             BM bm = trainer.train();
-            double objective = trainer.terminator.getLastValue();
+            double objective = trainer.getObjective();
             if (objective < bestObjective){
                 bestObjective = objective;
                 best = bm;
@@ -40,10 +42,10 @@ public class BMSelector {
         BMTrainer best = null;
         double bestObjective = Double.POSITIVE_INFINITY;
         for (int i=0;i<numRuns;i++){
-            System.out.println("fitting BM model "+i);
+//            System.out.println("fitting BM model "+i);
             BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
             BM bm = trainer.train();
-            double objective = trainer.terminator.getLastValue();
+            double objective = trainer.getObjective();
             if (objective < bestObjective){
                 bestObjective = objective;
                 best = trainer;
@@ -58,7 +60,7 @@ public class BMSelector {
                 .numDataPoints(multiLabels.length)
                 .numFeatures(numClasses)
                 // use sparse format to speed up computation
-                .dense(false)
+                .density(Density.SPARSE_RANDOM)
                 .build();
         for (int i=0;i<multiLabels.length;i++){
             MultiLabel multiLabel = multiLabels[i];
@@ -72,5 +74,27 @@ public class BMSelector {
         return trainer.gammas;
     }
 
+
+    public static Pair<BM,double[][]> selectAll(int numClasses, MultiLabel[] multiLabels, int numClusters) {
+        DataSet dataSet = DataSetBuilder.getBuilder()
+                .numDataPoints(multiLabels.length)
+                .numFeatures(numClasses)
+                // use sparse format to speed up computation
+                .density(Density.SPARSE_RANDOM)
+                .build();
+        for (int i=0;i<multiLabels.length;i++){
+            MultiLabel multiLabel = multiLabels[i];
+            for (int label: multiLabel.getMatchedLabels()){
+                dataSet.setFeatureValue(i,label,1);
+            }
+        }
+        BMTrainer trainer = BMSelector.selectTrainer(dataSet, numClusters, 10);
+//        System.out.println("bm = "+trainer.bm);
+//        System.out.println("gamma = "+ Arrays.deepToString(trainer.gammas));
+        Pair<BM,double[][]> pair = new Pair<>();
+        pair.setFirst(trainer.getBm());
+        pair.setSecond(trainer.gammas);
+        return pair;
+    }
 
 }

@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.feature_extraction;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
+import edu.neu.ccs.pyramid.dataset.SparseDataSet;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.FeatureLoader;
 import edu.neu.ccs.pyramid.feature.Ngram;
@@ -39,11 +40,8 @@ public class StumpSelector {
             e.printStackTrace();
         }
         ngram.setIndex(0);
-
-        DataSet dataSet = DataSetBuilder.getBuilder()
-                .numDataPoints(labels[0].length)
-                .numFeatures(1)
-                .build();
+        
+        DataSet dataSet = new SparseDataSet(labels[0].length,1, false, null);
         FeatureLoader.loadNgramFeature(index, dataSet, ngram, idTranslator, matchScoreType, docFilter);
         double[] scores = new double[labels.length];
         for (int l=0;l<scores.length;l++){

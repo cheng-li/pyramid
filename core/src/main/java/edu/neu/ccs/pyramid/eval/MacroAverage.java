@@ -5,7 +5,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.util.PrintUtil;
+import org.apache.mahout.math.Vector;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -15,6 +18,7 @@ import java.util.stream.IntStream;
  * Based on
  * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
  * Advances in Neural Information Processing Systems. 2015.
+ * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/24/16.
  */
 @JsonSerialize(using = MacroAverage.Serializer.class)
@@ -45,7 +49,7 @@ public class MacroAverage {
     public MacroAverage(MLConfusionMatrix confusionMatrix) {
         this.numClasses = confusionMatrix.getNumClasses();
         int numDataPoints = confusionMatrix.getNumDataPoints();
-        MLConfusionMatrix.Entry[][] entries = confusionMatrix.getEntries();
+        DataSet entries = confusionMatrix.getEntries();
         this.labelWiseTP = new int[numClasses];
         this.labelWiseTN = new int[numClasses];
         this.labelWiseFP = new int[numClasses];
@@ -60,23 +64,19 @@ public class MacroAverage {
 
 
         IntStream.range(0,numClasses).parallel().forEach(l->{
-            for (int i=0;i<numDataPoints;i++){
-                MLConfusionMatrix.Entry entry = entries[i][l];
-                switch (entry){
-                    case TP:
-                        labelWiseTP[l] += 1;
-                        break;
-                    case FP:
-                        labelWiseFP[l] += 1;
-                        break;
-                    case TN:
-                        labelWiseTN[l] += 1;
-                        break;
-                    case FN:
-                        labelWiseFN[l] += 1;
-                        break;
+            Vector vector = entries.getColumn(l);
+            for (Vector.Element element: vector.nonZeroes()){
+                double v = element.get();
+                if (v==1){
+                    labelWiseTP[l] += 1;
+                } else if (v==2){
+                    labelWiseFN[l] += 1;
+                } else if (v==3){
+                    labelWiseFP[l] += 1;
                 }
             }
+            labelWiseTN[l] = numDataPoints - vector.getNumNonZeroElements();
+
             double tp = ((double) labelWiseTP[l])/numDataPoints;
             double tn = ((double) labelWiseTN[l])/numDataPoints;
             double fp = ((double) labelWiseFP[l])/numDataPoints;
@@ -177,13 +177,36 @@ public class MacroAverage {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("macro overlap = ").append(overlap).append("\n");
-        sb.append("macro Hamming loss = ").append(hammingLoss).append("\n");
-        sb.append("macro F1 = ").append(f1).append("\n");
-        sb.append("macro precision = ").append(precision).append("\n");
-        sb.append("macro recall = ").append(recall).append("\n");
-        sb.append("macro binary accuracy = ").append(binaryAccuracy).append("\n");
+        sb.append("label Jaccard Index = ").append(overlap).append("\n");
+        sb.append("label Hamming loss = ").append(hammingLoss).append("\n");
+        sb.append("label F1 = ").append(f1).append("\n");
+        sb.append("label precision = ").append(precision).append("\n");
+        sb.append("label recall = ").append(recall).append("\n");
+        sb.append("label binary accuracy = ").append(binaryAccuracy).append("\n");
 
+        return sb.toString();
+    }
+
+
+
+    public String printDetail() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("f1=").append(f1);
+        sb.append(", overlap=").append(overlap);
+        sb.append(", precision=").append(precision);
+        sb.append(", recall=").append(recall);
+        sb.append(", hammingLoss=").append(hammingLoss);
+        sb.append(", binaryAccuracy=").append(binaryAccuracy);
+        sb.append(", labelWisePrecision=").append(PrintUtil.printWithIndex(labelWisePrecision));
+        sb.append(", labelWiseRecall=").append(PrintUtil.printWithIndex(labelWiseRecall));
+        sb.append(", labelWiseOverlap=").append(PrintUtil.printWithIndex(labelWiseOverlap));
+        sb.append(", labelWiseF1=").append(PrintUtil.printWithIndex(labelWiseF1));
+        sb.append(", labelWiseHammingLoss=").append(PrintUtil.printWithIndex(labelWiseHammingLoss));
+        sb.append(", labelWiseAccuracy=").append(PrintUtil.printWithIndex(labelWiseAccuracy));
+        sb.append(", labelWiseTP=").append(PrintUtil.printWithIndex(labelWiseTP));
+        sb.append(", labelWiseTN=").append(PrintUtil.printWithIndex(labelWiseTN));
+        sb.append(", labelWiseFP=").append(PrintUtil.printWithIndex(labelWiseFP));
+        sb.append(", labelWiseFN=").append(PrintUtil.printWithIndex(labelWiseFN));
         return sb.toString();
     }
 

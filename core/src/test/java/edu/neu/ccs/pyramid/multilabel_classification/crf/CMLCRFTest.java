@@ -6,15 +6,19 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.FMeasure;
+import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.eval.Overlap;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.CMLCRF;
 import edu.neu.ccs.pyramid.multilabel_classification.crf.CRFLoss;
 import edu.neu.ccs.pyramid.optimization.GradientDescent;
 import edu.neu.ccs.pyramid.optimization.LBFGS;
 import edu.neu.ccs.pyramid.optimization.Optimizer;
+import edu.neu.ccs.pyramid.simulation.MultiLabelSynthesizer;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Rainicy on 12/14/15.
@@ -25,13 +29,16 @@ public class CMLCRFTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test1();
+//        test1();
 //        test2();
 
 //        test3();
 //        test4();
 //        test5();
 //        test6();
+
+//        test7();
+        test8();
     }
 
     public static void test2() throws Exception {
@@ -302,8 +309,188 @@ public class CMLCRFTest {
 //            System.out.println("crf = "+cmlcrf.getWeights());
 //            System.out.println(Arrays.toString(predTrain));
         }
+    }
 
+    private static void test7() throws Exception {
 
+        System.out.println(config);
+
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        // loading or save model infos.
+        String output = config.getString("output");
+        String modelName = config.getString("modelName");
+
+        CMLCRF cmlcrf = null;
+
+        if (config.getString("train.warmStart").equals("true")) {
+            cmlcrf = CMLCRF.deserialize(new File(output, modelName));
+            System.out.println("loading model:");
+            System.out.println(cmlcrf);
+        } else if (config.getString("train.warmStart").equals("auto")) {
+            cmlcrf = CMLCRF.deserialize(new File(output, modelName));
+            System.out.println("retrain model:");
+            CMLCRFElasticNet cmlcrfElasticNet = new CMLCRFElasticNet(cmlcrf, trainSet, config.getDouble("l1Ratio"), config.getDouble("regularization"));
+            train(cmlcrfElasticNet, cmlcrf, trainSet, testSet, config);
+
+        } else if (config.getString("train.warmStart").equals("false")) {
+            cmlcrf = new CMLCRF(trainSet);
+            cmlcrf.setConsiderPair(config.getBoolean("considerLabelPair"));
+            CMLCRFElasticNet cmlcrfElasticNet = new CMLCRFElasticNet(cmlcrf, trainSet, config.getDouble("l1Ratio"), config.getDouble("regularization"));
+            train(cmlcrfElasticNet, cmlcrf, trainSet, testSet, config);
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println("--------------------------------Results-----------------------------\n");
+        MLMeasures measures = new MLMeasures(cmlcrf, trainSet);
+        System.out.println("========== Train ==========\n");
+        System.out.println(measures);
+
+        System.out.println("========== Test ==========\n");
+        long startTimePred = System.nanoTime();
+        MultiLabel[] preds = cmlcrf.predict(testSet);
+        long stopTimePred = System.nanoTime();
+        long predTime = stopTimePred - startTimePred;
+        System.out.println("\nprediction time: " + TimeUnit.NANOSECONDS.toSeconds(predTime) + " sec.");
+        System.out.println(new MLMeasures(cmlcrf, testSet));
+        System.out.println("\n\n");
+        InstanceF1Predictor pluginF1 = new InstanceF1Predictor(cmlcrf);
+        System.out.println("Plugin F1");
+        System.out.println(new MLMeasures(pluginF1, testSet));
+
+        if (config.getBoolean("saveModel")) {
+            (new File(output)).mkdirs();
+            File serializeModel = new File(output, modelName);
+            cmlcrf.serialize(serializeModel);
+        }
+    }
+    private static void train(CMLCRFElasticNet optimizer, CMLCRF cmlcrf, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet testSet, Config config) {
+        MultiLabel[] predTrain;
+        MultiLabel[] predTest;
+        long startTime = System.nanoTime();
+        for (int i=0; i < config.getInt("numRounds"); i++) {
+            optimizer.iterate();
+            predTrain = cmlcrf.predict(trainSet);
+            predTest = cmlcrf.predict(testSet);
+            System.out.print("iter: " + String.format("%04d", i));
+            System.out.print("\tobjective: " + String.format("%.4f", optimizer.getValue()));
+            System.out.print("\tTrain acc: " + String.format("%.4f", Accuracy.accuracy(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTrain overlap " + String.format("%.4f", Overlap.overlap(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTrain F1 " + String.format("%.4f", FMeasure.f1(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTest acc: " + String.format("%.4f", Accuracy.accuracy(testSet.getMultiLabels(), predTest)));
+            System.out.print("\tTest overlap " + String.format("%.4f", Overlap.overlap(testSet.getMultiLabels(), predTest)));
+            System.out.println("\tTest F1 " + String.format("%.4f", FMeasure.f1(testSet.getMultiLabels(), predTest)));
+        }
+
+        long stopTime = System.nanoTime();
+        long trainTime = stopTime - startTime;
+        System.out.println("\ntraining time: " + TimeUnit.NANOSECONDS.toSeconds(trainTime) + " sec.");
 
     }
+
+    private static void test8() throws Exception {
+
+        System.out.println(config);
+
+        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet testSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"),
+                DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        // loading or save model infos.
+        String output = config.getString("output");
+        String modelName = config.getString("modelName");
+
+        CMLCRF cmlcrf = new CMLCRF(trainSet);
+        BlockwiseCD blockwiseCD = new BlockwiseCD(cmlcrf, trainSet, config.getDouble("l1Ratio"), config.getDouble("regularization"));
+
+        MultiLabel[] predTrain;
+        MultiLabel[] predTest;
+        for (int i=0; i < 10000; i++) {
+            blockwiseCD.iterate();
+            predTrain = cmlcrf.predict(trainSet);
+            predTest = cmlcrf.predict(testSet);
+            System.out.print("iter: " + String.format("%04d", i));
+            System.out.print("\tobjective: " + String.format("%.4f", blockwiseCD.getValue()));
+            System.out.print("\tTrain acc: " + String.format("%.4f", Accuracy.accuracy(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTrain overlap " + String.format("%.4f", Overlap.overlap(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTrain F1 " + String.format("%.4f", FMeasure.f1(trainSet.getMultiLabels(), predTrain)));
+            System.out.print("\tTest acc: " + String.format("%.4f", Accuracy.accuracy(testSet.getMultiLabels(), predTest)));
+            System.out.print("\tTest overlap " + String.format("%.4f", Overlap.overlap(testSet.getMultiLabels(), predTest)));
+            System.out.println("\tTest F1 " + String.format("%.4f", FMeasure.f1(testSet.getMultiLabels(), predTest)));
+        }
+
+
+        System.out.println();
+        System.out.println();
+        System.out.println("--------------------------------Results-----------------------------\n");
+        MLMeasures measures = new MLMeasures(cmlcrf, trainSet);
+        System.out.println("========== Train ==========\n");
+        System.out.println(measures);
+
+        System.out.println("========== Test ==========\n");
+        long startTimePred = System.nanoTime();
+        MultiLabel[] preds = cmlcrf.predict(testSet);
+        long stopTimePred = System.nanoTime();
+        long predTime = stopTimePred - startTimePred;
+        System.out.println("\nprediction time: " + TimeUnit.NANOSECONDS.toSeconds(predTime) + " sec.");
+        System.out.println(new MLMeasures(cmlcrf, testSet));
+        System.out.println("\n\n");
+        InstanceF1Predictor pluginF1 = new InstanceF1Predictor(cmlcrf);
+        System.out.println("Plugin F1");
+        System.out.println(new MLMeasures(pluginF1, testSet));
+
+        if (config.getBoolean("saveModel")) {
+            (new File(output)).mkdirs();
+            File serializeModel = new File(output, modelName);
+            cmlcrf.serialize(serializeModel);
+        }
+    }
+
+
+    private static void test9(){
+        MultiLabelClfDataSet train = MultiLabelSynthesizer.independentNoise();
+        MultiLabelClfDataSet test = MultiLabelSynthesizer.independent();
+        CMLCRF cmlcrf = new CMLCRF(train);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(0,0);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(0).set(1,1);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(1).set(1,1);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(2).set(1,0);
+
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(0,1);
+        cmlcrf.getWeights().getWeightsWithoutBiasForClass(3).set(1,-1);
+
+        CRFLoss crfLoss = new CRFLoss(cmlcrf,train,1);
+
+        System.out.println(cmlcrf);
+        System.out.println("initial loss = "+crfLoss.getValue());
+        System.out.println("training performance");
+        System.out.println(new MLMeasures(cmlcrf, train));
+        System.out.println("test performance");
+        System.out.println(new MLMeasures(cmlcrf, test));
+
+
+        LBFGS optimizer = new LBFGS(crfLoss);
+        while (!optimizer.getTerminator().shouldTerminate()) {
+            System.out.println("------------");
+            optimizer.iterate();
+            System.out.println(optimizer.getTerminator().getLastValue());
+            System.out.println("training performance");
+            System.out.println(new MLMeasures(cmlcrf, train));
+            System.out.println("test performance");
+            System.out.println(new MLMeasures(cmlcrf, test));
+        }
+        System.out.println(cmlcrf);
+    }
 }
+
+

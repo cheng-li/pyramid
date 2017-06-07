@@ -18,9 +18,7 @@ import java.util.stream.IntStream;
  */
 public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
     private static final long serialVersionUID = 2L;
-
     private int numClasses;
-    private double[] counts;
     private double[] probs;
     private int topClass;
     private FeatureList featureList;
@@ -30,10 +28,15 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
     public PriorProbClassifier(int numClasses) {
         this.numClasses = numClasses;
         this.probs = new double[numClasses];
-        this.counts = new double[numClasses];
+    }
+
+    public PriorProbClassifier(double[] probs) {
+        this.numClasses = probs.length;
+        this.probs = probs;
     }
 
     public void fit(ClfDataSet clfDataSet){
+        double[] counts = new double[numClasses];
         int[] labels = clfDataSet.getLabels();
         for (int label: labels){
             counts[label] += 1;
@@ -49,6 +52,7 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
     public void fit(DataSet dataSet, double[][] targetDistribution, double[] weights){
         double totalCount = MathUtil.arraySum(weights);
 
+        double[] counts = new double[numClasses];
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             for (int k=0;k<numClasses;k++){
                 counts[k] += targetDistribution[i][k]*weights[i];

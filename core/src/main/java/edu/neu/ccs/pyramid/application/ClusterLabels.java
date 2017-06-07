@@ -16,6 +16,7 @@ import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
+import edu.neu.ccs.pyramid.util.*;
 import org.apache.commons.io.FileUtils;
 
 import java.awt.*;
@@ -25,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -48,61 +51,64 @@ public class ClusterLabels {
     }
 
     private static void fitModel(Config config) throws Exception{
-        MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.data"),DataSetType.ML_CLF_SPARSE,true);
-        MultiLabel[] multiLabels = train.getMultiLabels();
+        List<String> labelNames = FileUtils.readLines(new File(config.getString("input.labelNames")));
+        List<String> labels = FileUtils.readLines(new File(config.getString("input.labels")));
+
+        int numLabels = labelNames.size();
+        int numData = labels.size();
 
         DataSet dataSet = DataSetBuilder.getBuilder()
-                .dense(false)
-                .numDataPoints(train.getNumDataPoints())
-                .numFeatures(train.getNumClasses())
+                .density(Density.SPARSE_SEQUENTIAL)
+                .numDataPoints(numData)
+                .numFeatures(numLabels)
                 .build();
 
-        for (int i=0;i<multiLabels.length;i++){
-            MultiLabel multiLabel = multiLabels[i];
-            for (int label: multiLabel.getMatchedLabels()){
-                dataSet.setFeatureValue(i,label,1);
+        for (int i=0;i<numData;i++){
+            String line = labels.get(i);
+            if (!line.isEmpty()){
+                String[] split = line.split(" ");
+                for (String s: split){
+                    int l = Integer.parseInt(s);
+                    dataSet.setFeatureValue(i,l,1);
+                }
             }
         }
 
+
         System.out.println("data loaded");
 
-        LabelTranslator labelTranslator = train.getLabelTranslator();
+        int numClusters = config.getInt("numClusters");
 
-        int numClusters = config.getInt("numComponents");
-
-        System.out.println("=======================BM====================");
+        System.out.println("Start training Bernoulli mixture with EM");
         BMTrainer trainer = new BMTrainer(dataSet,numClusters, 0);
         for (int iter=1;iter<=config.getInt("numIterations");iter++){
             System.out.println("iteration = "+iter);
             trainer.eStep();
             trainer.mStep();
-            if (iter%5==0){
-                System.out.println("obj = "+trainer.getObjective());
-            }
+//            if (iter%5==0){
+//                System.out.println("obj = "+trainer.getObjective());
+//            }
         }
         BM bm = trainer.getBm();
 
-        List<String> names = new ArrayList<>();
-        for (int l=0;l<train.getNumClasses();l++){
-            names.add(labelTranslator.toExtLabel(l));
-        }
 
-        bm.setNames(names);
+        bm.setNames(labelNames);
 
-        String output = config.getString("output.folder");
+        String output = config.getString("output.dir");
         new File(output).mkdirs();
         Serialization.serialize(bm, new File(output, "model"));
 
         FileUtils.writeStringToFile(new File(output, "model_parameters.txt"), bm.toString());
+
     }
 
 
     public static void plot(Config config) throws Exception{
-        BM bm = (BM) Serialization.deserialize(new File(config.getString("output.folder"), "model"));
+        BM bm = (BM) Serialization.deserialize(new File(config.getString("output.dir"), "model"));
         double[] coefficients = bm.getMixtureCoefficients();
         int[] sortedComponents = ArgSort.argSortDescending(bm.getMixtureCoefficients());
 
-        File clusterFolder = Paths.get(config.getString("output.folder"),"clusters").toFile();
+        File clusterFolder = Paths.get(config.getString("output.dir"),"clusters").toFile();
         clusterFolder.mkdirs();
         FileUtils.cleanDirectory(clusterFolder);
 
@@ -126,7 +132,7 @@ public class ClusterLabels {
             wordCloud.setFontScalar(new LinearFontScalar(20, (int)(500/ratio)));
             wordCloud.setWordStartStrategy(new CenterWordStart());
             wordCloud.build(frequencies);
-            File out = Paths.get(config.getString("output.folder"),"clusters",""+i+"_"+coefficients[k]+".png").toFile();
+            File out = Paths.get(config.getString("output.dir"),"clusters",""+i+"_"+coefficients[k]+".png").toFile();
             wordCloud.writeToFile(out.getAbsolutePath());
         }
     }

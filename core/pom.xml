@@ -5,7 +5,7 @@
     <parent>
         <artifactId>pyramid-root</artifactId>
         <groupId>edu.neu.ccs.pyramid</groupId>
-        <version>0.7.15</version>
+        <version>0.8.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -96,6 +96,18 @@
             <groupId>edu.neu.ccs.pyramid</groupId>
             <artifactId>phrase-count-plugin</artifactId>
             <version>1.0</version>
+        </dependency>
+        <dependency> <!-- Spark dependency -->
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.11</artifactId>
+            <version>2.0.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_2.10</artifactId>
+            <version>2.0.2</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

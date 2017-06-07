@@ -92,6 +92,22 @@ public class IMLGBTrainer {
         }
     }
 
+    public void iterateWithoutStagingScores(boolean[] shouldStop){
+        for (int k=0;k<this.boosting.getNumClasses();k++){
+
+            if (!shouldStop[k]){
+                if (logger.isDebugEnabled()){
+                    logger.debug("updating class "+k);
+                }
+                /**
+                 * parallel by feature
+                 */
+                Regressor regressor = this.fitClassK(k);
+                this.boosting.addRegressor(regressor, k);
+            }
+        }
+    }
+
 
 
 

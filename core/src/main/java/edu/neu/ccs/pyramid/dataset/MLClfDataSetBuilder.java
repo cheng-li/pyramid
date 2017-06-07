@@ -6,9 +6,9 @@ package edu.neu.ccs.pyramid.dataset;
 public class MLClfDataSetBuilder {
     private int numDataPoints = -1;
     private int numFeatures = -1;
-    private boolean dense = true;
     private boolean missingValue = false;
     private int numClasses = -1;
+    private Density density = Density.DENSE;
 
     public static MLClfDataSetBuilder getBuilder(){
         return new MLClfDataSetBuilder();
@@ -24,8 +24,9 @@ public class MLClfDataSetBuilder {
         return this;
     }
 
-    public MLClfDataSetBuilder dense(boolean dense) {
-        this.dense = dense;
+
+    public MLClfDataSetBuilder density(Density density) {
+        this.density = density;
         return this;
     }
 
@@ -52,12 +53,19 @@ public class MLClfDataSetBuilder {
             throw new RuntimeException("numClasses<=0");
         }
 
-        MultiLabelClfDataSet dataSet;
-        if (dense){
-            dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
-        } else {
-            dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+        MultiLabelClfDataSet dataSet = null;
+        switch (density){
+            case DENSE:
+                dataSet = new DenseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+                break;
+            case SPARSE_RANDOM:
+                dataSet = new SparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+                break;
+            case SPARSE_SEQUENTIAL:
+                dataSet = new SequentialSparseMLClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+                break;
         }
+
         return dataSet;
     }
 
