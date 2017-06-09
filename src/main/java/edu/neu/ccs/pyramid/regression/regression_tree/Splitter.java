@@ -37,8 +37,11 @@ public class Splitter {
 
 
         // the list might be empty
-        List<SplitResult> splitResults = IntStream.range(0, dataSet.getNumFeatures())
-                .parallel()
+        IntStream intStream = IntStream.range(0,dataSet.getNumFeatures());
+        if (regTreeConfig.isParallel()){
+            intStream = intStream.parallel();
+        }
+        List<SplitResult> splitResults = intStream
                 .mapToObj(featureIndex -> split(regTreeConfig, dataSet, labels,
                         probs, featureIndex, globalStats))
                 .filter(Optional::isPresent)
@@ -108,29 +111,33 @@ public class Splitter {
 //    }
 
 
-    public static List<SplitResult> getAllSplits(RegTreeConfig regTreeConfig,
-                                       DataSet dataSet,
-                                       double[] labels,
-                                       double[] probs){
-        GlobalStats globalStats = new GlobalStats(labels,probs);
-
-        return IntStream.range(0,dataSet.getNumFeatures()).parallel()
-                .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
-                        probs,featureIndex, globalStats))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
-    }
-
-    public static List<SplitResult> getAllSplits(RegTreeConfig regTreeConfig,
-                                                 DataSet dataSet,
-                                                 double[] labels){
-        double[] probs = new double[labels.length];
-        for (int i=0;i<labels.length;i++){
-            probs[i] = 1;
-        }
-        return getAllSplits(regTreeConfig,dataSet,labels,probs);
-    }
+//    public static List<SplitResult> getAllSplits(RegTreeConfig regTreeConfig,
+//                                       DataSet dataSet,
+//                                       double[] labels,
+//                                       double[] probs){
+//        GlobalStats globalStats = new GlobalStats(labels,probs);
+//        IntStream intStream = IntStream.range(0,dataSet.getNumFeatures()).;
+//        if (regTreeConfig.isParallel()){
+//            intStream = intStream.parallel();
+//        }
+//
+//        return intStream
+//                .mapToObj(featureIndex -> split(regTreeConfig,dataSet,labels,
+//                        probs,featureIndex, globalStats))
+//                .filter(Optional::isPresent)
+//                .map(Optional::get)
+//                .collect(Collectors.toList());
+//    }
+//
+//    public static List<SplitResult> getAllSplits(RegTreeConfig regTreeConfig,
+//                                                 DataSet dataSet,
+//                                                 double[] labels){
+//        double[] probs = new double[labels.length];
+//        for (int i=0;i<labels.length;i++){
+//            probs[i] = 1;
+//        }
+//        return getAllSplits(regTreeConfig,dataSet,labels,probs);
+//    }
 
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,

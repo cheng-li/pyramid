@@ -8,6 +8,7 @@ public class RegTreeConfig {
     private int maxNumLeaves=2;
     private int minDataPerLeaf=0;
     private int randomLevel=1;
+    private boolean parallel=true;
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
         this.maxNumLeaves = maxNumLeaves;
@@ -19,6 +20,10 @@ public class RegTreeConfig {
         return this;
     }
 
+    public RegTreeConfig setParallel(boolean parallel) {
+        this.parallel = parallel;
+        return this;
+    }
 
     public RegTreeConfig setNumSplitIntervals(int numSplitIntervals) {
         if (numSplitIntervals<=1){
@@ -55,4 +60,7 @@ public class RegTreeConfig {
         return randomLevel;
     }
 
+    public boolean isParallel() {
+        return parallel;
+    }
 }

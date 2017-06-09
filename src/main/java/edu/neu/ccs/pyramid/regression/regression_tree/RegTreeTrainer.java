@@ -7,6 +7,7 @@ import org.apache.mahout.math.Vector;
 
 import java.util.*;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Created by chengli on 8/11/14.
@@ -79,7 +80,7 @@ public class RegTreeTrainer {
         }
 
         //parallel
-        setLeavesOutputs(tree.leaves,leafOutputCalculator, labels);
+        setLeavesOutputs(regTreeConfig, tree.leaves,leafOutputCalculator, labels);
         cleanLeaves(tree.leaves);
         normalizeReductions(tree,dataSet);
         return tree;
@@ -129,7 +130,11 @@ public class RegTreeTrainer {
         double[] parentProbs = leafToSplit.getProbs();
         double[] leftProbs = new double[numDataPoints];
         double[] rightProbs = new double[numDataPoints];
-        IntStream.range(0,numDataPoints).parallel().forEach(i->{
+        IntStream intStream = IntStream.range(0,numDataPoints);
+        if (regTreeConfig.isParallel()){
+            intStream = intStream.parallel();
+        }
+        intStream.forEach(i->{
             double featureValue = columnVector.get(i);
             if (Double.isNaN(featureValue)){
                 // go to both branches probabilistically
@@ -215,9 +220,13 @@ public class RegTreeTrainer {
     /**
      * parallel
      */
-    private static void setLeavesOutputs(List<Node> leaves, LeafOutputCalculator calculator, double[] labels){
-        leaves.parallelStream()
-                .forEach(leaf -> setLeafOutput(leaf, calculator, labels));
+    private static void setLeavesOutputs(RegTreeConfig regTreeConfig, List<Node> leaves, LeafOutputCalculator calculator, double[] labels){
+        Stream<Node> stream = leaves.stream();
+        if (regTreeConfig.isParallel()){
+            stream = stream.parallel();
+        }
+
+        stream.forEach(leaf -> setLeafOutput(leaf, calculator, labels));
     }
 
     private static void setLeafOutput(Node leaf, LeafOutputCalculator calculator, double[] labels){
