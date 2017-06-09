@@ -72,40 +72,31 @@ public class IMLGBTrainer {
     }
 
     public void iterate(){
-        for (int k=0;k<this.boosting.getNumClasses();k++){
+        IntStream.range(0, this.boosting.getNumClasses()).parallel()
+            .forEach(k->{
+                if (!shouldStop[k]){
+                    if (logger.isDebugEnabled()){
+                        logger.debug("updating class "+k);
+                    }
+                    Regressor regressor = this.fitClassK(k);
+                    this.boosting.addRegressor(regressor, k);
 
-            if (!shouldStop[k]){
-                if (logger.isDebugEnabled()){
-                    logger.debug("updating class "+k);
+                    this.updateStagedClassScores(regressor,k);
                 }
-                /**
-                 * parallel by feature
-                 */
-                Regressor regressor = this.fitClassK(k);
-                this.boosting.addRegressor(regressor, k);
-                /**
-                 * parallel by data
-                 */
-                this.updateStagedClassScores(regressor,k);
-            }
-
-        }
+            });
     }
 
     public void iterateWithoutStagingScores(boolean[] shouldStop){
-        for (int k=0;k<this.boosting.getNumClasses();k++){
-
-            if (!shouldStop[k]){
-                if (logger.isDebugEnabled()){
-                    logger.debug("updating class "+k);
+        IntStream.range(0, this.boosting.getNumClasses()).parallel()
+            .forEach(k->{
+                if (!shouldStop[k]){
+                    if (logger.isDebugEnabled()){
+                        logger.debug("updating class "+k);
+                    }
+                    Regressor regressor = this.fitClassK(k);
+                    this.boosting.addRegressor(regressor, k);
                 }
-                /**
-                 * parallel by feature
-                 */
-                Regressor regressor = this.fitClassK(k);
-                this.boosting.addRegressor(regressor, k);
-            }
-        }
+            });
     }
 
 
@@ -157,15 +148,15 @@ public class IMLGBTrainer {
 
     private void initStagedClassScoreMatrix(IMLGradientBoosting boosting){
         int numClasses = this.config.getDataSet().getNumClasses();
-        for (int k=0;k<numClasses;k++){
-            for (Regressor regressor: boosting.getRegressors(k)){
-                this.updateStagedClassScores(regressor, k);
-            }
-        }
+        IntStream.range(0, numClasses).parallel()
+                .forEach(k->{
+                    for (Regressor regressor: boosting.getRegressors(k)){
+                        this.updateStagedClassScores(regressor, k);
+                    }
+                });
     }
 
     /**
-     * parallel by data points
      * update scoreMatrix of class k
      * @param regressor
      * @param k
@@ -173,7 +164,7 @@ public class IMLGBTrainer {
     private void updateStagedClassScores(Regressor regressor, int k){
         DataSet dataSet= this.config.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
-        IntStream.range(0, numDataPoints).parallel()
+        IntStream.range(0, numDataPoints)
                 .forEach(dataIndex -> this.updateStagedClassScore(regressor, k, dataIndex));
     }
 
@@ -207,7 +198,7 @@ public class IMLGBTrainer {
 
 
     private double[] computeGradientForClass(int k){
-        return IntStream.range(0, this.config.getDataSet().getNumDataPoints()).parallel()
+        return IntStream.range(0, this.config.getDataSet().getNumDataPoints())
                 .mapToDouble(i->computeGradient(k,i)).toArray();
     }
 
@@ -234,7 +225,6 @@ public class IMLGBTrainer {
     private RegressionTree fitClassK(int k){
 
         double[] gradients = computeGradientForClass(k);
-        int numClasses = this.config.getDataSet().getNumClasses();
         double learningRate = this.config.getLearningRate();
 
 
@@ -245,6 +235,7 @@ public class IMLGBTrainer {
         regTreeConfig.setMinDataPerLeaf(this.config.getMinDataPerLeaf());
 
         regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
+        regTreeConfig.setParallel(false);
 
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
                 this.config.getDataSet(),
