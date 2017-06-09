@@ -129,6 +129,8 @@ public class App4 {
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
 
 
+
+
         MultiLabelClfDataSet testSet = null;
         if (config.getBoolean("train.showTestProgress")){
             testSet = loadData(config,config.getString("input.testData"));
@@ -144,6 +146,8 @@ public class App4 {
         } else {
             boosting  = new IMLGradientBoosting(numClasses);
         }
+        List<MultiLabel> allAssignments = DataSetUtil.gatherMultiLabels(allTrainData);
+        boosting.setAssignments(allAssignments);
 
         logger.info("During training, the performance is reported using Hamming loss optimal predictor");
 

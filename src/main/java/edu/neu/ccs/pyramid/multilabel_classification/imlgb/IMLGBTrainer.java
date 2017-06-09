@@ -55,8 +55,8 @@ public class IMLGBTrainer {
         }
         this.initStagedClassScoreMatrix(boosting);
 //        this.gradientMatrix = new FloatGradientMatrix(numDataPoints,numClasses, FloatGradientMatrix.Objective.MAXIMIZE);
-        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
-        boosting.setAssignments(assignments);
+//        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
+//        boosting.setAssignments(assignments);
         this.shouldStop = new boolean[numClasses];
     }
 
