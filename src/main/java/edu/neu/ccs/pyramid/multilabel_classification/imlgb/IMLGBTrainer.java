@@ -167,11 +167,20 @@ public class IMLGBTrainer {
         DataSet dataSet = config.getDataSet();
         IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .forEach(i->{
-                    double[] classScores = boosting.predictClassScoresTransToDenseInput(dataSet.getRow(i));
+                    double[] classScores = boosting.predictClassScoresCachedInput(dataSet.getRow(i));
                     for (int k=0;k<boosting.getNumClasses();k++){
                         scoreMatrix.setScore(i,k,classScores[k]);
                     }
                 });
+
+//        int numClasses = this.config.getDataSet().getNumClasses();
+//        IntStream.range(0, numClasses).parallel()
+//        .forEach(k-> {
+//                    for (Regressor regressor : boosting.getRegressors(k)) {
+//                        this.updateStagedClassScores(regressor, k);
+//                    }});
+
+
     }
 
 
