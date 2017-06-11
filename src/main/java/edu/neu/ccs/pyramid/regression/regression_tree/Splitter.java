@@ -34,12 +34,14 @@ public class Splitter {
             logger.debug("global statistics = "+globalStats);
         }
 
-        double featureSamplingRate = regTreeConfig.getFeatureSamplingRate();
-        List<Integer> featureIndices = IntStream.range(0, dataSet.getNumFeatures()).boxed().collect(Collectors.toList());
-        int numFeaturesUsed = (int)(Math.ceil(dataSet.getNumFeatures()*featureSamplingRate));
-        Collections.shuffle(featureIndices);
+        List<Integer> featureIndices;
+        if (regTreeConfig.getActiveFeatures().isPresent()){
+            featureIndices = regTreeConfig.getActiveFeatures().get();
+        } else {
+            featureIndices = IntStream.range(0, dataSet.getNumFeatures()).boxed().collect(Collectors.toList());
+        }
 
-        Stream<Integer> stream = featureIndices.stream().limit(numFeaturesUsed);
+        Stream<Integer> stream = featureIndices.stream();
         if (regTreeConfig.isParallel()){
             stream = stream.parallel();
         }

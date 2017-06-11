@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Created by chengli on 8/5/14.
  */
@@ -8,7 +11,8 @@ public class RegTreeConfig {
     private int maxNumLeaves=2;
     private int minDataPerLeaf=0;
     private boolean parallel=true;
-    private double featureSamplingRate=1;
+    private List<Integer> activeFeatures = null;
+
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
         this.maxNumLeaves = maxNumLeaves;
@@ -33,13 +37,18 @@ public class RegTreeConfig {
         return this;
     }
 
-    public RegTreeConfig setFeatureSamplingRate(double featureSamplingRate) {
-        this.featureSamplingRate = featureSamplingRate;
-        return this;
+    public Optional<List<Integer>> getActiveFeatures() {
+        if (activeFeatures==null){
+            return Optional.empty();
+        } else {
+            return Optional.of(activeFeatures);
+        }
+
     }
 
-    public double getFeatureSamplingRate() {
-        return featureSamplingRate;
+    public RegTreeConfig setActiveFeatures(List<Integer> activeFeatures) {
+        this.activeFeatures = activeFeatures;
+        return this;
     }
 
     int getMaxNumLeaves() {
