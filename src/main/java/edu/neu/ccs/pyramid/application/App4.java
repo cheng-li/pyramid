@@ -191,6 +191,7 @@ public class App4 {
                     .numLeaves(numLeaves)
                     .numSplitIntervals(config.getInt("train.numSplitIntervals"))
                     .usePrior(config.getBoolean("train.usePrior"))
+                    .featureSamplingRate(config.getDouble("train.featureSamplingRate"))
                     .build();
 
             IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);

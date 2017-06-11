@@ -236,6 +236,7 @@ public class IMLGBTrainer {
 
         regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
         regTreeConfig.setParallel(false);
+        regTreeConfig.setFeatureSamplingRate(this.config.getFeatureSamplingRate());
 
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
                 this.config.getDataSet(),

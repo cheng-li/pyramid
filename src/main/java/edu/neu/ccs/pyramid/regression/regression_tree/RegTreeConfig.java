@@ -7,8 +7,8 @@ public class RegTreeConfig {
     private int numSplitIntervals=100;
     private int maxNumLeaves=2;
     private int minDataPerLeaf=0;
-    private int randomLevel=1;
     private boolean parallel=true;
+    private double featureSamplingRate=1;
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
         this.maxNumLeaves = maxNumLeaves;
@@ -33,12 +33,13 @@ public class RegTreeConfig {
         return this;
     }
 
-    public RegTreeConfig setRandomLevel(int randomLevel) {
-        if (randomLevel<1){
-            throw new IllegalArgumentException("random level should be at least 1");
-        }
-        this.randomLevel = randomLevel;
+    public RegTreeConfig setFeatureSamplingRate(double featureSamplingRate) {
+        this.featureSamplingRate = featureSamplingRate;
         return this;
+    }
+
+    public double getFeatureSamplingRate() {
+        return featureSamplingRate;
     }
 
     int getMaxNumLeaves() {
@@ -56,9 +57,6 @@ public class RegTreeConfig {
         return numSplitIntervals;
     }
 
-    int getRandomLevel() {
-        return randomLevel;
-    }
 
     public boolean isParallel() {
         return parallel;

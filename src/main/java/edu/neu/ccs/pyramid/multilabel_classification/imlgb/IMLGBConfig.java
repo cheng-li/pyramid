@@ -13,8 +13,7 @@ public class IMLGBConfig {
     private double learningRate;
     private int numLeaves;
     private int minDataPerLeaf;
-    private int[] activeFeatures;
-    private int[] activeDataPoints;
+    private double featureSamplingRate=1;
     private int numSplitIntervals;
     private boolean usePrior;
 
@@ -38,20 +37,8 @@ public class IMLGBConfig {
         return minDataPerLeaf;
     }
 
-    int[] getActiveFeatures() {
-        return activeFeatures;
-    }
-
-    void setActiveFeatures(int[] activeFeatures) {
-        this.activeFeatures = activeFeatures;
-    }
-
-    int[] getActiveDataPoints() {
-        return activeDataPoints;
-    }
-
-    void setActiveDataPoints(int[] activeDataPoints) {
-        this.activeDataPoints = activeDataPoints;
+    double getFeatureSamplingRate() {
+        return featureSamplingRate;
     }
 
     int getNumSplitIntervals() {
@@ -71,7 +58,6 @@ public class IMLGBConfig {
         int numLeaves = 2;
         double learningRate = 1;
         int minDataPerLeaf = 1;
-        double dataSamplingRate=1;
         double featureSamplingRate=1;
         private int numSplitIntervals =100;
         boolean usePrior = true;
@@ -92,12 +78,6 @@ public class IMLGBConfig {
 
         public Builder minDataPerLeaf(int minDataPerLeaf) {
             this.minDataPerLeaf = minDataPerLeaf;
-            return this;
-        }
-
-
-        public Builder dataSamplingRate(double dataSamplingRate) {
-            this.dataSamplingRate = dataSamplingRate;
             return this;
         }
 
@@ -131,36 +111,8 @@ public class IMLGBConfig {
         this.learningRate = builder.learningRate;
         this.numLeaves = builder.numLeaves;
         this.minDataPerLeaf = builder.minDataPerLeaf;
-        double dataSamplingRate = builder.dataSamplingRate;
-        double featureSamplingRate = builder.featureSamplingRate;
+        this.featureSamplingRate = builder.featureSamplingRate;
         this.numSplitIntervals = builder.numSplitIntervals;
         this.usePrior = builder.usePrior;
-        int numDataPoints = dataSet.getNumDataPoints();
-        if (dataSamplingRate == 1) {
-            /**
-             * preserve orders (seems does not matter for data)
-             */
-            this.activeDataPoints = IntStream.range(0, numDataPoints).toArray();
-        } else {
-            /**
-             * does not preserve orders
-             */
-            this.activeDataPoints = Sampling.sampleByPercentage(numDataPoints,
-                    dataSamplingRate);
-        }
-
-        if (featureSamplingRate == 1) {
-            /**
-             * preserve orders
-             */
-            this.activeFeatures = IntStream.range(0, this.dataSet.getNumFeatures())
-                    .toArray();
-        } else {
-            /**
-             * does not preserve orders
-             */
-            this.activeFeatures = Sampling.sampleByPercentage(this.dataSet.getNumFeatures(),
-                    featureSamplingRate);
-        }
     }
 }

@@ -42,7 +42,7 @@ public class RegTreeTrainerTest {
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
         
-        regTreeConfig.setRandomLevel(3);
+
 
         regTreeConfig.setNumSplitIntervals(100);
 //        regTreeConfig.setParallel(false);
