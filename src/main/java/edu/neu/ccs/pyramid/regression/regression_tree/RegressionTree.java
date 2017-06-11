@@ -86,6 +86,12 @@ public class RegressionTree implements Regressor, Serializable {
 
     @Override
     public double predict(Vector vector){
+        Optional<Double> predictionNoMissing = predictNoMissingValue(vector);
+        return predictionNoMissing.orElseGet(() -> predictWithMissingValue(vector));
+    }
+
+    // prediction method designed for input with missing values
+    private double predictWithMissingValue(Vector vector){
         // use as a simple cache
         int numNodes = this.numNodes;
         boolean[] calculated = new boolean[numNodes];
@@ -98,6 +104,28 @@ public class RegressionTree implements Regressor, Serializable {
         return prediction;
     }
 
+    // prediction method designed for input without missing values
+    // if missing value is encountered, return empty
+    private Optional<Double> predictNoMissingValue(Vector vector){
+        Node node = root;
+        while(!node.isLeaf()){
+            int featureIndex = node.getFeatureIndex();
+            double featureValue = vector.get(featureIndex);
+            if (Double.isNaN(featureValue)){
+                return Optional.empty();
+            }
+            double threshold = node.getThreshold();
+            Node child;
+            if (featureValue<=threshold){
+                child = root.getLeftChild();
+            } else {
+                child = root.getRightChild();
+            }
+            node = child;
+        }
+        return Optional.of(node.getValue());
+    }
+
 
     /**
      * the probability of a vector falling into the node
@@ -107,14 +135,16 @@ public class RegressionTree implements Regressor, Serializable {
      * @return
      */
      double probability(Vector vector, Node node, boolean[] calculated, double[] probs){
-        int id = node.getId();
 
-        if (calculated[id]){
-            return probs[id];
-        }
 
         if (node == root){
             return 1;
+        }
+
+        int id = node.getId();
+
+        if (calculated[id]){
+             return probs[id];
         }
 
         Node parent = node.getParent();
