@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -165,14 +164,17 @@ public class IMLGBTrainer {
     }
 
     private void initStagedClassScoreMatrix(IMLGradientBoosting boosting){
-        int numClasses = this.config.getDataSet().getNumClasses();
-        IntStream.range(0, numClasses).parallel()
-                .forEach(k->{
-                    for (Regressor regressor: boosting.getRegressors(k)){
-                        this.updateStagedClassScores(regressor, k);
+        DataSet dataSet = config.getDataSet();
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->{
+                    double[] classScores = boosting.predictClassScoresTransToDenseInput(dataSet.getRow(i));
+                    for (int k=0;k<boosting.getNumClasses();k++){
+                        scoreMatrix.setScore(i,k,classScores[k]);
                     }
                 });
     }
+
+
 
     /**
      * update scoreMatrix of class k

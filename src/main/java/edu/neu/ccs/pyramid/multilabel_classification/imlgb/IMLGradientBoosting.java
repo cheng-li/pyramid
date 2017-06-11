@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import org.apache.mahout.math.DelegatingVector;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -104,6 +106,18 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
             scores[k] = this.predictClassScore(vector, k);
         }
         return scores;
+    }
+
+    // first transform the input to a dense vector
+    // all subsequent computation access the dense vector
+    public double[] predictClassScoresTransToDenseInput(Vector vector){
+        Vector denseVector;
+        if (vector.isDense()){
+            denseVector = vector;
+        } else {
+            denseVector = new DenseVector(vector);
+        }
+        return predictClassScores(denseVector);
     }
 
 
