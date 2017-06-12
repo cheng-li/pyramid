@@ -117,9 +117,9 @@ public class RegressionTree implements Regressor, Serializable {
             double threshold = node.getThreshold();
             Node child;
             if (featureValue<=threshold){
-                child = root.getLeftChild();
+                child = node.getLeftChild();
             } else {
-                child = root.getRightChild();
+                child = node.getRightChild();
             }
             node = child;
         }
