@@ -127,13 +127,13 @@ public class App4 {
         stopWatch.start();
 
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
+        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"));
 
 
-
-
-        MultiLabelClfDataSet testSet = null;
-        if (config.getBoolean("train.showTestProgress")){
-            testSet = loadData(config,config.getString("input.testData"));
+        MultiLabelClfDataSet testSetForEval = null;
+        if (config.getBoolean("train.showTestProgress") || config.getBoolean("train.earlyStop")){
+            MultiLabelClfDataSet testSet = loadData(config,config.getString("input.testData"));
+            testSetForEval = minibatch(testSet, config.getInt("train.showProgress.sampleSize"));
         }
 
         int numClasses = allTrainData.getNumClasses();
@@ -149,7 +149,8 @@ public class App4 {
         List<MultiLabel> allAssignments = DataSetUtil.gatherMultiLabels(allTrainData);
         boosting.setAssignments(allAssignments);
 
-        logger.info("During training, the performance is reported using Hamming loss optimal predictor");
+        logger.info("During training, the performance is reported using Hamming loss optimal predictor. The performance is computed approximately with "+config.getInt("train.showProgress.sampleSize")+" instances.");
+
 
 
         boolean earlyStop = config.getBoolean("train.earlyStop");
@@ -164,7 +165,6 @@ public class App4 {
                 earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
                 earlyStoppers.add(earlyStopper);
             }
-
 
             for (int l=0;l<numClasses;l++){
                 Terminator terminator = new Terminator();
@@ -194,34 +194,38 @@ public class App4 {
                     .featureSamplingRate(config.getDouble("train.featureSamplingRate"))
                     .build();
 
-            IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
-            trainer.iterateWithoutStagingScores(shouldStop);
-            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
-                logger.info("training set performance");
-                logger.info(new MLMeasures(boosting,allTrainData).toString());
-            }
-            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
-                logger.info("test set performance");
-                logger.info(new MLMeasures(boosting,testSet).toString());
-                if (earlyStop){
-                    for (int l=0;l<numClasses;l++){
-                        EarlyStopper earlyStopper = earlyStoppers.get(l);
-                        Terminator terminator = terminators.get(l);
-                        if (!shouldStop[l]){
-                            double kl = KL(boosting, testSet, l);
-                            earlyStopper.add(i,kl);
-                            terminator.add(kl);
-                            if (earlyStopper.shouldStop() || terminator.shouldTerminate()){
-                                logger.info("training for label "+l+" ("+allTrainData.getLabelTranslator().toExtLabel(l)+") should stop now");
-                                logger.info("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
-                                shouldStop[l]=true;
-                                numLabelsLeftToTrain -= 1;
-                                logger.info("the number of labels left to be trained on = "+numLabelsLeftToTrain);
-                            }
+            IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting, shouldStop);
+            trainer.iterateWithoutStagingScores();
+            if (earlyStop && (i%progressInterval==0 || i==numIterations)){
+                for (int l=0;l<numClasses;l++){
+                    EarlyStopper earlyStopper = earlyStoppers.get(l);
+                    Terminator terminator = terminators.get(l);
+                    if (!shouldStop[l]){
+                        double kl = KL(boosting, testSetForEval, l);
+                        earlyStopper.add(i,kl);
+                        terminator.add(kl);
+                        if (earlyStopper.shouldStop() || terminator.shouldTerminate()){
+                            logger.info("training for label "+l+" ("+allTrainData.getLabelTranslator().toExtLabel(l)+") should stop now");
+                            logger.info("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
+                            shouldStop[l]=true;
+                            numLabelsLeftToTrain -= 1;
+                            logger.info("the number of labels left to be trained on = "+numLabelsLeftToTrain);
                         }
                     }
                 }
+                logger.info("training done");
+                File serializedModel =  new File(output,modelName);
+                //todo pick best models
 
+                boosting.serialize(serializedModel);
+            }
+            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
+                logger.info("training set performance");
+                logger.info(new MLMeasures(boosting,trainSetForEval).toString());
+            }
+            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
+                logger.info("test set performance");
+                logger.info(new MLMeasures(boosting,testSetForEval).toString());
             }
             if (numLabelsLeftToTrain==0){
                 logger.info("all label training finished");
@@ -488,10 +492,10 @@ public class App4 {
                 .average().getAsDouble();
     }
 
-    private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allTrain, int minibatchSize){
-        List<Integer> all = IntStream.range(0, allTrain.getNumDataPoints()).boxed().collect(Collectors.toList());
+    private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allData, int minibatchSize){
+        List<Integer> all = IntStream.range(0, allData.getNumDataPoints()).boxed().collect(Collectors.toList());
         Collections.shuffle(all);
         List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
-        return DataSetUtil.sampleData(allTrain, keep);
+        return DataSetUtil.sampleData(allData, keep);
     }
 }
