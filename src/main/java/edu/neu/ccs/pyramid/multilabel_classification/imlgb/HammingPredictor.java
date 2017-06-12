@@ -27,9 +27,9 @@ public class HammingPredictor implements PluginPredictor<IMLGradientBoosting>{
     @Override
     public MultiLabel predict(Vector vector) {
         MultiLabel prediction = new MultiLabel();
+        double[] scores = imlGradientBoosting.predictClassScoresCachedInput(vector);
         for (int k=0;k<getNumClasses();k++){
-            double score = imlGradientBoosting.predictClassScore(vector, k);
-            if (score > 0){
+            if (scores[k] > 0){
                 prediction.addLabel(k);
             }
         }
