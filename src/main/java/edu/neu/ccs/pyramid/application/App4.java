@@ -213,18 +213,17 @@ public class App4 {
                         }
                     }
                 }
-                logger.info("training done");
                 File serializedModel =  new File(output,modelName);
                 //todo pick best models
 
                 boosting.serialize(serializedModel);
             }
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
-                logger.info("training set performance");
+                logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
                 logger.info(new MLMeasures(boosting,trainSetForEval).toString());
             }
             if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
-                logger.info("test set performance");
+                logger.info("test set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
                 logger.info(new MLMeasures(boosting,testSetForEval).toString());
             }
             if (numLabelsLeftToTrain==0){
