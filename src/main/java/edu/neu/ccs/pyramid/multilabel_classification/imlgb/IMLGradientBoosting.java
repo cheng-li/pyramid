@@ -109,10 +109,26 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return scores;
     }
 
+    public double[] predictClassScores(Vector vector, boolean[] shouldStop){
+        int numClasses = this.numClasses;
+        double[] scores = new double[numClasses];
+        for (int k=0;k<numClasses;k++){
+            if (!shouldStop[k]){
+                scores[k] = this.predictClassScore(vector, k);
+            }
+        }
+        return scores;
+    }
+
 
     double[] predictClassScoresCachedInput(Vector vector){
         Vector cachedVector = new CachedAccessOnlyVector((RandomAccessSparseVector) vector);
         return predictClassScores(cachedVector);
+    }
+
+    double[] predictClassScoresCachedInput(Vector vector, boolean[] shouldStop){
+        Vector cachedVector = new CachedAccessOnlyVector((RandomAccessSparseVector) vector);
+        return predictClassScores(cachedVector, shouldStop);
     }
 
 

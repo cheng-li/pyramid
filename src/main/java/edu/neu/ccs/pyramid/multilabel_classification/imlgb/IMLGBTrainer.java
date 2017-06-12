@@ -61,6 +61,27 @@ public class IMLGBTrainer {
         this.shouldStop = new boolean[numClasses];
     }
 
+    public IMLGBTrainer(IMLGBConfig config,
+                        IMLGradientBoosting boosting,
+                        boolean[] shouldStop) {
+        if (config.getDataSet().getNumClasses()!=boosting.getNumClasses()){
+            throw new IllegalArgumentException("config.getDataSet().getNumClasses()!=boosting.getNumClasses()");
+        }
+        this.config = config;
+        this.boosting = boosting;
+        MultiLabelClfDataSet dataSet = config.getDataSet();
+        boosting.setFeatureList(dataSet.getFeatureList());
+        boosting.setLabelTranslator(dataSet.getLabelTranslator());
+        int numClasses = dataSet.getNumClasses();
+        int numDataPoints = dataSet.getNumDataPoints();
+        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
+        if (config.usePrior() && boosting.getRegressors(0).size()==0){
+            this.setPriorProbs(dataSet);
+        }
+        this.shouldStop = shouldStop;
+        this.initStagedClassScoreMatrix(boosting, shouldStop);
+    }
+
     public void setShouldStop(int classIndex){
         shouldStop[classIndex] = true;
         if (logger.isDebugEnabled()){
@@ -96,7 +117,7 @@ public class IMLGBTrainer {
             });
     }
 
-    public void iterateWithoutStagingScores(boolean[] shouldStop){
+    public void iterateWithoutStagingScores(){
         List<Integer> allFeatureIndices = IntStream.range(0, this.config.getDataSet().getNumFeatures()).boxed().collect(Collectors.toList());
         int numFeaturesUsed = (int)(Math.ceil(this.config.getDataSet().getNumFeatures()* config.getFeatureSamplingRate()));
         if (config.getFeatureSamplingRate()!=1){
@@ -181,6 +202,19 @@ public class IMLGBTrainer {
 //                    }});
 
 
+    }
+
+    private void initStagedClassScoreMatrix(IMLGradientBoosting boosting, boolean[] shouldStop){
+        DataSet dataSet = config.getDataSet();
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->{
+                    double[] classScores = boosting.predictClassScoresCachedInput(dataSet.getRow(i), shouldStop);
+                    for (int k=0;k<boosting.getNumClasses();k++){
+                        if (!shouldStop[k]){
+                            scoreMatrix.setScore(i,k,classScores[k]);
+                        }
+                    }
+                });
     }
 
 
