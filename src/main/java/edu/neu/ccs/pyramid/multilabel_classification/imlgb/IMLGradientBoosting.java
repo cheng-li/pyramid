@@ -136,6 +136,12 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return this.regressors.get(k);
     }
 
+    public void cutTail(int classIndex, int numTreesToKeep){
+        int size = getRegressors(classIndex).size();
+        // assuming the first regressor is the prior
+        getRegressors(classIndex).subList(numTreesToKeep+1, size).clear();
+    }
+
 
     //todo think about this when having assignments, maybe doesn't matter much
     public double predictClassProb(Vector vector, int classIndex){
