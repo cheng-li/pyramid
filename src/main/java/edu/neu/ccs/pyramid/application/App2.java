@@ -6,10 +6,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.eval.*;
+import edu.neu.ccs.pyramid.eval.KLDivergence;
+import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
-import edu.neu.ccs.pyramid.feature_selection.FeatureDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
@@ -30,7 +30,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.FileHandler;
@@ -40,22 +40,21 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * imlgb
- * Created by chengli on 6/13/15.
+ * Created by chengli on 6/4/17.
  */
 public class App2 {
-
-
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("Please specify a properties file.");
         }
 
         Config config = new Config(args[0]);
+
         main(config);
     }
 
     public static void main(Config config) throws Exception{
+
         Logger logger = Logger.getAnonymousLogger();
         String logFile = config.getString("output.log");
         FileHandler fileHandler = null;
@@ -69,13 +68,17 @@ public class App2 {
             logger.setUseParentHandlers(false);
         }
 
-        
+
         logger.info(config.toString());
 
         new File(config.getString("output.folder")).mkdirs();
 
         if (config.getBoolean("train")){
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             train(config, logger);
+            logger.info("total training time = "+stopWatch);
+
             if (config.getString("predict.target").equals("macroFMeasure")){
                 logger.info("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
                         "Reports will be generated after tuning.");
@@ -103,6 +106,8 @@ public class App2 {
             report(config,config.getString("input.testData"), logger);
         }
 
+
+
         if (fileHandler!=null){
             fileHandler.close();
         }
@@ -123,32 +128,23 @@ public class App2 {
         double learningRate = config.getDouble("train.learningRate");
         int minDataPerLeaf = config.getInt("train.minDataPerLeaf");
         String modelName = "model_app3";
-//        double featureSamplingRate = config.getDouble("train.featureSamplingRate");
-//        double dataSamplingRate = config.getDouble("train.dataSamplingRate");
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        MultiLabelClfDataSet dataSet = loadData(config,config.getString("input.trainData"));
+        MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
+        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"));
 
-        MultiLabelClfDataSet testSet = null;
-        if (config.getBoolean("train.showTestProgress")){
-            testSet = loadData(config,config.getString("input.testData"));
+
+        MultiLabelClfDataSet testSetForEval = null;
+        if (config.getBoolean("train.showTestProgress") || config.getBoolean("train.earlyStop")){
+            MultiLabelClfDataSet testSet = loadData(config,config.getString("input.testData"));
+            testSetForEval = minibatch(testSet, config.getInt("train.showProgress.sampleSize"));
         }
 
-
-
-        int numClasses = dataSet.getNumClasses();
+        int numClasses = allTrainData.getNumClasses();
         logger.info("number of class = "+numClasses);
-        IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(dataSet)
-//                .dataSamplingRate(dataSamplingRate)
-//                .featureSamplingRate(featureSamplingRate)
-                .learningRate(learningRate)
-                .minDataPerLeaf(minDataPerLeaf)
-                .numLeaves(numLeaves)
-                .numSplitIntervals(config.getInt("train.numSplitIntervals"))
-                .usePrior(config.getBoolean("train.usePrior"))
-                .build();
+
 
         IMLGradientBoosting boosting;
         if (config.getBoolean("train.warmStart")){
@@ -156,17 +152,18 @@ public class App2 {
         } else {
             boosting  = new IMLGradientBoosting(numClasses);
         }
+        List<MultiLabel> allAssignments = DataSetUtil.gatherMultiLabels(allTrainData);
+        boosting.setAssignments(allAssignments);
 
-        logger.info("During training, the performance is reported using Hamming loss optimal predictor");
-        logger.info("initialing trainer");
+        logger.info("During training, the performance is reported using Hamming loss optimal predictor. The performance is computed approximately with "+config.getInt("train.showProgress.sampleSize")+" instances.");
 
-        IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting);
 
 
         boolean earlyStop = config.getBoolean("train.earlyStop");
 
         List<EarlyStopper> earlyStoppers = new ArrayList<>();
         List<Terminator> terminators = new ArrayList<>();
+        boolean[] shouldStop = new boolean[allTrainData.getNumClasses()];
 
         if (earlyStop){
             for (int l=0;l<numClasses;l++){
@@ -174,7 +171,6 @@ public class App2 {
                 earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
                 earlyStoppers.add(earlyStopper);
             }
-
 
             for (int l=0;l<numClasses;l++){
                 Terminator terminator = new Terminator();
@@ -188,44 +184,58 @@ public class App2 {
         }
 
 
-
-
-
-
-        logger.info("trainer initialized");
-
         int numLabelsLeftToTrain = numClasses;
 
         int progressInterval = config.getInt("train.showProgress.interval");
         for (int i=1;i<=numIterations;i++){
             logger.info("iteration "+i);
-            trainer.iterate();
-            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
-                logger.info("training set performance");
-                logger.info(new MLMeasures(boosting,dataSet).toString());
-            }
-            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
-                logger.info("test set performance");
-                logger.info(new MLMeasures(boosting,testSet).toString());
-                if (earlyStop){
-                    for (int l=0;l<numClasses;l++){
-                        EarlyStopper earlyStopper = earlyStoppers.get(l);
-                        Terminator terminator = terminators.get(l);
-                        if (!trainer.getShouldStop()[l]){
-                            double kl = KL(boosting, testSet, l);
-                            earlyStopper.add(i,kl);
-                            terminator.add(kl);
-                            if (earlyStopper.shouldStop() || terminator.shouldTerminate()){
-                                logger.info("training for label "+l+" ("+dataSet.getLabelTranslator().toExtLabel(l)+") should stop now");
-                                logger.info("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
-                                trainer.setShouldStop(l);
-                                numLabelsLeftToTrain -= 1;
-                                logger.info("the number of labels left to be trained on = "+numLabelsLeftToTrain);
+            MultiLabelClfDataSet trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
+
+            IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(trainBatch)
+                    .learningRate(learningRate)
+                    .minDataPerLeaf(minDataPerLeaf)
+                    .numLeaves(numLeaves)
+                    .numSplitIntervals(config.getInt("train.numSplitIntervals"))
+                    .usePrior(config.getBoolean("train.usePrior"))
+                    .featureSamplingRate(config.getDouble("train.featureSamplingRate"))
+                    .build();
+
+            IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting, shouldStop);
+            trainer.iterateWithoutStagingScores();
+            if (earlyStop && (i%progressInterval==0 || i==numIterations)){
+                for (int l=0;l<numClasses;l++){
+                    EarlyStopper earlyStopper = earlyStoppers.get(l);
+                    Terminator terminator = terminators.get(l);
+                    if (!shouldStop[l]){
+                        double kl = KL(boosting, testSetForEval, l);
+                        earlyStopper.add(i,kl);
+                        terminator.add(kl);
+                        if (earlyStopper.shouldStop() || terminator.shouldTerminate()){
+                            logger.info("training for label "+l+" ("+allTrainData.getLabelTranslator().toExtLabel(l)+") should stop now");
+                            logger.info("the best number of training iterations for the label is "+earlyStopper.getBestIteration());
+                            if (i!=earlyStopper.getBestIteration()){
+                                boosting.cutTail(l, earlyStopper.getBestIteration());
+                                logger.info("roll back the model for this label to iteration "+earlyStopper.getBestIteration());
                             }
+
+                            shouldStop[l]=true;
+                            numLabelsLeftToTrain -= 1;
+                            logger.info("the number of labels left to be trained on = "+numLabelsLeftToTrain);
                         }
                     }
                 }
+                File serializedModel =  new File(output,modelName);
+                //todo pick best models
 
+                boosting.serialize(serializedModel);
+            }
+            if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
+                logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
+                logger.info(new MLMeasures(boosting,trainSetForEval).toString());
+            }
+            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
+                logger.info("test set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
+                logger.info(new MLMeasures(boosting,testSetForEval).toString());
             }
             if (numLabelsLeftToTrain==0){
                 logger.info("all label training finished");
@@ -261,7 +271,7 @@ public class App2 {
             StringBuilder sb = new StringBuilder();
             for (int l=0;l<boosting.getNumClasses();l++){
                 sb.append("-------------------------").append("\n");
-                sb.append(dataSet.getLabelTranslator().toExtLabel(l)).append(":").append("\n");
+                sb.append(allTrainData.getLabelTranslator().toExtLabel(l)).append(":").append("\n");
                 for (Feature feature: topFeaturesList.get(l).getTopFeatures()){
                     sb.append(feature.simpleString()).append(", ");
                 }
@@ -297,7 +307,7 @@ public class App2 {
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
         double[] thresholds = MacroFMeasureTuner.tuneThresholds(boosting,dataSet,beta);
-        TunedMarginalClassifier  tunedMarginalClassifier = new TunedMarginalClassifier(boosting,thresholds);
+        TunedMarginalClassifier tunedMarginalClassifier = new TunedMarginalClassifier(boosting,thresholds);
         Serialization.serialize(tunedMarginalClassifier, new File(output,"predictor_macro_f"));
         logger.info("finish tuning for macro F measure");
 
@@ -345,7 +355,6 @@ public class App2 {
         logger.info("performance on dataset "+dataName);
         logger.info(mlMeasures.toString());
 
-
         boolean simpleCSV = true;
         if (simpleCSV){
             logger.info("start generating simple CSV report");
@@ -382,7 +391,7 @@ public class App2 {
                 int start = i*numDocsPerFile;
                 int end = start+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->
-                    IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a,  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
+                        IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a,  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
 
                 String file = "report_"+(i+1)+".json";
@@ -492,5 +501,10 @@ public class App2 {
                 .average().getAsDouble();
     }
 
-
+    private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allData, int minibatchSize){
+        List<Integer> all = IntStream.range(0, allData.getNumDataPoints()).boxed().collect(Collectors.toList());
+        Collections.shuffle(all);
+        List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
+        return DataSetUtil.sampleData(allData, keep);
+    }
 }

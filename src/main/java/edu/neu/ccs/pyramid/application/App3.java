@@ -77,7 +77,8 @@ public class App3 {
         Config app2Config = new Config();
         String[] same = {"output.folder","output.log", "train","test","tune","predict.target","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf",
-        "train.numSplitIntervals","train.showTrainProgress","train.showTestProgress",
+        "train.numSplitIntervals","train.batchSize", "train.featureSamplingRate",
+                "train.showTrainProgress","train.showTestProgress", "train.showProgress.sampleSize",
                 "train.earlyStop.patience","train.earlyStop.minIterations","train.earlyStop",
                 "train.earlyStop.absoluteChange", "train.earlyStop.relativeChange",
                 "train.showProgress.interval","train.generateReports","tune.data","tune.FMeasure.beta",
