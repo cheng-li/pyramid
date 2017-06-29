@@ -206,12 +206,22 @@ public class PhraseCountQuery extends Query {
             this.needsScores = needsScores;
             final IndexReaderContext context = searcher.getTopReaderContext();
             states = new TermContext[terms.length];
-            TermStatistics termStats[] = new TermStatistics[terms.length];
             for (int i = 0; i < terms.length; i++) {
-                final Term term = terms[i];
+                Term term = terms[i];
+                if (isPosTag(term.text())) {
+                    term = new Term(term.field()+"_tags", getPosTag(term.text()));
+                    terms[i] = term;
+                }
                 states[i] = TermContext.build(context, term);
-                termStats[i] = searcher.termStatistics(term, states[i]);
             }
+        }
+
+        private boolean isPosTag(String s) {
+            return s.charAt(0) == '<' && s.charAt(s.length() - 1) == '>';
+        }
+
+        private String getPosTag(String s) {
+            return s.substring(1, s.length() - 1);
         }
 
         @Override
@@ -240,20 +250,21 @@ public class PhraseCountQuery extends Query {
             final LeafReader reader = context.reader();
             PhraseCountQuery.PostingsAndFreq[] postingsFreqs = new PhraseCountQuery.PostingsAndFreq[terms.length];
 
-            final Terms fieldTerms = reader.terms(field);
-            if (fieldTerms == null) {
-                return null;
-            }
-
-            if (fieldTerms.hasPositions() == false) {
-                throw new IllegalStateException("field \"" + field + "\" was indexed without position data; cannot run PhraseCountQuery (phrase=" + getQuery() + ")");
-            }
-
-            // Reuse single TermsEnum below:
-            final TermsEnum te = fieldTerms.iterator();
             float totalMatchCost = 0;
 
             for (int i = 0; i < terms.length; i++) {
+
+                final Terms fieldTerms = reader.terms(field);
+                if (fieldTerms == null) {
+                    return null;
+                }
+
+                if (fieldTerms.hasPositions() == false) {
+                    throw new IllegalStateException("field \"" + field + "\" was indexed without position data; cannot run PhraseCountQuery (phrase=" + getQuery() + ")");
+                }
+
+                // Reuse single TermsEnum below:
+                final TermsEnum te = fieldTerms.iterator();
                 final Term t = terms[i];
                 final TermState state = states[i].get(context.ord);
                 if (state == null) { /* term doesnt exist in this segment */
@@ -274,6 +285,8 @@ public class PhraseCountQuery extends Query {
             return new PhraseCountScorer(this, postingsFreqs, slop,
                     needsScores, weightedCount, totalMatchCost);
         }
+
+//        private
 
         // only called from assert
         private boolean termNotInReader(LeafReader reader, Term term) throws IOException {

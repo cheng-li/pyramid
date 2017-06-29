@@ -2,7 +2,9 @@ package edu.neu.ccs.pyramid.esplugins;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CachingTokenFilter;
+import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
@@ -155,11 +157,12 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
     }
 
     protected Query doToQuery(QueryShardContext context) throws IOException {
-        Analyzer analyzer = context.getMapperService().searchAnalyzer();
+//        Analyzer analyzer = context.getMapperService().searchAnalyzer();
+        Analyzer analyzer = new WhitespaceAnalyzer();
 //        List<Term> terms = new ArrayList<>();
 //        return new PhraseCountQuery(slop, terms.toArray(new Term[terms.size()]));
         try (TokenStream source = analyzer.tokenStream(fieldName, value.toString())) {
-            CachingTokenFilter stream = new CachingTokenFilter(source);
+            CachingTokenFilter stream = new CachingTokenFilter(new LowerCaseFilter(source));
             TermToBytesRefAttribute termAtt = stream.getAttribute(TermToBytesRefAttribute.class);
             if (termAtt == null) {
                 return null;
