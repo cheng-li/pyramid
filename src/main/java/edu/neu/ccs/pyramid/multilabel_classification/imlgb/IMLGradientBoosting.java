@@ -172,7 +172,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
 
 
 
-    double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
+    public double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
         if (this.assignments==null){
             throw new RuntimeException("CRF is used but legal assignments is not specified!");
         }
@@ -210,7 +210,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return probs;
     }
 
-    double predictAssignmentProbWithoutConstraint(Vector vector, MultiLabel assignment){
+    public double predictAssignmentProbWithoutConstraint(Vector vector, MultiLabel assignment){
         double[] classScores = predictClassScores(vector);
         double logProb = 0;
         for (int k=0;k<numClasses;k++){
