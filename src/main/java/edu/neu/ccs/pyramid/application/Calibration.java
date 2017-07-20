@@ -13,6 +13,7 @@ import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -80,7 +81,8 @@ public class Calibration {
                 }).collect(Collectors.toList());
 
         double intervalSize = 1.0/numIntervals;
-        System.out.println("interval"+"\t"+"total"+"\t"+"correct"+"\t"+"incorrect"+"\t"+"average confidence"+"\t"+"average accuracy");
+        DecimalFormat decimalFormat = new DecimalFormat("#0.00");
+        System.out.println("interval"+"\t"+"total"+"\t"+"correct"+"\t\t"+"incorrect"+"\t"+"accuracy"+"\t"+"average confidence");
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
             double right = intervalSize*(i+1);
@@ -89,7 +91,7 @@ public class Calibration {
             int numNeg = matched.size()-numPos;
             double aveProb = matched.stream().mapToDouble(res->res.probability).average().orElse(0);
             double accuracy = SafeDivide.divide(numPos,matched.size(), 0);
-            System.out.println("["+left+", "+right+"]"+"\t"+matched.size()+"\t"+numPos+"\t"+numNeg+"\t"+aveProb+"\t"+accuracy);
+            System.out.println("["+decimalFormat.format(left)+", "+decimalFormat.format(right)+"]"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb));
         }
 
 
