@@ -49,7 +49,6 @@ public abstract class AbstractRecoverCBMOptimizer {
 //    private double dropProb = 0.01;
 
     private double lambda=0;
-    private double tau=0;
     private int flipped=0;
 
     public AbstractRecoverCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
@@ -91,9 +90,6 @@ public abstract class AbstractRecoverCBMOptimizer {
         this.lambda = lambda;
     }
 
-    public void setTau(double tau) {
-        this.tau = tau;
-    }
 
     public void setSmoothingStrength(double smoothingStrength) {
         this.smoothingStrength = smoothingStrength;
@@ -172,20 +168,28 @@ public abstract class AbstractRecoverCBMOptimizer {
 //    }
 
     private List<Change> rank(){
-        List<Change> all = new ArrayList<>();
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int l=0;l<dataSet.getNumClasses();l++){
-                if (!dataSet.getMultiLabels()[i].matchClass(l)){
-                    Change change = lossChange(i,l);
-                    all.add(change);
-                }
 
-            }
-        }
+        List<Change> all = IntStream.range(0,dataSet.getNumDataPoints()).parallel().boxed()
+                .flatMap(i->IntStream.range(0, dataSet.getNumClasses())
+                        .filter(l->!dataSet.getMultiLabels()[i].matchClass(l))
+                        .mapToObj(l->lossChange(i,l)))
+                .collect(Collectors.toList());
+
+
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            for (int l=0;l<dataSet.getNumClasses();l++){
+//                if (!dataSet.getMultiLabels()[i].matchClass(l)){
+//                    Change change = lossChange(i,l);
+//                    all.add(change);
+//                }
+//
+//            }
+//        }
         List<Change> sorted = all.stream().sorted(Comparator.comparing(change->change.totalChange)).collect(Collectors.toList());
         return sorted;
     }
 
+    // assuming the tau is in the extremes
     protected Change lossChange(int dataPoint, int label){
 
         double[][] logProbs = new double[cbm.getNumComponents()][2];
@@ -205,7 +209,7 @@ public abstract class AbstractRecoverCBMOptimizer {
         }
 
 
-        double currentPenalty =  lambda*Math.abs(flipped-tau*dataSet.getNumDataPoints());
+//        double currentPenalty =  lambda*Math.abs(flipped-tau*dataSet.getNumDataPoints());
 
 
 
@@ -216,17 +220,20 @@ public abstract class AbstractRecoverCBMOptimizer {
         }
 
 
-        double newPenalty;
-        if (newGroundTruth==1){
-            newPenalty = lambda*Math.abs(flipped+1-tau*dataSet.getNumDataPoints());
-        } else {
-            newPenalty = lambda*Math.abs(flipped-1-tau*dataSet.getNumDataPoints());
-        }
+//        double newPenalty;
+
 
         Change change = new Change();
         change.changeInNll = newNLL - currentNll;
-        change.changeInPenalty = newPenalty - currentPenalty;
-        change.totalChange = newNLL - currentNll + newPenalty - currentPenalty;
+        if (newGroundTruth==1){
+//            newPenalty = lambda*Math.abs(flipped+1-tau*dataSet.getNumDataPoints());
+            change.changeInPenalty = lambda;
+        } else {
+//            newPenalty = lambda*Math.abs(flipped-1-tau*dataSet.getNumDataPoints());
+            change.changeInPenalty = -lambda;
+        }
+
+        change.totalChange = newNLL - currentNll + change.changeInPenalty;
         change.data = dataPoint;
         change.label = label;
         return change;
