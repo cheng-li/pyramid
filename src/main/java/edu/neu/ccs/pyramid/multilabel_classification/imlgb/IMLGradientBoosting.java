@@ -75,7 +75,10 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
 
     }
 
-
+    public double predictAssignmentScore(Vector vector, MultiLabel assignment){
+        double[] classScores = predictClassScores(vector);
+        return calAssignmentScore(assignment, classScores);
+    }
 
     double calAssignmentScore(MultiLabel assignment, double[] classScores){
         double score = 0;

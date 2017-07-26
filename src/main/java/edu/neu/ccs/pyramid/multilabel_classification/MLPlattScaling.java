@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 /**
+ * fit a plat scaling for each label
  * Created by chengli on 4/3/15.
  */
 public class MLPlattScaling implements MultiLabelClassifier.ClassProbEstimator{

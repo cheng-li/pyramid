@@ -9,7 +9,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 /**
- * scaling by fitting every class score against every class label match(0/1)
+ * aggregate all class scores and probabilities and fit a single scaling model
  * Created by chengli on 5/29/15.
  */
 public class MLFlatScaling implements MultiLabelClassifier.ClassProbEstimator{
