@@ -36,7 +36,7 @@ public class IMLGBScaling{
                         dataSet.setLabel(i, 0);
                     }
                 });
-        LogisticRegression logisticRegression = new LogisticRegression(2,dataSet.getNumFeatures());
+        this.logisticRegression = new LogisticRegression(2,dataSet.getNumFeatures());
         RidgeLogisticOptimizer logisticOptimizer = new RidgeLogisticOptimizer(logisticRegression, dataSet,1000000, true);
         logisticOptimizer.optimize();
         System.out.println("calibration done");
