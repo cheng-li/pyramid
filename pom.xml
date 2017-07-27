@@ -14,7 +14,7 @@
     <version>0.8.4</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <elasticsearch.version>5.3.1</elasticsearch.version>
+        <elasticsearch.version>5.4.1</elasticsearch.version>
         <lucene.version>6.4.2</lucene.version>
     </properties>
 
