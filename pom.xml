@@ -15,7 +15,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <elasticsearch.version>5.4.1</elasticsearch.version>
-        <lucene.version>6.4.2</lucene.version>
+        <lucene.version>6.5.1</lucene.version>
     </properties>
 
     <!--The elasticsearch version and lucene version should match as follows-->
