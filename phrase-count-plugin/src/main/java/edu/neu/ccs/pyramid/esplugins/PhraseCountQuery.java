@@ -1,8 +1,5 @@
 package edu.neu.ccs.pyramid.esplugins;
 
-/**
- * Created by maoqiuzi on 5/24/17.
- */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,397 +17,330 @@ package edu.neu.ccs.pyramid.esplugins;
  * limitations under the License.
  */
 
-import org.apache.lucene.codecs.lucene50.Lucene50PostingsFormat;
-import org.apache.lucene.codecs.lucene50.Lucene50PostingsReader;
 import org.apache.lucene.index.*;
-import org.apache.lucene.search.*;
-import org.apache.lucene.util.ArrayUtil;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.spans.NearSpansOrdered;
+import org.apache.lucene.search.spans.NearSpansUnordered;
+import org.apache.lucene.search.spans.SpanCollector;
+import org.apache.lucene.search.spans.Spans;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
-/** A Query that matches documents containing a particular sequence of terms.
- * A PhraseCountQuery is built by QueryParser for input like <code>"new york"</code>.
+//import org.apache.lucene.search.spans.CustomSpanQuery;
+//import org.apache.lucene.search.spans.Spans;
+
+
+/** Matches spans which are near one another.  One can specify <i>slop</i>, the
+ * maximum number of intervening unmatched positions, as well as whether
+ * matches are required to be in-order.
  */
-public class PhraseCountQuery extends Query {
+public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
 
+    protected List<CustomSpanQuery> clauses;
+    protected int slop;
+    protected boolean inOrder;
+    protected boolean weightedCount;
 
+    protected String field;
 
-    private final int slop;
-    private final String field;
-    private final Term[] terms;
-    private final int[] positions;
-    private final boolean weightedCount;
-
-    private PhraseCountQuery(int slop, boolean weightedCount, Term[] terms, int[] positions) {
-        if (terms.length != positions.length) {
-            throw new IllegalArgumentException("Must have as many terms as positions");
-        }
-        if (slop < 0) {
-            throw new IllegalArgumentException("Slop must be >= 0, got " + slop);
+    /** Construct a PhraseCountQuery.  Matches spans matching a span from each
+     * clause, with up to <code>slop</code> total unmatched positions between
+     * them.
+     * <br>When <code>inOrder</code> is true, the spans from each clause
+     * must be in the same order as in <code>clauses</code> and must be non-overlapping.
+     * <br>When <code>inOrder</code> is false, the spans from each clause
+     * need not be ordered and may overlap.
+     * @param clausesIn the clauses to find near each other, in the same field, at least 2.
+     * @param slop The slop value
+     * @param inOrder true if order is important
+     */
+    public PhraseCountQuery(CustomSpanQuery[] clausesIn, int slop, boolean inOrder, boolean weightedCount) {
+        this.clauses = new ArrayList<>(clausesIn.length);
+        for (CustomSpanQuery clause : clausesIn) {
+            if (this.field == null) {                               // check field
+                this.field = clause.getField();
+            }
+//            else if (clause.getField() != null && !clause.getField().equals(field)) {
+//                throw new IllegalArgumentException("Clauses must have same field.");
+//            }
+            this.clauses.add(clause);
         }
         this.slop = slop;
+        this.inOrder = inOrder;
         this.weightedCount = weightedCount;
-        this.terms = terms;
-        this.positions = positions;
-        this.field = terms.length == 0 ? null : terms[0].field();
     }
 
-    private static int[] incrementalPositions(int length) {
-        int[] positions = new int[length];
-        for (int i = 0; i < length; ++i) {
-            positions[i] = i;
-        }
-        return positions;
+    /** Return the clauses whose spans are matched. */
+    public CustomSpanQuery[] getClauses() {
+        return clauses.toArray(new CustomSpanQuery[clauses.size()]);
     }
 
-    /**
-     * Create a phrase query which will match documents that contain the given
-     * list of terms at consecutive positions in {@code field}, and at a
-     * maximum edit distance of {@code slop}.
-     * @see #getSlop()
-     */
-    public PhraseCountQuery(int slop, boolean weightedCount, Term... terms) {
-        this(slop, weightedCount, terms, incrementalPositions(terms.length));
-    }
-
-    /**
-     * Return the slop for this {@link PhraseCountQuery}.
-     *
-     * <p>The slop is an edit distance between respective positions of terms as
-     * defined in this {@link PhraseCountQuery} and the positions of terms in a
-     * document.
-     *
-     * <p>For instance, when searching for {@code "quick fox"}, it is expected that
-     * the difference between the positions of {@code fox} and {@code quick} is 1.
-     * So {@code "a quick brown fox"} would be at an edit distance of 1 since the
-     * difference of the positions of {@code fox} and {@code quick} is 2.
-     * Similarly, {@code "the fox is quick"} would be at an edit distance of 3
-     * since the difference of the positions of {@code fox} and {@code quick} is -2.
-     * The slop defines the maximum edit distance for a document to match.
-     *
-     * <p>More exact matches are scored higher than sloppier matches, thus search
-     * results are sorted by exactness.
-     */
+    /** Return the maximum number of intervening unmatched positions permitted.*/
     public int getSlop() { return slop; }
 
-    /** Returns the list of terms in this phrase. */
-    public Term[] getTerms() {
-        return terms;
+    /** Return true if matches are required to be in-order.*/
+    public boolean isInOrder() { return inOrder; }
+
+    @Override
+    public String getField() { return field; }
+
+    @Override
+    public String toString(String field) {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("phraseCount([");
+        Iterator<CustomSpanQuery> i = clauses.iterator();
+        while (i.hasNext()) {
+            CustomSpanQuery clause = i.next();
+            buffer.append(clause.toString(field));
+            if (i.hasNext()) {
+                buffer.append(", ");
+            }
+        }
+        buffer.append("], ");
+        buffer.append(slop);
+        buffer.append(", ");
+        buffer.append(inOrder);
+        buffer.append(", ");
+        buffer.append(weightedCount);
+        buffer.append(")");
+        return buffer.toString();
     }
 
-    /**
-     * Returns the relative positions of terms in this phrase.
-     */
-    public int[] getPositions() {
-        return positions;
+    @Override
+    public CustomSpanWeight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
+        List<CustomSpanWeight> subWeights = new ArrayList<>();
+        for (CustomSpanQuery q : clauses) {
+            subWeights.add(q.createWeight(searcher, false));
+        }
+        CustomSpanNearWeight res = new CustomSpanNearWeight(subWeights, searcher, needsScores ? getTermContexts(subWeights) : null);
+        res.setWeightedCount(weightedCount);
+        return res;
+    }
+
+    public class CustomSpanNearWeight extends CustomSpanWeight {
+
+        final List<CustomSpanWeight> subWeights;
+
+        public CustomSpanNearWeight(List<CustomSpanWeight> subWeights, IndexSearcher searcher, Map<Term, TermContext> terms) throws IOException {
+            super(PhraseCountQuery.this, searcher, terms);
+            this.subWeights = subWeights;
+        }
+
+        @Override
+        public void extractTermContexts(Map<Term, TermContext> contexts) {
+            for (CustomSpanWeight w : subWeights) {
+                w.extractTermContexts(contexts);
+            }
+        }
+
+        @Override
+        public Spans getSpans(final LeafReaderContext context, Postings requiredPostings) throws IOException {
+
+            Terms terms = context.reader().terms(field);
+            if (terms == null) {
+                return null; // field does not exist
+            }
+
+            ArrayList<Spans> subSpans = new ArrayList<>(clauses.size());
+            for (CustomSpanWeight w : subWeights) {
+                Spans subSpan = w.getSpans(context, requiredPostings);
+                if (subSpan != null) {
+                    subSpans.add(subSpan);
+                } else {
+                    return null; // all required
+                }
+            }
+
+            // all NearSpans require at least two subSpans
+            return (!inOrder) ? new NearSpansUnordered(slop, subSpans)
+                : new NearSpansOrdered(slop, subSpans);
+        }
+
+        @Override
+        public void extractTerms(Set<Term> terms) {
+            for (CustomSpanWeight w : subWeights) {
+                w.extractTerms(terms);
+            }
+        }
     }
 
     @Override
     public Query rewrite(IndexReader reader) throws IOException {
-        if (terms.length == 0) {
-            return new MatchNoDocsQuery("empty PhraseCountQuery");
-        } else if (terms.length == 1) {
-            return new TermCountQuery(terms[0]);
-        } else if (positions[0] != 0) {
-            int[] newPositions = new int[positions.length];
-            for (int i = 0; i < positions.length; ++i) {
-                newPositions[i] = positions[i] - positions[0];
-            }
-            return new PhraseCountQuery(slop, weightedCount, terms, newPositions);
-        } else {
-            return super.rewrite(reader);
+        boolean actuallyRewritten = false;
+        List<CustomSpanQuery> rewrittenClauses = new ArrayList<>();
+        for (int i = 0 ; i < clauses.size(); i++) {
+            CustomSpanQuery c = clauses.get(i);
+            CustomSpanQuery query = (CustomSpanQuery) c.rewrite(reader);
+            actuallyRewritten |= query != c;
+            rewrittenClauses.add(query);
         }
+        if (actuallyRewritten) {
+            try {
+                PhraseCountQuery rewritten = (PhraseCountQuery) clone();
+                rewritten.clauses = rewrittenClauses;
+                return rewritten;
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError(e);
+            }
+        }
+        return super.rewrite(reader);
     }
 
-    static class PostingsAndFreq implements Comparable<PostingsAndFreq> {
-        final PostingsEnum postings;
-        final int position;
-        final Term[] terms;
-        final int nTerms; // for faster comparisons
+    @Override
+    public boolean equals(Object other) {
+        return sameClassAs(other) &&
+            equalsTo(getClass().cast(other));
+    }
 
-        public PostingsAndFreq(PostingsEnum postings, int position, Term... terms) {
-            this.postings = postings;
-            this.position = position;
-            nTerms = terms==null ? 0 : terms.length;
-            if (nTerms>0) {
-                if (terms.length==1) {
-                    this.terms = terms;
-                } else {
-                    Term[] terms2 = new Term[terms.length];
-                    System.arraycopy(terms, 0, terms2, 0, terms.length);
-                    Arrays.sort(terms2);
-                    this.terms = terms2;
-                }
-            } else {
-                this.terms = null;
+    private boolean equalsTo(PhraseCountQuery other) {
+        return inOrder == other.inOrder &&
+            slop == other.slop &&
+            clauses.equals(other.clauses);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = classHash();
+        result ^= clauses.hashCode();
+        result += slop;
+        int fac = 1 + (inOrder ? 8 : 4);
+        return fac * result;
+    }
+
+    private static class CustomSpanGapQuery extends CustomSpanQuery {
+
+        private final String field;
+        private final int width;
+
+        public CustomSpanGapQuery(String field, int width) {
+            this.field = field;
+            this.width = width;
+        }
+
+        @Override
+        public String getField() {
+            return field;
+        }
+
+        @Override
+        public String toString(String field) {
+            return "SpanGap(" + field + ":" + width + ")";
+        }
+
+        @Override
+        public CustomSpanWeight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
+            return new CustomSpanGapWeight(searcher);
+        }
+
+        private class CustomSpanGapWeight extends CustomSpanWeight {
+
+            CustomSpanGapWeight(IndexSearcher searcher) throws IOException {
+                super(CustomSpanGapQuery.this, searcher, null);
+            }
+
+            @Override
+            public void extractTermContexts(Map<Term, TermContext> contexts) {
+
+            }
+
+            @Override
+            public Spans getSpans(LeafReaderContext ctx, Postings requiredPostings) throws IOException {
+                return new GapSpans(width);
+            }
+
+            @Override
+            public void extractTerms(Set<Term> terms) {
+
             }
         }
 
         @Override
-        public int compareTo(PhraseCountQuery.PostingsAndFreq other) {
-            if (position != other.position) {
-                return position - other.position;
-            }
-            if (nTerms != other.nTerms) {
-                return nTerms - other.nTerms;
-            }
-            if (nTerms == 0) {
-                return 0;
-            }
-            for (int i=0; i<terms.length; i++) {
-                int res = terms[i].compareTo(other.terms[i]);
-                if (res!=0) return res;
-            }
-            return 0;
+        public boolean equals(Object other) {
+            return sameClassAs(other) &&
+                equalsTo(getClass().cast(other));
+        }
+
+        private boolean equalsTo(CustomSpanGapQuery other) {
+            return width == other.width &&
+                field.equals(other.field);
         }
 
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + position;
-            for (int i=0; i<nTerms; i++) {
-                result = prime * result + terms[i].hashCode();
-            }
-            return result;
+            int result = classHash();
+            result -= 7 * width;
+            return result * 15 - field.hashCode();
+        }
+
+    }
+
+    static class GapSpans extends Spans {
+
+        int doc = -1;
+        int pos = -1;
+        final int width;
+
+        GapSpans(int width) {
+            this.width = width;
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (obj == null) return false;
-            if (getClass() != obj.getClass()) return false;
-            PhraseCountQuery.PostingsAndFreq other = (PhraseCountQuery.PostingsAndFreq) obj;
-            if (position != other.position) return false;
-            if (terms == null) return other.terms == null;
-            return Arrays.equals(terms, other.terms);
+        public int nextStartPosition() throws IOException {
+            return ++pos;
         }
-    }
 
-    private class PhraseWeight extends Weight {
-        private final boolean needsScores;
-        private transient TermContext states[];
-
-        public PhraseWeight(IndexSearcher searcher, boolean needsScores)
-                throws IOException {
-            super(PhraseCountQuery.this);
-            final int[] positions = PhraseCountQuery.this.getPositions();
-            if (positions.length < 2) {
-                throw new IllegalStateException("PhraseWeight does not support less than 2 terms, call rewrite first");
-            } else if (positions[0] != 0) {
-                throw new IllegalStateException("PhraseWeight requires that the first position is 0, call rewrite first");
-            }
-            this.needsScores = needsScores;
-            final IndexReaderContext context = searcher.getTopReaderContext();
-            states = new TermContext[terms.length];
-            TermStatistics termStats[] = new TermStatistics[terms.length];
-            for (int i = 0; i < terms.length; i++) {
-                final Term term = terms[i];
-                states[i] = TermContext.build(context, term);
-                termStats[i] = searcher.termStatistics(term, states[i]);
-            }
+        public int skipToPosition(int position) throws IOException {
+            return pos = position;
         }
 
         @Override
-        public void extractTerms(Set<Term> queryTerms) {
-            Collections.addAll(queryTerms, terms);
+        public int startPosition() {
+            return pos;
         }
 
         @Override
-        public String toString() { return "weight(" + PhraseCountQuery.this + ")"; }
-
-        // not used
-        @Override
-        public float getValueForNormalization() {
-            return 1f;
-        }
-
-        // not used
-        @Override
-        public void normalize(float queryNorm, float boost) {
-            ;
+        public int endPosition() {
+            return pos + width;
         }
 
         @Override
-        public Scorer scorer(LeafReaderContext context) throws IOException {
-            assert terms.length > 0;
-            final LeafReader reader = context.reader();
-            PhraseCountQuery.PostingsAndFreq[] postingsFreqs = new PhraseCountQuery.PostingsAndFreq[terms.length];
-
-            final Terms fieldTerms = reader.terms(field);
-            if (fieldTerms == null) {
-                return null;
-            }
-
-            if (fieldTerms.hasPositions() == false) {
-                throw new IllegalStateException("field \"" + field + "\" was indexed without position data; cannot run PhraseCountQuery (phrase=" + getQuery() + ")");
-            }
-
-            // Reuse single TermsEnum below:
-            final TermsEnum te = fieldTerms.iterator();
-            float totalMatchCost = 0;
-
-            for (int i = 0; i < terms.length; i++) {
-                final Term t = terms[i];
-                final TermState state = states[i].get(context.ord);
-                if (state == null) { /* term doesnt exist in this segment */
-                    assert termNotInReader(reader, t): "no termstate found but term exists in reader";
-                    return null;
-                }
-                te.seekExact(t.bytes(), state);
-                PostingsEnum postingsEnum = te.postings(null, PostingsEnum.POSITIONS);
-                postingsFreqs[i] = new PhraseCountQuery.PostingsAndFreq(postingsEnum, positions[i], t);
-                totalMatchCost += termPositionsCost(te);
-            }
-
-            // sort by increasing docFreq order
-            if (slop == 0) {
-                ArrayUtil.timSort(postingsFreqs);
-            }
-
-            return new PhraseCountScorer(this, postingsFreqs, slop,
-                    needsScores, weightedCount, totalMatchCost);
-        }
-
-        // only called from assert
-        private boolean termNotInReader(LeafReader reader, Term term) throws IOException {
-            return reader.docFreq(term) == 0;
+        public int width() {
+            return width;
         }
 
         @Override
-        public Explanation explain(LeafReaderContext context, int doc) throws IOException {
-            Scorer scorer = scorer(context);
-            if (scorer != null) {
-                int newDoc = scorer.iterator().advance(doc);
-                if (newDoc == doc) {
-                    if (weightedCount) {
-                        return Explanation.match((scorer).score(), "sloppy frequency");
-                    }
-                    return Explanation.match(scorer.score(), "phrase frequency");
-                }
-            }
+        public void collect(SpanCollector collector) throws IOException {
 
-            return Explanation.noMatch("no matching term");
-        }
-    }
-
-    /** A guess of
-     * the average number of simple operations for the initial seek and buffer refill
-     * per document for the positions of a term.
-     * See also {@link Lucene50PostingsReader.BlockPostingsEnum#nextPosition()}.
-     * <p>
-     * Aside: Instead of being constant this could depend among others on
-     * {@link Lucene50PostingsFormat#BLOCK_SIZE},
-     * {@link TermsEnum#docFreq()},
-     * {@link TermsEnum#totalTermFreq()},
-     * {@link DocIdSetIterator#cost()} (expected number of matching docs),
-     * {@link LeafReader#maxDoc()} (total number of docs in the segment),
-     * and the seek time and block size of the device storing the index.
-     */
-    private static final int TERM_POSNS_SEEK_OPS_PER_DOC = 128;
-
-    /** Number of simple operations in {@link Lucene50PostingsReader.BlockPostingsEnum#nextPosition()}
-     *  when no seek or buffer refill is done.
-     */
-    private static final int TERM_OPS_PER_POS = 7;
-
-    /** Returns an expected cost in simple operations
-     *  of processing the occurrences of a term
-     *  in a document that contains the term.
-     *  This is for use by {@link TwoPhaseIterator#matchCost} implementations.
-     *  <br>This may be inaccurate when {@link TermsEnum#totalTermFreq()} is not available.
-     *  @param termsEnum The term is the term at which this TermsEnum is positioned.
-     */
-    static float termPositionsCost(TermsEnum termsEnum) throws IOException {
-        int docFreq = termsEnum.docFreq();
-        assert docFreq > 0;
-        long totalTermFreq = termsEnum.totalTermFreq(); // -1 when not available
-        float expOccurrencesInMatchingDoc = (totalTermFreq < docFreq) ? 1 : (totalTermFreq / (float) docFreq);
-        return TERM_POSNS_SEEK_OPS_PER_DOC + expOccurrencesInMatchingDoc * TERM_OPS_PER_POS;
-    }
-
-
-    @Override
-    public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
-        return new PhraseCountQuery.PhraseWeight(searcher, needsScores);
-    }
-
-    /** Prints a user-readable version of this query. */
-    @Override
-    public String toString(String f) {
-        StringBuilder buffer = new StringBuilder();
-        if (field != null && !field.equals(f)) {
-            buffer.append(field);
-            buffer.append(":");
         }
 
-        buffer.append("\"");
-        final int maxPosition;
-        if (positions.length == 0) {
-            maxPosition = -1;
-        } else {
-            maxPosition = positions[positions.length - 1];
-        }
-        String[] pieces = new String[maxPosition + 1];
-        for (int i = 0; i < terms.length; i++) {
-            int pos = positions[i];
-            String s = pieces[pos];
-            if (s == null) {
-                s = (terms[i]).text();
-            } else {
-                s = s + "|" + (terms[i]).text();
-            }
-            pieces[pos] = s;
-        }
-        for (int i = 0; i < pieces.length; i++) {
-            if (i > 0) {
-                buffer.append(' ');
-            }
-            String s = pieces[i];
-            if (s == null) {
-                buffer.append('?');
-            } else {
-                buffer.append(s);
-            }
-        }
-        buffer.append("\"");
-
-        if (slop != 0) {
-            buffer.append("~");
-            buffer.append(slop);
+        @Override
+        public int docID() {
+            return doc;
         }
 
-        return buffer.toString();
-    }
+        @Override
+        public int nextDoc() throws IOException {
+            pos = -1;
+            return ++doc;
+        }
 
-    /** Returns true iff <code>o</code> is equal to this. */
-    @Override
-    public boolean equals(Object other) {
-        return sameClassAs(other) &&
-                equalsTo(getClass().cast(other));
-    }
+        @Override
+        public int advance(int target) throws IOException {
+            pos = -1;
+            return doc = target;
+        }
 
-    private boolean equalsTo(PhraseCountQuery other) {
-        return slop == other.slop &&
-                weightedCount == other.weightedCount &&
-                Arrays.equals(terms, other.terms) &&
-                Arrays.equals(positions, other.positions);
-    }
+        @Override
+        public long cost() {
+            return 0;
+        }
 
-    /** Returns a hash code value for this object.*/
-    @Override
-    public int hashCode() {
-        int h = classHash();
-        h = 31 * h + slop;
-        h = 31 * h + Arrays.hashCode(terms);
-        h = 31 * h + Arrays.hashCode(positions);
-        int t = (weightedCount) ? 1 : 0;
-        h = 31 * h + t;
-        return h;
+        @Override
+        public float positionsCost() {
+            return 0;
+        }
     }
 
 }
-
