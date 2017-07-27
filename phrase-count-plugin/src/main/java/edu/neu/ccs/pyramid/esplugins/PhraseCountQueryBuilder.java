@@ -26,9 +26,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Created by maoqiuzi on 5/23/17.
- */
 public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQueryBuilder> {
     private String analyzer;
     private int slop = 0;
@@ -36,11 +33,13 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
     public static final ParseField SLOP_FIELD = new ParseField("slop", "phrase_slop");
     public static final ParseField ANALYZER_FIELD = new ParseField("analyzer");
     public static final ParseField QUERY_FIELD = new ParseField("query");
+    public static final ParseField IN_ORDER_FIELD = new ParseField("in_order");
     public static final ParseField WEIGHTED_COUNT_FIELD = new ParseField("weighted_count");
 
 
     private final String value;
     private boolean weightedCount = false;
+    private boolean inOrder = false;
 
     public static final String NAME = "phrase_count_query";
 
@@ -55,7 +54,7 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
         this.value = value.toString();
     }
 
-    public PhraseCountQueryBuilder(String fieldName, int slop, boolean weightedCount, String... terms) {
+    public PhraseCountQueryBuilder(String fieldName, int slop, boolean inOrder, boolean weightedCount, String... terms) {
         if (Strings.isEmpty(fieldName)) {
             throw new IllegalArgumentException("[" + NAME + "] requires fieldName");
         }
@@ -64,6 +63,7 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
         }
         this.fieldName = fieldName;
         this.value = String.join(" ", terms);
+        this.inOrder = inOrder;
         this.weightedCount = weightedCount;
         this.slop = slop;
     }
@@ -73,6 +73,7 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
         fieldName = in.readString();
         value = in.readString();
         slop = in.readVInt();
+        inOrder = in.readBoolean();
         weightedCount = in.readBoolean();
         analyzer = in.readOptionalString();
     }
@@ -82,6 +83,7 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
         out.writeString(fieldName);
         out.writeString(value);
         out.writeVInt(slop);
+        out.writeBoolean(inOrder);
         out.writeBoolean(weightedCount);
         out.writeOptionalString(analyzer);
     }
@@ -96,6 +98,7 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
             builder.field(ANALYZER_FIELD.getPreferredName(), analyzer);
         }
         builder.field(SLOP_FIELD.getPreferredName(), slop);
+        builder.field(IN_ORDER_FIELD.getPreferredName(), inOrder);
         builder.field(WEIGHTED_COUNT_FIELD.getPreferredName(), weightedCount);
         printBoostAndQueryName(builder);
         builder.endObject();
@@ -105,14 +108,16 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
     @Override
     protected boolean doEquals(PhraseCountQueryBuilder other) {
         return Objects.equals(fieldName, other.fieldName) &&
-                Objects.equals(value, other.value) &&
-                Objects.equals(analyzer, other.analyzer)
-                && Objects.equals(slop, other.slop);
+            Objects.equals(value, other.value) &&
+            Objects.equals(analyzer, other.analyzer) &&
+            Objects.equals(inOrder, other.inOrder) &&
+            Objects.equals(weightedCount, other.weightedCount)
+            && Objects.equals(slop, other.slop);
     }
 
     @Override
     protected int doHashCode() {
-        return Objects.hash(fieldName, value, analyzer, slop);
+        return Objects.hash(fieldName, value, analyzer, slop, inOrder, weightedCount);
     }
 
     @Override
@@ -156,27 +161,42 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
         this.weightedCount = weightedCount;
     }
 
+    public boolean inOrder() {
+        return inOrder;
+    }
+
+    public void inOrder(boolean inOrder) {
+        this.inOrder = inOrder;
+    }
+
     protected Query doToQuery(QueryShardContext context) throws IOException {
 //        Analyzer analyzer = context.getMapperService().searchAnalyzer();
         Analyzer analyzer = new WhitespaceAnalyzer();
-//        List<Term> terms = new ArrayList<>();
-//        return new PhraseCountQuery(slop, terms.toArray(new Term[terms.size()]));
         try (TokenStream source = analyzer.tokenStream(fieldName, value.toString())) {
             CachingTokenFilter stream = new CachingTokenFilter(new LowerCaseFilter(source));
             TermToBytesRefAttribute termAtt = stream.getAttribute(TermToBytesRefAttribute.class);
             if (termAtt == null) {
                 return null;
             }
-            List<Term> terms = new ArrayList<>();
+            List<CustomSpanTermQuery> clauses = new ArrayList<>();
             stream.reset();
             while (stream.incrementToken()) {
-                terms.add(new Term(fieldName, termAtt.getBytesRef()));
+                Term term = new Term(fieldName, termAtt.getBytesRef());
+                    clauses.add(new CustomSpanTermQuery(term));
             }
-            return new PhraseCountQuery(slop, weightedCount, terms.toArray(new Term[terms.size()]));
+            return new PhraseCountQuery(clauses.toArray(new CustomSpanTermQuery[clauses.size()]), slop, inOrder, weightedCount);
         } catch (IOException e) {
             throw new RuntimeException("Error analyzing query text", e);
         }
 
+
+    }
+    private boolean isPosTag(String s) {
+        return s.charAt(0) == '<' && s.charAt(s.length() - 1) == '>';
+    }
+
+    private String getPosTag(String s) {
+        return s.substring(1, s.length() - 1);
     }
     //XSON (maps to Content-Type application/xson) is an optimized binary representation of JSON.
     public static Optional<PhraseCountQueryBuilder> fromXContent(QueryParseContext parseContext) throws IOException {
@@ -186,6 +206,7 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
         float boost = AbstractQueryBuilder.DEFAULT_BOOST;
         String analyzer = null;
         int slop = MatchQuery.DEFAULT_PHRASE_SLOP;
+        boolean inOrder = false;
         boolean weightedCount = false;
         String queryName = null;
         String currentFieldName = null;
@@ -206,6 +227,8 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
                             value = parser.objectText();
                         } else if (ANALYZER_FIELD.match(currentFieldName)) {
                             analyzer = parser.text();
+                        } else if(IN_ORDER_FIELD.match(currentFieldName)) {
+                            inOrder = parser.booleanValue();
                         } else if (WEIGHTED_COUNT_FIELD.match(currentFieldName)) {
                             weightedCount = parser.booleanValue();
                         } else if (BOOST_FIELD.match(currentFieldName)) {
@@ -216,11 +239,11 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
                             queryName = parser.text();
                         } else {
                             throw new ParsingException(parser.getTokenLocation(),
-                                    "[" + NAME + "] query does not support [" + currentFieldName + "]");
+                                "[" + NAME + "] query does not support [" + currentFieldName + "]");
                         }
                     } else {
                         throw new ParsingException(parser.getTokenLocation(),
-                                "[" + NAME + "] unknown token [" + token + "] after [" + currentFieldName + "]");
+                            "[" + NAME + "] unknown token [" + token + "] after [" + currentFieldName + "]");
                     }
                 }
             } else {
@@ -233,6 +256,7 @@ public class PhraseCountQueryBuilder extends AbstractQueryBuilder<PhraseCountQue
         PhraseCountQueryBuilder phraseCountQuery = new PhraseCountQueryBuilder(fieldName, value);
         phraseCountQuery.analyzer(analyzer);
         phraseCountQuery.slop(slop);
+        phraseCountQuery.inOrder(inOrder);
         phraseCountQuery.weightedCount(weightedCount);
         phraseCountQuery.queryName(queryName);
         phraseCountQuery.boost(boost);
