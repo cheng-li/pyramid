@@ -35,11 +35,12 @@ public class Visualizer {
         // TODO: take class file in command line input
         new Visualizer(); // to instantiate static class variables
 
-        String defaultDir = "/Users/Rainicy/Dropbox/tmp/out/app2-out/reports_app3/test_reports";
+        String defaultDir = "/Users/Rainicy/Dropbox/tmp/out/app3/reports_app3/test_reports";
         File inputDir = getInputDir(defaultDir);
 
         Utilities.echo("taking "+inputDir+" as the input directory");
         processFolder(inputDir);
+        System.exit(0);
     }
 
     public static void processFolder(File inputDir) {
@@ -85,7 +86,6 @@ public class Visualizer {
             Utilities.echo("parsing "+fileName);
             processFile(jsonReport, esIndex, fields);
         }
-
     }
 
     private static void processFile(File reportFile, String esIndex, String fields) {
