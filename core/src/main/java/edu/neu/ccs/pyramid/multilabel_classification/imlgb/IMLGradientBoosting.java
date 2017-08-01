@@ -1,11 +1,14 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
+import edu.neu.ccs.pyramid.dataset.CachedAccessOnlyVector;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -72,7 +75,10 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
 
     }
 
-
+    public double predictAssignmentScore(Vector vector, MultiLabel assignment){
+        double[] classScores = predictClassScores(vector);
+        return calAssignmentScore(assignment, classScores);
+    }
 
     double calAssignmentScore(MultiLabel assignment, double[] classScores){
         double score = 0;
@@ -106,9 +112,37 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return scores;
     }
 
+    public double[] predictClassScores(Vector vector, boolean[] shouldStop){
+        int numClasses = this.numClasses;
+        double[] scores = new double[numClasses];
+        for (int k=0;k<numClasses;k++){
+            if (!shouldStop[k]){
+                scores[k] = this.predictClassScore(vector, k);
+            }
+        }
+        return scores;
+    }
+
+
+    double[] predictClassScoresCachedInput(Vector vector){
+        Vector cachedVector = new CachedAccessOnlyVector((RandomAccessSparseVector) vector);
+        return predictClassScores(cachedVector);
+    }
+
+    double[] predictClassScoresCachedInput(Vector vector, boolean[] shouldStop){
+        Vector cachedVector = new CachedAccessOnlyVector((RandomAccessSparseVector) vector);
+        return predictClassScores(cachedVector, shouldStop);
+    }
+
 
     public List<Regressor> getRegressors(int k){
         return this.regressors.get(k);
+    }
+
+    public void cutTail(int classIndex, int numTreesToKeep){
+        int size = getRegressors(classIndex).size();
+        // assuming the first regressor is the prior
+        getRegressors(classIndex).subList(numTreesToKeep+1, size).clear();
     }
 
 
@@ -141,7 +175,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
 
 
 
-    double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
+    public double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
         if (this.assignments==null){
             throw new RuntimeException("CRF is used but legal assignments is not specified!");
         }
@@ -179,7 +213,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return probs;
     }
 
-    double predictAssignmentProbWithoutConstraint(Vector vector, MultiLabel assignment){
+    public double predictAssignmentProbWithoutConstraint(Vector vector, MultiLabel assignment){
         double[] classScores = predictClassScores(vector);
         double logProb = 0;
         for (int k=0;k<numClasses;k++){

@@ -94,8 +94,8 @@ public class IMLGradientBoostingTest {
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
                 .numLeaves(7).learningRate(0.1).numSplitIntervals(50).minDataPerLeaf(3)
-                .dataSamplingRate(1).featureSamplingRate(1).build();
-        System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
+                .featureSamplingRate(1).build();
+
 
         IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
 
@@ -159,8 +159,7 @@ public class IMLGradientBoostingTest {
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
                 .numLeaves(60).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
-                .dataSamplingRate(1).featureSamplingRate(1).build();
-        System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
+                .featureSamplingRate(1).build();
 
 
         IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
@@ -278,8 +277,7 @@ public class IMLGradientBoostingTest {
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
                 .numLeaves(10).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
-                .dataSamplingRate(1).featureSamplingRate(1).build();
-        System.out.println(Arrays.toString(trainConfig.getActiveFeatures()));
+                .featureSamplingRate(1).build();
 
         IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
 
@@ -378,7 +376,7 @@ public class IMLGradientBoostingTest {
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
                 .numLeaves(2).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
-                .dataSamplingRate(1).featureSamplingRate(1).build();
+                .featureSamplingRate(1).build();
 
         IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
         StopWatch stopWatch = new StopWatch();

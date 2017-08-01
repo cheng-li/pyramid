@@ -24,10 +24,9 @@ public class RegTreeTrainerTest {
      * slice location data, dense
      */
     static void test2() throws Exception {
-        int numLeaves = 70;
+        int numLeaves = 7000;
 
-        RegDataSet dataSet = StandardFormat.loadRegDataSet("/Users/chengli/Datasets/slice_location/standard/features.txt",
-                "/Users/chengli/Datasets/slice_location/standard/labels.txt", ",", DataSetType.REG_DENSE,false);
+        RegDataSet dataSet = TRECFormat.loadRegDataSet("/Users/chengli/Dropbox/Public/pyramid/mnist/train",DataSetType.REG_DENSE, true);
 
         System.out.println(dataSet.getNumDataPoints());
         System.out.println(dataSet.getNumFeatures());
@@ -43,9 +42,10 @@ public class RegTreeTrainerTest {
         regTreeConfig.setMaxNumLeaves(numLeaves);
         regTreeConfig.setMinDataPerLeaf(5);
         
-        regTreeConfig.setRandomLevel(3);
+
 
         regTreeConfig.setNumSplitIntervals(100);
+//        regTreeConfig.setParallel(false);
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,dataSet,labels);

@@ -22,6 +22,9 @@ class IntervalSplitter {
                                        int featureIndex,
                                        Splitter.GlobalStats globalStats){
         Vector featureValues = dataSet.getColumn(featureIndex);
+        if (featureValues.getNumNonZeroElements()==0){
+            return Optional.empty();
+        }
         List<Interval> possibleIntervals = generateIntervals(regTreeConfig, featureValues, probs, labels, globalStats);
         List<Interval> compressedIntervals = compress(possibleIntervals);
         return findBest(regTreeConfig,compressedIntervals,featureIndex);

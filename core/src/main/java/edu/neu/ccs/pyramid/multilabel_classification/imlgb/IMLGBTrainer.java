@@ -10,8 +10,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -55,9 +56,30 @@ public class IMLGBTrainer {
         }
         this.initStagedClassScoreMatrix(boosting);
 //        this.gradientMatrix = new FloatGradientMatrix(numDataPoints,numClasses, FloatGradientMatrix.Objective.MAXIMIZE);
-        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
-        boosting.setAssignments(assignments);
+//        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
+//        boosting.setAssignments(assignments);
         this.shouldStop = new boolean[numClasses];
+    }
+
+    public IMLGBTrainer(IMLGBConfig config,
+                        IMLGradientBoosting boosting,
+                        boolean[] shouldStop) {
+        if (config.getDataSet().getNumClasses()!=boosting.getNumClasses()){
+            throw new IllegalArgumentException("config.getDataSet().getNumClasses()!=boosting.getNumClasses()");
+        }
+        this.config = config;
+        this.boosting = boosting;
+        MultiLabelClfDataSet dataSet = config.getDataSet();
+        boosting.setFeatureList(dataSet.getFeatureList());
+        boosting.setLabelTranslator(dataSet.getLabelTranslator());
+        int numClasses = dataSet.getNumClasses();
+        int numDataPoints = dataSet.getNumDataPoints();
+        this.scoreMatrix = new ScoreMatrix(numDataPoints,numClasses);
+        if (config.usePrior() && boosting.getRegressors(0).size()==0){
+            this.setPriorProbs(dataSet);
+        }
+        this.shouldStop = shouldStop;
+        this.initStagedClassScoreMatrix(boosting, shouldStop);
     }
 
     public void setShouldStop(int classIndex){
@@ -72,40 +94,47 @@ public class IMLGBTrainer {
     }
 
     public void iterate(){
-        for (int k=0;k<this.boosting.getNumClasses();k++){
 
-            if (!shouldStop[k]){
-                if (logger.isDebugEnabled()){
-                    logger.debug("updating class "+k);
-                }
-                /**
-                 * parallel by feature
-                 */
-                Regressor regressor = this.fitClassK(k);
-                this.boosting.addRegressor(regressor, k);
-                /**
-                 * parallel by data
-                 */
-                this.updateStagedClassScores(regressor,k);
-            }
-
+        List<Integer> allFeatureIndices = IntStream.range(0, this.config.getDataSet().getNumFeatures()).boxed().collect(Collectors.toList());
+        int numFeaturesUsed = (int)(Math.ceil(this.config.getDataSet().getNumFeatures()* config.getFeatureSamplingRate()));
+        if (config.getFeatureSamplingRate()!=1){
+            Collections.shuffle(allFeatureIndices);
         }
+
+        List<Integer> activeFeatureIndices = allFeatureIndices.subList(0,numFeaturesUsed);
+
+        IntStream.range(0, this.boosting.getNumClasses()).parallel()
+            .forEach(k->{
+                if (!shouldStop[k]){
+                    if (logger.isDebugEnabled()){
+                        logger.debug("updating class "+k);
+                    }
+                    Regressor regressor = this.fitClassK(k, activeFeatureIndices);
+                    this.boosting.addRegressor(regressor, k);
+
+                    this.updateStagedClassScores(regressor,k);
+                }
+            });
     }
 
-    public void iterateWithoutStagingScores(boolean[] shouldStop){
-        for (int k=0;k<this.boosting.getNumClasses();k++){
-
-            if (!shouldStop[k]){
-                if (logger.isDebugEnabled()){
-                    logger.debug("updating class "+k);
-                }
-                /**
-                 * parallel by feature
-                 */
-                Regressor regressor = this.fitClassK(k);
-                this.boosting.addRegressor(regressor, k);
-            }
+    public void iterateWithoutStagingScores(){
+        List<Integer> allFeatureIndices = IntStream.range(0, this.config.getDataSet().getNumFeatures()).boxed().collect(Collectors.toList());
+        int numFeaturesUsed = (int)(Math.ceil(this.config.getDataSet().getNumFeatures()* config.getFeatureSamplingRate()));
+        if (config.getFeatureSamplingRate()!=1){
+            Collections.shuffle(allFeatureIndices);
         }
+        List<Integer> activeFeatureIndices = allFeatureIndices.subList(0,numFeaturesUsed);
+
+        IntStream.range(0, this.boosting.getNumClasses()).parallel()
+            .forEach(k->{
+                if (!shouldStop[k]){
+                    if (logger.isDebugEnabled()){
+                        logger.debug("updating class "+k);
+                    }
+                    Regressor regressor = this.fitClassK(k, activeFeatureIndices);
+                    this.boosting.addRegressor(regressor, k);
+                }
+            });
     }
 
 
@@ -156,16 +185,41 @@ public class IMLGBTrainer {
     }
 
     private void initStagedClassScoreMatrix(IMLGradientBoosting boosting){
-        int numClasses = this.config.getDataSet().getNumClasses();
-        for (int k=0;k<numClasses;k++){
-            for (Regressor regressor: boosting.getRegressors(k)){
-                this.updateStagedClassScores(regressor, k);
-            }
-        }
+        DataSet dataSet = config.getDataSet();
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->{
+                    double[] classScores = boosting.predictClassScoresCachedInput(dataSet.getRow(i));
+                    for (int k=0;k<boosting.getNumClasses();k++){
+                        scoreMatrix.setScore(i,k,classScores[k]);
+                    }
+                });
+
+//        int numClasses = this.config.getDataSet().getNumClasses();
+//        IntStream.range(0, numClasses).parallel()
+//        .forEach(k-> {
+//                    for (Regressor regressor : boosting.getRegressors(k)) {
+//                        this.updateStagedClassScores(regressor, k);
+//                    }});
+
+
     }
 
+    private void initStagedClassScoreMatrix(IMLGradientBoosting boosting, boolean[] shouldStop){
+        DataSet dataSet = config.getDataSet();
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->{
+                    double[] classScores = boosting.predictClassScoresCachedInput(dataSet.getRow(i), shouldStop);
+                    for (int k=0;k<boosting.getNumClasses();k++){
+                        if (!shouldStop[k]){
+                            scoreMatrix.setScore(i,k,classScores[k]);
+                        }
+                    }
+                });
+    }
+
+
+
     /**
-     * parallel by data points
      * update scoreMatrix of class k
      * @param regressor
      * @param k
@@ -173,7 +227,7 @@ public class IMLGBTrainer {
     private void updateStagedClassScores(Regressor regressor, int k){
         DataSet dataSet= this.config.getDataSet();
         int numDataPoints = dataSet.getNumDataPoints();
-        IntStream.range(0, numDataPoints).parallel()
+        IntStream.range(0, numDataPoints)
                 .forEach(dataIndex -> this.updateStagedClassScore(regressor, k, dataIndex));
     }
 
@@ -207,7 +261,7 @@ public class IMLGBTrainer {
 
 
     private double[] computeGradientForClass(int k){
-        return IntStream.range(0, this.config.getDataSet().getNumDataPoints()).parallel()
+        return IntStream.range(0, this.config.getDataSet().getNumDataPoints())
                 .mapToDouble(i->computeGradient(k,i)).toArray();
     }
 
@@ -231,10 +285,9 @@ public class IMLGBTrainer {
      * @return regressionTreeLk, shrunk
      * @throws Exception
      */
-    private RegressionTree fitClassK(int k){
+    private RegressionTree fitClassK(int k, List<Integer> activeFeatures){
 
         double[] gradients = computeGradientForClass(k);
-        int numClasses = this.config.getDataSet().getNumClasses();
         double learningRate = this.config.getLearningRate();
 
 
@@ -245,6 +298,8 @@ public class IMLGBTrainer {
         regTreeConfig.setMinDataPerLeaf(this.config.getMinDataPerLeaf());
 
         regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
+        regTreeConfig.setParallel(false);
+        regTreeConfig.setActiveFeatures(activeFeatures);
 
         RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
                 this.config.getDataSet(),

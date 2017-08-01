@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Created by chengli on 8/5/14.
  */
@@ -7,7 +10,9 @@ public class RegTreeConfig {
     private int numSplitIntervals=100;
     private int maxNumLeaves=2;
     private int minDataPerLeaf=0;
-    private int randomLevel=1;
+    private boolean parallel=true;
+    private List<Integer> activeFeatures = null;
+
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
         this.maxNumLeaves = maxNumLeaves;
@@ -19,6 +24,10 @@ public class RegTreeConfig {
         return this;
     }
 
+    public RegTreeConfig setParallel(boolean parallel) {
+        this.parallel = parallel;
+        return this;
+    }
 
     public RegTreeConfig setNumSplitIntervals(int numSplitIntervals) {
         if (numSplitIntervals<=1){
@@ -28,11 +37,17 @@ public class RegTreeConfig {
         return this;
     }
 
-    public RegTreeConfig setRandomLevel(int randomLevel) {
-        if (randomLevel<1){
-            throw new IllegalArgumentException("random level should be at least 1");
+    public Optional<List<Integer>> getActiveFeatures() {
+        if (activeFeatures==null){
+            return Optional.empty();
+        } else {
+            return Optional.of(activeFeatures);
         }
-        this.randomLevel = randomLevel;
+
+    }
+
+    public RegTreeConfig setActiveFeatures(List<Integer> activeFeatures) {
+        this.activeFeatures = activeFeatures;
         return this;
     }
 
@@ -51,8 +66,8 @@ public class RegTreeConfig {
         return numSplitIntervals;
     }
 
-    int getRandomLevel() {
-        return randomLevel;
-    }
 
+    public boolean isParallel() {
+        return parallel;
+    }
 }
