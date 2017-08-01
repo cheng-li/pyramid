@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.visualizer;
+package edu.neu.ccs.pyramid.visualization;
 
 /**
  * Created by shikhar on 7/4/17.

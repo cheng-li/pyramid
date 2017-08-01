@@ -20,7 +20,7 @@ import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
-import edu.neu.ccs.pyramid.visualizer.Visualizer;
+import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
@@ -479,7 +479,11 @@ public class App2 {
         }
 
         if (config.getBoolean("report.produceHTML")){
-            Visualizer.produceHtml(analysisFolder);
+            logger.info("start producing html files");
+            Visualizer visualizer = new Visualizer(logger);
+            visualizer.produceHtml(analysisFolder);
+            visualizer.close();
+            logger.info("finish producing html files");
         }
 
         logger.info("reports generated");

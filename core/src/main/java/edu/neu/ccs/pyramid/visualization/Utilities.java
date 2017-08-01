@@ -1,4 +1,4 @@
-package edu.neu.ccs.pyramid.visualizer;
+package edu.neu.ccs.pyramid.visualization;
 
 
 import java.util.Map;

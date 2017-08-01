@@ -1,62 +1,62 @@
-package edu.neu.ccs.pyramid.visualizer;
+package edu.neu.ccs.pyramid.visualization;
 
 import com.google.gson.*;
 import edu.neu.ccs.pyramid.util.DirWalker;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * //todo do not use static fields
  * Created by shikhar on 6/28/17.
  */
 public class Visualizer {
-    private static JsonParser jsonParser = null;
-    private static Gson gson = null;
-    private static JsonArray writeRulePositions = null;
-    private static String writeRuleField = null;
+    private JsonParser jsonParser = null;
+    private Gson gson = null;
+    private JsonArray writeRulePositions = null;
+    private String writeRuleField = null;
+    private Logger logger;
+    private RestClient esClient;
 
-    //todo get rid of this
-    /*
-    * A static block to initiate Class variables*/
-    {
+    public Visualizer(Logger logger) {
         jsonParser = new JsonParser();
         gson = new GsonBuilder().serializeNulls().create();
+        this.logger = logger;
+
+        // todo is this enough?
+        esClient = RestClient.builder(
+                new HttpHost("localhost", 9200, "http"),
+                new HttpHost("localhost", 9205, "http")).build();
     }
 
-    public static void produceHtml(File inputPath){
-        new Visualizer(); // to instantiate static class variables
+    public void close(){
+        try {
+            esClient.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public void produceHtml(File inputPath){
         File inputDir = getInputDir(inputPath.getAbsolutePath());
-        Utilities.echo("taking "+inputDir+" as the input directory");
         processFolder(inputDir);
-        //todo get rid of this
-        System.exit(0);
     }
 
-    public static void main(String[] args) {
-        // TODO: take class file in command line input
-        new Visualizer(); // to instantiate static class variables
 
-        String defaultDir = "/Users/Rainicy/Dropbox/tmp/out/app3/reports_app3/test_reports";
-        File inputDir = getInputDir(defaultDir);
-
-        Utilities.echo("taking "+inputDir+" as the input directory");
-        processFolder(inputDir);
-        //todo get rid of this
-        System.exit(0);
-    }
-
-    public static void processFolder(File inputDir) {
+    public void processFolder(File inputDir) {
         /*   read config files   */
         String configString = null;
         String dataString = null;
@@ -69,7 +69,7 @@ public class Visualizer {
                             .collect(Collectors.joining());
         } catch (IOException e) {
             e.printStackTrace();
-            Utilities.error("Exceptioin in reading one of the config files in json. Exiting ...");
+            logger.log(Level.SEVERE,"Exception in reading one of the config files in json. Exiting ...");
             System.exit(1);
         }
         JsonObject config = jsonParser.parse(configString).getAsJsonObject();
@@ -95,13 +95,12 @@ public class Visualizer {
                 continue;
             if ( ! fileName.startsWith("report"))
                 continue;
-
-            Utilities.echo("parsing "+fileName);
+            logger.info("processing file "+jsonReport.getName());
             processFile(jsonReport, esIndex, fields);
         }
     }
 
-    private static void processFile(File reportFile, String esIndex, String fields) {
+    private void processFile(File reportFile, String esIndex, String fields) {
         String inputFileName = reportFile.getName();
         String outputFileName = inputFileName.replaceAll(".json", ".html");
         File outputFile = new File(reportFile.getParent(), outputFileName);
@@ -122,7 +121,7 @@ public class Visualizer {
     }
 
     /*   corresponds to createTable() of visualizer.py   */
-    private static String jsonToHtmlTable(String jsonString,String esIndex, String fields) {
+    private String jsonToHtmlTable(String jsonString,String esIndex, String fields) {
         JsonElement json_file = (new JsonParser()).parse(jsonString);
         JsonArray jsonRows = json_file.getAsJsonArray();
         int lineCount = 0;
@@ -132,15 +131,12 @@ public class Visualizer {
             lineCount += 1;
             output.add(createRow(jsonRow, esIndex, fields, lineCount));
 
-            /*   finish row   */
-            if (lineCount % 100 == 0)
-                Utilities.echo("Current parsing ID: "+lineCount);
         }
         return gson.toJson(output);
     }
 
     /*   corresponds to each iteration of the loop in createTable() of viusualizer.py   */
-    private static JsonObject createRow(JsonObject jsonRow, String esIndex, String fields, int lineCount) {
+    private JsonObject createRow(JsonObject jsonRow, String esIndex, String fields, int lineCount) {
         JsonObject thisRow = new JsonObject();
         Map<String, JsonElement> labelsMap = new HashMap<>();
         labelsMap.put("id", jsonRow.get("id"));
@@ -295,7 +291,7 @@ public class Visualizer {
         Response response = null;
         String jsonResponse = null;
         try {
-            response = Properties.esClient.performRequest(
+            response = esClient.performRequest(
                     "GET",
                     esIndex + "/" + Properties.DOCUMENT_TYPE + "/" + labelsMap.get("id").getAsString(),
                     Collections.emptyMap()
@@ -326,7 +322,7 @@ public class Visualizer {
         return thisRow;
     }
 
-    private static void createTFPNColumns(String esIndex, JsonObject jsonRow, int lineCount, JsonObject thisRow) {
+    private void createTFPNColumns(String esIndex, JsonObject jsonRow, int lineCount, JsonObject thisRow) {
         String id = jsonRow.get("id").getAsString();
         JsonArray classScoreCalculations = jsonRow.get("classScoreCalculations").getAsJsonArray();
         JsonArray internalLabels = jsonRow.get("internalLabels").getAsJsonArray();
@@ -373,7 +369,7 @@ public class Visualizer {
         }
     }
 
-    private static JsonObject writeClass(String esIndex, String id, int lineCount, JsonObject eachClass) {
+    private JsonObject writeClass(String esIndex, String id, int lineCount, JsonObject eachClass) {
         JsonObject thisClass = new JsonObject();
         thisClass.add("id", eachClass.get("internalClassIndex"));
         String name = eachClass.get("className").getAsString();
@@ -414,7 +410,7 @@ public class Visualizer {
         return thisClass;
     }
 
-    private static JsonObject writeRule(String esIndex, String id, int lineCount, int i, JsonObject rulei) {
+    private JsonObject writeRule(String esIndex, String id, int lineCount, int i, JsonObject rulei) {
         JsonObject oneRule = new JsonObject();
 
         oneRule.add("score", rulei.get("score").getAsJsonPrimitive());
@@ -465,7 +461,7 @@ public class Visualizer {
         return oneRule;
     }
 
-    private static JsonArray getPositions(String esIndex, String id, String field, JsonElement keywords, int slop, boolean inOrder) {
+    private JsonArray getPositions(String esIndex, String id, String field, JsonElement keywords, int slop, boolean inOrder) {
         // TODO: Debug
 //        System.out.println("ID: " + id);
 //        System.out.println("Words: " + keywords);
@@ -504,7 +500,7 @@ public class Visualizer {
         String responseStr = null;
         try {
             Response response =
-                    Properties.esClient.performRequest(
+                    esClient.performRequest(
                             "GET",
                             esIndex + "/" + Properties.DOCUMENT_TYPE + "/" + "_search",
                             Collections.emptyMap(),
@@ -569,7 +565,7 @@ public class Visualizer {
         return positions;
     }
 
-    private static String createUnigramQueryJson(String id , String field, String keyword) {
+    private String createUnigramQueryJson(String id , String field, String keyword) {
         return
                 "{\n" +
                         "  \"query\": {\n" +
@@ -598,7 +594,7 @@ public class Visualizer {
                         "}";
 
     }
-    private static String createQueryJson(String id , boolean inOrder, int slop, String field, JsonArray clauses) {
+    private String createQueryJson(String id , boolean inOrder, int slop, String field, JsonArray clauses) {
         return
                 "{\n" +
                         "  \"query\": {\n" +
@@ -631,7 +627,7 @@ public class Visualizer {
 
     }
 
-    private static int includesLabel(String className, Map<String, JsonElement> internalLabels) {
+    private int includesLabel(String className, Map<String, JsonElement> internalLabels) {
         for (Map.Entry<String, JsonElement> internalLabel : internalLabels.entrySet()) {
             String label = internalLabel.getValue().getAsString();
             if (className.equals(label))

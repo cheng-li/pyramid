@@ -1,7 +1,4 @@
-package edu.neu.ccs.pyramid.visualizer;
-
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
+package edu.neu.ccs.pyramid.visualization;
 
 /**
  * Created by shikhar on 6/29/17.
@@ -906,17 +903,9 @@ public class Properties {
                     "</script>\n" +
                     "</body></html>\n";
 
-    /*   ElasticSearch   */
-    public static RestClient esClient = null;
     // public static final String CLUSTER_NAME = "ohsumed_20000"; // picked up from .properties file
     public static final String DOCUMENT_TYPE = "document";
 
 
 
-    /*   Initialize  objects   */
-    static {
-        esClient = RestClient.builder(
-                new HttpHost("localhost", 9200, "http"),
-                new HttpHost("localhost", 9205, "http")).build();
-    }
 }

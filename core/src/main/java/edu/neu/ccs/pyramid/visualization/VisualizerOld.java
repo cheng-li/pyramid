@@ -3,7 +3,7 @@
  * Copyright by Bishwajeet Dey.
  * All rights reserved.
  *******************************************************************************/
-package edu.neu.ccs.pyramid.visualizer;
+package edu.neu.ccs.pyramid.visualization;
 
 import java.io.BufferedReader;
 import java.io.File;
