@@ -20,6 +20,7 @@ import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
+import edu.neu.ccs.pyramid.visualizer.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
@@ -466,6 +467,10 @@ public class App2 {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
             logger.info("finish writing individual label performance to json");
+        }
+
+        if (config.getBoolean("report.produceHTML")){
+            Visualizer.produceHtml(analysisFolder);
         }
 
         logger.info("reports generated");

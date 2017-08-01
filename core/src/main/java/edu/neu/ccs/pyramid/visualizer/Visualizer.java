@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * //todo do not use static fields
  * Created by shikhar on 6/28/17.
  */
 public class Visualizer {
@@ -24,11 +25,22 @@ public class Visualizer {
     private static JsonArray writeRulePositions = null;
     private static String writeRuleField = null;
 
+    //todo get rid of this
     /*
     * A static block to initiate Class variables*/
     {
         jsonParser = new JsonParser();
         gson = new GsonBuilder().serializeNulls().create();
+    }
+
+    public static void produceHtml(File inputPath){
+        new Visualizer(); // to instantiate static class variables
+
+        File inputDir = getInputDir(inputPath.getAbsolutePath());
+        Utilities.echo("taking "+inputDir+" as the input directory");
+        processFolder(inputDir);
+        //todo get rid of this
+        System.exit(0);
     }
 
     public static void main(String[] args) {
@@ -40,6 +52,7 @@ public class Visualizer {
 
         Utilities.echo("taking "+inputDir+" as the input directory");
         processFolder(inputDir);
+        //todo get rid of this
         System.exit(0);
     }
 
