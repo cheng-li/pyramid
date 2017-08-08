@@ -6,7 +6,6 @@ package edu.neu.ccs.pyramid.dataset;
 public class MLClfDataSetBuilder {
     private int numDataPoints = -1;
     private int numFeatures = -1;
-    private boolean dense = true;
     private boolean missingValue = false;
     private int numClasses = -1;
     private Density density = Density.DENSE;
@@ -25,11 +24,6 @@ public class MLClfDataSetBuilder {
         return this;
     }
 
-    @Deprecated
-    public MLClfDataSetBuilder dense(boolean dense) {
-        this.dense = dense;
-        return this;
-    }
 
     public MLClfDataSetBuilder density(Density density) {
         this.density = density;

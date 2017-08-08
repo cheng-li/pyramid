@@ -163,7 +163,7 @@ public class CBMEN {
         EarlyStopper earlyStopper = loadNewEarlyStopper(config);
 
         ENCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
-        if (config.getBoolean("random.initial")) {
+        if (config.getBoolean("train.randomInitialize")) {
             optimizer.randInitialize();
         } else {
             optimizer.initialize();
@@ -278,7 +278,7 @@ public class CBMEN {
 
         ENCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
         System.out.println("Initializing the model");
-        if (config.getBoolean("random.initial")) {
+        if (config.getBoolean("train.randomInitialize")) {
             optimizer.randInitialize();
         } else {
             optimizer.initialize();
@@ -460,17 +460,17 @@ public class CBMEN {
     private static ENCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
         ENCBMOptimizer optimizer = new ENCBMOptimizer(cbm, trainSet);
 
-        optimizer.setLineSearch(config.getBoolean("elasticnet.lineSearch"));
+        optimizer.setLineSearch(config.getBoolean("train.elasticnet.lineSearch"));
         optimizer.setRegularizationBinary(hyperParameters.penalty);
         optimizer.setRegularizationMultiClass(hyperParameters.penalty);
         optimizer.setL1RatioBinary(hyperParameters.l1Ratio);
         optimizer.setL1RatioMultiClass(hyperParameters.l1Ratio);
-        optimizer.setActiveSet(config.getBoolean("elasticnet.activeSet"));
+        optimizer.setActiveSet(config.getBoolean("train.elasticnet.activeSet"));
 
-        optimizer.setBinaryUpdatesPerIter(config.getInt("binary.updatesPerIteration"));
-        optimizer.setMulticlassUpdatesPerIter(config.getInt("multiClass.updatesPerIteration"));
-        optimizer.setSkipDataThreshold(config.getDouble("skipDataThreshold"));
-        optimizer.setSkipLabelThreshold(config.getDouble("skipLabelThreshold"));
+        optimizer.setBinaryUpdatesPerIter(config.getInt("train.updatesPerIteration"));
+        optimizer.setMulticlassUpdatesPerIter(config.getInt("train.updatesPerIteration"));
+        optimizer.setSkipDataThreshold(config.getDouble("train.skipDataThreshold"));
+        optimizer.setSkipLabelThreshold(config.getDouble("train.skipLabelThreshold"));
 //
 
         return optimizer;

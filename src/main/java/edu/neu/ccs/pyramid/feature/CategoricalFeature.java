@@ -63,7 +63,6 @@ public class CategoricalFeature extends Feature {
         sb.append("category='").append(category).append('\'');
         sb.append(", numCategories=").append(numCategories);
         sb.append(", variableName='").append(variableName).append('\'');
-        sb.append(", categoryIndexMap=").append(categoryIndexMap);
         sb.append('}');
         return sb.toString();
     }

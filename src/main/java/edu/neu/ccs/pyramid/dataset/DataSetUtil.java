@@ -667,7 +667,7 @@ public class DataSetUtil {
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(numFeatures)
                 .numClasses(dataSet1.getNumClasses())
-                .dense(dataSet1.isDense())
+                .density(dataSet1.density())
                 .missingValue(dataSet1.hasMissingValue())
                 .build();
 
