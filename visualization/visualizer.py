@@ -83,10 +83,10 @@ def writeRule(docId, line_count, num, rule):
         
         if not check["feature"].has_key("ngram"):
             checkOneRule["name"] = check["feature"]["name"]
-            checkOneRule["index"] = check["feature"]["index"]
+            # checkOneRule["index"] = check["feature"]["index"]
         else:
             checkOneRule["ngram"] = check["feature"]["ngram"]
-            checkOneRule["index"] = check["feature"]["index"]
+            # checkOneRule["index"] = check["feature"]["index"]
             checkOneRule["field"] = check["feature"]["field"]
             checkOneRule["slop"] = check["feature"]["slop"]
             field = checkOneRule["field"]

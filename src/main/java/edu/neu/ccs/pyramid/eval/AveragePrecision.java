@@ -40,6 +40,30 @@ public class AveragePrecision {
         return SafeDivide.divide(sumPrecisionAtK,totalRelevant, 1);
     }
 
+
+    /**
+     * follows http://web.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+     * https://en.wikipedia.org/wiki/Information_retrieval#Average_precision
+     *
+     * @param relevance the actual relevance of each item in the sorted list; sorted by the estimated relevance,
+     *                  from most relevant to least relevant
+     *                  the list is truncated so that some relevant items are not retrieved
+     * @param totalNumRelevant total number of relevant items
+     *
+     * @return
+     */
+    public static double averagePrecisionTruncated(boolean[] relevance, int totalNumRelevant){
+        double relevantSoFar = 0;
+        double sumPrecisionAtK = 0;
+        for (int i=0;i<relevance.length;i++){
+            if (relevance[i]){
+                relevantSoFar += 1;
+                sumPrecisionAtK += relevantSoFar/(i+1);
+            }
+        }
+        return SafeDivide.divide(sumPrecisionAtK,totalNumRelevant, 1);
+    }
+
     public static double averagePrecision(int[] relevance){
         double totalRelevant = 0;
         double relevantSoFar = 0;
@@ -52,6 +76,18 @@ public class AveragePrecision {
             }
         }
         return SafeDivide.divide(sumPrecisionAtK,totalRelevant, 1);
+    }
+
+    public static double averagePrecisionTruncated(int[] relevance, int totalNumRelevant){
+        double relevantSoFar = 0;
+        double sumPrecisionAtK = 0;
+        for (int i=0;i<relevance.length;i++){
+            if (relevance[i]==1){
+                relevantSoFar += 1;
+                sumPrecisionAtK += relevantSoFar/(i+1);
+            }
+        }
+        return SafeDivide.divide(sumPrecisionAtK,totalNumRelevant, 1);
     }
 
     /**
@@ -67,6 +103,21 @@ public class AveragePrecision {
             relevance[i] = binaryLabels[sortedIndices[i]];
         }
         return averagePrecision(relevance);
+    }
+
+    /**
+     * sort by scores, and compare against binary labels; bigger score is interpreted as more relevant
+     * @param binaryLabels
+     * @param scores
+     * @return
+     */
+    public static double averagePrecisionTruncated(int[] binaryLabels, double[] scores, int totalNumRelevant){
+        int[] sortedIndices = ArgSort.argSortDescending(scores);
+        int[] relevance = new int[binaryLabels.length];
+        for (int i=0;i<relevance.length;i++){
+            relevance[i] = binaryLabels[sortedIndices[i]];
+        }
+        return averagePrecisionTruncated(relevance, totalNumRelevant);
     }
 
     /**

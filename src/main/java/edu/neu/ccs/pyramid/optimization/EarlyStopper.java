@@ -108,6 +108,15 @@ public class EarlyStopper implements Serializable{
         return stringBuilder.toString();
     }
 
+    public double getValueAtIteration(int iteration){
+
+        for (int i=0;i<iterations.size();i++){
+            if (iterations.get(i)==iteration){
+                return values.get(i);
+            }
+        }
+        throw new IllegalArgumentException("cannot find the given iteration "+iteration);
+    }
 
 
 

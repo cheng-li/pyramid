@@ -86,6 +86,11 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         return new BMDistribution(this, x);
     }
 
+
+    public BMDistribution computeBM(Vector x, double piThreshold){
+        return new BMDistribution(this, x, piThreshold);
+    }
+
     /**
      * for single assignment, compute log assignment probability
      * @param x
@@ -240,7 +245,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
      */
     public double[] predictClassProbs(Vector vector){
         //todo threshold
-        BMDistribution bmDistribution = new BMDistribution(this, vector, 0.1);
+        BMDistribution bmDistribution = new BMDistribution(this, vector, 0.001);
         return bmDistribution.marginals();
     }
 
@@ -334,7 +339,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
      * @return
      */
     public List<MultiLabel> samples(Vector x, int numSamples){
-        BMDistribution bmDistribution = computeBM(x);
+        BMDistribution bmDistribution = new BMDistribution(this, x, 0.001);
         return bmDistribution.sample(numSamples);
 
     }
@@ -363,6 +368,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         private List<MultiLabel> support;
         private String binaryClassifierType= "lr";
         private String multiClassClassifierType = "lr";
+
+        private boolean dense=false;
 
         private Builder() {
         }
@@ -397,6 +404,11 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
             return this;
         }
 
+        public Builder setDense(boolean dense) {
+            this.dense = dense;
+            return this;
+        }
+
         public CBM build(){
             CBM CBM = new CBM();
             CBM.numLabels = numClasses;
@@ -410,19 +422,22 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
                 case "lr":
                     CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];
                     //// TODO: 3/5/17
-//                    for (int k = 0; k< numComponents; k++) {
-//                        for (int l=0; l<numClasses; l++) {
-//                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
-//                        }
-//                    }
-                    break;
-                case "boost":
-                    CBM.binaryClassifiers = new LKBoost[numComponents][numClasses];
-                    for (int k = 0; k< numComponents; k++) {
-                        for (int l=0; l<numClasses; l++) {
-                            CBM.binaryClassifiers[k][l] = new LKBoost(2);
+                    if (dense){
+                        for (int k = 0; k< numComponents; k++) {
+                            for (int l=0; l<numClasses; l++) {
+                            CBM.binaryClassifiers[k][l] = new LogisticRegression(2,numFeatures);
+                            }
                         }
                     }
+
+                    break;
+                case "boost":
+                    CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];
+//                    for (int k = 0; k< numComponents; k++) {
+//                        for (int l=0; l<numClasses; l++) {
+//                            CBM.binaryClassifiers[k][l] = new LKBoost(2);
+//                        }
+//                    }
                     break;
                 case "elasticnet":
                     CBM.binaryClassifiers = new ProbabilityEstimator[numComponents][numClasses];

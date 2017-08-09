@@ -1,12 +1,9 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
-import edu.neu.ccs.pyramid.clustering.bm.BM;
 import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.util.ArgMax;
-import edu.neu.ccs.pyramid.util.MathUtil;
-import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,9 +15,10 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 /**
- * Created by chengli on 3/21/17.
+ * Created by chengli on 4/7/17.
  */
-public abstract class AbstractCBMOptimizer {
+public abstract class AbstractRobustCBMOptimizer {
+
     private static final Logger logger = LogManager.getLogger();
     protected CBM cbm;
     protected MultiLabelClfDataSet dataSet;
@@ -48,9 +46,13 @@ public abstract class AbstractCBMOptimizer {
 
     protected DataSet labelMatrix;
 
-    protected boolean parallelBinaryUpdates =true;
 
-    public AbstractCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
+    private double noiseGammaLabel = 0;
+    private double[][] noiseLabelWeights;
+    private double[][] marginals;
+
+
+    public AbstractRobustCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         this.cbm = cbm;
         this.dataSet = dataSet;
 
@@ -79,7 +81,24 @@ public abstract class AbstractCBMOptimizer {
             positiveCounts[l] = labelMatrix.getColumn(l).getNumNonZeroElements();
         }
 
+        this.marginals = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        this.noiseLabelWeights = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            Arrays.fill(noiseLabelWeights[i],1);
+        }
 
+    }
+
+    public void setNoiseGammaLabel(double noiseGammaLabel) {
+        this.noiseGammaLabel = noiseGammaLabel;
+    }
+
+    public double[][] getNoiseLabelWeights() {
+        return noiseLabelWeights;
+    }
+
+    public double[][] getMarginals() {
+        return marginals;
     }
 
     public void setSmoothingStrength(double smoothingStrength) {
@@ -103,41 +122,29 @@ public abstract class AbstractCBMOptimizer {
     }
 
     public void initialize(){
-        gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
-        if (logger.isDebugEnabled()){
-            logger.debug("performing M step");
-        }
-        mStep();
-    }
-
-    public void randInitialize() {
-        int K = cbm.getNumComponents();
-        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            double[] dist = new double[K];
-            for (int k=0; k<K; k++) {
-                dist[k] = Math.random();
-            }
-            double sum = MathUtil.arraySum(dist);
-            for (int k=0; k<K; k++) {
-                double value = dist[k]/sum;
-                gammas[i][k] = value;
+        if (cbm.numComponents>1){
+            gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
+            if (logger.isDebugEnabled()){
+                logger.debug("performing M step");
             }
         }
-        System.out.println("performing random M step");
+
         mStep();
     }
 
-    public void averageInitialize() {
-        System.out.println("performing average M step");
-        mStep();
-    }
-
-    public void iterate() {
+    public void iterateSimple(){
         eStep();
         mStep();
     }
 
-    protected void eStep(){
+    public void iterate() {
+        updateMarginals();
+        updateLabelWeights();
+        eStep();
+        mStep();
+    }
+
+    public void eStep(){
         if (logger.isDebugEnabled()){
             logger.debug("start E step");
         }
@@ -157,13 +164,56 @@ public abstract class AbstractCBMOptimizer {
     protected void updateGamma(int n) {
         Vector x = dataSet.getRow(n);
         MultiLabel y = dataSet.getMultiLabels()[n];
-        double[] posterior = cbm.posteriorMembershipShortCircuit(x, y);
+        double[] posterior = cbm.posteriorMembership(x, y, noiseLabelWeights[n]);
         for (int k=0; k<cbm.numComponents; k++) {
             gammas[n][k] = posterior[k];
         }
     }
 
-    void mStep() {
+    private void updateMarginals(){
+        IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                .forEach(i-> {
+                    double[] predictedMarginals = cbm.predictClassProbs(dataSet.getRow(i));
+                    for (int l=0;l<dataSet.getNumClasses();l++){
+                        if (dataSet.getMultiLabels()[i].matchClass(l)){
+                            marginals[i][l] = predictedMarginals[l];
+                        } else {
+                            marginals[i][l] = 1- predictedMarginals[l];
+                        }
+                    }
+                });
+    }
+
+    private void updateLabelWeights(){
+        double total = 0;
+        double n = dataSet.getNumDataPoints();
+        double numLabels = dataSet.getNumClasses();
+        double numEntries = 0;
+
+
+        for (int i=0;i<n;i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l=0;l<numLabels;l++){
+                if (!multiLabel.matchClass(l)){
+                    total += Math.pow(marginals[i][l], noiseGammaLabel);
+                    numEntries += 1;
+                }
+
+            }
+        }
+
+        for (int i=0;i<n;i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i];
+            for (int l=0;l<numLabels;l++){
+                if (!multiLabel.matchClass(l)){
+                    noiseLabelWeights[i][l] = numEntries*Math.pow(marginals[i][l],noiseGammaLabel)/total;
+                }
+
+            }
+        }
+    }
+
+    public void mStep() {
         if (logger.isDebugEnabled()){
             logger.debug("start M step");
         }
@@ -193,7 +243,6 @@ public abstract class AbstractCBMOptimizer {
         }
 
         // skip small gammas
-        List<Double> activeGammasList = new ArrayList<>();
         List<Integer> activeIndices = new ArrayList<>();
         double[] gammasForComponent = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(i->gammas[i][component]).toArray();
         int maxIndex = ArgMax.argMax(gammasForComponent);
@@ -205,18 +254,12 @@ public abstract class AbstractCBMOptimizer {
             double v = gammas[i][component];
             weightedTotal += v;
             if (v>= skipDataThreshold || i==maxIndex){
-                activeGammasList.add(v);
                 activeIndices.add(i);
                 thresholdedWeightedTotal += v;
                 counter += 1;
             }
         }
 
-        //todo deal with empty components
-
-
-
-        double[] activeGammas = activeGammasList.stream().mapToDouble(a->a).toArray();
 
         if (logger.isDebugEnabled()){
             logger.debug("number of active data  = "+ counter);
@@ -235,19 +278,14 @@ public abstract class AbstractCBMOptimizer {
 
         // to please lambda
         final double totalWeight = weightedTotal;
-        if (parallelBinaryUpdates){
-            IntStream.range(0, cbm.numLabels).parallel()
-                    .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
-        } else {
-            IntStream.range(0, cbm.numLabels)
-                    .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
-        }
-
+        IntStream.range(0, cbm.numLabels).parallel()
+                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeIndices, activeDataSet,  totalWeight));
     }
 
 
-    protected void skipOrUpdateBinaryClassifier(int component, int label, MultiLabelClfDataSet activeDataSet,
-                                                double[] activeGammas, double totalWeight){
+    protected void skipOrUpdateBinaryClassifier(int component, int label, List<Integer> activeIndices,
+                                                MultiLabelClfDataSet activeDataSet,
+                                                double totalWeight){
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
@@ -276,11 +314,6 @@ public abstract class AbstractCBMOptimizer {
             smoothedPositiveProb=1;
         }
 
-        //todo avoid zero probability
-        if (smoothedPositiveProb<1E-30){
-            smoothedPositiveProb = 1E-30;
-        }
-
         if (nonSmoothedPositiveProb<skipLabelThreshold || nonSmoothedPositiveProb>1-skipLabelThreshold){
             double[] probs = {1-smoothedPositiveProb, smoothedPositiveProb};
             cbm.binaryClassifiers[component][label] = new PriorProbClassifier(probs);
@@ -295,10 +328,12 @@ public abstract class AbstractCBMOptimizer {
         if (logger.isDebugEnabled()){
             logger.debug(sb.toString());
         }
-        updateBinaryClassifier(component, label, activeDataSet, activeGammas);
+
+        double[] activeInstanceWeights = activeIndices.stream().mapToDouble(i->gammas[i][component]*noiseLabelWeights[i][label]).toArray();
+        updateBinaryClassifier(component, label, activeDataSet, activeInstanceWeights);
     }
 
-    abstract protected void updateBinaryClassifier(int component, int label, MultiLabelClfDataSet activeDataset, double[] activeGammas);
+    abstract protected void updateBinaryClassifier(int component, int label, MultiLabelClfDataSet activeDataset, double[] activeInstanceWeights);
 
     protected abstract void updateMultiClassClassifier();
 
@@ -307,7 +342,7 @@ public abstract class AbstractCBMOptimizer {
         Vector labelColumn = labelMatrix.getColumn(labelIndex);
         for (Vector.Element element: labelColumn.nonZeroes()){
             int dataIndex = element.index();
-            sum += gammas[dataIndex][componentIndex];
+            sum += gammas[dataIndex][componentIndex] * noiseLabelWeights[dataIndex][labelIndex];
         }
         return sum;
     }
@@ -345,6 +380,4 @@ public abstract class AbstractCBMOptimizer {
             }
         }
     }
-
-
 }

@@ -1,29 +1,29 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
-import edu.neu.ccs.pyramid.clustering.bm.BM;
 import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.util.ArgMax;
-import edu.neu.ccs.pyramid.util.MathUtil;
-import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Created by chengli on 3/21/17.
+ * Created by chengli on 4/9/17.
  */
-public abstract class AbstractCBMOptimizer {
+public abstract class AbstractRecoverCBMOptimizer {
     private static final Logger logger = LogManager.getLogger();
     protected CBM cbm;
     protected MultiLabelClfDataSet dataSet;
+
+    protected MultiLabelClfDataSet groundTruth;
 
     // format [#data][#components]
     protected double[][] gammas;
@@ -43,14 +43,15 @@ public abstract class AbstractCBMOptimizer {
 
     protected double smoothingStrength =0.0001;
 
-    // number of positives for all labels
-    private int[] positiveCounts;
 
     protected DataSet labelMatrix;
 
-    protected boolean parallelBinaryUpdates =true;
+//    private double dropProb = 0.01;
 
-    public AbstractCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
+    private double lambda=0;
+    private int flipped=0;
+
+    public AbstractRecoverCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         this.cbm = cbm;
         this.dataSet = dataSet;
 
@@ -74,13 +75,21 @@ public abstract class AbstractCBMOptimizer {
             }
         }
 
-        positiveCounts = new int[dataSet.getNumClasses()];
-        for (int l=0;l<dataSet.getNumClasses();l++){
-            positiveCounts[l] = labelMatrix.getColumn(l).getNumNonZeroElements();
-        }
 
 
+        List<Integer> all = IntStream.range(0, dataSet.getNumDataPoints()).boxed().collect(Collectors.toList());
+        groundTruth = DataSetUtil.sampleData(dataSet, all);
     }
+
+//    public void setDropProb(double dropProb) {
+//        this.dropProb = dropProb;
+//    }
+
+
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
+    }
+
 
     public void setSmoothingStrength(double smoothingStrength) {
         this.smoothingStrength = smoothingStrength;
@@ -103,32 +112,13 @@ public abstract class AbstractCBMOptimizer {
     }
 
     public void initialize(){
-        gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
-        if (logger.isDebugEnabled()){
-            logger.debug("performing M step");
-        }
-        mStep();
-    }
-
-    public void randInitialize() {
-        int K = cbm.getNumComponents();
-        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
-            double[] dist = new double[K];
-            for (int k=0; k<K; k++) {
-                dist[k] = Math.random();
-            }
-            double sum = MathUtil.arraySum(dist);
-            for (int k=0; k<K; k++) {
-                double value = dist[k]/sum;
-                gammas[i][k] = value;
+        if (cbm.getNumComponents()>1){
+            gammas = BMSelector.selectGammas(dataSet.getNumClasses(),dataSet.getMultiLabels(), cbm.getNumComponents());
+            if (logger.isDebugEnabled()){
+                logger.debug("performing M step");
             }
         }
-        System.out.println("performing random M step");
-        mStep();
-    }
 
-    public void averageInitialize() {
-        System.out.println("performing average M step");
         mStep();
     }
 
@@ -136,6 +126,169 @@ public abstract class AbstractCBMOptimizer {
         eStep();
         mStep();
     }
+
+
+    public void updateGroundTruth(){
+        List<Change> ranked = rank();
+        for (Change change: ranked){
+            int data = change.data;
+            int label = change.label;
+            double estimatedChange = change.totalChange;
+            Change realChange = lossChange(data, label);
+            System.out.println("for data "+data+" class "+label+" estimated totalChange = "+estimatedChange+", real totalChange = "+realChange.totalChange+", change in NLL="+realChange.changeInNll+", change in penalty = "+realChange.changeInPenalty);
+            if (realChange.totalChange<0){
+                // flip or reset flip
+                groundTruth.getMultiLabels()[data].flipLabel(label);
+                int newGroundTruth = 0;
+                if (groundTruth.getMultiLabels()[data].matchClass(label)){
+                    newGroundTruth = 1;
+                }
+                labelMatrix.setFeatureValue(data, label, newGroundTruth);
+                if (newGroundTruth==1){
+                    flipped += 1;
+                    System.out.println("flip label "+label+" for data "+data+" from 0 to 1. #flips = "+flipped);
+                } else {
+                    flipped -= 1;
+                    System.out.println("reset label "+label+" for data "+data+" from 1 to 0. #flips = "+flipped);
+                }
+            } else {
+                System.out.println("break");
+                break;
+            }
+        }
+    }
+
+//    protected void updateGroundTruth(int dataPoint){
+//        for (int l=0;l<dataSet.getNumClasses();l++){
+//            if (!dataSet.getMultiLabels()[dataPoint].matchClass(l)){
+//                updateGroundTruth(dataPoint, l);
+//            }
+//
+//        }
+//    }
+
+    private List<Change> rank(){
+
+        List<Change> all = IntStream.range(0,dataSet.getNumDataPoints()).parallel().boxed()
+                .flatMap(i->IntStream.range(0, dataSet.getNumClasses())
+                        .filter(l->!dataSet.getMultiLabels()[i].matchClass(l))
+                        .mapToObj(l->lossChange(i,l)))
+                .collect(Collectors.toList());
+
+
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            for (int l=0;l<dataSet.getNumClasses();l++){
+//                if (!dataSet.getMultiLabels()[i].matchClass(l)){
+//                    Change change = lossChange(i,l);
+//                    all.add(change);
+//                }
+//
+//            }
+//        }
+        List<Change> sorted = all.stream().sorted(Comparator.comparing(change->change.totalChange)).collect(Collectors.toList());
+        return sorted;
+    }
+
+    // assuming the tau is in the extremes
+    protected Change lossChange(int dataPoint, int label){
+
+        double[][] logProbs = new double[cbm.getNumComponents()][2];
+        for (int k=0;k<cbm.getNumComponents();k++){
+            logProbs[k] = cbm.getBinaryClassifiers()[k][label].predictLogClassProbs(dataSet.getRow(dataPoint));
+        }
+        //assuming the given label =0
+
+        int currentGroundTruth = 0;
+        if (groundTruth.getMultiLabels()[dataPoint].matchClass(label)){
+            currentGroundTruth = 1;
+        }
+
+        double currentNll = 0;
+        for (int k=0;k<cbm.getNumComponents();k++){
+            currentNll += -logProbs[k][currentGroundTruth]*gammas[dataPoint][k];
+        }
+
+
+//        double currentPenalty =  lambda*Math.abs(flipped-tau*dataSet.getNumDataPoints());
+
+
+
+        int newGroundTruth = 1-currentGroundTruth;
+        double newNLL =0;
+        for (int k=0;k<cbm.getNumComponents();k++){
+            newNLL += -logProbs[k][newGroundTruth]*gammas[dataPoint][k];
+        }
+
+
+//        double newPenalty;
+
+
+        Change change = new Change();
+        change.changeInNll = newNLL - currentNll;
+        if (newGroundTruth==1){
+//            newPenalty = lambda*Math.abs(flipped+1-tau*dataSet.getNumDataPoints());
+            change.changeInPenalty = lambda;
+        } else {
+//            newPenalty = lambda*Math.abs(flipped-1-tau*dataSet.getNumDataPoints());
+            change.changeInPenalty = -lambda;
+        }
+
+        change.totalChange = newNLL - currentNll + change.changeInPenalty;
+        change.data = dataPoint;
+        change.label = label;
+        return change;
+    }
+
+
+
+//    protected void updateGroundTruth(int dataPoint, int label){
+//
+//        double[][] logProbs = new double[cbm.getNumComponents()][2];
+//        for (int k=0;k<cbm.getNumComponents();k++){
+//            logProbs[k] = cbm.getBinaryClassifiers()[k][label].predictLogClassProbs(dataSet.getRow(dataPoint));
+//        }
+//        //assuming the given label =0
+//
+//        int currentGroundTruth = 0;
+//        if (groundTruth.getMultiLabels()[dataPoint].matchClass(label)){
+//            currentGroundTruth = 1;
+//        }
+//
+//        double currentObj = 0;
+//        for (int k=0;k<cbm.getNumComponents();k++){
+//            currentObj += -logProbs[k][currentGroundTruth]*gammas[dataPoint][k];
+//        }
+//
+//
+//
+//        if (currentGroundTruth==1){
+//            currentObj += -Math.log(dropProb);
+//
+//        }
+//
+//
+//        int newGroundTruth = 1-currentGroundTruth;
+//        double newObj =0;
+//        for (int k=0;k<cbm.getNumComponents();k++){
+//            newObj += -logProbs[k][newGroundTruth]*gammas[dataPoint][k];
+//        }
+//
+//
+//
+//        if (newGroundTruth==1){
+//            newObj += -Math.log(dropProb);
+//
+//        }
+//
+//
+//        if (newObj < currentObj){
+//            System.out.println("flipping ground truth label for class "+label+"("+dataSet.getLabelTranslator().toExtLabel(label)+") for data point "
+//                    +dataPoint+"("+dataSet.getIdTranslator().toExtId(dataPoint)+") from "+currentGroundTruth+" to "+newGroundTruth);
+//
+//            groundTruth.getMultiLabels()[dataPoint].flipLabel(label);
+//            labelMatrix.setFeatureValue(dataPoint, label, newGroundTruth);
+//        }
+//    }
 
     protected void eStep(){
         if (logger.isDebugEnabled()){
@@ -150,13 +303,13 @@ public abstract class AbstractCBMOptimizer {
 
 
     protected void updateGamma() {
-        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+        IntStream.range(0, groundTruth.getNumDataPoints()).parallel()
                 .forEach(this::updateGamma);
     }
 
     protected void updateGamma(int n) {
-        Vector x = dataSet.getRow(n);
-        MultiLabel y = dataSet.getMultiLabels()[n];
+        Vector x = groundTruth.getRow(n);
+        MultiLabel y = groundTruth.getMultiLabels()[n];
         double[] posterior = cbm.posteriorMembershipShortCircuit(x, y);
         for (int k=0; k<cbm.numComponents; k++) {
             gammas[n][k] = posterior[k];
@@ -195,13 +348,13 @@ public abstract class AbstractCBMOptimizer {
         // skip small gammas
         List<Double> activeGammasList = new ArrayList<>();
         List<Integer> activeIndices = new ArrayList<>();
-        double[] gammasForComponent = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(i->gammas[i][component]).toArray();
+        double[] gammasForComponent = IntStream.range(0, groundTruth.getNumDataPoints()).mapToDouble(i->gammas[i][component]).toArray();
         int maxIndex = ArgMax.argMax(gammasForComponent);
 
         double weightedTotal = 0;
         double thresholdedWeightedTotal = 0;
         int counter = 0;
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
+        for (int i=0;i<groundTruth.getNumDataPoints();i++){
             double v = gammas[i][component];
             weightedTotal += v;
             if (v>= skipDataThreshold || i==maxIndex){
@@ -226,7 +379,7 @@ public abstract class AbstractCBMOptimizer {
         }
 
 
-        MultiLabelClfDataSet activeDataSet = DataSetUtil.sampleData(dataSet, activeIndices);
+        MultiLabelClfDataSet activeDataSet = DataSetUtil.sampleData(groundTruth, activeIndices);
         int activeFeatures = (int) IntStream.range(0, activeDataSet.getNumFeatures()).filter(j->activeDataSet.getColumn(j).getNumNonZeroElements()>0).count();
         if (logger.isDebugEnabled()){
             logger.debug("active dataset created");
@@ -235,14 +388,8 @@ public abstract class AbstractCBMOptimizer {
 
         // to please lambda
         final double totalWeight = weightedTotal;
-        if (parallelBinaryUpdates){
-            IntStream.range(0, cbm.numLabels).parallel()
-                    .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
-        } else {
-            IntStream.range(0, cbm.numLabels)
-                    .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
-        }
-
+        IntStream.range(0, cbm.numLabels).parallel()
+                .forEach(l-> skipOrUpdateBinaryClassifier(component,l, activeDataSet, activeGammas, totalWeight));
     }
 
 
@@ -256,14 +403,15 @@ public abstract class AbstractCBMOptimizer {
         double nonSmoothedPositiveProb = effectivePositives/totalWeight;
 
         // smooth the component-wise label fraction with global label fraction
+        double positiveCount = labelMatrix.getColumn(label).getNumNonZeroElements();
 
-        double smoothedPositiveProb = (effectivePositives+smoothingStrength*positiveCounts[label])/(totalWeight+smoothingStrength*dataSet.getNumDataPoints());
+        double smoothedPositiveProb = (effectivePositives+smoothingStrength*positiveCount)/(totalWeight+smoothingStrength*groundTruth.getNumDataPoints());
 
         StringBuilder sb = new StringBuilder();
         sb.append("for component ").append(component).append(", label ").append(label);
         sb.append(", weighted positives = ").append(effectivePositives);
         sb.append(", non-smoothed positive fraction = "+(effectivePositives/totalWeight));
-        sb.append(", global positive fraction = "+((double)positiveCounts[label]/dataSet.getNumDataPoints()));
+        sb.append(", global positive fraction = "+(positiveCount/groundTruth.getNumDataPoints()));
         sb.append(", smoothed positive fraction = "+smoothedPositiveProb);
 
 
@@ -274,11 +422,6 @@ public abstract class AbstractCBMOptimizer {
         // it be happen that p >1 for numerical reasons
         if (smoothedPositiveProb>=1){
             smoothedPositiveProb=1;
-        }
-
-        //todo avoid zero probability
-        if (smoothedPositiveProb<1E-30){
-            smoothedPositiveProb = 1E-30;
         }
 
         if (nonSmoothedPositiveProb<skipLabelThreshold || nonSmoothedPositiveProb>1-skipLabelThreshold){
@@ -336,6 +479,8 @@ public abstract class AbstractCBMOptimizer {
         return gammas;
     }
 
+    public MultiLabelClfDataSet getGroundTruth() { return groundTruth; }
+
     private void checkGamma(){
         for (int i=0;i<gammas.length;i++){
             for (int k=0;k<gammas[0].length;k++){
@@ -347,4 +492,11 @@ public abstract class AbstractCBMOptimizer {
     }
 
 
+    private static class Change{
+        int data;
+        int label;
+        double totalChange;
+        double changeInNll;
+        double changeInPenalty;
+    }
 }

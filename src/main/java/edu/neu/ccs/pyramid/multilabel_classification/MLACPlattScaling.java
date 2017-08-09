@@ -24,7 +24,7 @@ public class MLACPlattScaling implements MultiLabelClassifier.ClassProbEstimator
     public MLACPlattScaling(MultiLabelClfDataSet dataSet, MultiLabelClassifier.ClassScoreEstimator scoreEstimator) {
         this.scoreEstimator = scoreEstimator;
         MultiLabelClfDataSet scoreDataSet = MLClfDataSetBuilder.getBuilder().numDataPoints(dataSet.getNumDataPoints())
-                .numFeatures(dataSet.getNumClasses()).numClasses(dataSet.getNumClasses()).dense(true)
+                .numFeatures(dataSet.getNumClasses()).numClasses(dataSet.getNumClasses())
                 .missingValue(false).build();
         for (int i=0;i<scoreDataSet.getNumDataPoints();i++){
             scoreDataSet.addLabels(i,dataSet.getMultiLabels()[i].getMatchedLabels());

@@ -6,25 +6,21 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.optimization.LBFGS;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * CBM optimizer for LR base learners
- * Created by chengli on 3/21/17.
+ * Created by chengli on 4/9/17.
  */
-public class LRCBMOptimizer extends AbstractCBMOptimizer {
+public class LRRecoverCBMOptimizer extends AbstractRecoverCBMOptimizer{
     private static final Logger logger = LogManager.getLogger();
     // regularization for multiClassClassifier
     private double priorVarianceMultiClass =1;
     // regularization for binary logisticRegression
     private double priorVarianceBinary =1;
 
-    private double initialStepSize=1;
-
-    public LRCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
+    public LRRecoverCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         super(cbm, dataSet);
     }
 
@@ -35,10 +31,6 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
 
     public void setPriorVarianceBinary(double priorVarianceBinary) {
         this.priorVarianceBinary = priorVarianceBinary;
-    }
-
-    public void setInitialStepSize(double initialStepSize) {
-        this.initialStepSize = initialStepSize;
     }
 
     @Override
@@ -57,8 +49,6 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
         ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.binaryClassifiers[component][label],
                 activeDataset, binaryLabels, activeGammas, priorVarianceBinary, false);
 
-        ((LBFGS)ridgeLogisticOptimizer.getOptimizer()).getLineSearcher().setInitialStepLength(initialStepSize);
-
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(binaryUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
         if (logger.isDebugEnabled()){
@@ -74,9 +64,6 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
         // parallel
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer((LogisticRegression)cbm.multiClassClassifier,
                 dataSet, gammas, priorVarianceMultiClass, true);
-
-        ((LBFGS)ridgeLogisticOptimizer.getOptimizer()).getLineSearcher().setInitialStepLength(initialStepSize);
-
         ridgeLogisticOptimizer.getOptimizer().getTerminator().setMaxIteration(multiclassUpdatesPerIter);
         ridgeLogisticOptimizer.optimize();
         if (logger.isDebugEnabled()){
@@ -87,14 +74,14 @@ public class LRCBMOptimizer extends AbstractCBMOptimizer {
     // todo deal with prior classifier
     @Override
     protected double binaryObj(int component, int classIndex) {
-        int[] binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(), classIndex);
+        int[] binaryLabels = DataSetUtil.toBinaryLabels(groundTruth.getMultiLabels(), classIndex);
         double[][] targetsDistribution = DataSetUtil.labelsToDistributions(binaryLabels, 2);
-        double[] weights = new double[dataSet.getNumDataPoints()];
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
+        double[] weights = new double[groundTruth.getNumDataPoints()];
+        for (int i=0;i<groundTruth.getNumDataPoints();i++){
             weights[i] = gammas[i][component];
         }
         LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) cbm.binaryClassifiers[component][classIndex],
-                dataSet, weights, targetsDistribution, priorVarianceBinary, false);
+                groundTruth, weights, targetsDistribution, priorVarianceBinary, false);
         return logisticLoss.getValue();
     }
 

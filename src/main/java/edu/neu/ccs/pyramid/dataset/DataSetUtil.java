@@ -622,6 +622,43 @@ public class DataSetUtil {
         return dataSet;
     }
 
+    public static MultiLabelClfDataSet concatenateByRow(List<MultiLabelClfDataSet> dataSets){
+        int numDataPoints = 0;
+        for (MultiLabelClfDataSet dataSet: dataSets){
+            numDataPoints += dataSet.getNumDataPoints();
+        }
+        int numFeatures = dataSets.get(0).getNumFeatures();
+        int numClasses = dataSets.get(0).getNumClasses();
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(numClasses)
+                .density(dataSets.get(0).density())
+                .missingValue(dataSets.get(0).hasMissingValue())
+                .build();
+
+        int dataIndex = 0;
+        for (MultiLabelClfDataSet ds: dataSets){
+            for (int i=0;i<ds.getNumDataPoints();i++){
+                Vector row = ds.getRow(i);
+                for (Vector.Element element: row.nonZeroes()){
+                    int j = element.index();
+                    double value = element.get();
+                    dataSet.setFeatureValue(dataIndex,j,value);
+                }
+                dataSet.setLabels(dataIndex,ds.getMultiLabels()[i]);
+                dataIndex+=1;
+            }
+        }
+
+
+        dataSet.setFeatureList(dataSets.get(0).getFeatureList());
+        dataSet.setLabelTranslator(dataSets.get(0).getLabelTranslator());
+        //id translator is not set
+
+        return dataSet;
+    }
+
     public static MultiLabelClfDataSet concatenateByColumn(MultiLabelClfDataSet dataSet1, MultiLabelClfDataSet dataSet2){
         int numDataPoints = dataSet1.getNumDataPoints();
         int numFeatures1 = dataSet1.getNumFeatures();
@@ -630,7 +667,7 @@ public class DataSetUtil {
         MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
                 .numDataPoints(numDataPoints).numFeatures(numFeatures)
                 .numClasses(dataSet1.getNumClasses())
-                .dense(dataSet1.isDense())
+                .density(dataSet1.density())
                 .missingValue(dataSet1.hasMissingValue())
                 .build();
 

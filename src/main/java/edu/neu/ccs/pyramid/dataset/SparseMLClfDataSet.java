@@ -60,7 +60,7 @@ public class SparseMLClfDataSet extends SparseDataSet implements MultiLabelClfDa
     public String getMetaInfo() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.getMetaInfo());
-        sb.append("type = ").append("sparse multi-label classification").append("\n");
+        sb.append("type = ").append("sparse random multi-label classification").append("\n");
         sb.append("number of classes = ").append(this.numClasses);
         return sb.toString();
     }
