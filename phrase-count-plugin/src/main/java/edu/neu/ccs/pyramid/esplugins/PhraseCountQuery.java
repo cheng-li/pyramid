@@ -18,8 +18,7 @@ package edu.neu.ccs.pyramid.esplugins;
  */
 
 import org.apache.lucene.index.*;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.spans.NearSpansOrdered;
 import org.apache.lucene.search.spans.NearSpansUnordered;
 import org.apache.lucene.search.spans.SpanCollector;
@@ -28,9 +27,6 @@ import org.apache.lucene.search.spans.Spans;
 import java.io.IOException;
 import java.util.*;
 
-//import org.apache.lucene.search.spans.CustomSpanQuery;
-//import org.apache.lucene.search.spans.Spans;
-
 
 /** Matches spans which are near one another.  One can specify <i>slop</i>, the
  * maximum number of intervening unmatched positions, as well as whether
@@ -38,7 +34,7 @@ import java.util.*;
  */
 public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
 
-    protected List<CustomSpanQuery> clauses;
+    protected List<CustomSpanTermQuery> clauses;
     protected int slop;
     protected boolean inOrder;
     protected boolean weightedCount;
@@ -56,9 +52,9 @@ public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
      * @param slop The slop value
      * @param inOrder true if order is important
      */
-    public PhraseCountQuery(CustomSpanQuery[] clausesIn, int slop, boolean inOrder, boolean weightedCount) {
+    public PhraseCountQuery(CustomSpanTermQuery[] clausesIn, int slop, boolean inOrder, boolean weightedCount) {
         this.clauses = new ArrayList<>(clausesIn.length);
-        for (CustomSpanQuery clause : clausesIn) {
+        for (CustomSpanTermQuery clause : clausesIn) {
             if (this.field == null) {                               // check field
                 this.field = clause.getField();
             }
@@ -90,7 +86,7 @@ public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
     public String toString(String field) {
         StringBuilder buffer = new StringBuilder();
         buffer.append("phraseCount([");
-        Iterator<CustomSpanQuery> i = clauses.iterator();
+        Iterator<CustomSpanTermQuery> i = clauses.iterator();
         while (i.hasNext()) {
             CustomSpanQuery clause = i.next();
             buffer.append(clause.toString(field));
@@ -155,7 +151,7 @@ public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
 
             // all NearSpans require at least two subSpans
             return (!inOrder) ? new NearSpansUnordered(slop, subSpans)
-                : new NearSpansOrdered(slop, subSpans);
+                    : new NearSpansOrdered(slop, subSpans);
         }
 
         @Override
@@ -168,11 +164,14 @@ public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
 
     @Override
     public Query rewrite(IndexReader reader) throws IOException {
+        if (clauses.size() < 2) {
+            return new TermCountQuery(clauses.get(0).getTerm());
+        }
         boolean actuallyRewritten = false;
-        List<CustomSpanQuery> rewrittenClauses = new ArrayList<>();
+        List<CustomSpanTermQuery> rewrittenClauses = new ArrayList<>();
         for (int i = 0 ; i < clauses.size(); i++) {
-            CustomSpanQuery c = clauses.get(i);
-            CustomSpanQuery query = (CustomSpanQuery) c.rewrite(reader);
+            CustomSpanTermQuery c = clauses.get(i);
+            CustomSpanTermQuery query = (CustomSpanTermQuery) c.rewrite(reader);
             actuallyRewritten |= query != c;
             rewrittenClauses.add(query);
         }
@@ -191,13 +190,13 @@ public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
     @Override
     public boolean equals(Object other) {
         return sameClassAs(other) &&
-            equalsTo(getClass().cast(other));
+                equalsTo(getClass().cast(other));
     }
 
     private boolean equalsTo(PhraseCountQuery other) {
         return inOrder == other.inOrder &&
-            slop == other.slop &&
-            clauses.equals(other.clauses);
+                slop == other.slop &&
+                clauses.equals(other.clauses);
     }
 
     @Override
@@ -259,12 +258,12 @@ public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
         @Override
         public boolean equals(Object other) {
             return sameClassAs(other) &&
-                equalsTo(getClass().cast(other));
+                    equalsTo(getClass().cast(other));
         }
 
         private boolean equalsTo(CustomSpanGapQuery other) {
             return width == other.width &&
-                field.equals(other.field);
+                    field.equals(other.field);
         }
 
         @Override
