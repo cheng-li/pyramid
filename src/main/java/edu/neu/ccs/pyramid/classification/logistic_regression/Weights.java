@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 import edu.neu.ccs.pyramid.dataset.SerializableVector;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorView;
 
@@ -22,6 +23,26 @@ public class Weights implements Serializable {
      * vector is not serializable
      */
     private transient Vector weightVector;
+
+    public Weights(int numClasses, int numFeatures, boolean random, boolean dense) {
+        if (random) {
+            this.numClasses = numClasses;
+            this.numFeatures = numFeatures;
+            this.weightVector = dense ? new DenseVector((numFeatures + 1)*numClasses) :
+                    new RandomAccessSparseVector((numFeatures + 1) * numClasses);
+            Random randomGenerator = new Random(0L);
+            for (int i=0; i<weightVector.size(); i++) {
+                double p = randomGenerator.nextDouble()-0.5;
+                weightVector.set(i,p);
+            }
+        } else {
+            this.numClasses = numClasses;
+            this.numFeatures = numFeatures;
+            this.weightVector = dense ? new DenseVector((numFeatures + 1)*numClasses) :
+                    new RandomAccessSparseVector((numFeatures + 1) * numClasses);
+        }
+
+    }
 
 
     public Weights(int numClasses, int numFeatures, boolean random) {
