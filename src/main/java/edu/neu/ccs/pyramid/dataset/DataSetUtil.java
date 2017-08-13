@@ -22,6 +22,32 @@ import java.util.stream.IntStream;
 public class DataSetUtil {
 
     /**
+     * get the l2 norm for all columns, return the number of features array.
+     * @param dataSet
+     * @return
+     */
+    public static double[] normsForColumns(DataSet dataSet) {
+        double[] norms = new double[dataSet.getNumFeatures()];
+        for (int j=0; j<norms.length; j++) {
+            Vector column = dataSet.getColumn(j);
+            norms[j] = column.norm(2);
+        }
+        return norms;
+    }
+
+    public static void normNormalize(ClfDataSet dataSet, double[] norms) {
+        // update data1
+        for (int i=0; i<dataSet.getNumDataPoints(); i++) {
+            Vector vector = dataSet.getRow(i);
+            for (Vector.Element element : vector.nonZeroes()) {
+                int featureIndex = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(i, featureIndex, value/norms[featureIndex]);
+            }
+        }
+    }
+
+    /**
      *
      * @param dataSet
      * @param numClasses for new dataset
