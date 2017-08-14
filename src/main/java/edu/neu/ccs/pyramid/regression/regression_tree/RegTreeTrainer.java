@@ -49,6 +49,7 @@ public class RegTreeTrainer {
         tree.root.setId(tree.numNodes);
         tree.numNodes += 1;
 
+
         //root gets all active data points
         double[] rootProbs = new double[dataSet.getNumDataPoints()];
         for (int dataPoint=0; dataPoint<dataSet.getNumDataPoints();dataPoint++){
@@ -59,7 +60,7 @@ public class RegTreeTrainer {
         updateNode(tree.root, regTreeConfig,dataSet,labels);
         tree.leaves.add(tree.root);
         tree.root.setLeaf(true);
-
+        tree.allNodes.add(tree.root);
 
         /**
          * grow the tree
@@ -91,6 +92,7 @@ public class RegTreeTrainer {
         tree.root.setValue(score);
         tree.root.setLeaf(true);
         tree.leaves.add(tree.root);
+        tree.allNodes.add(tree.root);
         return tree;
     }
 
@@ -176,6 +178,8 @@ public class RegTreeTrainer {
         rightChild.setLeaf(true);
         tree.leaves.add(leftChild);
         tree.leaves.add(rightChild);
+        tree.allNodes.add(leftChild);
+        tree.allNodes.add(rightChild);
     }
 
     /**

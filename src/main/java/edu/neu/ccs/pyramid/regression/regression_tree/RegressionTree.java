@@ -9,12 +9,28 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import org.dmg.pmml.DataType;
+import org.dmg.pmml.FieldName;
+import org.dmg.pmml.MathContext;
+import org.dmg.pmml.MiningFunction;
+import org.dmg.pmml.Predicate;
+import org.dmg.pmml.SimplePredicate;
+import org.dmg.pmml.True;
+import org.dmg.pmml.tree.TreeModel;
+import org.jpmml.converter.BinaryFeature;
+import org.jpmml.converter.ContinuousFeature;
+import org.jpmml.converter.Feature;
+import org.jpmml.converter.ModelUtil;
+import org.jpmml.converter.Schema;
+import org.jpmml.converter.ValueUtil;
+
+
 /**
  * Created by chengli on 8/6/14.
  */
 public class RegressionTree implements Regressor, Serializable {
 
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = 4L;
 
     /**
      * including intermediate nodes
@@ -28,11 +44,15 @@ public class RegressionTree implements Regressor, Serializable {
 
     protected List<Node> leaves;
 
+    // all nodes in the tree
+    protected List<Node> allNodes;
+
     private FeatureList featureList;
 
     protected RegressionTree() {
         this.numNodes = 0;
         this.leaves = new ArrayList<>();
+        this.allNodes = new ArrayList<>();
     }
 
     //todo use an array to save these values in boosting
@@ -361,5 +381,96 @@ public class RegressionTree implements Regressor, Serializable {
 
     public void setFeatureList(FeatureList featureList) {
         this.featureList = featureList;
+    }
+
+
+    //======================PMML===========================
+    // this part follows the design of jpmml package
+
+    public TreeModel encodeTreeModel(Schema schema){
+        org.dmg.pmml.tree.Node root = new org.dmg.pmml.tree.Node()
+                .setPredicate(new True());
+
+        encodeNode(root, 0, schema);
+
+        TreeModel treeModel = new TreeModel(MiningFunction.REGRESSION, ModelUtil.createMiningSchema(schema.getLabel()), root)
+                .setSplitCharacteristic(TreeModel.SplitCharacteristic.BINARY_SPLIT)
+                .setMissingValueStrategy(TreeModel.MissingValueStrategy.NONE)
+                .setMathContext(MathContext.FLOAT);
+
+        return treeModel;
+    }
+
+    private void encodeNode(org.dmg.pmml.tree.Node parent, int index, Schema schema){
+        parent.setId(String.valueOf(index + 1));
+
+        Node node = allNodes.get(index);
+
+        if(!node.isLeaf()){
+            int splitIndex = node.getFeatureIndex();
+
+            Feature feature = schema.getFeature(splitIndex);
+
+            org.dmg.pmml.tree.Node leftChild = new org.dmg.pmml.tree.Node()
+                    .setPredicate(encodePredicate(feature, node, true));
+
+            encodeNode(leftChild, node.getLeftChild().getFeatureIndex(), schema);
+
+            org.dmg.pmml.tree.Node rightChild = new org.dmg.pmml.tree.Node()
+                    .setPredicate(encodePredicate(feature, node, false));
+
+            encodeNode(rightChild, node.getRightChild().getFeatureIndex(), schema);
+
+            parent.addNodes(leftChild, rightChild);
+
+            boolean defaultLeft = false;
+
+            parent.setDefaultChild(defaultLeft ? leftChild.getId() : rightChild.getId());
+        } else
+
+        {
+            float value = (float)node.getValue();
+
+            parent.setScore(ValueUtil.formatValue(value));
+        }
+    }
+
+    static
+    private Predicate encodePredicate(Feature feature, Node node, boolean left){
+        FieldName name = feature.getName();
+        SimplePredicate.Operator operator;
+        String value;
+
+        if(feature instanceof BinaryFeature){
+            BinaryFeature binaryFeature = (BinaryFeature)feature;
+
+            operator = (left ? SimplePredicate.Operator.NOT_EQUAL : SimplePredicate.Operator.EQUAL);
+            value = binaryFeature.getValue();
+        } else
+
+        {
+            ContinuousFeature continuousFeature = feature.toContinuousFeature();
+
+            Number splitValue = node.getThreshold();
+
+            DataType dataType = continuousFeature.getDataType();
+            switch(dataType){
+                case INTEGER:
+                    splitValue = (int)(splitValue.floatValue() + 1f);
+                    break;
+                case FLOAT:
+                    break;
+                default:
+                    throw new IllegalArgumentException();
+            }
+
+            operator = (left ? SimplePredicate.Operator.LESS_OR_EQUAL : SimplePredicate.Operator.GREATER_THAN);
+            value = ValueUtil.formatValue(splitValue);
+        }
+
+        SimplePredicate simplePredicate = new SimplePredicate(name, operator)
+                .setValue(value);
+
+        return simplePredicate;
     }
 }
