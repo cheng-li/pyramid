@@ -486,6 +486,16 @@ public class App2 {
             List<String> hosts = savedApp1Config.getStrings("index.hosts");
             List<Integer> ports = savedApp1Config.getIntegers("index.ports");
 
+            //todo make it better
+            if (savedApp1Config.getString("index.clientType").equals("node")){
+                hosts = new ArrayList<>();
+                for (int port: ports){
+                    hosts.add("localhost");
+                }
+                //default setting
+                hosts.add("localhost");
+                ports.add(9200);
+            }
             try (Visualizer visualizer = new Visualizer(logger, hosts, ports)){
                 visualizer.produceHtml(analysisFolder);
                 logger.info("finish producing html files");
