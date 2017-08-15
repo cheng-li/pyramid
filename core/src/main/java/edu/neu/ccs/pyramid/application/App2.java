@@ -480,10 +480,18 @@ public class App2 {
 
         if (config.getBoolean("report.produceHTML")){
             logger.info("start producing html files");
-            Visualizer visualizer = new Visualizer(logger);
-            visualizer.produceHtml(analysisFolder);
-            visualizer.close();
-            logger.info("finish producing html files");
+
+            Config savedApp1Config = new Config(Paths.get(config.getString("input.folder"), "meta_data","saved_config_app1").toFile());
+
+            List<String> hosts = savedApp1Config.getStrings("index.hosts");
+            List<Integer> ports = savedApp1Config.getIntegers("index.ports");
+
+            try (Visualizer visualizer = new Visualizer(logger, hosts, ports)){
+                visualizer.produceHtml(analysisFolder);
+                logger.info("finish producing html files");
+            }
+
+
         }
 
         logger.info("reports generated");

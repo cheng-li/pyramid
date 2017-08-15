@@ -9,6 +9,7 @@ import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 /**
  * Created by shikhar on 6/28/17.
  */
-public class Visualizer {
+public class Visualizer implements AutoCloseable{
     private JsonParser jsonParser = null;
     private Gson gson = null;
     private JsonArray writeRulePositions = null;
@@ -31,15 +32,17 @@ public class Visualizer {
     private Logger logger;
     private RestClient esClient;
 
-    public Visualizer(Logger logger) {
+    public Visualizer(Logger logger, List<String> hosts, List<Integer> ports) {
         jsonParser = new JsonParser();
         gson = new GsonBuilder().serializeNulls().create();
         this.logger = logger;
 
-        // todo is this enough?
-        esClient = RestClient.builder(
-                new HttpHost("localhost", 9200, "http"),
-                new HttpHost("localhost", 9205, "http")).build();
+        HttpHost[] httpHosts = new HttpHost[hosts.size()];
+        for (int i=0;i< hosts.size();i++){
+            HttpHost host = new HttpHost(hosts.get(i), ports.get(i),"http");
+            httpHosts[i] = host;
+        }
+        esClient = RestClient.builder(httpHosts).build();
     }
 
     public void close(){
