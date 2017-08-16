@@ -1481,23 +1481,27 @@ public class ESIndex implements AutoCloseable{
             }
             ESIndex esIndex = new ESIndex();
             esIndex.indexName = indexName;
+
             esIndex.documentType = documentType;
             esIndex.clientType = clientType;
             esIndex.clusterName = clusterName;
             esIndex.bodyField = bodyField;
 
-
             if (clientType.equals("node")){
                 /**
                  * don't hold data
                  */
-            	Settings settings = Settings.builder()
+
+                Settings settings = Settings.builder()
                         .put("cluster.name", clusterName)
                         .put("node.data", false)
                         .build();
-                Node node = new Node(settings);
-                esIndex.node = node;
-                esIndex.client = node.client();
+
+                esIndex.client = new PreBuiltTransportClient(settings);
+                //TODO Check ?
+                ((TransportClient)esIndex.client)
+                        .addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress("127.0.0.1",
+                                9300)));
             } else {
                 Settings settings = Settings.builder()
                         .put("cluster.name", clusterName).build();
@@ -1505,7 +1509,7 @@ public class ESIndex implements AutoCloseable{
                 esIndex.client = new PreBuiltTransportClient(settings);
                 for (int i=0;i<this.hosts.size();i++){
                     ((TransportClient)esIndex.client)
-                            .addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(hosts.get(i),
+                            .addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(this.hosts.get(i),
                                     this.ports.get(i))));
                 }
             }

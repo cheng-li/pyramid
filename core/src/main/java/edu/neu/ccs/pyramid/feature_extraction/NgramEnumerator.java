@@ -2,9 +2,7 @@ package edu.neu.ccs.pyramid.feature_extraction;
 
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
-import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
-import edu.neu.ccs.pyramid.elasticsearch.SingleLabelIndex;
 import edu.neu.ccs.pyramid.feature.Ngram;
 
 import java.util.*;

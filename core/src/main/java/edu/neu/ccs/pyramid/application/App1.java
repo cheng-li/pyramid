@@ -7,7 +7,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.FeatureLoader;
-import edu.neu.ccs.pyramid.elasticsearch.MultiLabelIndex;
+import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
@@ -65,7 +65,7 @@ public class App1 {
         output.mkdirs();
 
         if (config.getBoolean("createTrainSet")){
-            try (MultiLabelIndex index = loadIndex(config, logger, "train")){
+            try (ESIndex index = loadIndex(config, logger, "train")){
                 createTrainSet(config, index, logger);
             }
 
@@ -73,7 +73,7 @@ public class App1 {
 
 
         if (config.getBoolean("createTestSet")){
-            try (MultiLabelIndex index = loadIndex(config, logger, "test")){
+            try (ESIndex index = loadIndex(config, logger, "test")){
                 createTestSet(config, index, logger);
             }
 
@@ -84,26 +84,18 @@ public class App1 {
         }
     }
 
-    static MultiLabelIndex loadIndex(Config config, Logger logger, String trainOrTest) throws Exception{
+    static ESIndex loadIndex(Config config, Logger logger, String trainOrTest) throws Exception{
 
 
 
-        MultiLabelIndex.Builder builder = new MultiLabelIndex.Builder()
+        ESIndex.Builder builder = new ESIndex.Builder()
                 .setIndexName(config.getString("index.indexName"))
                 .setClusterName(config.getString("index.clusterName"))
                 .setClientType(config.getString("index.clientType"))
 
                 .setDocumentType(config.getString("index.documentType"));
 
-        if (trainOrTest.endsWith("train")){
-            builder.setExtMultiLabelField(config.getString("train.label.field"));
-        }
 
-        if (trainOrTest.endsWith("test")){
-            File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
-            Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
-            builder.setExtMultiLabelField(savedConfig.getString("train.label.field"));
-        }
 
 
 
@@ -113,7 +105,7 @@ public class App1 {
             String[] ports = config.getString("index.ports").split(Pattern.quote(","));
             builder.addHostsAndPorts(hosts,ports);
         }
-        MultiLabelIndex index = builder.build();
+        ESIndex index = builder.build();
         logger.info("index loaded");
         logger.info("there are "+index.getNumDocs()+" documents in the index.");
         return index;
@@ -308,7 +300,7 @@ public class App1 {
     }
 
     //todo keep track of feature types(numerical /binary)
-    static MultiLabelClfDataSet loadData(Config config, MultiLabelIndex index,
+    static MultiLabelClfDataSet loadData(Config config, ESIndex index,
                                          FeatureList featureList,
                                          IdTranslator idTranslator, int totalDim,
                                          LabelTranslator labelTranslator,
@@ -324,18 +316,17 @@ public class App1 {
                 .numClasses(numClasses)
                 .density(Density.SPARSE_RANDOM)
                 .missingValue(savedConfig.getBoolean("train.feature.missingValue")).build();
-        for(int i=0;i<numDataPoints;i++){
-            String dataIndexId = idTranslator.toExtId(i);
-            List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
-            if (savedConfig.getBoolean("train.label.filter")){
-                String prefix = savedConfig.getString("train.label.filter.prefix");
-                extMultiLabel = extMultiLabel.stream().filter(extLabel -> extLabel.startsWith(prefix)).collect(Collectors.toList());
-            }
-            for (String extLabel: extMultiLabel){
-                int intLabel = labelTranslator.toIntLabel(extLabel);
-                dataSet.addLabel(i,intLabel);
+
+        for (int l=0;l<labelTranslator.getNumClasses();l++){
+            String label = labelTranslator.toExtLabel(l);
+            String labelField = config.getString("train.label.field");
+            List<String> ids = index.termFilter(labelField,label,docFilter, idTranslator.numData());
+            for (String id: ids){
+                int intId = idTranslator.toIntId(id);
+                dataSet.addLabel(intId, l);
             }
         }
+
 
         String matchScoreTypeString = savedConfig.getString("train.feature.ngram.matchScoreType");
 
@@ -366,7 +357,7 @@ public class App1 {
     }
 
 
-    static LabelTranslator loadTrainLabelTranslator(Config config, MultiLabelIndex index, String[] trainIndexIds,
+    static LabelTranslator loadTrainLabelTranslator(Config config, ESIndex index, String[] trainIndexIds,
                                                     Logger logger) throws Exception{
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("train.label.field"), trainIndexIds);
         if (config.getBoolean("train.label.filter")){
@@ -396,7 +387,7 @@ public class App1 {
         return labelTranslator;
     }
 
-    static LabelTranslator loadAugmentedLabelTranslator(Config config, MultiLabelIndex index, String[] testIndexIds,
+    static LabelTranslator loadAugmentedLabelTranslator(Config config, ESIndex index, String[] testIndexIds,
                                                         LabelTranslator trainLabelTranslator, Logger logger){
 
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
@@ -466,7 +457,7 @@ public class App1 {
 //        logger.info("time spent on generating distributions = "+stopWatch);
 //    }
     
-    static void generateMetaData(Config config, MultiLabelIndex index, Logger logger) throws Exception{
+    static void generateMetaData(Config config, ESIndex index, Logger logger) throws Exception{
         logger.info("generating meta data");
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         metaDataFolder.mkdirs();
@@ -536,7 +527,7 @@ public class App1 {
 
     }
 
-    static void createDataSet(Config config, MultiLabelIndex index, String[] indexIds, String datasetName,
+    static void createDataSet(Config config, ESIndex index, String[] indexIds, String datasetName,
                               String docFilter, Logger logger) throws Exception{
 //        String splitValueAll = splitListToString(splitValues);
 
@@ -564,7 +555,7 @@ public class App1 {
 
     }
 
-    static void createTrainSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
+    static void createTrainSet(Config config, ESIndex index, Logger logger) throws Exception{
         generateMetaData(config, index, logger);
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
 
@@ -572,7 +563,7 @@ public class App1 {
                 config.getString("train.splitQuery"), logger);
     }
 
-    static void createTestSet(Config config, MultiLabelIndex index, Logger logger) throws Exception{
+    static void createTestSet(Config config, ESIndex index, Logger logger) throws Exception{
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("test.splitQuery"));
         createDataSet(config, index, indexIds,config.getString("output.testFolder"),
                 config.getString("test.splitQuery"), logger);
@@ -633,31 +624,30 @@ public class App1 {
      *
      * @return into 2d arrary: num label * num data
      */
-    private static double[][] loadLabels(Config config, MultiLabelIndex index,
+    private static double[][] loadLabels(Config config, ESIndex index,
                                          IdTranslator idTranslator,
-                                         LabelTranslator labelTranslator){
+                                         LabelTranslator labelTranslator,
+                                         String docFilter) throws Exception{
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
 
         int numDataPoints = idTranslator.numData();
         int numClasses = labelTranslator.getNumClasses();
         double[][] labels = new double[numClasses][numDataPoints];
-        for(int i=0;i<numDataPoints;i++){
-            String dataIndexId = idTranslator.toExtId(i);
-            List<String> extMultiLabel = index.getExtMultiLabel(dataIndexId);
-            if (savedConfig.getBoolean("train.label.filter")){
-                String prefix = savedConfig.getString("train.label.filter.prefix");
-                extMultiLabel = extMultiLabel.stream().filter(extLabel -> extLabel.startsWith(prefix)).collect(Collectors.toList());
-            }
-            for (String extLabel: extMultiLabel){
-                int intLabel = labelTranslator.toIntLabel(extLabel);
-                labels[intLabel][i] = 1;
+        for (int l=0;l<labelTranslator.getNumClasses();l++){
+            String label = labelTranslator.toExtLabel(l);
+            String labelField = config.getString("train.label.field");
+            List<String> ids = index.termFilter(labelField,label,docFilter, idTranslator.numData());
+            for (String id: ids){
+                int intId = idTranslator.toIntId(id);
+                labels[l][intId] = 1;
             }
         }
+
         return labels;
     }
 
-    private static void ngramSelection(Config config, MultiLabelIndex index,
+    private static void ngramSelection(Config config, ESIndex index,
                                        String docFilter,
                                        Logger logger)throws Exception{
 
@@ -686,7 +676,7 @@ public class App1 {
                 throw new IllegalArgumentException("unknown ngramMatchScoreType");
         }
 
-        double[][] labels = loadLabels(config, index, idTranslator, labelTranslator);
+        double[][] labels = loadLabels(config, index, idTranslator, labelTranslator, docFilter);
         int numLabels = labels.length;
         int toKeep = config.getInt("train.feature.ngram.selectPerLabel");
         List<BoundedBlockPriorityQueue<Pair<Ngram, Double>>> queues = new ArrayList<>();

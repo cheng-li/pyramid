@@ -37,15 +37,7 @@ public class ESIndexTest {
 //        index.close();
 //    }
 
-    static void test4() throws Exception{
-        SingleLabelIndex index = new SingleLabelIndex.Builder().setClientType("node").setIndexName("cnn")
-                .build();
-        System.out.println(index.getLabel("0"));
-        System.out.println(index.getExtLabel("0"));
-        System.out.println(index.getStringField("0","split"));
 
-        index.close();
-    }
 
     static void test5() throws Exception{
         ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
