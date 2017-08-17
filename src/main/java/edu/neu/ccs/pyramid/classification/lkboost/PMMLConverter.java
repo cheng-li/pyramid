@@ -9,16 +9,18 @@ import org.dmg.pmml.*;
 import org.dmg.pmml.mining.MiningModel;
 import org.dmg.pmml.mining.Segmentation;
 import org.dmg.pmml.regression.RegressionModel;
+
 import org.dmg.pmml.tree.TreeModel;
 import org.jpmml.converter.*;
-import org.jpmml.converter.mining.MiningModelUtil;
+
 import org.jpmml.model.MetroJAXBUtil;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.util.ArrayList;
+
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 /**
  * convert lk boosting to PMML
@@ -152,4 +154,6 @@ public class PMMLConverter {
             e.printStackTrace();
         }
     }
+
+
 }
