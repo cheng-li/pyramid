@@ -12,13 +12,16 @@ import org.jpmml.converter.mining.MiningModelUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.dmg.pmml.DataType.DOUBLE;
+import static org.dmg.pmml.DataType.FLOAT;
+
 /**
  * convert gb to pmml
  * based on jpmml
  */
 public class PMMLConverter {
 
-    public Label encodeLabel(FieldName targetField, List<String> targetCategories, PMMLEncoder encoder){
+    public static Label encodeLabel(FieldName targetField, List<String> targetCategories, PMMLEncoder encoder){
         if(targetCategories != null){
             throw new IllegalArgumentException();
         }
@@ -28,7 +31,7 @@ public class PMMLConverter {
         return new ContinuousLabel(dataField);
     }
 
-    public MiningModel encodeMiningModel(List<RegressionTree> regTrees, float base_score, Schema schema){
+    public static MiningModel encodeMiningModel(List<RegressionTree> regTrees, float base_score, Schema schema){
         MiningModel miningModel = createMiningModel(regTrees, base_score, schema);
 
         return miningModel;
@@ -56,7 +59,7 @@ public class PMMLConverter {
         return miningModel;
     }
 
-    public PMML encodePMML(FieldName targetField, List<String> targetCategories, FeatureList featureList, List<RegressionTree> regTrees, float base_score){
+    public static PMML encodePMML(FieldName targetField, List<String> targetCategories, FeatureList featureList, List<RegressionTree> regTrees, float base_score){
         LSBoostEncoder encoder = new LSBoostEncoder();
 
         if(targetField == null){
@@ -67,6 +70,10 @@ public class PMMLConverter {
 
         //todo
         List<Feature> features = new ArrayList<>();
+        for (int i=0;i<featureList.size();i++){
+            Feature feature = new ContinuousFeature(encoder,new FieldName("feature_"+i),FLOAT);
+            features.add(feature);
+        }
 
 
         Schema schema = new Schema(label, features);

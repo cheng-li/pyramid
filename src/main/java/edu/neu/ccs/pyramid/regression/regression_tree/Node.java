@@ -165,7 +165,7 @@ public class Node implements Serializable {
         this.rightProb = rightProb;
     }
 
-    int getId() {
+    public int getId() {
         return id;
     }
 

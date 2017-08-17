@@ -402,6 +402,7 @@ public class RegressionTree implements Regressor, Serializable {
     }
 
     private void encodeNode(org.dmg.pmml.tree.Node parent, int index, Schema schema){
+        System.out.println("index="+index);
         parent.setId(String.valueOf(index + 1));
 
         Node node = allNodes.get(index);
@@ -414,12 +415,12 @@ public class RegressionTree implements Regressor, Serializable {
             org.dmg.pmml.tree.Node leftChild = new org.dmg.pmml.tree.Node()
                     .setPredicate(encodePredicate(feature, node, true));
 
-            encodeNode(leftChild, node.getLeftChild().getFeatureIndex(), schema);
+            encodeNode(leftChild, node.getLeftChild().getId(), schema);
 
             org.dmg.pmml.tree.Node rightChild = new org.dmg.pmml.tree.Node()
                     .setPredicate(encodePredicate(feature, node, false));
 
-            encodeNode(rightChild, node.getRightChild().getFeatureIndex(), schema);
+            encodeNode(rightChild, node.getRightChild().getId(), schema);
 
             parent.addNodes(leftChild, rightChild);
 
