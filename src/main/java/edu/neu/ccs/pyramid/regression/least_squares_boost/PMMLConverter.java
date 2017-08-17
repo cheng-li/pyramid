@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.regression.least_squares_boost;
 
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.regression.ConstantRegressor;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeTrainer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.dmg.pmml.*;
 import org.dmg.pmml.mining.MiningModel;
@@ -98,7 +99,11 @@ public class PMMLConverter {
                 .filter(a->a instanceof RegressionTree).map(a->(RegressionTree)a).collect(Collectors.toList());
 
         double constant = ((ConstantRegressor)lsBoost.getEnsemble(0).get(0)).getScore();
-        PMML pmml = PMMLConverter.encodePMML(null, null, featureList, regressionTrees, (float)constant);
+        RegressionTree constantTree = RegTreeTrainer.constantTree(constant);
+        List<RegressionTree> allTrees = new ArrayList<>();
+        allTrees.add(constantTree);
+        allTrees.addAll(regressionTrees);
+        PMML pmml = PMMLConverter.encodePMML(null, null, featureList, allTrees, (float)constant);
 
 
         try(OutputStream os = new FileOutputStream(pmmlFile)){
