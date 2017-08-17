@@ -103,7 +103,7 @@ public class PMMLConverter {
         List<RegressionTree> allTrees = new ArrayList<>();
         allTrees.add(constantTree);
         allTrees.addAll(regressionTrees);
-        PMML pmml = PMMLConverter.encodePMML(null, null, featureList, allTrees, (float)constant);
+        PMML pmml = PMMLConverter.encodePMML(null, null, featureList, allTrees, 0);
 
 
         try(OutputStream os = new FileOutputStream(pmmlFile)){
