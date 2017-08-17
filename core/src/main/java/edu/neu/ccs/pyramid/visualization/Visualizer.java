@@ -14,6 +14,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -296,7 +297,7 @@ public class Visualizer implements AutoCloseable{
         try {
             response = esClient.performRequest(
                     "GET",
-                    esIndex + "/" + Properties.DOCUMENT_TYPE + "/" + labelsMap.get("id").getAsString(),
+                    esIndex + "/" + Properties.DOCUMENT_TYPE + "/" + URLEncoder.encode(labelsMap.get("id").getAsString(),"UTF-8"),
                     Collections.emptyMap()
             );
             jsonResponse = EntityUtils.toString(response.getEntity());
