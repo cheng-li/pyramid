@@ -71,7 +71,9 @@ public class PMMLConverter {
         //todo
         List<Feature> features = new ArrayList<>();
         for (int i=0;i<featureList.size();i++){
-            Feature feature = new ContinuousFeature(encoder,new FieldName("feature_"+i),FLOAT);
+            FieldName fieldName = new FieldName("feature_"+i);
+            DataField dataField = encoder.createDataField(fieldName, OpType.CONTINUOUS, DataType.FLOAT);
+            Feature feature = new ContinuousFeature(encoder, dataField);
             features.add(feature);
         }
 
