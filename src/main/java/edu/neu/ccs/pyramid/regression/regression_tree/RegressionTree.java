@@ -402,7 +402,6 @@ public class RegressionTree implements Regressor, Serializable {
     }
 
     private void encodeNode(org.dmg.pmml.tree.Node parent, int index, Schema schema){
-        System.out.println("index="+index);
         parent.setId(String.valueOf(index + 1));
 
         Node node = allNodes.get(index);
