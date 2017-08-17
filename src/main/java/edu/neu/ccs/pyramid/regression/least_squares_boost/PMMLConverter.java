@@ -23,7 +23,7 @@ import static org.dmg.pmml.DataType.FLOAT;
 
 /**
  * convert gb to pmml
- * based on jpmml
+ * based on jpmml and jpmml-xgboost
  */
 public class PMMLConverter {
 
