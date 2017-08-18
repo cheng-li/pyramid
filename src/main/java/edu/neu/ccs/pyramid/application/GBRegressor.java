@@ -99,7 +99,7 @@ public class GBRegressor {
         Serialization.serialize(lsBoost, serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());
 
-        File pmmlModel = new File(output, "pmml.xml");
+        File pmmlModel = new File(output, "model.pmml");
         PMMLConverter.savePMML(lsBoost,pmmlModel);
         System.out.println("PMML model saved to "+pmmlModel.getAbsolutePath());
 

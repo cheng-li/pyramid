@@ -93,7 +93,7 @@ public class GBClassifier {
         Serialization.serialize(lkBoost, serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());
 
-        File pmmlModel = new File(output, "pmml.xml");
+        File pmmlModel = new File(output, "model.pmml");
         PMMLConverter.savePMML(lkBoost,pmmlModel);
         System.out.println("PMML model saved to "+pmmlModel.getAbsolutePath());
 
