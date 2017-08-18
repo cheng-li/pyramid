@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.RMSE;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoostOptimizer;
+import edu.neu.ccs.pyramid.regression.least_squares_boost.PMMLConverter;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.util.PrintUtil;
@@ -97,6 +98,11 @@ public class GBRegressor {
         File serializedModel =  new File(output,"model");
         Serialization.serialize(lsBoost, serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());
+
+        File pmmlModel = new File(output, "model.pmml");
+        PMMLConverter.savePMML(lsBoost,pmmlModel);
+        System.out.println("PMML model saved to "+pmmlModel.getAbsolutePath());
+
         File reportFile = new File(output, "train_predictions.txt");
         report(lsBoost, trainSet, reportFile);
         System.out.println("predictions on the training set are written to "+reportFile.getAbsolutePath());

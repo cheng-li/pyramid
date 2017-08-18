@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.application;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBOutputCalculator;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoost;
 import edu.neu.ccs.pyramid.classification.lkboost.LKBoostOptimizer;
+import edu.neu.ccs.pyramid.classification.lkboost.PMMLConverter;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
@@ -91,6 +92,11 @@ public class GBClassifier {
         File serializedModel =  new File(output,"model");
         Serialization.serialize(lkBoost, serializedModel);
         System.out.println("model saved to "+serializedModel.getAbsolutePath());
+
+        File pmmlModel = new File(output, "model.pmml");
+        PMMLConverter.savePMML(lkBoost,pmmlModel);
+        System.out.println("PMML model saved to "+pmmlModel.getAbsolutePath());
+
         File reportFile = new File(output, "train_predictions.txt");
         report(lkBoost, trainSet, reportFile);
         System.out.println("predictions on the training set are written to "+reportFile.getAbsolutePath());

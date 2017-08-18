@@ -7,7 +7,7 @@
     <groupId>edu.neu.ccs.pyramid</groupId>
     <artifactId>pyramid</artifactId>
     <packaging>jar</packaging>
-    <version>0.8.4</version>
+    <version>0.8.5</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -99,6 +99,45 @@
             <artifactId>kumo</artifactId>
             <version>1.8</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.jpmml</groupId>
+            <artifactId>jpmml-converter</artifactId>
+            <version>1.2.5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun.xml.fastinfoset</groupId>
+                    <artifactId>FastInfoset</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.glassfish.jaxb</groupId>
+                    <artifactId>txw2</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jvnet.staxex</groupId>
+                    <artifactId>stax-ex</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jpmml</groupId>
+            <artifactId>pmml-evaluator</artifactId>
+            <version>1.3.7</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jpmml</groupId>
+            <artifactId>pmml-evaluator-test</artifactId>
+            <version>1.3.7</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
