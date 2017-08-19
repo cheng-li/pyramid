@@ -3,7 +3,9 @@ package edu.neu.ccs.pyramid.elasticsearch;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -594,26 +596,26 @@ public class ESIndex implements AutoCloseable{
         }
         return set;
     }
-
-    /**
-     * naive implementation
-     * @param id
-     * @return
-     */
-    public int getDocLength(String id){
-        return getTermVector(id).keySet().size();
-    }
-
-
-    public Map<Integer,String> getTermVector(String id){
-        Map<Integer,String> termVector = null;
-        try {
-            termVector = this.termVectorCache.get(id);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-        return termVector;
-    }
+//
+//    /**
+//     * naive implementation
+//     * @param id
+//     * @return
+//     */
+//    public int getDocLength(String id){
+//        return getTermVector(id).keySet().size();
+//    }
+//
+//
+//    public Map<Integer,String> getTermVector(String id){
+//        Map<Integer,String> termVector = null;
+//        try {
+//            termVector = this.termVectorCache.get(id);
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        }
+//        return termVector;
+//    }
 
     public Map<Integer,String> getTermVectorFromIndex(String field, String id){
         Map<Integer,String> map = null;
@@ -707,7 +709,7 @@ public class ESIndex implements AutoCloseable{
     }
 
     public Object getField(String id, String field){
-        GetResponse response = client.prepareGet(this.indexName, this.documentType, id)
+        GetResponse response = client.prepareGet(this.indexName, this.documentType, encodeId(id))
                 .setStoredFields(field)
                 .execute()
                 .actionGet();
@@ -1415,6 +1417,15 @@ public class ESIndex implements AutoCloseable{
 //        }
 //        return list;
 //    }
+    private static String encodeId(String id) {
+        String enId= null;
+        try {
+            enId = URLEncoder.encode(id,"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return enId;
+    }
 
 
 

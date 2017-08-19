@@ -48,14 +48,14 @@ public class ESIndexTest {
         index.close();
     }
 
-    static void test6() throws Exception{
-        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
-                .build();
-        System.out.println(index.getTermVector("0"));
-
-
-        index.close();
-    }
+//    static void test6() throws Exception{
+//        ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
+//                .build();
+//        System.out.println(index.getTermVector("0"));
+//
+//
+//        index.close();
+//    }
 
     static void test7() throws Exception{
         ESIndex index = new ESIndex.Builder().setClientType("node").setIndexName("cnn")
