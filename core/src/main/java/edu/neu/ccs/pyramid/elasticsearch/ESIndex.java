@@ -708,25 +708,54 @@ public class ESIndex implements AutoCloseable{
         return getField(id, field) != null;
     }
 
+    // todo this method fetch the field from the source, it works even when store=false
+    // this is slow
+
     public Object getField(String id, String field){
         GetResponse response = client.prepareGet(this.indexName, this.documentType, id)
-                .setStoredFields(field)
+                .setFetchSource(field,null)
+//                .setStoredFields(field)
                 .execute()
                 .actionGet();
+        Object res = null;
         if (response==null){
             if (logger.isWarnEnabled()){
                 logger.warn("no response from document "+id+" when fetching field "+field+"!");
             }
             return null;
-        }else if (response.getField(field)==null){
-            if (logger.isWarnEnabled()) {
-                logger.warn("document " + id + " has no field " + field + "!");
+        }else {
+            res = response.getSourceAsMap().get(field);
+            if (res==null){
+                if (logger.isWarnEnabled()) {
+                    logger.warn("document " + id + " has no field " + field + "!");
+                }
             }
-            return null;
         }
 
-        return response.getField(field).getValue();
+        return res;
+//        return response.getField(field).getValue();
     }
+
+    //todo use this method when the field has store=true
+//    public Object getField(String id, String field){
+//        GetResponse response = client.prepareGet(this.indexName, this.documentType, id)
+//                .setStoredFields(field)
+//                .execute()
+//                .actionGet();
+//        if (response==null){
+//            if (logger.isWarnEnabled()){
+//                logger.warn("no response from document "+id+" when fetching field "+field+"!");
+//            }
+//            return null;
+//        }else if (response.getField(field)==null){
+//            if (logger.isWarnEnabled()) {
+//                logger.warn("document " + id + " has no field " + field + "!");
+//            }
+//            return null;
+//        }
+//
+//        return response.getField(field).getValue();
+//    }
 
     //todo handle missing values
     public List<Object> getListField(String id, String field){
