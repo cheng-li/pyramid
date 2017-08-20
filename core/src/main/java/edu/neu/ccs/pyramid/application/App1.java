@@ -331,6 +331,7 @@ public class App1 {
         String matchScoreTypeString = savedConfig.getString("train.feature.ngram.matchScoreType");
 
         FeatureLoader.MatchScoreType matchScoreType;
+        Map<String, float[]> fieldLength=null;
 
         switch (matchScoreTypeString){
             case "es_original":
@@ -344,12 +345,24 @@ public class App1 {
                 break;
             case "tfifl":
                 matchScoreType= FeatureLoader.MatchScoreType.TFIFL;
+                fieldLength = new HashMap<>();
+                for (String field: config.getStrings("train.feature.ngram.extractionFields")){
+
+                    float[] arr = new float[idTranslator.numData()];
+                    for (int i=0;i<idTranslator.numData();i++){
+                        String extId = idTranslator.toExtId(i);
+                        index.getFloatField(extId, field+"_field_length");
+                    }
+                    fieldLength.put(field, arr);
+                }
+
+
                 break;
             default:
                 throw new IllegalArgumentException("unknown ngramMatchScoreType");
         }
 
-        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator, matchScoreType, docFilter);
+        FeatureLoader.loadFeatures(index, dataSet, featureList, idTranslator, matchScoreType, docFilter, fieldLength);
 
         dataSet.setIdTranslator(idTranslator);
         dataSet.setLabelTranslator(labelTranslator);

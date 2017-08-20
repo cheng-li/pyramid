@@ -10,6 +10,7 @@ import org.elasticsearch.search.SearchHit;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 /**
@@ -19,7 +20,8 @@ public class FeatureLoader {
 
 
     public static void loadFeatures(ESIndex index, DataSet dataSet, FeatureList features,
-                                    IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter){
+                                    IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter,
+                                    Map<String, float[]> fieldLength){
 //        ProgressBar progressBar = new ProgressBar(features.size());
         IntStream.range(0,features.size())
         		.parallel()
@@ -28,7 +30,7 @@ public class FeatureLoader {
                     if (feature instanceof CategoricalFeature){
                         loadCategoricalFeature(index,dataSet,(CategoricalFeature)feature,idTranslator, docFilter);
                     } else if (feature instanceof Ngram){
-                        loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType, docFilter);
+                        loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType, docFilter, fieldLength);
                     } else if (feature instanceof CodeDescription) {
                         loadCodeDesFeature(index, dataSet, feature, idTranslator, docFilter);
                     } else {
@@ -68,7 +70,8 @@ public class FeatureLoader {
     }
 
     public static void loadNgramFeature(ESIndex index, DataSet dataSet, Ngram feature,
-                                        IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter){
+                                        IdTranslator idTranslator, MatchScoreType matchScoreType, String docFilter,
+                                        Map<String, float[]> fieldLength){
         switch (matchScoreType){
             case ES_ORIGINAL:
                 loadNgramFeatureOriginal(index, dataSet, feature, idTranslator, docFilter);
@@ -80,7 +83,7 @@ public class FeatureLoader {
                 loadNgramFeatureFrequency(index, dataSet, feature, idTranslator, docFilter);
                 break;
             case TFIFL:
-                loadNgramFeatureTFIFL(index, dataSet, feature, idTranslator, docFilter);
+                loadNgramFeatureTFIFL(index, dataSet, feature, idTranslator, docFilter, fieldLength);
         }
     }
 
@@ -115,18 +118,19 @@ public class FeatureLoader {
     // field storing the length of the body field should be called body_field_length
     // todo avoid repeated retrieval of the same field length
     private static void loadNgramFeatureTFIFL(ESIndex index, DataSet dataSet, Ngram feature,
-                                              IdTranslator idTranslator, String docFilter){
+                                              IdTranslator idTranslator, String docFilter,
+                                              Map<String, float[]> fieldLength){
         int featureIndex = feature.getIndex();
         SearchResponse response = index.spanNearFrequency(feature, docFilter, idTranslator.numData());
         SearchHit[] hits = response.getHits().getHits();
         String field = feature.getField();
-        String lengthField = field+"_"+"field_length";
         for (SearchHit hit: hits){
             String indexId = hit.getId();
             float score = hit.getScore();
-            float docLength = index.getFloatField(indexId,lengthField);
-            double s = score/docLength;
             int algorithmId = idTranslator.toIntId(indexId);
+            float docLength = fieldLength.get(field)[algorithmId];
+            double s = score/docLength;
+
             dataSet.setFeatureValue(algorithmId,featureIndex,s);
         }
     }
