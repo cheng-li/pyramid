@@ -351,7 +351,7 @@ public class App1 {
                     float[] arr = new float[idTranslator.numData()];
                     for (int i=0;i<idTranslator.numData();i++){
                         String extId = idTranslator.toExtId(i);
-                        index.getFloatField(extId, field+"_field_length");
+                        arr[i]=index.getFloatField(extId, field+"_field_length");
                     }
                     fieldLength.put(field, arr);
                 }
@@ -686,13 +686,13 @@ public class App1 {
                 break;
             case "tfifl":
                 matchScoreType= FeatureLoader.MatchScoreType.TFIFL;
-                
+
                 for (String field: config.getStrings("train.feature.ngram.extractionFields")){
 
                     float[] arr = new float[idTranslator.numData()];
                     for (int i=0;i<idTranslator.numData();i++){
                         String extId = idTranslator.toExtId(i);
-                        index.getFloatField(extId, field+"_field_length");
+                        arr[i]=index.getFloatField(extId, field+"_field_length");
                     }
                     fieldLength.put(field, arr);
                 }
