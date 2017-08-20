@@ -117,7 +117,8 @@ public class TRECFormat {
     public static ClfDataSet loadClfDataSet(File trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
         boolean legalArg = ((dataSetType == DataSetType.CLF_DENSE)
-                ||(dataSetType==DataSetType.CLF_SPARSE));
+                ||(dataSetType==DataSetType.CLF_SPARSE)
+                ||(dataSetType==DataSetType.CLF_SEQSPARSE));
         if (!legalArg){
             throw new IllegalArgumentException("illegal data set type");
         }
@@ -131,6 +132,9 @@ public class TRECFormat {
         }
         if (dataSetType==DataSetType.CLF_SPARSE){
             dataSet = new SparseClfDataSet(numDataPoints,numFeatures,missingValue,numClasses);
+        }
+        if (dataSetType==DataSetType.CLF_SEQSPARSE) {
+            dataSet = new SparseSeqClfDataSet(numDataPoints, numFeatures, missingValue, numClasses);
         }
         fillClfDataSet(dataSet,trecFile);
         if (loadSettings){
