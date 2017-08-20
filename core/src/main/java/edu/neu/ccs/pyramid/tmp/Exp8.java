@@ -24,7 +24,7 @@ public class Exp8 {
     public static void main(String[] args) throws Exception{
 
 
-        String dir  = "/Users/Rainicy/Dropbox/tmp/ohsumed-first-20000-docs/";
+        String dir  = "/Users/chengli/tmp/ohsumed-first-20000-docs/";
         Settings settings = Settings.builder()
                 .put("cluster.name", "elasticsearch")
                 //.put("client.transport.sniff", true)
@@ -49,7 +49,7 @@ public class Exp8 {
         Map<String, Set<String>> nameToCodesMap = IndexBuilder.collectCodes(dir);
 
         System.out.println(nameToCodesMap); //if (true) System.exit(0);
-        int id = 0;
+
         for (File file: list){
             if (!added.contains(file.getName())){
                 // System.out.println("id = "+id);
@@ -57,9 +57,10 @@ public class Exp8 {
                 // System.out.println(builder.string());
                 IndexResponse response = client.prepareIndex("ohsumed_20000", "document")
                         .setSource(builder)
+                        .setId(file.getAbsolutePath())
                         .execute()
                         .actionGet();
-                id += 1;
+
                 added.add(file.getName());
             } else {
                 System.out.println(file.getName()+" already indexed, skip");

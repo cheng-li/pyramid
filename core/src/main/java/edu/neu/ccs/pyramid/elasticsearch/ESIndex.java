@@ -709,7 +709,7 @@ public class ESIndex implements AutoCloseable{
     }
 
     public Object getField(String id, String field){
-        GetResponse response = client.prepareGet(this.indexName, this.documentType, encodeId(id))
+        GetResponse response = client.prepareGet(this.indexName, this.documentType, id)
                 .setStoredFields(field)
                 .execute()
                 .actionGet();
