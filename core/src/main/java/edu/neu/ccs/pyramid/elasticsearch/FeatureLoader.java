@@ -113,6 +113,7 @@ public class FeatureLoader {
 
     // term frequency inverse field length
     // field storing the length of the body field should be called body_field_length
+    // todo avoid repeated retrieval of the same field length
     private static void loadNgramFeatureTFIFL(ESIndex index, DataSet dataSet, Ngram feature,
                                               IdTranslator idTranslator, String docFilter){
         int featureIndex = feature.getIndex();
