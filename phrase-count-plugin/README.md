@@ -40,7 +40,7 @@ Explanation:
 - If needed to added to local repo, run `mvn install`
 ### install plugin
 - change to elasticsearch install directory
-- if already installed, run `./bin/elasticsearch-plugin remove phrase-count-query` to remove
+- if already installed, run `./bin/elasticsearch-plugin remove phrase-count-plugin` to remove
 - run `./bin/elasticsearch-plugin install file:/path/target-file-name.zip`. The "file:" part is only needed for local zip package.
 
 ## Compatibility
