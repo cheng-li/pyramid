@@ -13,6 +13,7 @@ import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import edu.neu.ccs.pyramid.util.Serialization;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * streaming ngram feature selection by regression stump
@@ -30,7 +31,8 @@ public class StumpSelector {
      */
     public static double[] scores(ESIndex index, double[][] labels,
                              Ngram feature,
-                             IdTranslator idTranslator, FeatureLoader.MatchScoreType matchScoreType, String docFilter){
+                             IdTranslator idTranslator, FeatureLoader.MatchScoreType matchScoreType, String docFilter,
+                                  Map<String, float[]> fieldLength){
         Ngram ngram = null;
         try {
             ngram = (Ngram) Serialization.deepCopy(feature);
@@ -42,7 +44,7 @@ public class StumpSelector {
         ngram.setIndex(0);
         
         DataSet dataSet = new SparseDataSet(labels[0].length,1, false, null);
-        FeatureLoader.loadNgramFeature(index, dataSet, ngram, idTranslator, matchScoreType, docFilter);
+        FeatureLoader.loadNgramFeature(index, dataSet, ngram, idTranslator, matchScoreType, docFilter, fieldLength);
         double[] scores = new double[labels.length];
         for (int l=0;l<scores.length;l++){
             double score = score(dataSet, labels[l]);

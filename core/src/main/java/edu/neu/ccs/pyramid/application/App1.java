@@ -672,6 +672,8 @@ public class App1 {
         IdTranslator idTranslator = loadIdTranslator(indexIds);
         LabelTranslator labelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
 
+        final Map<String, float[]> fieldLength=new HashMap<>();
+
         switch (matchScoreTypeString){
             case "es_original":
                 matchScoreType= FeatureLoader.MatchScoreType.ES_ORIGINAL;
@@ -684,6 +686,18 @@ public class App1 {
                 break;
             case "tfifl":
                 matchScoreType= FeatureLoader.MatchScoreType.TFIFL;
+                
+                for (String field: config.getStrings("train.feature.ngram.extractionFields")){
+
+                    float[] arr = new float[idTranslator.numData()];
+                    for (int i=0;i<idTranslator.numData();i++){
+                        String extId = idTranslator.toExtId(i);
+                        index.getFloatField(extId, field+"_field_length");
+                    }
+                    fieldLength.put(field, arr);
+                }
+
+
                 break;
             default:
                 throw new IllegalArgumentException("unknown ngramMatchScoreType");
@@ -704,7 +718,7 @@ public class App1 {
                 .filter(feature->feature instanceof Ngram).map(feature->(Ngram)feature)
                 .filter(ngram -> ngram.getN()>1 )
                 .forEach(ngram ->{
-                    double[] scores = StumpSelector.scores(index, labels, ngram, idTranslator, matchScoreType, docFilter);
+                    double[] scores = StumpSelector.scores(index, labels, ngram, idTranslator, matchScoreType, docFilter, fieldLength);
                     for (int l=0;l<numLabels;l++){
                         queues.get(l).add(new Pair<>(ngram, scores[l]));
                     }
