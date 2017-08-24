@@ -72,6 +72,10 @@ public class RidgeLogisticOptimizer{
         this.optimizer.optimize();
     }
 
+    public void iterate() {
+        ((LBFGS) this.optimizer).iterate();
+    }
+
     public Optimizer getOptimizer() {
         return optimizer;
     }
