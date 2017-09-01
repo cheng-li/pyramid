@@ -437,7 +437,7 @@ public class TRECFormat {
                 int label = Integer.parseInt(lineSplit[0]);
                 dataSet.setLabel(dataIndex, label);
                 double featureNorm = 0.0;
-                for (int i=0; i<lineSplit.length; i++) {
+                for (int i=1; i<lineSplit.length; i++) {
                     String pair = lineSplit[i];
                     if (pair.startsWith("#")) {
                         break;
