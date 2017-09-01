@@ -1,6 +1,10 @@
 package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.configuration.Config;
+import edu.neu.ccs.pyramid.dataset.row.RowClfDataSet;
+import edu.neu.ccs.pyramid.dataset.row.RowMultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.row.RowSparseSeqClfDataSet;
+import edu.neu.ccs.pyramid.dataset.row.RowSparseSeqMLClfDataSet;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -96,10 +100,38 @@ public class TRECFormat {
         return loadClfDataSet(new File(trecFile),dataSetType, loadSettings);
     }
 
+    /**
+     * load the Row Clf DATSET
+     * @param trecFile
+     * @param dataSetType
+     * @param loadSettings
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static RowClfDataSet loadRowClfDataSet(String trecFile, DataSetType dataSetType,
+                                                  boolean loadSettings) throws IOException, ClassNotFoundException {
+        return loadRowClfDataSet(new File(trecFile), dataSetType, loadSettings);
+    }
+
+    /**
+     * load the Row MultiLabel Clf Dataset.
+     * @param trecFile
+     * @param dataSetType
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static RowMultiLabelClfDataSet loadRowMultiLabelClfDataSet(String trecFile, DataSetType dataSetType)
+            throws IOException, ClassNotFoundException{
+        return loadRowMultiLabelClfDataSet(new File(trecFile), dataSetType);
+    }
+
     public static RegDataSet loadRegDataSet(String trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
         return loadRegDataSet(new File(trecFile),dataSetType, loadSettings);
     }
+
 
     public static MultiLabelClfDataSet loadMultiLabelClfDataSet(String trecFile, DataSetType dataSetType,
                                             boolean loadSettings) throws IOException, ClassNotFoundException {
@@ -112,6 +144,32 @@ public class TRECFormat {
 
     public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseSequential(String trecFile) throws IOException, ClassNotFoundException {
         return loadMultiLabelClfDataSetAutoSparseSequential(new File(trecFile));
+    }
+
+    /**
+     * load Row Clf Dataset. Only support CLF_SEQ SPARSE ONLY.
+     * @param trecFile
+     * @param dataSetType
+     * @param loadSettings
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static RowClfDataSet loadRowClfDataSet(File trecFile, DataSetType dataSetType,
+                                                  boolean loadSettings) throws IOException, ClassNotFoundException {
+        boolean legalArg = ((dataSetType == DataSetType.CLF_SEQSPARSE));
+        if (!legalArg) {
+            throw new IllegalArgumentException("illegal data set type: " + dataSetType);
+        }
+        int numDataPoints = parseNumDataPoints(trecFile);
+        int numFeatures = parseNumFeaturess(trecFile);
+        int numClasses = parseNumClasses(trecFile);
+        RowClfDataSet dataSet = null;
+        if (dataSetType == DataSetType.CLF_SEQSPARSE) {
+            dataSet = new RowSparseSeqClfDataSet(numDataPoints, numFeatures, numClasses);
+        }
+        fillRowClfDataSet(dataSet, trecFile);
+        return dataSet;
     }
 
     public static ClfDataSet loadClfDataSet(File trecFile, DataSetType dataSetType,
@@ -177,6 +235,30 @@ public class TRECFormat {
         return dataSet;
     }
 
+    /**
+     * load the rowData, only support Sequential Sparse for now.
+     * @param trecFile
+     * @param dataSetType
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static RowMultiLabelClfDataSet loadRowMultiLabelClfDataSet(File trecFile, DataSetType dataSetType)
+            throws IOException, ClassNotFoundException {
+        boolean legalArg = ((dataSetType == DataSetType.ML_CLF_SEQ_SPARSE));
+        if (!legalArg) {
+            throw new IllegalArgumentException("illegal data set type");
+        }
+        int numDataPoints = parseNumDataPoints(trecFile);
+        int numFeatures = parseNumFeaturess(trecFile);
+        int numClasses = parseNumClasses(trecFile);
+        RowMultiLabelClfDataSet dataSet = null;
+        if (dataSetType == DataSetType.CLF_SEQSPARSE) {
+            dataSet = new RowSparseSeqMLClfDataSet(numDataPoints, numFeatures, numClasses);
+        }
+        fillRowMultiLabelClfDataSet(dataSet, trecFile);
+        return dataSet;
+    }
 
     public static MultiLabelClfDataSet loadMultiLabelClfDataSetAutoSparseRandom(File trecFile) throws IOException, ClassNotFoundException {
         boolean dense = isDense(trecFile);
@@ -339,6 +421,39 @@ public class TRECFormat {
 
     }
 
+    /**
+     *
+     * @param dataSet
+     * @param trecFile
+     * @throws IOException
+     */
+    private static void fillRowClfDataSet(RowClfDataSet dataSet, File trecFile) throws IOException {
+        File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
+        try (BufferedReader br = new BufferedReader(new FileReader(matrixFile))) {
+            String line = null;
+            int dataIndex = 0;
+            while ((line=br.readLine()) != null) {
+                String[] lineSplit = line.split("\\s+");
+                int label = Integer.parseInt(lineSplit[0]);
+                dataSet.setLabel(dataIndex, label);
+                double featureNorm = 0.0;
+                for (int i=0; i<lineSplit.length; i++) {
+                    String pair = lineSplit[i];
+                    if (pair.startsWith("#")) {
+                        break;
+                    }
+                    String[] pairSplit = pair.split(":");
+                    int featureIndex = Integer.parseInt(pairSplit[0]);
+                    double featureValue = Double.parseDouble(pairSplit[1]);
+                    dataSet.setFeatureValue(dataIndex, featureIndex, featureValue);
+                    featureNorm += featureValue*featureValue;
+                }
+                dataSet.setNorm(dataIndex, featureNorm);
+                dataIndex += 1;
+            }
+        }
+    }
+
     private static void fillClfDataSet(ClfDataSet dataSet, File trecFile) throws IOException {
         File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
         try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
@@ -365,6 +480,55 @@ public class TRECFormat {
         }
     }
 
+    /**
+     * load the row only multi-label dataset.
+     * @param dataSet
+     * @param trecFile
+     * @throws IOException
+     */
+    private static void fillRowMultiLabelClfDataSet(RowMultiLabelClfDataSet dataSet, File trecFile) throws IOException {
+        File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
+        try (BufferedReader br = new BufferedReader(new FileReader(matrixFile))) {
+            String line = null;
+            int dataIndex = 0;
+            while ((line=br.readLine()) != null) {
+                String[] lineSplit = line.split("\\s+");
+                if (lineSplit.length >= 1) {
+                    String multiLabelString = null;
+                    try {
+                        multiLabelString = lineSplit[0];
+                    } catch (Exception e) {
+                        System.out.println("load data error happens");
+                        System.out.println("line number: " + dataIndex);
+                        System.out.println("line: " + line);
+                    }
+                    String[] multiLabelSplit = multiLabelString.split(Pattern.quote(","));
+                    for (String label : multiLabelSplit) {
+                        if (label.equals("")) {
+                            continue;
+                        }
+                        dataSet.addLabel(dataIndex, Integer.parseInt(label));
+                    }
+                }
+
+                double featureNorm = 0.0;
+                for (int i=1; i<lineSplit.length; i++) {
+                    String pair = lineSplit[i];
+                    if (pair.startsWith("#")) {
+                        break;
+                    }
+                    String[] pairSplit = pair.split(":");
+                    int featureIndex = Integer.parseInt(pairSplit[0]);
+                    double featureValue = Double.parseDouble(pairSplit[1]);
+                    featureNorm += Math.pow(featureValue, 2.0);
+                    dataSet.setFeatureValue(dataIndex, featureIndex, featureValue);
+                }
+                dataSet.setNorm(dataIndex, featureNorm);
+
+                dataIndex += 1;
+            }
+        }
+    }
     private static void fillMultiLabelClfDataSet(MultiLabelClfDataSet dataSet, File trecFile) throws IOException {
         File matrixFile = new File(trecFile, TREC_MATRIX_FILE_NAME);
         try (BufferedReader br = new BufferedReader(new FileReader(matrixFile));
