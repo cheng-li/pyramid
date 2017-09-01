@@ -38,3 +38,4 @@ nbactions.xml
 ## python
 *.pyc
 local.properties
+core/src/main/java/edu/neu/ccs/pyramid/tmp
