@@ -226,8 +226,6 @@ public class App2 {
                     }
                 }
                 File serializedModel =  new File(output,modelName);
-                //todo pick best models
-
                 boosting.serialize(serializedModel);
             }
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
