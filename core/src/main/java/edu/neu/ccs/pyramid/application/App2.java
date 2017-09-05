@@ -351,7 +351,7 @@ public class App2 {
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
-        mlMeasures.getMacroAverage().setLabelTranslator(boosting.getLabelTranslator());
+        mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
 
         logger.info("performance on dataset "+dataName);
         logger.info(mlMeasures.toString());
