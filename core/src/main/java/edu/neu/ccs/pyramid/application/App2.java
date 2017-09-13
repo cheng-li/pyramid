@@ -25,10 +25,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.mahout.math.Vector;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -551,7 +548,8 @@ public class App2 {
         return DataSetUtil.sampleData(allData, keep);
     }
 
-    private static class CheckPoint{
+    private static class CheckPoint implements Serializable{
+        private static final long serialVersionUID = 1L;
         private IMLGradientBoosting boosting;
         private List<EarlyStopper> earlyStoppers;
         private List<Terminator> terminators;
