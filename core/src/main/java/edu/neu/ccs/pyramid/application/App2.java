@@ -146,49 +146,64 @@ public class App2 {
         int numClasses = allTrainData.getNumClasses();
         logger.info("number of class = "+numClasses);
 
-
         IMLGradientBoosting boosting;
+        List<EarlyStopper> earlyStoppers;
+        List<Terminator> terminators;
+        boolean[] shouldStop;
+        int numLabelsLeftToTrain;
+        int startIter;
+
+        boolean earlyStop = config.getBoolean("train.earlyStop");
+        CheckPoint checkPoint;
+
         if (config.getBoolean("train.warmStart")){
-            boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+            checkPoint = (CheckPoint) Serialization.deserialize(new File(output, "checkpoint"));
+            boosting = checkPoint.boosting;
+            earlyStoppers = checkPoint.earlyStoppers;
+            terminators = checkPoint.terminators;
+            shouldStop = checkPoint.shouldStop;
+            numLabelsLeftToTrain = checkPoint.numLabelsLeftToTrain;
+            startIter = checkPoint.lastIter+1;
         } else {
             boosting  = new IMLGradientBoosting(numClasses);
+            earlyStoppers = new ArrayList<>();
+            terminators = new ArrayList<>();
+            if (earlyStop){
+                for (int l=0;l<numClasses;l++){
+                    EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE, config.getInt("train.earlyStop.patience"));
+                    earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
+                    earlyStoppers.add(earlyStopper);
+                }
+
+                for (int l=0;l<numClasses;l++){
+                    Terminator terminator = new Terminator();
+                    terminator.setMaxStableIterations(config.getInt("train.earlyStop.patience"))
+                            .setMinIterations(config.getInt("train.earlyStop.minIterations")/config.getInt("train.showProgress.interval"))
+                            .setAbsoluteEpsilon(config.getDouble("train.earlyStop.absoluteChange"))
+                            .setRelativeEpsilon(config.getDouble("train.earlyStop.relativeChange"))
+                            .setOperation(Terminator.Operation.OR);
+                    terminators.add(terminator);
+                }
+            }
+            shouldStop = new boolean[allTrainData.getNumClasses()];
+            numLabelsLeftToTrain = numClasses;
+            checkPoint = new CheckPoint();
+            checkPoint.boosting = boosting;
+            checkPoint.earlyStoppers = earlyStoppers;
+            checkPoint.terminators = terminators;
+            checkPoint.shouldStop = shouldStop;
+            // this is not a pointer, has to be updated
+            checkPoint.numLabelsLeftToTrain = numLabelsLeftToTrain;
+            checkPoint.lastIter = 0;
+            startIter = 1;
         }
         List<MultiLabel> allAssignments = DataSetUtil.gatherMultiLabels(allTrainData);
         boosting.setAssignments(allAssignments);
 
         logger.info("During training, the performance is reported using Hamming loss optimal predictor. The performance is computed approximately with "+config.getInt("train.showProgress.sampleSize")+" instances.");
 
-
-
-        boolean earlyStop = config.getBoolean("train.earlyStop");
-
-        List<EarlyStopper> earlyStoppers = new ArrayList<>();
-        List<Terminator> terminators = new ArrayList<>();
-        boolean[] shouldStop = new boolean[allTrainData.getNumClasses()];
-
-        if (earlyStop){
-            for (int l=0;l<numClasses;l++){
-                EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE, config.getInt("train.earlyStop.patience"));
-                earlyStopper.setMinimumIterations(config.getInt("train.earlyStop.minIterations"));
-                earlyStoppers.add(earlyStopper);
-            }
-
-            for (int l=0;l<numClasses;l++){
-                Terminator terminator = new Terminator();
-                terminator.setMaxStableIterations(config.getInt("train.earlyStop.patience"))
-                        .setMinIterations(config.getInt("train.earlyStop.minIterations")/config.getInt("train.showProgress.interval"))
-                        .setAbsoluteEpsilon(config.getDouble("train.earlyStop.absoluteChange"))
-                        .setRelativeEpsilon(config.getDouble("train.earlyStop.relativeChange"))
-                        .setOperation(Terminator.Operation.OR);
-                terminators.add(terminator);
-            }
-        }
-
-
-        int numLabelsLeftToTrain = numClasses;
-
         int progressInterval = config.getInt("train.showProgress.interval");
-        for (int i=1;i<=numIterations;i++){
+        for (int i=startIter;i<=numIterations;i++){
             logger.info("iteration "+i);
             MultiLabelClfDataSet trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
 
@@ -203,6 +218,7 @@ public class App2 {
 
             IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting, shouldStop);
             trainer.iterateWithoutStagingScores();
+            checkPoint.lastIter+=1;
             if (earlyStop && (i%progressInterval==0 || i==numIterations)){
                 for (int l=0;l<numClasses;l++){
                     EarlyStopper earlyStopper = earlyStoppers.get(l);
@@ -221,13 +237,17 @@ public class App2 {
 
                             shouldStop[l]=true;
                             numLabelsLeftToTrain -= 1;
+                            checkPoint.numLabelsLeftToTrain = numLabelsLeftToTrain;
                             logger.info("the number of labels left to be trained on = "+numLabelsLeftToTrain);
                         }
                     }
                 }
-                File serializedModel =  new File(output,modelName);
-                boosting.serialize(serializedModel);
+//                File serializedModel =  new File(output,modelName);
+//                boosting.serialize(serializedModel);
             }
+
+            Serialization.serialize(checkPoint, new File(output,"checkpoint"));
+
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
                 logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
                 logger.info(new MLMeasures(boosting,trainSetForEval).toString());
@@ -243,7 +263,6 @@ public class App2 {
         }
         logger.info("training done");
         File serializedModel =  new File(output,modelName);
-        //todo pick best models
 
         boosting.serialize(serializedModel);
         logger.info(stopWatch.toString());
@@ -280,7 +299,6 @@ public class App2 {
 
             logger.info("finish writing top features");
         }
-
 
     }
 
@@ -531,5 +549,14 @@ public class App2 {
         Collections.shuffle(all);
         List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
         return DataSetUtil.sampleData(allData, keep);
+    }
+
+    private static class CheckPoint{
+        private IMLGradientBoosting boosting;
+        private List<EarlyStopper> earlyStoppers;
+        private List<Terminator> terminators;
+        private boolean[] shouldStop;
+        private int numLabelsLeftToTrain;
+        private int lastIter;
     }
 }
