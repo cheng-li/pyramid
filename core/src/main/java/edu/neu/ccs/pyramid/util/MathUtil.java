@@ -162,6 +162,15 @@ public class MathUtil {
         return sum;
     }
 
+
+    public static double arraySum(int[] arr){
+        double sum = 0;
+        for(double num:arr){
+            sum += num;
+        }
+        return sum;
+    }
+
     public static float arraySum(float[] arr){
         float sum = 0;
         for(float num:arr){
