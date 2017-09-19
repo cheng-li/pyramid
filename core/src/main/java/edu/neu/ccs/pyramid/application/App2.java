@@ -346,6 +346,7 @@ public class App2 {
             boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         } else {
             boosting = ((CheckPoint) Serialization.deserialize(new File(output, "checkpoint"))).boosting;
+            Serialization.serialize(boosting, new File(output,modelName));
         }
 
         String predictTarget = config.getString("predict.target");
