@@ -302,14 +302,8 @@ public class App2 {
         String output = config.getString("output.folder");
         String modelName = "model_app3";
         double beta = config.getDouble("tune.FMeasure.beta");
-        //todo
-        IMLGradientBoosting boosting;
-        if (new File(output,modelName).exists()){
-            boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        } else {
-            boosting = ((CheckPoint) Serialization.deserialize(new File(output, "checkpoint"))).boosting;
-        }
 
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));;
         String tuneBy = config.getString("tune.data");
         String dataName;
         switch (tuneBy){
@@ -340,14 +334,7 @@ public class App2 {
         analysisFolder.mkdirs();
         FileUtils.cleanDirectory(analysisFolder);
 
-        //todo remove this hack
-        IMLGradientBoosting boosting;
-        if (new File(output,modelName).exists()){
-            boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        } else {
-            boosting = ((CheckPoint) Serialization.deserialize(new File(output, "checkpoint"))).boosting;
-            Serialization.serialize(boosting, new File(output,modelName));
-        }
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));;
 
         String predictTarget = config.getString("predict.target");
 
