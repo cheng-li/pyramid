@@ -239,11 +239,12 @@ public class App2 {
                         }
                     }
                 }
-//                File serializedModel =  new File(output,modelName);
-//                boosting.serialize(serializedModel);
+
             }
 
             Serialization.serialize(checkPoint, new File(output,"checkpoint"));
+            File serializedModel =  new File(output,modelName);
+            boosting.serialize(serializedModel);
 
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
                 logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
@@ -259,9 +260,6 @@ public class App2 {
             }
         }
         logger.info("training done");
-        File serializedModel =  new File(output,modelName);
-
-        boosting.serialize(serializedModel);
         logger.info(stopWatch.toString());
 
         if (earlyStop){
@@ -335,7 +333,14 @@ public class App2 {
         analysisFolder.mkdirs();
         FileUtils.cleanDirectory(analysisFolder);
 
-        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        //todo remove this hack
+        IMLGradientBoosting boosting;
+        if (new File(output,modelName).exists()){
+            boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        } else {
+            boosting = ((CheckPoint) Serialization.deserialize(new File(output, "checkpoint"))).boosting;
+        }
+
         String predictTarget = config.getString("predict.target");
 
         PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = null;
