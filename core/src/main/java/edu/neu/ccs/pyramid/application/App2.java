@@ -302,7 +302,14 @@ public class App2 {
         String output = config.getString("output.folder");
         String modelName = "model_app3";
         double beta = config.getDouble("tune.FMeasure.beta");
-        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        //todo
+        IMLGradientBoosting boosting;
+        if (new File(output,modelName).exists()){
+            boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        } else {
+            boosting = ((CheckPoint) Serialization.deserialize(new File(output, "checkpoint"))).boosting;
+        }
+
         String tuneBy = config.getString("tune.data");
         String dataName;
         switch (tuneBy){
