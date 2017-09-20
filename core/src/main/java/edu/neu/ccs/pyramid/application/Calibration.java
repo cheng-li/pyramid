@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.util.Serialization;
+import org.apache.commons.io.FileUtils;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
@@ -146,6 +147,7 @@ public class Calibration {
 
         double intervalSize = 1.0/numIntervals;
         DecimalFormat decimalFormat = new DecimalFormat("#0.00");
+        System.out.println("=========calibrated probabilities==============");
         System.out.println("interval"+"\t"+"total"+"\t"+"correct"+"\t\t"+"incorrect"+"\t"+"accuracy"+"\t"+"average confidence");
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
@@ -161,15 +163,20 @@ public class Calibration {
         dump(0.7,0.8, dataSet, config, results);
         dump(0.8,0.9, dataSet, config, results);
         dump(0.9,1, dataSet, config, results);
-        
+
     }
 
-    private static void dump(double left, double right, MultiLabelClfDataSet dataSet, Config config, List<Result> results){
+    private static void dump(double left, double right, MultiLabelClfDataSet dataSet, Config config, List<Result> results) throws Exception{
         File data = new File(config.getString("input.data")+"_calibration_"+left+"-"+right);
         List<Integer>ids = results.stream().filter(res->res.probability>=left&&res.probability<=right).map(res->res.intId).collect(Collectors.toList());
-        MultiLabelClfDataSet subset = DataSetUtil.sampleData(dataSet,ids);
-        TRECFormat.save(subset, data);
-        System.out.println("saved data with calibrated probabilities between "+left+" and "+right+" to "+data.getAbsolutePath());
+        if (ids.size()>0){
+            MultiLabelClfDataSet subset = DataSetUtil.sampleData(dataSet,ids);
+            TRECFormat.save(subset, data);
+            //todo this is a hack
+            FileUtils.copyFile(new File(config.getString("input.data"),"data_config.json"), new File(data, "data_config.json"));
+            System.out.println("saved data with calibrated probabilities between "+left+" and "+right+" to "+data.getAbsolutePath());
+        }
+
     }
 
     static class Result{
