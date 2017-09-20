@@ -1,10 +1,7 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.SafeDivide;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
@@ -36,7 +33,7 @@ public class Calibration {
         File modelFolder = (new File(config.getString("input.model"))).getParentFile();
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.data"), DataSetType.ML_CLF_SPARSE,
                 true);
-        int numIntervals = config.getInt("numIntervals");
+        int numIntervals = 10;
         String predictTarget = config.getString("predict.Target");
         PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = null;
 
@@ -111,7 +108,7 @@ public class Calibration {
 
         IMLGBScaling scaling = new IMLGBScaling(boosting, dataSet);
 
-        int numIntervals = config.getInt("numIntervals");
+        int numIntervals = 10;
         String predictTarget = config.getString("predict.Target");
         PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = null;
 
@@ -143,6 +140,7 @@ public class Calibration {
                     double probability = scaling.calibratedProb(dataSet.getRow(i),multiLabel);
                     result.probability = probability;
                     result.correctness = multiLabel.equals(dataSet.getMultiLabels()[i]);
+                    result.intId =i;
                     return result;
                 }).collect(Collectors.toList());
 
@@ -159,10 +157,23 @@ public class Calibration {
             double accuracy = SafeDivide.divide(numPos,matched.size(), 0);
             System.out.println("["+decimalFormat.format(left)+", "+decimalFormat.format(right)+"]"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb));
         }
+
+        dump(0.7,0.8, dataSet, config, results);
+        dump(0.8,0.9, dataSet, config, results);
+        dump(0.9,1, dataSet, config, results);
+        
+    }
+
+    private static void dump(double left, double right, MultiLabelClfDataSet dataSet, Config config, List<Result> results){
+        File data = new File(config.getString("input.data")+"_calibration_"+left+"-"+right);
+        List<Integer>ids = results.stream().filter(res->res.probability>=left&&res.probability<=right).map(res->res.intId).collect(Collectors.toList());
+        MultiLabelClfDataSet subset = DataSetUtil.sampleData(dataSet,ids);
+        TRECFormat.save(subset, data);
+        System.out.println("saved data with calibrated probabilities between "+left+" and "+right+" to "+data.getAbsolutePath());
     }
 
     static class Result{
-
+        int intId;
         double probability;
         boolean correctness;
     }
