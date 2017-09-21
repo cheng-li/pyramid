@@ -67,7 +67,7 @@ _If you are a Java developer who prefer working with the source code or want to 
 
 Pyramid uses [Maven](https://maven.apache.org/) for its build system.
 
-To compile and package the project from the source code, simply run the `mvn clean package -DskipTests` command in the cloned directory. The compressed package will be created under the target/releases directory.
+To compile and package the project from the source code, simply run the `mvn clean package -DskipTests` command in the cloned directory. The compressed package will be created under the core/target/releases directory.
 
 ## Feedback
 We welcome your feedback on the package. To ask questions, request new features or report bugs, please contact Cheng Li  via chengli.email@gmail.com.
