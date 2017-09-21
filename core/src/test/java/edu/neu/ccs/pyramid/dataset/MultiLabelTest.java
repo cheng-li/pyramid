@@ -68,6 +68,8 @@ public class MultiLabelTest {
         MultiLabel multiLabel1 = new MultiLabel().addLabel(0).addLabel(2).addLabel(1);
         MultiLabel multiLabel2 = new MultiLabel().addLabel(0).addLabel(1).addLabel(2);
         System.out.println(multiLabel1.isSubsetOf(multiLabel2));
+        multiLabel1.removeAllLabels();
+        System.out.println(multiLabel1);
     }
 
 }

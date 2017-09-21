@@ -63,6 +63,12 @@ public class MultiLabel implements Serializable{
         this.labels.clear(k);
     }
 
+    public void removeAllLabels(){
+        for (int l: getMatchedLabels()){
+            removeLabel(l);
+        }
+    }
+
     public void flipLabel(int k){
         this.labels.flip(k);
     }
