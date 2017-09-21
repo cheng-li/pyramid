@@ -253,7 +253,7 @@ public class TRECFormat {
         int numFeatures = parseNumFeaturess(trecFile);
         int numClasses = parseNumClasses(trecFile);
         RowMultiLabelClfDataSet dataSet = null;
-        if (dataSetType == DataSetType.CLF_SEQSPARSE) {
+        if (dataSetType == DataSetType.ML_CLF_SEQ_SPARSE) {
             dataSet = new RowSparseSeqMLClfDataSet(numDataPoints, numFeatures, numClasses);
         }
         fillRowMultiLabelClfDataSet(dataSet, trecFile);
