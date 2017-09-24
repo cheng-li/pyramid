@@ -12,7 +12,7 @@ public class IMLGBIsotonicScaling {
     IMLGradientBoosting boosting;
 
     public IMLGBIsotonicScaling(IMLGradientBoosting boosting, MultiLabelClfDataSet multiLabelClfDataSet) {
-        System.out.println("calibrating");
+        System.out.println("calibrating with isotonic regression");
         this.boosting = boosting;
         double[] locations = new double[multiLabelClfDataSet.getNumDataPoints()];
         double[] binaryLabels = new double[multiLabelClfDataSet.getNumDataPoints()];

@@ -20,7 +20,7 @@ public class IMLGBPlattScaling {
     IMLGradientBoosting boosting;
 
     public IMLGBPlattScaling(IMLGradientBoosting boosting, MultiLabelClfDataSet multiLabelClfDataSet) {
-        System.out.println("calibrating");
+        System.out.println("calibrating with Platt scaling");
         this.boosting = boosting;
         ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
                 .numClasses(2).numDataPoints(multiLabelClfDataSet.getNumDataPoints()).numFeatures(1)

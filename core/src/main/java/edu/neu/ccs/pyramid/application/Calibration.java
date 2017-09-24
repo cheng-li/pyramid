@@ -30,28 +30,28 @@ public class Calibration {
         IMLGBPlattScaling plattScaling = new IMLGBPlattScaling(boosting, validation);
         IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, validation);
 
-        System.out.println("====original probabilities on the validation set ====");
-        
+        System.out.println("====original probabilities on the validation set====");
+
         original(config, boosting, validation);
 
-        System.out.println("====Platt scaling calibrated probabilities on the validation set ====");
+        System.out.println("====Platt scaling calibrated probabilities on the validation set====");
 
         plattCalibration(config, boosting, validation, plattScaling);
 
-        System.out.println("====Isotonic regression calibrated probabilities on the validation set ====");
+        System.out.println("====Isotonic regression calibrated probabilities on the validation set====");
 
         isoCalibration(config, boosting, validation, isotonicScaling);
 
 
-        System.out.println("====original probabilities on the test set ====");
+        System.out.println("====original probabilities on the test set====");
 
         original(config, boosting, test);
 
-        System.out.println("====Platt scaling calibrated probabilities on the test set ====");
+        System.out.println("====Platt scaling calibrated probabilities on the test set====");
 
         plattCalibration(config, boosting, test, plattScaling);
 
-        System.out.println("====Isotonic regression calibrated probabilities on the test set ====");
+        System.out.println("====Isotonic regression calibrated probabilities on the test set====");
 
         isoCalibration(config, boosting, test, isotonicScaling);
 
