@@ -107,7 +107,7 @@ public class Calibration {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.data"), DataSetType.ML_CLF_SPARSE,
                 true);
 
-        IMLGBScaling scaling = new IMLGBScaling(boosting, dataSet);
+        IMLGBPlattScaling scaling = new IMLGBPlattScaling(boosting, dataSet);
 
         int numIntervals = 10;
         String predictTarget = config.getString("predict.Target");
