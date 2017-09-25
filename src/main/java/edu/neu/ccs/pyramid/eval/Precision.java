@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.row.RowMultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.ArgSort;
 
@@ -77,6 +78,14 @@ public class Precision {
     public static double precisionAtK(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet dataSet, int k){
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i-> precisionAtK(multiLabelClassifier.predictClassProbs(dataSet.getRow(i)),dataSet.getMultiLabels()[i],k))
+                .average().getAsDouble();
+    }
+
+    public static double precisionAtK(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier,
+                                      RowMultiLabelClfDataSet dataSet, int k) {
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> precisionAtK(multiLabelClassifier.predictClassProbs(dataSet.getRow(i)),
+                        dataSet.getMultiLabels()[i], k))
                 .average().getAsDouble();
     }
 
