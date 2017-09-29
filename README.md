@@ -37,7 +37,7 @@ If you just want to use pyramid as a command line tool (which is very simple), a
 If you are also a Java developer and wish to call Pyramid Java APIs, you will also need [Maven](https://maven.apache.org/).
 
 ## **Setup**
-Pyramid doesn't require any installation effort. All you need is downloading the latest [pre-compiled package] (https://github.com/cheng-li/pyramid/releases) (with a name like pyramid-x.x.x.zip) and decompressing it. Now you can move into the created folder and type 
+Pyramid doesn't require any installation effort. All you need is downloading the latest [pre-compiled package](https://github.com/cheng-li/pyramid/releases) (with a name like pyramid-x.x.x.zip) and decompressing it. Now you can move into the created folder and type 
 
 `./pyramid config/welcome.properties`
 
