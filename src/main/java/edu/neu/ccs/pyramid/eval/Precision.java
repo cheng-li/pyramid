@@ -7,7 +7,11 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.row.RowMultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.ArgSort;
+import edu.neu.ccs.pyramid.util.BoundedBlockPriorityQueue;
+import edu.neu.ccs.pyramid.util.Pair;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -79,6 +83,43 @@ public class Precision {
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i-> precisionAtK(multiLabelClassifier.predictClassProbs(dataSet.getRow(i)),dataSet.getMultiLabels()[i],k))
                 .average().getAsDouble();
+    }
+
+    public static Comparator<Pair<Integer, Double>> pairComparator = new Comparator<Pair<Integer, Double>>() {
+        @Override
+        public int compare(Pair<Integer, Double> o1, Pair<Integer, Double> o2) {
+            if (o1.getSecond() < o2.getSecond()) return -1;
+            if (o1.getSecond() > o2.getSecond()) return 1;
+            return 0;
+        }
+    };
+
+    public static double precisionAtKByPQ(double[] scores, MultiLabel label, int k) {
+        BoundedBlockPriorityQueue<Pair<Integer, Double>> queue = new BoundedBlockPriorityQueue<>(k, pairComparator);
+        for (int i=0; i<scores.length; i++) {
+            queue.add(new Pair(i, scores[i]));
+        }
+        int totalMatch = 0;
+        while(queue.size() > 0) {
+            int l = queue.poll().getFirst();
+            if (label.matchClass(l)) {
+                totalMatch += 1;
+            }
+        }
+        return totalMatch/k;
+    }
+
+    /**
+     * TODO: predict batch precision at Ks. saving time.
+     * @param multiLabelClassifier
+     * @param dataSet
+     * @param Ks
+     * @return
+     */
+    public static double[] precisionAtKs(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier,
+                                       RowMultiLabelClfDataSet dataSet, int[] Ks) {
+        int max = Arrays.stream(Ks).max().getAsInt();
+        return null;
     }
 
     public static double precisionAtK(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier,
