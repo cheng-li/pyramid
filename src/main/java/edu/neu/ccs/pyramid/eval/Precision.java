@@ -109,17 +109,10 @@ public class Precision {
         return totalMatch/k;
     }
 
-    /**
-     * TODO: predict batch precision at Ks. saving time.
-     * @param multiLabelClassifier
-     * @param dataSet
-     * @param Ks
-     * @return
-     */
-    public static double[] precisionAtKs(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier,
-                                       RowMultiLabelClfDataSet dataSet, int[] Ks) {
-        int max = Arrays.stream(Ks).max().getAsInt();
-        return null;
+    public static double precisionAtK(double[][] scores, MultiLabel[] labels, int k) {
+        return IntStream.range(0, labels.length).parallel()
+                .mapToDouble(i -> precisionAtK(scores[i], labels[i], k))
+                .average().getAsDouble();
     }
 
     public static double precisionAtK(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier,
