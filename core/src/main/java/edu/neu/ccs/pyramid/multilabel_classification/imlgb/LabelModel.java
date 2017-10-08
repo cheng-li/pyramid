@@ -14,6 +14,19 @@ public class LabelModel {
     double priorSccore;
     List<GeneralTreeRule> rules;
 
+
+    public String getLabelName() {
+        return labelName;
+    }
+
+    public double getPriorSccore() {
+        return priorSccore;
+    }
+
+    public List<GeneralTreeRule> getRules() {
+        return rules;
+    }
+
     public LabelModel(IMLGradientBoosting boosting, int classIndex) {
         labelName = boosting.getLabelTranslator().toExtLabel(classIndex);
         List<Regressor> regressors = boosting.getRegressors(classIndex);

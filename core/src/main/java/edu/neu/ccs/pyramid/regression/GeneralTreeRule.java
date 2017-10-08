@@ -25,15 +25,13 @@ public class GeneralTreeRule {
         this.score = leaf.getValue();
     }
 
-    public GeneralChecks getGeneralChecks() {
+    public GeneralChecks getChecks() {
         return checks;
     }
 
     public double getScore() {
         return score;
     }
-
-
 
     @Override
     public String toString() {
@@ -44,7 +42,7 @@ public class GeneralTreeRule {
     }
 
     public static GeneralTreeRule merge(GeneralTreeRule treeRule1, GeneralTreeRule treeRule2){
-        if (!treeRule1.getGeneralChecks().equals(treeRule2.getGeneralChecks())){
+        if (!treeRule1.getChecks().equals(treeRule2.getChecks())){
             throw new IllegalArgumentException("cannot merge decisions with different decision paths");
         }
         GeneralTreeRule treeRule = new GeneralTreeRule();

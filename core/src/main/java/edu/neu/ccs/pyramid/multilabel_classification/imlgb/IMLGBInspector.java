@@ -157,11 +157,9 @@ public class IMLGBInspector {
     }
 
     public static List<LabelModel> getAllRules(IMLGradientBoosting boosting){
-        List<LabelModel> labelModels = new ArrayList<>();
-        for (int k=0;k<boosting.getNumClasses();k++){
-            labelModels.add(new LabelModel(boosting, k));
-        }
-        return labelModels;
+        return IntStream.range(0, boosting.getNumClasses()).parallel()
+                .mapToObj(k->new LabelModel(boosting, k)).collect(Collectors.toList());
+
     }
 
 
