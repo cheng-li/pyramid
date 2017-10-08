@@ -245,6 +245,10 @@ public class App2 {
             Serialization.serialize(checkPoint, new File(output,"checkpoint"));
             File serializedModel =  new File(output,modelName);
             boosting.serialize(serializedModel);
+            if (true){
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.writeValue(new File(output,"model_rules.json"),IMLGBInspector.getAllRules(boosting));
+            }
 
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
                 logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");

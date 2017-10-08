@@ -156,6 +156,14 @@ public class IMLGBInspector {
         return classScoreCalculation;
     }
 
+    public static List<LabelModel> getAllRules(IMLGradientBoosting boosting){
+        List<LabelModel> labelModels = new ArrayList<>();
+        for (int k=0;k<boosting.getNumClasses();k++){
+            labelModels.add(new LabelModel(boosting, k));
+        }
+        return labelModels;
+    }
+
 
     //todo  speed up
 
