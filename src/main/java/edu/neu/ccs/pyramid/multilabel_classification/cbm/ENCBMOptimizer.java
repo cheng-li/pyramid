@@ -34,6 +34,7 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
         stopWatch.start();
 
 
+        // TODO: not an instanceof??
         if (cbm.binaryClassifiers[component][label] == null || cbm.binaryClassifiers[component][label] instanceof PriorProbClassifier) {
             cbm.binaryClassifiers[component][label] = new LogisticRegression(2, activeDataset.getNumFeatures());
         }
