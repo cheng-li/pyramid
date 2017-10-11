@@ -133,6 +133,7 @@ public class App2 {
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
         MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"));
 
+        LabelTranslator labelTranslator = allTrainData.getLabelTranslator();
 
         MultiLabelClfDataSet testSetForEval = null;
         if (config.getBoolean("train.showTestProgress") || config.getBoolean("train.earlyStop")){
@@ -247,7 +248,13 @@ public class App2 {
             boosting.serialize(serializedModel);
             if (true){
                 ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.writeValue(new File(output,"model_rules.json"),IMLGBInspector.getAllRules(boosting));
+                List<LabelModel> labelModels = IMLGBInspector.getAllRules(boosting);
+                new File(output,"decision_rules").mkdirs();
+
+                for (int l=0;l<boosting.getNumClasses();l++){
+                    objectMapper.writeValue(Paths.get(output, "decision_rules", labelTranslator.toExtLabel(l)).toFile(),labelModels.get(l));
+                }
+
             }
 
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
