@@ -30,9 +30,11 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
         this.probs = new double[numClasses];
     }
 
+    // TODO: topClass should be decided.
     public PriorProbClassifier(double[] probs) {
         this.numClasses = probs.length;
         this.probs = probs;
+        this.topClass = ArgMax.argMax(probs);
     }
 
     public void fit(ClfDataSet clfDataSet){
@@ -98,8 +100,16 @@ public class PriorProbClassifier implements Classifier.ProbabilityEstimator {
         return this.probs;
     }
 
+    public double predictClassProbs(Vector vector, int l) {
+        return this.probs[l];
+    }
+
     public double[] getClassProbs(){
         return this.probs;
+    }
+
+    public double getClassProb(int l) {
+        return this.probs[l];
     }
 
     @Override
