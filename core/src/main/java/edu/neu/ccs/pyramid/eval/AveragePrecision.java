@@ -165,6 +165,21 @@ public class AveragePrecision {
         return ap * 1.0 / labels.length;
     }
 
+    public static double globalAveragePrecision(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
+        int[] binaryLabels = new int[dataSet.getNumDataPoints()*dataSet.getNumClasses()];
+        double[] scores = new double[dataSet.getNumDataPoints()*dataSet.getNumClasses()];
+        int numClasses = dataSet.getNumClasses();
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->{
+                    double[] p = classifier.predictClassProbs(dataSet.getRow(i));
+                    System.arraycopy(p, 0, scores, i * numClasses, numClasses);
+                    for (int l:dataSet.getMultiLabels()[i].getMatchedLabels()){
+                        binaryLabels[i*numClasses+l]=1;
+                    }
+                });
+        return averagePrecision(binaryLabels, scores);
+    }
+
     /**
      * Average Precision for each data point, based by given scores.
      * @param label
