@@ -532,6 +532,203 @@ public class App2 {
     }
 
 
+    static void reportCalibrated(Config config, String dataName, Logger logger) throws Exception{
+        logger.info("generating reports with calibrated probabilities for data set "+dataName);
+        String output = config.getString("output.folder");
+        String modelName = "model_app3";
+        String calibration = "calibration";
+        File analysisFolder = new File(new File(output,"reports_app3"),dataName+"_reports_calibrated");
+        analysisFolder.mkdirs();
+        FileUtils.cleanDirectory(analysisFolder);
+
+        IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
+        IMLGBIsotonicScaling scaling = (IMLGBIsotonicScaling)Serialization.deserialize(new File(output,calibration));
+
+        String predictTarget = config.getString("predict.target");
+
+        PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = null;
+
+        switch (predictTarget){
+            case "subsetAccuracy":
+                pluginPredictorTmp = new SubsetAccPredictor(boosting);
+                break;
+            case "hammingLoss":
+                pluginPredictorTmp = new HammingPredictor(boosting);
+                break;
+            case "instanceFMeasure":
+                pluginPredictorTmp = new InstanceF1Predictor(boosting);
+                break;
+            case "macroFMeasure":
+                TunedMarginalClassifier  tunedMarginalClassifier = (TunedMarginalClassifier)Serialization.deserialize(new File(output, "predictor_macro_f"));
+                pluginPredictorTmp = new MacroF1Predictor(boosting,tunedMarginalClassifier);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown prediction target measure "+predictTarget);
+        }
+
+        // just to make Lambda expressions happy
+        final PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
+
+        MultiLabelClfDataSet dataSet = loadData(config,dataName);
+
+        MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
+        mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
+
+        logger.info("performance on dataset "+dataName);
+        logger.info(mlMeasures.toString());
+
+        boolean simpleCSV = true;
+        if (simpleCSV){
+            logger.info("start generating simple CSV report");
+            double probThreshold=config.getDouble("report.classProbThreshold");
+            File csv = new File(analysisFolder,"report.csv");
+            List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
+                    .mapToObj(i->IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, scaling, pluginPredictor,dataSet,i,probThreshold))
+                    .collect(Collectors.toList());
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(csv))){
+                for (int i=0;i<dataSet.getNumDataPoints();i++){
+                    String str = strs.get(i);
+                    bw.write(str);
+                }
+            }
+            logger.info("finish generating simple CSV report");
+        }
+
+
+
+
+
+        boolean rulesToJson = config.getBoolean("report.showPredictionDetail");
+        if (rulesToJson){
+            logger.info("start writing rules to json");
+            int ruleLimit = config.getInt("report.rule.limit");
+            int numDocsPerFile = config.getInt("report.numDocsPerFile");
+            int numFiles = (int)Math.ceil((double)dataSet.getNumDataPoints()/numDocsPerFile);
+
+            double probThreshold=config.getDouble("report.classProbThreshold");
+            int labelSetLimit = config.getInt("report.labelSetLimit");
+
+
+            IntStream.range(0,numFiles).forEach(i->{
+                int start = i*numDocsPerFile;
+                int end = start+numDocsPerFile;
+                List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->
+                        IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a,  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
+                ObjectMapper mapper = new ObjectMapper();
+
+                String file = "report_"+(i+1)+".json";
+                try {
+                    mapper.writeValue(new File(analysisFolder,file), partition);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                logger.info("progress = "+ Progress.percentage(i+1,numFiles));
+            });
+
+            logger.info("finish writing rules to json");
+        }
+
+
+        boolean dataInfoToJson = true;
+        if (dataInfoToJson){
+            logger.info("start writing data info to json");
+            Set<String> modelLabels = IntStream.range(0,boosting.getNumClasses()).mapToObj(i->boosting.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
+
+            Set<String> dataSetLabels = DataSetUtil.gatherLabels(dataSet).stream().map(i -> dataSet.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
+
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(new File(analysisFolder,"data_info.json"), JsonEncoding.UTF8);
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("dataSet",dataName);
+            jsonGenerator.writeNumberField("numClassesInModel",boosting.getNumClasses());
+            jsonGenerator.writeNumberField("numClassesInDataSet",dataSetLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelDataSetCombined",dataSet.getNumClasses());
+            Set<String> modelNotDataLabels = SetUtil.complement(modelLabels, dataSetLabels);
+            Set<String> dataNotModelLabels = SetUtil.complement(dataSetLabels,modelLabels);
+            jsonGenerator.writeNumberField("numClassesInDataSetButNotModel",dataNotModelLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelButNotDataSet",modelNotDataLabels.size());
+            jsonGenerator.writeArrayFieldStart("classesInDataSetButNotModel");
+            for (String label: dataNotModelLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeArrayFieldStart("classesInModelButNotDataSet");
+            for (String label: modelNotDataLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeNumberField("labelCardinality",dataSet.labelCardinality());
+
+            jsonGenerator.writeEndObject();
+            jsonGenerator.close();
+            logger.info("finish writing data info to json");
+        }
+
+
+        boolean modelConfigToJson = true;
+        if (modelConfigToJson){
+            logger.info("start writing model config to json");
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"model_config.json"),config);
+            logger.info("finish writing model config to json");
+        }
+
+        boolean dataConfigToJson = true;
+        if (dataConfigToJson){
+            logger.info("start writing data config to json");
+            File dataConfigFile = Paths.get(config.getString("input.folder"),
+                    "data_sets",dataName,"data_config.json").toFile();
+            if (dataConfigFile.exists()){
+                FileUtils.copyFileToDirectory(dataConfigFile,analysisFolder);
+            }
+            logger.info("finish writing data config to json");
+        }
+
+        boolean performanceToJson = true;
+        if (performanceToJson){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"performance.json"),mlMeasures);
+        }
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            logger.info("start writing individual label performance to json");
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
+            logger.info("finish writing individual label performance to json");
+        }
+
+        if (config.getBoolean("report.produceHTML")){
+            logger.info("start producing html files");
+
+            Config savedApp1Config = new Config(Paths.get(config.getString("input.folder"), "meta_data","saved_config_app1").toFile());
+
+            List<String> hosts = savedApp1Config.getStrings("index.hosts");
+            List<Integer> ports = savedApp1Config.getIntegers("index.ports");
+
+            //todo make it better
+            if (savedApp1Config.getString("index.clientType").equals("node")){
+                hosts = new ArrayList<>();
+                for (int port: ports){
+                    hosts.add("localhost");
+                }
+                //default setting
+                hosts.add("localhost");
+                ports.add(9200);
+            }
+            try (Visualizer visualizer = new Visualizer(logger, hosts, ports)){
+                visualizer.produceHtml(analysisFolder);
+                logger.info("finish producing html files");
+            }
+
+
+        }
+
+        logger.info("reports generated");
+    }
+
+
 
     private static double KL(IMLGradientBoosting boosting, Vector vector, MultiLabel multiLabel, int classIndex){
         double[] p = new double[2];

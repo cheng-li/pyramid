@@ -37,4 +37,8 @@ public class IMLGBIsotonicScaling {
         double score = boosting.predictAssignmentScore(vector, multiLabel);
         return isotonicRegression.predict(score);
     }
+
+    public double calibratedProb(double score){
+        return isotonicRegression.predict(score);
+    }
 }

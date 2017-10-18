@@ -213,6 +213,16 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return probs;
     }
 
+    public double[] predictAssignmentScores(Vector vector, List<MultiLabel> multiLabels){
+
+        double[] classScores = predictClassScores(vector);
+        double[] assignmentScores = new double[multiLabels.size()];
+        for (int i=0;i<multiLabels.size();i++){
+            assignmentScores[i] = calAssignmentScore(multiLabels.get(i),classScores);
+        }
+        return assignmentScores;
+    }
+
     public double predictAssignmentProbWithoutConstraint(Vector vector, MultiLabel assignment){
         double[] classScores = predictClassScores(vector);
         double logProb = 0;
