@@ -156,6 +156,12 @@ public class IMLGBInspector {
         return classScoreCalculation;
     }
 
+    public static List<LabelModel> getAllRules(IMLGradientBoosting boosting){
+        return IntStream.range(0, boosting.getNumClasses()).parallel()
+                .mapToObj(k->new LabelModel(boosting, k)).collect(Collectors.toList());
+
+    }
+
 
     //todo  speed up
 
@@ -262,6 +268,97 @@ public class IMLGBInspector {
     }
 
 
+    public static  MultiLabelPredictionAnalysis analyzePredictionCalibrated(IMLGradientBoosting boosting,
+                                                                  IMLGBIsotonicScaling scaling,
+                                                                  PluginPredictor<IMLGradientBoosting> pluginPredictor,
+                                                                  MultiLabelClfDataSet dataSet,
+                                                                  int dataPointIndex,  int ruleLimit,
+                                                                  int labelSetLimit, double classProbThreshold){
+        MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        IdTranslator idTranslator = dataSet.getIdTranslator();
+        predictionAnalysis.setInternalId(dataPointIndex);
+        predictionAnalysis.setId(idTranslator.toExtId(dataPointIndex));
+        predictionAnalysis.setInternalLabels(dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered());
+        List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
+                .map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setLabels(labels);
+        predictionAnalysis.setProbForTrueLabels(scaling.calibratedProb(dataSet.getRow(dataPointIndex),dataSet.getMultiLabels()[dataPointIndex]));
+
+
+        MultiLabel predictedLabels = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
+        List<Integer> internalPrediction = predictedLabels.getMatchedLabelsOrdered();
+        predictionAnalysis.setInternalPrediction(internalPrediction);
+        List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
+        predictionAnalysis.setPrediction(prediction);
+
+        predictionAnalysis.setProbForPredictedLabels(scaling.calibratedProb(dataSet.getRow(dataPointIndex),predictedLabels));
+
+        double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        List<Integer> classes = new ArrayList<Integer>();
+        for (int k = 0; k < boosting.getNumClasses(); k++){
+            if (classProbs[k]>=classProbThreshold
+                    ||dataSet.getMultiLabels()[dataPointIndex].matchClass(k)
+                    ||predictedLabels.matchClass(k)){
+                classes.add(k);
+            }
+        }
+
+        List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
+        for (int k: classes){
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
+                    dataSet.getRow(dataPointIndex),k,ruleLimit);
+            classScoreCalculations.add(classScoreCalculation);
+        }
+        predictionAnalysis.setClassScoreCalculations(classScoreCalculations);
+
+        List<MultiLabelPredictionAnalysis.ClassRankInfo> labelRanking = classes.stream().map(label -> {
+                    MultiLabelPredictionAnalysis.ClassRankInfo rankInfo = new MultiLabelPredictionAnalysis.ClassRankInfo();
+                    rankInfo.setClassIndex(label);
+                    rankInfo.setClassName(labelTranslator.toExtLabel(label));
+                    rankInfo.setProb(boosting.predictClassProb(dataSet.getRow(dataPointIndex), label));
+                    return rankInfo;
+                }
+        ).collect(Collectors.toList());
+        predictionAnalysis.setPredictedRanking(labelRanking);
+
+
+        List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
+
+        if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
+            double[] labelSetProbs = Arrays.stream(boosting.predictAssignmentScores(dataSet.getRow(dataPointIndex), boosting.getAssignments()))
+                    .map(scaling::calibratedProb).toArray();
+
+            labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
+                    .mapToObj(i -> {
+                        MultiLabel multiLabel = boosting.getAssignments().get(i);
+                        double setProb = labelSetProbs[i];
+                        MultiLabelPredictionAnalysis.LabelSetProbInfo labelSetProbInfo = new MultiLabelPredictionAnalysis.LabelSetProbInfo(multiLabel, setProb, labelTranslator);
+                        return labelSetProbInfo;
+                    }).sorted(Comparator.comparing(MultiLabelPredictionAnalysis.LabelSetProbInfo::getProbability).reversed())
+                    .limit(labelSetLimit)
+                    .collect(Collectors.toList());
+        }
+
+
+        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
+            labelSetRanking = new ArrayList<>();
+            DynamicProgramming dp = new DynamicProgramming(classProbs);
+            for (int c=0;c<labelSetLimit;c++){
+                DynamicProgramming.Candidate candidate = dp.nextHighest();
+                MultiLabel multiLabel = candidate.getMultiLabel();
+                double setProb = scaling.calibratedProb(dataSet.getRow(dataPointIndex), multiLabel);
+                MultiLabelPredictionAnalysis.LabelSetProbInfo labelSetProbInfo = new MultiLabelPredictionAnalysis.LabelSetProbInfo(multiLabel, setProb, labelTranslator);
+                labelSetRanking.add(labelSetProbInfo);
+            }
+        }
+
+        predictionAnalysis.setPredictedLabelSetRanking(labelSetRanking);
+
+        return predictionAnalysis;
+    }
+
+
     public static  String simplePredictionAnalysis(IMLGradientBoosting boosting,
                                                    PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                              MultiLabelClfDataSet dataSet,
@@ -306,6 +403,63 @@ public class IMLGBInspector {
         if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
             probability = boosting.predictAssignmentProbWithoutConstraint(dataSet.getRow(dataPointIndex),predicted);
         }
+
+        List<Integer> predictedList = predicted.getMatchedLabelsOrdered();
+        sb.append(id).append("\t");
+        for (int i=0;i<predictedList.size();i++){
+            sb.append(labelTranslator.toExtLabel(predictedList.get(i)));
+            if (i!=predictedList.size()-1){
+                sb.append(",");
+            }
+        }
+        sb.append("\t");
+        int setMatch = 0;
+        if (predicted.equals(trueLabels)){
+            setMatch=1;
+        }
+        sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\n");
+        return sb.toString();
+    }
+
+
+    public static  String simplePredictionAnalysisCalibrated(IMLGradientBoosting boosting,
+                                                   IMLGBIsotonicScaling scaling,
+                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
+                                                   MultiLabelClfDataSet dataSet,
+                                                   int dataPointIndex,  double classProbThreshold){
+        StringBuilder sb = new StringBuilder();
+        MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
+        String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        MultiLabel predicted = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
+
+        List<Integer> classes = new ArrayList<Integer>();
+        for (int k = 0; k < boosting.getNumClasses(); k++){
+            if (classProbs[k]>=classProbThreshold
+                    ||dataSet.getMultiLabels()[dataPointIndex].matchClass(k)
+                    ||predicted.matchClass(k)){
+                classes.add(k);
+            }
+        }
+
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
+        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<Integer, Double>(l, classProbs[l]))
+                .sorted(comparator.reversed()).collect(Collectors.toList());
+        for (Pair<Integer,Double> pair: list){
+            int label = pair.getFirst();
+            double prob = pair.getSecond();
+            int match = 0;
+            if (trueLabels.matchClass(label)){
+                match=1;
+            }
+            sb.append(id).append("\t").append(labelTranslator.toExtLabel(label)).append("\t")
+                    .append("single").append("\t").append(prob)
+                    .append("\t").append(match).append("\n");
+        }
+
+
+        double probability = scaling.calibratedProb(dataSet.getRow(dataPointIndex),predicted);
 
         List<Integer> predictedList = predicted.getMatchedLabelsOrdered();
         sb.append(id).append("\t");
