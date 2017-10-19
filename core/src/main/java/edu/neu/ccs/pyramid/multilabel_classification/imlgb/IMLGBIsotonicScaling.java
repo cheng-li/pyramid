@@ -4,15 +4,17 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import org.apache.mahout.math.Vector;
+import scala.Serializable;
 
 import java.util.stream.IntStream;
 
-public class IMLGBIsotonicScaling {
+public class IMLGBIsotonicScaling implements Serializable{
+    private static final long serialVersionUID = 1L;
     private IsotonicRegression isotonicRegression;
-    IMLGradientBoosting boosting;
+    private IMLGradientBoosting boosting;
 
     public IMLGBIsotonicScaling(IMLGradientBoosting boosting, MultiLabelClfDataSet multiLabelClfDataSet) {
-        System.out.println("calibrating with isotonic regression");
+//        System.out.println("calibrating with isotonic regression");
         this.boosting = boosting;
         double[] locations = new double[multiLabelClfDataSet.getNumDataPoints()];
         double[] binaryLabels = new double[multiLabelClfDataSet.getNumDataPoints()];
@@ -30,7 +32,7 @@ public class IMLGBIsotonicScaling {
                     }
                 });
         isotonicRegression = new IsotonicRegression(locations, binaryLabels);
-        System.out.println("calibration done");
+//        System.out.println("calibration done");
     }
 
     public double calibratedProb(Vector vector, MultiLabel multiLabel){

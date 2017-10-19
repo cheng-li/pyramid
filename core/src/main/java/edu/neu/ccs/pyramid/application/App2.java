@@ -77,12 +77,20 @@ public class App2 {
             train(config, logger);
             logger.info("total training time = "+stopWatch);
 
+            Config calibrationConfig = new Config();
+            calibrationConfig.setString("input.testSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.testData")).toString());
+            calibrationConfig.setString("input.model", Paths.get(config.getString("output.folder"),"model_app3").toString());
+            calibrationConfig.setString("out",config.getString("output.folder"));
+            Calibration.main(calibrationConfig, logger);
+
+
             if (config.getString("predict.target").equals("macroFMeasure")){
                 logger.info("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
                         "Reports will be generated after tuning.");
             } else {
                 if (config.getBoolean("train.generateReports")){
                     report(config,config.getString("input.trainData"), logger);
+                    reportCalibrated(config,config.getString("input.trainData"), logger);
                 }
 
             }
@@ -97,11 +105,13 @@ public class App2 {
             Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app2"));
             if (savedConfig.getBoolean("train.generateReports")){
                 report(config,config.getString("input.trainData"), logger);
+                reportCalibrated(config,config.getString("input.trainData"), logger);
             }
         }
 
         if (config.getBoolean("test")){
             report(config,config.getString("input.testData"), logger);
+            reportCalibrated(config,config.getString("input.testData"), logger);
         }
 
 
@@ -613,7 +623,7 @@ public class App2 {
                 int start = i*numDocsPerFile;
                 int end = start+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->
-                        IMLGBInspector.analyzePrediction(boosting, pluginPredictor, dataSet, a,  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
+                        IMLGBInspector.analyzePredictionCalibrated(boosting, scaling, pluginPredictor, dataSet, a,  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
 
                 String file = "report_"+(i+1)+".json";

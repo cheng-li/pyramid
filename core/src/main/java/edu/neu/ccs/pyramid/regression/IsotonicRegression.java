@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.regression;
 
 import edu.neu.ccs.pyramid.util.Pair;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -13,7 +14,8 @@ import java.util.stream.IntStream;
  * http://stat.wikia.com/wiki/Isotonic_regression
  */
 
-public class IsotonicRegression {
+public class IsotonicRegression implements Serializable{
+    private static final long serialVersionUID = 1L;
     //sorted locations
     private double[] locations;
     private double[] values;
