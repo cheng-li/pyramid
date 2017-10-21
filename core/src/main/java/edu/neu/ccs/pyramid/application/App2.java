@@ -27,10 +27,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -586,6 +583,11 @@ public class App2 {
         final PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
+
+        double aveSum = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
+                    .map(scaling::calibratedProb).sum()).average().getAsDouble();
+
+        logger.info("average sum of calibrated probabilities= "+aveSum);
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
