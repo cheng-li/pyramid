@@ -274,6 +274,9 @@ public class IMLGBInspector {
                                                                   MultiLabelClfDataSet dataSet,
                                                                   int dataPointIndex,  int ruleLimit,
                                                                   int labelSetLimit, double classProbThreshold){
+        if (! (pluginPredictor instanceof SubsetAccPredictor)){
+            throw new RuntimeException("calibrated probabilities can only be produced if predict.target=subsetAccuracy");
+        }
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         IdTranslator idTranslator = dataSet.getIdTranslator();
@@ -326,7 +329,7 @@ public class IMLGBInspector {
         List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
 
         if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
-            double[] labelSetProbs = Arrays.stream(boosting.predictAssignmentScores(dataSet.getRow(dataPointIndex), boosting.getAssignments()))
+            double[] labelSetProbs = Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
                     .map(scaling::calibratedProb).toArray();
 
             labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
@@ -339,19 +342,19 @@ public class IMLGBInspector {
                     .limit(labelSetLimit)
                     .collect(Collectors.toList());
         }
-
-
-        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
-            labelSetRanking = new ArrayList<>();
-            DynamicProgramming dp = new DynamicProgramming(classProbs);
-            for (int c=0;c<labelSetLimit;c++){
-                DynamicProgramming.Candidate candidate = dp.nextHighest();
-                MultiLabel multiLabel = candidate.getMultiLabel();
-                double setProb = scaling.calibratedProb(dataSet.getRow(dataPointIndex), multiLabel);
-                MultiLabelPredictionAnalysis.LabelSetProbInfo labelSetProbInfo = new MultiLabelPredictionAnalysis.LabelSetProbInfo(multiLabel, setProb, labelTranslator);
-                labelSetRanking.add(labelSetProbInfo);
-            }
-        }
+//
+//
+//        if (pluginPredictor instanceof HammingPredictor || pluginPredictor instanceof MacroF1Predictor){
+//            labelSetRanking = new ArrayList<>();
+//            DynamicProgramming dp = new DynamicProgramming(classProbs);
+//            for (int c=0;c<labelSetLimit;c++){
+//                DynamicProgramming.Candidate candidate = dp.nextHighest();
+//                MultiLabel multiLabel = candidate.getMultiLabel();
+//                double setProb = scaling.calibratedProb(dataSet.getRow(dataPointIndex), multiLabel);
+//                MultiLabelPredictionAnalysis.LabelSetProbInfo labelSetProbInfo = new MultiLabelPredictionAnalysis.LabelSetProbInfo(multiLabel, setProb, labelTranslator);
+//                labelSetRanking.add(labelSetProbInfo);
+//            }
+//        }
 
         predictionAnalysis.setPredictedLabelSetRanking(labelSetRanking);
 
@@ -427,6 +430,9 @@ public class IMLGBInspector {
                                                    PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                    MultiLabelClfDataSet dataSet,
                                                    int dataPointIndex,  double classProbThreshold){
+        if (! (pluginPredictor instanceof SubsetAccPredictor)){
+            throw new RuntimeException("calibrated probabilities can only be produced if predict.target=subsetAccuracy");
+        }
         StringBuilder sb = new StringBuilder();
         MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);

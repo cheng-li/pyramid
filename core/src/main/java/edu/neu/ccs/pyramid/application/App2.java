@@ -90,7 +90,9 @@ public class App2 {
             } else {
                 if (config.getBoolean("train.generateReports")){
                     report(config,config.getString("input.trainData"), logger);
-                    reportCalibrated(config,config.getString("input.trainData"), logger);
+                    if (config.getString("predict.target").equals("subsetAccuracy")){
+                        reportCalibrated(config,config.getString("input.trainData"), logger);
+                    }
                 }
 
             }
@@ -105,13 +107,17 @@ public class App2 {
             Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app2"));
             if (savedConfig.getBoolean("train.generateReports")){
                 report(config,config.getString("input.trainData"), logger);
-                reportCalibrated(config,config.getString("input.trainData"), logger);
+                if (config.getString("predict.target").equals("subsetAccuracy")){
+                    reportCalibrated(config,config.getString("input.trainData"), logger);
+                }
             }
         }
 
         if (config.getBoolean("test")){
             report(config,config.getString("input.testData"), logger);
-            reportCalibrated(config,config.getString("input.testData"), logger);
+            if (config.getString("predict.target").equals("subsetAccuracy")){
+                reportCalibrated(config,config.getString("input.testData"), logger);
+            }
         }
 
 

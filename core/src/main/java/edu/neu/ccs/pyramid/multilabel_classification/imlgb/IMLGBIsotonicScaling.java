@@ -23,7 +23,7 @@ public class IMLGBIsotonicScaling implements Serializable{
         IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                 .forEach(i->{
                     MultiLabel pre = predictor.predict(multiLabelClfDataSet.getRow(i));
-                    double score = boosting.predictAssignmentScore(multiLabelClfDataSet.getRow(i),pre);
+                    double score = boosting.predictAssignmentProbWithConstraint(multiLabelClfDataSet.getRow(i),pre);
                     locations[i] = score;
                     if (pre.equals(multiLabelClfDataSet.getMultiLabels()[i])){
                         binaryLabels[i] = 1;
@@ -36,11 +36,11 @@ public class IMLGBIsotonicScaling implements Serializable{
     }
 
     public double calibratedProb(Vector vector, MultiLabel multiLabel){
-        double score = boosting.predictAssignmentScore(vector, multiLabel);
-        return isotonicRegression.predict(score);
+        double uncalibrated = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
+        return isotonicRegression.predict(uncalibrated);
     }
 
-    public double calibratedProb(double score){
-        return isotonicRegression.predict(score);
+    public double calibratedProb(double uncalibratedProb){
+        return isotonicRegression.predict(uncalibratedProb);
     }
 }
