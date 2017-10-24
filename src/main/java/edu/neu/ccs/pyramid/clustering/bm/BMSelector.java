@@ -4,9 +4,13 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.Density;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.util.ArgMax;
+import edu.neu.ccs.pyramid.util.ArgMin;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.stream.IntStream;
 
 
 /**
@@ -39,19 +43,30 @@ public class BMSelector {
     }
 
     public static BMTrainer selectTrainer(DataSet dataSet, int numClusters, int numRuns) {
-        BMTrainer best = null;
-        double bestObjective = Double.POSITIVE_INFINITY;
-        for (int i=0;i<numRuns;i++){
-//            System.out.println("fitting BM model "+i);
-            BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
-            BM bm = trainer.train();
-            double objective = trainer.getObjective();
-            if (objective < bestObjective){
-                bestObjective = objective;
-                best = trainer;
-            }
-        }
-        return best;
+        // TODO: multi-threads
+        BMTrainer[] trainers = new BMTrainer[numRuns];
+        double[] trainersObjectives = new double[numRuns];
+        IntStream.range(0, numRuns).parallel().forEach(r -> {
+            trainers[r] = new BMTrainer(dataSet, numClusters, r);
+            trainers[r].train();
+            trainersObjectives[r] = trainers[r].getObjective();
+        });
+        return trainers[ArgMin.argMin(trainersObjectives)];
+
+
+//        BMTrainer best = null;
+//        double bestObjective = Double.POSITIVE_INFINITY;
+//        for (int i=0;i<numRuns;i++){
+////            System.out.println("fitting BM model "+i);
+//            BMTrainer trainer = new BMTrainer(dataSet,numClusters, i);
+//            BM bm = trainer.train();
+//            double objective = trainer.getObjective();
+//            if (objective < bestObjective){
+//                bestObjective = objective;
+//                best = trainer;
+//            }
+//        }
+//        return best;
     }
 
 

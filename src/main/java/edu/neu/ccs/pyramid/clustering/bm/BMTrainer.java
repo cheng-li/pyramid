@@ -105,7 +105,7 @@ public class BMTrainer {
 
 
     /**
-     *
+     * TODO: taking too long
      * @param k cluster index
      */
     private void updateCluster(int k){

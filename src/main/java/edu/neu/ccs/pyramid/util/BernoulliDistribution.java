@@ -46,6 +46,15 @@ public class BernoulliDistribution implements Serializable{
         }
     }
 
+    /**
+     * return log probability without checking the input.
+     * @param value
+     * @return
+     */
+    public double fastLogProbability(int value) {
+        return (value==1) ? logP : logOneMinusP;
+    }
+
     public int sample(){
         double d = ThreadLocalRandom.current().nextDouble();
         if (d<p){
