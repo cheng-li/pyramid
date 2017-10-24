@@ -23,14 +23,13 @@ import edu.neu.ccs.pyramid.util.SetUtil;
 import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -90,7 +89,9 @@ public class App2 {
             } else {
                 if (config.getBoolean("train.generateReports")){
                     report(config,config.getString("input.trainData"), logger);
-                    reportCalibrated(config,config.getString("input.trainData"), logger);
+                    if (config.getString("predict.target").equals("subsetAccuracy")){
+                        reportCalibrated(config,config.getString("input.trainData"), logger);
+                    }
                 }
 
             }
@@ -105,13 +106,17 @@ public class App2 {
             Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app2"));
             if (savedConfig.getBoolean("train.generateReports")){
                 report(config,config.getString("input.trainData"), logger);
-                reportCalibrated(config,config.getString("input.trainData"), logger);
+                if (config.getString("predict.target").equals("subsetAccuracy")){
+                    reportCalibrated(config,config.getString("input.trainData"), logger);
+                }
             }
         }
 
         if (config.getBoolean("test")){
             report(config,config.getString("input.testData"), logger);
-            reportCalibrated(config,config.getString("input.testData"), logger);
+            if (config.getString("predict.target").equals("subsetAccuracy")){
+                reportCalibrated(config,config.getString("input.testData"), logger);
+            }
         }
 
 
@@ -580,6 +585,13 @@ public class App2 {
         final PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
+
+        System.out.println("sum of calibrated probabilities");
+
+        double[] all = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
+                .map(scaling::calibratedProb).sum()).toArray();
+        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
+        System.out.println(descriptiveStatistics);
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
