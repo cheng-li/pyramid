@@ -23,6 +23,8 @@ import edu.neu.ccs.pyramid.util.SetUtil;
 import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -584,10 +586,12 @@ public class App2 {
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
-        double aveSum = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
-                    .map(scaling::calibratedProb).sum()).average().getAsDouble();
+        System.out.println("sum of calibrated probabilities");
 
-        logger.info("average sum of calibrated probabilities= "+aveSum);
+        double[] all = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
+                .map(scaling::calibratedProb).sum()).toArray();
+        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
+        System.out.println(descriptiveStatistics);
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
