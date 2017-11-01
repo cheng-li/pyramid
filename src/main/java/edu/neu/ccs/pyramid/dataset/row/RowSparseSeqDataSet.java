@@ -4,6 +4,8 @@ import edu.neu.ccs.pyramid.dataset.Density;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.stream.IntStream;
+
 /**
  * Created by Rainicy on 8/31/17
  */
@@ -18,9 +20,12 @@ public class RowSparseSeqDataSet extends  AbstractRowDataSet implements RowDataS
     public RowSparseSeqDataSet(int numDatapoints, int numFeatures) {
         super(numDatapoints, numFeatures);
         this.featureRows = new SequentialAccessSparseVector[numDatapoints];
-        for (int i=0; i<numDatapoints; i++) {
-            this.featureRows[i] = new SequentialAccessSparseVector(numFeatures);
-        }
+        IntStream.range(0, numDatapoints).parallel().forEach(i -> {
+            featureRows[i] = new SequentialAccessSparseVector(numFeatures);
+        });
+//        for (int i=0; i<numDatapoints; i++) {
+//            this.featureRows[i] = new SequentialAccessSparseVector(numFeatures);
+//        }
         featureNorm = new double[numDatapoints];
     }
 

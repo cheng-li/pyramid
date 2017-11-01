@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.SerializableVector;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 
 import java.io.IOException;
+import java.util.stream.IntStream;
 
 /**
  * Created by Rainicy on 8/31/17
@@ -19,10 +20,12 @@ public class RowSparseSeqMLClfDataSet extends RowSparseSeqDataSet implements Row
         super(numDatapoints, numFeatures);
         this.numClasses = numClasses;
         this.multiLabels = new MultiLabel[numDatapoints];
-        for (int i=0; i<numDatapoints; i++) {
-            multiLabels[i] = new MultiLabel();
-        }
-
+        IntStream.range(0, numDatapoints).parallel().forEach(i -> {
+                multiLabels[i] = new MultiLabel();
+        });
+//        for (int i=0; i<numDatapoints; i++) {
+//            multiLabels[i] = new MultiLabel();
+//        }
     }
 
     @Override
