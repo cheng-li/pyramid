@@ -66,12 +66,19 @@ public class Calibration {
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
             double right = intervalSize*(i+1);
-            List<Result> matched = results.stream().filter(result -> (result.probability>=left && result.probability<=right)).collect(Collectors.toList());
+            List<Result> matched = results.stream().filter(result -> (result.probability>=left && result.probability<right)).collect(Collectors.toList());
+            if (i==numIntervals-1){
+                matched = results.stream().filter(result -> (result.probability>=left && result.probability<=right)).collect(Collectors.toList());
+            }
             int numPos = (int)matched.stream().filter(res->res.correctness).count();
             int numNeg = matched.size()-numPos;
             double aveProb = matched.stream().mapToDouble(res->res.probability).average().orElse(0);
             double accuracy = SafeDivide.divide(numPos,matched.size(), 0);
-            stringBuilder.append("["+decimalFormat.format(left)+", "+decimalFormat.format(right)+"]"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n");
+            String st = "["+decimalFormat.format(left)+", "+decimalFormat.format(right)+")"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n";
+            if (i==numIntervals-1){
+                st = "["+decimalFormat.format(left)+", "+decimalFormat.format(right)+"]"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n";
+            }
+            stringBuilder.append(st);
         }
         logger.info(stringBuilder.toString());
 
@@ -102,12 +109,19 @@ public class Calibration {
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
             double right = intervalSize*(i+1);
-            List<Result> matched = results.stream().filter(result -> (result.probability>=left && result.probability<=right)).collect(Collectors.toList());
+            List<Result> matched = results.stream().filter(result -> (result.probability>=left && result.probability<right)).collect(Collectors.toList());
+            if (i==numIntervals-1){
+                matched = results.stream().filter(result -> (result.probability>=left && result.probability<=right)).collect(Collectors.toList());
+            }
             int numPos = (int)matched.stream().filter(res->res.correctness).count();
             int numNeg = matched.size()-numPos;
             double aveProb = matched.stream().mapToDouble(res->res.probability).average().orElse(0);
             double accuracy = SafeDivide.divide(numPos,matched.size(), 0);
-            stringBuilder.append("["+decimalFormat.format(left)+", "+decimalFormat.format(right)+"]"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n");
+            String st = "["+decimalFormat.format(left)+", "+decimalFormat.format(right)+")"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n";
+            if (i==numIntervals-1){
+                st = "["+decimalFormat.format(left)+", "+decimalFormat.format(right)+"]"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n";
+            }
+            stringBuilder.append(st);
         }
         logger.info(stringBuilder.toString());
 

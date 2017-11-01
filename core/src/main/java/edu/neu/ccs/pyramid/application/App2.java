@@ -586,12 +586,12 @@ public class App2 {
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
-        System.out.println("sum of calibrated probabilities");
+        logger.info("sum of calibrated probabilities");
 
         double[] all = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
                 .map(scaling::calibratedProb).sum()).toArray();
         DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
-        System.out.println(descriptiveStatistics);
+        logger.info(descriptiveStatistics.toString());
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
@@ -778,7 +778,7 @@ public class App2 {
         return DataSetUtil.sampleData(allData, keep);
     }
 
-    private static class CheckPoint implements Serializable{
+    public static class CheckPoint implements Serializable{
         private static final long serialVersionUID = 1L;
         private IMLGradientBoosting boosting;
         private List<EarlyStopper> earlyStoppers;
@@ -786,5 +786,9 @@ public class App2 {
         private boolean[] shouldStop;
         private int numLabelsLeftToTrain;
         private int lastIter;
+
+        public int getLastIter() {
+            return lastIter;
+        }
     }
 }
