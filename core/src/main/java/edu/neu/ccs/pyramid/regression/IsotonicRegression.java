@@ -36,6 +36,21 @@ public class IsotonicRegression implements Serializable{
         this.values = fit(sortedNumbers, weights);
     }
 
+    /**
+     *
+     * @param locations unsorted
+     * @param numbers
+     */
+    public IsotonicRegression(double[] locations, double[] numbers, double[] weights) {
+        List<Element> sorted = IntStream.range(0, locations.length).mapToObj(i->new Element(locations[i], numbers[i], weights[i]))
+                .sorted(Comparator.comparing(element->element.location)).collect(Collectors.toList());
+        double[] sortedLocations  = sorted.stream().mapToDouble(p->p.location).toArray();
+        double[] sortedNumbers  = sorted.stream().mapToDouble(p->p.number).toArray();
+        double[] sortedWeights  = sorted.stream().mapToDouble(p->p.weight).toArray();
+        this.locations=sortedLocations;
+        this.values = fit(sortedNumbers, sortedWeights);
+    }
+
     public double[] getLocations() {
         return locations;
     }
@@ -138,5 +153,17 @@ public class IsotonicRegression implements Serializable{
         sb.append(", values=").append(Arrays.toString(values));
         sb.append('}');
         return sb.toString();
+    }
+
+    private static class Element{
+        Element(double location, double number, double weight) {
+            this.location = location;
+            this.number = number;
+            this.weight = weight;
+        }
+
+        private double location;
+        private double number;
+        private double weight;
     }
 }

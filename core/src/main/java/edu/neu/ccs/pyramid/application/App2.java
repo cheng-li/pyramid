@@ -586,12 +586,12 @@ public class App2 {
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
 
-        System.out.println("sum of calibrated probabilities");
+        logger.info("sum of calibrated probabilities");
 
         double[] all = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
                 .map(scaling::calibratedProb).sum()).toArray();
         DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
-        System.out.println(descriptiveStatistics);
+        logger.info(descriptiveStatistics.toString());
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
