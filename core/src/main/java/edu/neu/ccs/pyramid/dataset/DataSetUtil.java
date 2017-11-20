@@ -715,6 +715,49 @@ public class DataSetUtil {
         return dataSet;
     }
 
+    public static MultiLabelClfDataSet concatenateByColumn(List<MultiLabelClfDataSet> dataSets){
+        int numDataPoints = dataSets.get(0).getNumDataPoints();
+        int numFeatures = 0;
+        for (DataSet dataSet: dataSets){
+            numFeatures += dataSet.getNumFeatures();
+        }
+        MultiLabelClfDataSet merged = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(dataSets.get(0).getNumClasses())
+                .density(dataSets.get(0).density())
+                .missingValue(dataSets.get(0).hasMissingValue())
+                .build();
+
+        int featureIndex = 0;
+        for (DataSet dataSet: dataSets){
+            for (int j=0;j<dataSet.getNumFeatures();j++){
+                Vector vector = dataSet.getColumn(j);
+                for (Vector.Element element: vector.nonZeroes()){
+                    int i = element.index();
+                    double value = element.get();
+                    merged.setFeatureValue(i,featureIndex,value);
+                }
+                featureIndex += 1;
+            }
+        }
+
+        for (int i=0;i<merged.getNumDataPoints();i++){
+            merged.setLabels(i,dataSets.get(0).getMultiLabels()[i]);
+        }
+
+        FeatureList featureList = new FeatureList();
+        for (DataSet dataSet: dataSets){
+            for (Feature feature: dataSet.getFeatureList().getAll()){
+                featureList.add(feature);
+            }
+        }
+        merged.setFeatureList(featureList);
+
+        merged.setLabelTranslator(dataSets.get(0).getLabelTranslator());
+        merged.setIdTranslator(dataSets.get(0).getIdTranslator());
+        return merged;
+    }
+
     /**
      *
      * @param dataSet
