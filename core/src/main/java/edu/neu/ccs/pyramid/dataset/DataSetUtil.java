@@ -1352,4 +1352,13 @@ public class DataSetUtil {
         }
         return IntStream.range(0, dataSet.getNumClasses()).filter(l-> !check[l]).boxed().sorted().collect(Collectors.toList());
     }
+
+    public static void copyFeatureMatrixTo(DataSet source, DataSet destination){
+        for (int i=0;i<source.getNumDataPoints();i++){
+            Vector row = source.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                destination.setFeatureValue(i,element.index(),element.get());
+            }
+        }
+    }
 }
