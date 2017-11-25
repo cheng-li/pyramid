@@ -78,7 +78,7 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
             rho = 1/denominator;
         }
         else {
-            terminator.forceTerminate();
+//            terminator.forceTerminate();
             if (logger.isWarnEnabled()){
                 logger.warn("denominator <= 0, force to terminate");
             }
