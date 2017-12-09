@@ -12,6 +12,7 @@ public class RegTreeConfig {
     private int minDataPerLeaf=0;
     private boolean parallel=true;
     private List<Integer> activeFeatures = null;
+    int numActiveFeatures=10;
 
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
@@ -51,6 +52,11 @@ public class RegTreeConfig {
         return this;
     }
 
+    public RegTreeConfig setnumActiveFeatures(int numActiveFeatures){
+        this.numActiveFeatures = numActiveFeatures;
+        return this;
+    }
+
     int getMaxNumLeaves() {
         return maxNumLeaves;
     }
@@ -65,6 +71,8 @@ public class RegTreeConfig {
     int getNumSplitIntervals() {
         return numSplitIntervals;
     }
+
+    int getNumActiveFeatures() {return numActiveFeatures;}
 
 
     public boolean isParallel() {

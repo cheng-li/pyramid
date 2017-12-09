@@ -25,6 +25,8 @@ public class Splitter {
      * @param probs
      * @return best valid splitResult, possibly nothing
      */
+
+
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
@@ -34,12 +36,7 @@ public class Splitter {
             logger.debug("global statistics = "+globalStats);
         }
 
-        List<Integer> featureIndices;
-        if (regTreeConfig.getActiveFeatures().isPresent()){
-            featureIndices = regTreeConfig.getActiveFeatures().get();
-        } else {
-            featureIndices = IntStream.range(0, dataSet.getNumFeatures()).boxed().collect(Collectors.toList());
-        }
+        List<Integer> featureIndices = regTreeConfig.getActiveFeatures().get();
 
         Stream<Integer> stream = featureIndices.stream();
         if (regTreeConfig.isParallel()){
@@ -51,6 +48,45 @@ public class Splitter {
                 .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
     }
+
+
+
+
+
+   // TODO: try to use stream
+
+    static Optional<SplitResult> splitRenewActiveFeatures(RegTreeConfig regTreeConfig,
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       double[] probs){
+        GlobalStats globalStats = new GlobalStats(labels,probs);
+        if (logger.isDebugEnabled()){
+            logger.debug("global statistics = "+globalStats);
+        }
+
+        Comparator<Optional<SplitResult>> comparator = Comparator.comparing(optional -> -1*optional.get().getReduction());
+        PriorityQueue<Optional<SplitResult>> fQueue = new PriorityQueue<>(comparator);
+
+        for(int i=0;i<dataSet.getNumFeatures();i++){
+            Optional<SplitResult> singleFeatureBest=split(regTreeConfig,dataSet,labels,probs,i,globalStats);
+            if (singleFeatureBest.isPresent()){
+                fQueue.add(singleFeatureBest);
+            }
+
+        }
+        Optional<SplitResult> result = fQueue.peek();
+        List<Integer> activeFeatures =new ArrayList<>();
+        for(int i=0; i< regTreeConfig.numActiveFeatures;i++){
+            SplitResult r = fQueue.poll().get();
+            activeFeatures.add(r.getFeatureIndex());
+
+        }
+        regTreeConfig.setActiveFeatures(activeFeatures);
+        return result;
+
+ }
+
+
 
 
     private static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
