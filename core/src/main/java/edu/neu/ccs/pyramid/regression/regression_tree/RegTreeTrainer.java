@@ -14,7 +14,6 @@ import java.util.stream.Stream;
  */
 public class RegTreeTrainer {
 
-
     public static RegressionTree fit(RegTreeConfig regTreeConfig,
                                      RegDataSet regDataSet){
         return fit(regTreeConfig,regDataSet,regDataSet.getLabels());

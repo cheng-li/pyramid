@@ -11,8 +11,7 @@ public class RegTreeConfig {
     private int maxNumLeaves=2;
     private int minDataPerLeaf=0;
     private boolean parallel=true;
-    private List<Integer> activeFeatures = null;
-    int numActiveFeatures=10;
+    private int numActiveFeatures=10;
 
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
@@ -38,21 +37,7 @@ public class RegTreeConfig {
         return this;
     }
 
-    public Optional<List<Integer>> getActiveFeatures() {
-        if (activeFeatures==null){
-            return Optional.empty();
-        } else {
-            return Optional.of(activeFeatures);
-        }
-
-    }
-
-    public RegTreeConfig setActiveFeatures(List<Integer> activeFeatures) {
-        this.activeFeatures = activeFeatures;
-        return this;
-    }
-
-    public RegTreeConfig setnumActiveFeatures(int numActiveFeatures){
+    public RegTreeConfig setNumActiveFeatures(int numActiveFeatures){
         this.numActiveFeatures = numActiveFeatures;
         return this;
     }
@@ -72,8 +57,9 @@ public class RegTreeConfig {
         return numSplitIntervals;
     }
 
-    int getNumActiveFeatures() {return numActiveFeatures;}
-
+    public int getNumActiveFeatures() {
+        return numActiveFeatures;
+    }
 
     public boolean isParallel() {
         return parallel;

@@ -216,7 +216,22 @@ public class App2 {
         logger.info("During training, the performance is reported using Hamming loss optimal predictor. The performance is computed approximately with "+config.getInt("train.showProgress.sampleSize")+" instances.");
 
         int progressInterval = config.getInt("train.showProgress.interval");
+
+
+
+        int interval = config.getInt("train.fullScanInterval");
+        int numActiveFeatures = config.getInt("train.numActiveFeatures");
+        int numofLabels = allTrainData.getNumClasses();
+
+        List<Integer>[] activeFeaturesLists = new ArrayList[numofLabels];
+
+        for(int labelnum =0; labelnum<numofLabels; labelnum++){
+            activeFeaturesLists[labelnum] = new ArrayList<>();
+        }
+
+
         for (int i=startIter;i<=numIterations;i++){
+
             logger.info("iteration "+i);
             MultiLabelClfDataSet trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
 
@@ -226,11 +241,17 @@ public class App2 {
                     .numLeaves(numLeaves)
                     .numSplitIntervals(config.getInt("train.numSplitIntervals"))
                     .usePrior(config.getBoolean("train.usePrior"))
-                    .featureSamplingRate(config.getDouble("train.featureSamplingRate"))
+                    .numActiveFeatures(numActiveFeatures)
                     .build();
 
             IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting, shouldStop);
-            trainer.iterateWithoutStagingScores();
+
+            if(i%interval == 1) {
+                trainer.iterateWithoutStagingScores(activeFeaturesLists,true);
+            }else{
+                trainer.iterateWithoutStagingScores(activeFeaturesLists,false);
+            }
+
             checkPoint.lastIter+=1;
             if (earlyStop && (i%progressInterval==0 || i==numIterations)){
                 for (int l=0;l<numClasses;l++){
