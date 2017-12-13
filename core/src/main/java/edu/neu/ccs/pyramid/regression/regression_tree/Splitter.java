@@ -51,7 +51,7 @@ public class Splitter {
 
 
 
-    // TODO: try to use stream// this is for active feature faster boosting
+    // TODO this is for active feature faster boosting
 
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,

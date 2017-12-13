@@ -229,28 +229,38 @@ public class App2 {
             activeFeaturesLists[labelnum] = new ArrayList<>();
         }
 
+        MultiLabelClfDataSet trainBatch = null;
+        IMLGBTrainer trainer = null;
+
+       // todo time start
+
+
 
         for (int i=startIter;i<=numIterations;i++){
 
             logger.info("iteration "+i);
-            MultiLabelClfDataSet trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
 
-            IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(trainBatch)
-                    .learningRate(learningRate)
-                    .minDataPerLeaf(minDataPerLeaf)
-                    .numLeaves(numLeaves)
-                    .numSplitIntervals(config.getInt("train.numSplitIntervals"))
-                    .usePrior(config.getBoolean("train.usePrior"))
-                    .numActiveFeatures(numActiveFeatures)
-                    .build();
+            if(i%10 == 1||i==startIter) {
+                trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
 
-            IMLGBTrainer trainer = new IMLGBTrainer(imlgbConfig,boosting, shouldStop);
+                IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(trainBatch)
+                        .learningRate(learningRate)
+                        .minDataPerLeaf(minDataPerLeaf)
+                        .numLeaves(numLeaves)
+                        .numSplitIntervals(config.getInt("train.numSplitIntervals"))
+                        .usePrior(config.getBoolean("train.usePrior"))
+                        .numActiveFeatures(numActiveFeatures)
+                        .build();
 
-            if(i%interval == 1) {
-                trainer.iterateWithoutStagingScores(activeFeaturesLists,true);
-            }else{
-                trainer.iterateWithoutStagingScores(activeFeaturesLists,false);
+                trainer = new IMLGBTrainer(imlgbConfig, boosting, shouldStop);
             }
+
+            if (i % interval == 1) {
+                trainer.iterate(activeFeaturesLists, true);
+            } else {
+                trainer.iterate(activeFeaturesLists, false);
+            }
+
 
             checkPoint.lastIter+=1;
             if (earlyStop && (i%progressInterval==0 || i==numIterations)){
@@ -299,15 +309,28 @@ public class App2 {
             }
             if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
                 logger.info("test set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
-                logger.info(new MLMeasures(boosting,testSetForEval).toString());
+                MLMeasures testPerformance = new MLMeasures(boosting,testSetForEval);
+                logger.info(testPerformance.toString());
+
+              // todo  testPerformance.getInstanceAverage().getF1();
             }
             if (numLabelsLeftToTrain==0){
                 logger.info("all label training finished");
                 break;
             }
+
+            //todo  time stop()
         }
+
+
         logger.info("training done");
         logger.info(stopWatch.toString());
+
+        //todo  output to file
+
+
+
+
 
         if (earlyStop){
             for (int l=0;l<numClasses;l++){
