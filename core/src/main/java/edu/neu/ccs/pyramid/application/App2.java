@@ -18,6 +18,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalC
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
 import edu.neu.ccs.pyramid.optimization.Terminator;
 import edu.neu.ccs.pyramid.util.Progress;
+import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
 import edu.neu.ccs.pyramid.visualization.Visualizer;
@@ -26,10 +27,12 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.mahout.math.Vector;
+import org.junit.rules.Stopwatch;
 
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -232,9 +235,12 @@ public class App2 {
         MultiLabelClfDataSet trainBatch = null;
         IMLGBTrainer trainer = null;
 
+
        // todo time start
-
-
+        List<Pair<Integer,Double>> accuracy = new ArrayList<>();
+        List<Pair<Integer,Double>> trainingTime = new ArrayList();
+        StopWatch timeWatch = new StopWatch();
+        timeWatch.start();
 
         for (int i=startIter;i<=numIterations;i++){
 
@@ -311,15 +317,17 @@ public class App2 {
                 logger.info("test set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
                 MLMeasures testPerformance = new MLMeasures(boosting,testSetForEval);
                 logger.info(testPerformance.toString());
-
               // todo  testPerformance.getInstanceAverage().getF1();
+                accuracy.add(new Pair<>(i, testPerformance.getInstanceAverage().getF1()));
             }
+
             if (numLabelsLeftToTrain==0){
                 logger.info("all label training finished");
                 break;
             }
 
             //todo  time stop()
+            trainingTime.add(new Pair<>(i,timeWatch.getTime()/1000.0));
         }
 
 
@@ -327,11 +335,26 @@ public class App2 {
         logger.info(stopWatch.toString());
 
         //todo  output to file
+        File outputdir = new File(config.getString("output.folder"));
+        outputdir.mkdirs();
 
+        File timeFile = new File(outputdir,"trainingTimeForIterations");
+        StringBuilder trainTimeBuilder = new StringBuilder();
+        for(int i=0;i<trainingTime.size();i++){
+            Pair<Integer,Double> timePair = trainingTime.get(i);
+            trainTimeBuilder.append("iteration=").append(timePair.getFirst()).append(": ").append(timePair.getSecond()).append("\n");
+        }
+        FileUtils.writeStringToFile(timeFile,trainTimeBuilder.toString());
 
+        File accuracyFile = new File(outputdir,"instaceF1ForIterations");
+        StringBuilder accuracyBuilder = new StringBuilder();
+        for(int i=0;i<accuracy.size();i++){
+            Pair<Integer,Double> accuracyPair = accuracy.get(i);
+            accuracyBuilder.append("iteration=").append(accuracyPair.getFirst()).append(": ").append(accuracyPair.getSecond()).append("\n");
+        }
+        FileUtils.writeStringToFile(accuracyFile,accuracyBuilder.toString());
 
-
-
+        
         if (earlyStop){
             for (int l=0;l<numClasses;l++){
                 logger.info("----------------------------------------------------");
