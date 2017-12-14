@@ -17,6 +17,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.thresholding.MacroFMeasureT
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
 import edu.neu.ccs.pyramid.optimization.Terminator;
+import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Progress;
 import edu.neu.ccs.pyramid.util.Serialization;
 import edu.neu.ccs.pyramid.util.SetUtil;
@@ -216,6 +217,15 @@ public class App2 {
         logger.info("During training, the performance is reported using Hamming loss optimal predictor. The performance is computed approximately with "+config.getInt("train.showProgress.sampleSize")+" instances.");
 
         int progressInterval = config.getInt("train.showProgress.interval");
+
+
+
+        List<Pair<Integer,Double>> trainingTime = new ArrayList<>();
+        List<Pair<Integer,Double>> accuracy = new ArrayList<>();
+
+        StopWatch timeWatch = new StopWatch();
+        timeWatch.start();
+
         for (int i=startIter;i<=numIterations;i++){
             logger.info("iteration "+i);
             MultiLabelClfDataSet trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
@@ -278,15 +288,41 @@ public class App2 {
             }
             if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
                 logger.info("test set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
-                logger.info(new MLMeasures(boosting,testSetForEval).toString());
+                MLMeasures testPerformance = new MLMeasures(boosting,testSetForEval);
+                logger.info(testPerformance.toString());
+                accuracy.add(new Pair<>(i,testPerformance.getInstanceAverage().getF1()));
             }
             if (numLabelsLeftToTrain==0){
                 logger.info("all label training finished");
                 break;
             }
+
+            trainingTime.add(new Pair<>(i,timeWatch.getTime()/1000.0));
+
         }
+
         logger.info("training done");
         logger.info(stopWatch.toString());
+
+        File outputdir = new File(config.getString("outout.folder"));
+        outputdir.mkdirs();
+        File timeFile = new File(outputdir, "trainingTimeForIterations");
+        File accuracyFile = new File(outputdir,"instanceF1ForIterations");
+        StringBuilder timeBuilder = new StringBuilder();
+        for(int i=0; i<trainingTime.size();i++){
+            Pair timePair = trainingTime.get(i);
+            timeBuilder.append("iterations=").append(timePair.getFirst()).append(": ").append(timePair.getSecond()).append("\n");
+        }
+        FileUtils.writeStringToFile(timeFile,timeBuilder.toString());
+
+        StringBuilder accuracyBuilder = new StringBuilder();
+        for(int i=0; i<accuracy.size();i++){
+            Pair accuracyPair = accuracy.get(i);
+            accuracyBuilder.append("iterations=").append(accuracyPair.getFirst()).append(": ").append(accuracyPair.getSecond()).append("\n");
+        }
+        FileUtils.writeStringToFile(accuracyFile,accuracyBuilder.toString());
+
+
 
         if (earlyStop){
             for (int l=0;l<numClasses;l++){
