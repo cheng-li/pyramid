@@ -304,7 +304,7 @@ public class App2 {
         logger.info("training done");
         logger.info(stopWatch.toString());
 
-        File outputdir = new File(config.getString("outout.folder"));
+        File outputdir = new File(config.getString("output.folder"));
         outputdir.mkdirs();
         File timeFile = new File(outputdir, "trainingTimeForIterations");
         File accuracyFile = new File(outputdir,"instanceF1ForIterations");
