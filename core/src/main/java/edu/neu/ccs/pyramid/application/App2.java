@@ -223,6 +223,7 @@ public class App2 {
 
 
         int interval = config.getInt("train.fullScanInterval");
+        int minibatchLifeSpan = config.getInt("train.minibatchLifeSpan");
         int numActiveFeatures = config.getInt("train.numActiveFeatures");
         int numofLabels = allTrainData.getNumClasses();
 
@@ -246,7 +247,7 @@ public class App2 {
 
             logger.info("iteration "+i);
 
-            if(i%10 == 1||i==startIter) {
+            if(i%minibatchLifeSpan == 1||i==startIter) {
                 trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
 
                 IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(trainBatch)
