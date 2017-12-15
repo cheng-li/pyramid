@@ -267,7 +267,7 @@ public class App2 {
                 new File(output,"decision_rules").mkdirs();
 
                 for (int l=0;l<boosting.getNumClasses();l++){
-                    objectMapper.writeValue(Paths.get(output, "decision_rules", labelTranslator.toExtLabel(l)+".json").toFile(),labelModels.get(l));
+                    objectMapper.writeValue(Paths.get(output, "decision_rules", l +".json").toFile(),labelModels.get(l));
                 }
 
             }
