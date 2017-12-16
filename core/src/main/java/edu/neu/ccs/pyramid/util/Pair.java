@@ -1,9 +1,12 @@
 package edu.neu.ccs.pyramid.util;
 
+import java.io.Serializable;
+
 /**
  * Created by chengli on 8/19/14.
  */
-public class Pair<A,B> {
+public class Pair<A,B> implements Serializable{
+    private static final long serialVersionUID = 1L;
     private A first;
     private B second;
 
