@@ -168,6 +168,10 @@ public class App2 {
         boolean[] shouldStop;
         int numLabelsLeftToTrain;
         int startIter;
+        List<Pair<Integer,Double>> trainingTime;
+        List<Pair<Integer,Double>> accuracy;
+        double startTime = 0;
+
 
         boolean earlyStop = config.getBoolean("train.earlyStop");
         CheckPoint checkPoint;
@@ -180,10 +184,16 @@ public class App2 {
             shouldStop = checkPoint.shouldStop;
             numLabelsLeftToTrain = checkPoint.numLabelsLeftToTrain;
             startIter = checkPoint.lastIter+1;
+            trainingTime = checkPoint.trainingTime;
+            accuracy = checkPoint.accuracy;
+            startTime = checkPoint.trainingTime.get(trainingTime.size()-1).getSecond();
         } else {
             boosting  = new IMLGradientBoosting(numClasses);
             earlyStoppers = new ArrayList<>();
             terminators = new ArrayList<>();
+            trainingTime = new ArrayList<>();
+            accuracy = new ArrayList<>();
+
             if (earlyStop){
                 for (int l=0;l<numClasses;l++){
                     EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE, config.getInt("train.earlyStop.patience"));
@@ -211,6 +221,8 @@ public class App2 {
             // this is not a pointer, has to be updated
             checkPoint.numLabelsLeftToTrain = numLabelsLeftToTrain;
             checkPoint.lastIter = 0;
+            checkPoint.trainingTime = trainingTime;
+            checkPoint.accuracy = accuracy;
             startIter = 1;
         }
         List<MultiLabel> allAssignments = DataSetUtil.gatherMultiLabels(allTrainData);
@@ -236,10 +248,6 @@ public class App2 {
         MultiLabelClfDataSet trainBatch = null;
         IMLGBTrainer trainer = null;
 
-
-       // todo time start
-        List<Pair<Integer,Double>> accuracy = new ArrayList<>();
-        List<Pair<Integer,Double>> trainingTime = new ArrayList();
         StopWatch timeWatch = new StopWatch();
         timeWatch.start();
 
@@ -296,19 +304,8 @@ public class App2 {
 
             }
 
-            Serialization.serialize(checkPoint, new File(output,"checkpoint"));
-            File serializedModel =  new File(output,modelName);
-            boosting.serialize(serializedModel);
-            if (true){
-                ObjectMapper objectMapper = new ObjectMapper();
-                List<LabelModel> labelModels = IMLGBInspector.getAllRules(boosting);
-                new File(output,"decision_rules").mkdirs();
 
-                for (int l=0;l<boosting.getNumClasses();l++){
-                    objectMapper.writeValue(Paths.get(output, "decision_rules", labelTranslator.toExtLabel(l)+".json").toFile(),labelModels.get(l));
-                }
 
-            }
 
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
                 logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
@@ -318,28 +315,30 @@ public class App2 {
                 logger.info("test set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
                 MLMeasures testPerformance = new MLMeasures(boosting,testSetForEval);
                 logger.info(testPerformance.toString());
-              // todo  testPerformance.getInstanceAverage().getF1();
                 accuracy.add(new Pair<>(i, testPerformance.getInstanceAverage().getF1()));
             }
+
+            trainingTime.add(new Pair<>(i, startTime+timeWatch.getTime()/1000.0));
+
+            Serialization.serialize(checkPoint, new File(output,"checkpoint"));
+            File serializedModel =  new File(output,modelName);
+            boosting.serialize(serializedModel);
 
             if (numLabelsLeftToTrain==0){
                 logger.info("all label training finished");
                 break;
             }
 
-            //todo  time stop()
-            trainingTime.add(new Pair<>(i,timeWatch.getTime()/1000.0));
         }
 
 
         logger.info("training done");
         logger.info(stopWatch.toString());
 
-        //todo  output to file
         File outputdir = new File(config.getString("output.folder"));
         outputdir.mkdirs();
 
-        File timeFile = new File(outputdir,"trainingTimeForIterations");
+        File timeFile = new File(outputdir,"training_time.txt");
         StringBuilder trainTimeBuilder = new StringBuilder();
         for(int i=0;i<trainingTime.size();i++){
             Pair<Integer,Double> timePair = trainingTime.get(i);
@@ -347,7 +346,7 @@ public class App2 {
         }
         FileUtils.writeStringToFile(timeFile,trainTimeBuilder.toString());
 
-        File accuracyFile = new File(outputdir,"instaceF1ForIterations");
+        File accuracyFile = new File(outputdir,"test_instance_f1.txt");
         StringBuilder accuracyBuilder = new StringBuilder();
         for(int i=0;i<accuracy.size();i++){
             Pair<Integer,Double> accuracyPair = accuracy.get(i);
@@ -355,7 +354,17 @@ public class App2 {
         }
         FileUtils.writeStringToFile(accuracyFile,accuracyBuilder.toString());
 
-        
+        if (true){
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<LabelModel> labelModels = IMLGBInspector.getAllRules(boosting);
+            new File(output,"decision_rules").mkdirs();
+
+            for (int l=0;l<boosting.getNumClasses();l++){
+                objectMapper.writeValue(Paths.get(output, "decision_rules", l+".json").toFile(),labelModels.get(l));
+            }
+
+        }
+
         if (earlyStop){
             for (int l=0;l<numClasses;l++){
                 logger.info("----------------------------------------------------");
@@ -847,13 +856,15 @@ public class App2 {
     }
 
     public static class CheckPoint implements Serializable{
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
         private IMLGradientBoosting boosting;
         private List<EarlyStopper> earlyStoppers;
         private List<Terminator> terminators;
         private boolean[] shouldStop;
         private int numLabelsLeftToTrain;
         private int lastIter;
+        private List<Pair<Integer,Double>> trainingTime;
+        private List<Pair<Integer,Double>> accuracy;
 
         public int getLastIter() {
             return lastIter;
