@@ -13,9 +13,9 @@ public class IMLGBConfig {
     private double learningRate;
     private int numLeaves;
     private int minDataPerLeaf;
-    private double featureSamplingRate=1;
     private int numSplitIntervals;
     private boolean usePrior;
+    private int numActiveFeatures;
 
     boolean usePrior() {
         return usePrior;
@@ -37,14 +37,14 @@ public class IMLGBConfig {
         return minDataPerLeaf;
     }
 
-    double getFeatureSamplingRate() {
-        return featureSamplingRate;
-    }
 
     int getNumSplitIntervals() {
         return numSplitIntervals;
     }
 
+    int getNumActiveFeatures() {
+        return numActiveFeatures;
+    }
 
     public static class Builder {
         /**
@@ -55,12 +55,12 @@ public class IMLGBConfig {
         /**
          * optional
          */
-        int numLeaves = 2;
-        double learningRate = 1;
-        int minDataPerLeaf = 1;
-        double featureSamplingRate=1;
+        private int numLeaves = 2;
+        private double learningRate = 1;
+        private int minDataPerLeaf = 1;
         private int numSplitIntervals =100;
-        boolean usePrior = true;
+        private boolean usePrior = true;
+        private int numActiveFeatures=20;
 
         public Builder(MultiLabelClfDataSet dataSet) {
             this.dataSet = dataSet;
@@ -76,15 +76,16 @@ public class IMLGBConfig {
             return this;
         }
 
+        public Builder numActiveFeatures(int numActiveFeatures) {
+            this.numActiveFeatures = numActiveFeatures;
+            return this;
+        }
+
         public Builder minDataPerLeaf(int minDataPerLeaf) {
             this.minDataPerLeaf = minDataPerLeaf;
             return this;
         }
 
-        public Builder featureSamplingRate(double featureSamplingRate) {
-            this.featureSamplingRate = featureSamplingRate;
-            return this;
-        }
 
         public Builder numSplitIntervals(int numSplitIntervals) {
             this.numSplitIntervals = numSplitIntervals;
@@ -111,8 +112,8 @@ public class IMLGBConfig {
         this.learningRate = builder.learningRate;
         this.numLeaves = builder.numLeaves;
         this.minDataPerLeaf = builder.minDataPerLeaf;
-        this.featureSamplingRate = builder.featureSamplingRate;
         this.numSplitIntervals = builder.numSplitIntervals;
         this.usePrior = builder.usePrior;
+        this.numActiveFeatures = builder.numActiveFeatures;
     }
 }

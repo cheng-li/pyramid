@@ -25,6 +25,7 @@ public class Splitter {
      * @param probs
      * @return best valid splitResult, possibly nothing
      */
+
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
                                        double[] labels,
@@ -34,12 +35,8 @@ public class Splitter {
             logger.debug("global statistics = "+globalStats);
         }
 
-        List<Integer> featureIndices;
-        if (regTreeConfig.getActiveFeatures().isPresent()){
-            featureIndices = regTreeConfig.getActiveFeatures().get();
-        } else {
-            featureIndices = IntStream.range(0, dataSet.getNumFeatures()).boxed().collect(Collectors.toList());
-        }
+        List<Integer> featureIndices = IntStream.range(0, dataSet.getNumFeatures()).boxed().collect(Collectors.toList());
+
 
         Stream<Integer> stream = featureIndices.stream();
         if (regTreeConfig.isParallel()){
@@ -51,6 +48,67 @@ public class Splitter {
                 .map(Optional::get)
                 .max(Comparator.comparing(SplitResult::getReduction));
     }
+
+
+
+    // TODO this is for active feature faster boosting
+
+    static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       double[] probs,
+                                       List<Integer> activeFeatures,
+                                       boolean fullScan){
+        if(fullScan){
+            GlobalStats globalStats = new GlobalStats(labels,probs);
+            if (logger.isDebugEnabled()){
+                logger.debug("global statistics = "+globalStats);
+            }
+
+            Comparator<Optional<SplitResult>> comparator = Comparator.comparing(optional -> -1*optional.get().getReduction());
+            PriorityQueue<Optional<SplitResult>> fQueue = new PriorityQueue<>(comparator);
+
+            for(int i=0;i<dataSet.getNumFeatures();i++){
+                Optional<SplitResult> singleFeatureBest=split(regTreeConfig,dataSet,labels,probs,i,globalStats);
+                if (singleFeatureBest.isPresent()){
+                    fQueue.add(singleFeatureBest);
+                }
+
+            }
+
+            //todo:full scan. so clear activeFeatures, and add elements to it.
+
+            activeFeatures.clear();
+            Optional<SplitResult> result = fQueue.peek();
+            for(int i=0; i< regTreeConfig.getNumActiveFeatures();i++){
+                SplitResult r = fQueue.poll().get();
+                activeFeatures.add(r.getFeatureIndex());
+
+            }
+            return result;
+
+        }else{
+            GlobalStats globalStats = new GlobalStats(labels,probs);
+            if (logger.isDebugEnabled()){
+                logger.debug("global statistics = "+globalStats);
+            }
+
+            Stream<Integer> stream = activeFeatures.stream();
+            if (regTreeConfig.isParallel()){
+                stream = stream.parallel();
+            }
+            // the list might be empty
+            return stream.map(featureIndex -> split(regTreeConfig, dataSet, labels, probs, featureIndex, globalStats))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .max(Comparator.comparing(SplitResult::getReduction));
+        }
+    }
+
+
+
+
+
 
 
     private static Optional<SplitResult> split(RegTreeConfig regTreeConfig,

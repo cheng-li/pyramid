@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -96,45 +97,86 @@ public class IMLGBTrainer {
     public void iterate(){
 
         List<Integer> allFeatureIndices = IntStream.range(0, this.config.getDataSet().getNumFeatures()).boxed().collect(Collectors.toList());
-        int numFeaturesUsed = (int)(Math.ceil(this.config.getDataSet().getNumFeatures()* config.getFeatureSamplingRate()));
-        if (config.getFeatureSamplingRate()!=1){
-            Collections.shuffle(allFeatureIndices);
-        }
 
-        List<Integer> activeFeatureIndices = allFeatureIndices.subList(0,numFeaturesUsed);
 
         IntStream.range(0, this.boosting.getNumClasses()).parallel()
-            .forEach(k->{
-                if (!shouldStop[k]){
-                    if (logger.isDebugEnabled()){
-                        logger.debug("updating class "+k);
-                    }
-                    Regressor regressor = this.fitClassK(k, activeFeatureIndices);
-                    this.boosting.addRegressor(regressor, k);
+                .forEach(k->{
+                    if (!shouldStop[k]){
+                        if (logger.isDebugEnabled()){
+                            logger.debug("updating class "+k);
+                        }
+                        Regressor regressor = this.fitClassK(k, allFeatureIndices,false);
+                        this.boosting.addRegressor(regressor, k);
 
-                    this.updateStagedClassScores(regressor,k);
-                }
-            });
+                        this.updateStagedClassScores(regressor,k);
+                    }
+                });
     }
 
-    public void iterateWithoutStagingScores(){
-        List<Integer> allFeatureIndices = IntStream.range(0, this.config.getDataSet().getNumFeatures()).boxed().collect(Collectors.toList());
-        int numFeaturesUsed = (int)(Math.ceil(this.config.getDataSet().getNumFeatures()* config.getFeatureSamplingRate()));
-        if (config.getFeatureSamplingRate()!=1){
-            Collections.shuffle(allFeatureIndices);
-        }
-        List<Integer> activeFeatureIndices = allFeatureIndices.subList(0,numFeaturesUsed);
 
-        IntStream.range(0, this.boosting.getNumClasses()).parallel()
-            .forEach(k->{
-                if (!shouldStop[k]){
-                    if (logger.isDebugEnabled()){
-                        logger.debug("updating class "+k);
+    public void iterate(List<Integer>[] activeFeatureLists, boolean fullScan){
+        if (fullScan){
+
+            IntStream.range(0, this.boosting.getNumClasses()).parallel()
+                .forEach(k->{
+                    if (!shouldStop[k]){
+                        if (logger.isDebugEnabled()){
+                            logger.debug("updating class "+k);
+                        }
+                        Regressor regressor = this.fitClassK(k, activeFeatureLists[k], true);
+                        this.boosting.addRegressor(regressor, k);
+
+                        this.updateStagedClassScores(regressor,k);
                     }
-                    Regressor regressor = this.fitClassK(k, activeFeatureIndices);
-                    this.boosting.addRegressor(regressor, k);
-                }
-            });
+                });
+
+        }else{
+            IntStream.range(0, this.boosting.getNumClasses()).parallel()
+                .forEach(k->{
+                    if (!shouldStop[k]){
+                        if (logger.isDebugEnabled()){
+                            logger.debug("updating class "+k);
+                        }
+                        Regressor regressor = this.fitClassK(k, activeFeatureLists[k], false);
+                        this.boosting.addRegressor(regressor, k);
+
+                        this.updateStagedClassScores(regressor,k);
+                    }
+                });
+        }
+
+
+    }
+
+
+    public void iterateWithoutStagingScores(List<Integer>[] activeFeatureLists, boolean fullScan){
+        if(fullScan){
+            IntStream.range(0, this.boosting.getNumClasses()).parallel()
+                    .forEach(k->{
+                        if (!shouldStop[k]){
+                            if (logger.isDebugEnabled()){
+                                logger.debug("updating class "+k);
+                            }
+                            Regressor regressor = this.fitClassK(k, activeFeatureLists[k], true);
+                            this.boosting.addRegressor(regressor, k);
+                        }
+                    });
+
+
+        }else{
+            IntStream.range(0, this.boosting.getNumClasses()).parallel()
+                    .forEach(k->{
+                        if (!shouldStop[k]){
+                            if (logger.isDebugEnabled()){
+                                logger.debug("updating class "+k);
+                            }
+                            Regressor regressor = this.fitClassK(k, activeFeatureLists[k], false);
+                            this.boosting.addRegressor(regressor, k);
+                        }
+                    });
+
+        }
+
     }
 
 
@@ -285,28 +327,60 @@ public class IMLGBTrainer {
      * @return regressionTreeLk, shrunk
      * @throws Exception
      */
-    private RegressionTree fitClassK(int k, List<Integer> activeFeatures){
+    private RegressionTree fitClassK(int k, List<Integer> activeFeatures, boolean fullScan){
+        if (fullScan){
+            double[] gradients = computeGradientForClass(k);
+            double learningRate = this.config.getLearningRate();
 
-        double[] gradients = computeGradientForClass(k);
-        double learningRate = this.config.getLearningRate();
+
+            LeafOutputCalculator leafOutputCalculator = new AverageOutputCalculator();
+
+            RegTreeConfig regTreeConfig = new RegTreeConfig();
+            regTreeConfig.setMaxNumLeaves(this.config.getNumLeaves());
+            regTreeConfig.setMinDataPerLeaf(this.config.getMinDataPerLeaf());
+
+            regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
+            regTreeConfig.setParallel(false);
+            regTreeConfig.setNumActiveFeatures(this.config.getNumActiveFeatures());
+
+            RegressionTree regressionTree = ActiveRegTreeTrainer.fit(regTreeConfig,
+                    this.config.getDataSet(),
+                    gradients,
+                    leafOutputCalculator,
+                    activeFeatures,
+                    true);
+            regressionTree.shrink(learningRate);
+            return regressionTree;
+
+        }else{
+
+            double[] gradients = computeGradientForClass(k);
+            double learningRate = this.config.getLearningRate();
 
 
-        LeafOutputCalculator leafOutputCalculator = new AverageOutputCalculator();
+            LeafOutputCalculator leafOutputCalculator = new AverageOutputCalculator();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig();
-        regTreeConfig.setMaxNumLeaves(this.config.getNumLeaves());
-        regTreeConfig.setMinDataPerLeaf(this.config.getMinDataPerLeaf());
+            RegTreeConfig regTreeConfig = new RegTreeConfig();
+            regTreeConfig.setMaxNumLeaves(this.config.getNumLeaves());
+            regTreeConfig.setMinDataPerLeaf(this.config.getMinDataPerLeaf());
 
-        regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
-        regTreeConfig.setParallel(false);
-        regTreeConfig.setActiveFeatures(activeFeatures);
+            regTreeConfig.setNumSplitIntervals(this.config.getNumSplitIntervals());
+            regTreeConfig.setParallel(false);
+            regTreeConfig.setNumActiveFeatures(this.config.getNumActiveFeatures());
 
-        RegressionTree regressionTree = RegTreeTrainer.fit(regTreeConfig,
-                this.config.getDataSet(),
-                gradients,
-                leafOutputCalculator);
-        regressionTree.shrink(learningRate);
-        return regressionTree;
+            RegressionTree regressionTree = ActiveRegTreeTrainer.fit(regTreeConfig,
+                    this.config.getDataSet(),
+                    gradients,
+                    leafOutputCalculator,
+                    activeFeatures,
+                    false);
+            regressionTree.shrink(learningRate);
+            return regressionTree;
+        }
+
+
+
+
     }
 
 

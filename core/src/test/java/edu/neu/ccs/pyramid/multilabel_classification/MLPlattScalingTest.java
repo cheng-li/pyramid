@@ -29,7 +29,7 @@ public class MLPlattScalingTest {
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
                 .numLeaves(2).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)
-                .featureSamplingRate(1).build();
+                .build();
 
         IMLGBTrainer trainer = new IMLGBTrainer(trainConfig,boosting);
         StopWatch stopWatch = new StopWatch();
