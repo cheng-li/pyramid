@@ -466,6 +466,8 @@ public class App2 {
         logger.info("performance on dataset "+dataName);
         logger.info(mlMeasures.toString());
 
+
+
         boolean simpleCSV = true;
         if (simpleCSV){
             logger.info("start generating simple CSV report");
@@ -670,16 +672,32 @@ public class App2 {
         logger.info("performance on dataset "+dataName);
         logger.info(mlMeasures.toString());
 
+        List<Integer> reportIdOrderTmp = IntStream.range(0,dataSet.getNumDataPoints()).boxed().collect(Collectors.toList());
+        if (config.getString("report.order").equals("confidence")){
+            Comparator<Pair<Integer,Double>> confidenceComparator = Comparator.comparing(pair->pair.getSecond());
+                    reportIdOrderTmp =
+                    IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToObj(i->{
+                        MultiLabel prediction = pluginPredictor.predict(dataSet.getRow(i));
+                        double confidence = scaling.calibratedProb(dataSet.getRow(i), prediction);
+                        return new Pair<>(i, confidence);
+                    }).sorted(confidenceComparator.reversed())
+                            .map(Pair::getFirst)
+                            .collect(Collectors.toList());
+        }
+
+        // just to please lambda expression
+        final List<Integer> reportIdOrder = reportIdOrderTmp;
+
         boolean simpleCSV = true;
         if (simpleCSV){
             logger.info("start generating simple CSV report");
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
-            List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                    .mapToObj(i->IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, scaling, pluginPredictor,dataSet,i,probThreshold))
+            List<String> strs = reportIdOrder.stream().parallel()
+                    .map(i->IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, scaling, pluginPredictor,dataSet,i,probThreshold))
                     .collect(Collectors.toList());
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(csv))){
-                for (int i=0;i<dataSet.getNumDataPoints();i++){
+                for (int i: reportIdOrder){
                     String str = strs.get(i);
                     bw.write(str);
                 }
@@ -706,7 +724,7 @@ public class App2 {
                 int start = i*numDocsPerFile;
                 int end = start+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->
-                        IMLGBInspector.analyzePredictionCalibrated(boosting, scaling, pluginPredictor, dataSet, a,  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
+                        IMLGBInspector.analyzePredictionCalibrated(boosting, scaling, pluginPredictor, dataSet, reportIdOrder.get(a),  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
 
                 String file = "report_"+(i+1)+".json";
