@@ -162,6 +162,15 @@ public class MathUtil {
         return sum;
     }
 
+
+    public static double arraySum(int[] arr){
+        double sum = 0;
+        for(double num:arr){
+            sum += num;
+        }
+        return sum;
+    }
+
     public static float arraySum(float[] arr){
         float sum = 0;
         for(float num:arr){
@@ -294,6 +303,41 @@ public class MathUtil {
         return Double.NaN;
     }
 
+    /**
+     * given x, y pairs, sort all pairs by x values,
+     * scan from left to right, merge every k points into one new point,
+     * where both coordinates are the average of k values
+     * @param input
+     * @return
+     */
+    public static List<Pair<Double, Double>> mergeEveryK(List<Pair<Double, Double>> input, int k){
+        List<Pair<Double, Double>> sorted = input.stream().sorted(Comparator.comparing(Pair::getFirst)).collect(Collectors.toList());
+        List<Pair<Double, Double>> res = new ArrayList<>();
+        int counter = 0;
+        double xSum = 0;
+        double ySum = 0;
+        for (int i=0;i<sorted.size();i++){
+            counter += 1;
+            xSum += sorted.get(i).getFirst();
+            ySum += sorted.get(i).getSecond();
+            if (counter==k){
+                double xAve = xSum/k;
+                double yAve = ySum/k;
+                res.add(new Pair<>(xAve, yAve));
+                counter = 0;
+                xSum = 0;
+                ySum = 0;
+            }
+        }
+
+        if (counter!=0){
+            double xAve = xSum/counter;
+            double yAve = ySum/counter;
+            res.add(new Pair<>(xAve, yAve));
+        }
+
+        return res;
+    }
 
 
 }

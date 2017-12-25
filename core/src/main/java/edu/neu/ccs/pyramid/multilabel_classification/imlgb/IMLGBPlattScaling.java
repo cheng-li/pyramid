@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ClfDataSetBuilder;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -14,12 +15,12 @@ import java.util.stream.IntStream;
 /**
  * platt scaling for imlgb at the set level
  */
-public class IMLGBScaling{
+public class IMLGBPlattScaling {
     private LogisticRegression logisticRegression;
     IMLGradientBoosting boosting;
 
-    public IMLGBScaling(IMLGradientBoosting boosting, MultiLabelClfDataSet multiLabelClfDataSet) {
-        System.out.println("calibrating");
+    public IMLGBPlattScaling(IMLGradientBoosting boosting, MultiLabelClfDataSet multiLabelClfDataSet) {
+        System.out.println("calibrating with Platt scaling");
         this.boosting = boosting;
         ClfDataSet dataSet = ClfDataSetBuilder.getBuilder()
                 .numClasses(2).numDataPoints(multiLabelClfDataSet.getNumDataPoints()).numFeatures(1)

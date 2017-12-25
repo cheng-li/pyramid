@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xpath.operations.And;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,8 @@ import java.util.List;
  * terminate optimization loops
  * Created by chengli on 9/4/15.
  */
-public class Terminator {
+public class Terminator implements Serializable{
+    private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger();
     private double min = Double.POSITIVE_INFINITY;
     private double max = Double.NEGATIVE_INFINITY;

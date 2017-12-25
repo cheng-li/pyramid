@@ -149,7 +149,7 @@ public class App1 {
 
         for (String field: featureFields){
             String featureType = index.getFieldType(field);
-            if (featureType.equalsIgnoreCase("string")){
+            if (featureType.equalsIgnoreCase("text")||featureType.equalsIgnoreCase("keyword")){
                 CategoricalFeatureExpander expander = new CategoricalFeatureExpander();
                 expander.setStart(featureList.size());
                 expander.setVariableName(field);
