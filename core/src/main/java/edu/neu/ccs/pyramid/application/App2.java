@@ -624,7 +624,7 @@ public class App2 {
         logger.info("generating reports with calibrated probabilities for data set "+dataName);
         String output = config.getString("output.folder");
         String modelName = "model_app3";
-        String calibration = "calibration";
+        String calibration = "set_calibration";
         File analysisFolder = new File(new File(output,"reports_app3"),dataName+"_reports_calibrated");
         analysisFolder.mkdirs();
         FileUtils.cleanDirectory(analysisFolder);
