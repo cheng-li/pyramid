@@ -9,12 +9,12 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class IMLGBLabelIsotonicScalling implements Serializable {
+public class IMLGBLabelIsotonicScaling implements Serializable {
     private static final long serialVersionUID = 1L;
     private IsotonicRegression isotonicRegression;
     private IMLGradientBoosting imlGradientBoosting;
 
-    public IMLGBLabelIsotonicScalling(IMLGradientBoosting imlGradientBoosting, MultiLabelClfDataSet multiLabelClfDataSet) {
+    public IMLGBLabelIsotonicScaling(IMLGradientBoosting imlGradientBoosting, MultiLabelClfDataSet multiLabelClfDataSet) {
         this.imlGradientBoosting = imlGradientBoosting;
         final int numBuckets = 10000;
         double bucketLength = 1.0/numBuckets;
@@ -27,7 +27,6 @@ public class IMLGBLabelIsotonicScalling implements Serializable {
         BucketInfo total;
         total = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                 .mapToObj(i->{
-                    System.out.println(i);
                     double[] probs = imlGradientBoosting.predictClassProbs(multiLabelClfDataSet.getRow(i));
                     double[] count = new double[numBuckets];
                     double[] sum = new double[numBuckets];
@@ -61,6 +60,15 @@ public class IMLGBLabelIsotonicScalling implements Serializable {
         isotonicRegression = new IsotonicRegression(locations, accs, counts);
     }
 
+    public double calibratedClassProb(double prob){
+        return isotonicRegression.predict(prob);
+    }
+
+    public double[] calibratedClassProbs(double[] probs){
+        return IntStream.range(0, probs.length)
+                .mapToDouble(i->calibratedClassProb(probs[i])).toArray();
+    }
+
     public BucketInfo individualProbs(MultiLabelClfDataSet multiLabelClfDataSet){
         final int numBuckets = 10;
         double bucketLength = 1.0/numBuckets;
@@ -69,7 +77,6 @@ public class IMLGBLabelIsotonicScalling implements Serializable {
         BucketInfo total;
         total = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                 .mapToObj(i->{
-                    System.out.println(i);
                     double[] probs = imlGradientBoosting.predictClassProbs(multiLabelClfDataSet.getRow(i));
                     double[] calibratedProbs = IntStream.range(0, probs.length)
                             .mapToDouble(j->isotonicRegression.predict(probs[j])).toArray();

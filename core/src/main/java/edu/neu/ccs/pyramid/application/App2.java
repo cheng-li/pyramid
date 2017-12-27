@@ -624,13 +624,15 @@ public class App2 {
         logger.info("generating reports with calibrated probabilities for data set "+dataName);
         String output = config.getString("output.folder");
         String modelName = "model_app3";
-        String calibration = "set_calibration";
+        String setCalibration = "set_calibration";
+        String labelCalibration = "label_calibration";
         File analysisFolder = new File(new File(output,"reports_app3"),dataName+"_reports_calibrated");
         analysisFolder.mkdirs();
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        IMLGBIsotonicScaling scaling = (IMLGBIsotonicScaling)Serialization.deserialize(new File(output,calibration));
+        IMLGBIsotonicScaling setScaling = (IMLGBIsotonicScaling)Serialization.deserialize(new File(output,setCalibration));
+        IMLGBLabelIsotonicScaling labelScaling = (IMLGBLabelIsotonicScaling)Serialization.deserialize(new File(output, labelCalibration));
 
         String predictTarget = config.getString("predict.target");
 
@@ -662,7 +664,7 @@ public class App2 {
         logger.info("sum of calibrated probabilities");
 
         double[] all = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
-                .map(scaling::calibratedProb).sum()).toArray();
+                .map(setScaling::calibratedProb).sum()).toArray();
         DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
         logger.info(descriptiveStatistics.toString());
 
@@ -678,7 +680,7 @@ public class App2 {
                     reportIdOrderTmp =
                     IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToObj(i->{
                         MultiLabel prediction = pluginPredictor.predict(dataSet.getRow(i));
-                        double confidence = scaling.calibratedProb(dataSet.getRow(i), prediction);
+                        double confidence = setScaling.calibratedProb(dataSet.getRow(i), prediction);
                         return new Pair<>(i, confidence);
                     }).sorted(confidenceComparator.reversed())
                             .map(Pair::getFirst)
@@ -694,7 +696,7 @@ public class App2 {
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
             List<String> strs = reportIdOrder.stream().parallel()
-                    .map(i->IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, scaling, pluginPredictor,dataSet,i,probThreshold))
+                    .map(i->IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, setScaling,labelScaling, pluginPredictor,dataSet,i,probThreshold))
                     .collect(Collectors.toList());
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(csv))){
                 for (int i: reportIdOrder){
@@ -724,7 +726,7 @@ public class App2 {
                 int start = i*numDocsPerFile;
                 int end = start+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,dataSet.getNumDataPoints())).parallel().mapToObj(a->
-                        IMLGBInspector.analyzePredictionCalibrated(boosting, scaling, pluginPredictor, dataSet, reportIdOrder.get(a),  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
+                        IMLGBInspector.analyzePredictionCalibrated(boosting, setScaling, labelScaling,pluginPredictor, dataSet, reportIdOrder.get(a),  ruleLimit,labelSetLimit, probThreshold)).collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
 
                 String file = "report_"+(i+1)+".json";

@@ -5,10 +5,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.SafeDivide;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
-import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
-import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.Serialization;
-import org.apache.commons.io.FileUtils;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
@@ -136,8 +133,8 @@ public class Calibration {
 
     private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger, Config config)throws Exception{
 
-        IMLGBLabelIsotonicScalling imlgbLabelIsotonicScalling = new IMLGBLabelIsotonicScalling(boosting, dataSet);
-        IMLGBLabelIsotonicScalling.BucketInfo total = imlgbLabelIsotonicScalling.individualProbs(dataSet);
+        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, dataSet);
+        IMLGBLabelIsotonicScaling.BucketInfo total = imlgbLabelIsotonicScaling.individualProbs(dataSet);
 
         double[] counts = total.getCounts();
         double[] correct = total.getSums();
@@ -165,7 +162,7 @@ public class Calibration {
 
         }
         logger.info(sb.toString());
-        Serialization.serialize(imlgbLabelIsotonicScalling, new File(config.getString("out"),"label_calibration"));
+        Serialization.serialize(imlgbLabelIsotonicScaling, new File(config.getString("out"),"label_calibration"));
 
     }
 
