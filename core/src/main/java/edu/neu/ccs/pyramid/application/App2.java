@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.eval.FMeasure;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.feature.Feature;
@@ -683,6 +684,19 @@ public class App2 {
                         double confidence = setScaling.calibratedProb(dataSet.getRow(i), prediction);
                         return new Pair<>(i, confidence);
                     }).sorted(confidenceComparator.reversed())
+                            .map(Pair::getFirst)
+                            .collect(Collectors.toList());
+        }
+
+        if (config.getString("report.order").equals("mistake")){
+            Comparator<Pair<Integer,Double>> mistakeComparator = Comparator.comparing(pair->pair.getSecond());
+            reportIdOrderTmp =
+                    IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToObj(i->{
+                        MultiLabel prediction = pluginPredictor.predict(dataSet.getRow(i));
+                        double confidence = setScaling.calibratedProb(dataSet.getRow(i), prediction);
+                        double instanceF1 = FMeasure.f1(prediction,dataSet.getMultiLabels()[i]);
+                        return new Pair<>(i, (1-instanceF1)*confidence);
+                    }).sorted(mistakeComparator.reversed())
                             .map(Pair::getFirst)
                             .collect(Collectors.toList());
         }
