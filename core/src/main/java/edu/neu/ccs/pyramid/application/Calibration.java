@@ -21,14 +21,13 @@ public class Calibration {
 
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testSet"),DataSetType.ML_CLF_SPARSE,true);
         IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(config.getString("input.model"));
-        IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, test);
-
-        logger.info("====original probabilities on the test set====");
 
         original(boosting, test, logger);
 
+        logger.info("start calibrating set probability");
+        IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, test);
+        logger.info("finish calibrating set probability");
 
-        logger.info("====Isotonic regression calibrated probabilities on the test set====");
 
         isoCalibration(boosting, test, isotonicScaling, logger);
 
@@ -136,8 +135,9 @@ public class Calibration {
     }
 
     private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger, Config config)throws Exception{
-
+        logger.info("start calibrating label probability ");
         IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, dataSet);
+        logger.info("finish calibrating label probability");
         IMLGBLabelIsotonicScaling.BucketInfo total = imlgbLabelIsotonicScaling.individualProbs(dataSet);
 
         double[] counts = total.getCounts();
