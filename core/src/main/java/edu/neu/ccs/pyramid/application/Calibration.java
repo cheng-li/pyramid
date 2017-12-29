@@ -32,9 +32,11 @@ public class Calibration {
 
         isoCalibration(boosting, test, isotonicScaling, logger);
 
+        labelUncalibration(boosting,test,logger);
+
         labelIsoCalibration(boosting, test, logger, config);
 
-        labelUncalibration(boosting,test,logger);
+
 
         Serialization.serialize(isotonicScaling, new File(config.getString("out"),"set_calibration"));
 
@@ -65,6 +67,7 @@ public class Calibration {
         double intervalSize = 1.0/numIntervals;
         DecimalFormat decimalFormat = new DecimalFormat("#0.00");
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("uncalibrated set probability\n");
         stringBuilder.append("\ninterval"+"\t"+"total"+"\t"+"correct"+"\t\t"+"incorrect"+"\t"+"accuracy"+"\t"+"average confidence\n");
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
@@ -108,6 +111,7 @@ public class Calibration {
         double intervalSize = 1.0/numIntervals;
         DecimalFormat decimalFormat = new DecimalFormat("#0.00");
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("calibrated set probability\n");
         stringBuilder.append("\ninterval"+"\t"+"total"+"\t"+"correct"+"\t\t"+"incorrect"+"\t"+"accuracy"+"\t"+"average confidence\n");
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
