@@ -7,9 +7,11 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.ArgSort;
+import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.mahout.math.Vector;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -178,6 +180,44 @@ public class AveragePrecision {
                     }
                 });
         return averagePrecision(binaryLabels, scores);
+    }
+
+    public static double globalAveragePrecisionTruncated(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet, int truncationLevel){
+        List<Pair<Double,Integer>> all = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToObj(i->topK(classifier, dataSet.getRow(i),dataSet.getMultiLabels()[i],truncationLevel))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        double[] scores = all.stream().mapToDouble(Pair::getFirst).toArray();
+        int[] matches = all.stream().mapToInt(Pair::getSecond).toArray();
+        int totalRel = IntStream.range(0, dataSet.getNumDataPoints()).map(i->dataSet.getMultiLabels()[i].getNumMatchedLabels()).sum();
+
+        return  AveragePrecision.averagePrecisionTruncated(matches, scores, totalRel);
+    }
+
+    /**
+     *
+     * @param classifier
+     * @param row
+     * @param truth
+     * @param truncationLevel how many labels to keep for each instance
+     * @return
+     */
+    private static List<Pair<Double,Integer>> topK(MultiLabelClassifier.ClassProbEstimator classifier, Vector row, MultiLabel truth, int truncationLevel){
+
+        double[] marginals = classifier.predictClassProbs(row);
+        int[] sorted = ArgSort.argSortDescending(marginals);
+        List<Pair<Double,Integer>> top = new ArrayList<>();
+        for (int k=0;k<truncationLevel;k++){
+            int label = sorted[k];
+            double score = marginals[label];
+            int match = 0;
+            if (truth.matchClass(label)){
+                match = 1;
+            }
+            top.add(new Pair<>(score, match));
+        }
+        return top;
     }
 
     /**
