@@ -150,7 +150,7 @@ public class PhraseCountQuery extends CustomSpanQuery implements Cloneable {
             }
 
             // all NearSpans require at least two subSpans
-            return (!inOrder) ? new NearSpansUnordered(slop, subSpans)
+            return (!inOrder) ? new CustomNearSpansUnordered(slop, subSpans)
                     : new NearSpansOrdered(slop, subSpans);
         }
 

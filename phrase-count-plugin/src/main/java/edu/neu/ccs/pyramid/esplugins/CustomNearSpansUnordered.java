@@ -16,12 +16,14 @@ package edu.neu.ccs.pyramid.esplugins;
  * limitations under the License.
  */
 
-        import java.io.IOException;
-        import java.util.List;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-        import org.apache.lucene.search.spans.SpanCollector;
-        import org.apache.lucene.search.spans.Spans;
-        import org.apache.lucene.util.PriorityQueue;
+import org.apache.lucene.search.spans.SpanCollector;
+import org.apache.lucene.search.spans.Spans;
+import org.apache.lucene.util.PriorityQueue;
 
 /**
  * Similar to NearSpansOrdered, but for the unordered case.
@@ -46,6 +48,7 @@ public class CustomNearSpansUnordered extends CustomConjunctionSpans {
     private class SpanTotalLengthEndPositionWindow extends PriorityQueue<Spans> {
         int totalSpanLength;
         int maxEndPosition;
+        Set<Integer> set = new HashSet<>();
 
         public SpanTotalLengthEndPositionWindow() {
             super(subSpans.length);
@@ -62,8 +65,11 @@ public class CustomNearSpansUnordered extends CustomConjunctionSpans {
             maxEndPosition = -1;
             for (Spans spans : subSpans) {
                 assert spans.startPosition() == -1;
-                spans.nextStartPosition();
-                assert spans.startPosition() != NO_MORE_POSITIONS;
+                do {
+                    spans.nextStartPosition();
+                    assert spans.startPosition() != NO_MORE_POSITIONS;
+                } while (set.contains(spans.startPosition()));
+                set.add(spans.startPosition());
                 add(spans);
                 if (spans.endPosition() > maxEndPosition) {
                     maxEndPosition = spans.endPosition();
@@ -78,10 +84,14 @@ public class CustomNearSpansUnordered extends CustomConjunctionSpans {
             Spans topSpans = top();
             assert topSpans.startPosition() != NO_MORE_POSITIONS;
             int spanLength = topSpans.endPosition() - topSpans.startPosition();
-            int nextStartPos = topSpans.nextStartPosition();
-            if (nextStartPos == NO_MORE_POSITIONS) {
-                return false;
-            }
+            int nextStartPos = 0;
+            do {
+                nextStartPos = topSpans.nextStartPosition();
+                if (nextStartPos == NO_MORE_POSITIONS) {
+                    return false;
+                }
+            } while (set.contains(nextStartPos));
+            set.add(nextStartPos);
             totalSpanLength -= spanLength;
             spanLength = topSpans.endPosition() - topSpans.startPosition();
             totalSpanLength += spanLength;
