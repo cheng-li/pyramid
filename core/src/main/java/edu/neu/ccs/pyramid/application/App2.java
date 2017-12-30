@@ -301,9 +301,6 @@ public class App2 {
 
             }
 
-
-
-
             if (config.getBoolean("train.showTrainProgress") && (i%progressInterval==0 || i==numIterations)){
                 logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
                 logger.info(new MLMeasures(boosting,trainSetForEval).toString());
