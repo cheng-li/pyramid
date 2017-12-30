@@ -5,10 +5,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.SafeDivide;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
-import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
-import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.Serialization;
-import org.apache.commons.io.FileUtils;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
@@ -24,18 +21,25 @@ public class Calibration {
 
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testSet"),DataSetType.ML_CLF_SPARSE,true);
         IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(config.getString("input.model"));
-        IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, test);
-
-        logger.info("====original probabilities on the test set====");
 
         original(boosting, test, logger);
 
+        logger.info("start calibrating set probability");
+        IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, test);
+        logger.info("finish calibrating set probability");
 
-        logger.info("====Isotonic regression calibrated probabilities on the test set====");
 
         isoCalibration(boosting, test, isotonicScaling, logger);
 
-        Serialization.serialize(isotonicScaling, new File(config.getString("out"),"calibration"));
+        labelUncalibration(boosting,test,logger);
+
+        labelIsoCalibration(boosting, test, logger, config);
+
+
+
+        Serialization.serialize(isotonicScaling, new File(config.getString("out"),"set_calibration"));
+
+
 
 
     }
@@ -62,6 +66,7 @@ public class Calibration {
         double intervalSize = 1.0/numIntervals;
         DecimalFormat decimalFormat = new DecimalFormat("#0.00");
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("uncalibrated set probability\n");
         stringBuilder.append("\ninterval"+"\t"+"total"+"\t"+"correct"+"\t\t"+"incorrect"+"\t"+"accuracy"+"\t"+"average confidence\n");
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
@@ -105,6 +110,7 @@ public class Calibration {
         double intervalSize = 1.0/numIntervals;
         DecimalFormat decimalFormat = new DecimalFormat("#0.00");
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("calibrated set probability\n");
         stringBuilder.append("\ninterval"+"\t"+"total"+"\t"+"correct"+"\t\t"+"incorrect"+"\t"+"accuracy"+"\t"+"average confidence\n");
         for (int i=0;i<numIntervals;i++){
             double left = intervalSize*i;
@@ -127,6 +133,110 @@ public class Calibration {
 
 
     }
+
+    private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger, Config config)throws Exception{
+        logger.info("start calibrating label probability ");
+        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, dataSet);
+        logger.info("finish calibrating label probability");
+        IMLGBLabelIsotonicScaling.BucketInfo total = imlgbLabelIsotonicScaling.individualProbs(dataSet);
+
+        double[] counts = total.getCounts();
+        double[] correct = total.getSums();
+        double[] sumProbs = total.getSumProbs();
+        double[] accs = new double[counts.length];
+        double[] average_confidence = new double[counts.length];
+
+        for (int i = 0; i < counts.length; i++) {
+            accs[i] = correct[i] / counts[i];
+        }
+        for (int j = 0; j < counts.length; j++) {
+            average_confidence[j] = sumProbs[j] / counts[j];
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat("#0.0000");
+        StringBuilder sb = new StringBuilder();
+        sb.append("calibrated label probabilities\n");
+        sb.append("interval\t\t").append("total\t\t").append("correct\t\t").append("incorrect\t\t").append("accuracy\t\t").append("average confidence\n");
+        for (int i = 0; i < 10; i++) {
+            sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
+                    .append(decimalFormat.format((i + 1) * 0.1)).append("]")
+                    .append("\t\t").append(counts[i]).append("\t\t").append(correct[i]).append("\t\t")
+                    .append(counts[i] - correct[i]).append("\t\t").append(decimalFormat.format(accs[i])).append("\t\t")
+                    .append(decimalFormat.format(average_confidence[i])).append("\n");
+
+        }
+        logger.info(sb.toString());
+        Serialization.serialize(imlgbLabelIsotonicScaling, new File(config.getString("out"),"label_calibration"));
+
+    }
+
+    private static void labelUncalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger)throws Exception{
+
+        final int numBuckets = 10;
+        double bucketLength = 1.0/numBuckets;
+
+        BucketInfo empty = new BucketInfo(numBuckets);
+        BucketInfo total;
+        total = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToObj(i->{
+                    double[] probs = boosting.predictClassProbs(dataSet.getRow(i));
+                    double[] count = new double[numBuckets];
+                    double[] sum = new double[numBuckets];
+                    double[] sumProbs = new double[numBuckets];
+                    for (int a=0;a<probs.length;a++){
+                        int index = (int)Math.floor(probs[a]/bucketLength);
+                        if (index<0){
+                            index=0;
+                        }
+                        if (index>=numBuckets){
+                            index = numBuckets-1;
+                        }
+                        count[index] += 1;
+                        sumProbs[index] += probs[a];
+                        if (dataSet.getMultiLabels()[i].matchClass(a)){
+                            sum[index] += 1;
+                        } else {
+                            sum[index] += 0;
+                        }
+                    }
+                    return new BucketInfo(count, sum, sumProbs);
+                }).reduce(empty, BucketInfo::add, BucketInfo::add);
+
+        double[] counts = total.getCounts();
+        double[] correct = total.getSums();
+        double[] sumProbs = total.getSumProbs();
+        double[] accs = new double[counts.length];
+        double[] average_confidence = new double[counts.length];
+
+        for (int i = 0; i < counts.length; i++) {
+            accs[i] = correct[i] / counts[i];
+        }
+        for (int j = 0; j < counts.length; j++) {
+            average_confidence[j] = sumProbs[j] / counts[j];
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat("#0.0000");
+        StringBuilder sb = new StringBuilder();
+        sb.append("uncalibrated label probabilities\n");
+        sb.append("interval\t\t").append("total\t\t").append("correct\t\t").append("incorrect\t\t").append("accuracy\t\t").append("average confidence\n");
+        for (int i = 0; i < 10; i++) {
+            sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
+                    .append(decimalFormat.format((i + 1) * 0.1)).append("]")
+                    .append("\t\t").append(counts[i]).append("\t\t").append(correct[i]).append("\t\t")
+                    .append(counts[i] - correct[i]).append("\t\t").append(decimalFormat.format(accs[i])).append("\t\t")
+                    .append(decimalFormat.format(average_confidence[i])).append("\n");
+
+        }
+        logger.info(sb.toString());
+
+
+    }
+
+
+
+
+
+
 
 
 

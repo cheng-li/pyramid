@@ -66,4 +66,17 @@ public class FMeasure {
 
         return f / multiLabels.length;
     }
+
+    public static double f1(MultiLabel prediction, MultiLabel truth){
+        if( (prediction.getMatchedLabels().size() + truth.getMatchedLabels().size() == 0)){
+            return 1;
+        }
+        return MultiLabel.intersection(prediction, truth).size() * 2.0 /
+                (prediction.getMatchedLabels().size() + truth.getMatchedLabels().size());
+
+    }
+
+
+
+
 }

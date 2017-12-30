@@ -126,11 +126,10 @@ public class IMLGBInspector {
     }
 
 
-    public static ClassScoreCalculation decisionProcess(IMLGradientBoosting boosting, LabelTranslator labelTranslator,
+    public static ClassScoreCalculation decisionProcess(IMLGradientBoosting boosting, LabelTranslator labelTranslator, double prob,
                                                         Vector vector, int classIndex, int limit){
         ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
                 boosting.predictClassScore(vector,classIndex));
-        double prob = boosting.predictClassProb(vector,classIndex);
         classScoreCalculation.setClassProbability(prob);
         List<Regressor> regressors = boosting.getRegressors(classIndex);
         List<TreeRule> treeRules = new ArrayList<>();
@@ -217,7 +216,7 @@ public class IMLGBInspector {
 
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){
-            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,classProbs[k],
                     dataSet.getRow(dataPointIndex),k,ruleLimit);
             classScoreCalculations.add(classScoreCalculation);
         }
@@ -227,7 +226,7 @@ public class IMLGBInspector {
                     MultiLabelPredictionAnalysis.ClassRankInfo rankInfo = new MultiLabelPredictionAnalysis.ClassRankInfo();
                     rankInfo.setClassIndex(label);
                     rankInfo.setClassName(labelTranslator.toExtLabel(label));
-                    rankInfo.setProb(boosting.predictClassProb(dataSet.getRow(dataPointIndex), label));
+                    rankInfo.setProb(classProbs[label]);
                     return rankInfo;
                 }
             ).collect(Collectors.toList());
@@ -269,7 +268,8 @@ public class IMLGBInspector {
 
 
     public static  MultiLabelPredictionAnalysis analyzePredictionCalibrated(IMLGradientBoosting boosting,
-                                                                  IMLGBIsotonicScaling scaling,
+                                                                  IMLGBIsotonicScaling setScaling,
+                                                                  IMLGBLabelIsotonicScaling labelScaling,
                                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                   MultiLabelClfDataSet dataSet,
                                                                   int dataPointIndex,  int ruleLimit,
@@ -286,7 +286,7 @@ public class IMLGBInspector {
         List<String> labels = dataSet.getMultiLabels()[dataPointIndex].getMatchedLabelsOrdered().stream()
                 .map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setLabels(labels);
-        predictionAnalysis.setProbForTrueLabels(scaling.calibratedProb(dataSet.getRow(dataPointIndex),dataSet.getMultiLabels()[dataPointIndex]));
+        predictionAnalysis.setProbForTrueLabels(setScaling.calibratedProb(dataSet.getRow(dataPointIndex),dataSet.getMultiLabels()[dataPointIndex]));
 
 
         MultiLabel predictedLabels = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
@@ -295,12 +295,13 @@ public class IMLGBInspector {
         List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setPrediction(prediction);
 
-        predictionAnalysis.setProbForPredictedLabels(scaling.calibratedProb(dataSet.getRow(dataPointIndex),predictedLabels));
+        predictionAnalysis.setProbForPredictedLabels(setScaling.calibratedProb(dataSet.getRow(dataPointIndex),predictedLabels));
 
         double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        double[] calibratedClassProbs = labelScaling.calibratedClassProbs(classProbs);
         List<Integer> classes = new ArrayList<Integer>();
         for (int k = 0; k < boosting.getNumClasses(); k++){
-            if (classProbs[k]>=classProbThreshold
+            if (calibratedClassProbs[k]>=classProbThreshold
                     ||dataSet.getMultiLabels()[dataPointIndex].matchClass(k)
                     ||predictedLabels.matchClass(k)){
                 classes.add(k);
@@ -309,7 +310,7 @@ public class IMLGBInspector {
 
         List<ClassScoreCalculation> classScoreCalculations = new ArrayList<>();
         for (int k: classes){
-            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,
+            ClassScoreCalculation classScoreCalculation = decisionProcess(boosting,labelTranslator,calibratedClassProbs[k],
                     dataSet.getRow(dataPointIndex),k,ruleLimit);
             classScoreCalculations.add(classScoreCalculation);
         }
@@ -319,7 +320,7 @@ public class IMLGBInspector {
                     MultiLabelPredictionAnalysis.ClassRankInfo rankInfo = new MultiLabelPredictionAnalysis.ClassRankInfo();
                     rankInfo.setClassIndex(label);
                     rankInfo.setClassName(labelTranslator.toExtLabel(label));
-                    rankInfo.setProb(boosting.predictClassProb(dataSet.getRow(dataPointIndex), label));
+                    rankInfo.setProb(calibratedClassProbs[label]);
                     return rankInfo;
                 }
         ).collect(Collectors.toList());
@@ -330,7 +331,7 @@ public class IMLGBInspector {
 
         if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
             double[] labelSetProbs = Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
-                    .map(scaling::calibratedProb).toArray();
+                    .map(setScaling::calibratedProb).toArray();
 
             labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
                     .mapToObj(i -> {
@@ -426,7 +427,8 @@ public class IMLGBInspector {
 
 
     public static  String simplePredictionAnalysisCalibrated(IMLGradientBoosting boosting,
-                                                   IMLGBIsotonicScaling scaling,
+                                                   IMLGBIsotonicScaling setScaling,
+                                                   IMLGBLabelIsotonicScaling labelScaling,
                                                    PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                    MultiLabelClfDataSet dataSet,
                                                    int dataPointIndex,  double classProbThreshold){
@@ -438,11 +440,13 @@ public class IMLGBInspector {
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        double[] calibratedClassProbs = labelScaling.calibratedClassProbs(classProbs);
+
         MultiLabel predicted = pluginPredictor.predict(dataSet.getRow(dataPointIndex));
 
         List<Integer> classes = new ArrayList<Integer>();
         for (int k = 0; k < boosting.getNumClasses(); k++){
-            if (classProbs[k]>=classProbThreshold
+            if (calibratedClassProbs[k]>=classProbThreshold
                     ||dataSet.getMultiLabels()[dataPointIndex].matchClass(k)
                     ||predicted.matchClass(k)){
                 classes.add(k);
@@ -450,7 +454,7 @@ public class IMLGBInspector {
         }
 
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<Integer, Double>(l, classProbs[l]))
+        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<Integer, Double>(l, calibratedClassProbs[l]))
                 .sorted(comparator.reversed()).collect(Collectors.toList());
         for (Pair<Integer,Double> pair: list){
             int label = pair.getFirst();
@@ -465,7 +469,7 @@ public class IMLGBInspector {
         }
 
 
-        double probability = scaling.calibratedProb(dataSet.getRow(dataPointIndex),predicted);
+        double probability = setScaling.calibratedProb(dataSet.getRow(dataPointIndex),predicted);
 
         List<Integer> predictedList = predicted.getMatchedLabelsOrdered();
         sb.append(id).append("\t");

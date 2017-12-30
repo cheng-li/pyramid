@@ -63,6 +63,10 @@ public class IMLGBIsotonicScaling implements Serializable{
 //        System.out.println("calibration done");
     }
 
+    public IMLGradientBoosting getBoosting() {
+        return boosting;
+    }
+
     public double calibratedProb(Vector vector, MultiLabel multiLabel){
         double uncalibrated = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
         return isotonicRegression.predict(uncalibrated);
@@ -74,12 +78,12 @@ public class IMLGBIsotonicScaling implements Serializable{
 
     private static class BucketInfo{
 
-        public BucketInfo(int size) {
+        private BucketInfo(int size) {
             counts = new double[size];
             sums = new double[size];
         }
 
-        public BucketInfo(double[] counts, double[] sums) {
+        private BucketInfo(double[] counts, double[] sums) {
             this.counts = counts;
             this.sums = sums;
         }
