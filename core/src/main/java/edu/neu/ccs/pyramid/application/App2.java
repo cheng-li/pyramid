@@ -713,9 +713,8 @@ public class App2 {
                     .map(i->IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, setScaling,labelScaling, pluginPredictor,dataSet,i,probThreshold))
                     .collect(Collectors.toList());
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(csv))){
-                for (int i: reportIdOrder){
-                    String str = strs.get(i);
-                    bw.write(str);
+                for (String line: strs){
+                    bw.write(line);
                 }
             }
             logger.info("finish generating simple CSV report");
