@@ -1047,7 +1047,7 @@ public class ESIndex implements AutoCloseable{
         }
 
         int slop = ngram.getSlop();
-        PhraseCountQueryBuilder queryBuilder = new PhraseCountQueryBuilder(ngram.getField(), slop, false, false, ngram.getTerms());
+        PhraseCountQueryBuilder queryBuilder = new PhraseCountQueryBuilder(ngram.getField(), slop, true, false, ngram.getTerms());
 
         SearchResponse response = client.prepareSearch(indexName).setSize(size)
                 .setTrackScores(false).
