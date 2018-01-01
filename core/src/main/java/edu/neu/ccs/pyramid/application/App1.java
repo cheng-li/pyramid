@@ -293,7 +293,9 @@ public class App1 {
 
 
     static void addNgramFeatures(FeatureList featureList, Set<Ngram> ngrams){
-        ngrams.stream().forEach(ngram -> {
+        List<Ngram> list = new ArrayList<>(ngrams);
+        Collections.sort(list);
+        list.stream().forEach(ngram -> {
             ngram.getSettings().put("source","matching_score");
             featureList.add(ngram);
         });

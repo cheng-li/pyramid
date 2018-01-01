@@ -8,16 +8,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.neu.ccs.pyramid.util.SetUtil;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by chengli on 3/7/15.
  */
 @JsonSerialize(using = Ngram.Serializer.class)
-public class Ngram extends Feature {
+public class Ngram extends Feature implements Comparable{
     private static final long serialVersionUID = 3L;
     private String ngram = "unknown";
     private String field = "unknown";
@@ -99,6 +96,9 @@ public class Ngram extends Feature {
         return str;
     }
 
+
+
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Ngram{");
@@ -113,6 +113,16 @@ public class Ngram extends Feature {
         sb.append(", settings=").append(settings);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        return Comparator.comparingInt(Ngram::getN)
+                .thenComparing(Ngram::getNgram)
+                .thenComparing(Ngram::getField)
+                .thenComparing(Ngram::isInOrder)
+                .thenComparingInt(Ngram::getSlop)
+                .compare(this, (Ngram)o);
     }
 
     public static class Serializer extends JsonSerializer<Ngram> {
