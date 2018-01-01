@@ -45,7 +45,7 @@ public class FeatureLoader {
 
     public static void loadCategoricalFeature(ESIndex index, DataSet dataSet, CategoricalFeature feature,
                                               IdTranslator idTranslator, String docFilter){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+//        String[] dataIndexIds = idTranslator.getAllExtIds();
         String variableName = feature.getVariableName();
         int featureIndex = feature.getIndex();
 
@@ -60,11 +60,11 @@ public class FeatureLoader {
             dataSet.setFeatureValue(algorithmId,featureIndex,1);
         }
 
-        List<String> docMissingField = index.docsWithFieldMissing(variableName,dataIndexIds);
-        for (String extId: docMissingField){
-            int algorithmId = idTranslator.toIntId(extId);
-            dataSet.setFeatureValue(algorithmId,featureIndex,Double.NaN);
-        }
+//        List<String> docMissingField = index.docsWithFieldMissing(variableName,dataIndexIds);
+//        for (String extId: docMissingField){
+//            int algorithmId = idTranslator.toIntId(extId);
+//            dataSet.setFeatureValue(algorithmId,featureIndex,Double.NaN);
+//        }
 
 
     }
