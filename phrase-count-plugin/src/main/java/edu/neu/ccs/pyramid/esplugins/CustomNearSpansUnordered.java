@@ -61,6 +61,7 @@ public class CustomNearSpansUnordered extends CustomConjunctionSpans {
 
         void startDocument() throws IOException {
             clear();
+            set = new HashSet<>();
             totalSpanLength = 0;
             maxEndPosition = -1;
             for (Spans spans : subSpans) {
