@@ -293,7 +293,9 @@ public class App1 {
 
 
     static void addNgramFeatures(FeatureList featureList, Set<Ngram> ngrams){
-        ngrams.stream().forEach(ngram -> {
+        List<Ngram> list = new ArrayList<>(ngrams);
+        Collections.sort(list);
+        list.stream().forEach(ngram -> {
             ngram.getSettings().put("source","matching_score");
             featureList.add(ngram);
         });
@@ -380,13 +382,18 @@ public class App1 {
         logger.info("there are "+buckets.size()+" classes in the training set.");
         List<String> labels = new ArrayList<>();
         logger.info("label distribution in training set:");
+
         StringBuilder stringBuilder = new StringBuilder();
+        int minDf = config.getInt("train.label.minDF");
         for (Terms.Bucket bucket: buckets){
-            stringBuilder.append(bucket.getKey());
-            stringBuilder.append(":");
-            stringBuilder.append(bucket.getDocCount());
-            stringBuilder.append(", ");
-            labels.add(bucket.getKeyAsString());
+            if (bucket.getDocCount()>=minDf){
+                stringBuilder.append(bucket.getKey());
+                stringBuilder.append(":");
+                stringBuilder.append(bucket.getDocCount());
+                stringBuilder.append(", ");
+                labels.add(bucket.getKeyAsString());
+            }
+
         }
         logger.info(stringBuilder.toString());
 
@@ -419,14 +426,17 @@ public class App1 {
         List<String> newLabels = new ArrayList<>();
         logger.info("label distribution in data set:");
         StringBuilder stringBuilder = new StringBuilder();
+        int minDf = config.getInt("train.label.minDF");
         for (Terms.Bucket bucket: buckets){
-            stringBuilder.append(bucket.getKey());
-            stringBuilder.append(":");
-            stringBuilder.append(bucket.getDocCount());
-            stringBuilder.append(", ");
-            if (!extLabels.contains(bucket.getKey())){
-                extLabels.add(bucket.getKeyAsString());
-                newLabels.add(bucket.getKeyAsString());
+            if (bucket.getDocCount()>=minDf){
+                stringBuilder.append(bucket.getKey());
+                stringBuilder.append(":");
+                stringBuilder.append(bucket.getDocCount());
+                stringBuilder.append(", ");
+                if (!extLabels.contains(bucket.getKey())){
+                    extLabels.add(bucket.getKeyAsString());
+                    newLabels.add(bucket.getKeyAsString());
+                }
             }
         }
         logger.info(stringBuilder.toString());
