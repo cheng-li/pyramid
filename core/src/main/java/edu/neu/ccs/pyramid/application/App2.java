@@ -18,10 +18,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.thresholding.MacroFMeasureT
 import edu.neu.ccs.pyramid.multilabel_classification.thresholding.TunedMarginalClassifier;
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
 import edu.neu.ccs.pyramid.optimization.Terminator;
-import edu.neu.ccs.pyramid.util.Pair;
-import edu.neu.ccs.pyramid.util.Progress;
-import edu.neu.ccs.pyramid.util.Serialization;
-import edu.neu.ccs.pyramid.util.SetUtil;
+import edu.neu.ccs.pyramid.util.*;
 import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -471,15 +468,9 @@ public class App2 {
             logger.info("start generating simple CSV report");
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
-            List<String> strs = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
-                    .mapToObj(i->IMLGBInspector.simplePredictionAnalysis(boosting,pluginPredictor,dataSet,i,probThreshold))
-                    .collect(Collectors.toList());
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(csv))){
-                for (int i=0;i<dataSet.getNumDataPoints();i++){
-                    String str = strs.get(i);
-                    bw.write(str);
-                }
-            }
+            List<Integer> list = IntStream.range(0,dataSet.getNumDataPoints()).boxed().collect(Collectors.toList());
+            ParallelStringMapper<Integer> mapper = (list1, i) -> IMLGBInspector.simplePredictionAnalysis(boosting,pluginPredictor,dataSet, list1.get(i),probThreshold);
+            ParallelFileWriter.mapToString(mapper,list, csv,100  );
             logger.info("finish generating simple CSV report");
         }
 
@@ -706,14 +697,14 @@ public class App2 {
             logger.info("start generating simple CSV report");
             double probThreshold=config.getDouble("report.classProbThreshold");
             File csv = new File(analysisFolder,"report.csv");
-            List<String> strs = reportIdOrder.stream().parallel()
-                    .map(i->IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, setScaling,labelScaling, pluginPredictor,dataSet,i,probThreshold))
-                    .collect(Collectors.toList());
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(csv))){
-                for (String line: strs){
-                    bw.write(line);
+            ParallelStringMapper<Integer> mapper = new ParallelStringMapper<Integer>() {
+                @Override
+                public String mapToString(List<Integer> list, int i) {
+                    return IMLGBInspector.simplePredictionAnalysisCalibrated(boosting, setScaling,labelScaling, pluginPredictor,dataSet,list.get(i),probThreshold);
+
                 }
-            }
+            };
+            ParallelFileWriter.mapToString(mapper, reportIdOrder,csv,100);
             logger.info("finish generating simple CSV report");
         }
 
