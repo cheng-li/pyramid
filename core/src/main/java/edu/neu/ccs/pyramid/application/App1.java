@@ -65,7 +65,7 @@ public class App1 {
         output.mkdirs();
 
         if (config.getBoolean("createTrainSet")){
-            try (ESIndex index = loadIndex(config, logger, "train")){
+            try (ESIndex index = loadIndex(config, logger)){
                 createTrainSet(config, index, logger);
             }
 
@@ -73,7 +73,7 @@ public class App1 {
 
 
         if (config.getBoolean("createTestSet")){
-            try (ESIndex index = loadIndex(config, logger, "test")){
+            try (ESIndex index = loadIndex(config, logger)){
                 createTestSet(config, index, logger);
             }
 
@@ -84,7 +84,7 @@ public class App1 {
         }
     }
 
-    static ESIndex loadIndex(Config config, Logger logger, String trainOrTest) throws Exception{
+    static ESIndex loadIndex(Config config, Logger logger) throws Exception{
 
 
 
@@ -222,6 +222,7 @@ public class App1 {
         int minDFrequency = (int)Math.floor(ids.length*minDf);
         List<String> fields = config.getStrings("train.feature.ngram.extractionFields");
         List<Integer> slops = config.getIntegers("train.feature.ngram.slop");
+        boolean inorder = config.getBoolean("train.feature.ngram.inorder");
         for (String field: fields){
             for (int n: ns){
                 for (int slop:slops){
@@ -232,6 +233,7 @@ public class App1 {
                     int newCounter = 0;
                     for (Multiset.Entry<Ngram> entry: ngrams.entrySet()){
                         Ngram ngram = entry.getElement();
+                        ngram.setInOrder(inorder);
                         int count = entry.getCount();
                         if (interesting(allNgrams,ngram,count)){
                             allNgrams.add(ngram,count);
