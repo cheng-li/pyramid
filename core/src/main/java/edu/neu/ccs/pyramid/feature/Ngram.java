@@ -42,9 +42,9 @@ public class Ngram extends Feature implements Comparable{
     }
 
     public boolean hasDuplicate(){
-        String[] ngramList = ngram.split(" ");
-        Set<String> ngramSet = new HashSet<>(Arrays.asList(ngramList));
-        if (ngramSet.size() == ngramList.length){
+        String[] terms = getTerms();
+        Set<String> ngramSet = new HashSet<>(Arrays.asList(terms));
+        if (ngramSet.size() == terms.length){
             return false;
         }else{
             return true;
