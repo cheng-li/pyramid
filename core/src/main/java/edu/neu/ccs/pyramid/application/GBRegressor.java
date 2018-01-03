@@ -16,6 +16,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -144,7 +145,10 @@ public class GBRegressor {
 
         }
 
-        File reportFile = new File(output, "train_predictions.txt");
+        String trainReportName = config.getString("output.trainReportFolderName");
+
+
+        File reportFile = Paths.get(output, trainReportName, "train_predictions.txt").toFile();
         report(lsBoost, trainSet, reportFile);
         logger.info("predictions on the training set are written to "+reportFile.getAbsolutePath());
     }
@@ -167,7 +171,11 @@ public class GBRegressor {
         }
         RegDataSet testSet = TRECFormat.loadRegDataSet(config.getString("input.testData"),dataSetType, true);
         logger.info("test RMSE = "+ RMSE.rmse(lsBoost, testSet));
-        File reportFile = new File(output, "test_predictions.txt");
+
+
+        String testReportName = config.getString("output.testReportFolderName");
+
+        File reportFile = Paths.get(output, testReportName, "test_predictions.txt").toFile();
         report(lsBoost, testSet, reportFile);
         logger.info("predictions on the test set are written to "+reportFile.getAbsolutePath());
     }
