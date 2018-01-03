@@ -223,6 +223,7 @@ public class App1 {
         List<String> fields = config.getStrings("train.feature.ngram.extractionFields");
         List<Integer> slops = config.getIntegers("train.feature.ngram.slop");
         boolean inorder = config.getBoolean("train.feature.ngram.inorder");
+        boolean allowDuplicates = config.getBoolean("train.feature.ngram.allowDuplicateWords");
         for (String field: fields){
             for (int n: ns){
                 for (int slop:slops){
@@ -234,11 +235,21 @@ public class App1 {
                     for (Multiset.Entry<Ngram> entry: ngrams.entrySet()){
                         Ngram ngram = entry.getElement();
                         ngram.setInOrder(inorder);
+                        String[] ngramList = ngram.getNgram().split(" ");
+                        Set<String> ngramSet = new HashSet<String>(Arrays.asList(ngramList));
                         int count = entry.getCount();
                         if (interesting(allNgrams,ngram,count)){
-                            allNgrams.add(ngram,count);
-                            newCounter += 1;
+                            if (allowDuplicates) {
+                                allNgrams.add(ngram, count);
+                                newCounter += 1;
+                            }else{
+                                if (ngramSet.size() == ngramList.length){
+                                    allNgrams.add(ngram, count);
+                                    newCounter += 1;
+                                }
+                            }
                         }
+
                     }
                     logger.info(newCounter+" are really new");
                 }
