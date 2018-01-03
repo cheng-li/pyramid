@@ -41,6 +41,16 @@ public class Ngram extends Feature implements Comparable{
         return false;
     }
 
+    public boolean hasDuplicate(){
+        String[] ngramList = ngram.split(" ");
+        Set<String> ngramSet = new HashSet<>(Arrays.asList(ngramList));
+        if (ngramSet.size() == ngramList.length){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
     public static boolean overlap(Ngram ngram1, Ngram ngram2){
         Set<String> set1 = new HashSet<>();
         Set<String> set2 = new HashSet<>();
