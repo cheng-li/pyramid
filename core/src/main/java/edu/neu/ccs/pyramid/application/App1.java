@@ -383,7 +383,7 @@ public class App1 {
     static LabelTranslator loadTrainLabelTranslator(Config config, ESIndex index, String[] trainIndexIds,
                                                     Logger logger) throws Exception{
         Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("train.label.field"), trainIndexIds);
-        if (config.getBoolean("train.label.filter")){
+        if (config.getBoolean("train.label.filterByPrefix")){
             String prefix = config.getString("train.label.filter.prefix");
             buckets = buckets.stream().filter(bucket -> bucket.getKeyAsString().startsWith(prefix)).collect(Collectors.toList());
         }
@@ -426,7 +426,7 @@ public class App1 {
         }
 
         Collection<Terms.Bucket> buckets = index.termAggregation(savedConfig.getString("train.label.field"), testIndexIds);
-        if (savedConfig.getBoolean("train.label.filter")){
+        if (savedConfig.getBoolean("train.label.filterByPrefix")){
             String prefix = savedConfig.getString("train.label.filter.prefix");
             buckets = buckets.stream().filter(bucket -> bucket.getKeyAsString().startsWith(prefix)).collect(Collectors.toList());
         }

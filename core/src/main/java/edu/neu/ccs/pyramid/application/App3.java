@@ -59,7 +59,7 @@ public class App3 {
                 "train.feature.useCodeDescription", "train.feature.codeDesc.File", "train.feature.codeDesc.analyzer",
                 "train.feature.codeDesc.matchField", "train.feature.codeDesc.minMatchPercentage","test.considerNewLabel","train.label.minDF",
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
-                "index.hosts","index.ports","train.label.field","train.label.filter","train.label.filter.prefix",
+                "index.hosts","index.ports","train.label.field","train.label.filterByPrefix","train.label.filter.prefix",
                 "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",
                 "train.splitQuery","test.splitQuery",
                 "train.feature.ngram.matchScoreType","createTrainSet","createTestSet",
