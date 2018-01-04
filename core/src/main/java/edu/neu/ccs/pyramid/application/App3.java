@@ -57,7 +57,7 @@ public class App3 {
                 "train.feature.filterNgramsByKeyWords","train.feature.filterNgrams.keyWordsFile",
                 "train.feature.filterNgramsByRegex", "train.feature.filterNgrams.regex",
                 "train.feature.useCodeDescription", "train.feature.codeDesc.File", "train.feature.codeDesc.analyzer",
-                "train.feature.codeDesc.matchField", "train.feature.codeDesc.minMatchPercentage",
+                "train.feature.codeDesc.matchField", "train.feature.codeDesc.minMatchPercentage","test.considerNewLabel","train.label.minDF",
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","train.label.field","train.label.filter","train.label.filter.prefix",
                 "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",

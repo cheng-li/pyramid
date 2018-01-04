@@ -7,7 +7,6 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.elasticsearch.FeatureLoader;
-import edu.neu.ccs.pyramid.elasticsearch.ESIndex;
 import edu.neu.ccs.pyramid.feature.*;
 import edu.neu.ccs.pyramid.feature_extraction.NgramEnumerator;
 import edu.neu.ccs.pyramid.feature_extraction.NgramTemplate;
@@ -17,13 +16,11 @@ import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.*;
 import java.util.regex.Pattern;
@@ -394,12 +391,15 @@ public class App1 {
         List<String> labels = new ArrayList<>();
         logger.info("label distribution in training set:");
         StringBuilder stringBuilder = new StringBuilder();
+        int trainLabelMinDF = config.getInt("train.label.minDF");
         for (Terms.Bucket bucket: buckets){
-            stringBuilder.append(bucket.getKey());
-            stringBuilder.append(":");
-            stringBuilder.append(bucket.getDocCount());
-            stringBuilder.append(", ");
-            labels.add(bucket.getKeyAsString());
+            if (bucket.getDocCount() >= trainLabelMinDF){
+                stringBuilder.append(bucket.getKey());
+                stringBuilder.append(":");
+                stringBuilder.append(bucket.getDocCount());
+                stringBuilder.append(", ");
+                labels.add(bucket.getKeyAsString());
+            }
         }
         logger.info(stringBuilder.toString());
 
@@ -413,11 +413,12 @@ public class App1 {
         return labelTranslator;
     }
 
-    static LabelTranslator loadAugmentedLabelTranslator(Config config, ESIndex index, String[] testIndexIds,
-                                                        LabelTranslator trainLabelTranslator, Logger logger){
+    static LabelTranslator loadTestLabelTranslator(Config config, ESIndex index, String[] testIndexIds,
+                                                   LabelTranslator trainLabelTranslator, Logger logger){
 
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
+        boolean testConsiderNew = config.getBoolean("test.considerNewLabel");
 
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
@@ -429,23 +430,36 @@ public class App1 {
             String prefix = savedConfig.getString("train.label.filter.prefix");
             buckets = buckets.stream().filter(bucket -> bucket.getKeyAsString().startsWith(prefix)).collect(Collectors.toList());
         }
-        List<String> newLabels = new ArrayList<>();
+
         logger.info("label distribution in data set:");
         StringBuilder stringBuilder = new StringBuilder();
-        for (Terms.Bucket bucket: buckets){
-            stringBuilder.append(bucket.getKey());
-            stringBuilder.append(":");
-            stringBuilder.append(bucket.getDocCount());
-            stringBuilder.append(", ");
-            if (!extLabels.contains(bucket.getKey())){
-                extLabels.add(bucket.getKeyAsString());
-                newLabels.add(bucket.getKeyAsString());
+        if (testConsiderNew){
+            List<String> newLabels = new ArrayList<>();
+            for (Terms.Bucket bucket: buckets){
+                stringBuilder.append(bucket.getKey());
+                stringBuilder.append(":");
+                stringBuilder.append(bucket.getDocCount());
+                stringBuilder.append(", ");
+                if (!extLabels.contains(bucket.getKey())){
+                    extLabels.add(bucket.getKeyAsString());
+                    newLabels.add(bucket.getKeyAsString());
+                }
             }
+            if (!newLabels.isEmpty()){
+                logger.warning("found new labels in data set: "+newLabels);
+            }
+        }else{
+            for (Terms.Bucket bucket: buckets){
+                stringBuilder.append(bucket.getKey());
+                stringBuilder.append(":");
+                stringBuilder.append(bucket.getDocCount());
+                stringBuilder.append(", ");
+            }
+
         }
+
         logger.info(stringBuilder.toString());
-        if (!newLabels.isEmpty()){
-            logger.warning("found new labels in data set: "+newLabels);
-        }
+
         return new LabelTranslator(extLabels);
     }
 
@@ -554,7 +568,7 @@ public class App1 {
     }
 
     static void createDataSet(Config config, ESIndex index, String[] indexIds, String datasetName,
-                              String docFilter, Logger logger) throws Exception{
+                              String docFilter, Logger logger, boolean isTrain) throws Exception{
 //        String splitValueAll = splitListToString(splitValues);
 
 
@@ -563,13 +577,15 @@ public class App1 {
         IdTranslator idTranslator = loadIdTranslator(indexIds);
         String archive = config.getString("output.folder");
         LabelTranslator trainLabelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
-        LabelTranslator labelTranslator = loadAugmentedLabelTranslator(config, index, indexIds, trainLabelTranslator, logger);
-
         FeatureList featureList = (FeatureList)Serialization.deserialize(new File(metaDataFolder,"feature_list.ser"));
-
-        MultiLabelClfDataSet dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator, docFilter);
+        MultiLabelClfDataSet dataSet;
+        if (!isTrain) {
+            LabelTranslator labelTranslator = loadTestLabelTranslator(config, index, indexIds, trainLabelTranslator, logger);
+            dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator, docFilter);
+        }else{
+            dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), trainLabelTranslator, docFilter);
+        }
         dataSet.setFeatureList(featureList);
-
         File dataFile = new File(new File(archive,"data_sets"),datasetName);
 
         TRECFormat.save(dataSet,dataFile);
@@ -586,13 +602,13 @@ public class App1 {
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("train.splitQuery"));
 
         createDataSet(config, index, indexIds,config.getString("output.trainFolder"),
-                config.getString("train.splitQuery"), logger);
+                config.getString("train.splitQuery"), logger, true);
     }
 
     static void createTestSet(Config config, ESIndex index, Logger logger) throws Exception{
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("test.splitQuery"));
         createDataSet(config, index, indexIds,config.getString("output.testFolder"),
-                config.getString("test.splitQuery"), logger);
+                config.getString("test.splitQuery"), logger,false);
     }
 
 //    public static String splitListToString(List<String> splitValues){
