@@ -69,6 +69,14 @@ public class Sampling {
 
     }
 
+    public static List<Integer> sampleByPercentage(List<Integer> indices, double percentage, long randomSeed){
+        Collections.shuffle(indices, new Random(randomSeed));
+        int totalSize = indices.size();
+        int sampleSize = (int)Math.ceil(percentage*totalSize);
+        return indices.subList(0,sampleSize);
+
+    }
+
     /**
      *
      * @param sampleSize
