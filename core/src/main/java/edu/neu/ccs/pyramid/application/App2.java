@@ -144,14 +144,15 @@ public class App2 {
         stopWatch.start();
 
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
-        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"));
+        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"),0);
 
         LabelTranslator labelTranslator = allTrainData.getLabelTranslator();
 
         MultiLabelClfDataSet testSetForEval = null;
         if (config.getBoolean("train.showTestProgress") || config.getBoolean("train.earlyStop")){
             MultiLabelClfDataSet testSet = loadData(config,config.getString("input.testData"));
-            testSetForEval = minibatch(testSet, config.getInt("train.showProgress.sampleSize"));
+            testSetForEval = minibatch(testSet, config.getInt("train.showProgress.sampleSize"),0);
+
         }
 
         int numClasses = allTrainData.getNumClasses();
@@ -250,8 +251,7 @@ public class App2 {
             logger.info("iteration "+i);
 
             if(i%minibatchLifeSpan == 1||i==startIter) {
-                trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"));
-
+                trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"),i);
                 IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(trainBatch)
                         .learningRate(learningRate)
                         .minDataPerLeaf(minDataPerLeaf)
@@ -866,6 +866,14 @@ public class App2 {
     private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allData, int minibatchSize){
         List<Integer> all = IntStream.range(0, allData.getNumDataPoints()).boxed().collect(Collectors.toList());
         Collections.shuffle(all);
+        List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
+        return DataSetUtil.sampleData(allData, keep);
+    }
+
+
+    private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allData, int minibatchSize, int interation){
+        List<Integer> all = IntStream.range(0, allData.getNumDataPoints()).boxed().collect(Collectors.toList());
+        Collections.shuffle(all, new Random(interation));
         List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
         return DataSetUtil.sampleData(allData, keep);
     }
