@@ -146,8 +146,6 @@ public class App2 {
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
         MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"),0);
 
-        LabelTranslator labelTranslator = allTrainData.getLabelTranslator();
-
         MultiLabelClfDataSet testSetForEval = null;
         if (config.getBoolean("train.showTestProgress") || config.getBoolean("train.earlyStop")){
             MultiLabelClfDataSet testSet = loadData(config,config.getString("input.testData"));
