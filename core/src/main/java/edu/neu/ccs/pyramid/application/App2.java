@@ -76,6 +76,7 @@ public class App2 {
 
             Config calibrationConfig = new Config();
             calibrationConfig.setString("input.testSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.testData")).toString());
+            calibrationConfig.setString("input.validSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.validData")).toString());
             calibrationConfig.setString("input.model", Paths.get(config.getString("output.folder"),"model_app3").toString());
             calibrationConfig.setString("out",config.getString("output.folder"));
             Calibration.main(calibrationConfig, logger);
@@ -146,12 +147,8 @@ public class App2 {
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
         MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"),0);
 
-        MultiLabelClfDataSet testSetForEval = null;
-        if (config.getBoolean("train.showTestProgress") || config.getBoolean("train.earlyStop")){
-            MultiLabelClfDataSet testSet = loadData(config,config.getString("input.testData"));
-            testSetForEval = minibatch(testSet, config.getInt("train.showProgress.sampleSize"),0);
+        MultiLabelClfDataSet validSet = loadData(config,config.getString("input.validData"));
 
-        }
 
         int numClasses = allTrainData.getNumClasses();
         logger.info("number of class = "+numClasses);
@@ -275,7 +272,7 @@ public class App2 {
                     EarlyStopper earlyStopper = earlyStoppers.get(l);
                     Terminator terminator = terminators.get(l);
                     if (!shouldStop[l]){
-                        double kl = KL(boosting, testSetForEval, l);
+                        double kl = KL(boosting, validSet, l);
                         earlyStopper.add(i,kl);
                         terminator.add(kl);
                         if (earlyStopper.shouldStop() || terminator.shouldTerminate()){
@@ -300,11 +297,11 @@ public class App2 {
                 logger.info("training set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
                 logger.info(new MLMeasures(boosting,trainSetForEval).toString());
             }
-            if (config.getBoolean("train.showTestProgress") && (i%progressInterval==0 || i==numIterations)){
-                logger.info("test set performance (computed approximately with Hamming loss predictor on "+config.getInt("train.showProgress.sampleSize")+" instances).");
-                MLMeasures testPerformance = new MLMeasures(boosting,testSetForEval);
-                logger.info(testPerformance.toString());
-                accuracy.add(new Pair<>(i, testPerformance.getInstanceAverage().getF1()));
+            if (config.getBoolean("train.showValidProgress") && (i%progressInterval==0 || i==numIterations)){
+                logger.info("validation set performance (computed approximately with Hamming loss predictor)");
+                MLMeasures validPerformance = new MLMeasures(boosting,validSet);
+                logger.info(validPerformance.toString());
+                accuracy.add(new Pair<>(i, validPerformance.getInstanceAverage().getF1()));
             }
 
             trainingTime.add(new Pair<>(i, startTime+timeWatch.getTime()/1000.0));
@@ -333,7 +330,7 @@ public class App2 {
         }
         FileUtils.writeStringToFile(timeFile,trainTimeBuilder.toString());
 
-        File accuracyFile = new File(outputdir,"test_instance_f1.txt");
+        File accuracyFile = new File(outputdir,"valid_instance_f1.txt");
         StringBuilder accuracyBuilder = new StringBuilder();
         for(int i=0;i<accuracy.size();i++){
             Pair<Integer,Double> accuracyPair = accuracy.get(i);
@@ -394,21 +391,9 @@ public class App2 {
         double beta = config.getDouble("tune.FMeasure.beta");
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));;
-        String tuneBy = config.getString("tune.data");
-        String dataName;
-        switch (tuneBy){
-            case "train":
-                dataName = config.getString("input.trainData");
-                break;
-            case "test":
-                dataName = config.getString("input.testData");
-                break;
-            default:
-                throw new IllegalArgumentException("tune.data should be train or test");
-        }
 
 
-        MultiLabelClfDataSet dataSet = loadData(config,dataName);
+        MultiLabelClfDataSet dataSet = loadData(config,config.getString("input.validData"));
         double[] thresholds = MacroFMeasureTuner.tuneThresholds(boosting,dataSet,beta);
         TunedMarginalClassifier tunedMarginalClassifier = new TunedMarginalClassifier(boosting,thresholds);
         Serialization.serialize(tunedMarginalClassifier, new File(output,"predictor_macro_f"));
@@ -650,7 +635,8 @@ public class App2 {
 
         logger.info("sum of calibrated probabilities");
 
-        double[] all = IntStream.range(0, dataSet.getNumDataPoints()).mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
+        double[] all = IntStream.range(0, dataSet.getNumDataPoints())
+                .mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
                 .map(setScaling::calibratedProb).sum()).toArray();
         DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
         logger.info(descriptiveStatistics.toString());
@@ -861,12 +847,6 @@ public class App2 {
                 .average().getAsDouble();
     }
 
-    private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allData, int minibatchSize){
-        List<Integer> all = IntStream.range(0, allData.getNumDataPoints()).boxed().collect(Collectors.toList());
-        Collections.shuffle(all);
-        List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
-        return DataSetUtil.sampleData(allData, keep);
-    }
 
 
     private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allData, int minibatchSize, int interation){

@@ -20,20 +20,21 @@ public class Calibration {
 
 
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testSet"),DataSetType.ML_CLF_SPARSE,true);
+        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validSet"),DataSetType.ML_CLF_SPARSE,true);
         IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(config.getString("input.model"));
 
         original(boosting, test, logger);
 
         logger.info("start calibrating set probability");
-        IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, test);
+        IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, valid);
         logger.info("finish calibrating set probability");
 
 
-        isoCalibration(boosting, test, isotonicScaling, logger);
+        displaySetCalibration(boosting, test, isotonicScaling, logger);
 
         labelUncalibration(boosting,test,logger);
 
-        labelIsoCalibration(boosting, test, logger, config);
+        labelIsoCalibration(boosting, test, valid, logger, config);
 
 
 
@@ -90,7 +91,7 @@ public class Calibration {
     }
 
 
-    private static void isoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, IMLGBIsotonicScaling scaling, Logger logger) throws Exception{
+    private static void displaySetCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, IMLGBIsotonicScaling scaling, Logger logger) throws Exception{
         int numIntervals = 10;
         PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
         final  PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
@@ -134,11 +135,11 @@ public class Calibration {
 
     }
 
-    private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger, Config config)throws Exception{
+    private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet testSet, MultiLabelClfDataSet validSet,Logger logger, Config config)throws Exception{
         logger.info("start calibrating label probability ");
-        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, dataSet);
+        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, validSet);
         logger.info("finish calibrating label probability");
-        IMLGBLabelIsotonicScaling.BucketInfo total = imlgbLabelIsotonicScaling.individualProbs(dataSet);
+        IMLGBLabelIsotonicScaling.BucketInfo total = imlgbLabelIsotonicScaling.individualProbs(testSet);
 
         double[] counts = total.getCounts();
         double[] correct = total.getSums();
