@@ -18,6 +18,7 @@ public class GaussianDistribution {
         this.detCovariance = decomposition.getDeterminant();
     }
 
+
     public RealVector getMean() {
         return mean;
     }
@@ -48,4 +49,13 @@ public class GaussianDistribution {
    private double density(RealVector x){
         return Math.exp(logDensity(x));
    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("GaussianDistribution{");
+        sb.append("mean=").append(mean);
+        sb.append(", covariance=").append(covariance);
+        sb.append('}');
+        return sb.toString();
+    }
 }
