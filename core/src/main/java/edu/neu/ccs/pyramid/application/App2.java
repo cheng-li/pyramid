@@ -605,7 +605,7 @@ public class App2 {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         IMLGBIsotonicScaling setScaling = (IMLGBIsotonicScaling)Serialization.deserialize(new File(output,setCalibration));
-        IMLGBJointLabelIsotonicScaling labelScaling = (IMLGBJointLabelIsotonicScaling)Serialization.deserialize(new File(output, labelCalibration));
+        IMLGBLabelIsotonicScaling labelScaling = (IMLGBLabelIsotonicScaling)Serialization.deserialize(new File(output, labelCalibration));
 
         String predictTarget = config.getString("predict.target");
 

@@ -34,7 +34,7 @@ public class Calibration {
 
         labelUncalibration(boosting,test,logger);
 
-        jointLabelCalibration(boosting, test, valid, logger, config);
+        //jointLabelCalibration(boosting, test, valid, logger, config);
 
         labelIsoCalibration(boosting, test, valid, logger, config);
 
