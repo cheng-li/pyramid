@@ -454,7 +454,7 @@ public class IMLGBInspector {
         }
 
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<Integer, Double>(l, calibratedClassProbs[l]))
+        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<>(l, calibratedClassProbs[l]))
                 .sorted(comparator.reversed()).collect(Collectors.toList());
         for (Pair<Integer,Double> pair: list){
             int label = pair.getFirst();
