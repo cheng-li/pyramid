@@ -269,7 +269,7 @@ public class IMLGBInspector {
 
     public static  MultiLabelPredictionAnalysis analyzePredictionCalibrated(IMLGradientBoosting boosting,
                                                                   IMLGBIsotonicScaling setScaling,
-                                                                  IMLGBLabelIsotonicScaling labelScaling,
+                                                                  IMLGBJointLabelIsotonicScaling labelScaling,
                                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                   MultiLabelClfDataSet dataSet,
                                                                   int dataPointIndex,  int ruleLimit,
@@ -428,7 +428,7 @@ public class IMLGBInspector {
 
     public static  String simplePredictionAnalysisCalibrated(IMLGradientBoosting boosting,
                                                    IMLGBIsotonicScaling setScaling,
-                                                   IMLGBLabelIsotonicScaling labelScaling,
+                                                   IMLGBJointLabelIsotonicScaling labelScaling,
                                                    PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                    MultiLabelClfDataSet dataSet,
                                                    int dataPointIndex,  double classProbThreshold){

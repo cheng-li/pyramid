@@ -140,12 +140,13 @@ public class App2 {
         double learningRate = config.getDouble("train.learningRate");
         int minDataPerLeaf = config.getInt("train.minDataPerLeaf");
         String modelName = "model_app3";
+        int randomSeed = config.getInt("train.randomSeed");
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
-        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"),0);
+        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"),0+randomSeed);
 
         MultiLabelClfDataSet validSet = loadData(config,config.getString("input.validData"));
 
@@ -246,7 +247,7 @@ public class App2 {
             logger.info("iteration "+i);
 
             if(i%minibatchLifeSpan == 1||i==startIter) {
-                trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"),i);
+                trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"),i+randomSeed);
                 IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(trainBatch)
                         .learningRate(learningRate)
                         .minDataPerLeaf(minDataPerLeaf)
@@ -604,7 +605,7 @@ public class App2 {
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
         IMLGBIsotonicScaling setScaling = (IMLGBIsotonicScaling)Serialization.deserialize(new File(output,setCalibration));
-        IMLGBLabelIsotonicScaling labelScaling = (IMLGBLabelIsotonicScaling)Serialization.deserialize(new File(output, labelCalibration));
+        IMLGBJointLabelIsotonicScaling labelScaling = (IMLGBJointLabelIsotonicScaling)Serialization.deserialize(new File(output, labelCalibration));
 
         String predictTarget = config.getString("predict.target");
 

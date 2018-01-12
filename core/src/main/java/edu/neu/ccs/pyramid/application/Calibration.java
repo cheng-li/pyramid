@@ -34,6 +34,8 @@ public class Calibration {
 
         labelUncalibration(boosting,test,logger);
 
+        jointLabelCalibration(boosting, test, valid, logger, config);
+
         labelIsoCalibration(boosting, test, valid, logger, config);
 
 
@@ -135,11 +137,47 @@ public class Calibration {
 
     }
 
-    private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet testSet, MultiLabelClfDataSet validSet,Logger logger, Config config)throws Exception{
+    private static void jointLabelCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet testSet, MultiLabelClfDataSet validSet, Logger logger, Config config)throws Exception{
+        logger.info("start calibrating joint label probability ");
+        IMLGBJointLabelIsotonicScaling imlgbJointLabelIsotonicScaling = new IMLGBJointLabelIsotonicScaling(boosting, validSet);
+        logger.info("finish calibrating joint label probability");
+        IMLGBJointLabelIsotonicScaling.BucketInfo total = imlgbJointLabelIsotonicScaling.individualProbs(testSet);
+
+        double[] counts = total.getCounts();
+        double[] correct = total.getSums();
+        double[] sumProbs = total.getSumProbs();
+        double[] accs = new double[counts.length];
+        double[] average_confidence = new double[counts.length];
+
+        for (int i = 0; i < counts.length; i++) {
+            accs[i] = correct[i] / counts[i];
+        }
+        for (int j = 0; j < counts.length; j++) {
+            average_confidence[j] = sumProbs[j] / counts[j];
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat("#0.0000");
+        StringBuilder sb = new StringBuilder();
+        sb.append("calibrated joint label probabilities\n");
+        sb.append("interval\t\t").append("total\t\t").append("correct\t\t").append("incorrect\t\t").append("accuracy\t\t").append("average confidence\n");
+        for (int i = 0; i < 10; i++) {
+            sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
+                    .append(decimalFormat.format((i + 1) * 0.1)).append("]")
+                    .append("\t\t").append(counts[i]).append("\t\t").append(correct[i]).append("\t\t")
+                    .append(counts[i] - correct[i]).append("\t\t").append(decimalFormat.format(accs[i])).append("\t\t")
+                    .append(decimalFormat.format(average_confidence[i])).append("\n");
+
+        }
+        logger.info(sb.toString());
+        Serialization.serialize(imlgbJointLabelIsotonicScaling, new File(config.getString("out"),"joint_label_calibration"));
+
+    }
+
+    private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet testSet, MultiLabelClfDataSet validSet, Logger logger, Config config)throws Exception{
         logger.info("start calibrating label probability ");
         IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, validSet);
         logger.info("finish calibrating label probability");
-        IMLGBLabelIsotonicScaling.BucketInfo total = imlgbLabelIsotonicScaling.individualProbs(testSet);
+        BucketInfo total = imlgbLabelIsotonicScaling.getBucketInfo(testSet);
 
         double[] counts = total.getCounts();
         double[] correct = total.getSums();
@@ -170,6 +208,7 @@ public class Calibration {
         Serialization.serialize(imlgbLabelIsotonicScaling, new File(config.getString("out"),"label_calibration"));
 
     }
+
 
     private static void labelUncalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger)throws Exception{
 
