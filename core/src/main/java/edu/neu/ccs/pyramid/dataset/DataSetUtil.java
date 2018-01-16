@@ -929,7 +929,7 @@ public class DataSetUtil {
                                                                                           double trainPercentage) {
         int numDataPoints = multiLabelClfDataSet.getNumDataPoints();
         List<Integer> all = IntStream.range(0,numDataPoints).mapToObj(i->i).collect(Collectors.toList());
-        List<Integer> trainIndices = Sampling.sampleByPercentage(all, trainPercentage);
+        List<Integer> trainIndices = Sampling.sampleByPercentage(all, trainPercentage, 0);
 
         Set<Integer> testIndicesSet = new HashSet<>();
         for (int i=0; i<numDataPoints; i++) {

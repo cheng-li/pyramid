@@ -562,7 +562,7 @@ public class CBMLR {
         String validPath = config.getString("input.validData");
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
 
-        if (validPath.isEmpty()){
+        if (validPath.isEmpty()||!config.getBoolean("train.useValidData")){
             return trainSet;
         } else {
             MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
