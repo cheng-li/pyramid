@@ -6,9 +6,11 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class GMM {
+public class GMM implements Serializable{
+    private static final long serialVersionUID = 1L;
     private int numComponents;
     private GaussianDistribution[] gaussianDistributions;
     private double[] mixtureCoefficients;
@@ -47,7 +49,7 @@ public class GMM {
         return mixtureCoefficients;
     }
 
-    private double logDensity(RealVector instance){
+    public double logDensity(RealVector instance){
         double[] arr = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             arr[k]=Math.log(mixtureCoefficients[k])+gaussianDistributions[k].logDensity(instance);
@@ -55,7 +57,7 @@ public class GMM {
         return MathUtil.logSumExp(arr);
     }
 
-     double[] posteriors(RealVector instance){
+    public double[] posteriors(RealVector instance){
         double[] arr = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             arr[k]=Math.log(mixtureCoefficients[k])+gaussianDistributions[k].logDensity(instance);
@@ -71,9 +73,13 @@ public class GMM {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("GMM{");
-        sb.append("numComponents=").append(numComponents);
-        sb.append(", gaussianDistributions=").append(Arrays.toString(gaussianDistributions));
-        sb.append(", mixtureCoefficients=").append(Arrays.toString(mixtureCoefficients));
+        sb.append("numComponents=").append(numComponents).append("\n");
+        for (int k=0;k<numComponents;k++){
+            sb.append("component "+k).append("\n");
+            sb.append("mixture coefficient = "+mixtureCoefficients[k]).append("\n");
+            sb.append("mean = "+gaussianDistributions[k].getMean()).append("\n");
+            sb.append("covariance = "+gaussianDistributions[k].getCovariance()).append("\n");
+        }
         sb.append('}');
         return sb.toString();
     }

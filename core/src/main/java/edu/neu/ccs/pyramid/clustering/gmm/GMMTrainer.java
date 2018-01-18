@@ -11,15 +11,21 @@ public class GMMTrainer {
     private RealMatrix data;
     private double[][] gammas;
     private GMM gmm;
+    private RealMatrix stabilizer;
+    private static double reg = 0.0001;
 
 
     public GMMTrainer(RealMatrix data, GMM gmm) {
         this.data = data;
         this.gmm = gmm;
         this.gammas = new double[data.getRowDimension()][gmm.getNumComponents()];
+        this.stabilizer = new Array2DRowRealMatrix(data.getColumnDimension(),data.getColumnDimension());
+        for (int i=0;i<stabilizer.getRowDimension();i++){
+            stabilizer.setEntry(i,i,reg);
+        }
     }
 
-    void iterate(){
+    public void iterate(){
         eStep();
         mStep();
     }
@@ -37,8 +43,13 @@ public class GMMTrainer {
                     RealVector mean = computeMean(k, sumGamma);
                     gmm.getGaussianDistributions()[k].setMean(mean);
                     RealMatrix cov = computeCov(k, mean, sumGamma);
-                    gmm.getGaussianDistributions()[k].setCovariance(cov);
+                    RealMatrix stabilizedCov = stablize(cov);
+                    gmm.getGaussianDistributions()[k].setCovariance(stabilizedCov);
                 });
+    }
+
+    private RealMatrix stablize(RealMatrix cov){
+        return cov.add(stabilizer);
     }
 
     private RealVector computeMean(int k, double sumGamma){
