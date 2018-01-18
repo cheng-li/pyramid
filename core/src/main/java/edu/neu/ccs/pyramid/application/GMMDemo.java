@@ -9,14 +9,16 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 
 public class GMMDemo {
     public static void main(String[] args) throws Exception{
         List<String> lines = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist_features.txt"));
+        Collections.shuffle(lines);
         int dim = lines.get(0).split(" ").length;
-        int rows = 1000;
+        int rows = 100;
         RealMatrix data = new Array2DRowRealMatrix(rows,dim);
         for (int i=0;i<rows;i++){
             String[] split = lines.get(i).split(" ");
@@ -26,28 +28,30 @@ public class GMMDemo {
         }
 
 
-        GMM gmm = new GMM(dim,5);
+        GMM gmm = new GMM(dim,10);
 
         GMMTrainer trainer = new GMMTrainer(data, gmm);
 
-        for (int i=1;i<=3;i++){
+        for (int i=1;i<=5;i++){
             System.out.println("iteration = "+i);
             trainer.iterate();
             double logLikelihood = IntStream.range(0,rows).parallel()
                     .mapToDouble(j->gmm.logDensity(data.getRowVector(j))).sum();
             System.out.println("log likelihood = "+logLikelihood);
-            Serialization.serialize(gmm, "/Users/chengli/tmp/gmm/model_"+i);
+            Serialization.serialize(gmm, "/Users/chengli/tmp/gmm/model_iter_"+i);
+            for (int k=0;k<gmm.getNumComponents();k++){
+                FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/mean_iter_"+i+"_component_"+(k+1)),
+                        gmm.getGaussianDistributions()[k].getMean().toString().replace("{","")
+                                .replace("}","").replace(";",","));
+            }
         }
 
-        System.out.println(gmm);
-
-
-//        GMM gmm = (GMM) Serialization.deserialize("/Users/chengli/tmp/gmm/model_1");
-        System.out.println(gmm.getGaussianDistributions()[0].getInverseCovariance());
-        System.out.println(Arrays.toString(gmm.posteriors(data.getRowVector(0))));
-        System.out.println(gmm.getGaussianDistributions()[0].logDensity(data.getRowVector(0)));
-
         FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/modeltext"), gmm.toString());
-        System.out.println(gmm);
+
+//        GMM gmm = (GMM) Serialization.deserialize("/Users/chengli/tmp/gmm/model_3");
+
+
+
+
     }
 }

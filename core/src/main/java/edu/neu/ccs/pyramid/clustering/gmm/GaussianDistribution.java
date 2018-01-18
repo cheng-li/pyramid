@@ -26,7 +26,7 @@ public class GaussianDistribution implements Serializable{
         return mean;
     }
 
-    public void setMean(RealVector mean) {
+    void setMean(RealVector mean) {
         this.mean = mean;
     }
 
@@ -38,7 +38,7 @@ public class GaussianDistribution implements Serializable{
         return inverseCovariance;
     }
 
-    public void setCovariance(RealMatrix covariance) {
+    void setCovariance(RealMatrix covariance) {
         this.covariance = covariance;
         CholeskyDecomposition decomposition = new CholeskyDecomposition(covariance);
         this.inverseCovariance = decomposition.getSolver().getInverse();
