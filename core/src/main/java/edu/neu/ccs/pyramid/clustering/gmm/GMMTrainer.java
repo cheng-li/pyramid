@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.clustering.gmm;
 
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -19,6 +20,10 @@ public class GMMTrainer {
         this.data = data;
         this.gmm = gmm;
         this.gammas = new double[data.getRowDimension()][gmm.getNumComponents()];
+//        for (int i=0;i<data.getRowDimension();i++){
+//            int randomAssignment = Sampling.intUniform(0, gmm.getNumComponents()-1);
+//            gammas[i][randomAssignment] = 1;
+//        }
         this.stabilizer = new Array2DRowRealMatrix(data.getColumnDimension(),data.getColumnDimension());
         for (int i=0;i<stabilizer.getRowDimension();i++){
             stabilizer.setEntry(i,i,reg);
@@ -30,12 +35,16 @@ public class GMMTrainer {
         mStep();
     }
 
-    private void eStep(){
+    public void setGammas(double[][] gammas) {
+        this.gammas = gammas;
+    }
+
+    public void eStep(){
         IntStream.range(0,data.getRowDimension()).parallel()
                 .forEach(i->gammas[i]=gmm.posteriors(data.getRowVector(i)));
     }
 
-    private void mStep(){
+    public void mStep(){
         IntStream.range(0,gmm.getNumComponents()).parallel()
                 .forEach(k->{
                     double sumGamma = computeSumGamma(k);

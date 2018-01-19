@@ -1,11 +1,17 @@
 package edu.neu.ccs.pyramid.application;
 
+import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
+import edu.neu.ccs.pyramid.clustering.bm.BMTrainer;
 import edu.neu.ccs.pyramid.clustering.gmm.GMM;
 import edu.neu.ccs.pyramid.clustering.gmm.GMMTrainer;
+import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.io.File;
 import java.util.Arrays;
@@ -27,10 +33,42 @@ public class GMMDemo {
             }
         }
 
+        double[] mins = new double[data.getColumnDimension()];
+        double[] maxs = new double[data.getColumnDimension()];
+        double[] vars = new double[data.getColumnDimension()];
+        for (int j=0;j<data.getColumnDimension();j++){
+            RealVector column = data.getColumnVector(j);
+            mins[j] = column.getMinValue();
+            maxs[j] = column.getMaxValue();
+            DescriptiveStatistics stats = new DescriptiveStatistics(column.toArray());
+            vars[j] = stats.getVariance();
+        }
 
-        GMM gmm = new GMM(dim,10);
+        DataSet dataSet = DataSetBuilder.getBuilder()
+                .numDataPoints(rows)
+                .numFeatures(data.getColumnDimension())
+                .build();
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            for (int j=0;j<dataSet.getNumFeatures();j++){
+                if (data.getEntry(i,j)>255.0/2){
+                    dataSet.setFeatureValue(i,j,1);
+                } else {
+                    dataSet.setFeatureValue(i,j,0);
+                }
+
+            }
+        }
+
+        int numComponents = 10;
+        BMTrainer bmTrainer = BMSelector.selectTrainer(dataSet,numComponents,5);
+
+
+        GMM gmm = new GMM(dim,numComponents, data);
 
         GMMTrainer trainer = new GMMTrainer(data, gmm);
+
+        trainer.setGammas(bmTrainer.getGammas());
+        trainer.mStep();
 
         for (int i=1;i<=5;i++){
             System.out.println("iteration = "+i);

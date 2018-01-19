@@ -21,11 +21,11 @@ public class GMMTrainerTest {
         }
 
 
-        GMM gmm = new GMM(dim,3);
+        GMM gmm = new GMM(dim,3, data);
 
         GMMTrainer trainer = new GMMTrainer(data, gmm);
 
-        for (int i=0;i<1000;i++){
+        for (int i=0;i<50;i++){
             trainer.iterate();
         }
 
