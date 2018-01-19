@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.application;
 
+import edu.neu.ccs.pyramid.clustering.bm.BM;
 import edu.neu.ccs.pyramid.clustering.bm.BMSelector;
 import edu.neu.ccs.pyramid.clustering.bm.BMTrainer;
 import edu.neu.ccs.pyramid.clustering.gmm.GMM;
@@ -60,31 +61,46 @@ public class GMMDemo {
         }
 
         int numComponents = 10;
-        BMTrainer bmTrainer = BMSelector.selectTrainer(dataSet,numComponents,5);
 
 
-        GMM gmm = new GMM(dim,numComponents, data);
-
-        GMMTrainer trainer = new GMMTrainer(data, gmm);
-
-        trainer.setGammas(bmTrainer.getGammas());
-        trainer.mStep();
-
-        for (int i=1;i<=5;i++){
-            System.out.println("iteration = "+i);
-            trainer.iterate();
-            double logLikelihood = IntStream.range(0,rows).parallel()
-                    .mapToDouble(j->gmm.logDensity(data.getRowVector(j))).sum();
-            System.out.println("log likelihood = "+logLikelihood);
-            Serialization.serialize(gmm, "/Users/chengli/tmp/gmm/model_iter_"+i);
-            for (int k=0;k<gmm.getNumComponents();k++){
-                FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/mean_iter_"+i+"_component_"+(k+1)),
-                        gmm.getGaussianDistributions()[k].getMean().toString().replace("{","")
-                                .replace("}","").replace(";",","));
+        BM bm = BMSelector.select(dataSet, numComponents, 100);
+        System.out.println(Arrays.toString(bm.getMixtureCoefficients()));
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int k=0;k<numComponents;k++){
+            for (int d=0;d<dataSet.getNumFeatures();d++){
+                stringBuilder.append(bm.getDistributions()[k][d].getP());
+                if (d!=dataSet.getNumFeatures()-1){
+                    stringBuilder.append(",");
+                }
             }
+            stringBuilder.append("\n");
         }
+        FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/bm"),stringBuilder.toString());
 
-        FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/modeltext"), gmm.toString());
+//        BMTrainer bmTrainer = BMSelector.selectTrainer(dataSet,numComponents,50);
+//
+//        GMM gmm = new GMM(dim,numComponents, data);
+//
+//        GMMTrainer trainer = new GMMTrainer(data, gmm);
+//
+//        trainer.setGammas(bmTrainer.getGammas());
+//        trainer.mStep();
+//
+//        for (int i=1;i<=5;i++){
+//            System.out.println("iteration = "+i);
+//            trainer.iterate();
+//            double logLikelihood = IntStream.range(0,rows).parallel()
+//                    .mapToDouble(j->gmm.logDensity(data.getRowVector(j))).sum();
+//            System.out.println("log likelihood = "+logLikelihood);
+//            Serialization.serialize(gmm, "/Users/chengli/tmp/gmm/model_iter_"+i);
+//            for (int k=0;k<gmm.getNumComponents();k++){
+//                FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/mean_iter_"+i+"_component_"+(k+1)),
+//                        gmm.getGaussianDistributions()[k].getMean().toString().replace("{","")
+//                                .replace("}","").replace(";",","));
+//            }
+//        }
+//
+//        FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/modeltext"), gmm.toString());
 
 //        GMM gmm = (GMM) Serialization.deserialize("/Users/chengli/tmp/gmm/model_3");
 
