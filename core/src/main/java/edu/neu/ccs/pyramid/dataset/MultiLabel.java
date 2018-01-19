@@ -143,6 +143,12 @@ public class MultiLabel implements Serializable{
         return sb.toString();
     }
 
+    public String toSimpleString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ListUtil.toSimpleString(getMatchedLabels().stream().sorted().collect(Collectors.toList())));
+        return sb.toString();
+    }
+
     public String toStringWithExtLabels(LabelTranslator labelTranslator){
         return getMatchedLabels().stream().sorted().map(labelTranslator::toExtLabel).collect(Collectors.toList()).toString();
     }
