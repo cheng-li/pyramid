@@ -445,6 +445,13 @@ public class App2 {
         logger.info("performance on dataset "+dataName);
         logger.info(mlMeasures.toString());
 
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            logger.info("start writing individual label performance to json");
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
+            logger.info("finish writing individual label performance to json");
+        }
 
 
         boolean simpleCSV = true;
@@ -457,10 +464,6 @@ public class App2 {
             ParallelFileWriter.mapToString(mapper,list, csv,100  );
             logger.info("finish generating simple CSV report");
         }
-
-
-
-
 
         boolean rulesToJson = config.getBoolean("report.showPredictionDetail");
         if (rulesToJson){
@@ -555,13 +558,7 @@ public class App2 {
             objectMapper.writeValue(new File(analysisFolder,"performance.json"),mlMeasures);
         }
 
-        boolean individualPerformance = true;
-        if (individualPerformance){
-            logger.info("start writing individual label performance to json");
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
-            logger.info("finish writing individual label performance to json");
-        }
+
 
         if (config.getBoolean("report.produceHTML")){
             logger.info("start producing html files");
@@ -677,6 +674,14 @@ public class App2 {
         // just to please lambda expression
         final List<Integer> reportIdOrder = reportIdOrderTmp;
 
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            logger.info("start writing individual label performance to json");
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
+            logger.info("finish writing individual label performance to json");
+        }
+
         boolean simpleCSV = true;
         if (simpleCSV){
             logger.info("start generating simple CSV report");
@@ -790,13 +795,7 @@ public class App2 {
             objectMapper.writeValue(new File(analysisFolder,"performance.json"),mlMeasures);
         }
 
-        boolean individualPerformance = true;
-        if (individualPerformance){
-            logger.info("start writing individual label performance to json");
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(new File(analysisFolder,"individual_performance.json"),mlMeasures.getMacroAverage());
-            logger.info("finish writing individual label performance to json");
-        }
+
 
         if (config.getBoolean("report.produceHTML")){
             logger.info("start producing html files");
