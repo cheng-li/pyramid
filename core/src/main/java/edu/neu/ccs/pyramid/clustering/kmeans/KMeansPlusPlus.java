@@ -25,8 +25,10 @@ public class KMeansPlusPlus {
     }
 
     public void initialize(){
+        System.out.println("initialize");
         int dataIndex = Sampling.intUniform(0,dataSet.getNumDataPoints()-1);
         centers.add(dataSet.getRow(dataIndex));
+        System.out.println("randomly pick instance "+(dataIndex+1)+" as the initial centroid for cluster "+centers.size());
         while(centers.size()<numComponents){
             updateDistance();
             double sum = MathUtil.arraySum(distances);
@@ -37,6 +39,7 @@ public class KMeansPlusPlus {
             EnumeratedIntegerDistribution dis = new EnumeratedIntegerDistribution(indices, distances);
             int sample = dis.sample();
             centers.add(dataSet.getRow(sample));
+            System.out.println("randomly pick instance "+(sample+1)+" as the initial centroid for cluster "+centers.size());
         }
     }
 

@@ -24,8 +24,9 @@ public class KMeans {
     }
 
     public void iterate(){
-        assign();
         updateCenters();
+        assign();
+
     }
 
     public int getNumComponents() {
@@ -41,7 +42,10 @@ public class KMeans {
     }
 
     private void updateCenters(){
-        IntStream.range(0,numComponents).parallel()
+        System.out.println("update cluster centroids");
+        IntStream.range(0,numComponents)
+                //todo
+//                .parallel()
                 .forEach(this::updateCenters);
     }
 
@@ -72,6 +76,7 @@ public class KMeans {
     }
 
     private void updateCenters(int k){
+
         Vector center = new DenseVector(dataSet.getNumFeatures());
         double count = 0;
         for (int i=0;i<dataSet.getNumDataPoints();i++){
@@ -85,6 +90,7 @@ public class KMeans {
         }
         center = center.divide(count);
         centers[k] = center;
+        System.out.println("update the centroid of cluster "+(k+1)+" based on "+(int)count+" instances in the cluster");
     }
 
     private void assign(int i){
@@ -93,11 +99,15 @@ public class KMeans {
                 .toArray();
         int assigned =  ArgMin.argMin(distances);
         assignments[i] = assigned;
+        System.out.println("assign instance "+(i+1)+" to cluster "+(assigned+1));
     }
 
 
     private void assign(){
-        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+        System.out.println("assign each instance to its nearest cluster");
+        IntStream.range(0, dataSet.getNumDataPoints())
+                //todo
+//                .parallel()
                 .forEach(this::assign);
     }
 

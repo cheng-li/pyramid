@@ -19,15 +19,19 @@ import java.util.Random;
 
 public class KMeansTest{
     public static void main(String[] args) throws Exception{
+//        extractImages();
         test1();
+
     }
 
-    private static void test1() throws Exception{
+    private static void extractImages() throws Exception{
+        FileUtils.cleanDirectory(new File("/Users/chengli/tmp/kmeans_demo"));
         List<String> lines = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist_features.txt"));
 
         Collections.shuffle(lines, new Random(0));
 
-        int rows = 1000;
+
+        int rows = 100;
         DataSet dataSet = DataSetBuilder.getBuilder()
                 .numDataPoints(rows)
                 .numFeatures(28*28)
@@ -40,11 +44,58 @@ public class KMeansTest{
             }
         }
 
-        int numComponents = 20;
+        for (int i=0;i<rows;i++){
+            plot(dataSet.getRow(i), 28,28,
+                    "/Users/chengli/tmp/mnist/pic_"+(i+1)+".png");
+        }
+    }
+
+    private static void test1() throws Exception{
+        FileUtils.cleanDirectory(new File("/Users/chengli/tmp/kmeans_demo"));
+        List<String> lines = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist_features.txt"));
+
+        Collections.shuffle(lines, new Random(0));
+
+        int rows = 100;
+        DataSet dataSet = DataSetBuilder.getBuilder()
+                .numDataPoints(rows)
+                .numFeatures(28*28)
+                .build();
+        for (int i=0;i<rows;i++){
+            String line = lines.get(i);
+            String[] split = line.split(" ");
+            for (int j=0;j<split.length;j++){
+                dataSet.setFeatureValue(i,j,Double.parseDouble(split[j]));
+            }
+        }
+
+        int numComponents = 10;
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
         kMeans.kmeansPlusPlusInitialize();
+        boolean showInitialize = true;
+        if (showInitialize){
+            int[] assignment = kMeans.getAssignments();
+            for (int k=0;k<numComponents;k++){
+                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/initial/cluster_"+(k+1)+"/center.png");
+//                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+(k+1)+"_pic_000center.png");
+
+                int counter = 0;
+                for (int i=0;i<assignment.length;i++){
+                    if (assignment[i]==k){
+                        plot(dataSet.getRow(i), 28,28,
+                                "/Users/chengli/tmp/kmeans_demo/clusters/initial/cluster_"+(k+1)+"/pic_"+(i+1)+".png");
+                        counter+=1;
+                    }
+
+
+//                    if (counter==5){
+//                        break;
+//                    }
+                }
+            }
+        }
 //        for (int k=0;k<numComponents;k++){
 //            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_0_component_"+k+".png");
 //            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+0+"_component_"+k+"_pic_000center.png");
@@ -59,18 +110,32 @@ public class KMeansTest{
 //        System.out.println("objective = "+kMeans.objective());
 
         for (int iter=1;iter<=5;iter++){
+            System.out.println("=====================================");
+            System.out.println("iteration "+iter);
             kMeans.iterate();
             System.out.println("objective = "+kMeans.objective());
+            int[] assignment = kMeans.getAssignments();
             for (int k=0;k<numComponents;k++){
-                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_"+iter+"_component_"+k+".png");
-                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+k+"_pic_000center.png");
+                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"/cluster_"+(k+1)+"/center.png");
+//                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+(k+1)+"_pic_000center.png");
+
+                int counter = 0;
+                for (int i=0;i<assignment.length;i++){
+                    if (assignment[i]==k){
+                        plot(dataSet.getRow(i), 28,28,
+                                "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"/cluster_"+(k+1)+"/pic_"+(i+1)+".png");
+                        counter+=1;
+                    }
+
+
+//                    if (counter==5){
+//                        break;
+//                    }
+                }
             }
 
-            int[] assignment = kMeans.getAssignments();
-            for (int i=0;i<assignment.length;i++){
-                plot(dataSet.getRow(i), 28,28,
-                        "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+assignment[i]+"_pic_"+i+".png");
-            }
+
+
 
         }
 
