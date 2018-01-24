@@ -15,12 +15,14 @@ public class KMeans {
     private Vector[] centers;
     private DataSet dataSet;
     private int[] assignments;
+    private boolean[] assigned;
 
     public KMeans(int numComponents, DataSet dataSet) {
         this.numComponents = numComponents;
         this.dataSet = dataSet;
         this.centers = new DenseVector[numComponents];
         this.assignments = new int[dataSet.getNumDataPoints()];
+        this.assigned = new boolean[dataSet.getNumDataPoints()];
     }
 
     public void iterate(){
@@ -94,12 +96,19 @@ public class KMeans {
     }
 
     private void assign(int i){
+        int previousAssignment = assignments[i];
         Vector vector = dataSet.getRow(i);
         double[] distances = IntStream.range(0,numComponents).mapToDouble(k->distance(vector, centers[k]))
                 .toArray();
-        int assigned =  ArgMin.argMin(distances);
-        assignments[i] = assigned;
-        System.out.println("assign instance "+(i+1)+" to cluster "+(assigned+1));
+        int assignedC =  ArgMin.argMin(distances);
+        assignments[i] = assignedC;
+        if (assigned[i] && (previousAssignment!=assignedC)){
+            System.out.println("assign instance "+(i+1)+" to cluster "+(assignedC+1)+", previously in cluster "+(previousAssignment+1));
+        } else {
+            System.out.println("assign instance "+(i+1)+" to cluster "+(assignedC+1));
+        }
+
+        assigned[i] = true;
     }
 
 
