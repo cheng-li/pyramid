@@ -27,7 +27,7 @@ public class KMeansTest{
 
         Collections.shuffle(lines, new Random(0));
 
-        int rows = 100;
+        int rows = 1000;
         DataSet dataSet = DataSetBuilder.getBuilder()
                 .numDataPoints(rows)
                 .numFeatures(28*28)
@@ -41,6 +41,64 @@ public class KMeansTest{
         }
 
         int numComponents = 20;
+
+        KMeans kMeans = new KMeans(numComponents, dataSet);
+//        kMeans.randomInitialize();
+        kMeans.kmeansPlusPlusInitialize();
+//        for (int k=0;k<numComponents;k++){
+//            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_0_component_"+k+".png");
+//            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+0+"_component_"+k+"_pic_000center.png");
+//        }
+//
+//        int[] assignment0 = kMeans.getAssignments();
+//        for (int i=0;i<assignment0.length;i++){
+//            plot(dataSet.getRow(i), 28,28,
+//                    "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+0+"_component_"+assignment0[i]+"_pic_"+i+".png");
+//        }
+//
+//        System.out.println("objective = "+kMeans.objective());
+
+        for (int iter=1;iter<=5;iter++){
+            kMeans.iterate();
+            System.out.println("objective = "+kMeans.objective());
+            for (int k=0;k<numComponents;k++){
+                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_"+iter+"_component_"+k+".png");
+                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+k+"_pic_000center.png");
+            }
+
+            int[] assignment = kMeans.getAssignments();
+            for (int i=0;i<assignment.length;i++){
+                plot(dataSet.getRow(i), 28,28,
+                        "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+assignment[i]+"_pic_"+i+".png");
+            }
+
+        }
+
+
+
+    }
+
+
+
+    private static void test2() throws Exception{
+        List<String> lines = FileUtils.readLines(new File("/Users/chengli/Downloads/fashion-mnist/features.txt"));
+
+        Collections.shuffle(lines, new Random(0));
+
+        int rows = 100;
+        DataSet dataSet = DataSetBuilder.getBuilder()
+                .numDataPoints(rows)
+                .numFeatures(28*28)
+                .build();
+        for (int i=0;i<rows;i++){
+            String line = lines.get(i);
+            String[] split = line.split(",");
+            for (int j=0;j<split.length;j++){
+                dataSet.setFeatureValue(i,j,Double.parseDouble(split[j]));
+            }
+        }
+
+        int numComponents = 10;
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
@@ -91,7 +149,10 @@ public class KMeansTest{
 //        g2d.dispose();
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
-                image.setRGB(j,i,(int)vector.get(i*width+j));
+                int v = (int)(vector.get(i*width+j));
+                int rgb = 65536 * v + 256 * v + v;
+                image.setRGB(j,i,rgb);
+//                image.setRGB(j,i,(int)(vector.get(i*width+j)/255*16777215));
             }
         }
 
