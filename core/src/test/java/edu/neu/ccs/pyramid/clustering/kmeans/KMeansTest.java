@@ -40,13 +40,20 @@ public class KMeansTest{
             }
         }
 
-        int numComponents = 10;
+        int numComponents = 20;
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
         kMeans.kmeansPlusPlusInitialize();
         for (int k=0;k<numComponents;k++){
-            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/iter_0_component_"+k+".png");
+            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_0_component_"+k+".png");
+            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+0+"_component_"+k+"_pic_000center.png");
+        }
+
+        int[] assignment0 = kMeans.getAssignments();
+        for (int i=0;i<assignment0.length;i++){
+            plot(dataSet.getRow(i), 28,28,
+                    "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+0+"_component_"+assignment0[i]+"_pic_"+i+".png");
         }
 
         System.out.println("objective = "+kMeans.objective());
@@ -55,7 +62,14 @@ public class KMeansTest{
             kMeans.iterate();
             System.out.println("objective = "+kMeans.objective());
             for (int k=0;k<numComponents;k++){
-                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/iter_"+iter+"_component_"+k+".png");
+                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_"+iter+"_component_"+k+".png");
+                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+k+"_pic_000center.png");
+            }
+
+            int[] assignment = kMeans.getAssignments();
+            for (int i=0;i<assignment.length;i++){
+                plot(dataSet.getRow(i), 28,28,
+                        "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+assignment[i]+"_pic_"+i+".png");
             }
 
         }

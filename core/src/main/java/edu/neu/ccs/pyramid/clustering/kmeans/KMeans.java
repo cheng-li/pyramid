@@ -50,6 +50,7 @@ public class KMeans {
             int dataIndex = Sampling.intUniform(0,dataSet.getNumDataPoints()-1);
             centers[k] = dataSet.getRow(dataIndex);
         }
+        assign();
     }
 
     public void kmeansPlusPlusInitialize(){
@@ -59,6 +60,7 @@ public class KMeans {
         for (int k=0;k<numComponents;k++){
             centers[k] = c.get(k);
         }
+        assign();
     }
 
     public double objective(){
