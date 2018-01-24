@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.clustering.kmeans;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.util.ArgMin;
 import edu.neu.ccs.pyramid.util.MathUtil;
+import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -21,9 +22,28 @@ public class KMeans {
         this.assignments = new int[dataSet.getNumDataPoints()];
     }
 
+    public int getNumComponents() {
+        return numComponents;
+    }
+
+    public Vector[] getCenters() {
+        return centers;
+    }
+
+    public int[] getAssignments() {
+        return assignments;
+    }
+
     private void updateCenters(){
         IntStream.range(0,numComponents).parallel()
                 .forEach(this::updateCenters);
+    }
+
+    public void randomInitialize(){
+        for (int k=0;k<numComponents;k++){
+            int dataIndex = Sampling.intUniform(0,dataSet.getNumDataPoints()-1);
+            centers[k] = dataSet.getRow(dataIndex);
+        }
     }
 
     private void updateCenters(int k){
