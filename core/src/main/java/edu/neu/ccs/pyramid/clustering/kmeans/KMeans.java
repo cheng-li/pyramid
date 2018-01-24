@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.util.Sampling;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class KMeans {
@@ -20,6 +21,11 @@ public class KMeans {
         this.dataSet = dataSet;
         this.centers = new DenseVector[numComponents];
         this.assignments = new int[dataSet.getNumDataPoints()];
+    }
+
+    public void iterate(){
+        assign();
+        updateCenters();
     }
 
     public int getNumComponents() {
@@ -46,16 +52,36 @@ public class KMeans {
         }
     }
 
+    public void kmeansPlusPlusInitialize(){
+        KMeansPlusPlus kMeansPlusPlus = new KMeansPlusPlus(this.numComponents,this.dataSet);
+        kMeansPlusPlus.initialize();
+        List<Vector> c = kMeansPlusPlus.getCenters();
+        for (int k=0;k<numComponents;k++){
+            centers[k] = c.get(k);
+        }
+    }
+
+    public double objective(){
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(this::objective).sum();
+    }
+    private double objective(int i){
+        return Math.pow(distance(dataSet.getRow(i),centers[assignments[i]]),2);
+    }
+
     private void updateCenters(int k){
         Vector center = new DenseVector(dataSet.getNumFeatures());
+        double count = 0;
         for (int i=0;i<dataSet.getNumDataPoints();i++){
             if (assignments[i]==k){
                 Vector instance = dataSet.getRow(i);
                 for (int j=0;j<instance.size();j++){
                     center.set(j, center.get(j)+instance.get(j));
                 }
+                count += 1;
             }
         }
+        center = center.divide(count);
         centers[k] = center;
     }
 
@@ -73,7 +99,7 @@ public class KMeans {
                 .forEach(this::assign);
     }
 
-    private static double distance(Vector vector1, Vector vector2){
+    static double distance(Vector vector1, Vector vector2){
         double sum = 0;
         for (int i=0;i<vector1.size();i++){
             double diff = (vector1.get(i)-vector2.get(i));

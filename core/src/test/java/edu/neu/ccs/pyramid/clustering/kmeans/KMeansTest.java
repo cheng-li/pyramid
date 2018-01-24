@@ -7,7 +7,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.mahout.math.Vector;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorConvertOp;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,14 +43,22 @@ public class KMeansTest{
         int numComponents = 10;
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
-        kMeans.randomInitialize();
-
+//        kMeans.randomInitialize();
+        kMeans.kmeansPlusPlusInitialize();
         for (int k=0;k<numComponents;k++){
             plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/iter_0_component_"+k+".png");
         }
 
+        System.out.println("objective = "+kMeans.objective());
 
+        for (int iter=1;iter<=5;iter++){
+            kMeans.iterate();
+            System.out.println("objective = "+kMeans.objective());
+            for (int k=0;k<numComponents;k++){
+                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/iter_"+iter+"_component_"+k+".png");
+            }
 
+        }
 
 
 
@@ -56,12 +67,21 @@ public class KMeansTest{
 
 
     private static void plot(Vector vector, int height, int width, String imageFile) throws Exception{
+
         BufferedImage image = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+//        Graphics2D g2d = image.createGraphics();
+//        g2d.setBackground(Color.WHITE);
+//
+//
+//        g2d.fillRect ( 0, 0, image.getWidth(), image.getHeight() );
+//        g2d.dispose();
         for (int i=0;i<width;i++){
             for (int j=0;j<height;j++){
                 image.setRGB(j,i,(int)vector.get(i*width+j));
             }
         }
+
+
         new File(imageFile).getParentFile().mkdirs();
         ImageIO.write(image,"png",new File(imageFile));
     }
