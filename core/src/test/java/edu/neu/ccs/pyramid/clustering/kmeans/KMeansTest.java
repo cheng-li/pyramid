@@ -17,10 +17,10 @@ import java.util.stream.IntStream;
 public class KMeansTest{
     public static void main(String[] args) throws Exception{
 
-//        testMnist();
-//        testMnistDigitTwo();
+//        mnist();
+        mnistSubgroup(2);
 //        fashion();
-        fashiSubgroup(9);
+//        fashiSubgroup(9);
 
     }
 
@@ -76,7 +76,7 @@ public class KMeansTest{
         }
     }
 
-    private static void testMnist() throws Exception{
+    private static void mnist() throws Exception{
         FileUtils.cleanDirectory(new File("/Users/chengli/tmp/kmeans_demo"));
         List<String> lines = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist_features.txt"));
 
@@ -99,7 +99,7 @@ public class KMeansTest{
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
-        kMeans.kmeansPlusPlusInitialize();
+        kMeans.kmeansPlusPlusInitialize(100);
         List<Double> objectives = new ArrayList<>();
         boolean showInitialize = true;
         if (showInitialize){
@@ -163,22 +163,23 @@ public class KMeansTest{
             }
 
 
-            System.out.println("training objective changes: "+objectives);
+
 
         }
+        System.out.println("training objective changes: "+objectives);
 
 
 
     }
 
-    private static void testMnistDigitTwo() throws Exception{
+    private static void mnistSubgroup(int label) throws Exception{
         FileUtils.cleanDirectory(new File("/Users/chengli/tmp/kmeans_demo"));
 
         List<Integer> labels = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist_labels.txt"))
                 .stream().mapToInt(l->(int)Double.parseDouble(l)).boxed().collect(Collectors.toList());
         List<String> features = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist_features.txt"));
 
-        List<String> lines = IntStream.range(0, features.size()).filter(i->labels.get(i)==2).mapToObj(i->features.get(i)).collect(Collectors.toList());
+        List<String> lines = IntStream.range(0, features.size()).filter(i->labels.get(i)==label).mapToObj(i->features.get(i)).collect(Collectors.toList());
 
         int rows = 100;
         DataSet dataSet = DataSetBuilder.getBuilder()
@@ -197,7 +198,7 @@ public class KMeansTest{
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
-        kMeans.kmeansPlusPlusInitialize();
+        kMeans.kmeansPlusPlusInitialize(100);
         List<Double> objectives = new ArrayList<>();
         boolean showInitialize = true;
         if (showInitialize){
@@ -292,7 +293,7 @@ public class KMeansTest{
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
-        kMeans.kmeansPlusPlusInitialize();
+        kMeans.kmeansPlusPlusInitialize(100);
         List<Double> objectives = new ArrayList<>();
         boolean showInitialize = true;
         if (showInitialize){
@@ -390,7 +391,7 @@ public class KMeansTest{
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
-        kMeans.kmeansPlusPlusInitialize();
+        kMeans.kmeansPlusPlusInitialize(100);
         List<Double> objectives = new ArrayList<>();
         boolean showInitialize = true;
         if (showInitialize){
@@ -463,61 +464,6 @@ public class KMeansTest{
     }
 
 
-    private static void test2() throws Exception{
-        List<String> lines = FileUtils.readLines(new File("/Users/chengli/Downloads/fashion-mnist/features.txt"));
-
-        Collections.shuffle(lines, new Random(0));
-
-        int rows = 100;
-        DataSet dataSet = DataSetBuilder.getBuilder()
-                .numDataPoints(rows)
-                .numFeatures(28*28)
-                .build();
-        for (int i=0;i<rows;i++){
-            String line = lines.get(i);
-            String[] split = line.split(",");
-            for (int j=0;j<split.length;j++){
-                dataSet.setFeatureValue(i,j,Double.parseDouble(split[j]));
-            }
-        }
-
-        int numComponents = 10;
-
-        KMeans kMeans = new KMeans(numComponents, dataSet);
-//        kMeans.randomInitialize();
-        kMeans.kmeansPlusPlusInitialize();
-        for (int k=0;k<numComponents;k++){
-            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_0_component_"+k+".png");
-            plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+0+"_component_"+k+"_pic_000center.png");
-        }
-
-        int[] assignment0 = kMeans.getAssignments();
-        for (int i=0;i<assignment0.length;i++){
-            plot(dataSet.getRow(i), 28,28,
-                    "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+0+"_component_"+assignment0[i]+"_pic_"+i+".png");
-        }
-
-        System.out.println("objective = "+kMeans.objective());
-
-        for (int iter=1;iter<=5;iter++){
-            kMeans.iterate();
-            System.out.println("objective = "+kMeans.objective());
-            for (int k=0;k<numComponents;k++){
-                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/centers/iter_"+iter+"_component_"+k+".png");
-                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+k+"_pic_000center.png");
-            }
-
-            int[] assignment = kMeans.getAssignments();
-            for (int i=0;i<assignment.length;i++){
-                plot(dataSet.getRow(i), 28,28,
-                        "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+assignment[i]+"_pic_"+i+".png");
-            }
-
-        }
-
-
-
-    }
 
 
 

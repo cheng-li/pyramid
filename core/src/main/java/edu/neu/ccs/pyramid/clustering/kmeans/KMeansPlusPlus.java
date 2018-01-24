@@ -15,6 +15,7 @@ public class KMeansPlusPlus {
     private List<Vector> centers;
     private DataSet dataSet;
     private double[] distances;
+    private List<Integer> pickedIds;
 
 
     public KMeansPlusPlus(int numComponents, DataSet dataSet) {
@@ -22,13 +23,21 @@ public class KMeansPlusPlus {
         this.dataSet = dataSet;
         this.centers = new ArrayList<>();
         this.distances = new double[dataSet.getNumDataPoints()];
+        this.pickedIds = new ArrayList<>();
     }
 
-    public void initialize(){
-        System.out.println("initialize");
+    public void initialize(boolean print){
+        if (print){
+            System.out.println("initialize");
+        }
+
         int dataIndex = Sampling.intUniform(0,dataSet.getNumDataPoints()-1);
         centers.add(dataSet.getRow(dataIndex));
-        System.out.println("randomly pick instance "+(dataIndex+1)+" as the initial centroid for cluster "+centers.size());
+        pickedIds.add(dataIndex);
+        if (print){
+            System.out.println("randomly pick instance "+(dataIndex+1)+" as the initial centroid for cluster "+centers.size());
+        }
+
         while(centers.size()<numComponents){
             updateDistance();
             double sum = MathUtil.arraySum(distances);
@@ -39,8 +48,16 @@ public class KMeansPlusPlus {
             EnumeratedIntegerDistribution dis = new EnumeratedIntegerDistribution(indices, distances);
             int sample = dis.sample();
             centers.add(dataSet.getRow(sample));
-            System.out.println("randomly pick instance "+(sample+1)+" as the initial centroid for cluster "+centers.size());
+            pickedIds.add(sample);
+            if (print){
+                System.out.println("randomly pick instance "+(sample+1)+" as the initial centroid for cluster "+centers.size());
+            }
+
         }
+    }
+
+    public List<Integer> getPickedIds() {
+        return pickedIds;
     }
 
     public List<Vector> getCenters() {
