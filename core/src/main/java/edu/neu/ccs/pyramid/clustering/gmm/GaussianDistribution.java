@@ -1,21 +1,24 @@
 package edu.neu.ccs.pyramid.clustering.gmm;
 
-import org.apache.commons.math3.linear.LUDecomposition;
+import org.apache.commons.math3.linear.CholeskyDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 
-public class GaussianDistribution {
+import java.io.Serializable;
+
+public class GaussianDistribution implements Serializable{
+    private static final long serialVersionUID = 1L;
     private RealVector mean;
     private RealMatrix covariance;
     private RealMatrix inverseCovariance;
-    private double detCovariance;
+    // calculating determinant directly results in overflow or underflow
+    // we should compute log determinant instead
+    // use the method described in http://xcorr.net/2008/06/11/log-determinant-of-positive-definite-matrices-in-matlab/
+    private double logDeterminant;
 
     public GaussianDistribution(RealVector mean, RealMatrix covariance) {
         this.mean = mean;
-        this.covariance = covariance;
-        LUDecomposition decomposition = new LUDecomposition(covariance);
-        this.inverseCovariance = decomposition.getSolver().getInverse();
-        this.detCovariance = decomposition.getDeterminant();
+        this.setCovariance(covariance);
     }
 
 
@@ -23,7 +26,7 @@ public class GaussianDistribution {
         return mean;
     }
 
-    public void setMean(RealVector mean) {
+    void setMean(RealVector mean) {
         this.mean = mean;
     }
 
@@ -31,17 +34,26 @@ public class GaussianDistribution {
         return covariance;
     }
 
-    public void setCovariance(RealMatrix covariance) {
+    public RealMatrix getInverseCovariance() {
+        return inverseCovariance;
+    }
+
+    void setCovariance(RealMatrix covariance) {
         this.covariance = covariance;
-        LUDecomposition decomposition = new LUDecomposition(covariance);
+        CholeskyDecomposition decomposition = new CholeskyDecomposition(covariance);
         this.inverseCovariance = decomposition.getSolver().getInverse();
-        this.detCovariance = decomposition.getDeterminant();
+        RealMatrix lMatrix = decomposition.getL();
+        double sum = 0;
+        for (int i=0;i<lMatrix.getRowDimension();i++){
+            sum += Math.log(lMatrix.getEntry(i,i));
+        }
+        this.logDeterminant = 2*sum;
     }
 
     public double logDensity(RealVector x){
         RealVector diff = x.subtract(mean);
         int dim = mean.getDimension();
-        return -0.5*dim*Math.log(2*Math.PI)-0.5*Math.log(detCovariance)
+        return -0.5*dim*Math.log(2*Math.PI)-0.5*logDeterminant
                 -0.5*(inverseCovariance.preMultiply(diff).dotProduct(diff));
 
     }
