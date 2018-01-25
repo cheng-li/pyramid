@@ -4,6 +4,7 @@ import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -21,7 +22,7 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private String predictionMode = "support";
     private int numSamples = 1000;
     private List<MultiLabel> support;
-
+    private CBMIsotonicScaling cbmIsotonicScaling;
 
     private double piThreshold = 0.001;
 
@@ -29,6 +30,12 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     public void setMaxSize(int maxSize) {
         this.maxSize = maxSize;
+    }
+
+    public PluginF1(CBM model, List<MultiLabel> support, MultiLabelClfDataSet dataSet) {
+        this.cbm = model;
+        this.support = support;
+        this.cbmIsotonicScaling = new CBMIsotonicScaling(cbm, dataSet);
     }
 
     public PluginF1(CBM model) {
@@ -74,10 +81,27 @@ public class PluginF1 implements PluginPredictor<CBM>{
             case "samplingNonEmpty":
                 pred =  predictBySamplingNonEmpty(vector);
                 break;
+            case "isotonic":
+                pred = predictByIsotonic(vector);
+                break;
             default:
                 throw new IllegalArgumentException("unknown mode");
         }
         return pred;
+    }
+
+    private MultiLabel predictByIsotonic(Vector vector) {
+        if (this.cbmIsotonicScaling == null) {
+            throw new RuntimeException("CBMIsotonicScaling is not initialized yet!");
+        }
+
+        double[] probs = new double[support.size()];
+        for (int c=0; c<support.size(); c++) {
+            probs[c] = cbmIsotonicScaling.calibratedProb(vector, support.get(c));
+        }
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+
+        return generalF1Predictor.predict(cbm.getNumClasses(), support, probs);
     }
 
     private MultiLabel predictBySampling(Vector vector){
