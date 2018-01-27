@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.eval.AveragePrecision;
 import edu.neu.ccs.pyramid.eval.MAP;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
@@ -425,6 +426,15 @@ public class CBMEN {
     private static void reportGeneral(Config config, CBM cbm, MultiLabelClfDataSet dataSet, String name) throws Exception{
         System.out.println("============================================================");
         System.out.println("computing other predictor-independent metrics");
+
+
+        System.out.println("label averaged MAP");
+        System.out.println(MAP.map(cbm, dataSet));
+        System.out.println("instance averaged MAP");
+        System.out.println(MAP.instanceMAP(cbm, dataSet));
+        System.out.println("global AP truncated at 30");
+        System.out.println(AveragePrecision.globalAveragePrecisionTruncated(cbm, dataSet, 30));
+
         String output = config.getString("output.dir");
         File labelProbFile = Paths.get(output, name+"_predictions",  "label_probabilities.txt").toFile();
         double labelProbThreshold = config.getDouble("report.labelProbThreshold");
