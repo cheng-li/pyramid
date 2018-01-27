@@ -1,11 +1,15 @@
 package edu.neu.ccs.pyramid.application;
 
 
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.AveragePrecision;
 import edu.neu.ccs.pyramid.eval.MAP;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
@@ -298,6 +302,8 @@ public class CBMEN {
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
         Serialization.serialize(support, new File(output,"support"));
 
+        featureImportance(config, cbm);
+
         System.out.println("Making predictions on train set with 3 different predictors designed for different metrics:");
         reportAccPrediction(config, cbm, trainSet, "train");
         reportF1Prediction(config, cbm, trainSet, "train");
@@ -471,6 +477,23 @@ public class CBMEN {
             System.out.println("The following labels do not actually appear in the training set and therefore cannot be learned:");
             System.out.println(ListUtil.toSimpleString(unobservedLabels));
         }
+    }
+
+    //todo currently only for br
+    private static void featureImportance(Config config, CBM cbm) throws Exception{
+        String output = config.getString("output.dir");
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int l=0;l<cbm.getNumClasses();l++){
+            LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
+            TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,100);
+            stringBuilder.append("label "+l+" ("+cbm.getLabelTranslator().toExtLabel(l)+")").append(": ");
+            for (Feature feature: topFeatures.getTopFeatures()){
+                stringBuilder.append(feature.getIndex()).append(" (").append(feature.getName()).append(")").append(", ");
+            }
+            stringBuilder.append("\n");
+        }
+        FileUtils.writeStringToFile(new File(output,"top_features.txt"),stringBuilder.toString());
+
     }
 
     private static ENCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
