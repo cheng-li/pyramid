@@ -468,6 +468,12 @@ public class CBMLR {
         StringBuilder stringBuilder = new StringBuilder();
         for (int l=0;l<cbm.getNumClasses();l++){
             LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
+            logisticRegression.setFeatureList(cbm.getFeatureList());
+            List<String> labels = new ArrayList<>();
+            labels.add("not_"+cbm.getLabelTranslator().toExtLabel(l));
+            labels.add(cbm.getLabelTranslator().toExtLabel(l));
+            LabelTranslator labelTranslator = new LabelTranslator(labels);
+            logisticRegression.setLabelTranslator(labelTranslator);
             TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,100);
             stringBuilder.append("label "+l+" ("+cbm.getLabelTranslator().toExtLabel(l)+")").append(": ");
             for (int f=0;f<topFeatures.getTopFeatures().size();f++){
