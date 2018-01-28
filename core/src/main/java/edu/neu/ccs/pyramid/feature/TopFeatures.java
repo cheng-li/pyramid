@@ -11,9 +11,18 @@ public class TopFeatures {
     private int classIndex;
     private String className;
     private List<Feature> topFeatures;
+    private List<Double> utilities;
 //    private List<FeatureDistribution> featureDistributions;
 
     public TopFeatures() {
+    }
+
+    public List<Double> getUtilities() {
+        return utilities;
+    }
+
+    public void setUtilities(List<Double> utilities) {
+        this.utilities = utilities;
     }
 
     public int getClassIndex() {

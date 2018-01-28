@@ -487,8 +487,12 @@ public class CBMEN {
             LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
             TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,100);
             stringBuilder.append("label "+l+" ("+cbm.getLabelTranslator().toExtLabel(l)+")").append(": ");
-            for (Feature feature: topFeatures.getTopFeatures()){
-                stringBuilder.append(feature.getIndex()).append(" (").append(feature.getName()).append(")").append(", ");
+            for (int f=0;f<topFeatures.getTopFeatures().size();f++){
+                Feature feature = topFeatures.getTopFeatures().get(f);
+                double utility = topFeatures.getUtilities().get(f);
+                stringBuilder.append(feature.getIndex()).append(" (").append(feature.getName()).append(")")
+                        .append(":").append(utility)
+                        .append(", ");
             }
             stringBuilder.append("\n");
         }

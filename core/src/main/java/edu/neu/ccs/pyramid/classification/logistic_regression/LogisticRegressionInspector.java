@@ -41,15 +41,15 @@ public class LogisticRegressionInspector {
         FeatureList featureList = logisticRegression.getFeatureList();
         Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
         Comparator<FeatureUtility> comparator = Comparator.comparing(FeatureUtility::getUtility);
-        List<Feature> list = IntStream.range(0, weights.size())
+        List<FeatureUtility> list = IntStream.range(0, weights.size())
                 .mapToObj(i -> new FeatureUtility(featureList.get(i)).setUtility(weights.get(i)))
                 .filter(featureUtility -> featureUtility.getUtility()>0)
                 .sorted(comparator.reversed())
-                .map(FeatureUtility::getFeature)
                 .limit(limit)
                 .collect(Collectors.toList());
         TopFeatures topFeatures = new TopFeatures();
-        topFeatures.setTopFeatures(list);
+        topFeatures.setTopFeatures(list.stream().map(FeatureUtility::getFeature).collect(Collectors.toList()));
+        topFeatures.setUtilities(list.stream().map(FeatureUtility::getUtility).collect(Collectors.toList()));
         topFeatures.setClassIndex(classIndex);
         LabelTranslator labelTranslator = logisticRegression.getLabelTranslator();
         topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
