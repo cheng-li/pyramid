@@ -9,6 +9,7 @@ import edu.neu.ccs.pyramid.eval.LogLikelihood;
 import edu.neu.ccs.pyramid.eval.MAP;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
@@ -282,7 +283,7 @@ public class CBMLR {
         Serialization.serialize(cbm, new File(output,"model"));
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
         Serialization.serialize(support, new File(output,"support"));
-        featureImportance(config, cbm);
+        featureImportance(config, cbm, trainSet.getFeatureList(), trainSet.getLabelTranslator());
 
 
         System.out.println();
@@ -461,21 +462,20 @@ public class CBMLR {
             System.out.println(ListUtil.toSimpleString(unobservedLabels));
         }
     }
-
     //todo currently only for br
-    private static void featureImportance(Config config, CBM cbm) throws Exception{
+    private static void featureImportance(Config config, CBM cbm, FeatureList featureList, LabelTranslator mlLabelTranslator) throws Exception{
         String output = config.getString("output.dir");
         StringBuilder stringBuilder = new StringBuilder();
         for (int l=0;l<cbm.getNumClasses();l++){
             LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
-            logisticRegression.setFeatureList(cbm.getFeatureList());
+            logisticRegression.setFeatureList(featureList);
             List<String> labels = new ArrayList<>();
-            labels.add("not_"+cbm.getLabelTranslator().toExtLabel(l));
-            labels.add(cbm.getLabelTranslator().toExtLabel(l));
+            labels.add("not_"+mlLabelTranslator.toExtLabel(l));
+            labels.add(mlLabelTranslator.toExtLabel(l));
             LabelTranslator labelTranslator = new LabelTranslator(labels);
             logisticRegression.setLabelTranslator(labelTranslator);
             TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,100);
-            stringBuilder.append("label "+l+" ("+cbm.getLabelTranslator().toExtLabel(l)+")").append(": ");
+            stringBuilder.append("label "+l+" ("+mlLabelTranslator.toExtLabel(l)+")").append(": ");
             for (int f=0;f<topFeatures.getTopFeatures().size();f++){
                 Feature feature = topFeatures.getTopFeatures().get(f);
                 double utility = topFeatures.getUtilities().get(f);
@@ -515,6 +515,7 @@ public class CBMLR {
                 .setNumComponents(hyperParameters.numComponents)
                 .setMultiClassClassifierType("lr")
                 .setBinaryClassifierType("lr")
+                .setDense(true)
                 .build();
         String allowEmpty = config.getString("predict.allowEmpty");
         switch (allowEmpty){
