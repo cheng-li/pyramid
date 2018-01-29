@@ -40,10 +40,10 @@ public class LogisticRegressionInspector {
                                                          int limit){
         FeatureList featureList = logisticRegression.getFeatureList();
         Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
-        Comparator<FeatureUtility> comparator = Comparator.comparing(FeatureUtility::getUtility);
+        Comparator<FeatureUtility> comparator = Comparator.comparing(featureUtility->Math.abs(featureUtility.getUtility()));
         List<FeatureUtility> list = IntStream.range(0, weights.size())
                 .mapToObj(i -> new FeatureUtility(featureList.get(i)).setUtility(weights.get(i)))
-                .filter(featureUtility -> featureUtility.getUtility()>0)
+//                .filter(featureUtility -> featureUtility.getUtility()>0)
                 .sorted(comparator.reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
