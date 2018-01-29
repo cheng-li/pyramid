@@ -5,6 +5,7 @@ import com.google.common.collect.Multiset;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.eval.InstanceAverage;
 import edu.neu.ccs.pyramid.eval.KLDivergence;
+import edu.neu.ccs.pyramid.multilabel_classification.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.multilabel_classification.Enumerator;
@@ -59,6 +60,22 @@ public class GeneralF1Predictor {
         return predict(numClasses,multiLabels,p);
     }
 
+    public MultiLabel predict(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities, IsotonicRegression isotonicRegression) {
+        double[][] p = getPMatrix(numClasses, multiLabels, probabilities);
+        double zeroProb = 0;
+        for (int i=0;i<multiLabels.size();i++){
+            if (multiLabels.get(i).getMatchedLabels().size()==0){
+                zeroProb = probabilities.get(i);
+                break;
+            }
+        }
+        for (int i=0;i<p.length;i++) {
+            for (int j=0;j<p[i].length;j++) {
+                p[i][j] = isotonicRegression.predict(p[i][j]);
+            }
+        }
+        return predictWithPMatrix(p, zeroProb);
+    }
 
     /**
      *
@@ -139,7 +156,7 @@ public class GeneralF1Predictor {
         for (int j=0;j<multiLabels.size();j++){
             MultiLabel multiLabel = multiLabels.get(j);
             double prob = probabilities.get(j);
-            int s = multiLabel.getMatchedLabels().size();
+            int s = multiLabel.getMatchedLabels().size(); // TODO: what if s=0?
             if (s<=maxSize){
                 for (int i: multiLabel.getMatchedLabels()){
                     double old = pMatrix[i][s-1];
