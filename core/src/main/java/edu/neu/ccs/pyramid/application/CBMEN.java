@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.application;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -359,6 +360,12 @@ public class CBMEN {
         }
 
         System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(output,name+"_predictions", "instance_accuracy_optimal","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+        }
         System.out.println("============================================================");
     }
 
@@ -393,7 +400,14 @@ public class CBMEN {
             }
         }
 
+
         System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(output,name+"_predictions", "instance_f1_optimal","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+        }
         System.out.println("============================================================");
     }
 
@@ -426,6 +440,12 @@ public class CBMEN {
         }
 
         System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(output,name+"_predictions", "instance_hamming_loss_optimal","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+        }
         System.out.println("============================================================");
     }
 
