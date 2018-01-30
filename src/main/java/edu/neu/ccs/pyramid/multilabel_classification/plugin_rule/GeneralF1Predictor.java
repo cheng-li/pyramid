@@ -13,6 +13,7 @@ import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
+import org.apache.xpath.operations.Mult;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -150,7 +151,8 @@ public class GeneralF1Predictor {
     }
 
 
-    private double[][] getPMatrix(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
+
+    public double[][] getPMatrix(int numClasses, List<MultiLabel> multiLabels, List<Double> probabilities){
         int min = Math.min(maxSize, numClasses);
         double[][] pMatrix = new double[numClasses][min];
         for (int j=0;j<multiLabels.size();j++){
