@@ -36,17 +36,17 @@ public class GMM implements Serializable{
         System.out.println("mins = "+Arrays.toString(mins));
         System.out.println("maxs = "+Arrays.toString(maxs));
         for (int k=0;k<numComponents;k++){
-//            int randomMeanInstance = Sampling.intUniform(0,data.getRowDimension());
+            int randomMeanInstance = Sampling.intUniform(0,data.getRowDimension());
 
-//            RealVector mean = data.getRowVector(randomMeanInstance).copy();
-            RealVector mean = new ArrayRealVector(dimension);
-            for (int d=0;d<dimension;d++){
-                mean.setEntry(d, Sampling.doubleUniform(mins[d],maxs[d]));
-            }
+            RealVector mean = data.getRowVector(randomMeanInstance).copy();
+//            RealVector mean = new ArrayRealVector(dimension);
+//            for (int d=0;d<dimension;d++){
+//                mean.setEntry(d, Sampling.doubleUniform(mins[d],maxs[d]));
+//            }
 
             RealMatrix cov = new Array2DRowRealMatrix(dimension,dimension);
             for (int d=0;d<dimension;d++){
-                cov.setEntry(d,d,vars[d]);
+                cov.setEntry(d,d,vars[d]+0.00001);
             }
             gaussianDistributions[k] = new GaussianDistribution(mean, cov);
         }

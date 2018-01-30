@@ -20,10 +20,10 @@ public class GMMTrainer {
         this.data = data;
         this.gmm = gmm;
         this.gammas = new double[data.getRowDimension()][gmm.getNumComponents()];
-//        for (int i=0;i<data.getRowDimension();i++){
-//            int randomAssignment = Sampling.intUniform(0, gmm.getNumComponents()-1);
-//            gammas[i][randomAssignment] = 1;
-//        }
+        for (int i=0;i<data.getRowDimension();i++){
+            int randomAssignment = Sampling.intUniform(0, gmm.getNumComponents()-1);
+            gammas[i][randomAssignment] = 1;
+        }
         this.stabilizer = new Array2DRowRealMatrix(data.getColumnDimension(),data.getColumnDimension());
         for (int i=0;i<stabilizer.getRowDimension();i++){
             stabilizer.setEntry(i,i,reg);
