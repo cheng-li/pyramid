@@ -22,12 +22,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class CBMEval {
-    public static void main(String[] args) throws Exception{
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Please specify a properties file.");
-        }
 
-        Config config = new Config(args[0]);
+    public static void main(Config config) throws Exception{
         CBM cbm = (CBM) Serialization.deserialize(config.getString("model"));
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(config.getString("support"));
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("data"), DataSetType.ML_CLF_SEQ_SPARSE,true);
@@ -48,6 +44,16 @@ public class CBMEval {
         reportAccPrediction(cbm, test);
         reportF1Prediction(cbm, support, test);
         reportHammingPrediction(cbm, test);
+    }
+
+
+    public static void main(String[] args) throws Exception{
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Please specify a properties file.");
+        }
+
+        Config config = new Config(args[0]);
+        main(config);
     }
 
 
