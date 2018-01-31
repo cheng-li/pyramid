@@ -13,6 +13,7 @@ import org.apache.mahout.math.Vector;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 /**
  * Created by chengli on 4/9/16.
@@ -23,6 +24,7 @@ public class PluginF1 implements PluginPredictor<CBM>{
     private int numSamples = 1000;
     private List<MultiLabel> support;
     private CBMIsotonicScaling cbmIsotonicScaling;
+    private PMatrixIsotonicScaling pMatrixIsotonicScaling;
 
     private double piThreshold = 0.001;
 
@@ -30,6 +32,14 @@ public class PluginF1 implements PluginPredictor<CBM>{
 
     public void setMaxSize(int maxSize) {
         this.maxSize = maxSize;
+    }
+
+    public PluginF1(CBM model, List<MultiLabel> support, MultiLabelClfDataSet dataSet, boolean isPair) {
+        this.cbm = model;
+        this.support = support;
+        if (isPair) {
+            this.pMatrixIsotonicScaling = new PMatrixIsotonicScaling(cbm, dataSet);
+        }
     }
 
     public PluginF1(CBM model, List<MultiLabel> support, MultiLabelClfDataSet dataSet) {
@@ -84,10 +94,36 @@ public class PluginF1 implements PluginPredictor<CBM>{
             case "isotonic":
                 pred = predictByIsotonic(vector);
                 break;
+            case "pmatrix":
+                pred = predictByPMatrix(vector);
+                break;
             default:
                 throw new IllegalArgumentException("unknown mode");
         }
         return pred;
+    }
+
+    private MultiLabel predictByPMatrix(Vector vector) {
+        if (this.pMatrixIsotonicScaling == null) {
+            throw new RuntimeException("pMatrixIsotonicScaling is not defined.");
+        }
+        double[] probs = cbm.predictAssignmentProbs(vector, support);
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        double[][] p = generalF1Predictor.getPMatrix(cbm.getNumClasses(), support,
+                DoubleStream.of(probs).boxed().collect(Collectors.toList()));
+        for (int i=0; i<p.length; i++) {
+            for (int j=0; j<p[i].length; j++) {
+                p[i][j] = pMatrixIsotonicScaling.calibratedProb(p[i][j]);
+            }
+        }
+        double zeroProb = 0;
+        for (int i=0;i<support.size();i++){
+            if (support.get(i).getMatchedLabels().size()==0){
+                zeroProb = probs[i];
+                break;
+            }
+        }
+        return generalF1Predictor.predictWithPMatrix(p, zeroProb);
     }
 
     private MultiLabel predictByIsotonic(Vector vector) {

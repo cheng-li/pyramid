@@ -311,9 +311,9 @@ public class CBMENISOTONIC {
         System.out.println();
 
         System.out.println("Making predictions on test set with 3 different predictors designed for different metrics:");
-        reportAccPrediction(config, cbm, testSet);
+//        reportAccPrediction(config, cbm, testSet);
         reportF1Prediction(config, cbm, testSet, validSet);
-        reportHammingPrediction(config, cbm, testSet);
+//        reportHammingPrediction(config, cbm, testSet);
         reportGeneral(config, cbm, testSet);
         System.out.println();
     }
@@ -356,16 +356,18 @@ public class CBMENISOTONIC {
         System.out.println("Making predictions on test set with the instance F1 optimal predictor");
         String output = config.getString("output.dir");
         PluginF1 pluginF1 = new PluginF1(cbm, cbm.getSupport(), validSet);
+        MultiLabel[] predictions;
+        MLMeasures mlMeasures;
 //        PluginF1 pluginF1 = new PluginF1(cbm);
 //        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(output, "support"));
 //        pluginF1.setSupport(support);
         pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
         // sampling first
-        pluginF1.setPredictionMode("sampling");
-        MultiLabel[] predictions = pluginF1.predict(dataSet);
-        MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
-        System.out.println("test performance with the instance F1 optimal predictor using Sampling  Strategy");
-        System.out.println(mlMeasures);
+//        pluginF1.setPredictionMode("sampling");
+//        MultiLabel[] predictions = pluginF1.predict(dataSet);
+//        MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
+//        System.out.println("test performance with the instance F1 optimal predictor using Sampling  Strategy");
+//        System.out.println(mlMeasures);
 
         // support secondly
         pluginF1.setPredictionMode("support");
@@ -374,25 +376,32 @@ public class CBMENISOTONIC {
         System.out.println("test performance with the instance F1 optimal predictor using Support  Strategy");
         System.out.println(mlMeasures);
 
-        // isotonic third: 1) with test, 2) with valid
-        pluginF1.setPredictionMode("isotonic");
+        pluginF1 = new PluginF1(cbm, cbm.getSupport(), validSet, true);
+        pluginF1.setPredictionMode("pmatrix");
         predictions = pluginF1.predict(dataSet);
         mlMeasures = new MLMeasures(dataSet.getNumClasses(), dataSet.getMultiLabels(), predictions);
         System.out.println("test performance with the instance F1 optimal predictor using Isotonic  Strategy on Validation set");
         System.out.println(mlMeasures);
 
-        pluginF1 = new PluginF1(cbm, cbm.getSupport(), dataSet);
-        pluginF1.setPredictionMode("isotonic");
-        predictions = pluginF1.predict(dataSet);
-        mlMeasures = new MLMeasures(dataSet.getNumClasses(), dataSet.getMultiLabels(), predictions);
-        System.out.println("test performance with the instance F1 optimal predictor using Isotonic  Strategy on Test set");
-        System.out.println(mlMeasures);
+        // isotonic third: 1) with test, 2) with valid
+//        pluginF1.setPredictionMode("isotonic");
+//        predictions = pluginF1.predict(dataSet);
+//        mlMeasures = new MLMeasures(dataSet.getNumClasses(), dataSet.getMultiLabels(), predictions);
+//        System.out.println("test performance with the instance F1 optimal predictor using Isotonic  Strategy on Validation set");
+//        System.out.println(mlMeasures);
+//
+//        pluginF1 = new PluginF1(cbm, cbm.getSupport(), dataSet);
+//        pluginF1.setPredictionMode("isotonic");
+//        predictions = pluginF1.predict(dataSet);
+//        mlMeasures = new MLMeasures(dataSet.getNumClasses(), dataSet.getMultiLabels(), predictions);
+//        System.out.println("test performance with the instance F1 optimal predictor using Isotonic  Strategy on Test set");
+//        System.out.println(mlMeasures);
 
-        pluginF1.setPredictionMode("samplingNonEmpty");
-        predictions = pluginF1.predict(dataSet);
-        mlMeasures = new MLMeasures(dataSet.getNumClasses(), dataSet.getMultiLabels(), predictions);
-        System.out.println("test performance with the instance F1 optimal predictor using Sampling without Empty Strategy");
-        System.out.println(mlMeasures);
+//        pluginF1.setPredictionMode("samplingNonEmpty");
+//        predictions = pluginF1.predict(dataSet);
+//        mlMeasures = new MLMeasures(dataSet.getNumClasses(), dataSet.getMultiLabels(), predictions);
+//        System.out.println("test performance with the instance F1 optimal predictor using Sampling without Empty Strategy");
+//        System.out.println(mlMeasures);
 
         File performanceFile = Paths.get(output,"test_predictions", "instance_f1_optimal","performance.txt").toFile();
         FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
