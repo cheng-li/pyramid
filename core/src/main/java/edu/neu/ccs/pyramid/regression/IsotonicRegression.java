@@ -20,6 +20,9 @@ public class IsotonicRegression implements Serializable{
     private double[] locations;
     private double[] values;
 
+
+
+
     /**
      *
      * @param locations unsorted
