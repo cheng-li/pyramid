@@ -264,7 +264,7 @@ public class GMMTrainerTest {
 
 
         DataSet dataSet = TRECFormat.loadClfDataSet("/Users/chengli/tmp/spam/train",DataSetType.CLF_DENSE,true);
-
+//        DataSet dataSet = TRECFormat.loadRegDataSet("/Users/chengli/tmp/housing/train",DataSetType.REG_DENSE,true);
 
         int numComponents = 5;
 

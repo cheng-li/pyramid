@@ -36,7 +36,7 @@ public class GMM implements Serializable{
         System.out.println("mins = "+Arrays.toString(mins));
         System.out.println("maxs = "+Arrays.toString(maxs));
         for (int k=0;k<numComponents;k++){
-            int randomMeanInstance = Sampling.intUniform(0,data.getRowDimension());
+            int randomMeanInstance = Sampling.intUniform(0,data.getRowDimension()-1);
 
             RealVector mean = data.getRowVector(randomMeanInstance).copy();
 //            RealVector mean = new ArrayRealVector(dimension);
