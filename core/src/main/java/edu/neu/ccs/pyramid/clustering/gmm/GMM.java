@@ -80,7 +80,9 @@ public class GMM implements Serializable{
         double[] arr = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             arr[k]=Math.log(mixtureCoefficients[k])+gaussianDistributions[k].logDensity(instance);
+//            System.out.println("k="+k+", log density= "+gaussianDistributions[k].logDensity(instance));
         }
+//        System.out.println("arry = "+Arrays.toString(arr));
         double[] posteriors = new double[numComponents];
         double logDenominator = MathUtil.logSumExp(arr);
         for (int k=0;k<numComponents;k++){

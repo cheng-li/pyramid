@@ -35,6 +35,10 @@ public class GMMTrainer {
         mStep();
     }
 
+    public double[][] getGammas() {
+        return gammas;
+    }
+
     public void setGammas(double[][] gammas) {
         this.gammas = gammas;
     }
