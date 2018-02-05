@@ -33,8 +33,8 @@ public class GMM implements Serializable{
             DescriptiveStatistics stats = new DescriptiveStatistics(column.toArray());
             vars[j] = stats.getVariance();
         }
-        System.out.println("mins = "+Arrays.toString(mins));
-        System.out.println("maxs = "+Arrays.toString(maxs));
+//        System.out.println("mins = "+Arrays.toString(mins));
+//        System.out.println("maxs = "+Arrays.toString(maxs));
         for (int k=0;k<numComponents;k++){
             int randomMeanInstance = Sampling.intUniform(0,data.getRowDimension()-1);
 

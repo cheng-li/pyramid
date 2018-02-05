@@ -153,7 +153,7 @@ public class GMMTrainerTest {
             }
         }
 
-        int numComponents = 3;
+        int numComponents = 5;
 
 //        KMeans kMeans = new KMeans(numComponents, dataSet);
 ////        kMeans.randomInitialize();
@@ -223,9 +223,8 @@ public class GMMTrainerTest {
 //            trainer.mStep();
 //            trainer.eStep();
             trainer.iterate();
-            double[][] gammas = trainer.getGammas();
-            System.out.println(Arrays.toString(gammas[0]));
-            System.out.println(Arrays.toString(gammas[1]));
+            System.out.println("iteration "+i);
+
 //            double[] entropies = IntStream.range(0,rows).mapToDouble(i->Entropy.entropy(gammas[i])).toArray();
 //            System.out.println(Arrays.toString(entropies));
 //            int max = ArgMax.argMax(entropies);
@@ -244,6 +243,13 @@ public class GMMTrainerTest {
 //                    }
 //                }
             }
+
+
+        }
+        for (int k=0;k<numComponents;k++){
+            System.out.println("component "+k);
+            System.out.println("mean="+gmm.getGaussianDistributions()[k].getMean());
+            System.out.println("log determinant ="+gmm.getGaussianDistributions()[k].getLogDeterminant());
         }
 
 //        double[][] gammas = trainer.getGammas();
@@ -333,20 +339,29 @@ public class GMMTrainerTest {
 //        trainer.setGammas(gammas);
         System.out.println("start training GMM");
         for (int i=1;i<=50;i++){
+            System.out.println("iteration "+i);
 //            trainer.mStep();
 //            trainer.eStep();
             trainer.iterate();
             double logLikelihood = IntStream.range(0,dataSet.getNumDataPoints()).parallel()
                     .mapToDouble(j->gmm.logDensity(data.getRowVector(j))).sum();
             System.out.println("log likelihood = "+logLikelihood);
+
+
         }
 
-        double[][] gammas = trainer.getGammas();
-        double[] entropies = IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(i->Entropy.entropy(gammas[i])).toArray();
-        System.out.println(Arrays.toString(entropies));
-        int max = ArgMax.argMax(entropies);
+        for (int k=0;k<numComponents;k++){
+            System.out.println("component "+k);
+            System.out.println("mean="+gmm.getGaussianDistributions()[k].getMean());
+            System.out.println("log determinant ="+gmm.getGaussianDistributions()[k].getLogDeterminant());
+        }
 
-        System.out.println(Arrays.toString(gammas[max]));
+//        double[][] gammas = trainer.getGammas();
+//        double[] entropies = IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(i->Entropy.entropy(gammas[i])).toArray();
+//        System.out.println(Arrays.toString(entropies));
+//        int max = ArgMax.argMax(entropies);
+//
+//        System.out.println(Arrays.toString(gammas[max]));
 
 //        System.out.println(gmm);
 

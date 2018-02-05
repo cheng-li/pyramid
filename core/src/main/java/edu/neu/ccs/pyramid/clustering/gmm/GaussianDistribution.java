@@ -22,6 +22,10 @@ public class GaussianDistribution implements Serializable{
     }
 
 
+    public double getLogDeterminant() {
+        return logDeterminant;
+    }
+
     public RealVector getMean() {
         return mean;
     }
