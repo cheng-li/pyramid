@@ -68,6 +68,12 @@ public class App1 {
 
         }
 
+        if (config.getBoolean("createValidSet")){
+            try (ESIndex index = loadIndex(config, logger)){
+                createValidSet(config, index, logger);
+            }
+
+        }
 
         if (config.getBoolean("createTestSet")){
             try (ESIndex index = loadIndex(config, logger)){
@@ -76,12 +82,7 @@ public class App1 {
 
         }
 
-        if (config.getBoolean("createValidSet")){
-            try (ESIndex index = loadIndex(config, logger)){
-                createValidSet(config, index, logger);
-            }
 
-        }
 
         if (fileHandler!=null){
             fileHandler.close();
@@ -305,6 +306,31 @@ public class App1 {
             featureList.add(codeDescription);
         }
     }
+
+    private static void addCodeDescriptionTfidf(ESIndex index, String[] trainIndexIds, Config config, FeatureList featureList) throws Exception{
+        String file = config.getString("train.feature.codeDesc.File");
+        List<String> lines = FileUtils.readLines(new File(file));
+        String field = config.getString("train.feature.codeDesc.matchField");
+        Collection<Terms.Bucket> buckets = index.termAggregation(config.getString("train.label.field"), trainIndexIds);
+        Map<String, Long> map = new HashMap<>();
+        for(Terms.Bucket bucket: buckets){
+            map.put(bucket.getKeyAsString(),bucket.getDocCount());
+        }
+        Map<String, String> codeMap = new HashMap<>();
+        for (String line: lines){
+            String[] lineString = line.split("\t");
+            String codeDesString = lineString[1].replace("\"", "");
+            codeMap.put(lineString[0],codeDesString);
+        }
+        for(String key:map.keySet()){
+            String codeDes = codeMap.get(key);
+            int size =map.get(key).intValue();
+            CodeDescription codeDescription = new CodeDescription(codeDes, field,size*2,key);
+            featureList.add(codeDescription);
+
+        }
+    }
+
 
 
     static void addNgramFeatures(FeatureList featureList, Set<Ngram> ngrams){
@@ -579,7 +605,8 @@ public class App1 {
         }
 
         if (config.getBoolean("train.feature.useCodeDescription")){
-            addCodeDescription(config, index, featureList);
+            addCodeDescriptionTfidf(index, trainIndexIds,config,featureList);
+//            addCodeDescription(config,index,featureList);
         }
 
 

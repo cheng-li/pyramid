@@ -630,14 +630,14 @@ public class App2 {
         final PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
-
-        logger.info("sum of calibrated probabilities");
-
-        double[] all = IntStream.range(0, dataSet.getNumDataPoints())
-                .mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
-                .map(setScaling::calibratedProb).sum()).toArray();
-        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
-        logger.info(descriptiveStatistics.toString());
+//
+//        logger.info("sum of calibrated probabilities");
+//
+//        double[] all = IntStream.range(0, dataSet.getNumDataPoints())
+//                .mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
+//                .map(setScaling::calibratedProb).sum()).toArray();
+//        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
+//        logger.info(descriptiveStatistics.toString());
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());

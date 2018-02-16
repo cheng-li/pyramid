@@ -47,6 +47,35 @@ public class App3 {
         App2.main(app2Config);
     }
 
+    public static void main(Config config) throws Exception{
+        Logger logger = Logger.getAnonymousLogger();
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
+        }
+
+        logger.info(config.toString());
+        if (fileHandler!=null){
+            fileHandler.close();
+        }
+
+        File output = new File(config.getString("output.folder"));
+        output.mkdirs();
+
+        Config app1Config = createApp1Config(config);
+        Config app2Config = createApp2Config(config);
+
+        App1.main(app1Config);
+        App2.main(app2Config);
+    }
+
     private static Config createApp1Config(Config config){
         Config app1Config = new Config();
         String[] same = {"output.folder","output.trainFolder","output.testFolder","output.validFolder","output.log",
