@@ -26,9 +26,9 @@ public class BucketInfo {
         return sumProbs;
     }
 
-    double[] counts;
-    double[] sums;
-    double [] sumProbs;
+    public double[] counts;
+    public double[] sums;
+    public double [] sumProbs;
 
     public static BucketInfo add(BucketInfo bucketInfo1, BucketInfo bucketInfo2){
         BucketInfo bucketInfo = new BucketInfo(bucketInfo1.counts.length);

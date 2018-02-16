@@ -6,10 +6,13 @@ import java.util.List;
  * Created by chengli on 10/6/16.
  */
 public class CodeDescription extends Feature {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private List<String> description;
     private int percentage;
     private String field;
+    private String descriptionString;
+    private int size;
+    private String code;
 
     public CodeDescription(List<String> description, int percentage, String field) {
         this.description = description;
@@ -17,9 +20,21 @@ public class CodeDescription extends Feature {
         this.field = field;
     }
 
+    public CodeDescription(String descriptionString, String field, int size, String code) {
+        this.descriptionString = descriptionString;
+        this.size = size;
+        this.field = field;
+        this.code = code;
+    }
+
+
     public List<String> getDescription() {
         return description;
     }
+
+    public String getDescriptionString(){ return descriptionString;}
+
+    public int getSize(){return size;}
 
     public int getPercentage() {
         return percentage;
@@ -29,13 +44,17 @@ public class CodeDescription extends Feature {
         return field;
     }
 
+    public String getCode(){return code;}
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CodeDescription{");
-        sb.append("description=").append(description);
-        sb.append(", percentage=").append(percentage);
-        sb.append(", field='").append(field).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "CodeDescription{" +
+                "description=" + description +
+                ", percentage=" + percentage +
+                ", field='" + field + '\'' +
+                ", descriptionString='" + descriptionString + '\'' +
+                ", size=" + size +
+                ", code='" + code + '\'' +
+                '}';
     }
 }
