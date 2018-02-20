@@ -56,4 +56,14 @@ public class TopFeatures {
 //    public void setFeatureDistributions(List<FeatureDistribution> featureDistributions) {
 //        this.featureDistributions = featureDistributions;
 //    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        for (int i=0;i<topFeatures.size();i++){
+            sb.append(topFeatures.get(i)).append(", ");
+        }
+        return sb.toString();
+    }
 }
