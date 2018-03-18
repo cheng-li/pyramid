@@ -61,6 +61,33 @@ public class MAP {
     }
 
 
+    public static double[] labelMapDetail(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
+        if (classifier.getNumClasses()!=dataSet.getNumClasses()){
+            throw new IllegalArgumentException("classifier.getNumClasses()!=dataSet.getNumClasses()");
+        }
+        int numData = dataSet.getNumDataPoints();
+        double[][] probs = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+
+        IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .forEach(i->probs[i] = classifier.predictClassProbs(dataSet.getRow(i)));
+        double[] ap = new double[classifier.getNumClasses()];
+
+        for (int l=0;l<classifier.getNumClasses();l++){
+            int[] binaryLabels = new int[numData];
+            double[] marginals = new double[numData];
+            for (int i=0;i<numData;i++){
+                if (dataSet.getMultiLabels()[i].matchClass(l)){
+                    binaryLabels[i] = 1;
+                }
+                marginals[i] = probs[i][l];
+            }
+
+            ap[l] = AveragePrecision.averagePrecision(binaryLabels, marginals);
+        }
+        return ap;
+    }
+
+
     /**
      * label MAP
      * marginals are estimated through support combinations
