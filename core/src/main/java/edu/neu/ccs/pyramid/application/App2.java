@@ -350,13 +350,13 @@ public class App2 {
 
         }
 
-        if (earlyStop){
-            for (int l=0;l<numClasses;l++){
-                logger.info("----------------------------------------------------");
-                logger.info("test performance history for label "+l+": "+earlyStoppers.get(l).history());
-                logger.info("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
-            }
-        }
+//        if (earlyStop){
+//            for (int l=0;l<numClasses;l++){
+//                logger.info("----------------------------------------------------");
+//                logger.info("test performance history for label "+l+": "+earlyStoppers.get(l).history());
+//                logger.info("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
+//            }
+//        }
 
         boolean topFeaturesToFile = true;
 
