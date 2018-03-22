@@ -11,6 +11,7 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -71,9 +72,8 @@ public class IsotonicRegression implements Serializable{
     public String displayCalibrationResult(Stream<Pair<Double, Integer>> stream){
         final int numBuckets = 10;
         double bucketLength = 1.0/numBuckets;
-
-        BucketInfo empty = new BucketInfo(numBuckets);
         BucketInfo total;
+
         total = stream.map(doubleIntegerPair -> {
             double probs = this.predict(doubleIntegerPair.getFirst());
             double[] sum = new double[numBuckets];
@@ -90,7 +90,8 @@ public class IsotonicRegression implements Serializable{
             sumProbs[index] += probs;
             sum[index]+=doubleIntegerPair.getSecond();
             return new BucketInfo(count, sum,sumProbs);
-        }).reduce(empty, BucketInfo::add, BucketInfo::add);
+        }).collect(() -> new BucketInfo(numBuckets), BucketInfo::addAll, BucketInfo::addAll);
+
         double[] counts = total.getCounts();
         double[] correct = total.getSums();
         double[] sumProbs = total.getSumProbs();
@@ -255,25 +256,10 @@ public class IsotonicRegression implements Serializable{
                 locations[i]= i*bucketLength + 0.5*bucketLength;
             }
 
-            BucketInfo empty = new BucketInfo(numBuckets);
+
             BucketInfo total;
-            total = stream.map(doubleIntegerPair -> {
-                double probs =  doubleIntegerPair.getFirst();
-                double[] sum = new double[numBuckets];
-                double[] sumProbs = new double[numBuckets];
-                double[] count = new double[numBuckets];
-                int index = (int)Math.floor(probs/bucketLength);
-                if (index<0){
-                    index=0;
-                }
-                if (index>=numBuckets){
-                    index = numBuckets-1;
-                }
-                count[index] += 1;
-                sumProbs[index] += probs;
-                sum[index]+=doubleIntegerPair.getSecond();
-                return new BucketInfo(count, sum,sumProbs);
-            }).reduce(empty, BucketInfo::add, BucketInfo::add);
+            total=stream.collect(()->new BucketInfo(numBuckets),BucketInfo::add, BucketInfo::addAll);
+
             double[] counts = total.counts;
             double[] sums = total.sums;
 
