@@ -73,37 +73,27 @@ public class App2 {
             stopWatch.start();
             train(config, logger);
             logger.info("total training time = "+stopWatch);
+            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
+            config.store(new File(metaDataFolder, "saved_config_app2"));
+        }
 
+        if (config.getBoolean("calibrate")){
             Config calibrationConfig = new Config();
             calibrationConfig.setString("input.testSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.testData")).toString());
             calibrationConfig.setString("input.validSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.validData")).toString());
             calibrationConfig.setString("input.model", Paths.get(config.getString("output.folder"),"model_app3").toString());
             calibrationConfig.setString("out",config.getString("output.folder"));
             Calibration.main(calibrationConfig, logger);
-
-
-            if (config.getString("predict.target").equals("macroFMeasure")){
-                logger.info("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
-                        "Reports will be generated after tuning.");
-            } else {
-                if (config.getBoolean("train.generateReports")){
-                    report(config,config.getString("input.trainData"), logger);
-                    if (config.getString("predict.target").equals("subsetAccuracy")){
-                        reportCalibrated(config,config.getString("input.trainData"), logger);
-                    }
-                }
-
-            }
-            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
-            config.store(new File(metaDataFolder, "saved_config_app2"));
-
         }
+
+
 
         if (config.getBoolean("tune")){
             tuneForMacroF(config, logger);
-            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
-            Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app2"));
-            if (savedConfig.getBoolean("train.generateReports")){
+        }
+
+        if (config.getBoolean("train")){
+            if (config.getBoolean("train.generateReports")){
                 report(config,config.getString("input.trainData"), logger);
                 if (config.getString("predict.target").equals("subsetAccuracy")){
                     reportCalibrated(config,config.getString("input.trainData"), logger);

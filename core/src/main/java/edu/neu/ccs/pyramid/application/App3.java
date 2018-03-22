@@ -105,7 +105,7 @@ public class App3 {
 
     private static Config createApp2Config(Config config){
         Config app2Config = new Config();
-        String[] same = {"output.folder","output.log", "train","test","tune","predict.target","train.warmStart","train.usePrior",
+        String[] same = {"output.folder","output.log", "train","calibrate","test","tune","predict.target","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf",
         "train.numSplitIntervals","train.batchSize", "train.minibatchLifeSpan", "train.fullScanInterval", "train.numActiveFeatures",
                 "train.showTrainProgress","train.showValidProgress", "train.showProgress.sampleSize",
