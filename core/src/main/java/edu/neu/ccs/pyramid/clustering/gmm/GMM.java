@@ -33,20 +33,20 @@ public class GMM implements Serializable{
             DescriptiveStatistics stats = new DescriptiveStatistics(column.toArray());
             vars[j] = stats.getVariance();
         }
-        System.out.println("mins = "+Arrays.toString(mins));
-        System.out.println("maxs = "+Arrays.toString(maxs));
+//        System.out.println("mins = "+Arrays.toString(mins));
+//        System.out.println("maxs = "+Arrays.toString(maxs));
         for (int k=0;k<numComponents;k++){
-//            int randomMeanInstance = Sampling.intUniform(0,data.getRowDimension());
+            int randomMeanInstance = Sampling.intUniform(0,data.getRowDimension()-1);
 
-//            RealVector mean = data.getRowVector(randomMeanInstance).copy();
-            RealVector mean = new ArrayRealVector(dimension);
-            for (int d=0;d<dimension;d++){
-                mean.setEntry(d, Sampling.doubleUniform(mins[d],maxs[d]));
-            }
+            RealVector mean = data.getRowVector(randomMeanInstance).copy();
+//            RealVector mean = new ArrayRealVector(dimension);
+//            for (int d=0;d<dimension;d++){
+//                mean.setEntry(d, Sampling.doubleUniform(mins[d],maxs[d]));
+//            }
 
             RealMatrix cov = new Array2DRowRealMatrix(dimension,dimension);
             for (int d=0;d<dimension;d++){
-                cov.setEntry(d,d,vars[d]);
+                cov.setEntry(d,d,vars[d]+0.00001);
             }
             gaussianDistributions[k] = new GaussianDistribution(mean, cov);
         }
@@ -80,7 +80,9 @@ public class GMM implements Serializable{
         double[] arr = new double[numComponents];
         for (int k=0;k<numComponents;k++){
             arr[k]=Math.log(mixtureCoefficients[k])+gaussianDistributions[k].logDensity(instance);
+//            System.out.println("k="+k+", log density= "+gaussianDistributions[k].logDensity(instance));
         }
+//        System.out.println("arry = "+Arrays.toString(arr));
         double[] posteriors = new double[numComponents];
         double logDenominator = MathUtil.logSumExp(arr);
         for (int k=0;k<numComponents;k++){

@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.clustering.kmeans;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
+import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.util.ArgMax;
 import org.apache.commons.io.FileUtils;
 import org.apache.mahout.math.Vector;
 
@@ -17,8 +19,8 @@ import java.util.stream.IntStream;
 public class KMeansTest{
     public static void main(String[] args) throws Exception{
 
-//        mnist();
-        mnistSubgroup(2);
+        mnist();
+//        mnistSubgroup(2);
 //        fashion();
 //        fashiSubgroup(9);
 
@@ -78,11 +80,16 @@ public class KMeansTest{
 
     private static void mnist() throws Exception{
         FileUtils.cleanDirectory(new File("/Users/chengli/tmp/kmeans_demo"));
-        List<String> lines = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist_features.txt"));
+        List<String> lines = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist/mnist_features.txt"));
+        List<Integer> intputLabels = FileUtils.readLines(new File("/Users/chengli/Dropbox/Shared/CS6220DM/2_cluster_EM_mixt/HW2/mnist/mnist_labels.txt"))
+                .stream().mapToInt(line->(int)Double.parseDouble(line)).boxed().collect(Collectors.toList());
+
 
         Collections.shuffle(lines, new Random(0));
+        Collections.shuffle(intputLabels, new Random(0));
 
         int rows = 100;
+        int[] labels = intputLabels.stream().limit(rows).mapToInt(a->a).toArray();
         DataSet dataSet = DataSetBuilder.getBuilder()
                 .numDataPoints(rows)
                 .numFeatures(28*28)
@@ -95,7 +102,7 @@ public class KMeansTest{
             }
         }
 
-        int numComponents = 10;
+        int numComponents = 20;
 
         KMeans kMeans = new KMeans(numComponents, dataSet);
 //        kMeans.randomInitialize();
@@ -143,6 +150,9 @@ public class KMeansTest{
             kMeans.iterate();
             objectives.add(kMeans.objective());
             int[] assignment = kMeans.getAssignments();
+
+
+
             for (int k=0;k<numComponents;k++){
                 plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"/cluster_"+(k+1)+"/center.png");
 //                plot(kMeans.getCenters()[k], 28,28, "/Users/chengli/tmp/kmeans_demo/clusters/iter_"+iter+"_component_"+(k+1)+"_pic_000center.png");
@@ -166,10 +176,38 @@ public class KMeansTest{
 
 
         }
+
+        int[] assignment = kMeans.getAssignments();
+        System.out.println("purity="+purity(assignment,labels,10,numComponents));
         System.out.println("training objective changes: "+objectives);
 
 
 
+    }
+
+
+    private static double purity(int[] assignment, int[] labels, int numLabels, int numClusters){
+        int[] clusterLabels = new int[numClusters];
+        for (int k=0;k<numClusters;k++){
+            clusterLabels[k] = findCommon(assignment, labels, numLabels, k);
+        }
+
+        int[] pred = new int[assignment.length];
+        for (int i=0;i<assignment.length;i++){
+            pred[i] = clusterLabels[assignment[i]];
+        }
+        return Accuracy.accuracy(labels, pred);
+    }
+
+    private static int findCommon(int[] assignment, int[] labels, int numLabels, int clusterIndex){
+        double[] coutns = new double[numLabels];
+        for (int i=0;i<assignment.length;i++){
+            if (assignment[i]==clusterIndex){
+                coutns[labels[i]]+=1;
+            }
+        }
+
+        return ArgMax.argMax(coutns);
     }
 
     private static void mnistSubgroup(int label) throws Exception{
