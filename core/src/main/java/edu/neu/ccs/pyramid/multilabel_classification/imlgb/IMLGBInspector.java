@@ -268,7 +268,7 @@ public class IMLGBInspector {
 
 
     public static  MultiLabelPredictionAnalysis analyzePredictionCalibrated(IMLGradientBoosting boosting,
-                                                                  IMLGBIsotonicScaling setScaling,
+                                                                            CardinalityCalibrator setScaling,
                                                                   IMLGBLabelIsotonicScaling labelScaling,
                                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                   MultiLabelClfDataSet dataSet,
@@ -330,8 +330,10 @@ public class IMLGBInspector {
         List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
 
         if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
-            double[] labelSetProbs = Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
-                    .map(setScaling::calibratedProb).toArray();
+            double[] uncalibratedLabelSetProbs = Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex))).toArray();
+            double[] labelSetProbs = IntStream.range(0,boosting.getAssignments().size())
+                    .mapToDouble(i->setScaling.calibrate(uncalibratedLabelSetProbs[i],boosting.getAssignments().get(i).getNumMatchedLabels()))
+                    .toArray();
 
             labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
                     .mapToObj(i -> {
@@ -427,7 +429,7 @@ public class IMLGBInspector {
 
 
     public static  String simplePredictionAnalysisCalibrated(IMLGradientBoosting boosting,
-                                                   IMLGBIsotonicScaling setScaling,
+                                                             CardinalityCalibrator setScaling,
                                                    IMLGBLabelIsotonicScaling labelScaling,
                                                    PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                    MultiLabelClfDataSet dataSet,

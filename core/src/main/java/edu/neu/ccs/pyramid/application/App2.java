@@ -601,7 +601,7 @@ public class App2 {
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        IMLGBIsotonicScaling setScaling = (IMLGBIsotonicScaling)Serialization.deserialize(new File(output,setCalibration));
+        CardinalityCalibrator setScaling = (CardinalityCalibrator)Serialization.deserialize(new File(output,setCalibration));
         IMLGBLabelIsotonicScaling labelScaling = (IMLGBLabelIsotonicScaling)Serialization.deserialize(new File(output, labelCalibration));
 
         String predictTarget = config.getString("predict.target");

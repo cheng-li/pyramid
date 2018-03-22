@@ -31,16 +31,10 @@ public class Calibration {
 
         original(boosting, test, logger);
 
-        logger.info("start calibrating set probability");
-        IMLGBIsotonicScaling isotonicScaling = new IMLGBIsotonicScaling(boosting, valid);
-        logger.info("finish calibrating set probability");
 
-
-        displaySetCalibration(boosting, test, isotonicScaling, logger);
-
-        logger.info("start calibrating set probability by cardinality");
+        logger.info("start cardinality based set probability calibration");
         CardinalityCalibrator cardinalityCalibrator = new CardinalityCalibrator(boosting, valid);
-        logger.info("finish calibrating set probability by cardinality");
+        logger.info("finish cardinality based set probability calibration");
 
 
         displayCardinalityCalibration(boosting, test, cardinalityCalibrator, logger);
@@ -51,12 +45,7 @@ public class Calibration {
 
         labelIsoCalibration(boosting, test, valid, logger, config);
 
-
-
-        Serialization.serialize(isotonicScaling, new File(config.getString("out"),"set_calibration"));
-        Serialization.serialize(cardinalityCalibrator, new File(config.getString("out"),"set_calibration_by_cardinality"));
-
-
+        Serialization.serialize(cardinalityCalibrator, new File(config.getString("out"),"set_calibration"));
 
 
     }
@@ -107,51 +96,6 @@ public class Calibration {
     }
 
 
-//    private static void displaySetCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, IMLGBIsotonicScaling scaling, Logger logger) throws Exception{
-//        int numIntervals = 10;
-//        PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
-//        final  PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
-//        List<Result> results = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-//                .mapToObj(i->{
-//                    Result result = new Result();
-//                    Vector vector = dataSet.getRow(i);
-//                    MultiLabel multiLabel = pluginPredictor.predict(vector);
-//
-//                    double probability = scaling.calibratedProb(dataSet.getRow(i),multiLabel);
-//                    result.probability = probability;
-//                    result.correctness = multiLabel.equals(dataSet.getMultiLabels()[i]);
-//                    result.intId =i;
-//                    return result;
-//                }).collect(Collectors.toList());
-//
-//        double intervalSize = 1.0/numIntervals;
-//        DecimalFormat decimalFormat = new DecimalFormat("#0.00");
-//        StringBuilder stringBuilder = new StringBuilder();
-//        stringBuilder.append("calibrated set probability\n");
-//        stringBuilder.append("\ninterval"+"\t"+"total"+"\t"+"correct"+"\t\t"+"incorrect"+"\t"+"accuracy"+"\t"+"average confidence\n");
-//        for (int i=0;i<numIntervals;i++){
-//            double left = intervalSize*i;
-//            double right = intervalSize*(i+1);
-//            List<Result> matched = results.stream().filter(result -> (result.probability>=left && result.probability<right)).collect(Collectors.toList());
-//            if (i==numIntervals-1){
-//                matched = results.stream().filter(result -> (result.probability>=left && result.probability<=right)).collect(Collectors.toList());
-//            }
-//            int numPos = (int)matched.stream().filter(res->res.correctness).count();
-//            int numNeg = matched.size()-numPos;
-//            double aveProb = matched.stream().mapToDouble(res->res.probability).average().orElse(0);
-//            double accuracy = SafeDivide.divide(numPos,matched.size(), 0);
-//            String st = "["+decimalFormat.format(left)+", "+decimalFormat.format(right)+")"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n";
-//            if (i==numIntervals-1){
-//                st = "["+decimalFormat.format(left)+", "+decimalFormat.format(right)+"]"+"\t"+matched.size()+"\t"+numPos+"\t\t"+numNeg+"\t\t"+decimalFormat.format(accuracy)+"\t\t"+decimalFormat.format(aveProb)+"\n";
-//            }
-//            stringBuilder.append(st);
-//        }
-//        logger.info(stringBuilder.toString());
-//
-//
-//    }
-
-
     private static void displaySetCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, IMLGBIsotonicScaling scaling, Logger logger) throws Exception{
         PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
         final  PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
@@ -172,8 +116,6 @@ public class Calibration {
 
         IsotonicRegression isotonicRegression = scaling.getIsotonicRegression();
         logger.info(isotonicRegression.displayCalibrationResult(stream));
-
-
     }
 
 
@@ -310,7 +252,6 @@ public class Calibration {
 
 
     static class Result{
-        int intId;
         double probability;
         boolean correctness;
     }
