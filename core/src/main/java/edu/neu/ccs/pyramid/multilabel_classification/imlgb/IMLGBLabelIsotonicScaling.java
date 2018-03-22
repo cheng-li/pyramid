@@ -48,7 +48,7 @@ public class IMLGBLabelIsotonicScaling implements Serializable {
                         }
 
                         return new BucketInfo(count, sum, sumProbs);
-                    }).reduce(empty, BucketInfo::add, BucketInfo::add);
+                    }).collect(()->new BucketInfo(numBuckets), BucketInfo::addAll, BucketInfo::addAll);
             double[] counts = total.counts;
             double[] sums = total.sums;
             double[] accs = new double[counts.length];
@@ -104,7 +104,7 @@ public class IMLGBLabelIsotonicScaling implements Serializable {
                         }
                     }
                     return new BucketInfo(count, sum, sumProbs);
-                }).reduce(empty, BucketInfo::add, BucketInfo::add);
+                }).collect(()->new BucketInfo(numBuckets), BucketInfo::addAll, BucketInfo::addAll);
         return total;
     }
 
