@@ -1,13 +1,20 @@
 package edu.neu.ccs.pyramid.regression;
 
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.BucketInfo;
 import edu.neu.ccs.pyramid.util.Pair;
+import edu.neu.ccs.pyramid.util.Serialization;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * follows the algorithm here:
@@ -19,9 +26,6 @@ public class IsotonicRegression implements Serializable{
     //sorted locations
     private double[] locations;
     private double[] values;
-
-
-
 
     /**
      *
@@ -53,6 +57,73 @@ public class IsotonicRegression implements Serializable{
         this.locations=sortedLocations;
         this.values = fit(sortedNumbers, sortedWeights);
     }
+
+    public IsotonicRegression(WeightedInput weightedInput) {
+        this(weightedInput.locationNonEmpty, weightedInput.accsNonempty, weightedInput.countsNonEmpty);
+    }
+
+
+
+    public IsotonicRegression(Stream<Pair<Double,Integer>> stream){
+        this(new WeightedInput(stream));
+    }
+
+
+    public String displayCalibrationResult(Stream<Pair<Double, Integer>> stream){
+        final int numBuckets = 10;
+        double bucketLength = 1.0/numBuckets;
+        BucketInfo total;
+
+        total = stream.map(doubleIntegerPair -> {
+            double probs = this.predict(doubleIntegerPair.getFirst());
+            double[] sum = new double[numBuckets];
+            double[] sumProbs = new double[numBuckets];
+            double[] count = new double[numBuckets];
+            int index = (int)Math.floor(probs/bucketLength);
+            if (index<0){
+                index=0;
+            }
+            if (index>=numBuckets){
+                index = numBuckets-1;
+            }
+            count[index] += 1;
+            sumProbs[index] += probs;
+            sum[index]+=doubleIntegerPair.getSecond();
+            return new BucketInfo(count, sum,sumProbs);
+        }).collect(() -> new BucketInfo(numBuckets), BucketInfo::addAll, BucketInfo::addAll);
+
+        double[] counts = total.getCounts();
+        double[] correct = total.getSums();
+        double[] sumProbs = total.getSumProbs();
+        double[] accs = new double[counts.length];
+        double[] average_confidence = new double[counts.length];
+
+        for (int i = 0; i < counts.length; i++) {
+            accs[i] = correct[i] / counts[i];
+        }
+        for (int j = 0; j < counts.length; j++) {
+            average_confidence[j] = sumProbs[j] / counts[j];
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat("#0.0000");
+        StringBuilder sb = new StringBuilder();
+        sb.append("interval\t\t").append("total\t\t").append("correct\t\t").append("incorrect\t\t").append("accuracy\t\t").append("average confidence\n");
+        for (int i = 0; i < 10; i++) {
+            sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
+                    .append(decimalFormat.format((i + 1) * 0.1)).append("]")
+                    .append("\t\t").append(counts[i]).append("\t\t").append(correct[i]).append("\t\t")
+                    .append(counts[i] - correct[i]).append("\t\t").append(decimalFormat.format(accs[i])).append("\t\t")
+                    .append(decimalFormat.format(average_confidence[i])).append("\n");
+
+        }
+
+        String result = sb.toString();
+        return result;
+
+    }
+
+
+
 
     public double[] getLocations() {
         return locations;
@@ -168,5 +239,39 @@ public class IsotonicRegression implements Serializable{
         private double location;
         private double number;
         private double weight;
+    }
+
+
+
+    private static class WeightedInput{
+        private double[] locationNonEmpty;
+        private double[] accsNonempty;
+        private double[] countsNonEmpty;
+
+        public WeightedInput(Stream<Pair<Double,Integer>> stream) {
+            final int numBuckets = 10000;
+            double bucketLength = 1.0/numBuckets;
+            double[] locations = new double[numBuckets];
+            for (int i=0;i<numBuckets;i++){
+                locations[i]= i*bucketLength + 0.5*bucketLength;
+            }
+
+
+            BucketInfo total;
+            total=stream.collect(()->new BucketInfo(numBuckets),BucketInfo::add, BucketInfo::addAll);
+
+            double[] counts = total.counts;
+            double[] sums = total.sums;
+
+
+            this.countsNonEmpty = IntStream.range(0,counts.length).filter(i->counts[i]!=0)
+                    .mapToDouble(i->counts[i]).toArray();
+            this.locationNonEmpty = IntStream.range(0,counts.length).filter(i->counts[i]!=0)
+                    .mapToDouble(i->locations[i]).toArray();
+            double[] sumNonempty = IntStream.range(0,counts.length).filter(i->counts[i]!=0)
+                    .mapToDouble(i->sums[i]).toArray();
+            this. accsNonempty = IntStream.range(0,countsNonEmpty.length)
+                    .mapToDouble(i->sumNonempty[i]/countsNonEmpty[i]).toArray();
+        }
     }
 }
