@@ -37,15 +37,7 @@ import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.IdsQueryBuilder;
-import org.elasticsearch.index.query.MatchQueryBuilder;
-import org.elasticsearch.index.query.Operator;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.SpanNearQueryBuilder;
-import org.elasticsearch.index.query.SpanNotQueryBuilder;
-import org.elasticsearch.index.query.SpanTermQueryBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.index.query.functionscore.ScriptScoreFunctionBuilder;
 import org.elasticsearch.node.Node;
@@ -1196,6 +1188,17 @@ public class ESIndex implements AutoCloseable{
     }
 
 
+    public SearchResponse match(String field, String matchQuery, String filterQuery, int size
+                                ){
+
+        QueryBuilder queryBuilder = QueryBuilders.matchQuery(field,matchQuery);
+        SearchResponse response = client.prepareSearch(indexName).setSize(size)
+                .setTrackScores(false).
+                        setFetchSource(false).setExplain(false).setFetchSource(false).
+                        setQuery(QueryBuilders.boolQuery().must(queryBuilder).filter(QueryBuilders.wrapperQuery(filterQuery)))
+                .execute().actionGet();
+        return response;
+    }
 
 
 

@@ -20,8 +20,8 @@ public class IMLGBLabelIsotonicScallingTest {
 
         MultiLabelClfDataSet multiLabelClfDataSet = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"), DataSetType.ML_CLF_SPARSE, true);
         IMLGradientBoosting imlGradientBoosting = (IMLGradientBoosting) Serialization.deserialize(config.getString("model_app3"));
-        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(imlGradientBoosting, multiLabelClfDataSet);
-        IMLGBLabelIsotonicScaling.BucketInfo total = imlgbLabelIsotonicScaling.individualProbs(multiLabelClfDataSet);
+        IMLGBJointLabelIsotonicScaling imlgbJointLabelIsotonicScaling = new IMLGBJointLabelIsotonicScaling(imlGradientBoosting, multiLabelClfDataSet);
+        IMLGBJointLabelIsotonicScaling.BucketInfo total = imlgbJointLabelIsotonicScaling.individualProbs(multiLabelClfDataSet);
 
         double[] counts = total.counts;
         double[] correct = total.sums;

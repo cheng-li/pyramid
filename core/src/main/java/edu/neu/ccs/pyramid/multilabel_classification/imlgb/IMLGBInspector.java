@@ -268,7 +268,7 @@ public class IMLGBInspector {
 
 
     public static  MultiLabelPredictionAnalysis analyzePredictionCalibrated(IMLGradientBoosting boosting,
-                                                                  IMLGBIsotonicScaling setScaling,
+                                                                            CardinalityCalibrator setScaling,
                                                                   IMLGBLabelIsotonicScaling labelScaling,
                                                                   PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                                   MultiLabelClfDataSet dataSet,
@@ -330,8 +330,10 @@ public class IMLGBInspector {
         List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
 
         if (pluginPredictor instanceof SubsetAccPredictor || pluginPredictor instanceof InstanceF1Predictor){
-            double[] labelSetProbs = Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
-                    .map(setScaling::calibratedProb).toArray();
+            double[] uncalibratedLabelSetProbs = Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex))).toArray();
+            double[] labelSetProbs = IntStream.range(0,boosting.getAssignments().size())
+                    .mapToDouble(i->setScaling.calibrate(uncalibratedLabelSetProbs[i],boosting.getAssignments().get(i).getNumMatchedLabels()))
+                    .toArray();
 
             labelSetRanking = IntStream.range(0,boosting.getAssignments().size())
                     .mapToObj(i -> {
@@ -427,7 +429,7 @@ public class IMLGBInspector {
 
 
     public static  String simplePredictionAnalysisCalibrated(IMLGradientBoosting boosting,
-                                                   IMLGBIsotonicScaling setScaling,
+                                                             CardinalityCalibrator setScaling,
                                                    IMLGBLabelIsotonicScaling labelScaling,
                                                    PluginPredictor<IMLGradientBoosting> pluginPredictor,
                                                    MultiLabelClfDataSet dataSet,
@@ -454,7 +456,7 @@ public class IMLGBInspector {
         }
 
         Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<Integer, Double>(l, calibratedClassProbs[l]))
+        List<Pair<Integer,Double>> list = classes.stream().map(l -> new Pair<>(l, calibratedClassProbs[l]))
                 .sorted(comparator.reversed()).collect(Collectors.toList());
         for (Pair<Integer,Double> pair: list){
             int label = pair.getFirst();

@@ -2,9 +2,6 @@ package edu.neu.ccs.pyramid.elasticsearch;
 
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.feature.*;
-import edu.neu.ccs.pyramid.util.ProgressBar;
-import org.apache.mahout.math.RandomAccessSparseVector;
-import org.apache.mahout.math.Vector;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 
@@ -32,7 +29,8 @@ public class FeatureLoader {
                     } else if (feature instanceof Ngram){
                         loadNgramFeature(index, dataSet, (Ngram)feature, idTranslator, matchScoreType, docFilter, fieldLength);
                     } else if (feature instanceof CodeDescription) {
-                        loadCodeDesFeature(index, dataSet, feature, idTranslator, docFilter);
+                        loadCodeDesFeatureTfidf(index, dataSet, feature, idTranslator, docFilter);
+//                        loadCodeDesFeature(index, dataSet, feature, idTranslator, docFilter);
                     } else {
                         loadNumericalFeature(index,dataSet,feature,idTranslator);
                     }
@@ -201,7 +199,7 @@ public class FeatureLoader {
 
     private static void loadCodeDesFeature(ESIndex index, DataSet dataSet, Feature feature,
                                            IdTranslator idTranslator, String docFilter){
-        String[] dataIndexIds = idTranslator.getAllExtIds();
+
         int featureIndex = feature.getIndex();
         CodeDescription codeDescription = (CodeDescription)(feature);
         SearchResponse response = index.minimumShouldMatch(codeDescription.getDescription(), codeDescription.getField(), codeDescription.getPercentage(), idTranslator.numData(), docFilter);
@@ -214,6 +212,37 @@ public class FeatureLoader {
         }
 
     }
+
+
+    private static void loadCodeDesFeatureTfidf(ESIndex index, DataSet dataSet, Feature feature,
+                                                IdTranslator idTranslator, String docFilter){
+        int featureIndex = feature.getIndex();
+        CodeDescription codeDescription = (CodeDescription)(feature);
+
+        SearchResponse response = index.match(codeDescription.getField(),codeDescription.getDescriptionString(),
+                    docFilter,
+                    codeDescription.getSize());
+        SearchHit[] hits = response.getHits().getHits();
+        for (SearchHit hit: hits){
+            String indexId = hit.getId();
+            float score = hit.getScore();
+            int algorithmId = idTranslator.toIntId(indexId);
+            dataSet.setFeatureValue(algorithmId,featureIndex,score);
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     public static enum MatchScoreType{
