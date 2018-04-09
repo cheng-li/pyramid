@@ -1,15 +1,18 @@
-package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
+package edu.neu.ccs.pyramid.calibration;
 
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 public class BucketInfo {
     public double[] counts;
     public double[] sums;
     public double [] sumProbs;
+    public int numBuckets;
 
     public BucketInfo(int size) {
+        numBuckets = size;
         counts = new double[size];
         sums = new double[size];
         sumProbs = new double[size];
@@ -17,9 +20,15 @@ public class BucketInfo {
 
 
     public BucketInfo(double[] counts, double[] sums, double[] sumProbs) {
+        this.numBuckets = counts.length;
         this.counts = counts;
         this.sums = sums;
         this.sumProbs = sumProbs;
+    }
+
+
+    public static BucketInfo aggregate(Stream<Pair<Double,Integer>> stream, int numBuckets){
+        return stream.collect(()->new BucketInfo(numBuckets),BucketInfo::add, BucketInfo::addAll);
     }
 
     public double[] getCounts() {
@@ -34,9 +43,11 @@ public class BucketInfo {
         return sumProbs;
     }
 
+    public int getNumBuckets() {
+        return numBuckets;
+    }
 
-
-//    public static BucketInfo add(BucketInfo bucketInfo1, BucketInfo bucketInfo2){
+    //    public static BucketInfo add(BucketInfo bucketInfo1, BucketInfo bucketInfo2){
 //        BucketInfo bucketInfo = new BucketInfo(bucketInfo1.counts.length);
 //        for (int i=0;i<bucketInfo1.counts.length;i++){
 //            bucketInfo.counts[i] = bucketInfo1.counts[i]+bucketInfo2.counts[i];

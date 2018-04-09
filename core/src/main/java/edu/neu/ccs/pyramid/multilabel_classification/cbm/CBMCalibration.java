@@ -5,16 +5,12 @@ import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
-import edu.neu.ccs.pyramid.multilabel_classification.cbm.AccPredictor;
-import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.BucketInfo;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
+import edu.neu.ccs.pyramid.calibration.BucketInfo;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.CalibrationDisplay;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 
-import java.io.File;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.*;

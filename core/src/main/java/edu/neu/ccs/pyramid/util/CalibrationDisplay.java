@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.util;
 
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.BucketInfo;
+import edu.neu.ccs.pyramid.calibration.BucketInfo;
 
 import java.text.DecimalFormat;
 import java.util.stream.Stream;

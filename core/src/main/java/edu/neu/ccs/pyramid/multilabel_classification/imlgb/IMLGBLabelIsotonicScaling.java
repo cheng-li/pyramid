@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 
+import edu.neu.ccs.pyramid.calibration.BucketInfo;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 
