@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.calibration;
 
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.Arrays;
@@ -7,23 +8,26 @@ import java.util.stream.Stream;
 
 public class BucketInfo {
     public double[] counts;
-    public double[] sums;
+    public double[] sumLabels;
     public double [] sumProbs;
+    public double[] sumSquareProbs;
     public int numBuckets;
 
-    public BucketInfo(int size) {
+    private BucketInfo(int size) {
         numBuckets = size;
         counts = new double[size];
-        sums = new double[size];
+        sumLabels = new double[size];
         sumProbs = new double[size];
+        sumSquareProbs = new double[size];
     }
 
 
-    public BucketInfo(double[] counts, double[] sums, double[] sumProbs) {
+    private BucketInfo(double[] counts, double[] sumLabels, double[] sumProbs, double[] sumSquareProbs) {
         this.numBuckets = counts.length;
         this.counts = counts;
-        this.sums = sums;
+        this.sumLabels = sumLabels;
         this.sumProbs = sumProbs;
+        this.sumSquareProbs = sumSquareProbs;
     }
 
 
@@ -35,34 +39,50 @@ public class BucketInfo {
         return counts;
     }
 
-    public double[] getSums() {
-        return sums;
+    public double[] getSumLabels() {
+        return sumLabels;
     }
 
     public double[] getSumProbs() {
         return sumProbs;
     }
 
+    public double[] getSumSquareProbs() {
+        return sumSquareProbs;
+    }
+
     public int getNumBuckets() {
         return numBuckets;
     }
 
-    //    public static BucketInfo add(BucketInfo bucketInfo1, BucketInfo bucketInfo2){
-//        BucketInfo bucketInfo = new BucketInfo(bucketInfo1.counts.length);
-//        for (int i=0;i<bucketInfo1.counts.length;i++){
-//            bucketInfo.counts[i] = bucketInfo1.counts[i]+bucketInfo2.counts[i];
-//            bucketInfo.sums[i] = bucketInfo1.sums[i]+bucketInfo2.sums[i];
-//            bucketInfo.sumProbs[i] = bucketInfo1.sumProbs[i] + bucketInfo2.sumProbs[i];
-//        }
-//        return bucketInfo;
-//    }
+
+    public double[] getAveLabels(){
+        double[] ave = new double[numBuckets];
+        for (int i=0;i<numBuckets;i++){
+            ave[i] = sumLabels[i]/counts[i];
+        }
+        return ave;
+    }
+
+    public double[] getAveProbs(){
+        double[] ave = new double[numBuckets];
+        for (int i=0;i<numBuckets;i++){
+            ave[i] = sumProbs[i]/counts[i];
+        }
+        return ave;
+    }
+
+    public double getTotalCount(){
+        return MathUtil.arraySum(counts);
+    }
 
 
     public void addAll(BucketInfo bucketInfo2){
         for (int i=0;i<this.counts.length;i++){
             this.counts[i] += bucketInfo2.counts[i];
-            this.sums[i] += bucketInfo2.sums[i];
+            this.sumLabels[i] += bucketInfo2.sumLabels[i];
             this.sumProbs[i] += bucketInfo2.sumProbs[i];
+            this.sumSquareProbs[i] += bucketInfo2.sumSquareProbs[i];
         }
     }
 
@@ -80,7 +100,8 @@ public class BucketInfo {
         }
         this.counts[index] += 1;
         this.sumProbs[index] += prob;
-        this.sums[index]+=pair.getSecond();
+        this.sumLabels[index]+=pair.getSecond();
+        this.sumSquareProbs[index] += prob*prob;
     }
 
 //    public static BucketInfo addTo(BucketInfo bucketInfo, Pair<Double,Integer> pair){
@@ -126,7 +147,7 @@ public class BucketInfo {
     public String toString() {
         return "BucketInfo{" +
                 "counts=" + Arrays.toString(counts) +
-                ", sums=" + Arrays.toString(sums) +
+                ", sumLabels=" + Arrays.toString(sumLabels) +
                 ", sumProbs=" + Arrays.toString(sumProbs) +
                 '}';
     }

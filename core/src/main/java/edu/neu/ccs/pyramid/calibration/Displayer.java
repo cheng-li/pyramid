@@ -14,29 +14,9 @@ public class Displayer {
      */
     public static String displayCalibrationResult(Stream<Pair<Double, Integer>> stream){
         final int numBuckets = 10;
-        double bucketLength = 1.0/numBuckets;
-        BucketInfo total;
-
-        total = stream.map(doubleIntegerPair -> {
-            double probs = doubleIntegerPair.getFirst();
-            double[] sum = new double[numBuckets];
-            double[] sumProbs = new double[numBuckets];
-            double[] count = new double[numBuckets];
-            int index = (int)Math.floor(probs/bucketLength);
-            if (index<0){
-                index=0;
-            }
-            if (index>=numBuckets){
-                index = numBuckets-1;
-            }
-            count[index] += 1;
-            sumProbs[index] += probs;
-            sum[index]+=doubleIntegerPair.getSecond();
-            return new BucketInfo(count, sum,sumProbs);
-        }).collect(() -> new BucketInfo(numBuckets), BucketInfo::addAll, BucketInfo::addAll);
-
+        BucketInfo total = BucketInfo.aggregate(stream, numBuckets);
         double[] counts = total.getCounts();
-        double[] correct = total.getSums();
+        double[] correct = total.getSumLabels();
         double[] sumProbs = total.getSumProbs();
         double[] accs = new double[counts.length];
         double[] average_confidence = new double[counts.length];

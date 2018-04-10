@@ -11,18 +11,24 @@ public class CalibrationEval {
         return stream.mapToDouble(pair->Math.pow(pair.getFirst()-pair.getSecond(),2)).average().getAsDouble();
     }
 
-    public static double error(Stream<Pair<Double, Integer>> stream, int numBuckets){
+    public static double absoluteError(Stream<Pair<Double, Integer>> stream, int numBuckets){
         BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets);
         double sum = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
-            double count = bucketInfo.getCounts()[i];
-            sum += count*Math.abs(bucketInfo.getSumProbs()[i]/count-bucketInfo.getSums()[i]/count);
+            sum += Math.abs(bucketInfo.getSumProbs()[i]-bucketInfo.getSumLabels()[i]);
         }
-        int total = 0;
+
+        return sum/bucketInfo.getTotalCount();
+    }
+
+    public static double squareError(Stream<Pair<Double, Integer>> stream, int numBuckets){
+        BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets);
+        double[] aveLabels = bucketInfo.getAveLabels();
+        double sum = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
-            total += bucketInfo.getCounts()[i];
+            sum += Math.pow(aveLabels[i],2)*bucketInfo.getCounts()[i]-2*bucketInfo.getSumProbs()[i]*aveLabels[i]+bucketInfo.getSumSquareProbs()[i];
         }
-        return sum/total;
+        return sum/bucketInfo.getTotalCount();
     }
 
     public static double sharpness(Stream<Pair<Double, Integer>> stream, int numBuckets){
@@ -30,23 +36,22 @@ public class CalibrationEval {
         BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets);
         double[] accuracies = new double[bucketInfo.getNumBuckets()];
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
-            accuracies[i] = bucketInfo.getSums()[i]/bucketInfo.getCounts()[i];
+            accuracies[i] = bucketInfo.getSumLabels()[i]/bucketInfo.getCounts()[i];
         }
         double average = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
-            average += bucketInfo.getSums()[i];
+            average += bucketInfo.getSumLabels()[i];
         }
 
-        int total = 0;
-        for (int i=0;i<bucketInfo.getNumBuckets();i++){
-            total += bucketInfo.getCounts()[i];
-        }
-
+        double total = bucketInfo.getTotalCount();
         average/=total;
         double sum = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
             double count = bucketInfo.getCounts()[i];
-            sum += count*Math.pow(accuracies[i]-average,2);
+            if (count!=0){
+                sum += count*Math.pow(accuracies[i]-average,2);
+            }
+
         }
         return sum/(total-1);
     }
