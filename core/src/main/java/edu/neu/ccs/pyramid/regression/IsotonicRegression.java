@@ -1,7 +1,10 @@
 package edu.neu.ccs.pyramid.regression;
 
 import edu.neu.ccs.pyramid.calibration.BucketInfo;
+import edu.neu.ccs.pyramid.calibration.StreamGenerator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
@@ -17,7 +20,7 @@ import java.util.stream.Stream;
  * http://stat.wikia.com/wiki/Isotonic_regression
  */
 
-public class IsotonicRegression implements Serializable{
+public class IsotonicRegression implements Regressor{
     private static final long serialVersionUID = 1L;
     //sorted locations
     private double[] locations;
@@ -66,6 +69,18 @@ public class IsotonicRegression implements Serializable{
 
 
 
+    public static IsotonicRegression train(StreamGenerator streamGenerator){
+        Stream<Pair<Vector,Integer>> stream = streamGenerator.generateStream();
+        Stream singleStream = stream.map(s->new Pair<>(s.getFirst().get(0),s.getSecond()));
+        IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream);
+        return isotonicRegression;
+    }
+
+    public static IsotonicRegression train(Stream<Pair<Vector,Integer>> stream){
+        Stream singleStream = stream.map(s->new Pair<>(s.getFirst().get(0),s.getSecond()));
+        IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream);
+        return isotonicRegression;
+    }
 
 
     public double[] getLocations() {
@@ -170,6 +185,16 @@ public class IsotonicRegression implements Serializable{
         sb.append(", values=").append(Arrays.toString(values));
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public double predict(Vector vector) {
+        return predict(vector.get(0));
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return null;
     }
 
     private static class Element{
