@@ -35,8 +35,18 @@ public class Displayer {
             sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
                     .append(decimalFormat.format((i + 1) * 0.1)).append("]")
                     .append("\t\t").append(counts[i]).append("\t\t").append(correct[i]).append("\t\t")
-                    .append(counts[i] - correct[i]).append("\t\t").append(decimalFormat.format(accs[i])).append("\t\t")
-                    .append(decimalFormat.format(average_confidence[i])).append("\n");
+                    .append(counts[i] - correct[i]).append("\t\t");
+                    if (Double.isFinite(accs[i])){
+                        sb.append(decimalFormat.format(accs[i])).append("\t\t");
+                    } else {
+                        sb.append("N/A").append("\t\t");
+                    }
+
+                    if (Double.isFinite(average_confidence[i])){
+                        sb.append(decimalFormat.format(average_confidence[i])).append("\n");
+                    } else {
+                        sb.append("N/A").append("\n");
+                    }
 
         }
 

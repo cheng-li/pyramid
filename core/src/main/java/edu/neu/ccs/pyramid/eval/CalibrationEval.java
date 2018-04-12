@@ -26,7 +26,10 @@ public class CalibrationEval {
         double[] aveLabels = bucketInfo.getAveLabels();
         double sum = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
-            sum += Math.pow(aveLabels[i],2)*bucketInfo.getCounts()[i]-2*bucketInfo.getSumProbs()[i]*aveLabels[i]+bucketInfo.getSumSquareProbs()[i];
+            if (bucketInfo.getCounts()[i]!=0){
+                sum += Math.pow(aveLabels[i],2)*bucketInfo.getCounts()[i]-2*bucketInfo.getSumProbs()[i]*aveLabels[i]+bucketInfo.getSumSquareProbs()[i];
+            }
+
         }
         return sum/bucketInfo.getTotalCount();
     }
