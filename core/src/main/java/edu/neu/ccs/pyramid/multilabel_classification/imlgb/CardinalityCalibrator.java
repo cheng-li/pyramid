@@ -6,6 +6,8 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.util.ArgMax;
+import edu.neu.ccs.pyramid.util.ArgMin;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -67,12 +69,13 @@ public class CardinalityCalibrator implements Regressor{
         // vec(1) is cardinality
         stream.forEach(pair->map.put((int)pair.getFirst().get(1),1));
         Enumeration<Integer> ints = map.keys();
-        Set<Integer> cardinalities = new HashSet<>();
+        List<Integer> cardinalities = new ArrayList<>();
         CardinalityCalibrator cardinalityCalibrator = new CardinalityCalibrator();
         cardinalityCalibrator.calibrations = new HashMap<>();
         while(ints.hasMoreElements()){
             cardinalities.add(ints.nextElement());
         }
+        Collections.sort(cardinalities);
 
         for (int cardinality: cardinalities){
             Stream<Pair<Vector,Integer>> filtered = streamGenerator.generateStream().filter(pair->(int)pair.getFirst().get(1)==cardinality);
@@ -84,7 +87,15 @@ public class CardinalityCalibrator implements Regressor{
 
 
     public double calibrate(double uncalibrated, int cardinality){
-        return calibrations.get(cardinality).predict(uncalibrated);
+        //deal with unseen cardinality
+        List<Integer> cards = new ArrayList<>(calibrations.keySet());
+        Collections.sort(cards);
+        double[] diff = new double[cards.size()];
+        for (int i=0;i<cards.size();i++){
+            diff[i] = Math.abs(cardinality-cards.get(i));
+        }
+        int closest = cards.get(ArgMin.argMin(diff));
+        return calibrations.get(closest).predict(uncalibrated);
     }
 
 
