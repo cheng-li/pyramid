@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.imlgb.HammingPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBLabelIsotonicScaling;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.SubsetAccPredictor;
+import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.DenseVector;
@@ -35,11 +36,15 @@ public class StreamGenerator {
     }
 
     public  Stream<Pair<Vector,Integer>> generateStream(){
-        return IntStream.range(0, dataSet.getNumDataPoints())
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .boxed().flatMap(this::generateStream);
     }
 
-    public Stream<Pair<Vector,Integer>> generateStream(int data){
+    public Stream<Pair<Double,Integer>> generateCalibratedStream(Regressor regressor){
+        return generateStream().map(a->new Pair<>(regressor.predict(a.getFirst()),a.getSecond()));
+    }
+
+    private Stream<Pair<Vector,Integer>> generateStream(int data){
         double[] uncalibratedLabelProbs = boosting.predictClassProbs(dataSet.getRow(data));
         double[] calibratedLabelProbs = labelCali.calibratedClassProbs(uncalibratedLabelProbs);
 
@@ -54,9 +59,8 @@ public class StreamGenerator {
 
         Set<MultiLabel> candidateSet = new HashSet<>();
         candidateSet.add(top);
-        if (config.getString("D").equals("2")){
-            candidateSet.addAll(boosting.getAssignments());
-        }
+        candidateSet.addAll(boosting.getAssignments());
+
         List<MultiLabel> candidates = new ArrayList<>(candidateSet);
 
         double[] probabilities = new double[candidates.size()];
@@ -77,21 +81,28 @@ public class StreamGenerator {
             }
         }
 
-        Stream<Pair<Vector,Integer>> stream = IntStream.range(0,candidateSet.size())
+        List<MultiLabel> fcandidates = candidates;
+
+        Stream<Item> stream = IntStream.range(0,fcandidates.size())
                 .mapToObj(i->{
                     Vector vector = new DenseVector(4);
+                    //todo add more dim
                     vector.set(0, probabilities[i]);
-                    vector.set(1,candidates.get(i).getNumMatchedLabels());
-                    Pair<Vector,Integer> pair = new Pair<>();
-                    pair.setFirst(vector);
-                    pair.setSecond(0);
-                    if (candidates.get(i).equals(dataSet.getMultiLabels()[data])){
-                        pair.setSecond(1);
+                    vector.set(1,fcandidates.get(i).getNumMatchedLabels());
+                    Item item = new Item();
+                    item.multiLabel = fcandidates.get(i);
+                    if (fcandidates.get(i).equals(dataSet.getMultiLabels()[data])){
+                        item.label=1;
                     }
-                    return pair;
+                    item.vector = vector;
+                    return item;
                 });
 
-        return stream;
+        if (config.getString("D").equals("2")){
+            return stream.map(item->new Pair<>(item.vector,item.label));
+        } else {
+            return stream.filter(item->item.multiLabel.equals(top)).map(item->new Pair<>(item.vector,item.label));
+        }
 
     }
 
@@ -106,5 +117,11 @@ public class StreamGenerator {
             }
         }
         return product;
+    }
+
+    private static class Item{
+        MultiLabel multiLabel;
+        Vector vector;
+        int label;
     }
 }
