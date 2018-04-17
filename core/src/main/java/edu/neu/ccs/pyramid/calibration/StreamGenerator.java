@@ -3,10 +3,7 @@ package edu.neu.ccs.pyramid.calibration;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.HammingPredictor;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBLabelIsotonicScaling;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.SubsetAccPredictor;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -54,11 +51,24 @@ public class StreamGenerator {
 
         MultiLabel accPred = new SubsetAccPredictor(boosting).predict(dataSet.getRow(data));
         MultiLabel hammingPred = new HammingPredictor(boosting).predict(dataSet.getRow(data));
-        MultiLabel top;
-        if (config.getString("A").equals("1")){
+        MultiLabel accPredCalibrated = new CalibratedSetAccPredictor(boosting, labelCali).predict(dataSet.getRow(data));
+        MultiLabel hammingPredCalibrated = new CalibratedHammingPredictor(boosting, labelCali).predict(dataSet.getRow(data));
+        MultiLabel top = null;
+        if (config.getString("A").equals("1") && config.getString("G").equals("1")){
             top = hammingPred;
-        } else {
+        }
+
+        if (config.getString("A").equals("1") && config.getString("G").equals("2")){
+            top = hammingPredCalibrated;
+        }
+
+
+        if (config.getString("A").equals("2") && config.getString("G").equals("1")){
             top = accPred;
+        }
+
+        if (config.getString("A").equals("2") && config.getString("G").equals("2")){
+            top = accPredCalibrated;
         }
 
         Set<MultiLabel> candidateSet = new HashSet<>();
@@ -66,6 +76,7 @@ public class StreamGenerator {
 
         //todo always add hamming?
         candidateSet.add(hammingPred);
+        candidateSet.add(hammingPredCalibrated);
         //todo empty set
         candidateSet.add(new MultiLabel());
         candidateSet.addAll(boosting.getAssignments());
@@ -116,11 +127,24 @@ public class StreamGenerator {
 
         MultiLabel accPred = new SubsetAccPredictor(boosting).predict(dataSet.getRow(data));
         MultiLabel hammingPred = new HammingPredictor(boosting).predict(dataSet.getRow(data));
-        MultiLabel top;
-        if (config.getString("A").equals("1")){
+        MultiLabel accPredCalibrated = new CalibratedSetAccPredictor(boosting, labelCali).predict(dataSet.getRow(data));
+        MultiLabel hammingPredCalibrated = new CalibratedHammingPredictor(boosting, labelCali).predict(dataSet.getRow(data));
+        MultiLabel top = null;
+        if (config.getString("A").equals("1") && config.getString("G").equals("1")){
             top = hammingPred;
-        } else {
+        }
+
+        if (config.getString("A").equals("1") && config.getString("G").equals("2")){
+            top = hammingPredCalibrated;
+        }
+
+
+        if (config.getString("A").equals("2") && config.getString("G").equals("1")){
             top = accPred;
+        }
+
+        if (config.getString("A").equals("2") && config.getString("G").equals("2")){
+            top = accPredCalibrated;
         }
 
         Set<MultiLabel> candidateSet = new HashSet<>();
@@ -128,6 +152,7 @@ public class StreamGenerator {
 
         //todo always add hamming?
         candidateSet.add(hammingPred);
+        candidateSet.add(hammingPredCalibrated);
         //todo empty set
         candidateSet.add(new MultiLabel());
         candidateSet.addAll(boosting.getAssignments());
@@ -178,10 +203,11 @@ public class StreamGenerator {
                     return item;
                 });
 
+        MultiLabel fTop = top;
         if (config.getString("D").equals("2")){
             return stream.map(item->new Pair<>(item.vector,item.label));
         } else {
-            return stream.filter(item->item.multiLabel.equals(top)).map(item->new Pair<>(item.vector,item.label));
+            return stream.filter(item->item.multiLabel.equals(fTop)).map(item->new Pair<>(item.vector,item.label));
         }
 
     }
