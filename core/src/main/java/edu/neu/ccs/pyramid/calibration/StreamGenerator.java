@@ -38,6 +38,39 @@ public class StreamGenerator {
         return generateStream().map(a->new Pair<>(regressor.predict(a.getFirst()),a.getSecond()));
     }
 
+    public List<Double> calibratedProbsForSupport(Regressor regressor, Vector instance){
+        double[] uncalibratedLabelProbs = boosting.predictClassProbs(instance);
+        double[] calibratedLabelProbs = labelCali.calibratedClassProbs(uncalibratedLabelProbs);
+        List<MultiLabel> candidates = boosting.getAssignments();
+        double[] uncalibrated = new double[candidates.size()];
+        if (config.getString("B").equals("1")){
+            for (int i=0;i<candidates.size();i++){
+                uncalibrated[i] = proba(candidates.get(i),uncalibratedLabelProbs);
+            }
+        } else {
+            for (int i=0;i<candidates.size();i++){
+                uncalibrated[i] = proba(candidates.get(i),calibratedLabelProbs);
+            }
+        }
+
+        if (config.getString("C").equals("1")){
+            double sum = MathUtil.arraySum(uncalibrated);
+            for (int i=0;i<uncalibrated.length;i++){
+                uncalibrated[i] /= sum;
+            }
+        }
+
+        List<Double> calibrated = new ArrayList<>();
+        for (int a=0;a<candidates.size();a++){
+            Vector vector = new DenseVector(4);
+            //todo add more dim
+            vector.set(0, uncalibrated[a]);
+            vector.set(1,candidates.get(a).getNumMatchedLabels());
+            calibrated.add(regressor.predict(vector));
+        }
+        return calibrated;
+    }
+
     public double calibratedSum(Regressor regressor){
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i->calibratedSum(regressor,i)).average().getAsDouble();
