@@ -34,8 +34,17 @@ public class StreamGenerator {
                 .boxed().flatMap(this::generateStream);
     }
 
+    public  Stream<Pair<Vector,Integer>> generateStreamTruncated(int top){
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .boxed().flatMap(i->generateStreamTruncated(i,top));
+    }
+
     public Stream<Pair<Double,Integer>> generateCalibratedStream(Regressor regressor){
         return generateStream().map(a->new Pair<>(regressor.predict(a.getFirst()),a.getSecond()));
+    }
+
+    public Stream<Pair<Double,Integer>> generateCalibratedStreamTruncated(Regressor regressor, int top){
+        return generateStreamTruncated(top).map(a->new Pair<>(regressor.predict(a.getFirst()),a.getSecond()));
     }
 
     public List<Double> calibratedProbsForSupport(Regressor regressor, Vector instance){
@@ -243,6 +252,18 @@ public class StreamGenerator {
             return stream.filter(item->item.multiLabel.equals(fTop)).map(item->new Pair<>(item.vector,item.label));
         }
 
+    }
+
+
+    /**
+     *
+     * @param data
+     * @param top truncated at top 10
+     * @return
+     */
+    private Stream<Pair<Vector,Integer>> generateStreamTruncated(int data, int top){
+        Comparator<Pair<Vector,Integer>> comparator = Comparator.comparing(pair->pair.getFirst().get(0));
+        return generateStream(data).sorted(comparator.reversed()).limit(top);
     }
 
     private static double proba(MultiLabel multiLabel, double[] marginals){
