@@ -93,7 +93,31 @@ public class MathUtil {
         return Math.log(sum) + maxElement;
     }
 
+    /**
+     * calculate log(w1*exp(x1)+w2*exp(x2)+...)
+     * some of w1,w2,... can be negative
+     * @return
+     */
+    public static double logSumExpWeighted(double[] exponents, double[] weights){
+        double maxElement = Double.NEGATIVE_INFINITY;
+        for (double number: exponents){
+            if (number > maxElement){
+                maxElement = number;
+            }
+        }
 
+        if (maxElement==Double.NEGATIVE_INFINITY){
+            return Double.NEGATIVE_INFINITY;
+        }
+
+        double sum = 0;
+        for (int i=0;i<exponents.length;i++){
+            double exponent = exponents[i];
+            double weight = weights[i];
+            sum += weight*Math.exp(exponent - maxElement);
+        }
+        return Math.log(sum) + maxElement;
+    }
 
     /**
      * calculate log(exp(x1)+exp(x2)+...)
