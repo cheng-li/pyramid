@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
+import edu.neu.ccs.pyramid.util.ArgMin;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -55,14 +56,22 @@ public class CardinalityCalibrator implements Serializable{
 
 
     public double calibrate(double uncalibrated, int cardinality){
-        return calibrations.get(cardinality).predict(uncalibrated);
+        //deal with unseen cardinality
+        List<Integer> cards = new ArrayList<>(calibrations.keySet());
+        Collections.sort(cards);
+        double[] diff = new double[cards.size()];
+        for (int i=0;i<cards.size();i++){
+            diff[i] = Math.abs(cardinality-cards.get(i));
+        }
+        int closest = cards.get(ArgMin.argMin(diff));
+        return calibrations.get(closest).predict(uncalibrated);
     }
 
 
     public double calibratedProb(Vector vector, MultiLabel multiLabel){
         double uncalibrated = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
         int cardinality = multiLabel.getNumMatchedLabels();
-        return calibrations.get(cardinality).predict(uncalibrated);
+        return calibrate(uncalibrated, cardinality);
     }
 
 
