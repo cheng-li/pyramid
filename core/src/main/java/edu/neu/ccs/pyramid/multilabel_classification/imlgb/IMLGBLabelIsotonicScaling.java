@@ -48,6 +48,7 @@ public class IMLGBLabelIsotonicScaling implements Serializable {
 
     }
 
-
-
+    public List<IsotonicRegression> getIsotonicRegressionList() {
+        return isotonicRegressionList;
+    }
 }
