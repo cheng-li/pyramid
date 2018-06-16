@@ -102,7 +102,7 @@ public class CardinalityCalibrator implements Regressor{
     public double calibratedProb(Vector vector, MultiLabel multiLabel){
         double uncalibrated = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
         int cardinality = multiLabel.getNumMatchedLabels();
-        return calibrations.get(cardinality).predict(uncalibrated);
+        return calibrate(uncalibrated, cardinality);
     }
 
 
