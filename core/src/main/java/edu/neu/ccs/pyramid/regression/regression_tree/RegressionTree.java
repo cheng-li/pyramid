@@ -337,10 +337,10 @@ public class RegressionTree implements Regressor, Serializable {
                 if (!node1.isLeaf()){
                     Node node2 = stack.peek();
                     if (node2 == node1.getLeftChild()){
-                        sb.append(node1.getFeatureIndex())
+                        sb.append(featureList.get(node1.getFeatureIndex()).getName())
                                 .append("<=").append(node1.getThreshold()).append("   ");
                     } else {
-                        sb.append(node1.getFeatureIndex()).
+                        sb.append(featureList.get(node1.getFeatureIndex()).getName()).
                                 append(">").append(node1.getThreshold()).append("   ");
                     }
                 } else{

@@ -80,7 +80,7 @@ public class Splitter {
 
             activeFeatures.clear();
             Optional<SplitResult> result = fQueue.peek();
-            for(int i=0; i< regTreeConfig.getNumActiveFeatures();i++){
+            for(int i=0; i< Math.min(regTreeConfig.getNumActiveFeatures(),fQueue.size());i++){
                 SplitResult r = fQueue.poll().get();
                 activeFeatures.add(r.getFeatureIndex());
 
