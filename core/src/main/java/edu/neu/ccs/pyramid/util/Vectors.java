@@ -10,6 +10,11 @@ import org.apache.mahout.math.Vector;
  */
 public class Vectors {
 
+    public static double cosine(Vector vector1, Vector vector2){
+        double prod = vector1.dot(vector2);
+        return prod/(vector1.norm(2)*vector2.norm(2));
+    }
+
     public static Vector concatenate(Vector vector, Vector vector2){
         Vector con = new DenseVector(vector.size()+vector2.size());
 

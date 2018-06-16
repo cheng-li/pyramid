@@ -1,13 +1,12 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.DataSetType;
-import edu.neu.ccs.pyramid.dataset.DataSetUtil;
-import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.dataset.*;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -26,6 +25,8 @@ public class Merger {
             case "reg":
                 //todo
                 break;
+            case "mlclf":
+                mergeMLClfData(config);
         }
 
     }
@@ -38,6 +39,19 @@ public class Merger {
         ClfDataSet dataSet1 = TRECFormat.loadClfDataSet(input1,DataSetType.CLF_DENSE,true);
         ClfDataSet dataSet2 = TRECFormat.loadClfDataSet(input2,DataSetType.CLF_DENSE,true);
         ClfDataSet merged = DataSetUtil.concatenateByRow(dataSet1,dataSet2);
+        TRECFormat.save(merged,output);
+
+    }
+
+    private static void mergeMLClfData(Config config) throws Exception{
+        List<String> inputs = config.getStrings("input.dataSets");
+        String output= config.getString("output.dataSet");
+        List<MultiLabelClfDataSet> dataSets = new ArrayList<>();
+        for (String input: inputs){
+            MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(input,DataSetType.ML_CLF_SPARSE,true);
+            dataSets.add(dataSet);
+        }
+        MultiLabelClfDataSet merged = DataSetUtil.concatenateByRow(dataSets);
         TRECFormat.save(merged,output);
 
     }

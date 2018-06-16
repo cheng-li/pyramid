@@ -83,6 +83,10 @@ public class LabelTranslator implements Serializable{
     }
 
 
+    public Set<String> getAllExtLabels(){
+        return extToInt.keySet();
+    }
+
 
     /**
      * int labels are assigned based on the alphabetical order of ext labels

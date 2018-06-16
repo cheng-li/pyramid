@@ -41,6 +41,9 @@ public class LBFGS extends GradientValueOptimizer implements Optimizer{
 
     }
 
+    public BackTrackingLineSearcher getLineSearcher() {
+        return lineSearcher;
+    }
 
     private void reset(){
         this.sQueue = new LinkedList<>();

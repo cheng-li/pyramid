@@ -14,5 +14,11 @@ public class ConstantRule implements Rule{
         return score;
     }
 
-
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ConstantRule{");
+        sb.append("score=").append(score);
+        sb.append('}');
+        return sb.toString();
+    }
 }

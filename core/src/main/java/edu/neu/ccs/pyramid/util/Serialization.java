@@ -7,7 +7,7 @@ import java.io.*;
  */
 public class Serialization {
 
-    public static Object deepCopy(Serializable serializableObj) throws IOException, ClassNotFoundException {
+    public static Object deepCopy(Object serializableObj) throws IOException, ClassNotFoundException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(bos);
         out.writeObject(serializableObj);
