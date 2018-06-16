@@ -211,7 +211,7 @@ public class IsotonicRegression implements Regressor{
 
 
 
-    private static class WeightedInput{
+    public static class WeightedInput{
         private double[] locationNonEmpty;
         private double[] accsNonempty;
         private double[] countsNonEmpty;
@@ -239,6 +239,17 @@ public class IsotonicRegression implements Regressor{
                     .mapToDouble(i->sums[i]).toArray();
             this. accsNonempty = IntStream.range(0,countsNonEmpty.length)
                     .mapToDouble(i->sumNonempty[i]/countsNonEmpty[i]).toArray();
+        }
+
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("WeightedInput{");
+            sb.append("locationNonEmpty=").append(Arrays.toString(locationNonEmpty));
+            sb.append(", accsNonempty=").append(Arrays.toString(accsNonempty));
+            sb.append(", countsNonEmpty=").append(Arrays.toString(countsNonEmpty));
+            sb.append('}');
+            return sb.toString();
         }
     }
 }
