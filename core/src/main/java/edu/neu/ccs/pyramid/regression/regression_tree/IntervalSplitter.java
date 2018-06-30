@@ -229,17 +229,22 @@ class IntervalSplitter {
             double reduction = leftSum * leftSum / leftCount +
                     rightSum * rightSum / rightCount
                     - totalSum * totalSum / totalCount;
+            double leftOut = leftSum/leftCount;
+            double rightOut = rightSum/rightCount;
+            boolean monotonic = rightOut>=leftOut;
             SplitResult splitResult = new SplitResult();
             splitResult.setFeatureIndex(featureIndex)
                     .setLeftCount(leftCount)
                     .setRightCount(rightCount)
                     .setReduction(reduction)
                     .setThreshold(interval.getUpper());
+            splitResult.setMonotonic(monotonic);
             splitResults.add(splitResult);
         }
         return splitResults.stream().filter(splitResult
                 -> splitResult.getLeftCount() >= minDataPerLeaf
                 && splitResult.getRightCount() >= minDataPerLeaf)
+                .filter(splitResult->splitResult.isMonotonic())
                 .max(Comparator.comparing(SplitResult::getReduction));
     }
 
