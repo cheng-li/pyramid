@@ -49,6 +49,37 @@ public class Splitter {
                 .max(Comparator.comparing(SplitResult::getReduction));
     }
 
+    /**
+     *
+     * @param regTreeConfig
+     * @param probs
+     * @return best valid splitResult, possibly nothing
+     */
+
+    static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       double[] probs,
+                                       int[] monotonicity){
+        GlobalStats globalStats = new GlobalStats(labels,probs);
+        if (logger.isDebugEnabled()){
+            logger.debug("global statistics = "+globalStats);
+        }
+
+        List<Integer> featureIndices = IntStream.range(0, dataSet.getNumFeatures()).boxed().collect(Collectors.toList());
+
+
+        Stream<Integer> stream = featureIndices.stream();
+        if (regTreeConfig.isParallel()){
+            stream = stream.parallel();
+        }
+        // the list might be empty
+        return stream.map(featureIndex -> split(regTreeConfig, dataSet, labels, probs, featureIndex, globalStats, monotonicity))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .max(Comparator.comparing(SplitResult::getReduction));
+    }
+
 
 
     // TODO this is for active feature faster boosting
@@ -120,6 +151,19 @@ public class Splitter {
 
         return IntervalSplitter.split(regTreeConfig,dataSet,labels,
                     probs,featureIndex, globalStats);
+    }
+
+
+    private static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
+                                               DataSet dataSet,
+                                               double[] labels,
+                                               double[] probs,
+                                               int featureIndex,
+                                               GlobalStats globalStats,
+                                               int[] monotonicity){
+
+        return IntervalSplitter.split(regTreeConfig,dataSet,labels,
+                probs,featureIndex, globalStats, monotonicity);
     }
 
 

@@ -30,6 +30,23 @@ class IntervalSplitter {
         return findBest(regTreeConfig,compressedIntervals,featureIndex);
     }
 
+
+    static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
+                                       DataSet dataSet,
+                                       double[] labels,
+                                       double[] probs,
+                                       int featureIndex,
+                                       Splitter.GlobalStats globalStats,
+                                       int[] monotonicity){
+        Vector featureValues = dataSet.getColumn(featureIndex);
+        if (featureValues.getNumNonZeroElements()==0){
+            return Optional.empty();
+        }
+        List<Interval> possibleIntervals = generateIntervals(regTreeConfig, featureValues, probs, labels, globalStats);
+        List<Interval> compressedIntervals = compress(possibleIntervals);
+        return findBest(regTreeConfig,compressedIntervals,featureIndex, monotonicity);
+    }
+
     static List<Interval> generateIntervals(RegTreeConfig regTreeConfig,
                                             Vector featureValues,
                                             double[] probs,
@@ -229,9 +246,61 @@ class IntervalSplitter {
             double reduction = leftSum * leftSum / leftCount +
                     rightSum * rightSum / rightCount
                     - totalSum * totalSum / totalCount;
+            SplitResult splitResult = new SplitResult();
+            splitResult.setFeatureIndex(featureIndex)
+                    .setLeftCount(leftCount)
+                    .setRightCount(rightCount)
+                    .setReduction(reduction)
+                    .setThreshold(interval.getUpper());
+            splitResults.add(splitResult);
+        }
+        return splitResults.stream().filter(splitResult
+                -> splitResult.getLeftCount() >= minDataPerLeaf
+                && splitResult.getRightCount() >= minDataPerLeaf)
+                .max(Comparator.comparing(SplitResult::getReduction));
+    }
+
+
+    private static Optional<SplitResult> findBest(RegTreeConfig regTreeConfig,
+                                                  List<Interval> intervals,
+                                                  int featureIndex,
+                                                  int[] monotonicity){
+        List<SplitResult> splitResults = new ArrayList<>(intervals.size());
+        int minDataPerLeaf = regTreeConfig.getMinDataPerLeaf();
+        double totalSum=0;
+        double totalCount=0;
+        for (Interval interval: intervals){
+            totalCount += interval.getProbabilisticCount();
+            totalSum += interval.getWeightedSum();
+        }
+
+
+        double leftSum = 0;
+        double leftCount = 0;
+        for (int i=0;i<=intervals.size()-2;i++) {
+            Interval interval = intervals.get(i);
+            leftCount += interval.getProbabilisticCount();
+            leftSum += interval.getWeightedSum();
+            double rightSum = totalSum - leftSum;
+            double rightCount = totalCount - leftCount;
+            double reduction = leftSum * leftSum / leftCount +
+                    rightSum * rightSum / rightCount
+                    - totalSum * totalSum / totalCount;
             double leftOut = leftSum/leftCount;
             double rightOut = rightSum/rightCount;
-            boolean monotonic = rightOut>=leftOut;
+            boolean monotonic = false;
+            if (monotonicity[featureIndex]==0){
+                monotonic=true;
+            }
+
+            if (monotonicity[featureIndex]==-1&&leftOut>=rightOut){
+                monotonic=true;
+            }
+
+            if (monotonicity[featureIndex]==1&&leftOut<=rightOut){
+                monotonic=true;
+            }
+
             SplitResult splitResult = new SplitResult();
             splitResult.setFeatureIndex(featureIndex)
                     .setLeftCount(leftCount)
@@ -244,7 +313,7 @@ class IntervalSplitter {
         return splitResults.stream().filter(splitResult
                 -> splitResult.getLeftCount() >= minDataPerLeaf
                 && splitResult.getRightCount() >= minDataPerLeaf)
-                .filter(splitResult->splitResult.isMonotonic())
+                .filter(SplitResult::isMonotonic)
                 .max(Comparator.comparing(SplitResult::getReduction));
     }
 
