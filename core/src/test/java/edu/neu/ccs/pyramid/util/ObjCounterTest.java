@@ -1,8 +1,7 @@
 package edu.neu.ccs.pyramid.util;
 
-import junit.framework.TestCase;
 
-public class ObjCounterTest extends TestCase {
+public class ObjCounterTest  {
     public static void main(String[] args) {
         ObjCounter<String> objCounter = new ObjCounter<>();
         objCounter.add("a",3);
