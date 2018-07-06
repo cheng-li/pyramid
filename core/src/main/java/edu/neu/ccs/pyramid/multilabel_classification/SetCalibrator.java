@@ -19,8 +19,8 @@ public class SetCalibrator implements Serializable {
     private static final long serialVersionUID = 1L;
     private IsotonicRegression isotonicRegression;
 
-    public SetCalibrator(MultiLabelClassifier.AssignmentProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet) {
-        List<MultiLabel> support = DataSetUtil.gatherMultiLabels(multiLabelClfDataSet);
+    public SetCalibrator(MultiLabelClassifier.AssignmentProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet,
+                         List<MultiLabel> support) {
         Stream<Pair<Double,Integer>> stream =  IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                 .boxed().flatMap(i-> {
                     double[] probs = multiLabelClassifier.predictAssignmentProbs(multiLabelClfDataSet.getRow(i),support);
