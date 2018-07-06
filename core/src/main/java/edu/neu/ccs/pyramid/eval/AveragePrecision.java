@@ -208,7 +208,7 @@ public class AveragePrecision {
         double[] marginals = classifier.predictClassProbs(row);
         int[] sorted = ArgSort.argSortDescending(marginals);
         List<Pair<Double,Integer>> top = new ArrayList<>();
-        for (int k=0;k<truncationLevel;k++){
+        for (int k=0;k<Math.min(truncationLevel,sorted.length);k++){
             int label = sorted[k];
             double score = marginals[label];
             int match = 0;
