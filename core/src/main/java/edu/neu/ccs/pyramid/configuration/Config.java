@@ -15,7 +15,8 @@ import java.util.*;
  * Created by chengli on 8/11/14.
  */
 @JsonSerialize(using = Config.Serializer.class)
-public class Config {
+public class Config implements Serializable{
+    private static final long serialVersionUID = 1L;
     private Properties properties;
 
     public Config(String configFile) {

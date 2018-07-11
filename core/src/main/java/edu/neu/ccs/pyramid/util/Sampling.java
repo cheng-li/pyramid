@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.util;
 
 import org.apache.commons.math3.distribution.BinomialDistribution;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -62,10 +63,34 @@ public class Sampling {
     }
 
     public static List<Integer> sampleByPercentage(List<Integer> indices, double percentage){
-        Collections.shuffle(indices);
+        List<Integer> copy = null;
+        try {
+            copy = (List) Serialization.deepCopy(indices);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        Collections.shuffle(copy);
         int totalSize = indices.size();
         int sampleSize = (int)Math.ceil(percentage*totalSize);
-        return indices.subList(0,sampleSize);
+        return copy.subList(0,sampleSize);
+
+    }
+
+    public static List<Integer> sampleByPercentage(List<Integer> indices, double percentage, long randomSeed){
+        List<Integer> copy = null;
+        try {
+            copy = (List) Serialization.deepCopy(indices);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        Collections.shuffle(copy, new Random(randomSeed));
+        int totalSize = indices.size();
+        int sampleSize = (int)Math.ceil(percentage*totalSize);
+        return copy.subList(0,sampleSize);
 
     }
 

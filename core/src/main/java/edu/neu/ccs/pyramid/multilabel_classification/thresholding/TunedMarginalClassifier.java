@@ -27,6 +27,12 @@ public class TunedMarginalClassifier implements MultiLabelClassifier{
         this.thresholds = thresholds;
     }
 
+    public TunedMarginalClassifier(ClassProbEstimator classProbEstimator, double shardThreshold) {
+        this.classProbEstimator = classProbEstimator;
+        thresholds = new double[classProbEstimator.getNumClasses()];
+        Arrays.fill(thresholds, shardThreshold);
+    }
+
     public double[] getThresholds() {
         return thresholds;
     }

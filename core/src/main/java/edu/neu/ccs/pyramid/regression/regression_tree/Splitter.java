@@ -51,7 +51,7 @@ public class Splitter {
 
 
 
-    // TODO this is for active feature faster boosting
+    // this is for active feature faster boosting
 
     static Optional<SplitResult> split(RegTreeConfig regTreeConfig,
                                        DataSet dataSet,
@@ -65,27 +65,35 @@ public class Splitter {
                 logger.debug("global statistics = "+globalStats);
             }
 
-            Comparator<Optional<SplitResult>> comparator = Comparator.comparing(optional -> -1*optional.get().getReduction());
-            PriorityQueue<Optional<SplitResult>> fQueue = new PriorityQueue<>(comparator);
+            List<Integer> featureIndices = IntStream.range(0, dataSet.getNumFeatures()).boxed().collect(Collectors.toList());
 
-            for(int i=0;i<dataSet.getNumFeatures();i++){
-                Optional<SplitResult> singleFeatureBest=split(regTreeConfig,dataSet,labels,probs,i,globalStats);
-                if (singleFeatureBest.isPresent()){
-                    fQueue.add(singleFeatureBest);
-                }
-
+            Stream<Integer> stream = featureIndices.stream();
+            if (regTreeConfig.isParallel()){
+                stream = stream.parallel();
             }
 
-            //todo:full scan. so clear activeFeatures, and add elements to it.
+            Comparator<SplitResult> comparator = Comparator.comparing(SplitResult::getReduction);
+
+            // keep top features, can be empty
+            List<SplitResult> results = stream.map(j->split(regTreeConfig,dataSet,labels,probs,j,globalStats))
+                    .filter(Optional::isPresent).map(Optional::get)
+                    .sorted(comparator.reversed()).limit(regTreeConfig.getNumActiveFeatures())
+                    .collect(Collectors.toList());
+
+            //clear activeFeatures, and add elements to it.
 
             activeFeatures.clear();
-            Optional<SplitResult> result = fQueue.peek();
-            for(int i=0; i< regTreeConfig.getNumActiveFeatures();i++){
-                SplitResult r = fQueue.poll().get();
-                activeFeatures.add(r.getFeatureIndex());
+
+            if (results.isEmpty()){
+                return Optional.empty();
+            }
+
+            for(SplitResult result: results){
+                activeFeatures.add(result.getFeatureIndex());
 
             }
-            return result;
+
+            return Optional.of(results.get(0));
 
         }else{
             GlobalStats globalStats = new GlobalStats(labels,probs);
