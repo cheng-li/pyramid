@@ -205,7 +205,7 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return labelTranslator;
     }
 
-    void setLabelTranslator(LabelTranslator labelTranslator) {
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
         this.labelTranslator = labelTranslator;
     }
 
