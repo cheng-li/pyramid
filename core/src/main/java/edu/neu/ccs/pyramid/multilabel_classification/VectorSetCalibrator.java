@@ -1,6 +1,7 @@
-package edu.neu.ccs.pyramid.regression.regression_tree;
+package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.VectorCalibrator;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
@@ -9,7 +10,7 @@ import scala.Serializable;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class VectorSetCalibrator implements Serializable {
+public class VectorSetCalibrator implements Serializable, VectorCalibrator {
     private static final long serialVersionUID = 1L;
     private IsotonicRegression isotonicRegression;
     private int scoreIndex;

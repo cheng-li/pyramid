@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.ArgMin;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -12,7 +11,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class VectorCardSetCalibrator implements Serializable {
+public class VectorCardSetCalibrator implements Serializable, VectorCalibrator {
     private static final long serialVersionUID = 1L;
     Map<Integer,IsotonicRegression> calibrations;
     private int scoreIndex;
