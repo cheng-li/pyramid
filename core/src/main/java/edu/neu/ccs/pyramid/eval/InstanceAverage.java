@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import org.apache.mahout.math.Vector;
 
+import java.io.Serializable;
 import java.util.stream.IntStream;
 
 /**
@@ -13,7 +14,8 @@ import java.util.stream.IntStream;
  * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/3/16.
  */
-public class InstanceAverage {
+public class InstanceAverage implements Serializable {
+    private static final long serialVersionUID = 1L;
     private double f1;
     private double overlap;
     private double precision;
