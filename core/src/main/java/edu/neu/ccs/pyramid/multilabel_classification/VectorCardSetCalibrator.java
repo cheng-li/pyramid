@@ -28,7 +28,7 @@ public class VectorCardSetCalibrator implements Serializable, VectorCalibrator {
 
         for (int cardinality : cardinalities) {
             Stream<Pair<Double, Integer>> stream = IntStream.range(0, clfDataSet.getNumDataPoints()).parallel()
-                    .boxed().filter(i->(int)clfDataSet.getRow(i).get(cardinality)==cardinality)
+                    .boxed().filter(i->((int)clfDataSet.getRow(i).get(cardIndex))==cardinality)
                     .map(i->new Pair<>(clfDataSet.getRow(i).get(scoreIndex),clfDataSet.getLabels()[i]));
             calibrations.put(cardinality, new IsotonicRegression(stream));
         }
