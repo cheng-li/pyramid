@@ -110,6 +110,8 @@ public class RegTreeTrainer {
         tree.root.setProbs(rootProbs);
         //parallel
         updateNode(tree.root, regTreeConfig,dataSet,labels, monotonicity);
+        setLeafOutput(tree.root,leafOutputCalculator,labels);
+
         tree.leaves.add(tree.root);
         tree.root.setLeaf(true);
         tree.allNodes.add(tree.root);
@@ -125,14 +127,13 @@ public class RegTreeTrainer {
             Optional<Node> leafToSplitOptional = findLeafToSplit(tree.leaves);
             if (leafToSplitOptional.isPresent()){
                 Node leafToSplit = leafToSplitOptional.get();
-                splitNode(tree, leafToSplit,regTreeConfig,dataSet,labels, monotonicity);
+                splitNode(tree, leafToSplit,regTreeConfig,dataSet,labels, monotonicity, leafOutputCalculator);
             } else {
                 break;
             }
         }
 
         //parallel
-        setLeavesOutputs(regTreeConfig, tree.leaves,leafOutputCalculator, labels);
         cleanLeaves(tree.leaves);
         normalizeReductions(tree,dataSet);
         return tree;
@@ -245,7 +246,7 @@ public class RegTreeTrainer {
      * @param dataSet
      */
     private static void splitNode(RegressionTree tree, Node leafToSplit, RegTreeConfig regTreeConfig,
-                                  DataSet dataSet, double[] labels, int[] monotonicity) {
+                                  DataSet dataSet, double[] labels, int[] monotonicity, LeafOutputCalculator leafOutputCalculator) {
         int numDataPoints = dataSet.getNumDataPoints();
 
         /**
@@ -326,8 +327,44 @@ public class RegTreeTrainer {
         tree.leaves.add(rightChild);
         tree.allNodes.add(leftChild);
         tree.allNodes.add(rightChild);
+
+        int mono = monotonicity[featureIndex];
+        setLeafOutput(leftChild,leafOutputCalculator,labels);
+        setLeafOutput(rightChild,leafOutputCalculator,labels);
+        setBoundForChildren(leafToSplit,mono);
+        leftChild.boundValue();
+        rightChild.boundValue();
     }
 
+    private static void setBoundForChildren(Node nodeToSplit, int monotonicity){
+        Node leftChild = nodeToSplit.getLeftChild();
+        Node rightChild = nodeToSplit.getRightChild();
+        double lowerBound = nodeToSplit.getLowerBound();
+        double upperbound = nodeToSplit.getUpperBound();
+        if (monotonicity==0){
+            leftChild.setLowerBound(lowerBound);
+            leftChild.setUpperBound(upperbound);
+            rightChild.setLowerBound(lowerBound);
+            rightChild.setUpperBound(upperbound);
+        }
+
+
+        if (monotonicity==1){
+            double mid = (leftChild.getValue()+rightChild.getValue())*0.5;
+            leftChild.setLowerBound(lowerBound);
+            leftChild.setUpperBound(Math.min(upperbound,mid));
+            rightChild.setLowerBound(Math.max(lowerBound,mid));
+            rightChild.setUpperBound(upperbound);
+        }
+
+        if (monotonicity==-1){
+            double mid = (leftChild.getValue()+rightChild.getValue())*0.5;
+            leftChild.setLowerBound(Math.max(lowerBound,mid));
+            leftChild.setUpperBound(upperbound);
+            rightChild.setLowerBound(lowerBound);
+            rightChild.setUpperBound(Math.min(upperbound,mid));
+        }
+    }
 
 
 
