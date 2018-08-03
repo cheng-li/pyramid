@@ -42,4 +42,9 @@ public class HMLGBLeafOutputCalculator implements LeafOutputCalculator{
         }
         return out;
     }
+
+    @Override
+    public void setParallel(boolean parallel) {
+
+    }
 }

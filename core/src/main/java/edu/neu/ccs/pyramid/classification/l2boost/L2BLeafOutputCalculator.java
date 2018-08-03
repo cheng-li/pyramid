@@ -37,4 +37,9 @@ public class L2BLeafOutputCalculator implements LeafOutputCalculator{
         }
         return out;
     }
+
+    @Override
+    public void setParallel(boolean parallel) {
+
+    }
 }

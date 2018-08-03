@@ -14,4 +14,5 @@ public interface LeafOutputCalculator {
      * @return output of the leaf node
      */
     double getLeafOutput(double[] probabilities, double[] labels);
+    void setParallel(boolean parallel);
 }

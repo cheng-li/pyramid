@@ -110,6 +110,7 @@ public class RegTreeTrainer {
         tree.root.setProbs(rootProbs);
         //parallel
         updateNode(tree.root, regTreeConfig,dataSet,labels, monotonicity);
+        leafOutputCalculator.setParallel(regTreeConfig.isParallel());
         setLeafOutput(tree.root,leafOutputCalculator,labels);
 
         tree.leaves.add(tree.root);
@@ -329,6 +330,7 @@ public class RegTreeTrainer {
         tree.allNodes.add(rightChild);
 
         int mono = monotonicity[featureIndex];
+        leafOutputCalculator.setParallel(regTreeConfig.isParallel());
         setLeafOutput(leftChild,leafOutputCalculator,labels);
         setLeafOutput(rightChild,leafOutputCalculator,labels);
         setBoundForChildren(leafToSplit,mono);
