@@ -333,38 +333,53 @@ public class RegTreeTrainer {
         leafOutputCalculator.setParallel(regTreeConfig.isParallel());
         setLeafOutput(leftChild,leafOutputCalculator,labels);
         setLeafOutput(rightChild,leafOutputCalculator,labels);
+
         setBoundForChildren(leafToSplit,mono);
-        leftChild.boundValue();
-        rightChild.boundValue();
+
     }
 
     private static void setBoundForChildren(Node nodeToSplit, int monotonicity){
         Node leftChild = nodeToSplit.getLeftChild();
         Node rightChild = nodeToSplit.getRightChild();
         double lowerBound = nodeToSplit.getLowerBound();
-        double upperbound = nodeToSplit.getUpperBound();
-        if (monotonicity==0){
-            leftChild.setLowerBound(lowerBound);
-            leftChild.setUpperBound(upperbound);
-            rightChild.setLowerBound(lowerBound);
-            rightChild.setUpperBound(upperbound);
-        }
+        double upperBound = nodeToSplit.getUpperBound();
+
+        // first inherit bounds
+        leftChild.setLowerBound(lowerBound);
+        leftChild.setUpperBound(upperBound);
+
+        rightChild.setLowerBound(lowerBound);
+        rightChild.setUpperBound(upperBound);
+
+        // correct output if out of bound
+        leftChild.boundValue();
+        rightChild.boundValue();
+
+        // tighten bounds
+
+        //do nothing if monotonicity=0
+//        if (monotonicity==0){
+//            leftChild.setLowerBound(lowerBound);
+//            leftChild.setUpperBound(upperBound);
+//            rightChild.setLowerBound(lowerBound);
+//            rightChild.setUpperBound(upperBound);
+//        }
 
 
         if (monotonicity==1){
             double mid = (leftChild.getValue()+rightChild.getValue())*0.5;
-            leftChild.setLowerBound(lowerBound);
-            leftChild.setUpperBound(Math.min(upperbound,mid));
+//            leftChild.setLowerBound(lowerBound);
+            leftChild.setUpperBound(Math.min(upperBound,mid));
             rightChild.setLowerBound(Math.max(lowerBound,mid));
-            rightChild.setUpperBound(upperbound);
+//            rightChild.setUpperBound(upperBound);
         }
 
         if (monotonicity==-1){
             double mid = (leftChild.getValue()+rightChild.getValue())*0.5;
             leftChild.setLowerBound(Math.max(lowerBound,mid));
-            leftChild.setUpperBound(upperbound);
-            rightChild.setLowerBound(lowerBound);
-            rightChild.setUpperBound(Math.min(upperbound,mid));
+//            leftChild.setUpperBound(upperBound);
+//            rightChild.setLowerBound(lowerBound);
+            rightChild.setUpperBound(Math.min(upperBound,mid));
         }
     }
 
