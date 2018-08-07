@@ -502,6 +502,8 @@ public class CBMEN {
 
     //todo currently only for br
     private static void featureImportance(Config config, CBM cbm, FeatureList featureList, LabelTranslator mlLabelTranslator) throws Exception{
+
+        System.out.println("number of selected features = "+CBMInspector.usedFeatures(cbm).size());
         String output = config.getString("output.dir");
         StringBuilder stringBuilder = new StringBuilder();
         for (int l=0;l<cbm.getNumClasses();l++){

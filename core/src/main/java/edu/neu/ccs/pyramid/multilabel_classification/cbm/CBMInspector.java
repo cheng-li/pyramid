@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
+import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.classification.logistic_regression.Weights;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
@@ -24,6 +25,23 @@ import java.util.stream.IntStream;
  */
 public class CBMInspector {
     private static BasicMatrix.Factory<PrimitiveMatrix> factory = PrimitiveMatrix.FACTORY;
+
+    public static Set<Integer> usedFeatures(CBM cbm){
+        Set<Integer> all = new HashSet<>();
+        if (cbm.getMultiClassClassifier() instanceof LogisticRegression){
+            all.addAll(LogisticRegressionInspector.usedFeaturesCombined((LogisticRegression)cbm.getMultiClassClassifier()));
+        }
+
+        for (int k=0;k<cbm.getNumComponents();k++){
+            for (int l=0;l<cbm.getNumClasses();l++){
+                if (cbm.getBinaryClassifiers()[k][l] instanceof LogisticRegression){
+                    all.addAll(LogisticRegressionInspector.usedFeaturesCombined((LogisticRegression)cbm.getBinaryClassifiers()[k][l]));
+                }
+
+            }
+        }
+        return all;
+    }
 
 
 
