@@ -21,11 +21,8 @@ public class MAP {
      * @return
      */
     public static double map(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet, List<Integer> labels){
-        if (classifier.getNumClasses()!=dataSet.getNumClasses()){
-            throw new IllegalArgumentException("classifier.getNumClasses()!=dataSet.getNumClasses()");
-        }
         int numData = dataSet.getNumDataPoints();
-        double[][] probs = new double[dataSet.getNumDataPoints()][dataSet.getNumClasses()];
+        double[][] probs = new double[dataSet.getNumDataPoints()][classifier.getNumClasses()];
 
         IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .forEach(i->probs[i] = classifier.predictClassProbs(dataSet.getRow(i)));
@@ -39,7 +36,10 @@ public class MAP {
                 if (dataSet.getMultiLabels()[i].matchClass(l)){
                     binaryLabels[i] = 1;
                 }
-                marginals[i] = probs[i][l];
+                // leave the marginal 0 if l is a novel label in test set
+                if (l<classifier.getNumClasses()){
+                    marginals[i] = probs[i][l];
+                }
             }
 
             double averagePrecision = AveragePrecision.averagePrecision(binaryLabels, marginals);
