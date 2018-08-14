@@ -7,6 +7,8 @@ import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 import scala.Serializable;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 

@@ -4,6 +4,8 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BucketInfo {
@@ -12,27 +14,31 @@ public class BucketInfo {
     public double [] sumProbs;
     public double[] sumSquareProbs;
     public int numBuckets;
+    public double minValue;
+    public double maxValue;
 
-    private BucketInfo(int size) {
+    private BucketInfo(int size, double minValue, double maxValue) {
         numBuckets = size;
         counts = new double[size];
         sumLabels = new double[size];
         sumProbs = new double[size];
         sumSquareProbs = new double[size];
+        this.minValue = minValue;
+        this.maxValue = maxValue;
     }
 
+//
+//    private BucketInfo(double[] counts, double[] sumLabels, double[] sumProbs, double[] sumSquareProbs) {
+//        this.numBuckets = counts.length;
+//        this.counts = counts;
+//        this.sumLabels = sumLabels;
+//        this.sumProbs = sumProbs;
+//        this.sumSquareProbs = sumSquareProbs;
+//    }
 
-    private BucketInfo(double[] counts, double[] sumLabels, double[] sumProbs, double[] sumSquareProbs) {
-        this.numBuckets = counts.length;
-        this.counts = counts;
-        this.sumLabels = sumLabels;
-        this.sumProbs = sumProbs;
-        this.sumSquareProbs = sumSquareProbs;
-    }
 
-
-    public static BucketInfo aggregate(Stream<Pair<Double,Integer>> stream, int numBuckets){
-        return stream.collect(()->new BucketInfo(numBuckets),BucketInfo::add, BucketInfo::addAll);
+    public static BucketInfo aggregate(Stream<Pair<Double,Integer>> stream, int numBuckets, double minValue, double maxValue){
+        return stream.collect(()->new BucketInfo(numBuckets, minValue, maxValue),BucketInfo::add, BucketInfo::addAll);
     }
 
     public double[] getCounts() {
@@ -89,9 +95,9 @@ public class BucketInfo {
 
     public void add(Pair<Double,Integer> pair){
         final int numBuckets = this.counts.length;
-        double bucketLength = 1.0/numBuckets;
+        double bucketLength = (maxValue-minValue)/numBuckets;
         double prob = pair.getFirst();
-        int index = (int)Math.floor(prob/bucketLength);
+        int index = (int)Math.floor((prob-minValue)/bucketLength);
         if (index<0){
             index=0;
         }

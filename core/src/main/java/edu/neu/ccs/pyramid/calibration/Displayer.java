@@ -14,7 +14,7 @@ public class Displayer {
      */
     public static String displayCalibrationResult(Stream<Pair<Double, Integer>> stream){
         final int numBuckets = 10;
-        BucketInfo total = BucketInfo.aggregate(stream, numBuckets);
+        BucketInfo total = BucketInfo.aggregate(stream, numBuckets,0,1);
         double[] counts = total.getCounts();
         double[] correct = total.getSumLabels();
         double[] sumProbs = total.getSumProbs();

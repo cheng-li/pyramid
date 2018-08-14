@@ -12,7 +12,7 @@ public class CalibrationEval {
     }
 
     public static double absoluteError(Stream<Pair<Double, Integer>> stream, int numBuckets){
-        BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets);
+        BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets,0,1);
         double sum = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
             sum += Math.abs(bucketInfo.getSumProbs()[i]-bucketInfo.getSumLabels()[i]);
@@ -22,7 +22,7 @@ public class CalibrationEval {
     }
 
     public static double squareError(Stream<Pair<Double, Integer>> stream, int numBuckets){
-        BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets);
+        BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets,0,1);
         double[] aveLabels = bucketInfo.getAveLabels();
         double sum = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
@@ -36,7 +36,7 @@ public class CalibrationEval {
 
     public static double sharpness(Stream<Pair<Double, Integer>> stream, int numBuckets){
 
-        BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets);
+        BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets,0,1);
         double[] accuracies = new double[bucketInfo.getNumBuckets()];
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
             accuracies[i] = bucketInfo.getSumLabels()[i]/bucketInfo.getCounts()[i];

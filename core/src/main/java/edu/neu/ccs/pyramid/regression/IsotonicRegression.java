@@ -217,15 +217,19 @@ public class IsotonicRegression implements Regressor{
         private double[] countsNonEmpty;
 
         public WeightedInput(Stream<Pair<Double,Integer>> stream) {
+            //todo deal with the stream better
+            List<Pair<Double,Integer>> streamCopy = stream.collect(Collectors.toList());
+            double min = streamCopy.stream().mapToDouble(Pair::getFirst).min().getAsDouble();
+            double max = streamCopy.stream().mapToDouble(Pair::getFirst).max().getAsDouble();
             final int numBuckets = 10000;
-            double bucketLength = 1.0/numBuckets;
+            double bucketLength = (max-min)/numBuckets;
             double[] locations = new double[numBuckets];
             for (int i=0;i<numBuckets;i++){
-                locations[i]= i*bucketLength + 0.5*bucketLength;
+                locations[i]= min+i*bucketLength + 0.5*bucketLength;
             }
 
 
-            BucketInfo total = BucketInfo.aggregate(stream, numBuckets);
+            BucketInfo total = BucketInfo.aggregate(streamCopy.parallelStream(), numBuckets, min, max);
 
             double[] counts = total.counts;
             double[] sums = total.sumLabels;
