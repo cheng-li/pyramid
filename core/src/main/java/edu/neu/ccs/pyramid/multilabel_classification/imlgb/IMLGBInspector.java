@@ -21,6 +21,37 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/13/14.
  */
 public class IMLGBInspector {
+
+    /**
+     *
+     * @param boosting
+     * @param classIndex
+     * @return features selected by the model
+     */
+    public static Set<Integer> getSelectedFeatures(IMLGradientBoosting boosting, int classIndex){
+        List<Regressor> regressors = boosting.getRegressors(classIndex);
+        List<RegressionTree> trees = regressors.stream().filter(regressor ->
+                regressor instanceof RegressionTree)
+                .map(regressor -> (RegressionTree) regressor)
+                .collect(Collectors.toList());
+        Set<Integer> features = new HashSet<>();
+        for (RegressionTree tree: trees){
+            features.addAll(RegTreeInspector.features(tree));
+        }
+        return features;
+    }
+
+
+    public static Set<Integer> getSelectedFeatures(IMLGradientBoosting boosting){
+
+        Set<Integer> features = new HashSet<>();
+        for (int i=0;i<boosting.getNumClasses();i++){
+            features.addAll(getSelectedFeatures(boosting, i));
+        }
+        return features;
+    }
+
+
     //todo: consider newton step and learning rate
 
     /**
