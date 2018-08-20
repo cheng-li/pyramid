@@ -55,6 +55,11 @@ public class PrintUtil {
         return Arrays.toString(arr).replaceAll(Pattern.quote("["),"").replaceAll(Pattern.quote("]"),"");
     }
 
+
+    public static String toSimpleString(List<? extends Object> arr){
+        return arr.toString().replaceAll(Pattern.quote("["),"").replaceAll(Pattern.quote("]"),"");
+    }
+
     public static String printWithIndex(List<? extends Object> list, int startIndex){
         StringBuilder sb = new StringBuilder();
         sb.append("[");
