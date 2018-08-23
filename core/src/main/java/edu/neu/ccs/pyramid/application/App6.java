@@ -108,6 +108,11 @@ public class App6 {
                 System.out.println(new MLMeasures(predictor,trainSet));
                 System.out.println("test performance:");
                 System.out.println(new MLMeasures(predictor,testSet));
+                String modelName = "model_crf";
+                String output = config.getString("output.folder");
+                (new File(output)).mkdirs();
+                File serializeModel = new File(output, modelName);
+                cmlcrf.serialize(serializeModel);
             }
 
             if (optimizer.getTerminator().shouldTerminate()){

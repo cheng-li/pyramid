@@ -248,7 +248,12 @@ public class BMDistribution {
         return m;
     }
 
-    List<MultiLabel> sample(int numSamples){
+    /**
+     * may contain duplicates
+     * @param numSamples
+     * @return
+     */
+    public List<MultiLabel> sample(int numSamples){
         List<MultiLabel> list = new ArrayList<>();
         double[] proportions = Arrays.stream(logProportions).map(Math::exp).toArray();
         double[][] classProbs = new double[numComponents][numLabels];
