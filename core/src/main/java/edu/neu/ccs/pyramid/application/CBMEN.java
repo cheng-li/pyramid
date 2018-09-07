@@ -12,6 +12,7 @@ import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
+import edu.neu.ccs.pyramid.multilabel_classification.LabelCalibrator;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
@@ -648,15 +649,9 @@ public class CBMEN {
     }
 
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
-        String validPath = config.getString("input.validData");
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
+        return trainSet;
 
-        if (validPath.isEmpty()){
-            return trainSet;
-        } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
-            return DataSetUtil.concatenateByRow(trainSet, validSet);
-        }
 
     }
 
