@@ -13,12 +13,15 @@ import edu.neu.ccs.pyramid.multilabel_classification.*;
 import edu.neu.ccs.pyramid.multilabel_classification.br.SupportPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.BMDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
-;
+
 import edu.neu.ccs.pyramid.util.Pair;
+import edu.neu.ccs.pyramid.util.ParallelFileWriter;
+import edu.neu.ccs.pyramid.util.ParallelStringMapper;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
+import java.io.File;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.*;
@@ -30,13 +33,26 @@ public class BRCalibration {
     public static void main(String[] args) throws Exception {
         Config config = new Config(args[0]);
         System.out.println(config);
+        if (config.getBoolean("calibrate")){
+            calibrate(config);
+        }
+
+        if (config.getBoolean("test")){
+            test(config);
+        }
+
+    }
+
+
+    private static void calibrate(Config config) throws Exception{
+
 
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("train"), DataSetType.ML_CLF_SPARSE, true);
         //todo
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("valid"), DataSetType.ML_CLF_SPARSE, true);
 
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"), DataSetType.ML_CLF_SPARSE, true);
-        CBM cbm = (CBM) Serialization.deserialize(config.getString("cbm"));
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
         cbm.setAllowEmpty(config.getBoolean("allowEmpty"));
 
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(train);
@@ -78,6 +94,13 @@ public class BRCalibration {
 
         VectorCardSetCalibrator vectorCardSetCalibratorProductCali = new VectorCardSetCalibrator(clfDataSet, 1, 3);
 
+        Serialization.serialize(labelCalibrator,Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
+        Serialization.serialize(vectorCardSetCalibratorProductCali,Paths.get(config.getString("output.dir"),"card_iso_set_calibrator").toFile());
+        Serialization.serialize(setPrior,Paths.get(config.getString("output.dir"),"set_priors").toFile());
+        Serialization.serialize(cardPrior,Paths.get(config.getString("output.dir"),"card_priors").toFile());
+        Serialization.serialize(implications,Paths.get(config.getString("output.dir"),"implications").toFile());
+        Serialization.serialize(pairPriors,Paths.get(config.getString("output.dir"),"pair_priors").toFile());
+
 
         if (true) {
             System.out.println("calibration performance on test set");
@@ -88,13 +111,109 @@ public class BRCalibration {
 
             System.out.println("cardinality based isotonic on product of calibrated label probs");
 
-            CaliRes cardCali = eval(predictions, vectorCardSetCalibratorProductCali);
-
-
+            eval(predictions, vectorCardSetCalibratorProductCali);
 
         }
+    }
+
+    private static void test(Config config) throws Exception{
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"), DataSetType.ML_CLF_SPARSE, true);
+        CBM cbm = (CBM) Serialization.deserialize(config.getString("cbm"));
+        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
+        VectorCardSetCalibrator vectorCardSetCalibrator = (VectorCardSetCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"card_iso_set_calibrator").toFile());
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"support").toFile());
+        List<Pair<Integer, Integer>> implications = (List<Pair<Integer, Integer>>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"implications").toFile());
+        double[][][] pairPriors = (double[][][]) Serialization.deserialize(Paths.get(config.getString("output.dir"),"pair_priors").toFile());
+        Map<MultiLabel, Double> setPrior = (Map<MultiLabel, Double>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"set_priors").toFile());
+        Map<Integer, Double> cardPrior = (Map<Integer, Double>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"card_priors").toFile());
 
 
+        BRSupportPrecictor brSupportPrecictor = new BRSupportPrecictor(cbm, support, labelCalibrator);
+        System.out.println("test performance");
+        System.out.println(new MLMeasures(brSupportPrecictor, test));
+
+
+        boolean simpleCSV = true;
+        if (simpleCSV){
+            File testDataFile = new File(config.getString("test"));
+            File csv = Paths.get(config.getString("output.dir"),testDataFile.getName()+"_report_calibrated","report.csv").toFile();
+            List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
+            ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(config, cbm, labelCalibrator, vectorCardSetCalibrator,
+                    test, i, support, implications, pairPriors, cardPrior, setPrior);
+            ParallelFileWriter.mapToString(mapper,list, csv,100  );
+        }
+    }
+
+
+    public static String simplePredictionAnalysisCalibrated(Config config,
+                                                             CBM cbm,
+                                                             LabelCalibrator labelCalibrator,
+                                                             VectorCardSetCalibrator vectorCardSetCalibrator,
+                                                             MultiLabelClfDataSet dataSet,
+                                                             int dataPointIndex,
+                                                             List<MultiLabel> support,
+                                                             List<Pair<Integer, Integer>> implications,
+                                                             double[][][] pairPriors,
+                                                             Map<Integer, Double> cardPriors,
+                                                             Map<MultiLabel, Double> setPrior
+    ){
+        StringBuilder sb = new StringBuilder();
+        MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
+        String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        double[] classProbs = cbm.predictClassProbs(dataSet.getRow(dataPointIndex));
+        double[] calibratedClassProbs = labelCalibrator.calibratedClassProbs(classProbs);
+
+        MultiLabel predicted = SupportPredictor.predict(calibratedClassProbs,support);
+
+        List<Integer> classes = new ArrayList<Integer>();
+        for (int k = 0; k < dataSet.getNumClasses(); k++){
+            if (dataSet.getMultiLabels()[dataPointIndex].matchClass(k)
+                    ||predicted.matchClass(k)){
+                classes.add(k);
+            }
+        }
+
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
+        List<Pair<Integer,Double>> list = classes.stream().map(l -> {
+            if (l < cbm.getNumClasses()) {
+                return new Pair<>(l, calibratedClassProbs[l]);
+            } else {
+                return new Pair<>(l, 0.0);
+            }
+        }).sorted(comparator.reversed()).collect(Collectors.toList());
+        for (Pair<Integer,Double> pair: list){
+            int label = pair.getFirst();
+            double prob = pair.getSecond();
+            int match = 0;
+            if (trueLabels.matchClass(label)){
+                match=1;
+            }
+            sb.append(id).append("\t").append(labelTranslator.toExtLabel(label)).append("\t")
+                    .append("single").append("\t").append(prob)
+                    .append("\t").append(match).append("\n");
+        }
+
+        Vector feature = feature(config,cbm.computeBM(dataSet.getRow(dataPointIndex),0.001),predicted,setPrior,
+                cardPriors,calibratedClassProbs,pairPriors,implications,Optional.empty());
+        double probability = vectorCardSetCalibrator.calibrate(feature);
+
+
+        List<Integer> predictedList = predicted.getMatchedLabelsOrdered();
+        sb.append(id).append("\t");
+        for (int i=0;i<predictedList.size();i++){
+            sb.append(labelTranslator.toExtLabel(predictedList.get(i)));
+            if (i!=predictedList.size()-1){
+                sb.append(",");
+            }
+        }
+        sb.append("\t");
+        int setMatch = 0;
+        if (predicted.equals(trueLabels)){
+            setMatch=1;
+        }
+        sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\n");
+        return sb.toString();
     }
 
 
@@ -505,5 +624,39 @@ public class BRCalibration {
         public double sharpness;
     }
 
+
+    public static class BRSupportPrecictor implements MultiLabelClassifier{
+        CBM cbm;
+        List<MultiLabel> support;
+        LabelCalibrator labelCalibrator;
+
+        public BRSupportPrecictor(CBM cbm, List<MultiLabel> support, LabelCalibrator labelCalibrator) {
+            this.cbm = cbm;
+            this.support = support;
+            this.labelCalibrator = labelCalibrator;
+        }
+
+        @Override
+        public int getNumClasses() {
+            return cbm.getNumClasses();
+        }
+
+        @Override
+        public MultiLabel predict(Vector vector) {
+            double[] marginals = cbm.predictClassProbs(vector);
+            double[] calibratedMarginals = labelCalibrator.calibratedClassProbs(marginals);
+            return SupportPredictor.predict(calibratedMarginals,support);
+        }
+
+        @Override
+        public FeatureList getFeatureList() {
+            return null;
+        }
+
+        @Override
+        public LabelTranslator getLabelTranslator() {
+            return null;
+        }
+    }
 
 }
