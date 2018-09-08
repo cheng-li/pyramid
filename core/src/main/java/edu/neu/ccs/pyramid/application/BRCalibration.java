@@ -47,13 +47,12 @@ public class BRCalibration {
     private static void calibrate(Config config) throws Exception{
 
 
-        MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("train"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SPARSE, true);
         //todo
-        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("valid"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SPARSE, true);
 
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"), DataSetType.ML_CLF_SPARSE, true);
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SPARSE, true);
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
-        cbm.setAllowEmpty(config.getBoolean("allowEmpty"));
 
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(train);
         LabelCalibrator labelCalibrator = new LabelCalibrator(cbm, cal);
@@ -117,8 +116,8 @@ public class BRCalibration {
     }
 
     private static void test(Config config) throws Exception{
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"), DataSetType.ML_CLF_SPARSE, true);
-        CBM cbm = (CBM) Serialization.deserialize(config.getString("cbm"));
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SPARSE, true);
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
         LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
         VectorCardSetCalibrator vectorCardSetCalibrator = (VectorCardSetCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"card_iso_set_calibrator").toFile());
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"support").toFile());
@@ -135,8 +134,9 @@ public class BRCalibration {
 
         boolean simpleCSV = true;
         if (simpleCSV){
-            File testDataFile = new File(config.getString("test"));
+            File testDataFile = new File(config.getString("input.testData"));
             File csv = Paths.get(config.getString("output.dir"),testDataFile.getName()+"_report_calibrated","report.csv").toFile();
+            csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(config, cbm, labelCalibrator, vectorCardSetCalibrator,
                     test, i, support, implications, pairPriors, cardPrior, setPrior);
