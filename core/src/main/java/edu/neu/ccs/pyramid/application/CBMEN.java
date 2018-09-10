@@ -458,10 +458,11 @@ public class CBMEN {
 
         System.out.println("label averaged MAP");
         System.out.println(MAP.map(cbm, dataSet));
-        System.out.println("instance averaged MAP");
-        System.out.println(MAP.instanceMAP(cbm, dataSet));
-        System.out.println("global AP truncated at 30");
-        System.out.println(AveragePrecision.globalAveragePrecisionTruncated(cbm, dataSet, 30));
+        //todo
+//        System.out.println("instance averaged MAP");
+//        System.out.println(MAP.instanceMAP(cbm, dataSet));
+//        System.out.println("global AP truncated at 30");
+//        System.out.println(AveragePrecision.globalAveragePrecisionTruncated(cbm, dataSet, 30));
 
         String output = config.getString("output.dir");
         File labelProbFile = Paths.get(output, name+"_predictions",  "label_probabilities.txt").toFile();
@@ -504,7 +505,16 @@ public class CBMEN {
     //todo currently only for br
     private static void featureImportance(Config config, CBM cbm, FeatureList featureList, LabelTranslator mlLabelTranslator) throws Exception{
 
-        System.out.println("number of selected features = "+CBMInspector.usedFeatures(cbm).size());
+        System.out.println("number of selected features in all labels (union)= "+CBMInspector.usedFeatures(cbm).size());
+        int[] featuresByEach = CBMInspector.usedFeaturesByEachLabel(cbm);
+        double average = Arrays.stream(featuresByEach).average().getAsDouble();
+        System.out.println("average number of selected features in each label ="+average);
+
+        StringBuilder sbcount = new StringBuilder();
+        for (int l=0;l<featuresByEach.length;l++){
+            sbcount.append(cbm.getLabelTranslator().toExtLabel(l)).append(":").append(featuresByEach[l]).append("\n");
+        }
+
         String output = config.getString("output.dir");
         StringBuilder stringBuilder = new StringBuilder();
         for (int l=0;l<cbm.getNumClasses();l++){
@@ -530,6 +540,8 @@ public class CBMEN {
 
         }
         FileUtils.writeStringToFile(new File(output,"top_features.txt"),stringBuilder.toString());
+        System.out.println("feature count in each label is saved to the file "+new File(output,"feature_count_in_each_label.txt").getAbsolutePath());
+        FileUtils.writeStringToFile(new File(output,"feature_count_in_each_label.txt"),sbcount.toString());
 
     }
 

@@ -44,6 +44,21 @@ public class CBMInspector {
     }
 
 
+    public static int[] usedFeaturesByEachLabel(CBM cbm){
+        int[] count = new int[cbm.getNumClasses()];
+        for (int l=0;l<cbm.getNumClasses();l++) {
+            Set<Integer> used = new HashSet<>();
+            for (int k = 0; k < cbm.getNumComponents(); k++) {
+                if (cbm.getBinaryClassifiers()[k][l] instanceof LogisticRegression){
+                    used.addAll(LogisticRegressionInspector.usedFeaturesCombined((LogisticRegression)cbm.getBinaryClassifiers()[k][l]));
+                }
+            }
+            count[l] = used.size();
+        }
+        return count;
+    }
+
+
 
     public static String topLabels(CBM cbm, Vector vector, double probabilityThreshold){
         double[] marginals = cbm.predictClassProbs(vector);
