@@ -47,11 +47,11 @@ public class BRCalibration {
     private static void calibrate(Config config) throws Exception{
 
 
+        System.out.println("start training calibrator");
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SPARSE, true);
         //todo
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SPARSE, true);
 
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SPARSE, true);
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
 
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(train);
@@ -100,19 +100,9 @@ public class BRCalibration {
         Serialization.serialize(implications,Paths.get(config.getString("output.dir"),"implications").toFile());
         Serialization.serialize(pairPriors,Paths.get(config.getString("output.dir"),"pair_priors").toFile());
 
+        System.out.println("finish training calibrator");
 
-        if (true) {
-            System.out.println("calibration performance on test set");
 
-            List<Instance> predictions = IntStream.range(0, test.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictedBySupport(config, test, i, setPrior, cardPrior, cbm, labelCalibrator, finalPairPriors, finalImplications, support))
-                    .collect(Collectors.toList());
-
-            System.out.println("cardinality based isotonic on product of calibrated label probs");
-
-            eval(predictions, vectorCardSetCalibratorProductCali);
-
-        }
     }
 
     private static void test(Config config) throws Exception{
@@ -130,6 +120,17 @@ public class BRCalibration {
         BRSupportPrecictor brSupportPrecictor = new BRSupportPrecictor(cbm, support, labelCalibrator);
         System.out.println("test performance");
         System.out.println(new MLMeasures(brSupportPrecictor, test));
+
+        if (true) {
+            System.out.println("calibration performance on test set");
+
+            List<Instance> predictions = IntStream.range(0, test.getNumDataPoints()).parallel()
+                    .boxed().map(i -> predictedBySupport(config, test, i, setPrior, cardPrior, cbm, labelCalibrator, pairPriors, implications, support))
+                    .collect(Collectors.toList());
+
+            eval(predictions, vectorCardSetCalibrator);
+
+        }
 
 
         boolean simpleCSV = true;
