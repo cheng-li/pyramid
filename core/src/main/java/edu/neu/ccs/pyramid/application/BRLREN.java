@@ -343,7 +343,7 @@ public class BRLREN {
 
         StringBuilder sbcount = new StringBuilder();
         for (int l=0;l<featuresByEach.length;l++){
-            sbcount.append(cbm.getLabelTranslator().toExtLabel(l)).append(":").append(featuresByEach[l]).append("\n");
+            sbcount.append(mlLabelTranslator.toExtLabel(l)).append(":").append(featuresByEach[l]).append("\n");
         }
 
         String output = config.getString("output.dir");

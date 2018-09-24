@@ -25,19 +25,40 @@ import java.io.File;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class BRCalibration {
     public static void main(Config config) throws Exception{
-        System.out.println(config);
+
+        Logger logger = Logger.getAnonymousLogger();
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
+        }
+        logger.info(config.toString());
+        
         if (config.getBoolean("calibrate")){
-            calibrate(config);
+            calibrate(config, logger);
         }
 
         if (config.getBoolean("test")){
-            test(config);
+            test(config, logger);
+        }
+
+        if (fileHandler!=null){
+            fileHandler.close();
         }
     }
     public static void main(String[] args) throws Exception {
@@ -47,10 +68,10 @@ public class BRCalibration {
     }
 
 
-    private static void calibrate(Config config) throws Exception{
+    private static void calibrate(Config config, Logger logger) throws Exception{
 
 
-        System.out.println("start training calibrator");
+        logger.info("start training calibrator");
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SPARSE, true);
         //todo
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SPARSE, true);
@@ -63,17 +84,17 @@ public class BRCalibration {
 
         List<Pair<Integer, Integer>> implications = null;
         if (config.getBoolean("implication")) {
-            System.out.println("find implications");
+            logger.info("find implications");
             implications = findImplications(train.getMultiLabels(), train.getNumClasses());
-            System.out.println("done");
+            logger.info("done");
         }
 
 
         double[][][] pairPriors = null;
         if (config.getBoolean("pairPrior")) {
-            System.out.println("computing pair priors");
+            logger.info("computing pair priors");
             pairPriors = computePairPriors(train.getMultiLabels(), train.getNumClasses());
-            System.out.println("done");
+            logger.info("done");
         }
 
 
@@ -103,12 +124,12 @@ public class BRCalibration {
         Serialization.serialize(implications,Paths.get(config.getString("output.dir"),"implications").toFile());
         Serialization.serialize(pairPriors,Paths.get(config.getString("output.dir"),"pair_priors").toFile());
 
-        System.out.println("finish training calibrator");
+        logger.info("finish training calibrator");
 
 
     }
 
-    private static void test(Config config) throws Exception{
+    private static void test(Config config, Logger logger) throws Exception{
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SPARSE, true);
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
         LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
@@ -121,17 +142,17 @@ public class BRCalibration {
 
 
         BRSupportPrecictor brSupportPrecictor = new BRSupportPrecictor(cbm, support, labelCalibrator);
-        System.out.println("test performance");
-        System.out.println(new MLMeasures(brSupportPrecictor, test));
+        logger.info("test performance");
+        logger.info(new MLMeasures(brSupportPrecictor, test).toString());
 
         if (true) {
-            System.out.println("calibration performance on test set");
+            logger.info("calibration performance on test set");
 
             List<Instance> predictions = IntStream.range(0, test.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictedBySupport(config, test, i, setPrior, cardPrior, cbm, labelCalibrator, pairPriors, implications, support))
                     .collect(Collectors.toList());
 
-            eval(predictions, vectorCardSetCalibrator);
+            eval(predictions, vectorCardSetCalibrator, logger);
 
         }
 
@@ -221,16 +242,16 @@ public class BRCalibration {
     }
 
 
-    private static CaliRes eval(List<Instance> predictions, VectorCalibrator calibrator){
+    private static CaliRes eval(List<Instance> predictions, VectorCalibrator calibrator, Logger logger){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
-        System.out.println("mse="+mse);
-        System.out.println("absolute calibration error="+ace);
-        System.out.println("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
-        System.out.println("sharpness="+sharpness);
-        System.out.println("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
-        System.out.println(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+        logger.info("mse="+mse);
+        logger.info("absolute calibration error="+ace);
+        logger.info("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
+        logger.info("sharpness="+sharpness);
+        logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
+        logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
         CaliRes caliRes = new CaliRes();
         caliRes.mse = mse;
         caliRes.ace= ace;
@@ -243,7 +264,7 @@ public class BRCalibration {
         for (int l=0;l<numClasses;l++){
             for (int m=0;m<numClasses;m++){
                 if (m!=l&&imply(l,m,multiLabels)){
-                    System.out.println(l+" implies "+m);
+//                    logger.info(l+" implies "+m);
                     implications.add(new Pair<>(l,m));
                 }
             }

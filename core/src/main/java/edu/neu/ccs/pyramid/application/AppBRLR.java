@@ -105,11 +105,12 @@ public class AppBRLR {
     private static Config createBRLRENConfig(Config config){
         Config brConfig = new Config();
 
-        brConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),config.getString("output.trainFolder")).toString());
-        brConfig.setString("input.testData",Paths.get(config.getString("output.folder"),config.getString("output.testFolder")).toString());
-        brConfig.setString("input.validData",Paths.get(config.getString("output.folder"),config.getString("output.validFolder")).toString());
+        brConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
+        brConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        brConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
         brConfig.setString("output.dir",config.getString("output.folder"));
         brConfig.setString("output.verbose","true");
+        brConfig.setString("output.log",config.getString("output.log"));
         brConfig.setString("tune",config.getString("train"));
         brConfig.setString("train",config.getString("train"));
         brConfig.setString("predict.allowEmpty","auto");
@@ -141,12 +142,13 @@ public class AppBRLR {
 
     private static Config createBRCalibrationConfig(Config config){
         Config calConfig = new Config();
-        calConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),config.getString("output.trainFolder")).toString());
-        calConfig.setString("input.testData",Paths.get(config.getString("output.folder"),config.getString("output.testFolder")).toString());
-        calConfig.setString("input.validData",Paths.get(config.getString("output.folder"),config.getString("output.validFolder")).toString());
+        calConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
+        calConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        calConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets", config.getString("output.validFolder")).toString());
         calConfig.setString("output.dir",config.getString("output.folder"));
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
+        calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");
         calConfig.setString("cardPrior","false");
@@ -158,7 +160,7 @@ public class AppBRLR {
         calConfig.setString("implication","false");
         calConfig.setEqual("labelProbs=false");
         calConfig.setEqual("position=false");
-        calConfig.setEqual("calibrator.train.numCandidates=400");
+        calConfig.setString("calibrator.train.numCandidates",config.getString("calibrate.numCandidates"));
         calConfig.setEqual("monotonic=true");
         calConfig.setEqual("logScale=false");
         return calConfig;
