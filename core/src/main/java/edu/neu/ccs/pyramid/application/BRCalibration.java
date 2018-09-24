@@ -30,8 +30,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class BRCalibration {
-    public static void main(String[] args) throws Exception {
-        Config config = new Config(args[0]);
+    public static void main(Config config) throws Exception{
         System.out.println(config);
         if (config.getBoolean("calibrate")){
             calibrate(config);
@@ -40,6 +39,10 @@ public class BRCalibration {
         if (config.getBoolean("test")){
             test(config);
         }
+    }
+    public static void main(String[] args) throws Exception {
+        Config config = new Config(args[0]);
+        main(config);
 
     }
 

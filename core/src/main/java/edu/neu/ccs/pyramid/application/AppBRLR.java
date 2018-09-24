@@ -37,10 +37,12 @@ public class AppBRLR {
         output.mkdirs();
 
         Config app1Config = createApp1Config(config);
-        Config app2Config = createApp2Config(config);
-
+        Config brConfig = createBRLRENConfig(config);
+        Config calConfig = createBRCalibrationConfig(config);
         App1.main(app1Config);
-        App2.main(app2Config);
+        BRLREN.main(brConfig);
+        BRCalibration.main(calConfig);
+
     }
 
     public static void main(Config config) throws Exception{
@@ -66,10 +68,11 @@ public class AppBRLR {
         output.mkdirs();
 
         Config app1Config = createApp1Config(config);
-        Config app2Config = createApp2Config(config);
-
+        Config brConfig = createBRLRENConfig(config);
+        Config calConfig = createBRCalibrationConfig(config);
         App1.main(app1Config);
-        App2.main(app2Config);
+        BRLREN.main(brConfig);
+        BRCalibration.main(calConfig);
     }
 
     private static Config createApp1Config(Config config){
@@ -101,10 +104,6 @@ public class AppBRLR {
 
     private static Config createBRLRENConfig(Config config){
         Config brConfig = new Config();
-        String[] same = {"test"};
-
-        Config.copyExisting(config,brConfig,same);
-
 
         brConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),config.getString("output.trainFolder")).toString());
         brConfig.setString("input.testData",Paths.get(config.getString("output.folder"),config.getString("output.testFolder")).toString());
@@ -122,10 +121,46 @@ public class AppBRLR {
         brConfig.setString("tune.monitorInterval","1");
         brConfig.setString("tune.earlyStop.minIterations","5");
         brConfig.setString("tune.earlyStop.patience","10");
-        
-
-
+        brConfig.setString("train.useTunedHyperParameters","true");
+        brConfig.setString("train.iterations","10");
+        brConfig.setString("train.penalty","0.0001");
+        brConfig.setString("train.numComponents","1");
+        brConfig.setString("train.randomInitialize","false");
+        brConfig.setString("train.elasticnet.lineSearch","false");
+        brConfig.setString("train.elasticnet.activeSet","true");
+        brConfig.setString("train.updatesPerIteration","5");
+        brConfig.setString("train.skipDataThreshold","0.00001");
+        brConfig.setString("train.skipLabelThreshold","0.00001");
+        brConfig.setString("train.smoothStrength","0.0001");
+        brConfig.setString("report.labelProbThreshold",config.getString("report.classProbThreshold"));
+        brConfig.setString("test","false");
 
         return brConfig;
+    }
+
+
+    private static Config createBRCalibrationConfig(Config config){
+        Config calConfig = new Config();
+        calConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),config.getString("output.trainFolder")).toString());
+        calConfig.setString("input.testData",Paths.get(config.getString("output.folder"),config.getString("output.testFolder")).toString());
+        calConfig.setString("input.validData",Paths.get(config.getString("output.folder"),config.getString("output.validFolder")).toString());
+        calConfig.setString("output.dir",config.getString("output.folder"));
+        calConfig.setString("calibrate",config.getString("calibrate"));
+        calConfig.setString("test",config.getString("test"));
+        calConfig.setString("setPrior","true");
+        calConfig.setString("brProb","true");
+        calConfig.setString("cardPrior","false");
+        calConfig.setString("card","true");
+        calConfig.setString("pairPrior","false");
+        calConfig.setString("encodeLabel","false");
+        calConfig.setString("f1Prior","false");
+        calConfig.setString("cbmProb","false");
+        calConfig.setString("implication","false");
+        calConfig.setEqual("labelProbs=false");
+        calConfig.setEqual("position=false");
+        calConfig.setEqual("calibrator.train.numCandidates=400");
+        calConfig.setEqual("monotonic=true");
+        calConfig.setEqual("logScale=false");
+        return calConfig;
     }
 }

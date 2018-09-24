@@ -10,7 +10,7 @@ public class ConfigTest {
     private static final String TMP = config.getString("output.tmp");
 
     public static void main(String[] args) throws Exception{
-        test3();
+        test4();
     }
 
     private static void test1(){
@@ -36,6 +36,14 @@ public class ConfigTest {
             Config config = new Config(new File(TMP,""+i));
 //            System.out.println(config);
         }
+
+    }
+
+    private static void test4() throws Exception{
+        Config config = new Config();
+        config.setEqual("a=b");
+        config.setEqual("c=d,e,f");
+        System.out.println(config);
 
     }
 

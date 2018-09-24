@@ -66,6 +66,11 @@ public class Config implements Serializable{
         this.properties.setProperty(key,value);
     }
 
+    public void setEqual(String equation){
+        String[] split = equation.split("=");
+        setString(split[0],split[1]);
+    }
+
     public int getInt(String key){
         if (!containsKey(key)){
             throw new IllegalArgumentException("config does not contain the key "+key);

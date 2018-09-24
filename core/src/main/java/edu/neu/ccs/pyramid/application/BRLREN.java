@@ -34,16 +34,7 @@ import java.util.stream.IntStream;
 public class BRLREN {
     private static boolean VERBOSE = false;
 
-    public static void main(String[] args) throws Exception {
-
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Please specify a properties file.");
-        }
-        
-        
-        Config config = new Config(args[0]);
-
-
+    public static void main(Config config) throws Exception{
         Logger logger = Logger.getAnonymousLogger();
         String logFile = config.getString("output.log");
         FileHandler fileHandler = null;
@@ -56,7 +47,7 @@ public class BRLREN {
             logger.addHandler(fileHandler);
             logger.setUseParentHandlers(false);
         }
-        
+
 
         logger.info(config.toString());
 
@@ -172,6 +163,19 @@ public class BRLREN {
         if (fileHandler!=null){
             fileHandler.close();
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Please specify a properties file.");
+        }
+        
+        
+        Config config = new Config(args[0]);
+
+        main(config);
+
 
     }
 
