@@ -512,7 +512,7 @@ public class CBMEN {
 
         StringBuilder sbcount = new StringBuilder();
         for (int l=0;l<featuresByEach.length;l++){
-            sbcount.append(cbm.getLabelTranslator().toExtLabel(l)).append(":").append(featuresByEach[l]).append("\n");
+            sbcount.append(mlLabelTranslator.toExtLabel(l)).append(":").append(featuresByEach[l]).append("\n");
         }
 
         String output = config.getString("output.dir");
@@ -526,7 +526,7 @@ public class CBMEN {
                 labels.add(mlLabelTranslator.toExtLabel(l));
                 LabelTranslator labelTranslator = new LabelTranslator(labels);
                 logisticRegression.setLabelTranslator(labelTranslator);
-                TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,100);
+                TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,Integer.MAX_VALUE);
                 stringBuilder.append("label "+l+" ("+mlLabelTranslator.toExtLabel(l)+")").append(": ");
                 for (int f=0;f<topFeatures.getTopFeatures().size();f++){
                     Feature feature = topFeatures.getTopFeatures().get(f);

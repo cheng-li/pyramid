@@ -357,7 +357,7 @@ public class BRLREN {
                 labels.add(mlLabelTranslator.toExtLabel(l));
                 LabelTranslator labelTranslator = new LabelTranslator(labels);
                 logisticRegression.setLabelTranslator(labelTranslator);
-                TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,100);
+                TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,Integer.MAX_VALUE);
                 stringBuilder.append("label "+l+" ("+mlLabelTranslator.toExtLabel(l)+")").append(": ");
                 for (int f=0;f<topFeatures.getTopFeatures().size();f++){
                     Feature feature = topFeatures.getTopFeatures().get(f);
