@@ -357,6 +357,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         return numComponents;
     }
 
+
+
     public static Builder getBuilder(){
         return new Builder();
     }

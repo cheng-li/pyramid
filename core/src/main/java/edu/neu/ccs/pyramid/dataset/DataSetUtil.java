@@ -678,6 +678,7 @@ public class DataSetUtil {
                 .missingValue(dataSets.get(0).hasMissingValue())
                 .build();
 
+        IdTranslator idTranslator = new IdTranslator();
         int dataIndex = 0;
         for (MultiLabelClfDataSet ds: dataSets){
             for (int i=0;i<ds.getNumDataPoints();i++){
@@ -688,6 +689,7 @@ public class DataSetUtil {
                     dataSet.setFeatureValue(dataIndex,j,value);
                 }
                 dataSet.setLabels(dataIndex,ds.getMultiLabels()[i]);
+                idTranslator.addData(dataIndex,ds.getIdTranslator().toExtId(i));
                 dataIndex+=1;
             }
         }
@@ -695,8 +697,7 @@ public class DataSetUtil {
 
         dataSet.setFeatureList(dataSets.get(0).getFeatureList());
         dataSet.setLabelTranslator(dataSets.get(0).getLabelTranslator());
-        //id translator is not set
-
+        dataSet.setIdTranslator(idTranslator);
         return dataSet;
     }
 
