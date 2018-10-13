@@ -363,13 +363,16 @@ public class BRLREN {
                     for (int f=0;f<topFeatures.getTopFeatures().size();f++){
                         Feature feature = topFeatures.getTopFeatures().get(f);
                         double utility = topFeatures.getUtilities().get(f);
-                        bw.write(feature.getIndex());
-                        bw.write(" (");
-                        bw.write(feature.getName());
-                        bw.write(")");
-                        bw.write(":");
-                        bw.write(""+utility);
-                        bw.write(", ");
+                        if (utility!=0){
+                            bw.write(""+feature.getIndex());
+//                        bw.write(" (");
+//                        bw.write(feature.getName());
+//                        bw.write(")");
+                            bw.write(":");
+                            bw.write(""+utility);
+                            bw.write(", ");
+                        }
+
                     }
                     bw.write("\n");
                 }

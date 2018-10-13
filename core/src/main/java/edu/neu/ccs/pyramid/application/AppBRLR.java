@@ -120,8 +120,8 @@ public class AppBRLR {
         brConfig.setString("tune.l1Ratio.candidates",config.getString("train.l1Ratio.candidates"));
         brConfig.setString("tune.numComponents.candidates","1");
         brConfig.setString("tune.monitorInterval","1");
-        brConfig.setString("tune.earlyStop.minIterations","5");
-        brConfig.setString("tune.earlyStop.patience","10");
+        brConfig.setString("tune.earlyStop.minIterations","3");
+        brConfig.setString("tune.earlyStop.patience","3");
         brConfig.setString("train.useTunedHyperParameters","true");
         brConfig.setString("train.iterations","10");
         brConfig.setString("train.penalty","0.0001");
