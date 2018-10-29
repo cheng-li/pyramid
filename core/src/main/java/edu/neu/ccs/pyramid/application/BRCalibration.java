@@ -160,7 +160,7 @@ public class BRCalibration {
         boolean simpleCSV = true;
         if (simpleCSV){
             File testDataFile = new File(config.getString("input.testData"));
-            File csv = Paths.get(config.getString("output.dir"),testDataFile.getName()+"_report_calibrated","report.csv").toFile();
+            File csv = Paths.get(config.getString("output.dir"),"reports_lr",testDataFile.getName()+"_report_calibrated","report.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(config, cbm, labelCalibrator, vectorCardSetCalibrator,
