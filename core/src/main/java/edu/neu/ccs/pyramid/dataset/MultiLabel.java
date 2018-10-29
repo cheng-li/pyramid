@@ -134,6 +134,20 @@ public class MultiLabel implements Serializable{
         return true;
     }
 
+    public static boolean agreeOnLabel(MultiLabel multiLabel1, MultiLabel multiLabel2, int labelIndex){
+        if (multiLabel1.matchClass(labelIndex)&&multiLabel2.matchClass(labelIndex)){
+            return true;
+        }
+
+
+        if ((!multiLabel1.matchClass(labelIndex))&&(!multiLabel2.matchClass(labelIndex))){
+            return true;
+        }
+
+        return false;
+
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
