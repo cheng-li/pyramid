@@ -5,6 +5,8 @@ import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression
 import edu.neu.ccs.pyramid.classification.logistic_regression.RidgeLogisticOptimizer;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.ClfDataSetBuilder;
+import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.dataset.DataSetBuilder;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -26,6 +28,27 @@ public class PlattScaling implements Serializable {
 
         this.logisticRegression = new LogisticRegression(2,dataSet.getNumFeatures());
         RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,1000000,true);
+        ridgeLogisticOptimizer.optimize();
+    }
+
+    /**
+     *
+     * @param scores
+     * @param positiveProbs target positive label probability
+     */
+    public PlattScaling(double[] scores, double[] positiveProbs) {
+        DataSet dataSet = DataSetBuilder.getBuilder()
+                .numDataPoints(scores.length).numFeatures(1)
+                .dense(true).missingValue(false).build();
+        double[][] targetDis = new double[positiveProbs.length][2];
+        for (int i=0;i<scores.length;i++){
+            dataSet.setFeatureValue(i,0,scores[i]);
+            targetDis[i][1] = positiveProbs[i];
+            targetDis[i][0] = 1-positiveProbs[i];
+        }
+
+        this.logisticRegression = new LogisticRegression(2,dataSet.getNumFeatures());
+        RidgeLogisticOptimizer ridgeLogisticOptimizer = new RidgeLogisticOptimizer(logisticRegression,dataSet,targetDis,1000000,true);
         ridgeLogisticOptimizer.optimize();
     }
 
