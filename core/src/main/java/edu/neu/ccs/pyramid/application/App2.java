@@ -689,6 +689,23 @@ public class App2 {
         }
 
 
+        boolean topKSets = true;
+        if (topKSets){
+            logger.info("start generating top sets report");
+
+            File csv = new File(analysisFolder,"top_sets.csv");
+            ParallelStringMapper<Integer> mapper = new ParallelStringMapper<Integer>() {
+                @Override
+                public String mapToString(List<Integer> list, int i) {
+                    return IMLGBInspector.topKSets(boosting, setScaling,dataSet,list.get(i),config.getInt("report.labelSetLimit"));
+
+                }
+            };
+            ParallelFileWriter.mapToString(mapper, reportIdOrder,csv,100);
+            logger.info("finish generating top sets report");
+        }
+
+
 
 
 

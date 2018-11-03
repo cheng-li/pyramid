@@ -6,6 +6,7 @@ import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
+import edu.neu.ccs.pyramid.multilabel_classification.br.SupportPredictor;
 import edu.neu.ccs.pyramid.regression.*;
 import edu.neu.ccs.pyramid.regression.regression_tree.TreeRule;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeInspector;
@@ -518,6 +519,36 @@ public class IMLGBInspector {
             setMatch=1;
         }
         sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\n");
+        return sb.toString();
+    }
+
+
+    public static  String topKSets(IMLGradientBoosting boosting,
+                                                             CardinalityCalibrator setScaling,
+                                                             MultiLabelClfDataSet dataSet,
+                                                             int dataPointIndex, int top){
+        StringBuilder sb = new StringBuilder();
+
+        String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        double[] classProbs = boosting.predictClassProbs(dataSet.getRow(dataPointIndex));
+        List<Pair<MultiLabel, Double>> topSets = SupportPredictor.topKSetsAndProbs(classProbs,boosting.getAssignments(),top);
+        for (Pair<MultiLabel,Double> pair: topSets){
+            MultiLabel set = pair.getFirst();
+            double probability = setScaling.calibratedProb(dataSet.getRow(dataPointIndex),set);
+            List<Integer> predictedList = set.getMatchedLabelsOrdered();
+            sb.append(id).append("\t");
+            for (int i=0;i<predictedList.size();i++){
+                sb.append(labelTranslator.toExtLabel(predictedList.get(i)));
+                if (i!=predictedList.size()-1){
+                    sb.append(",");
+                }
+            }
+            sb.append("\t");
+            sb.append(probability);
+            sb.append("\n");
+        }
+
         return sb.toString();
     }
 
