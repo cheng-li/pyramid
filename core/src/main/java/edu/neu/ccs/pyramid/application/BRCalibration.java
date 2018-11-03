@@ -167,6 +167,19 @@ public class BRCalibration {
                     test, i, support, implications, pairPriors, cardPrior, setPrior);
             ParallelFileWriter.mapToString(mapper,list, csv,100  );
         }
+
+
+        boolean topSets = true;
+        if (topSets){
+            File testDataFile = new File(config.getString("input.testData"));
+            File csv = Paths.get(config.getString("output.dir"),"reports_lr",testDataFile.getName()+"_report_calibrated","top_sets.csv").toFile();
+            csv.getParentFile().mkdirs();
+            List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
+            ParallelStringMapper<Integer> mapper = (list1, i) -> topKSets(config, cbm, labelCalibrator, vectorCardSetCalibrator,
+                    test, i, support, implications, pairPriors, cardPrior, setPrior);
+            ParallelFileWriter.mapToString(mapper,list, csv,100  );
+        }
+
     }
 
 
@@ -238,6 +251,48 @@ public class BRCalibration {
             setMatch=1;
         }
         sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\n");
+        return sb.toString();
+    }
+
+
+    public static String topKSets(Config config,
+                                CBM cbm,
+                                LabelCalibrator labelCalibrator,
+                                VectorCardSetCalibrator vectorCardSetCalibrator,
+                                MultiLabelClfDataSet dataSet,
+                                int dataPointIndex,
+                                List<MultiLabel> support,
+                                List<Pair<Integer, Integer>> implications,
+                                double[][][] pairPriors,
+                                Map<Integer, Double> cardPriors,
+                                Map<MultiLabel, Double> setPrior){
+        StringBuilder sb = new StringBuilder();
+        String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
+        LabelTranslator labelTranslator = dataSet.getLabelTranslator();
+        double[] classProbs = cbm.predictClassProbs(dataSet.getRow(dataPointIndex));
+        double[] calibratedClassProbs = labelCalibrator.calibratedClassProbs(classProbs);
+        List<Pair<MultiLabel,Double>> topK = SupportPredictor.topKSetsAndProbs(calibratedClassProbs,support,config.getInt("report.labelSetLimit"));
+
+
+        for (Pair<MultiLabel,Double> pair: topK){
+            MultiLabel set = pair.getFirst();
+            double uncalibrated = pair.getSecond();
+            Vector feature = feature(config,cbm.computeBM(dataSet.getRow(dataPointIndex),0.001),set,setPrior,
+                    cardPriors,calibratedClassProbs,pairPriors,implications,Optional.empty());
+            double probability = vectorCardSetCalibrator.calibrate(feature);
+            List<Integer> predictedList = set.getMatchedLabelsOrdered();
+            sb.append(id).append("\t");
+            for (int i=0;i<predictedList.size();i++){
+                sb.append(labelTranslator.toExtLabel(predictedList.get(i)));
+                if (i!=predictedList.size()-1){
+                    sb.append(",");
+                }
+            }
+            sb.append("\t");
+            sb.append(probability);
+            sb.append("\n");
+        }
+
         return sb.toString();
     }
 

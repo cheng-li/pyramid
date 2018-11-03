@@ -163,6 +163,7 @@ public class AppBRLR {
         calConfig.setString("calibrator.train.numCandidates",config.getString("calibrate.numCandidates"));
         calConfig.setEqual("monotonic=true");
         calConfig.setEqual("logScale=false");
+        Config.copy(config,calConfig,"report.labelSetLimit");
         return calConfig;
     }
 }
