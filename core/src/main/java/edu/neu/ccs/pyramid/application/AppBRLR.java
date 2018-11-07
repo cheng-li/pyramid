@@ -135,6 +135,7 @@ public class AppBRLR {
         brConfig.setString("train.smoothStrength","0.0001");
         brConfig.setString("report.labelProbThreshold",config.getString("report.classProbThreshold"));
         brConfig.setString("test","false");
+        Config.copy(config,brConfig,"train.useInstanceWeights");
 
         return brConfig;
     }

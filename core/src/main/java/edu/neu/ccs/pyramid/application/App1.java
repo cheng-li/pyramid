@@ -704,7 +704,7 @@ public class App1 {
             for (double w: weights){
                 stringBuilder.append(w).append("\n");
             }
-            File file = Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder"),"instance_weights").toFile();
+            File file = Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder"),"instance_weights.txt").toFile();
             FileUtils.writeStringToFile(file, stringBuilder.toString());
         }
     }
