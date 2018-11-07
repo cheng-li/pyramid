@@ -94,7 +94,7 @@ public class App3 {
                 "train.splitQuery","test.splitQuery","valid.splitQuery",
                 "train.feature.ngram.matchScoreType","createTrainSet","createTestSet","createValidSet",
                 "train.feature.ngram.selection", "train.feature.ngram.selectPerLabel",
-                "train.label.order"
+                "train.label.order","train.useInstanceWeights","train.weight.field"
 
         };
 

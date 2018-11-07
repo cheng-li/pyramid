@@ -23,6 +23,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.FileHandler;
@@ -386,6 +387,11 @@ public class BRLREN {
     private static ENCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
         ENCBMOptimizer optimizer = new ENCBMOptimizer(cbm, trainSet);
 
+        if (config.getBoolean("train.useInstanceWeights")){
+            double[] instanceWeights = loadInstanceWeights(config);
+            optimizer.setInstanceWeights(instanceWeights);
+        }
+
         optimizer.setLineSearch(config.getBoolean("train.elasticnet.lineSearch"));
         optimizer.setRegularizationBinary(hyperParameters.penalty);
         optimizer.setRegularizationMultiClass(hyperParameters.penalty);
@@ -502,8 +508,17 @@ public class BRLREN {
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
         return trainSet;
+    }
 
-
+    private static double[] loadInstanceWeights(Config config){
+        File file = new File(config.getString("input.trainData"),"instance_weights.txt");
+        double[] weights = new double[0];
+        try {
+            weights = FileUtils.readLines(file).stream().mapToDouble(Double::parseDouble).toArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return weights;
     }
 
     private static class HyperParameters{

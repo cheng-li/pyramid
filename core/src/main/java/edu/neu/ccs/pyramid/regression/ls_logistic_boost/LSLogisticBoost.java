@@ -6,6 +6,9 @@ import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Sigmoid;
 import org.apache.mahout.math.Vector;
 
+/**
+ * logistic boost as a regressor optimized by squared loss
+ */
 public class LSLogisticBoost extends GradientBoosting implements Regressor {
     private static final long serialVersionUID = 1L;
 

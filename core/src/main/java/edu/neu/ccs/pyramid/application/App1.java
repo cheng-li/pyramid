@@ -21,10 +21,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * for multi label dataset,
@@ -694,6 +696,17 @@ public class App1 {
 
         createDataSet(config, index, indexIds,config.getString("output.trainFolder"),
                 config.getString("train.splitQuery"), logger, "train");
+
+        if (config.getBoolean("train.useInstanceWeights")){
+            String weightField = config.getString("train.weight.field");
+            double[] weights = Arrays.stream(indexIds).mapToDouble(id->index.getFloatField(id,weightField)).toArray();
+            StringBuilder stringBuilder = new StringBuilder();
+            for (double w: weights){
+                stringBuilder.append(w).append("\n");
+            }
+            File file = Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder"),"instance_weights").toFile();
+            FileUtils.writeStringToFile(file, stringBuilder.toString());
+        }
     }
 
     static void createTestSet(Config config, ESIndex index, Logger logger) throws Exception{
