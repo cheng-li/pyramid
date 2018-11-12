@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.calibration.Displayer;
 
+import edu.neu.ccs.pyramid.calibration.IsoLabelCalibrator;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.CalibrationEval;
@@ -79,7 +80,7 @@ public class BRCalibration {
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
 
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(train);
-        LabelCalibrator labelCalibrator = new LabelCalibrator(cbm, cal);
+        IsoLabelCalibrator isoLabelCalibrator = new IsoLabelCalibrator(cbm, cal);
 
 
         List<Pair<Integer, Integer>> implications = null;
@@ -110,14 +111,14 @@ public class BRCalibration {
         List<Pair<Integer, Integer>> finalImplications = implications;
         double[][][] finalPairPriors = pairPriors;
         List<Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
-                .boxed().flatMap(i -> expand(config, cal, i, setPrior, cardPrior, cbm, labelCalibrator, finalPairPriors, finalImplications, support).stream())
+                .boxed().flatMap(i -> expand(config, cal, i, setPrior, cardPrior, cbm, isoLabelCalibrator, finalPairPriors, finalImplications, support).stream())
                 .collect(Collectors.toList());
 
         ClfDataSet clfDataSet = createClfData(instances, train.getLabelTranslator());
 
         VectorCardSetCalibrator vectorCardSetCalibratorProductCali = new VectorCardSetCalibrator(clfDataSet, 1, 3);
 
-        Serialization.serialize(labelCalibrator,Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
+        Serialization.serialize(isoLabelCalibrator,Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
         Serialization.serialize(vectorCardSetCalibratorProductCali,Paths.get(config.getString("output.dir"),"card_iso_set_calibrator").toFile());
         Serialization.serialize(setPrior,Paths.get(config.getString("output.dir"),"set_priors").toFile());
         Serialization.serialize(cardPrior,Paths.get(config.getString("output.dir"),"card_priors").toFile());
@@ -132,7 +133,7 @@ public class BRCalibration {
     private static void test(Config config, Logger logger) throws Exception{
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SPARSE, true);
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
-        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
+        IsoLabelCalibrator isoLabelCalibrator = (IsoLabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"label_calibrator").toFile());
         VectorCardSetCalibrator vectorCardSetCalibrator = (VectorCardSetCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"card_iso_set_calibrator").toFile());
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"support").toFile());
         List<Pair<Integer, Integer>> implications = (List<Pair<Integer, Integer>>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"implications").toFile());
@@ -141,7 +142,7 @@ public class BRCalibration {
         Map<Integer, Double> cardPrior = (Map<Integer, Double>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"card_priors").toFile());
 
 
-        BRSupportPrecictor brSupportPrecictor = new BRSupportPrecictor(cbm, support, labelCalibrator);
+        BRSupportPrecictor brSupportPrecictor = new BRSupportPrecictor(cbm, support, isoLabelCalibrator);
         logger.info("test performance");
         logger.info(new MLMeasures(brSupportPrecictor, test).toString());
 
@@ -149,7 +150,7 @@ public class BRCalibration {
             logger.info("calibration performance on test set");
 
             List<Instance> predictions = IntStream.range(0, test.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictedBySupport(config, test, i, setPrior, cardPrior, cbm, labelCalibrator, pairPriors, implications, support))
+                    .boxed().map(i -> predictedBySupport(config, test, i, setPrior, cardPrior, cbm, isoLabelCalibrator, pairPriors, implications, support))
                     .collect(Collectors.toList());
 
             eval(predictions, vectorCardSetCalibrator, logger);
@@ -163,7 +164,7 @@ public class BRCalibration {
             File csv = Paths.get(config.getString("output.dir"),"reports_lr",testDataFile.getName()+"_report_calibrated","report.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
-            ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(config, cbm, labelCalibrator, vectorCardSetCalibrator,
+            ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(config, cbm, isoLabelCalibrator, vectorCardSetCalibrator,
                     test, i, support, implications, pairPriors, cardPrior, setPrior);
             ParallelFileWriter.mapToString(mapper,list, csv,100  );
         }
@@ -175,7 +176,7 @@ public class BRCalibration {
             File csv = Paths.get(config.getString("output.dir"),"reports_lr",testDataFile.getName()+"_report_calibrated","top_sets.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
-            ParallelStringMapper<Integer> mapper = (list1, i) -> topKSets(config, cbm, labelCalibrator, vectorCardSetCalibrator,
+            ParallelStringMapper<Integer> mapper = (list1, i) -> topKSets(config, cbm, isoLabelCalibrator, vectorCardSetCalibrator,
                     test, i, support, implications, pairPriors, cardPrior, setPrior);
             ParallelFileWriter.mapToString(mapper,list, csv,100  );
         }
@@ -185,7 +186,7 @@ public class BRCalibration {
 
     public static String simplePredictionAnalysisCalibrated(Config config,
                                                              CBM cbm,
-                                                             LabelCalibrator labelCalibrator,
+                                                             IsoLabelCalibrator isoLabelCalibrator,
                                                              VectorCardSetCalibrator vectorCardSetCalibrator,
                                                              MultiLabelClfDataSet dataSet,
                                                              int dataPointIndex,
@@ -200,7 +201,7 @@ public class BRCalibration {
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         double[] classProbs = cbm.predictClassProbs(dataSet.getRow(dataPointIndex));
-        double[] calibratedClassProbs = labelCalibrator.calibratedClassProbs(classProbs);
+        double[] calibratedClassProbs = isoLabelCalibrator.calibratedClassProbs(classProbs);
 
         MultiLabel predicted = SupportPredictor.predict(calibratedClassProbs,support);
 
@@ -257,7 +258,7 @@ public class BRCalibration {
 
     public static String topKSets(Config config,
                                 CBM cbm,
-                                LabelCalibrator labelCalibrator,
+                                IsoLabelCalibrator isoLabelCalibrator,
                                 VectorCardSetCalibrator vectorCardSetCalibrator,
                                 MultiLabelClfDataSet dataSet,
                                 int dataPointIndex,
@@ -270,7 +271,7 @@ public class BRCalibration {
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         double[] classProbs = cbm.predictClassProbs(dataSet.getRow(dataPointIndex));
-        double[] calibratedClassProbs = labelCalibrator.calibratedClassProbs(classProbs);
+        double[] calibratedClassProbs = isoLabelCalibrator.calibratedClassProbs(classProbs);
         List<Pair<MultiLabel,Double>> topK = SupportPredictor.topKSetsAndProbs(calibratedClassProbs,support,config.getInt("report.labelSetLimit"));
 
 
@@ -489,10 +490,10 @@ public class BRCalibration {
 
     private static List<Instance> expand(Config config, MultiLabelClfDataSet dataSet, int index,
                                          Map<MultiLabel,Double> setPriors, Map<Integer,Double> cardPriors,
-                                         CBM cbm, LabelCalibrator labelCalibrator,
+                                         CBM cbm, IsoLabelCalibrator isoLabelCalibrator,
                                          double[][][] pairPriors,List<Pair<Integer,Integer>> implications,
                                          List<MultiLabel> support){
-        double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(dataSet.getRow(index)));
+        double[] marginals = isoLabelCalibrator.calibratedClassProbs(cbm.predictClassProbs(dataSet.getRow(index)));
         MultiLabel prediction = SupportPredictor.predict(marginals, support);
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
         List<Instance> instances = new ArrayList<>();
@@ -518,10 +519,10 @@ public class BRCalibration {
 
 
     private static Instance predictedBySupport(Config config, MultiLabelClfDataSet dataSet, int index, Map<MultiLabel,Double> setPriors,
-                                               Map<Integer,Double> cardPriors, CBM cbm, LabelCalibrator labelCalibrator,
+                                               Map<Integer,Double> cardPriors, CBM cbm, IsoLabelCalibrator isoLabelCalibrator,
                                                double[][][] pairPriors, List<Pair<Integer,Integer>> implications, List<MultiLabel> support){
 
-        double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(dataSet.getRow(index)));
+        double[] marginals = isoLabelCalibrator.calibratedClassProbs(cbm.predictClassProbs(dataSet.getRow(index)));
         MultiLabel prediction = SupportPredictor.predict(marginals, support);
         BMDistribution bmDistribution = cbm.computeBM(dataSet.getRow(index),0.001);
         return createInstance(config, bmDistribution,prediction,dataSet.getMultiLabels()[index],setPriors,cardPriors,marginals, pairPriors, implications, Optional.empty());
@@ -708,12 +709,12 @@ public class BRCalibration {
     public static class BRSupportPrecictor implements MultiLabelClassifier{
         CBM cbm;
         List<MultiLabel> support;
-        LabelCalibrator labelCalibrator;
+        IsoLabelCalibrator isoLabelCalibrator;
 
-        public BRSupportPrecictor(CBM cbm, List<MultiLabel> support, LabelCalibrator labelCalibrator) {
+        public BRSupportPrecictor(CBM cbm, List<MultiLabel> support, IsoLabelCalibrator isoLabelCalibrator) {
             this.cbm = cbm;
             this.support = support;
-            this.labelCalibrator = labelCalibrator;
+            this.isoLabelCalibrator = isoLabelCalibrator;
         }
 
         @Override
@@ -724,7 +725,7 @@ public class BRCalibration {
         @Override
         public MultiLabel predict(Vector vector) {
             double[] marginals = cbm.predictClassProbs(vector);
-            double[] calibratedMarginals = labelCalibrator.calibratedClassProbs(marginals);
+            double[] calibratedMarginals = isoLabelCalibrator.calibratedClassProbs(marginals);
             return SupportPredictor.predict(calibratedMarginals,support);
         }
 

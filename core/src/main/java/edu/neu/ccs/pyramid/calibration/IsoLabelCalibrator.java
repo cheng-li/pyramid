@@ -1,6 +1,7 @@
-package edu.neu.ccs.pyramid.multilabel_classification;
+package edu.neu.ccs.pyramid.calibration;
 
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -11,12 +12,12 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class LabelCalibrator implements Serializable {
+public class IsoLabelCalibrator implements Serializable {
     private static final long serialVersionUID = 1L;
     List<IsotonicRegression> isotonicRegressionList;
 
 
-    public LabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet) {
+    public IsoLabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet) {
         this.isotonicRegressionList = new ArrayList<>();
         for (int l= 0; l < multiLabelClassifier.getNumClasses(); l++) {
             final int calssIndex = l;
