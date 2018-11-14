@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.calibration;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
@@ -22,6 +23,7 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     int numCandidate;
     private PredictionVectorizer predictionVectorizer;
 
+
     public Reranker(Regressor regressor, CBM cbm, int numCandidate, PredictionVectorizer predictionVectorizer) {
         this.regressor = regressor;
         this.cbm = cbm;
@@ -32,18 +34,6 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     @Override
     public int getNumClasses() {
         return cbm.getNumClasses();
-    }
-
-    public double prob(Vector labelFeatures){
-        double score = regressor.predict(labelFeatures);
-        if (score>1){
-            score=1;
-        }
-
-        if (score<0){
-            score=0;
-        }
-        return score;
     }
 
     public double prob(Vector vector, MultiLabel multiLabel){
@@ -112,6 +102,13 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     @Override
     public double calibrate(Vector vector) {
         double score = regressor.predict(vector);
+        if (score>1){
+            score=1;
+        }
+
+        if (score<0){
+            score=0;
+        }
         return score;
     }
 }

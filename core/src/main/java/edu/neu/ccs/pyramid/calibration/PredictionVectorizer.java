@@ -14,6 +14,7 @@ import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PredictionVectorizer implements Serializable {
@@ -60,6 +61,7 @@ public class PredictionVectorizer implements Serializable {
     public LabelCalibrator getLabelCalibrator() {
         return labelCalibrator;
     }
+
 
     public Vector feature(BMDistribution bmDistribution, MultiLabel multiLabel, double[] calibratedMarginals,
                            Optional<Map<MultiLabel,Integer>> positionMap){
@@ -160,8 +162,23 @@ public class PredictionVectorizer implements Serializable {
     }
 
 
+    public int[][] getMonotonicityConstraints(int numLabelsInModel){
+        int[][] monotonicity = new int[1][9+numLabelsInModel+numLabelsInModel];
 
-    private RegDataSet createData(List<Instance> instances, LabelTranslator labelTranslator){
+        monotonicity[0][0]=1;
+        monotonicity[0][1]=1;
+        monotonicity[0][2]=1;
+        monotonicity[0][5]=1;
+        monotonicity[0][6]=1;
+        monotonicity[0][7]=1;
+        monotonicity[0][8]=-1;
+        for (int l=0;l<numLabelsInModel;l++){
+            monotonicity[0][9+numLabelsInModel+l]=1;
+        }
+        return monotonicity;
+    }
+
+    public RegDataSet createData(List<Instance> instances, LabelTranslator labelTranslator){
         RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(instances.size())
                 .numFeatures(instances.get(0).vector.size())
@@ -216,24 +233,32 @@ public class PredictionVectorizer implements Serializable {
         return regDataSet;
     }
 
-    private List<Instance> expand(int numCandidates, MultiLabelClfDataSet dataSet, int index,
+    public RegDataSet createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm, int numCandidates){
+        List<Instance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
+                .boxed().flatMap(i -> expand(numCandidates, calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm).stream())
+                .collect(Collectors.toList());
+        RegDataSet regDataSet = createData(instances, calDataSet.getLabelTranslator());
+        return regDataSet;
+    }
+
+    private List<Instance> expand(int numCandidates, Vector x, MultiLabel groundTruth,
                                          CBM cbm){
-        double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(dataSet.getRow(index)));
+        double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
         List<Instance> instances = new ArrayList<>();
         Set<MultiLabel> candidates = new HashSet<>();
         MultiLabel empty = new MultiLabel();
         candidates.add(empty);
-        candidates.add(dataSet.getMultiLabels()[index]);
+        candidates.add(groundTruth);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
 
         for (int i=0;i<numCandidates;i++){
             MultiLabel multiLabel = dynamicProgramming.nextHighestVector();
             candidates.add(multiLabel);
         }
-        BMDistribution bmDistribution = cbm.computeBM(dataSet.getRow(index),0.001);
+        BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         for (MultiLabel multiLabel: candidates){
-            instances.add(createInstance(bmDistribution, multiLabel,dataSet.getMultiLabels()[index],marginals,Optional.of(positionMap)));
+            instances.add(createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap)));
         }
         return instances;
     }

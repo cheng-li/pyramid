@@ -114,23 +114,22 @@ public class BRCalibration {
 
 
 
+        RegDataSet calibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm,config.getInt("calibrator.train.numCandidates"));
 
-        List<Pair<Integer, Integer>> finalImplications = implications;
-        double[][][] finalPairPriors = pairPriors;
-        final LabelCalibrator fLabelCalibrator = labelCalibrator;
-        List<Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
-                .boxed().flatMap(i -> expand(config, cal, i, setPrior, cardPrior, cbm, fLabelCalibrator, finalPairPriors, finalImplications, support).stream())
-                .collect(Collectors.toList());
-
-        RegDataSet regDataSet = createData(instances, train.getLabelTranslator());
         VectorCalibrator setCalibrator = null;
 
         switch (config.getString("setCalibrator")){
             case "cardinality_isotonic":
-                setCalibrator = new VectorCardIsoSetCalibrator(regDataSet, 1, 3);
+                setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 1, 3);
                 break;
             case "reranker":
-                //todo
+                RerankerTrainer rerankerTrainer = RerankerTrainer.newBuilder()
+                            .numCandidates(config.getInt("numCandidates"))
+                            .monotonic(config.getBoolean("monotonic"))
+                            .numIterations(config.getInt("numIterations"))
+                            .numLeaves(config.getInt("numLeaves"))
+                            .build();
+                setCalibrator = rerankerTrainer.train(calibratorTrainData, cbm,predictionVectorizer);
                 break;
             case "isotonic":
                 //todo
@@ -155,40 +154,6 @@ public class BRCalibration {
 
     }
 
-
-    private static LSBoost trainRegressor(RegDataSet regDataSet, Config config, int numLabels){
-        LSBoost lsBoost = new LSBoost();
-
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(config.getInt("reranker.numLeaves"));
-        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory);
-        if (config.getBoolean("reranker.monotonic")){
-            int[][] monotonicity = new int[1][9+numLabels+numLabels];
-
-            monotonicity[0][0]=1;
-            monotonicity[0][1]=1;
-            monotonicity[0][2]=1;
-            monotonicity[0][5]=1;
-            monotonicity[0][6]=1;
-            monotonicity[0][7]=1;
-            monotonicity[0][8]=-1;
-            for (int l=0;l<numLabels;l++){
-                monotonicity[0][9+numLabels+l]=1;
-            }
-            optimizer.setMonotonicity(monotonicity);
-        }
-        optimizer.setShrinkage(0.1);
-        optimizer.initialize();
-
-
-        int numIterations=config.getInt("reranker.numIterations");
-        for (int i=1;i<=numIterations;i++){
-            optimizer.iterate();
-//            System.out.println("iter "+i);
-//            System.out.println( "training RMSE = "+ RMSE.rmse(lsBoost, regDataSet));
-        }
-        return lsBoost;
-    }
 
     private static void test(Config config, Logger logger) throws Exception{
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SPARSE, true);
