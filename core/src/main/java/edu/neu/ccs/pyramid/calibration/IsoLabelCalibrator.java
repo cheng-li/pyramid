@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class IsoLabelCalibrator implements Serializable {
+public class IsoLabelCalibrator implements LabelCalibrator {
     private static final long serialVersionUID = 1L;
     List<IsotonicRegression> isotonicRegressionList;
 

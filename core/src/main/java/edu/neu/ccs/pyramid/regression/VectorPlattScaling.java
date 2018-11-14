@@ -1,7 +1,7 @@
 package edu.neu.ccs.pyramid.regression;
 
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.multilabel_classification.VectorCalibrator;
+import edu.neu.ccs.pyramid.calibration.VectorCalibrator;
 import org.apache.mahout.math.Vector;
 
 public class VectorPlattScaling implements VectorCalibrator {

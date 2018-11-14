@@ -1,6 +1,7 @@
-package edu.neu.ccs.pyramid.multilabel_classification;
+package edu.neu.ccs.pyramid.calibration;
 
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.calibration.VectorCalibrator;
+import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.ArgMin;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -11,25 +12,26 @@ import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class VectorCardSetCalibrator implements Serializable, VectorCalibrator {
+public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrator {
     private static final long serialVersionUID = 1L;
     Map<Integer,IsotonicRegression> calibrations;
     private int scoreIndex;
     private int cardIndex;
 
-    public VectorCardSetCalibrator(ClfDataSet clfDataSet, int scoreIndex, int cardIndex) {
+    public VectorCardIsoSetCalibrator(RegDataSet regDataSet, int scoreIndex, int cardIndex) {
         this.scoreIndex = scoreIndex;
         this.cardIndex = cardIndex;
         this.calibrations = new HashMap<>();
         Set<Integer> cardinalities = new HashSet<>();
-        for (int i=0;i<clfDataSet.getNumDataPoints();i++) {
-            cardinalities.add((int)clfDataSet.getRow(i).get(cardIndex));
+        for (int i=0;i<regDataSet.getNumDataPoints();i++) {
+            cardinalities.add((int)regDataSet.getRow(i).get(cardIndex));
         }
 
         for (int cardinality : cardinalities) {
-            Stream<Pair<Double, Integer>> stream = IntStream.range(0, clfDataSet.getNumDataPoints()).parallel()
-                    .boxed().filter(i->((int)clfDataSet.getRow(i).get(cardIndex))==cardinality)
-                    .map(i->new Pair<>(clfDataSet.getRow(i).get(scoreIndex),clfDataSet.getLabels()[i]));
+            Stream<Pair<Double, Integer>> stream = IntStream.range(0, regDataSet.getNumDataPoints()).parallel()
+                    .boxed().filter(i->((int)regDataSet.getRow(i).get(cardIndex))==cardinality)
+                    //todo deal with regression labels
+                    .map(i->new Pair<>(regDataSet.getRow(i).get(scoreIndex),(int)regDataSet.getLabels()[i]));
             calibrations.put(cardinality, new IsotonicRegression(stream));
         }
     }
