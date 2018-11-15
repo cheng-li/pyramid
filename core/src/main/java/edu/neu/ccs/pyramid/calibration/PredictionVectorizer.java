@@ -19,18 +19,18 @@ import java.util.stream.IntStream;
 
 public class PredictionVectorizer implements Serializable {
     private static final long serialVersionUID = 1L;
-    private boolean logScale=false;
-    private boolean setPrior=true;
-    private boolean brProb=true;
-    private boolean cardPrior=true;
-    private boolean card=true;
-    private boolean pairPrior=false;
-    private boolean f1Prior=false;
-    private boolean cbmProb=true;
-    private boolean implication=false;
-    private boolean position=true;
-    private boolean encodeLabel=true;
-    private boolean labelProbs=false;
+    private boolean logScale;
+    private boolean setPrior;
+    private boolean brProb;
+    private boolean cardPrior;
+    private boolean card;
+    private boolean pairPrior;
+    private boolean f1Prior;
+    private boolean cbmProb;
+    private boolean implication;
+    private boolean position;
+    private boolean encodeLabel;
+    private boolean labelProbs;
     private Map<MultiLabel,Double> setPriors;
     private Map<Integer,Double> cardPriors;
     private double[][][] pairPriors;
@@ -263,6 +263,13 @@ public class PredictionVectorizer implements Serializable {
         return instances;
     }
 
+    public Instance createInstance(CBM cbm, Vector x, MultiLabel prediction, MultiLabel groundTruth){
+        BMDistribution bmDistribution = cbm.computeBM(x,0.001);
+        double[] uncali = cbm.predictClassProbs(x);
+        double[] cali = labelCalibrator.calibratedClassProbs(uncali);
+        return createInstance(bmDistribution, prediction, groundTruth,cali, Optional.empty());
+    }
+
     private Instance createInstance(BMDistribution bmDistribution, MultiLabel multiLabel, MultiLabel groundtruth, double[] calibratedMarginals,
                                                          Optional<Map<MultiLabel,Integer>> positionMap){
         Instance instance = new Instance();
@@ -275,7 +282,7 @@ public class PredictionVectorizer implements Serializable {
     }
 
 
-    private static class Instance{
+    public static class Instance{
         Vector vector;
         double correctness;
     }
@@ -443,18 +450,18 @@ public class PredictionVectorizer implements Serializable {
 
 
     public static final class Builder {
-        private boolean logScale;
-        private boolean setPrior;
-        private boolean brProb;
-        private boolean cardPrior;
-        private boolean card;
-        private boolean pairPrior;
-        private boolean f1Prior;
-        private boolean cbmProb;
-        private boolean implication;
-        private boolean position;
-        private boolean encodeLabel;
-        private boolean labelProbs;
+        private boolean logScale=false;
+        private boolean setPrior=true;
+        private boolean brProb=true;
+        private boolean cardPrior=true;
+        private boolean card=true;
+        private boolean pairPrior=false;
+        private boolean f1Prior=false;
+        private boolean cbmProb=true;
+        private boolean implication=false;
+        private boolean position=true;
+        private boolean encodeLabel=true;
+        private boolean labelProbs=false;
 
         private Builder() {
         }
