@@ -36,6 +36,7 @@ public class PredictionVectorizer implements Serializable {
     private double[][][] pairPriors;
     private List<Pair<Integer,Integer>> implications;
     private LabelCalibrator labelCalibrator;
+    private int numCandidates;
 
     private PredictionVectorizer(Builder builder) {
         logScale = builder.logScale;
@@ -50,6 +51,7 @@ public class PredictionVectorizer implements Serializable {
         position = builder.position;
         encodeLabel = builder.encodeLabel;
         labelProbs = builder.labelProbs;
+        numCandidates = builder.numCandidates;
     }
 
 
@@ -233,15 +235,15 @@ public class PredictionVectorizer implements Serializable {
         return regDataSet;
     }
 
-    public RegDataSet createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm, int numCandidates){
+    public RegDataSet createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm){
         List<Instance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i -> expand(numCandidates, calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm).stream())
+                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm).stream())
                 .collect(Collectors.toList());
         RegDataSet regDataSet = createData(instances, calDataSet.getLabelTranslator());
         return regDataSet;
     }
 
-    private List<Instance> expand(int numCandidates, Vector x, MultiLabel groundTruth,
+    private List<Instance> expand(Vector x, MultiLabel groundTruth,
                                          CBM cbm){
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
@@ -305,10 +307,9 @@ public class PredictionVectorizer implements Serializable {
 
 
 
-    private static int findPosition(MultiLabel multiLabel, double[] marginals){
+    private int findPosition(MultiLabel multiLabel, double[] marginals){
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        int upper = 1000;
-        for (int i=0;i<upper;i++) {
+        for (int i=0;i<numCandidates;i++) {
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
             if (candidate.equals(multiLabel)) {
                 return i;
@@ -317,11 +318,10 @@ public class PredictionVectorizer implements Serializable {
         return Integer.MAX_VALUE;
     }
 
-    public static Map<MultiLabel, Integer> positionMap(double[] marginals){
+    public Map<MultiLabel, Integer> positionMap(double[] marginals){
         Map<MultiLabel, Integer> map = new HashMap<>();
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        int upper = 1000;
-        for (int i=0;i<upper;i++) {
+        for (int i=0;i<numCandidates;i++) {
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
             map.put(candidate,i);
         }
@@ -469,6 +469,7 @@ public class PredictionVectorizer implements Serializable {
         private boolean position=true;
         private boolean encodeLabel=true;
         private boolean labelProbs=false;
+        private int numCandidates=50;
 
         private Builder() {
         }
@@ -530,6 +531,11 @@ public class PredictionVectorizer implements Serializable {
 
         public Builder labelProbs(boolean val) {
             labelProbs = val;
+            return this;
+        }
+
+        public Builder numCandidates(int val) {
+            numCandidates = val;
             return this;
         }
 

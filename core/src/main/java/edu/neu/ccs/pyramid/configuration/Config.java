@@ -142,6 +142,7 @@ public class Config implements Serializable{
     }
 
     public void store(File file) throws Exception{
+        file.getParentFile().mkdirs();
         try (FileWriter fileWriter = new FileWriter(file);
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)
         ) {
