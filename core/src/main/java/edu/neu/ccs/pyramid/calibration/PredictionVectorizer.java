@@ -270,6 +270,13 @@ public class PredictionVectorizer implements Serializable {
         return createInstance(bmDistribution, prediction, groundTruth,cali, Optional.empty());
     }
 
+    public Vector feature(CBM cbm, Vector x, MultiLabel prediction){
+        BMDistribution bmDistribution = cbm.computeBM(x,0.001);
+        double[] uncali = cbm.predictClassProbs(x);
+        double[] cali = labelCalibrator.calibratedClassProbs(uncali);
+        return feature(bmDistribution, prediction,cali, Optional.empty());
+    }
+
     private Instance createInstance(BMDistribution bmDistribution, MultiLabel multiLabel, MultiLabel groundtruth, double[] calibratedMarginals,
                                                          Optional<Map<MultiLabel,Integer>> positionMap){
         Instance instance = new Instance();
@@ -283,8 +290,8 @@ public class PredictionVectorizer implements Serializable {
 
 
     public static class Instance{
-        Vector vector;
-        double correctness;
+        public Vector vector;
+        public double correctness;
     }
 
 

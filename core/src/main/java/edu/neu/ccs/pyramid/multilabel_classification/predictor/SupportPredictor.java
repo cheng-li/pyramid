@@ -20,6 +20,10 @@ public class SupportPredictor implements PluginPredictor<MultiLabelClassifier.Cl
     LabelCalibrator labelCalibrator;
     List<MultiLabel> support;
 
+    public List<MultiLabel> getSupport() {
+        return support;
+    }
+
     public SupportPredictor(ClassProbEstimator classifier, LabelCalibrator labelCalibrator, List<MultiLabel> support) {
         this.classifier = classifier;
         this.labelCalibrator = labelCalibrator;
