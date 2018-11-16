@@ -73,7 +73,7 @@ public class BRCalibration {
         //todo
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
 
-        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models","classifier"));
 
 
         LabelCalibrator labelCalibrator = null;
@@ -105,7 +105,7 @@ public class BRCalibration {
 
 
 
-        RegDataSet calibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm,config.getInt("calibrator.train.numCandidates"));
+        RegDataSet calibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm,config.getInt("numCandidates"));
 
         VectorCalibrator setCalibrator = null;
 
@@ -147,8 +147,8 @@ public class BRCalibration {
 
 
     private static void test(Config config, Logger logger) throws Exception{
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SPARSE, true);
-        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model").toFile());
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models","classifier"));
         LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
                 "calibrators",config.getString("calibrate.folder"),"label_calibrator").toFile());
         VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
@@ -189,7 +189,6 @@ public class BRCalibration {
                     .collect(Collectors.toList());
 
             eval(instances, setCalibrator, logger);
-
         }
 
 
@@ -198,26 +197,25 @@ public class BRCalibration {
         boolean simpleCSV = true;
         if (simpleCSV){
             File testDataFile = new File(config.getString("input.testData"));
-            File csv = Paths.get(config.getString("output.dir"),"reports_lr",testDataFile.getName()+"_reports_calibrated","report.csv").toFile();
+            File csv = Paths.get(config.getString("output.dir"),"model_predictions","lr","predictions",testDataFile.getName()+"_reports","report.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(cbm, labelCalibrator, setCalibrator,
                     test, i, fClassifier,predictionVectorizer);
-            ParallelFileWriter.mapToString(mapper,list, csv,100  );
+            ParallelFileWriter.mapToString(mapper,list, csv,100);
         }
 
 
         boolean topSets = true;
         if (topSets){
             File testDataFile = new File(config.getString("input.testData"));
-            File csv = Paths.get(config.getString("output.dir"),"reports_lr",testDataFile.getName()+"_reports_calibrated","top_sets.csv").toFile();
+            File csv = Paths.get(config.getString("output.dir"),"model_predictions","lr","predictions",testDataFile.getName()+"_reports","top_sets.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> topKSets(config, cbm, labelCalibrator, setCalibrator,
                     test, i, fClassifier,predictionVectorizer);
-            ParallelFileWriter.mapToString(mapper,list, csv,100  );
+            ParallelFileWriter.mapToString(mapper,list, csv,100);
         }
-
     }
 
 
@@ -227,8 +225,7 @@ public class BRCalibration {
                                                              MultiLabelClfDataSet dataSet,
                                                              int dataPointIndex,
                                                              MultiLabelClassifier classifier,
-                                                            PredictionVectorizer predictionVectorizer
-    ){
+                                                            PredictionVectorizer predictionVectorizer){
         StringBuilder sb = new StringBuilder();
         MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
@@ -246,7 +243,7 @@ public class BRCalibration {
             }
         }
 
-        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
+        Comparator<Pair<Integer,Double>> comparator = Comparator.comparing(Pair::getSecond);
         List<Pair<Integer,Double>> list = classes.stream().map(l -> {
             if (l < cbm.getNumClasses()) {
                 return new Pair<>(l, calibratedClassProbs[l]);
@@ -288,14 +285,13 @@ public class BRCalibration {
     }
 
 
-    public static String topKSets(Config config,
+    private static String topKSets(Config config,
                                 CBM cbm,
                                 LabelCalibrator labelCalibrator,
                                 VectorCalibrator setCalibrator,
                                 MultiLabelClfDataSet dataSet,
                                 int dataPointIndex, MultiLabelClassifier classifier,
-                                  PredictionVectorizer predictionVectorizer
- ){
+                                  PredictionVectorizer predictionVectorizer){
         StringBuilder sb = new StringBuilder();
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();

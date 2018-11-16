@@ -121,15 +121,15 @@ public class BRLREN {
             logger.info("train.l1Ratio = "+best.hyperParameters.l1Ratio);
             logger.info("train.iterations = "+best.hyperParameters.iterations);
             Config tunedHypers = best.hyperParameters.asConfig();
-            tunedHypers.store(new File(config.getString("output.dir"), "tuned_hyper_parameters.properties"));
-            logger.info("Tuned hyper parameters saved to "+new File(config.getString("output.dir"), "tuned_hyper_parameters.properties").getAbsolutePath());
+            tunedHypers.store(Paths.get(config.getString("output.dir"),"model_predictions","lr","models","tuned_hyper_parameters.properties").toFile());
+            logger.info("Tuned hyper parameters saved to "+Paths.get(config.getString("output.dir"),"model_predictions","lr","models","tuned_hyper_parameters.properties").toFile().getAbsolutePath());
             logger.info("============================================================");
         }
 
         if (config.getBoolean("train")){
             logger.info("============================================================");
             if (config.getBoolean("train.useTunedHyperParameters")){
-                File hyperFile = new File(config.getString("output.dir"), "tuned_hyper_parameters.properties");
+                File hyperFile = Paths.get(config.getString("output.dir"),"model_predictions","lr","models","tuned_hyper_parameters.properties").toFile();
                 if (!hyperFile.exists()){
                     logger.info("train.useTunedHyperParameters is set to true. But no tuned hyper parameters can be found in the output directory.");
                     logger.info("Please either run hyper parameter tuning, or provide hyper parameters manually and set train.useTunedHyperParameters=false.");
@@ -294,9 +294,10 @@ public class BRLREN {
         if (!unobservedLabels.isEmpty()){
             logger.info("The following labels do not actually appear in the training set and therefore cannot be learned:");
             logger.info(ListUtil.toSimpleString(unobservedLabels));
+            FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions","lr","analysis","unobserved_labels.txt").toFile(), ListUtil.toSimpleString(unobservedLabels));
         }
         String output = config.getString("output.dir");
-        FileUtils.writeStringToFile(new File(output,"unobserved_labels.txt"), ListUtil.toSimpleString(unobservedLabels));
+
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -319,14 +320,11 @@ public class BRLREN {
         logger.info("training done!");
         logger.info("time spent on training = "+stopWatch);
 
-        Serialization.serialize(cbm, new File(output,"model"));
+        Serialization.serialize(cbm, Paths.get(output,"model_predictions","lr","models","classifier"));
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
-        Serialization.serialize(support, new File(output,"support"));
+        Serialization.serialize(support, Paths.get(output,"model_predictions","lr","models","support"));
 
         featureImportance(config, cbm, trainSet.getFeatureList(), trainSet.getLabelTranslator(),logger);
-
-        logger.info("Making predictions on train set with 3 different predictors designed for different metrics:");
-
     }
 
 
@@ -348,7 +346,8 @@ public class BRLREN {
         }
 
         String output = config.getString("output.dir");
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(new File(output,"top_features.txt")))){
+        Paths.get(output, "model_predictions","lr","analysis").toFile().mkdirs();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(Paths.get(output, "model_predictions","lr","analysis","top_features.txt").toFile()))){
             for (int l=0;l<cbm.getNumClasses();l++){
                 if (cbm.getBinaryClassifiers()[0][l] instanceof LogisticRegression){
                     LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
@@ -379,8 +378,8 @@ public class BRLREN {
                 }
             }
         }
-        logger.info("feature count in each label is saved to the file "+new File(output,"feature_count_in_each_label.txt").getAbsolutePath());
-        FileUtils.writeStringToFile(new File(output,"feature_count_in_each_label.txt"),sbcount.toString());
+        logger.info("feature count in each label is saved to the file "+Paths.get(output, "model_predictions","lr","analysis","feature_count_in_each_label.txt").toFile().getAbsolutePath());
+        FileUtils.writeStringToFile(Paths.get(output, "model_predictions","lr","analysis","feature_count_in_each_label.txt").toFile(),sbcount.toString());
 
     }
 

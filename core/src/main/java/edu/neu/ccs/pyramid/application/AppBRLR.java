@@ -167,6 +167,8 @@ public class AppBRLR {
         calConfig.setEqual("monotonic=true");
         calConfig.setEqual("logScale=false");
         Config.copy(config,calConfig,"report.labelSetLimit");
+        calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
+        calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         return calConfig;
     }
 }
