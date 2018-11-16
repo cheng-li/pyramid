@@ -117,7 +117,7 @@ abstract class AbstractDataSet implements DataSet{
     @Override
     public void setFeatureList(FeatureList featureList) {
         if (featureList.size()!=this.numFeatures){
-            throw new IllegalArgumentException("featureList.size()!=this.numFeatures");
+            throw new IllegalArgumentException("featureList.size()="+featureList.size()+"!=this.numFeatures="+numFeatures);
         }
         this.featureList = featureList;
     }

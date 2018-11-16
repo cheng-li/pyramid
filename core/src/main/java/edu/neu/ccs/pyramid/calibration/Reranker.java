@@ -54,7 +54,7 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     @Override
     public MultiLabel predict(Vector vector) {
         double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
-        Map<MultiLabel,Integer> positionMap = PredictionVectorizer.positionMap(marginals);
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
         BMDistribution bmDistribution = cbm.computeBM(vector,0.001);

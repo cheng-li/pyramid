@@ -180,7 +180,7 @@ public class PredictionVectorizer implements Serializable {
         return monotonicity;
     }
 
-    public RegDataSet createData(List<Instance> instances, LabelTranslator labelTranslator){
+    private RegDataSet createData(List<Instance> instances, LabelTranslator trainLabelTranslator){
         RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(instances.size())
                 .numFeatures(instances.get(0).vector.size())
@@ -220,15 +220,15 @@ public class PredictionVectorizer implements Serializable {
         featureList.add(feature6);
         featureList.add(feature7);
         featureList.add(feature8);
-        for (int l=0;l<labelTranslator.getNumClasses();l++){
+        for (int l=0;l<trainLabelTranslator.getNumClasses();l++){
             Feature feature = new Feature();
-            feature.setName("label_"+labelTranslator.toExtLabel(l));
+            feature.setName("label_"+trainLabelTranslator.toExtLabel(l));
             featureList.add(feature);
         }
 
-        for (int l=0;l<labelTranslator.getNumClasses();l++){
+        for (int l=0;l<trainLabelTranslator.getNumClasses();l++){
             Feature feature = new Feature();
-            feature.setName("label_"+labelTranslator.toExtLabel(l)+"_prob");
+            feature.setName("label_"+trainLabelTranslator.toExtLabel(l)+"_prob");
             featureList.add(feature);
         }
         regDataSet.setFeatureList(featureList);
@@ -239,7 +239,7 @@ public class PredictionVectorizer implements Serializable {
         List<Instance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
                 .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm).stream())
                 .collect(Collectors.toList());
-        RegDataSet regDataSet = createData(instances, calDataSet.getLabelTranslator());
+        RegDataSet regDataSet = createData(instances, cbm.getLabelTranslator());
         return regDataSet;
     }
 

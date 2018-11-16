@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
+import org.apache.hadoop.hdfs.DFSClient;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -167,6 +168,8 @@ public class AppBRLR {
         calConfig.setEqual("monotonic=true");
         calConfig.setEqual("logScale=false");
         Config.copy(config,calConfig,"report.labelSetLimit");
+        Config.copy(config,calConfig,"calibrate.folder");
+        Config.copy(config,calConfig,"predict.mode");
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         return calConfig;

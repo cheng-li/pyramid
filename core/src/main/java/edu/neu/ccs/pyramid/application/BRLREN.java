@@ -422,6 +422,7 @@ public class BRLREN {
                 .setBinaryClassifierType("elasticnet")
                 .setDense(true)
                 .build();
+        cbm.setLabelTranslator(trainSet.getLabelTranslator());
 
         String allowEmpty = config.getString("predict.allowEmpty");
         switch (allowEmpty){

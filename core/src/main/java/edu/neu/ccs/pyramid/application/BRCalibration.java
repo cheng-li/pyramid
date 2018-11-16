@@ -100,12 +100,13 @@ public class BRCalibration {
                 .labelProbs(config.getBoolean("labelProbs"))
                 .position(config.getBoolean("position"))
                 .logScale(config.getBoolean("logScale"))
+                .numCandidates(config.getInt("numCandidates"))
                 .build(train,labelCalibrator);
 
 
 
 
-        RegDataSet calibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm,config.getInt("numCandidates"));
+        RegDataSet calibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm);
 
         VectorCalibrator setCalibrator = null;
 

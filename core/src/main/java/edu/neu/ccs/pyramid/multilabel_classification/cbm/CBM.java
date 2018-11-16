@@ -47,6 +47,8 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
     private String binaryClassifierType;
     private String multiClassClassifierType;
 
+    private LabelTranslator labelTranslator;
+
     private CBM() {
     }
 
@@ -325,7 +327,11 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
 
     @Override
     public LabelTranslator getLabelTranslator() {
-        return null;
+        return labelTranslator;
+    }
+
+    public void setLabelTranslator(LabelTranslator labelTranslator) {
+        this.labelTranslator = labelTranslator;
     }
 
     public void setNumSample(int numSample) {
