@@ -40,29 +40,15 @@ public class TopKFinder {
                                                      VectorCalibrator vectorCalibrator, PredictionVectorizer predictionVectorizer,
                                                      List<MultiLabel> support,
                                                      int top){
-        Set<MultiLabel> supportSets = new HashSet<>(support);
-        List<Pair<MultiLabel,Double>> list = new ArrayList<>();
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
-        int count = 0;
-        for (int i=0;i<Integer.MAX_VALUE;i++) {
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            if (supportSets.contains(candidate)) {
-                Map<MultiLabel,Integer> positionMap = new HashMap<>();
-                positionMap.put(candidate,i);
-                Vector yFeature = predictionVectorizer.feature(bmDistribution,candidate,marginals, Optional.of(positionMap));
-                double pro = vectorCalibrator.calibrate(yFeature);
-                list.add(new Pair<>(candidate,pro));
-                count += 1;
-            }
-            if (count==top){
-                break;
-            }
-        }
-
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        return list.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        return support.stream().map(multiLabel -> {
+            Vector yFeature = predictionVectorizer.feature(bmDistribution,multiLabel,marginals, Optional.of(positionMap));
+            double pro = vectorCalibrator.calibrate(yFeature);
+            return new Pair<>(multiLabel,pro);
+        }).sorted(comparator.reversed()).limit(top).collect(Collectors.toList());
     }
 
 
