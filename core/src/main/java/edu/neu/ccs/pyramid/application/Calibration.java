@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -87,9 +88,12 @@ public class Calibration {
         MultiLabel[] predictions = new MultiLabel[lines.size()];
         for (int i=0;i<lines.size();i++){
             predictions[i] = new MultiLabel();
-            String[] split = lines.get(i).split(" ")[0].split(",");
+            String[] split = lines.get(i).replace(" ","").split(Pattern.quote("("))[0].split(",");
             for (String l: split){
-                predictions[i].addLabel(Integer.parseInt(l));
+                if (!l.isEmpty()){
+                    predictions[i].addLabel(Integer.parseInt(l));
+                }
+
             }
         }
         return predictions;
@@ -100,7 +104,7 @@ public class Calibration {
         List<String> lines = FileUtils.readLines(new File(file));
         double[] scores = new double[lines.size()];
         for (int i=0;i<lines.size();i++){
-            String split = lines.get(i).split(" ")[1].replace("(","").replace(")","");
+            String split = lines.get(i).split(Pattern.quote("("))[1].replace(")","");
             scores[i] = Double.parseDouble(split);
         }
         return scores;
