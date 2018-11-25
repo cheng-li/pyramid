@@ -582,6 +582,7 @@ public class CBMEN {
                 .setDense(true)
                 .build();
 
+        cbm.setLabelTranslator(trainSet.getLabelTranslator());
         String allowEmpty = config.getString("predict.allowEmpty");
         switch (allowEmpty){
             case "true":
