@@ -1,7 +1,6 @@
 package edu.neu.ccs.pyramid.application;
 
 import edu.neu.ccs.pyramid.configuration.Config;
-import org.apache.hadoop.hdfs.DFSClient;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -42,7 +41,7 @@ public class AppBRLR {
         Config calConfig = createBRCalibrationConfig(config);
         App1.main(app1Config);
         BRLREN.main(brConfig);
-        BRCalibration.main(calConfig);
+        BRLRCalibration.main(calConfig);
 
     }
 
@@ -73,7 +72,7 @@ public class AppBRLR {
         Config calConfig = createBRCalibrationConfig(config);
         App1.main(app1Config);
         BRLREN.main(brConfig);
-        BRCalibration.main(calConfig);
+        BRLRCalibration.main(calConfig);
     }
 
     private static Config createApp1Config(Config config){

@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class Calibration {
+public class BRGBCalibration {
     public static void main(Config config, Logger logger) throws Exception{
 
 

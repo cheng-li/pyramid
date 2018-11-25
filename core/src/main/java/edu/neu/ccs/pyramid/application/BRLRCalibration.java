@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class BRCalibration {
+public class BRLRCalibration {
     public static void main(Config config) throws Exception{
 
         Logger logger = Logger.getAnonymousLogger();
