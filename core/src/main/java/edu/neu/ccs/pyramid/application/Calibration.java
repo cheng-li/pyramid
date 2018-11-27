@@ -71,9 +71,10 @@ public class Calibration {
 
         MultiLabel[] validPred = loadPredictions(config.getString("input.validPredictions"));
 
+        int[] ids = loadIds(config.getString("input.validPredictions"));
         double[] validScore = loadScores(config.getString("input.validPredictions"));
 
-        RegDataSet calibratorTrainData = createCaliData(cal,validPred,validScore);
+        RegDataSet calibratorTrainData = createCaliData(cal,validPred,validScore, ids);
 
         VectorCalibrator setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 1);
 
@@ -88,7 +89,7 @@ public class Calibration {
         MultiLabel[] predictions = new MultiLabel[lines.size()];
         for (int i=0;i<lines.size();i++){
             predictions[i] = new MultiLabel();
-            String[] split = lines.get(i).replace(" ","").split(Pattern.quote("("))[0].split(",");
+            String[] split = lines.get(i).split(Pattern.quote("("))[0].split(Pattern.quote(":"))[1].replace(" ","").split(",");
             for (String l: split){
                 if (!l.isEmpty()){
                     predictions[i].addLabel(Integer.parseInt(l));
@@ -110,7 +111,17 @@ public class Calibration {
         return scores;
     }
 
-    private static RegDataSet createCaliData(MultiLabelClfDataSet multiLabelClfDataSet, MultiLabel[] predictions, double[] scores){
+    private static int[] loadIds(String file) throws Exception{
+        List<String> lines = FileUtils.readLines(new File(file));
+        int[] ids = new int[lines.size()];
+        for (int i=0;i<lines.size();i++){
+            String split = lines.get(i).split(Pattern.quote(":"))[0];
+            ids[i] = Integer.parseInt(split);
+        }
+        return ids;
+    }
+
+    private static RegDataSet createCaliData(MultiLabelClfDataSet multiLabelClfDataSet, MultiLabel[] predictions, double[] scores, int[] ids){
         RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(predictions.length)
                 .numFeatures(2)
@@ -118,7 +129,8 @@ public class Calibration {
         for (int i=0;i<predictions.length;i++){
             regDataSet.setFeatureValue(i,0,scores[i]);
             regDataSet.setFeatureValue(i,1,predictions[i].getNumMatchedLabels());
-            if (multiLabelClfDataSet.getMultiLabels()[i].equals(predictions[i])){
+            int id = ids[i];
+            if (multiLabelClfDataSet.getMultiLabels()[id].equals(predictions[i])){
                 regDataSet.setLabel(i,1);
             } else {
                 regDataSet.setLabel(i,0);
@@ -136,7 +148,9 @@ public class Calibration {
         MultiLabel[] predictions = loadPredictions(config.getString("input.testPredictions"));
         double[] scores = loadScores(config.getString("input.testPredictions"));
 
-        RegDataSet calTestData = createCaliData(test,predictions,scores);
+        int[] ids = loadIds(config.getString("input.testPredictions"));
+
+        RegDataSet calTestData = createCaliData(test,predictions,scores, ids);
         if (true) {
             logger.info("calibration performance on test set");
 
