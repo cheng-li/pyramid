@@ -16,6 +16,8 @@ import java.util.stream.IntStream;
  * "Regularization paths for generalized linear models via coordinate descent."
  * Journal of statistical software 33.1 (2010): 1.
  * Created by chengli on 2/18/15.
+ * There is no restriction on instance weights
+ * The loss function is weighted square error/total weight + penalty
  */
 public class ElasticNetLinearRegOptimizer {
     private static final Logger logger = LogManager.getLogger();
