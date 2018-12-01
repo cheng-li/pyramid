@@ -60,7 +60,14 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
 
     private double gradientForInstance(int i){
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
-        return -2*(p-labels[i])*(1-p)*p;
+        //todo
+        double g = -2*(p-labels[i])*(1-p)*p;
+//        if (Math.abs(g)<1){
+//            g = MathUtil.sign(g)*1;
+//        }
+        return g;
+//        return -2*(p-labels[i])*(1-p)*p;
+//        return -2*(p-labels[i]);
     }
 
     @Override
