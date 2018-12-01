@@ -112,7 +112,8 @@ public class AppBRLR {
         brConfig.setString("output.dir",config.getString("output.folder"));
         brConfig.setString("output.verbose","true");
         brConfig.setString("output.log",config.getString("output.log"));
-        brConfig.setString("tune",config.getString("train"));
+        //todo
+        brConfig.setString("tune","false");
         brConfig.setString("train",config.getString("train"));
         brConfig.setString("predict.allowEmpty","auto");
         brConfig.setString("predict.piThreshold","0.001");
@@ -123,14 +124,20 @@ public class AppBRLR {
         brConfig.setString("tune.monitorInterval","1");
         brConfig.setString("tune.earlyStop.minIterations","3");
         brConfig.setString("tune.earlyStop.patience","3");
-        brConfig.setString("train.useTunedHyperParameters","true");
-        brConfig.setString("train.iterations","10");
-        brConfig.setString("train.penalty","0.0001");
+        //todo
+        brConfig.setString("train.useTunedHyperParameters","false");
+        //todo
+        brConfig.setString("train.iterations",config.getString("train.iterations"));
+        //todo
+        brConfig.setString("train.penalty",config.getString("train.penalty"));
+        //todo
+        brConfig.setString("train.l1Ratio",config.getString("train.l1Ratio"));
         brConfig.setString("train.numComponents","1");
         brConfig.setString("train.randomInitialize","false");
         brConfig.setString("train.elasticnet.lineSearch","false");
         brConfig.setString("train.elasticnet.activeSet","true");
-        brConfig.setString("train.updatesPerIteration","5");
+        //todo
+        brConfig.setString("train.updatesPerIteration","1");
         brConfig.setString("train.skipDataThreshold","0.00001");
         brConfig.setString("train.skipLabelThreshold","0.00001");
         brConfig.setString("train.smoothStrength","0.0001");
