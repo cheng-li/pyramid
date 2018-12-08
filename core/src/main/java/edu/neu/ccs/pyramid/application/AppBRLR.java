@@ -144,7 +144,7 @@ public class AppBRLR {
         brConfig.setString("report.labelProbThreshold",config.getString("report.classProbThreshold"));
         brConfig.setString("test","false");
         Config.copy(config,brConfig,"train.useInstanceWeights");
-
+        Config.copy(config, brConfig,"output.modelName");
         return brConfig;
     }
 

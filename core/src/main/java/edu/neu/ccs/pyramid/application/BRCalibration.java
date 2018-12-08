@@ -73,7 +73,7 @@ public class BRCalibration {
         //todo
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
 
-        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models","classifier"));
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models","classifier"));
 
 
         LabelCalibrator labelCalibrator = null;
@@ -135,11 +135,11 @@ public class BRCalibration {
 
 
 
-        Serialization.serialize(labelCalibrator,Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
+        Serialization.serialize(labelCalibrator,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models",
                 "calibrators",config.getString("calibrate.folder"),"label_calibrator").toFile());
-        Serialization.serialize(setCalibrator,Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
+        Serialization.serialize(setCalibrator,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models",
                 "calibrators",config.getString("calibrate.folder"),"set_calibrator").toFile());
-        Serialization.serialize(predictionVectorizer,Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
+        Serialization.serialize(predictionVectorizer,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models",
                 "calibrators",config.getString("calibrate.folder"),"prediction_vectorizer").toFile());
         logger.info("finish training calibrator");
 
@@ -149,15 +149,15 @@ public class BRCalibration {
 
     private static void test(Config config, Logger logger) throws Exception{
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
-        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models","classifier"));
-        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models","classifier"));
+        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models",
                 "calibrators",config.getString("calibrate.folder"),"label_calibrator").toFile());
-        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
+        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models",
                 "calibrators",config.getString("calibrate.folder"),"set_calibrator").toFile());
-        PredictionVectorizer predictionVectorizer = (PredictionVectorizer) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models",
+        PredictionVectorizer predictionVectorizer = (PredictionVectorizer) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models",
                 "calibrators",config.getString("calibrate.folder"),"prediction_vectorizer").toFile());
 
-        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions","lr","models","support").toFile());
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models","support").toFile());
 
 
 
@@ -198,7 +198,7 @@ public class BRCalibration {
         boolean simpleCSV = true;
         if (simpleCSV){
             File testDataFile = new File(config.getString("input.testData"));
-            File csv = Paths.get(config.getString("output.dir"),"model_predictions","lr","predictions",testDataFile.getName()+"_reports","report.csv").toFile();
+            File csv = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"predictions",testDataFile.getName()+"_reports","report.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(cbm, labelCalibrator, setCalibrator,
@@ -210,7 +210,7 @@ public class BRCalibration {
         boolean topSets = true;
         if (topSets){
             File testDataFile = new File(config.getString("input.testData"));
-            File csv = Paths.get(config.getString("output.dir"),"model_predictions","lr","predictions",testDataFile.getName()+"_reports","top_sets.csv").toFile();
+            File csv = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"predictions",testDataFile.getName()+"_reports","top_sets.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> topKSets(config, cbm, labelCalibrator, setCalibrator,
