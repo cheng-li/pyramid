@@ -121,15 +121,15 @@ public class BRLREN {
             logger.info("train.l1Ratio = "+best.hyperParameters.l1Ratio);
             logger.info("train.iterations = "+best.hyperParameters.iterations);
             Config tunedHypers = best.hyperParameters.asConfig();
-            tunedHypers.store(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models","tuned_hyper_parameters.properties").toFile());
-            logger.info("Tuned hyper parameters saved to "+Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models","tuned_hyper_parameters.properties").toFile().getAbsolutePath());
+            tunedHypers.store(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","tuned_hyper_parameters.properties").toFile());
+            logger.info("Tuned hyper parameters saved to "+Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","tuned_hyper_parameters.properties").toFile().getAbsolutePath());
             logger.info("============================================================");
         }
 
         if (config.getBoolean("train")){
             logger.info("============================================================");
             if (config.getBoolean("train.useTunedHyperParameters")){
-                File hyperFile = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"models","tuned_hyper_parameters.properties").toFile();
+                File hyperFile = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","tuned_hyper_parameters.properties").toFile();
                 if (!hyperFile.exists()){
                     logger.info("train.useTunedHyperParameters is set to true. But no tuned hyper parameters can be found in the output directory.");
                     logger.info("Please either run hyper parameter tuning, or provide hyper parameters manually and set train.useTunedHyperParameters=false.");
@@ -294,7 +294,7 @@ public class BRLREN {
         if (!unobservedLabels.isEmpty()){
             logger.info("The following labels do not actually appear in the training set and therefore cannot be learned:");
             logger.info(ListUtil.toSimpleString(unobservedLabels));
-            FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelName"),"analysis","unobserved_labels.txt").toFile(), ListUtil.toSimpleString(unobservedLabels));
+            FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"analysis","unobserved_labels.txt").toFile(), ListUtil.toSimpleString(unobservedLabels));
         }
         String output = config.getString("output.dir");
 
@@ -320,9 +320,9 @@ public class BRLREN {
         logger.info("training done!");
         logger.info("time spent on training = "+stopWatch);
 
-        Serialization.serialize(cbm, Paths.get(output,"model_predictions",config.getString("output.modelName"),"models","classifier"));
+        Serialization.serialize(cbm, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
-        Serialization.serialize(support, Paths.get(output,"model_predictions",config.getString("output.modelName"),"models","support"));
+        Serialization.serialize(support, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","support"));
 
         featureImportance(config, cbm, trainSet.getFeatureList(), trainSet.getLabelTranslator(),logger);
     }
@@ -346,8 +346,8 @@ public class BRLREN {
         }
 
         String output = config.getString("output.dir");
-        Paths.get(output, "model_predictions",config.getString("output.modelName"),"analysis").toFile().mkdirs();
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(Paths.get(output, "model_predictions",config.getString("output.modelName"),"analysis","top_features.txt").toFile()))){
+        Paths.get(output, "model_predictions",config.getString("output.modelFolder"),"analysis").toFile().mkdirs();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(Paths.get(output, "model_predictions",config.getString("output.modelFolder"),"analysis","top_features.txt").toFile()))){
             for (int l=0;l<cbm.getNumClasses();l++){
                 if (cbm.getBinaryClassifiers()[0][l] instanceof LogisticRegression){
                     LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
@@ -378,8 +378,8 @@ public class BRLREN {
                 }
             }
         }
-        logger.info("feature count in each label is saved to the file "+Paths.get(output, "model_predictions",config.getString("output.modelName"),"analysis","feature_count_in_each_label.txt").toFile().getAbsolutePath());
-        FileUtils.writeStringToFile(Paths.get(output, "model_predictions",config.getString("output.modelName"),"analysis","feature_count_in_each_label.txt").toFile(),sbcount.toString());
+        logger.info("feature count in each label is saved to the file "+Paths.get(output, "model_predictions",config.getString("output.modelFolder"),"analysis","feature_count_in_each_label.txt").toFile().getAbsolutePath());
+        FileUtils.writeStringToFile(Paths.get(output, "model_predictions",config.getString("output.modelFolder"),"analysis","feature_count_in_each_label.txt").toFile(),sbcount.toString());
 
     }
 

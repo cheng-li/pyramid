@@ -144,7 +144,7 @@ public class AppBRLR {
         brConfig.setString("report.labelProbThreshold",config.getString("report.classProbThreshold"));
         brConfig.setString("test","false");
         Config.copy(config,brConfig,"train.useInstanceWeights");
-        Config.copy(config, brConfig,"output.modelName");
+        Config.copy(config, brConfig,"output.modelFolder");
         return brConfig;
     }
 
@@ -175,7 +175,7 @@ public class AppBRLR {
         calConfig.setEqual("monotonic=true");
         calConfig.setEqual("logScale=false");
         Config.copy(config,calConfig,"report.labelSetLimit");
-        Config.copy(config,calConfig,"calibrate.folder");
+        Config.copy(config,calConfig,"output.calibratorFolder");
         Config.copy(config,calConfig,"predict.mode");
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
