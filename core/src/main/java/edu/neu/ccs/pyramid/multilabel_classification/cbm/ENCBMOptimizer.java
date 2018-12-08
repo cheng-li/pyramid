@@ -26,6 +26,7 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
     private boolean lineSearch = true;
     private boolean activeSet = false;
     private double[] instanceWeights;
+    private int maxNumLinearRegUpdates = 10;
 
     public ENCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         super(cbm, dataSet);
@@ -59,7 +60,9 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
                 cbm.binaryClassifiers[component][label],  activeDataset, 2, targetsDistribution, overallWeights)
                 .setRegularization(regularizationBinary)
                 .setL1Ratio(l1RatioBinary)
-                .setLineSearch(lineSearch).build();
+                .setLineSearch(lineSearch)
+                .setMaxNumLinearRegUpdates(maxNumLinearRegUpdates)
+                .build();
         elasticNetLogisticTrainer.setActiveSet(activeSet);
         elasticNetLogisticTrainer.getTerminator().setMaxIteration(this.binaryUpdatesPerIter);
         elasticNetLogisticTrainer.optimize();
@@ -79,7 +82,9 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
                 cbm.multiClassClassifier, dataSet, cbm.multiClassClassifier.getNumClasses(), gammas,instanceWeights)
                 .setRegularization(regularizationMultiClass)
                 .setL1Ratio(l1RatioMultiClass)
-                .setLineSearch(lineSearch).build();
+                .setLineSearch(lineSearch)
+                .setMaxNumLinearRegUpdates(maxNumLinearRegUpdates)
+                .build();
         elasticNetLogisticTrainer.setActiveSet(activeSet);
         elasticNetLogisticTrainer.getTerminator().setMaxIteration(this.multiclassUpdatesPerIter);
         elasticNetLogisticTrainer.optimize();
@@ -151,5 +156,9 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
 
     public void setActiveSet(boolean activeSet) {
         this.activeSet = activeSet;
+    }
+
+    public void setMaxNumLinearRegUpdates(int maxNumLinearRegUpdates) {
+        this.maxNumLinearRegUpdates = maxNumLinearRegUpdates;
     }
 }

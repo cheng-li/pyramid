@@ -402,6 +402,7 @@ public class BRLREN {
         optimizer.setMulticlassUpdatesPerIter(config.getInt("train.updatesPerIteration"));
         optimizer.setSkipDataThreshold(config.getDouble("train.skipDataThreshold"));
         optimizer.setSkipLabelThreshold(config.getDouble("train.skipLabelThreshold"));
+        optimizer.setMaxNumLinearRegUpdates(config.getInt("train.maxNumLinearRegUpdates"));
 //
 
         return optimizer;

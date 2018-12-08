@@ -145,6 +145,7 @@ public class AppBRLR {
         brConfig.setString("test","false");
         Config.copy(config,brConfig,"train.useInstanceWeights");
         Config.copy(config, brConfig,"output.modelFolder");
+        Config.copy(config,brConfig,"train.maxNumLinearRegUpdates");
         return brConfig;
     }
 
@@ -179,6 +180,7 @@ public class AppBRLR {
         Config.copy(config,calConfig,"predict.mode");
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
+        Config.copy(config, calConfig,"output.modelFolder");
         return calConfig;
     }
 }

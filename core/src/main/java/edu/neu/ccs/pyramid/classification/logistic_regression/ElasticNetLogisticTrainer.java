@@ -60,6 +60,8 @@ public class ElasticNetLogisticTrainer {
 
     private boolean isActiveSet = false;
 
+    private int maxNumLinearRegUpdates = 10;
+
     public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses,
                                      double[][] targets, double[] weights) {
         return new Builder(logisticRegression, dataSet, numClasses, targets, weights);
@@ -234,7 +236,7 @@ public class ElasticNetLogisticTrainer {
         linearRegTrainer.setL1Ratio(this.l1Ratio);
         linearRegTrainer.setActiveSet(this.isActiveSet);
         //TODO: no large iterations
-        linearRegTrainer.getTerminator().setMaxIteration(10);
+        linearRegTrainer.getTerminator().setMaxIteration(maxNumLinearRegUpdates);
         if (logger.isDebugEnabled()){
             logger.debug("start linearRegTrainer.optimize()");
         }
@@ -438,6 +440,8 @@ public class ElasticNetLogisticTrainer {
         private double epsilon=0.001;
         private boolean lineSearch=true;
 
+        private int maxNumLinearRegUpdates=10;
+
 
         public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels) {
             int numDataPoints = dataSet.getNumDataPoints();
@@ -513,6 +517,11 @@ public class ElasticNetLogisticTrainer {
             return this;
         }
 
+        public Builder setMaxNumLinearRegUpdates(int maxNumLinearRegUpdates) {
+            this.maxNumLinearRegUpdates = maxNumLinearRegUpdates;
+            return this;
+        }
+
         public ElasticNetLogisticTrainer build(){
             ElasticNetLogisticTrainer trainer = new ElasticNetLogisticTrainer();
             trainer.logisticRegression = logisticRegression;
@@ -533,6 +542,7 @@ public class ElasticNetLogisticTrainer {
             trainer.updateClassProbMatrix();
             trainer.updatePredictedCounts();
             trainer.terminator = new Terminator();
+            trainer.maxNumLinearRegUpdates = maxNumLinearRegUpdates;
             return trainer;
         }
     }
