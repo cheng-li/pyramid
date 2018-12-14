@@ -44,9 +44,14 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
     @Override
     protected void addPriors() {
         double average = IntStream.range(0,dataSet.getNumDataPoints()).parallel().mapToDouble(i-> labels[i]*weights[i]).average().getAsDouble();
-        if (average>=1||average<=0){
-            throw new RuntimeException("input average >=1 or <=0");
+        if (average>1){
+            average=0.99;
         }
+
+        if (average<0){
+            average=0.01;
+        }
+
         double inverse = MathUtil.inverseSigmoid(average);
         Regressor constant = new ConstantRegressor(inverse);
         boosting.getEnsemble(0).add(constant);
@@ -62,9 +67,21 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
         //todo
         double g = -2*(p-labels[i])*(1-p)*p;
+        if (labels[i]>=1 && p < 0.9){
+            g = -2*(p-labels[i]);
+        }
+
+        if (labels[i]<=0 && p > 0.1){
+            g = -2*(p-labels[i]);
+        }
+//        double g = -2*(p-labels[i]);
 //        if (Math.abs(g)<1){
 //            g = MathUtil.sign(g)*1;
 //        }
+//        if (labels[i]==1){
+//            System.out.println("**********");
+//        }
+//        System.out.println("p="+p+" label="+labels[i]+" g="+g);
         return g;
 //        return -2*(p-labels[i])*(1-p)*p;
 //        return -2*(p-labels[i]);

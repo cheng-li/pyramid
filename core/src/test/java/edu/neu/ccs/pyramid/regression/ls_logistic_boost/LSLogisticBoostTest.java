@@ -29,9 +29,9 @@ public class LSLogisticBoostTest {
             regDataSet.setFeatureValue(i,0,r);
             regDataSet.setFeatureValue(i,0,s);
             if (r+s<0.1){
-                regDataSet.setLabel(i,1);
+                regDataSet.setLabel(i,2);
             } else {
-                regDataSet.setLabel(i,0);
+                regDataSet.setLabel(i,-2);
             }
         }
 
@@ -50,18 +50,18 @@ public class LSLogisticBoostTest {
             System.out.println(regDataSet.getLabels()[i]+" "+lsLogisticBoost.predict(regDataSet.getRow(i)));
         }
 
-        System.out.println("********************** LSBOOST **************");
-        LSBoost lsBoost = new LSBoost();
-        LSBoostOptimizer lsBoostOptimizer = new LSBoostOptimizer(lsBoost,regDataSet,regTreeFactory);
-        lsBoostOptimizer.initialize();
-        for (int i=0;i<100;i++){
-            System.out.println("training rmse = "+ RMSE.rmse(lsBoost,regDataSet));
-            lsBoostOptimizer.iterate();
-        }
-
-        for (int i=0;i<1000;i++){
-            System.out.println(regDataSet.getLabels()[i]+" "+lsBoost.predict(regDataSet.getRow(i)));
-        }
+//        System.out.println("********************** LSBOOST **************");
+//        LSBoost lsBoost = new LSBoost();
+//        LSBoostOptimizer lsBoostOptimizer = new LSBoostOptimizer(lsBoost,regDataSet,regTreeFactory);
+//        lsBoostOptimizer.initialize();
+//        for (int i=0;i<100;i++){
+//            System.out.println("training rmse = "+ RMSE.rmse(lsBoost,regDataSet));
+//            lsBoostOptimizer.iterate();
+//        }
+//
+//        for (int i=0;i<1000;i++){
+//            System.out.println(regDataSet.getLabels()[i]+" "+lsBoost.predict(regDataSet.getRow(i)));
+//        }
     }
 
 
