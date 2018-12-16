@@ -15,7 +15,7 @@ import java.util.Arrays;
 
 public class LSLogisticBoostTest {
     public static void main(String[] args) throws Exception{
-        test1();
+        test3();
     }
 
     private static void test1(){
@@ -101,18 +101,53 @@ public class LSLogisticBoostTest {
         }
 //        System.out.println(Arrays.toString(lsLogisticBoost.predict(train)));
 
-//        LSBoost lsBoost = new LSBoost();
-//        LSBoostOptimizer lsBoostOptimizer = new LSBoostOptimizer(lsBoost, train, regTreeFactory);
-//
-//        System.out.println("LSBOOST");
-//        lsBoostOptimizer.initialize();
-//        for (int i=0;i<100;i++){
-//            System.out.println("training rmse = "+ RMSE.rmse(lsBoost,train));
-//            System.out.println("test rmse = "+ RMSE.rmse(lsBoost,test));
-//            lsBoostOptimizer.iterate();
-//        }
+        LSBoost lsBoost = new LSBoost();
+        LSBoostOptimizer lsBoostOptimizer = new LSBoostOptimizer(lsBoost, train, regTreeFactory);
+
+        System.out.println("LSBOOST");
+        lsBoostOptimizer.initialize();
+        for (int i=0;i<100;i++){
+            System.out.println("training rmse = "+ RMSE.rmse(lsBoost,train));
+            System.out.println("test rmse = "+ RMSE.rmse(lsBoost,test));
+            lsBoostOptimizer.iterate();
+        }
     }
 
+    private static void test3() throws Exception{
+        RegDataSet train = TRECFormat.loadRegDataSet("/Users/chengli/Downloads/spam/train", DataSetType.REG_DENSE,true);
+        RegDataSet test = TRECFormat.loadRegDataSet("/Users/chengli/Downloads/spam/test", DataSetType.REG_DENSE,true);
 
+
+        LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(10);
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost,train,regTreeFactory);
+        optimizer.setShrinkage(1);
+        optimizer.initialize();
+        for (int i=0;i<200;i++){
+            System.out.println("training rmse = "+ RMSE.rmse(lsLogisticBoost,train));
+            System.out.println("test rmse = "+ RMSE.rmse(lsLogisticBoost,test));
+            optimizer.iterate();
+        }
+
+        for (int i=0;i<test.getNumDataPoints();i++){
+            System.out.println(test.getLabels()[i]+" "+lsLogisticBoost.predict(test.getRow(i)));
+        }
+
+        System.out.println("********************** LSBOOST **************");
+        LSBoost lsBoost = new LSBoost();
+        LSBoostOptimizer lsBoostOptimizer = new LSBoostOptimizer(lsBoost,train,regTreeFactory);
+        lsBoostOptimizer.setShrinkage(0.1);
+        lsBoostOptimizer.initialize();
+        for (int i=0;i<100;i++){
+            System.out.println("training rmse = "+ RMSE.rmse(lsBoost,train));
+            System.out.println("test rmse = "+ RMSE.rmse(lsBoost,test));
+            lsBoostOptimizer.iterate();
+        }
+
+        for (int i=0;i<test.getNumDataPoints();i++){
+            System.out.println(test.getLabels()[i]+" "+lsBoost.predict(test.getRow(i)));
+        }
+    }
 
 }

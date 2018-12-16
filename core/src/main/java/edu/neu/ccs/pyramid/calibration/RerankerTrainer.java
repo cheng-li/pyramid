@@ -14,18 +14,20 @@ public class RerankerTrainer {
     private int numIterations;
     private boolean monotonic;
     private int numCandidates;
+    private double shrinkage;
+    private int minDataPerLeaf;
 
 
     public Reranker train(RegDataSet regDataSet, CBM cbm, PredictionVectorizer predictionVectorizer){
         LSBoost lsBoost = new LSBoost();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves);
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory);
         if (monotonic){
             optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
         }
-        optimizer.setShrinkage(0.1);
+        optimizer.setShrinkage(shrinkage);
         optimizer.initialize();
 
         for (int i=1;i<=numIterations;i++){
@@ -39,13 +41,13 @@ public class RerankerTrainer {
     public Reranker trainWithSigmoid(RegDataSet regDataSet, CBM cbm, PredictionVectorizer predictionVectorizer){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves);
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory);
         if (monotonic){
             optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
         }
-        optimizer.setShrinkage(0.1);
+        optimizer.setShrinkage(shrinkage);
         optimizer.initialize();
 
         for (int i=1;i<=numIterations;i++){
@@ -61,6 +63,9 @@ public class RerankerTrainer {
         numIterations = builder.numIterations;
         monotonic = builder.monotonic;
         numCandidates = builder.numCandidates;
+        shrinkage = builder.shrinkage;
+        minDataPerLeaf = builder.minDataPerLeaf;
+
     }
 
     public static Builder newBuilder() {
@@ -73,6 +78,8 @@ public class RerankerTrainer {
         private int numIterations = 100;
         private boolean monotonic = true;
         private int numCandidates = 50;
+        private double shrinkage = 0.1;
+        private int minDataPerLeaf=5;
 
         private Builder() {
         }
@@ -94,6 +101,16 @@ public class RerankerTrainer {
 
         public Builder numCandidates(int val){
             numCandidates = val;
+            return this;
+        }
+
+        public Builder shrinkage(double val){
+            shrinkage = val;
+            return this;
+        }
+
+        public Builder minDataPerLeaf(int val){
+            minDataPerLeaf = val;
             return this;
         }
 

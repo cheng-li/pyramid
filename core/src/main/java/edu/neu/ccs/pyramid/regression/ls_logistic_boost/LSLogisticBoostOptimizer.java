@@ -67,11 +67,11 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
         //todo
         double g = -2*(p-labels[i])*(1-p)*p;
-        if (labels[i]>=1 && p < 0.9){
+        if (labels[i]>=1 && p < 0.95){
             g = -2*(p-labels[i]);
         }
 
-        if (labels[i]<=0 && p > 0.1){
+        if (labels[i]<=0 && p > 0.05){
             g = -2*(p-labels[i]);
         }
 //        double g = -2*(p-labels[i]);
