@@ -181,6 +181,11 @@ public class AppBRLR {
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         Config.copy(config, calConfig,"output.modelFolder");
+        Config.copy(config, calConfig,"report.showPredictionDetail");
+        Config.copy(config, calConfig,"report.rule.limit");
+        Config.copy(config, calConfig,"report.numDocsPerFile");
+
+
         return calConfig;
     }
 }

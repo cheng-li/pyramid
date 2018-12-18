@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BRLRInspector {
+
     public static  MultiLabelPredictionAnalysis analyzePrediction(CBM cbm,
                                                                   LabelCalibrator labelCalibrator,
                                                                   VectorCalibrator setCalibrator,
@@ -82,9 +83,6 @@ public class BRLRInspector {
         ).collect(Collectors.toList());
         predictionAnalysis.setPredictedRanking(labelRanking);
 
-
-        List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = null;
-
         List<Pair<MultiLabel,Double>> topK;
         if (classifier instanceof SupportPredictor){
             topK = TopKFinder.topKinSupport(dataSet.getRow(dataPointIndex),cbm,labelCalibrator,setCalibrator,
@@ -94,7 +92,7 @@ public class BRLRInspector {
                     predictionVectorizer,labelSetLimit);
         }
 
-        labelSetRanking = topK.stream()
+        List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = topK.stream()
                     .map(pair -> {
                     MultiLabel multiLabel = pair.getFirst();
                     double setProb = pair.getSecond();
@@ -110,7 +108,7 @@ public class BRLRInspector {
     }
 
 
-
+    //only show the positive class score calculation
     public static ClassScoreCalculation decisionProcess(CBM cbm, LabelTranslator labelTranslator, double prob,
                                                         Vector vector, int classIndex, int limit){
         LogisticRegression logisticRegression = (LogisticRegression)cbm.getBinaryClassifiers()[0][classIndex];
@@ -121,6 +119,7 @@ public class BRLRInspector {
         List<LinearRule> linearRules = new ArrayList<>();
         Rule bias = new ConstantRule(logisticRegression.getWeights().getBiasForClass(1));
         classScoreCalculation.addRule(bias);
+        //todo speed up using sparsity
         for (int j=0;j<logisticRegression.getNumFeatures();j++){
             Feature feature = logisticRegression.getFeatureList().get(j);
             double weight = logisticRegression.getWeights().getWeightsWithoutBiasForClass(1).get(j);

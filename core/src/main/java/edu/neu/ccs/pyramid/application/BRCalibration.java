@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.application;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.calibration.*;
 
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -8,16 +9,13 @@ import edu.neu.ccs.pyramid.eval.CalibrationEval;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.multilabel_classification.*;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
-
 import edu.neu.ccs.pyramid.multilabel_classification.predictor.IndependentPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor;
-import edu.neu.ccs.pyramid.util.Pair;
-import edu.neu.ccs.pyramid.util.ParallelFileWriter;
-import edu.neu.ccs.pyramid.util.ParallelStringMapper;
-import edu.neu.ccs.pyramid.util.Serialization;
+import edu.neu.ccs.pyramid.util.*;
 import org.apache.mahout.math.Vector;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.*;
@@ -217,6 +215,40 @@ public class BRCalibration {
                     test, i, fClassifier,predictionVectorizer);
             ParallelFileWriter.mapToString(mapper,list, csv,100);
         }
+
+
+
+        boolean rulesToJson = config.getBoolean("report.showPredictionDetail");
+        if (rulesToJson){
+            logger.info("start writing rules to json");
+            int ruleLimit = config.getInt("report.rule.limit");
+            int numDocsPerFile = config.getInt("report.numDocsPerFile");
+            int numFiles = (int)Math.ceil((double)test.getNumDataPoints()/numDocsPerFile);
+
+            double probThreshold=config.getDouble("report.classProbThreshold");
+            int labelSetLimit = config.getInt("report.labelSetLimit");
+
+
+            IntStream.range(0,numFiles).forEach(i->{
+                int start = i*numDocsPerFile;
+                int end = start+numDocsPerFile;
+                List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,test.getNumDataPoints())).parallel().mapToObj(a->
+                        BRLRInspector.analyzePrediction(cbm, labelCalibrator, setCalibrator, test, fClassifier, predictionVectorizer, a,  ruleLimit,labelSetLimit, probThreshold))
+                        .collect(Collectors.toList());
+                ObjectMapper mapper = new ObjectMapper();
+                File testDataFile = new File(config.getString("input.testData"));
+                File jsonFile = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","report_"+(i+1)+".json").toFile();
+                try {
+                    mapper.writeValue(jsonFile, partition);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                logger.info("progress = "+ Progress.percentage(i+1,numFiles));
+            });
+
+            logger.info("finish writing rules to json");
+        }
+
     }
 
 
