@@ -1,181 +1,203 @@
 package edu.neu.ccs.pyramid.application;
 
-import edu.neu.ccs.pyramid.calibration.Displayer;
+import edu.neu.ccs.pyramid.calibration.*;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
-import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
-import edu.neu.ccs.pyramid.multilabel_classification.imlgb.*;
-import edu.neu.ccs.pyramid.util.Pair;
-import edu.neu.ccs.pyramid.util.Serialization;
-import org.apache.mahout.math.Vector;
+import edu.neu.ccs.pyramid.eval.CalibrationEval;
+
+import edu.neu.ccs.pyramid.util.*;
+import org.apache.commons.io.FileUtils;
+
 
 import java.io.File;
+import java.io.Serializable;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * General calibration app for multi-label classifiers that output set scores
+ */
 public class Calibration {
-    public static void main(Config config, Logger logger) throws Exception{
+    public static void main(Config config) throws Exception{
 
+        Logger logger = Logger.getAnonymousLogger();
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
+        }
+        logger.info(config.toString());
 
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testSet"),DataSetType.ML_CLF_SPARSE,true);
-        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validSet"),DataSetType.ML_CLF_SPARSE,true);
-        IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(config.getString("input.model"));
+        if (config.getBoolean("calibrate")){
+            calibrate(config, logger);
+        }
 
-        original(boosting, test, logger);
+        if (config.getBoolean("test")){
+            test(config, logger);
+        }
 
-
-        logger.info("start cardinality based set probability calibration");
-        CardinalityCalibrator cardinalityCalibrator = new CardinalityCalibrator(boosting, valid);
-        logger.info("finish cardinality based set probability calibration");
-
-
-        displayCardinalityCalibration(boosting, test, cardinalityCalibrator, logger);
-
-        labelUncalibration(boosting,test,logger);
-
-        //jointLabelCalibration(boosting, test, valid, logger, config);
-
-        labelIsoCalibration(boosting, test, valid, logger, config);
-
-        Serialization.serialize(cardinalityCalibrator, new File(config.getString("out"),"set_calibration"));
-
-
+        if (fileHandler!=null){
+            fileHandler.close();
+        }
     }
-
-    private static void original( IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger) throws Exception{
-
-
-        PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
-        final  PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
-
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .mapToObj(i->{
-                    Pair<Double,Integer> pairOverall = new Pair<>();
-                    Vector vector = dataSet.getRow(i);
-                    MultiLabel multiLabel = pluginPredictor.predict(vector);
-                    double prob = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
-                    pairOverall.setFirst(prob);
-                    pairOverall.setSecond(0);
-                    if (multiLabel.equals(dataSet.getMultiLabels()[i])) {
-                        pairOverall.setSecond(1);
-                    }
-                    return pairOverall;
-                });
-
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("uncalibrated set probability\n");
-
-        stringBuilder.append(Displayer.displayCalibrationResult(stream));
-
-        logger.info(stringBuilder.toString());
+    public static void main(String[] args) throws Exception {
+        Config config = new Config(args[0]);
+        main(config);
 
     }
 
 
-    private static void displaySetCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, IMLGBIsotonicScaling scaling, Logger logger) throws Exception{
-        PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
-        final  PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
-
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .mapToObj(i->{
-                    Pair<Double,Integer> pairOverall = new Pair<>();
-                    Vector vector = dataSet.getRow(i);
-                    MultiLabel multiLabel = pluginPredictor.predict(vector);
-                    double prob = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
-                    double calibrated = scaling.calibratedProb(prob);
-                    pairOverall.setFirst(calibrated);
-                    pairOverall.setSecond(0);
-                    if (multiLabel.equals(dataSet.getMultiLabels()[i])) {
-                        pairOverall.setSecond(1);
-                    }
-                    return pairOverall;
-                });
+    private static void calibrate(Config config, Logger logger) throws Exception{
 
 
-        logger.info(Displayer.displayCalibrationResult(stream));
+        logger.info("start training calibrator");
+
+        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        MultiLabel[] validPred = loadPredictions(config.getString("input.validPredictions"));
+
+        int[] ids = loadIds(config.getString("input.validPredictions"));
+        double[] validScore = loadScores(config.getString("input.validPredictions"));
+
+        RegDataSet calibratorTrainData = createCaliData(cal,validPred,validScore, ids);
+
+        VectorCalibrator setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 1);
+
+        Serialization.serialize(setCalibrator,Paths.get(config.getString("output.dir"),"set_calibrator").toFile());
+
+        logger.info("finish training calibrator");
     }
 
 
-    private static void displayCardinalityCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, CardinalityCalibrator scaling, Logger logger) throws Exception{
-        PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
-        final  PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
+    private static MultiLabel[] loadPredictions(String file) throws Exception{
+        List<String> lines = FileUtils.readLines(new File(file));
+        MultiLabel[] predictions = new MultiLabel[lines.size()];
+        for (int i=0;i<lines.size();i++){
+            predictions[i] = new MultiLabel();
+            String[] split = lines.get(i).split(Pattern.quote("("))[0].split(Pattern.quote(":"))[1].replace(" ","").split(",");
+            for (String l: split){
+                if (!l.isEmpty()){
+                    predictions[i].addLabel(Integer.parseInt(l));
+                }
 
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .mapToObj(i->{
-                    Pair<Double,Integer> pairOverall = new Pair<>();
-                    Vector vector = dataSet.getRow(i);
-                    MultiLabel multiLabel = pluginPredictor.predict(vector);
-                    double prob = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
-                    double calibratedProb = scaling.calibrate(prob, multiLabel.getNumMatchedLabels());
-                    pairOverall.setFirst(calibratedProb);
-                    pairOverall.setSecond(0);
-                    if (multiLabel.equals(dataSet.getMultiLabels()[i])) {
-                        pairOverall.setSecond(1);
-                    }
-                    return pairOverall;
-                });
-
-
-        logger.info(Displayer.displayCalibrationResult(stream));
-
-
+            }
+        }
+        return predictions;
     }
 
 
-    private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet testSet, MultiLabelClfDataSet validSet, Logger logger, Config config)throws Exception{
-        logger.info("start calibrating label probability ");
-        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, validSet);
-        logger.info("finish calibrating label probability");
+    private static double[] loadScores(String file) throws Exception{
+        List<String> lines = FileUtils.readLines(new File(file));
+        double[] scores = new double[lines.size()];
+        for (int i=0;i<lines.size();i++){
+            String split = lines.get(i).split(Pattern.quote("("))[1].replace(")","");
+            scores[i] = Double.parseDouble(split);
+        }
+        return scores;
+    }
 
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, testSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i-> {
-                    double[] probs = boosting.predictClassProbs(testSet.getRow(i));
-                    double[] calibrated = imlgbLabelIsotonicScaling.calibratedClassProbs(probs);
-                    Stream<Pair<Double,Integer>> pairs = IntStream.range(0, probs.length).mapToObj(a -> {
-                        Pair<Double, Integer> pair = new Pair<>();
-                        pair.setFirst(calibrated[a]);
-                        pair.setSecond(0);
-                        if (testSet.getMultiLabels()[i].matchClass(a)) {
-                            pair.setSecond(1);
-                        }
-                        return pair;
-                    });
-                    return pairs;
-                });
+    private static int[] loadIds(String file) throws Exception{
+        List<String> lines = FileUtils.readLines(new File(file));
+        int[] ids = new int[lines.size()];
+        for (int i=0;i<lines.size();i++){
+            String split = lines.get(i).split(Pattern.quote(":"))[0];
+            ids[i] = Integer.parseInt(split);
+        }
+        return ids;
+    }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("calibrated label probabilities\n");
-        sb.append(Displayer.displayCalibrationResult(stream));
-        logger.info(sb.toString());
-        Serialization.serialize(imlgbLabelIsotonicScaling, new File(config.getString("out"),"label_calibration"));
-
+    private static RegDataSet createCaliData(MultiLabelClfDataSet multiLabelClfDataSet, MultiLabel[] predictions, double[] scores, int[] ids){
+        RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
+                .numDataPoints(predictions.length)
+                .numFeatures(2)
+                .build();
+        for (int i=0;i<predictions.length;i++){
+            regDataSet.setFeatureValue(i,0,scores[i]);
+            regDataSet.setFeatureValue(i,1,predictions[i].getNumMatchedLabels());
+            int id = ids[i];
+            if (multiLabelClfDataSet.getMultiLabels()[id].equals(predictions[i])){
+                regDataSet.setLabel(i,1);
+            } else {
+                regDataSet.setLabel(i,0);
+            }
+        }
+        return regDataSet;
     }
 
 
-    private static void labelUncalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger)throws Exception{
+    private static void test(Config config, Logger logger) throws Exception{
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
 
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i-> {
-                        double[] probs = boosting.predictClassProbs(dataSet.getRow(i));
-                        Stream<Pair<Double,Integer>> pairs = IntStream.range(0, probs.length).mapToObj(a -> {
-                            Pair<Double, Integer> pair = new Pair<>();
-                            pair.setFirst(probs[a]);
-                            pair.setSecond(0);
-                            if (dataSet.getMultiLabels()[i].matchClass(a)) {
-                                pair.setSecond(1);
-                            }
-                            return pair;
-                        });
-                        return pairs;
-                });
+        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"set_calibrator").toFile());
+
+        MultiLabel[] predictions = loadPredictions(config.getString("input.testPredictions"));
+        double[] scores = loadScores(config.getString("input.testPredictions"));
+
+        int[] ids = loadIds(config.getString("input.testPredictions"));
+
+        RegDataSet calTestData = createCaliData(test,predictions,scores, ids);
+        if (true) {
+            logger.info("calibration performance on test set");
+
+            List<PredictionVectorizer.Instance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
+                    .boxed().map(i -> {
+
+                        PredictionVectorizer.Instance instance = new PredictionVectorizer.Instance();
+                        instance.vector = calTestData.getRow(i);
+                        instance.correctness=calTestData.getLabels()[i];
+                        return instance;
+                    })
+                    .collect(Collectors.toList());
+            eval(instances, setCalibrator, logger);
+        }
 
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("uncalibrated label probabilities\n");
-        sb.append(Displayer.displayCalibrationResult(stream));
-        logger.info(sb.toString());
+
+        double[] calibratedProbs = IntStream.range(0,test.getNumDataPoints()).parallel()
+                .mapToDouble(i->setCalibrator.calibrate(calTestData.getRow(i))).toArray();
+        String result = PrintUtil.toMutipleLines(calibratedProbs);
+        FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"test_calibrated_probabilities.txt").toFile(),result);
+        logger.info("calibrated probabilities for test predictions are saved in "+Paths.get(config.getString("output.dir"),"test_calibrated_probabilities.txt").toFile().getAbsolutePath());
     }
 
+
+    private static BRLRCalibration.CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger){
+        double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
+        double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
+        double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
+        logger.info("mse="+mse);
+        logger.info("absolute calibration error="+ace);
+        logger.info("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
+        logger.info("sharpness="+sharpness);
+        logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
+        logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+        BRLRCalibration.CaliRes caliRes = new BRLRCalibration.CaliRes();
+        caliRes.mse = mse;
+        caliRes.ace= ace;
+        caliRes.sharpness = sharpness;
+        return caliRes;
+    }
+
+
+
+    private static Stream<Pair<Double,Integer>> generateStream(List<PredictionVectorizer.Instance> predictions, VectorCalibrator vectorCalibrator){
+        return predictions.stream()
+                .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),(int)pred.correctness));
+    }
 
 }

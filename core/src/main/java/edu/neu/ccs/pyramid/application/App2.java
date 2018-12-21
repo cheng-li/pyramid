@@ -22,7 +22,6 @@ import edu.neu.ccs.pyramid.util.*;
 import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -83,7 +82,7 @@ public class App2 {
             calibrationConfig.setString("input.validSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.validData")).toString());
             calibrationConfig.setString("input.model", Paths.get(config.getString("output.folder"),"model_app3").toString());
             calibrationConfig.setString("out",config.getString("output.folder"));
-            Calibration.main(calibrationConfig, logger);
+            BRGBCalibration.main(calibrationConfig, logger);
         }
 
 
