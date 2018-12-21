@@ -184,6 +184,7 @@ public class AppBRLR {
         Config.copy(config, calConfig,"report.showPredictionDetail");
         Config.copy(config, calConfig,"report.rule.limit");
         Config.copy(config, calConfig,"report.numDocsPerFile");
+        Config.copy(config, calConfig,"report.classProbThreshold");
 
 
         return calConfig;
