@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PredictionVectorizer implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private boolean logScale;
     private boolean setPrior;
     private boolean brProb;
@@ -31,12 +31,14 @@ public class PredictionVectorizer implements Serializable {
     private boolean position;
     private boolean encodeLabel;
     private boolean labelProbs;
+    private boolean hierarchy;
     private Map<MultiLabel,Double> setPriors;
     private Map<Integer,Double> cardPriors;
     private double[][][] pairPriors;
     private List<Pair<Integer,Integer>> implications;
     private LabelCalibrator labelCalibrator;
     private int numCandidates;
+    private Hierarchy hierarchyRelation;
 
     private PredictionVectorizer(Builder builder) {
         logScale = builder.logScale;
@@ -52,6 +54,7 @@ public class PredictionVectorizer implements Serializable {
         encodeLabel = builder.encodeLabel;
         labelProbs = builder.labelProbs;
         numCandidates = builder.numCandidates;
+        hierarchy = builder.hierarchy;
     }
 
 
@@ -64,12 +67,15 @@ public class PredictionVectorizer implements Serializable {
         return labelCalibrator;
     }
 
+    public void setHierarchyRelation(Hierarchy hierarchyRelation) {
+        this.hierarchyRelation = hierarchyRelation;
+    }
 
     public Vector feature(BMDistribution bmDistribution, MultiLabel multiLabel, double[] calibratedMarginals,
-                           Optional<Map<MultiLabel,Integer>> positionMap){
+                          Optional<Map<MultiLabel,Integer>> positionMap){
 
         int numLabels = calibratedMarginals.length;
-        Vector vector = new RandomAccessSparseVector(9+numLabels+numLabels);
+        Vector vector = new RandomAccessSparseVector(10+numLabels+numLabels);
         if (setPrior){
             if (logScale){
                 vector.set(0,truncatedLog(empiricalPrior(multiLabel, setPriors)));
@@ -130,11 +136,20 @@ public class PredictionVectorizer implements Serializable {
             vector.set(8,pos);
         }
 
+        if (hierarchy){
+            if (hierarchyRelation.satisfy(multiLabel)){
+                vector.set(9, 1);
+            } else {
+                vector.set(9, 0);
+            }
+
+        }
+
         if (encodeLabel){
             for (int l:multiLabel.getMatchedLabels()){
                 //skip new labels
                 if (l<numLabels){
-                    vector.set(l+9,1);
+                    vector.set(l+10,1);
                 }
             }
         }
@@ -144,16 +159,16 @@ public class PredictionVectorizer implements Serializable {
             for (int l=0;l<numLabels;l++){
                 if (multiLabel.matchClass(l)){
                     if (logScale){
-                        vector.set(9+numLabels+l,truncatedLog(calibratedMarginals[l]));
+                        vector.set(10+numLabels+l,truncatedLog(calibratedMarginals[l]));
                     } else {
-                        vector.set(9+numLabels+l,calibratedMarginals[l]);
+                        vector.set(10+numLabels+l,calibratedMarginals[l]);
                     }
 
                 } else {
                     if (logScale){
-                        vector.set(9+numLabels+l,truncatedLog(1-calibratedMarginals[l]));
+                        vector.set(10+numLabels+l,truncatedLog(1-calibratedMarginals[l]));
                     } else {
-                        vector.set(9+numLabels+l,1-calibratedMarginals[l]);
+                        vector.set(10+numLabels+l,1-calibratedMarginals[l]);
                     }
 
                 }
@@ -165,7 +180,7 @@ public class PredictionVectorizer implements Serializable {
 
 
     public int[][] getMonotonicityConstraints(int numLabelsInModel){
-        int[][] monotonicity = new int[1][9+numLabelsInModel+numLabelsInModel];
+        int[][] monotonicity = new int[1][10+numLabelsInModel+numLabelsInModel];
 
         monotonicity[0][0]=1;
         monotonicity[0][1]=1;
@@ -174,8 +189,9 @@ public class PredictionVectorizer implements Serializable {
         monotonicity[0][6]=1;
         monotonicity[0][7]=1;
         monotonicity[0][8]=-1;
+        monotonicity[0][9]=1;
         for (int l=0;l<numLabelsInModel;l++){
-            monotonicity[0][9+numLabelsInModel+l]=1;
+            monotonicity[0][10+numLabelsInModel+l]=1;
         }
         return monotonicity;
     }
@@ -211,6 +227,8 @@ public class PredictionVectorizer implements Serializable {
         feature7.setName("implication");
         Feature feature8 = new Feature();
         feature8.setName("position");
+        Feature feature9 = new Feature();
+        feature9.setName("hierarchy");
         featureList.add(feature0);
         featureList.add(feature1);
         featureList.add(feature2);
@@ -220,6 +238,7 @@ public class PredictionVectorizer implements Serializable {
         featureList.add(feature6);
         featureList.add(feature7);
         featureList.add(feature8);
+        featureList.add(feature9);
         for (int l=0;l<trainLabelTranslator.getNumClasses();l++){
             Feature feature = new Feature();
             feature.setName("label_"+trainLabelTranslator.toExtLabel(l));
@@ -378,6 +397,7 @@ public class PredictionVectorizer implements Serializable {
     }
 
 
+
     private static boolean imply(int l, int m, MultiLabel[] multiLabels){
         for (MultiLabel multiLabel: multiLabels){
             if (multiLabel.matchClass(l)&&!multiLabel.matchClass(m)){
@@ -470,6 +490,7 @@ public class PredictionVectorizer implements Serializable {
         private boolean encodeLabel=true;
         private boolean labelProbs=false;
         private int numCandidates=50;
+        private boolean hierarchy=false;
 
         private Builder() {
         }
@@ -539,6 +560,11 @@ public class PredictionVectorizer implements Serializable {
             return this;
         }
 
+        public Builder hierarchy(boolean val){
+            hierarchy = val;
+            return this;
+        }
+
 
 
         public PredictionVectorizer build(MultiLabelClfDataSet dataSet, LabelCalibrator labelCalibrator) {
@@ -559,6 +585,30 @@ public class PredictionVectorizer implements Serializable {
                 predictionVectorizer.cardPriors.put(multiLabel.getNumMatchedLabels(), cardCount + 1.0 / dataSet.getNumDataPoints());
             }
             predictionVectorizer.labelCalibrator = labelCalibrator;
+
+            return predictionVectorizer;
+        }
+
+
+        public PredictionVectorizer build(MultiLabelClfDataSet dataSet, LabelCalibrator labelCalibrator, Hierarchy hierarchy) {
+            PredictionVectorizer predictionVectorizer = new PredictionVectorizer(this);
+            if (implication) {
+                predictionVectorizer.implications = findImplications(dataSet.getMultiLabels(), dataSet.getNumClasses());
+            }
+
+            if (pairPrior) {
+                predictionVectorizer.pairPriors = computePairPriors(dataSet.getMultiLabels(), dataSet.getNumClasses());
+            }
+            predictionVectorizer.setPriors = new HashMap<>();
+            predictionVectorizer.cardPriors = new HashMap<>();
+            for (MultiLabel multiLabel : dataSet.getMultiLabels()) {
+                double setCount = predictionVectorizer.setPriors.getOrDefault(multiLabel, 0.0);
+                predictionVectorizer.setPriors.put(multiLabel, setCount + 1.0 / dataSet.getNumDataPoints());
+                double cardCount = predictionVectorizer.cardPriors.getOrDefault(multiLabel.getNumMatchedLabels(), 0.0);
+                predictionVectorizer.cardPriors.put(multiLabel.getNumMatchedLabels(), cardCount + 1.0 / dataSet.getNumDataPoints());
+            }
+            predictionVectorizer.labelCalibrator = labelCalibrator;
+            predictionVectorizer.hierarchyRelation = hierarchy;
             return predictionVectorizer;
         }
     }
