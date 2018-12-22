@@ -15,7 +15,8 @@ import java.util.*;
  * Created by chengli on 8/11/14.
  */
 @JsonSerialize(using = Config.Serializer.class)
-public class Config {
+public class Config implements Serializable{
+    private static final long serialVersionUID = 1L;
     private Properties properties;
 
     public Config(String configFile) {
@@ -63,6 +64,11 @@ public class Config {
 
     public void setString(String key, String value){
         this.properties.setProperty(key,value);
+    }
+
+    public void setEqual(String equation){
+        String[] split = equation.split("=");
+        setString(split[0],split[1]);
     }
 
     public int getInt(String key){
@@ -136,6 +142,7 @@ public class Config {
     }
 
     public void store(File file) throws Exception{
+        file.getParentFile().mkdirs();
         try (FileWriter fileWriter = new FileWriter(file);
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)
         ) {

@@ -22,7 +22,6 @@ import edu.neu.ccs.pyramid.util.*;
 import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -73,37 +72,27 @@ public class App2 {
             stopWatch.start();
             train(config, logger);
             logger.info("total training time = "+stopWatch);
+            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
+            config.store(new File(metaDataFolder, "saved_config_app2"));
+        }
 
+        if (config.getBoolean("calibrate")){
             Config calibrationConfig = new Config();
             calibrationConfig.setString("input.testSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.testData")).toString());
             calibrationConfig.setString("input.validSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.validData")).toString());
             calibrationConfig.setString("input.model", Paths.get(config.getString("output.folder"),"model_app3").toString());
             calibrationConfig.setString("out",config.getString("output.folder"));
-            Calibration.main(calibrationConfig, logger);
-
-
-            if (config.getString("predict.target").equals("macroFMeasure")){
-                logger.info("predict.target=macroFMeasure,  user needs to run 'tune' before predictions can be made. " +
-                        "Reports will be generated after tuning.");
-            } else {
-                if (config.getBoolean("train.generateReports")){
-                    report(config,config.getString("input.trainData"), logger);
-                    if (config.getString("predict.target").equals("subsetAccuracy")){
-                        reportCalibrated(config,config.getString("input.trainData"), logger);
-                    }
-                }
-
-            }
-            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
-            config.store(new File(metaDataFolder, "saved_config_app2"));
-
+            BRGBCalibration.main(calibrationConfig, logger);
         }
+
+
 
         if (config.getBoolean("tune")){
             tuneForMacroF(config, logger);
-            File metaDataFolder = new File(config.getString("input.folder"),"meta_data");
-            Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app2"));
-            if (savedConfig.getBoolean("train.generateReports")){
+        }
+
+        if (config.getBoolean("train")){
+            if (config.getBoolean("train.generateReports")){
                 report(config,config.getString("input.trainData"), logger);
                 if (config.getString("predict.target").equals("subsetAccuracy")){
                     reportCalibrated(config,config.getString("input.trainData"), logger);
@@ -350,13 +339,13 @@ public class App2 {
 
         }
 
-        if (earlyStop){
-            for (int l=0;l<numClasses;l++){
-                logger.info("----------------------------------------------------");
-                logger.info("test performance history for label "+l+": "+earlyStoppers.get(l).history());
-                logger.info("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
-            }
-        }
+//        if (earlyStop){
+//            for (int l=0;l<numClasses;l++){
+//                logger.info("----------------------------------------------------");
+//                logger.info("test performance history for label "+l+": "+earlyStoppers.get(l).history());
+//                logger.info("model size for label "+l+" = "+(boosting.getRegressors(l).size()-1));
+//            }
+//        }
 
         boolean topFeaturesToFile = true;
 
@@ -601,7 +590,7 @@ public class App2 {
         FileUtils.cleanDirectory(analysisFolder);
 
         IMLGradientBoosting boosting = IMLGradientBoosting.deserialize(new File(output,modelName));
-        IMLGBIsotonicScaling setScaling = (IMLGBIsotonicScaling)Serialization.deserialize(new File(output,setCalibration));
+        CardinalityCalibrator setScaling = (CardinalityCalibrator)Serialization.deserialize(new File(output,setCalibration));
         IMLGBLabelIsotonicScaling labelScaling = (IMLGBLabelIsotonicScaling)Serialization.deserialize(new File(output, labelCalibration));
 
         String predictTarget = config.getString("predict.target");
@@ -630,14 +619,14 @@ public class App2 {
         final PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
 
         MultiLabelClfDataSet dataSet = loadData(config,dataName);
-
-        logger.info("sum of calibrated probabilities");
-
-        double[] all = IntStream.range(0, dataSet.getNumDataPoints())
-                .mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
-                .map(setScaling::calibratedProb).sum()).toArray();
-        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
-        logger.info(descriptiveStatistics.toString());
+//
+//        logger.info("sum of calibrated probabilities");
+//
+//        double[] all = IntStream.range(0, dataSet.getNumDataPoints())
+//                .mapToDouble(dataPointIndex-> Arrays.stream(boosting.predictAllAssignmentProbsWithConstraint(dataSet.getRow(dataPointIndex)))
+//                .map(setScaling::calibratedProb).sum()).toArray();
+//        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(all);
+//        logger.info(descriptiveStatistics.toString());
 
         MLMeasures mlMeasures = new MLMeasures(pluginPredictor,dataSet);
         mlMeasures.getMacroAverage().setLabelTranslator(dataSet.getLabelTranslator());
@@ -696,6 +685,23 @@ public class App2 {
             };
             ParallelFileWriter.mapToString(mapper, reportIdOrder,csv,100);
             logger.info("finish generating simple CSV report");
+        }
+
+
+        boolean topKSets = true;
+        if (topKSets){
+            logger.info("start generating top sets report");
+
+            File csv = new File(analysisFolder,"top_sets.csv");
+            ParallelStringMapper<Integer> mapper = new ParallelStringMapper<Integer>() {
+                @Override
+                public String mapToString(List<Integer> list, int i) {
+                    return IMLGBInspector.topKSets(boosting, setScaling,dataSet,list.get(i),config.getInt("report.labelSetLimit"));
+
+                }
+            };
+            ParallelFileWriter.mapToString(mapper, reportIdOrder,csv,100);
+            logger.info("finish generating top sets report");
         }
 
 

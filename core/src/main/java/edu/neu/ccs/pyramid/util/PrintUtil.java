@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.util;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -9,6 +10,23 @@ import java.util.regex.Pattern;
  * Created by chengli on 9/22/16.
  */
 public class PrintUtil {
+
+    public static String format(double d){
+        if (d==0){
+            return "0";
+        }
+
+        if (d>0.01){
+        DecimalFormat df = new DecimalFormat("0.###");
+        return df.format(d);
+        } else {
+            DecimalFormat df = new DecimalFormat("#.##E0");
+            return df.format(d);
+        }
+
+    }
+
+
     public static String toMutipleLines(Object[] arr){
         StringBuilder sb = new StringBuilder();
         for (Object obj: arr){
@@ -35,6 +53,11 @@ public class PrintUtil {
 
     public static String toSimpleString(double[] arr){
         return Arrays.toString(arr).replaceAll(Pattern.quote("["),"").replaceAll(Pattern.quote("]"),"");
+    }
+
+
+    public static String toSimpleString(List<? extends Object> arr){
+        return arr.toString().replaceAll(Pattern.quote("["),"").replaceAll(Pattern.quote("]"),"");
     }
 
     public static String printWithIndex(List<? extends Object> list, int startIndex){

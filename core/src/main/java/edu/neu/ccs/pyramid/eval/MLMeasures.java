@@ -10,13 +10,15 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * all multi-label measures
  * Created by chengli on 3/24/16.
  */
 @JsonSerialize(using = MLMeasures.Serializer.class)
-public class MLMeasures {
+public class MLMeasures implements Serializable {
+    private static final long serialVersionUID = 1L;
     private MLConfusionMatrix mlConfusionMatrix;
     private InstanceAverage instanceAverage;
     private MacroAverage macroAverage;

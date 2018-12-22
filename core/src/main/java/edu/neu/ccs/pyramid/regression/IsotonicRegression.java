@@ -1,20 +1,26 @@
 package edu.neu.ccs.pyramid.regression;
 
+import edu.neu.ccs.pyramid.calibration.BucketInfo;
+import edu.neu.ccs.pyramid.calibration.StreamGenerator;
+import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
+import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * follows the algorithm here:
  * http://stat.wikia.com/wiki/Isotonic_regression
  */
 
-public class IsotonicRegression implements Serializable{
+public class IsotonicRegression implements Regressor{
     private static final long serialVersionUID = 1L;
     //sorted locations
     private double[] locations;
@@ -50,6 +56,32 @@ public class IsotonicRegression implements Serializable{
         this.locations=sortedLocations;
         this.values = fit(sortedNumbers, sortedWeights);
     }
+
+    public IsotonicRegression(WeightedInput weightedInput) {
+        this(weightedInput.locationNonEmpty, weightedInput.accsNonempty, weightedInput.countsNonEmpty);
+    }
+
+
+
+    public IsotonicRegression(Stream<Pair<Double,Integer>> stream){
+        this(new WeightedInput(stream));
+    }
+
+
+
+    public static IsotonicRegression train(StreamGenerator streamGenerator){
+        Stream<Pair<Vector,Integer>> stream = streamGenerator.generateStream();
+        Stream singleStream = stream.map(s->new Pair<>(s.getFirst().get(0),s.getSecond()));
+        IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream);
+        return isotonicRegression;
+    }
+
+    public static IsotonicRegression train(Stream<Pair<Vector,Integer>> stream){
+        Stream singleStream = stream.map(s->new Pair<>(s.getFirst().get(0),s.getSecond()));
+        IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream);
+        return isotonicRegression;
+    }
+
 
     public double[] getLocations() {
         return locations;
@@ -155,6 +187,16 @@ public class IsotonicRegression implements Serializable{
         return sb.toString();
     }
 
+    @Override
+    public double predict(Vector vector) {
+        return predict(vector.get(0));
+    }
+
+    @Override
+    public FeatureList getFeatureList() {
+        return null;
+    }
+
     private static class Element{
         Element(double location, double number, double weight) {
             this.location = location;
@@ -165,5 +207,53 @@ public class IsotonicRegression implements Serializable{
         private double location;
         private double number;
         private double weight;
+    }
+
+
+
+    public static class WeightedInput{
+        private double[] locationNonEmpty;
+        private double[] accsNonempty;
+        private double[] countsNonEmpty;
+
+        public WeightedInput(Stream<Pair<Double,Integer>> stream) {
+            //todo deal with the stream better
+            List<Pair<Double,Integer>> streamCopy = stream.collect(Collectors.toList());
+            double min = streamCopy.stream().mapToDouble(Pair::getFirst).min().getAsDouble();
+            double max = streamCopy.stream().mapToDouble(Pair::getFirst).max().getAsDouble();
+            final int numBuckets = 10000;
+            double bucketLength = (max-min)/numBuckets;
+            double[] locations = new double[numBuckets];
+            for (int i=0;i<numBuckets;i++){
+                locations[i]= min+i*bucketLength + 0.5*bucketLength;
+            }
+
+
+            BucketInfo total = BucketInfo.aggregate(streamCopy.parallelStream(), numBuckets, min, max);
+
+            double[] counts = total.counts;
+            double[] sums = total.sumLabels;
+
+
+            this.countsNonEmpty = IntStream.range(0,counts.length).filter(i->counts[i]!=0)
+                    .mapToDouble(i->counts[i]).toArray();
+            this.locationNonEmpty = IntStream.range(0,counts.length).filter(i->counts[i]!=0)
+                    .mapToDouble(i->locations[i]).toArray();
+            double[] sumNonempty = IntStream.range(0,counts.length).filter(i->counts[i]!=0)
+                    .mapToDouble(i->sums[i]).toArray();
+            this. accsNonempty = IntStream.range(0,countsNonEmpty.length)
+                    .mapToDouble(i->sumNonempty[i]/countsNonEmpty[i]).toArray();
+        }
+
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("WeightedInput{");
+            sb.append("locationNonEmpty=").append(Arrays.toString(locationNonEmpty));
+            sb.append(", accsNonempty=").append(Arrays.toString(accsNonempty));
+            sb.append(", countsNonEmpty=").append(Arrays.toString(countsNonEmpty));
+            sb.append('}');
+            return sb.toString();
+        }
     }
 }

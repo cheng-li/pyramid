@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import edu.neu.ccs.pyramid.classification.ClassProbability;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Created by chengli on 2/28/15.
  */
+@JsonPropertyOrder({"internalId","id","internalLabels","labels","probForTrueLabels", "internalPrediction","prediction","probForPredictedLabels","predictedRanking","predictedLabelSetRanking","classScoreCalculations"})
 public class MultiLabelPredictionAnalysis {
     private int internalId;
     private String id;

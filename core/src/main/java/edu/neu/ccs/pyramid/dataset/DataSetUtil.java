@@ -622,6 +622,85 @@ public class DataSetUtil {
         return dataSet;
     }
 
+    public static DataSet concatenateByRow(DataSet dataSet1, DataSet dataSet2){
+        int numDataPoints1 = dataSet1.getNumDataPoints();
+        int numDataPoints2 = dataSet2.getNumDataPoints();
+        int numDataPoints = numDataPoints1 + numDataPoints2;
+        int numFeatures = dataSet1.getNumFeatures();
+
+        DataSet dataSet = DataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .density(dataSet1.density())
+                .missingValue(dataSet1.hasMissingValue())
+                .build();
+
+
+        int dataIndex = 0;
+        for (int i=0;i<dataSet1.getNumDataPoints();i++){
+            Vector row = dataSet1.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                int j = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(dataIndex,j,value);
+            }
+            dataIndex+=1;
+        }
+
+        for (int i=0;i<dataSet2.getNumDataPoints();i++){
+            Vector row = dataSet2.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                int j = element.index();
+                double value = element.get();
+                dataSet.setFeatureValue(dataIndex,j,value);
+            }
+
+            dataIndex+=1;
+        }
+
+        dataSet.setFeatureList(dataSet1.getFeatureList());
+        //id translator is not set
+
+        return dataSet;
+    }
+
+    public static MultiLabelClfDataSet concatenateByRow(List<MultiLabelClfDataSet> dataSets){
+        int numDataPoints = 0;
+        for (MultiLabelClfDataSet dataSet: dataSets){
+            numDataPoints += dataSet.getNumDataPoints();
+        }
+        int numFeatures = dataSets.get(0).getNumFeatures();
+        int numClasses = dataSets.get(0).getNumClasses();
+
+        MultiLabelClfDataSet dataSet = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(numClasses)
+                .density(dataSets.get(0).density())
+                .missingValue(dataSets.get(0).hasMissingValue())
+                .build();
+
+        IdTranslator idTranslator = new IdTranslator();
+        int dataIndex = 0;
+        for (MultiLabelClfDataSet ds: dataSets){
+            for (int i=0;i<ds.getNumDataPoints();i++){
+                Vector row = ds.getRow(i);
+                for (Vector.Element element: row.nonZeroes()){
+                    int j = element.index();
+                    double value = element.get();
+                    dataSet.setFeatureValue(dataIndex,j,value);
+                }
+                dataSet.setLabels(dataIndex,ds.getMultiLabels()[i]);
+                idTranslator.addData(dataIndex,ds.getIdTranslator().toExtId(i));
+                dataIndex+=1;
+            }
+        }
+
+
+        dataSet.setFeatureList(dataSets.get(0).getFeatureList());
+        dataSet.setLabelTranslator(dataSets.get(0).getLabelTranslator());
+        dataSet.setIdTranslator(idTranslator);
+        return dataSet;
+    }
+
     public static MultiLabelClfDataSet concatenateByColumn(MultiLabelClfDataSet dataSet1, MultiLabelClfDataSet dataSet2){
         int numDataPoints = dataSet1.getNumDataPoints();
         int numFeatures1 = dataSet1.getNumFeatures();
@@ -676,6 +755,49 @@ public class DataSetUtil {
         dataSet.setIdTranslator(dataSet1.getIdTranslator());
 
         return dataSet;
+    }
+
+    public static MultiLabelClfDataSet concatenateByColumn(List<MultiLabelClfDataSet> dataSets){
+        int numDataPoints = dataSets.get(0).getNumDataPoints();
+        int numFeatures = 0;
+        for (DataSet dataSet: dataSets){
+            numFeatures += dataSet.getNumFeatures();
+        }
+        MultiLabelClfDataSet merged = MLClfDataSetBuilder.getBuilder()
+                .numDataPoints(numDataPoints).numFeatures(numFeatures)
+                .numClasses(dataSets.get(0).getNumClasses())
+                .density(dataSets.get(0).density())
+                .missingValue(dataSets.get(0).hasMissingValue())
+                .build();
+
+        int featureIndex = 0;
+        for (DataSet dataSet: dataSets){
+            for (int j=0;j<dataSet.getNumFeatures();j++){
+                Vector vector = dataSet.getColumn(j);
+                for (Vector.Element element: vector.nonZeroes()){
+                    int i = element.index();
+                    double value = element.get();
+                    merged.setFeatureValue(i,featureIndex,value);
+                }
+                featureIndex += 1;
+            }
+        }
+
+        for (int i=0;i<merged.getNumDataPoints();i++){
+            merged.setLabels(i,dataSets.get(0).getMultiLabels()[i]);
+        }
+
+        FeatureList featureList = new FeatureList();
+        for (DataSet dataSet: dataSets){
+            for (Feature feature: dataSet.getFeatureList().getAll()){
+                featureList.add(feature);
+            }
+        }
+        merged.setFeatureList(featureList);
+
+        merged.setLabelTranslator(dataSets.get(0).getLabelTranslator());
+        merged.setIdTranslator(dataSets.get(0).getIdTranslator());
+        return merged;
     }
 
     /**
@@ -849,7 +971,7 @@ public class DataSetUtil {
                                                                                           double trainPercentage) {
         int numDataPoints = multiLabelClfDataSet.getNumDataPoints();
         List<Integer> all = IntStream.range(0,numDataPoints).mapToObj(i->i).collect(Collectors.toList());
-        List<Integer> trainIndices = Sampling.sampleByPercentage(all, trainPercentage);
+        List<Integer> trainIndices = Sampling.sampleByPercentage(all, trainPercentage, 0);
 
         Set<Integer> testIndicesSet = new HashSet<>();
         for (int i=0; i<numDataPoints; i++) {
@@ -1314,5 +1436,14 @@ public class DataSetUtil {
             }
         }
         return IntStream.range(0, dataSet.getNumClasses()).filter(l-> !check[l]).boxed().sorted().collect(Collectors.toList());
+    }
+
+    public static void copyFeatureMatrixTo(DataSet source, DataSet destination){
+        for (int i=0;i<source.getNumDataPoints();i++){
+            Vector row = source.getRow(i);
+            for (Vector.Element element: row.nonZeroes()){
+                destination.setFeatureValue(i,element.index(),element.get());
+            }
+        }
     }
 }

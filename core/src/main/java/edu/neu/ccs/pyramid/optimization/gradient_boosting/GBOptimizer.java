@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.dataset.GradientMatrix;
 import edu.neu.ccs.pyramid.dataset.ScoreMatrix;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegressionTree;
 import org.apache.mahout.math.Vector;
 
@@ -23,6 +24,7 @@ public abstract class GBOptimizer {
     protected double[] weights;
     protected boolean isInitialized;
     protected double shrinkage = 1;
+    protected int[][] monotonicity=null;
 
 
     protected GBOptimizer(GradientBoosting boosting, DataSet dataSet,  RegressorFactory factory, double[] weights) {
@@ -37,6 +39,9 @@ public abstract class GBOptimizer {
         this(boosting, dataSet, factory, defaultWeights(dataSet.getNumDataPoints()));
     }
 
+    public void setMonotonicity(int[][] monotonicity) {
+        this.monotonicity = monotonicity;
+    }
 
     /**
      * model specific initialization
@@ -64,7 +69,12 @@ public abstract class GBOptimizer {
 
     protected Regressor fitRegressor(int ensembleIndex){
         double[] gradients = gradient(ensembleIndex);
-        Regressor regressor = factory.fit(dataSet,gradients, weights);
+        Regressor regressor;
+        if (monotonicity==null){
+            regressor = factory.fit(dataSet,gradients, weights);
+        } else {
+            regressor = ((RegTreeFactory) factory).fit(dataSet, gradients, weights, monotonicity[ensembleIndex]);
+        }
         return regressor;
     }
 

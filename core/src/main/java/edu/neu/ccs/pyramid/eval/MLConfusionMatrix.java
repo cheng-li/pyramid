@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import org.apache.mahout.math.Vector;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -13,7 +14,8 @@ import java.util.stream.IntStream;
  * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/2/16.
  */
-public class MLConfusionMatrix {
+public class MLConfusionMatrix implements Serializable {
+    private static final long serialVersionUID = 1L;
     private int numClasses;
     private int numDataPoints;
     //[numData][numClasses]

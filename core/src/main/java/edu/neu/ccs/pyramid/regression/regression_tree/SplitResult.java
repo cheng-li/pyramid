@@ -9,6 +9,7 @@ public class SplitResult {
     private double reduction;
     private double leftCount;
     private double rightCount;
+    private boolean monotonic;
 
     SplitResult() {
     }
@@ -59,6 +60,14 @@ public class SplitResult {
 
     public double getReduction() {
         return reduction;
+    }
+
+    public boolean isMonotonic() {
+        return monotonic;
+    }
+
+    public void setMonotonic(boolean monotonic) {
+        this.monotonic = monotonic;
     }
 
     @Override

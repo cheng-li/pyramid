@@ -11,6 +11,7 @@ import edu.neu.ccs.pyramid.util.PrintUtil;
 import org.apache.mahout.math.Vector;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -22,7 +23,8 @@ import java.util.stream.IntStream;
  * Created by chengli on 3/24/16.
  */
 @JsonSerialize(using = MacroAverage.Serializer.class)
-public class MacroAverage {
+public class MacroAverage implements Serializable {
+    private static final long serialVersionUID = 1L;
     private int numClasses;
     private double f1;
     private double overlap;

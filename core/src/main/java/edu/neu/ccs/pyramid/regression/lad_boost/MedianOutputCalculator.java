@@ -25,4 +25,9 @@ public class MedianOutputCalculator implements LeafOutputCalculator {
 //        double[] a = nonZeros.stream().mapToDouble(b->b).toArray();
 //        return MathUtil.median(a);
     }
+
+    @Override
+    public void setParallel(boolean parallel) {
+
+    }
 }

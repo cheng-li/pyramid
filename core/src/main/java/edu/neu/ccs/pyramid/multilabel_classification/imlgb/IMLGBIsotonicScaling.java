@@ -3,11 +3,15 @@ package edu.neu.ccs.pyramid.multilabel_classification.imlgb;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 import scala.Serializable;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class IMLGBIsotonicScaling implements Serializable{
     private static final long serialVersionUID = 1L;
@@ -18,54 +22,29 @@ public class IMLGBIsotonicScaling implements Serializable{
 //        System.out.println("calibrating with isotonic regression");
         this.boosting = boosting;
         List<MultiLabel> allAssignments = boosting.getAssignments();
-
-
-        final int numBuckets = 10000;
-        double bucketLength = 1.0/numBuckets;
-        double[] locations = new double[numBuckets];
-        for (int i=0;i<numBuckets;i++){
-            locations[i]= i*bucketLength + 0.5*bucketLength;
-        }
-
-        BucketInfo empty = new BucketInfo(numBuckets);
-        BucketInfo total;
-        total = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
-                .mapToObj(i->{
+        Stream<Pair<Double,Integer>> stream =  IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+                .boxed().flatMap(i-> {
                     double[] probs = boosting.predictAllAssignmentProbsWithConstraint(multiLabelClfDataSet.getRow(i));
-                    double[] count = new double[numBuckets];
-                    double[] sum = new double[numBuckets];
-                    for (int a=0;a<probs.length;a++){
-                        int index = (int)Math.floor(probs[a]/bucketLength);
-                        if (index<0){
-                            index=0;
+                    Stream<Pair<Double,Integer>> pairs = IntStream.range(0, probs.length).mapToObj(a -> {
+                        Pair<Double, Integer> pair = new Pair<>();
+                        pair.setFirst(probs[a]);
+                        pair.setSecond(0);
+                        if (allAssignments.get(a).equals(multiLabelClfDataSet.getMultiLabels()[i])) {
+                            pair.setSecond(1);
                         }
-                        if (index>=numBuckets){
-                            index = numBuckets-1;
-                        }
-                        count[index] += 1;
-                        if (allAssignments.get(a).equals(multiLabelClfDataSet.getMultiLabels()[i])){
-                            sum[index] += 1;
-                        } else {
-                            sum[index] += 0;
-                        }
-                    }
-                    return new BucketInfo(count, sum);
-                }).reduce(empty, BucketInfo::add, BucketInfo::add);
-        double[] counts = total.counts;
-        double[] sums = total.sums;
-        double[] accs = new double[counts.length];
-        for (int i=0;i<counts.length;i++){
-            if (counts[i]!=0){
-                accs[i] = sums[i]/counts[i];
-            }
-        }
-        isotonicRegression = new IsotonicRegression(locations, accs, counts);
-//        System.out.println("calibration done");
+                        return pair;
+                    });
+                    return pairs;
+                });
+        isotonicRegression = new IsotonicRegression(stream);
     }
+
 
     public IMLGradientBoosting getBoosting() {
         return boosting;
     }
+
+    public IsotonicRegression getIsotonicRegression(){return isotonicRegression;}
 
     public double calibratedProb(Vector vector, MultiLabel multiLabel){
         double uncalibrated = boosting.predictAssignmentProbWithConstraint(vector, multiLabel);
@@ -76,28 +55,5 @@ public class IMLGBIsotonicScaling implements Serializable{
         return isotonicRegression.predict(uncalibratedProb);
     }
 
-    private static class BucketInfo{
 
-        private BucketInfo(int size) {
-            counts = new double[size];
-            sums = new double[size];
-        }
-
-        private BucketInfo(double[] counts, double[] sums) {
-            this.counts = counts;
-            this.sums = sums;
-        }
-
-        double[] counts;
-        double[] sums;
-
-        static BucketInfo add(BucketInfo bucketInfo1, BucketInfo bucketInfo2){
-            BucketInfo bucketInfo = new BucketInfo(bucketInfo1.counts.length);
-            for (int i=0;i<bucketInfo1.counts.length;i++){
-                bucketInfo.counts[i] = bucketInfo1.counts[i]+bucketInfo2.counts[i];
-                bucketInfo.sums[i] = bucketInfo1.sums[i]+bucketInfo2.sums[i];
-            }
-            return bucketInfo;
-        }
-    }
 }

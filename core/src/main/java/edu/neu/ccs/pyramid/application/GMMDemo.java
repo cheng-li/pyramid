@@ -45,37 +45,37 @@ public class GMMDemo {
             vars[j] = stats.getVariance();
         }
 
-        DataSet dataSet = DataSetBuilder.getBuilder()
-                .numDataPoints(rows)
-                .numFeatures(data.getColumnDimension())
-                .build();
-        for (int i=0;i<dataSet.getNumDataPoints();i++){
-            for (int j=0;j<dataSet.getNumFeatures();j++){
-                if (data.getEntry(i,j)>255.0/2){
-                    dataSet.setFeatureValue(i,j,1);
-                } else {
-                    dataSet.setFeatureValue(i,j,0);
-                }
-
-            }
-        }
-
-        int numComponents = 10;
-
-
-        BM bm = BMSelector.select(dataSet, numComponents, 100);
-        System.out.println(Arrays.toString(bm.getMixtureCoefficients()));
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int k=0;k<numComponents;k++){
-            for (int d=0;d<dataSet.getNumFeatures();d++){
-                stringBuilder.append(bm.getDistributions()[k][d].getP());
-                if (d!=dataSet.getNumFeatures()-1){
-                    stringBuilder.append(",");
-                }
-            }
-            stringBuilder.append("\n");
-        }
-        FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/bm"),stringBuilder.toString());
+//        DataSet dataSet = DataSetBuilder.getBuilder()
+//                .numDataPoints(rows)
+//                .numFeatures(data.getColumnDimension())
+//                .build();
+//        for (int i=0;i<dataSet.getNumDataPoints();i++){
+//            for (int j=0;j<dataSet.getNumFeatures();j++){
+//                if (data.getEntry(i,j)>255.0/2){
+//                    dataSet.setFeatureValue(i,j,1);
+//                } else {
+//                    dataSet.setFeatureValue(i,j,0);
+//                }
+//
+//            }
+//        }
+//
+//        int numComponents = 10;
+//
+//
+//        BM bm = BMSelector.select(dataSet, numComponents, 100);
+//        System.out.println(Arrays.toString(bm.getMixtureCoefficients()));
+//        StringBuilder stringBuilder = new StringBuilder();
+//        for (int k=0;k<numComponents;k++){
+//            for (int d=0;d<dataSet.getNumFeatures();d++){
+//                stringBuilder.append(bm.getDistributions()[k][d].getP());
+//                if (d!=dataSet.getNumFeatures()-1){
+//                    stringBuilder.append(",");
+//                }
+//            }
+//            stringBuilder.append("\n");
+//        }
+//        FileUtils.writeStringToFile(new File("/Users/chengli/tmp/gmm/bm"),stringBuilder.toString());
 
 //        BMTrainer bmTrainer = BMSelector.selectTrainer(dataSet,numComponents,50);
 //

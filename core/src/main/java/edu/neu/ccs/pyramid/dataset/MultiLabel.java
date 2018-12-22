@@ -63,6 +63,12 @@ public class MultiLabel implements Serializable{
         this.labels.clear(k);
     }
 
+    public void removeAllLabels(){
+        for (int l: getMatchedLabels()){
+            removeLabel(l);
+        }
+    }
+
     public void flipLabel(int k){
         this.labels.flip(k);
     }
@@ -128,12 +134,32 @@ public class MultiLabel implements Serializable{
         return true;
     }
 
+    public static boolean agreeOnLabel(MultiLabel multiLabel1, MultiLabel multiLabel2, int labelIndex){
+        if (multiLabel1.matchClass(labelIndex)&&multiLabel2.matchClass(labelIndex)){
+            return true;
+        }
+
+
+        if ((!multiLabel1.matchClass(labelIndex))&&(!multiLabel2.matchClass(labelIndex))){
+            return true;
+        }
+
+        return false;
+
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         sb.append(ListUtil.toSimpleString(getMatchedLabels().stream().sorted().collect(Collectors.toList())));
         sb.append("}");
+        return sb.toString();
+    }
+
+    public String toSimpleString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ListUtil.toSimpleString(getMatchedLabels().stream().sorted().collect(Collectors.toList())));
         return sb.toString();
     }
 

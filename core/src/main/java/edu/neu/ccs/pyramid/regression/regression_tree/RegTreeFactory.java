@@ -29,4 +29,9 @@ public class RegTreeFactory implements RegressorFactory {
     public Regressor fit(DataSet dataSet, double[] labels, double[] weights) {
         return RegTreeTrainer.fit(regTreeConfig,dataSet,labels,weights, leafOutputCalculator);
     }
+
+
+    public Regressor fit(DataSet dataSet, double[] labels, double[] weights, int[] monotonicity) {
+        return RegTreeTrainer.fit(regTreeConfig,dataSet,labels,weights, leafOutputCalculator, monotonicity);
+    }
 }

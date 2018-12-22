@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -37,8 +38,8 @@ public abstract class AbstractCBMOptimizer {
     protected double skipDataThreshold = 1E-5;
 
 
-    protected int multiclassUpdatesPerIter = 20;
-    protected int binaryUpdatesPerIter = 20;
+    protected int multiclassUpdatesPerIter = 10;
+    protected int binaryUpdatesPerIter = 10;
 
     protected double smoothingStrength =0.0001;
 
@@ -273,6 +274,11 @@ public abstract class AbstractCBMOptimizer {
         // it be happen that p >1 for numerical reasons
         if (smoothedPositiveProb>=1){
             smoothedPositiveProb=1;
+        }
+
+        //todo avoid zero probability
+        if (smoothedPositiveProb<1E-30){
+            smoothedPositiveProb = 1E-30;
         }
 
         if (nonSmoothedPositiveProb<skipLabelThreshold || nonSmoothedPositiveProb>1-skipLabelThreshold){

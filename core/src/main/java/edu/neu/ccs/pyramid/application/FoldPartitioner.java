@@ -13,6 +13,10 @@ import java.util.Set;
 public class FoldPartitioner {
     public static void main(String[] args) throws Exception{
         Config config = new Config(args[0]);
+        main(config);
+    }
+
+    public static void main(Config config) throws Exception{
         System.out.println(config);
         String dataType = config.getString("dataSetType");
         switch (dataType) {

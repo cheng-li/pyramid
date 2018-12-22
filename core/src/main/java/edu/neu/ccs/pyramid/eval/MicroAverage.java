@@ -3,6 +3,8 @@ package edu.neu.ccs.pyramid.eval;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import org.apache.mahout.math.Vector;
 
+import java.io.Serializable;
+
 /**
  * Based on
  * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
@@ -10,8 +12,8 @@ import org.apache.mahout.math.Vector;
  * convention: 0=TN, 1=TP, 2=FN, 3=FP
  * Created by chengli on 3/2/16.
  */
-public class MicroAverage {
-
+public class MicroAverage implements Serializable {
+    private static final long serialVersionUID = 1L;
     private double f1;
     private double overlap;
     private double precision;

@@ -10,6 +10,8 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+
 /**
  * CBM with Logistic Regression using ElasticNet optimizer
  * Created by Rainicy on 3/27/17.
@@ -23,9 +25,17 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
     private double l1RatioMultiClass = 0.0;
     private boolean lineSearch = true;
     private boolean activeSet = false;
+    private double[] instanceWeights;
+    private int maxNumLinearRegUpdates = 10;
 
     public ENCBMOptimizer(CBM cbm, MultiLabelClfDataSet dataSet) {
         super(cbm, dataSet);
+        this.instanceWeights = new double[dataSet.getNumDataPoints()];
+        Arrays.fill(instanceWeights,1.0/dataSet.getNumDataPoints());
+    }
+
+    public void setInstanceWeights(double[] instanceWeights) {
+        this.instanceWeights = instanceWeights;
     }
 
     @Override
@@ -41,11 +51,18 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
         int[] binaryLabels = DataSetUtil.toBinaryLabels(activeDataset.getMultiLabels(), label);
         double[][] targetsDistribution = DataSetUtil.labelsToDistributions(binaryLabels, 2);
 
+        double[] overallWeights = new double[activeGammas.length];
+        for (int i=0;i<overallWeights.length;i++){
+            overallWeights[i] = activeGammas[i]*instanceWeights[i];
+        }
+
         ElasticNetLogisticTrainer elasticNetLogisticTrainer = new ElasticNetLogisticTrainer.Builder((LogisticRegression)
-                cbm.binaryClassifiers[component][label],  activeDataset, 2, targetsDistribution, activeGammas)
+                cbm.binaryClassifiers[component][label],  activeDataset, 2, targetsDistribution, overallWeights)
                 .setRegularization(regularizationBinary)
                 .setL1Ratio(l1RatioBinary)
-                .setLineSearch(lineSearch).build();
+                .setLineSearch(lineSearch)
+                .setMaxNumLinearRegUpdates(maxNumLinearRegUpdates)
+                .build();
         elasticNetLogisticTrainer.setActiveSet(activeSet);
         elasticNetLogisticTrainer.getTerminator().setMaxIteration(this.binaryUpdatesPerIter);
         elasticNetLogisticTrainer.optimize();
@@ -62,10 +79,12 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
         }
 
         ElasticNetLogisticTrainer elasticNetLogisticTrainer = new ElasticNetLogisticTrainer.Builder((LogisticRegression)
-                cbm.multiClassClassifier, dataSet, cbm.multiClassClassifier.getNumClasses(), gammas)
+                cbm.multiClassClassifier, dataSet, cbm.multiClassClassifier.getNumClasses(), gammas,instanceWeights)
                 .setRegularization(regularizationMultiClass)
                 .setL1Ratio(l1RatioMultiClass)
-                .setLineSearch(lineSearch).build();
+                .setLineSearch(lineSearch)
+                .setMaxNumLinearRegUpdates(maxNumLinearRegUpdates)
+                .build();
         elasticNetLogisticTrainer.setActiveSet(activeSet);
         elasticNetLogisticTrainer.getTerminator().setMaxIteration(this.multiclassUpdatesPerIter);
         elasticNetLogisticTrainer.optimize();
@@ -81,7 +100,7 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
         double[][] targetsDistribution = DataSetUtil.labelsToDistributions(binaryLabels, 2);
         double[] weights = new double[dataSet.getNumDataPoints()];
         for (int i=0; i< dataSet.getNumDataPoints(); i++) {
-            weights[i] = gammas[i][component];
+            weights[i] = gammas[i][component]*instanceWeights[i];
         }
         LogisticLoss logisticLoss = new LogisticLoss((LogisticRegression) cbm.binaryClassifiers[component][classIndex],
                 dataSet, weights, targetsDistribution, regularizationBinary, l1RatioBinary, false);
@@ -91,7 +110,7 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
     @Override
     protected double multiClassClassifierObj() {
         LogisticLoss logisticLoss =  new LogisticLoss((LogisticRegression) cbm.multiClassClassifier,
-                dataSet, gammas, regularizationMultiClass, l1RatioMultiClass, true);
+                dataSet, instanceWeights,gammas, regularizationMultiClass, l1RatioMultiClass, true);
         return logisticLoss.getValueEL();
     }
 
@@ -137,5 +156,9 @@ public class ENCBMOptimizer  extends AbstractCBMOptimizer {
 
     public void setActiveSet(boolean activeSet) {
         this.activeSet = activeSet;
+    }
+
+    public void setMaxNumLinearRegUpdates(int maxNumLinearRegUpdates) {
+        this.maxNumLinearRegUpdates = maxNumLinearRegUpdates;
     }
 }

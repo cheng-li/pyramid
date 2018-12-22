@@ -240,7 +240,7 @@ public class BMDistribution {
         return sum;
     }
 
-    double[] marginals(){
+    public double[] marginals(){
         double[] m = new double[numLabels];
         for (int l=0;l<numLabels;l++){
             m[l] = marginal(l);
@@ -248,7 +248,12 @@ public class BMDistribution {
         return m;
     }
 
-    List<MultiLabel> sample(int numSamples){
+    /**
+     * may contain duplicates
+     * @param numSamples
+     * @return
+     */
+    public List<MultiLabel> sample(int numSamples){
         List<MultiLabel> list = new ArrayList<>();
         double[] proportions = Arrays.stream(logProportions).map(Math::exp).toArray();
         double[][] classProbs = new double[numComponents][numLabels];

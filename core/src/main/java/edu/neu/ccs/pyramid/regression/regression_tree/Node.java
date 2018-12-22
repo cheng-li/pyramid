@@ -47,6 +47,34 @@ public class Node implements Serializable {
     //todo this should be transient? maybe doesn't matter as it is cleaned
     private double[] probs;
 
+    private transient double lowerBound = Double.NEGATIVE_INFINITY;
+    private transient double upperBound = Double.POSITIVE_INFINITY;
+
+    double getLowerBound() {
+        return lowerBound;
+    }
+
+    double getUpperBound() {
+        return upperBound;
+    }
+
+    void setLowerBound(double lowerBound) {
+        this.lowerBound = lowerBound;
+    }
+
+    void setUpperBound(double upperBound) {
+        this.upperBound = upperBound;
+    }
+
+    void boundValue(){
+        if (value<lowerBound){
+            value = lowerBound;
+        }
+        if (value>upperBound){
+            value = upperBound;
+        }
+    }
+
     boolean isSplitable() {
         return splitable;
     }
