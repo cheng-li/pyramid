@@ -12,16 +12,27 @@ import java.util.stream.Collectors;
 
 public class HierarchicalArffParser {
     public static long parseNumFeatures(File file) throws Exception{
-        return FileUtils.readLines(file).stream().filter(line->line.toLowerCase().startsWith("@attribute"))
-                .filter(line->!line.toLowerCase().startsWith("@attribute class")).count();
+        return FileUtils.readLines(file).stream().filter(line->
+                isFeatureLine(line)).count();
     }
 
     public static LabelTranslator loadLabelTranslator(File file) throws Exception{
-        String def = FileUtils.readLines(file).stream().filter(line->line.toLowerCase().startsWith("@attribute class")).findFirst().get();
+        String def = FileUtils.readLines(file).stream().filter(line->isLabelLine(line)).findFirst().get();
         String part = def.split("\\s+")[3];
         String[] labels = part.split(",");
         LabelTranslator labelTranslator = new LabelTranslator(labels);
         return labelTranslator;
+    }
+
+    private static boolean isFeatureLine(String line){
+        String[] split = line.split("\\s+");
+        return split[0].equalsIgnoreCase("@attribute")&&(!split[1].equalsIgnoreCase("class"));
+    }
+
+
+    private static boolean isLabelLine(String line){
+        String[] split = line.split("\\s+");
+        return split[0].equalsIgnoreCase("@attribute")&&(split[1].equalsIgnoreCase("class"));
     }
 
     public static List<String> getParents(String label){

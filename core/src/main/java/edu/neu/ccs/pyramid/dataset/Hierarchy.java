@@ -28,6 +28,20 @@ public class Hierarchy implements Serializable {
         this.parents.get(l).addAll(parents);
     }
 
+
+    public boolean satisfy(MultiLabel multiLabel){
+        for (int l: multiLabel.getMatchedLabels()){
+            List<Integer> parents = getParentsForLabel(l);
+            for (int p: parents){
+                if (!multiLabel.matchClass(p)){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Hierarchy\n");
