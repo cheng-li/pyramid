@@ -111,4 +111,13 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         }
         return score;
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Reranker{");
+        sb.append("regressor=").append(regressor);
+        sb.append('}');
+        return sb.toString();
+    }
 }
