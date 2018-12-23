@@ -39,6 +39,7 @@ public class PredictionVectorizer implements Serializable {
     private LabelCalibrator labelCalibrator;
     private int numCandidates;
     private Hierarchy hierarchyRelation;
+    private String weight;
 
     private PredictionVectorizer(Builder builder) {
         logScale = builder.logScale;
@@ -55,6 +56,7 @@ public class PredictionVectorizer implements Serializable {
         labelProbs = builder.labelProbs;
         numCandidates = builder.numCandidates;
         hierarchy = builder.hierarchy;
+        weight = builder.weight;
     }
 
 
@@ -196,18 +198,21 @@ public class PredictionVectorizer implements Serializable {
         return monotonicity;
     }
 
-    private RegDataSet createData(List<Instance> instances, LabelTranslator trainLabelTranslator){
+    private Pair<RegDataSet,double[]> createData(List<Instance> instances, LabelTranslator trainLabelTranslator){
         RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(instances.size())
                 .numFeatures(instances.get(0).vector.size())
                 .dense(false)
                 .build();
+        double[] weights = new double[instances.size()];
         for (int i=0;i<instances.size();i++){
             for (int j=0;j<regDataSet.getNumFeatures();j++){
                 regDataSet.setFeatureValue(i,j,instances.get(i).vector.get(j));
             }
             regDataSet.setLabel(i,instances.get(i).correctness);
+            weights[i] = instances.get(i).weight;
         }
+
         FeatureList featureList = new FeatureList();
         Feature feature0 = new Feature();
         feature0.setName("setPrior");
@@ -251,15 +256,14 @@ public class PredictionVectorizer implements Serializable {
             featureList.add(feature);
         }
         regDataSet.setFeatureList(featureList);
-        return regDataSet;
+        return new Pair<>(regDataSet,weights);
     }
 
-    public RegDataSet createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm){
+    public Pair<RegDataSet,double[]> createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm){
         List<Instance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
                 .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm).stream())
                 .collect(Collectors.toList());
-        RegDataSet regDataSet = createData(instances, cbm.getLabelTranslator());
-        return regDataSet;
+        return createData(instances, cbm.getLabelTranslator());
     }
 
     private List<Instance> expand(Vector x, MultiLabel groundTruth,
@@ -267,20 +271,23 @@ public class PredictionVectorizer implements Serializable {
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
         List<Instance> instances = new ArrayList<>();
-        Set<MultiLabel> candidates = new HashSet<>();
-        MultiLabel empty = new MultiLabel();
-        candidates.add(empty);
-        candidates.add(groundTruth);
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
 
+
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         for (int i=0;i<numCandidates;i++){
             MultiLabel multiLabel = dynamicProgramming.nextHighestVector();
-            candidates.add(multiLabel);
+            Instance instance = createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap));
+            if (weight.equals("uniform")){
+                instance.weight=1;
+            } else {
+                //expBase
+                double base = Double.parseDouble(weight.substring(7));
+                instance.weight = Math.pow(base,-1*i);
+            }
+            instances.add(instance);
         }
-        BMDistribution bmDistribution = cbm.computeBM(x,0.001);
-        for (MultiLabel multiLabel: candidates){
-            instances.add(createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap)));
-        }
+
         return instances;
     }
 
@@ -313,6 +320,7 @@ public class PredictionVectorizer implements Serializable {
     public static class Instance{
         public Vector vector;
         public double correctness;
+        public double weight=1;
     }
 
 
@@ -491,6 +499,7 @@ public class PredictionVectorizer implements Serializable {
         private boolean labelProbs=false;
         private int numCandidates=50;
         private boolean hierarchy=false;
+        private String weight="uniform";
 
         private Builder() {
         }
@@ -562,6 +571,11 @@ public class PredictionVectorizer implements Serializable {
 
         public Builder hierarchy(boolean val){
             hierarchy = val;
+            return this;
+        }
+
+        public Builder weight(String val){
+            weight = val;
             return this;
         }
 

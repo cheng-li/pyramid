@@ -18,12 +18,12 @@ public class RerankerTrainer {
     private int minDataPerLeaf;
 
 
-    public Reranker train(RegDataSet regDataSet, CBM cbm, PredictionVectorizer predictionVectorizer){
+    public Reranker train(RegDataSet regDataSet, double[] instanceWeights, CBM cbm, PredictionVectorizer predictionVectorizer){
         LSBoost lsBoost = new LSBoost();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory);
+        LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         if (monotonic){
             optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
         }
@@ -38,12 +38,12 @@ public class RerankerTrainer {
     }
 
 
-    public Reranker trainWithSigmoid(RegDataSet regDataSet, CBM cbm, PredictionVectorizer predictionVectorizer){
+    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, CBM cbm, PredictionVectorizer predictionVectorizer){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory);
+        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         if (monotonic){
             optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
         }
