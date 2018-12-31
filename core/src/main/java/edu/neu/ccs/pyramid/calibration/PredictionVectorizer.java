@@ -272,7 +272,6 @@ public class PredictionVectorizer implements Serializable {
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
         List<Instance> instances = new ArrayList<>();
 
-
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         for (int i=0;i<numCandidates;i++){
@@ -280,10 +279,19 @@ public class PredictionVectorizer implements Serializable {
             Instance instance = createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap));
             if (weight.equals("uniform")){
                 instance.weight=1;
-            } else {
+            } else if (weight.startsWith("expBase")){
                 //expBase
                 double base = Double.parseDouble(weight.substring(7));
                 instance.weight = Math.pow(base,-1*i);
+            } else if (weight.startsWith("downSampleNegRate")){
+                double rate = Double.parseDouble(weight.substring(17));
+                if (instance.correctness==1){
+                    instance.weight=1;
+                } else {
+                    instance.weight=rate;
+                }
+            } else {
+                throw new RuntimeException("unknown weight method");
             }
             instances.add(instance);
         }

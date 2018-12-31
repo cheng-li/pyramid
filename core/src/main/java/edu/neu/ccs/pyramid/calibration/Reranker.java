@@ -12,9 +12,11 @@ import edu.neu.ccs.pyramid.multilabel_classification.cbm.BMDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.Pair;
+import edu.neu.ccs.pyramid.util.PrintUtil;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     private static final long serialVersionUID = 1L;
@@ -52,8 +54,9 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     }
 
     @Override
-    public MultiLabel predict(Vector vector) {
+     public MultiLabel predict(Vector vector) {
         double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
+
         Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
@@ -64,15 +67,23 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
             double score = regressor.predict(feature);
             candidates.add(new Pair<>(candidate,score));
         }
-        AccPredictor accPredictor = new AccPredictor(cbm);
-        accPredictor.setComponentContributionThreshold(0.001);
-        MultiLabel cbmPre = accPredictor.predict(vector);
-        Vector feature = predictionVectorizer.feature(bmDistribution, cbmPre,marginals,Optional.of(positionMap));
-        double score = regressor.predict(feature);
-        candidates.add(new Pair<>(cbmPre,score));
+        //todo
+//        AccPredictor accPredictor = new AccPredictor(cbm);
+//        accPredictor.setComponentContributionThreshold(0.001);
+//        MultiLabel cbmPre = accPredictor.predict(vector);
+//        Vector feature = predictionVectorizer.feature(bmDistribution, cbmPre,marginals,Optional.of(positionMap));
+//        double score = regressor.predict(feature);
+//        candidates.add(new Pair<>(cbmPre,score));
 
 
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
+//        double maxC = candidates.stream().max(comparator).map(pair->pair.getSecond()).get();
+//        List<MultiLabel> ties = candidates.stream().filter(pair->pair.getSecond()==maxC).map(pair->pair.getFirst()).collect(Collectors.toList());
+//        if (ties.size()>1){
+//            System.out.println("marginals = "+ PrintUtil.printWithIndex(marginals));
+//            System.out.println("number of ties = "+ties.size()+", "+ties);
+//        }
+
         return candidates.stream().max(comparator).map(pair->pair.getFirst()).get();
     }
 

@@ -9,6 +9,8 @@ import edu.neu.ccs.pyramid.regression.ls_logistic_boost.LSLogisticBoostOptimizer
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 
+import java.util.Arrays;
+
 public class RerankerTrainer {
     private int numLeaves;
     private int numIterations;
@@ -23,6 +25,7 @@ public class RerankerTrainer {
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        System.out.println("weights = "+ Arrays.toString(instanceWeights));
         LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         if (monotonic){
             optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
