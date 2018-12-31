@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.AccPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.BMDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
+import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.PrintUtil;
@@ -32,6 +33,16 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         this.numCandidate = numCandidate;
         this.predictionVectorizer = predictionVectorizer;
     }
+
+    public PredictionVectorizer getPredictionVectorizer() {
+        return predictionVectorizer;
+    }
+
+    public CBM getCbm() {
+        return cbm;
+    }
+
+
 
     @Override
     public int getNumClasses() {
@@ -86,6 +97,27 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
 
         return candidates.stream().max(comparator).map(pair->pair.getFirst()).get();
     }
+
+
+    public MultiLabel predictByGFM(Vector vector){
+        double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
+
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<MultiLabel> multiLabels = new ArrayList<>();
+        List<Double> probabilities = new ArrayList<>();
+        BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
+        for (int i=0;i<numCandidate;i++){
+            MultiLabel candidate = dynamicProgramming.nextHighestVector();
+            Vector feature = predictionVectorizer.feature(bmDistribution, candidate,marginals,Optional.of(positionMap));
+            double score = regressor.predict(feature);
+            multiLabels.add(candidate);
+            probabilities.add(score);
+        }
+        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+        return generalF1Predictor.predict(cbm.getNumClasses(),multiLabels,probabilities);
+    }
+
 
 
     public boolean isInTopK(Vector vector,  MultiLabel groundTruth){
