@@ -23,11 +23,14 @@ public class TopKFinder {
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
+
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
+
+
         for (int i=0;i<top;i++) {
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            Map<MultiLabel,Integer> positionMap = new HashMap<>();
-            positionMap.put(candidate,i);
-            Vector yFeature = predictionVectorizer.feature(bmDistribution,candidate,marginals, Optional.of(positionMap));
+            Vector yFeature = predictionVectorizer.feature(bmDistribution,candidate,marginals, Optional.of(positionMap), Optional.of(cdfMap));
             double pro = vectorCalibrator.calibrate(yFeature);
             list.add(new Pair<>(candidate,pro));
         }
@@ -42,10 +45,11 @@ public class TopKFinder {
                                                      int top){
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
         return support.stream().map(multiLabel -> {
-            Vector yFeature = predictionVectorizer.feature(bmDistribution,multiLabel,marginals, Optional.of(positionMap));
+            Vector yFeature = predictionVectorizer.feature(bmDistribution,multiLabel,marginals, Optional.of(positionMap), Optional.of(cdfMap));
             double pro = vectorCalibrator.calibrate(yFeature);
             return new Pair<>(multiLabel,pro);
         }).sorted(comparator.reversed()).limit(top).collect(Collectors.toList());

@@ -52,7 +52,7 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     public double prob(Vector vector, MultiLabel multiLabel){
         double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
         BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
-        Vector feature = predictionVectorizer.feature(bmDistribution, multiLabel,marginals,Optional.empty());
+        Vector feature = predictionVectorizer.feature(bmDistribution, multiLabel,marginals,Optional.empty(), Optional.empty());
         double score = regressor.predict(feature);
         if (score>1){
             score=1;
@@ -69,12 +69,13 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
 
         Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
         BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
         for (int i=0;i<numCandidate;i++){
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            Vector feature = predictionVectorizer.feature(bmDistribution, candidate,marginals,Optional.of(positionMap));
+            Vector feature = predictionVectorizer.feature(bmDistribution, candidate,marginals,Optional.of(positionMap), Optional.of(cdfMap));
             double score = regressor.predict(feature);
             candidates.add(new Pair<>(candidate,score));
         }
@@ -103,13 +104,14 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
 
         Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<MultiLabel> multiLabels = new ArrayList<>();
         List<Double> probabilities = new ArrayList<>();
         BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
         for (int i=0;i<numCandidate;i++){
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            Vector feature = predictionVectorizer.feature(bmDistribution, candidate,marginals,Optional.of(positionMap));
+            Vector feature = predictionVectorizer.feature(bmDistribution, candidate,marginals,Optional.of(positionMap), Optional.of(cdfMap));
             double score = regressor.predict(feature);
             multiLabels.add(candidate);
             probabilities.add(score);

@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PredictionVectorizer implements Serializable {
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
     private boolean logScale;
     private boolean setPrior;
     private boolean brProb;
@@ -32,6 +32,7 @@ public class PredictionVectorizer implements Serializable {
     private boolean encodeLabel;
     private boolean labelProbs;
     private boolean hierarchy;
+    private boolean cdf;
     private Map<MultiLabel,Double> setPriors;
     private Map<Integer,Double> cardPriors;
     private double[][][] pairPriors;
@@ -57,6 +58,7 @@ public class PredictionVectorizer implements Serializable {
         numCandidates = builder.numCandidates;
         hierarchy = builder.hierarchy;
         weight = builder.weight;
+        cdf = builder.cdf;
     }
 
 
@@ -74,10 +76,10 @@ public class PredictionVectorizer implements Serializable {
     }
 
     public Vector feature(BMDistribution bmDistribution, MultiLabel multiLabel, double[] calibratedMarginals,
-                          Optional<Map<MultiLabel,Integer>> positionMap){
+                          Optional<Map<MultiLabel,Integer>> positionMap, Optional<Map<MultiLabel,Double>> cdfMap){
 
         int numLabels = calibratedMarginals.length;
-        Vector vector = new RandomAccessSparseVector(10+numLabels+numLabels);
+        Vector vector = new RandomAccessSparseVector(11+numLabels+numLabels);
         if (setPrior){
             if (logScale){
                 vector.set(0,truncatedLog(empiricalPrior(multiLabel, setPriors)));
@@ -147,11 +149,24 @@ public class PredictionVectorizer implements Serializable {
 
         }
 
+        if (cdf){
+            double cdfValue;
+            if (cdfMap.isPresent()){
+                cdfValue = cdfMap.get().getOrDefault(multiLabel,1.0);
+            } else {
+                cdfValue = findCDF(multiLabel, calibratedMarginals);
+            }
+            vector.set(10, cdfValue);
+
+        }
+
+        int offSet = 11;
+
         if (encodeLabel){
             for (int l:multiLabel.getMatchedLabels()){
                 //skip new labels
                 if (l<numLabels){
-                    vector.set(l+10,1);
+                    vector.set(l+offSet,1);
                 }
             }
         }
@@ -161,16 +176,16 @@ public class PredictionVectorizer implements Serializable {
             for (int l=0;l<numLabels;l++){
                 if (multiLabel.matchClass(l)){
                     if (logScale){
-                        vector.set(10+numLabels+l,truncatedLog(calibratedMarginals[l]));
+                        vector.set(offSet+numLabels+l,truncatedLog(calibratedMarginals[l]));
                     } else {
-                        vector.set(10+numLabels+l,calibratedMarginals[l]);
+                        vector.set(offSet+numLabels+l,calibratedMarginals[l]);
                     }
 
                 } else {
                     if (logScale){
-                        vector.set(10+numLabels+l,truncatedLog(1-calibratedMarginals[l]));
+                        vector.set(offSet+numLabels+l,truncatedLog(1-calibratedMarginals[l]));
                     } else {
-                        vector.set(10+numLabels+l,1-calibratedMarginals[l]);
+                        vector.set(offSet+numLabels+l,1-calibratedMarginals[l]);
                     }
 
                 }
@@ -182,7 +197,8 @@ public class PredictionVectorizer implements Serializable {
 
 
     public int[][] getMonotonicityConstraints(int numLabelsInModel){
-        int[][] monotonicity = new int[1][10+numLabelsInModel+numLabelsInModel];
+        int offSet = 11;
+        int[][] monotonicity = new int[1][offSet+numLabelsInModel+numLabelsInModel];
 
         monotonicity[0][0]=1;
         monotonicity[0][1]=1;
@@ -192,8 +208,9 @@ public class PredictionVectorizer implements Serializable {
         monotonicity[0][7]=1;
         monotonicity[0][8]=-1;
         monotonicity[0][9]=1;
+        monotonicity[0][10]=-1;
         for (int l=0;l<numLabelsInModel;l++){
-            monotonicity[0][10+numLabelsInModel+l]=1;
+            monotonicity[0][offSet+numLabelsInModel+l]=1;
         }
         return monotonicity;
     }
@@ -234,6 +251,8 @@ public class PredictionVectorizer implements Serializable {
         feature8.setName("position");
         Feature feature9 = new Feature();
         feature9.setName("hierarchy");
+        Feature feature10 = new Feature();
+        feature10.setName("cdf");
         featureList.add(feature0);
         featureList.add(feature1);
         featureList.add(feature2);
@@ -244,6 +263,7 @@ public class PredictionVectorizer implements Serializable {
         featureList.add(feature7);
         featureList.add(feature8);
         featureList.add(feature9);
+        featureList.add(feature10);
         for (int l=0;l<trainLabelTranslator.getNumClasses();l++){
             Feature feature = new Feature();
             feature.setName("label_"+trainLabelTranslator.toExtLabel(l));
@@ -270,13 +290,14 @@ public class PredictionVectorizer implements Serializable {
                                          CBM cbm){
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
+        Map<MultiLabel, Double> cdfMap = cdfMap(marginals);
         List<Instance> instances = new ArrayList<>();
 
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         for (int i=0;i<numCandidates;i++){
             MultiLabel multiLabel = dynamicProgramming.nextHighestVector();
-            Instance instance = createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap));
+            Instance instance = createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap), Optional.of(cdfMap));
             if (weight.equals("uniform")){
                 instance.weight=1;
             } else if (weight.startsWith("expBase")){
@@ -303,20 +324,20 @@ public class PredictionVectorizer implements Serializable {
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         double[] uncali = cbm.predictClassProbs(x);
         double[] cali = labelCalibrator.calibratedClassProbs(uncali);
-        return createInstance(bmDistribution, prediction, groundTruth,cali, Optional.empty());
+        return createInstance(bmDistribution, prediction, groundTruth,cali, Optional.empty(), Optional.empty());
     }
 
     public Vector feature(CBM cbm, Vector x, MultiLabel prediction){
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         double[] uncali = cbm.predictClassProbs(x);
         double[] cali = labelCalibrator.calibratedClassProbs(uncali);
-        return feature(bmDistribution, prediction,cali, Optional.empty());
+        return feature(bmDistribution, prediction,cali, Optional.empty(), Optional.empty());
     }
 
     private Instance createInstance(BMDistribution bmDistribution, MultiLabel multiLabel, MultiLabel groundtruth, double[] calibratedMarginals,
-                                                         Optional<Map<MultiLabel,Integer>> positionMap){
+                                                         Optional<Map<MultiLabel,Integer>> positionMap, Optional<Map<MultiLabel,Double>> cdfMap){
         Instance instance = new Instance();
-        instance.vector=feature(bmDistribution, multiLabel,calibratedMarginals, positionMap);
+        instance.vector=feature(bmDistribution, multiLabel,calibratedMarginals, positionMap, cdfMap);
         instance.correctness = 0;
         if (multiLabel.equals(groundtruth)){
             instance.correctness=1;
@@ -353,12 +374,39 @@ public class PredictionVectorizer implements Serializable {
         return Integer.MAX_VALUE;
     }
 
+
+    private double findCDF(MultiLabel multiLabel, double[] marginals){
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        double cdf = 0;
+        for (int i=0;i<numCandidates;i++) {
+            MultiLabel candidate = dynamicProgramming.nextHighestVector();
+            if (candidate.equals(multiLabel)) {
+                return cdf;
+            }
+            cdf += brProb(candidate,marginals);
+        }
+        //todo what to return?
+        return 1;
+    }
+
     public Map<MultiLabel, Integer> positionMap(double[] marginals){
         Map<MultiLabel, Integer> map = new HashMap<>();
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         for (int i=0;i<numCandidates;i++) {
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
             map.put(candidate,i);
+        }
+        return map;
+    }
+
+    public Map<MultiLabel, Double> cdfMap(double[] marginals){
+        Map<MultiLabel, Double> map = new HashMap<>();
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        double cdf = 0;
+        for (int i=0;i<numCandidates;i++) {
+            MultiLabel candidate = dynamicProgramming.nextHighestVector();
+            map.put(candidate,cdf);
+            cdf += brProb(candidate,marginals);
         }
         return map;
     }
@@ -507,6 +555,7 @@ public class PredictionVectorizer implements Serializable {
         private boolean labelProbs=false;
         private int numCandidates=50;
         private boolean hierarchy=false;
+        private boolean cdf = true;
         private String weight="uniform";
 
         private Builder() {
@@ -579,6 +628,12 @@ public class PredictionVectorizer implements Serializable {
 
         public Builder hierarchy(boolean val){
             hierarchy = val;
+            return this;
+        }
+
+
+        public Builder cdf(boolean val){
+            cdf = val;
             return this;
         }
 
