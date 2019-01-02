@@ -140,6 +140,8 @@ public class BRLREN {
                 if (earlyStopper.shouldStop()){
                     if (VERBOSE){
                         logger.info("Early Stopper: the training should stop now!");
+                        logger.info("Early Stopper: best iteration found = "+earlyStopper.getBestIteration());
+                        logger.info("Early Stopper: best validation performance = "+earlyStopper.getBestValue());
                     }
 
                     break;
