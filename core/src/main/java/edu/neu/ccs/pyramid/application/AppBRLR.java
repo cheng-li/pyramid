@@ -111,25 +111,16 @@ public class AppBRLR {
         brConfig.setString("output.dir",config.getString("output.folder"));
         brConfig.setString("output.verbose","true");
         brConfig.setString("output.log",config.getString("output.log"));
-        //todo
-        brConfig.setString("tune","false");
+
         brConfig.setString("train",config.getString("train"));
         brConfig.setString("predict.allowEmpty","auto");
         brConfig.setString("predict.piThreshold","0.001");
-        brConfig.setString("tune.targetMetric","instance_set_accuracy");
-        brConfig.setString("tune.penalty.candidates",config.getString("train.penalty.candidates"));
-        brConfig.setString("tune.l1Ratio.candidates",config.getString("train.l1Ratio.candidates"));
-        brConfig.setString("tune.numComponents.candidates","1");
-        brConfig.setString("tune.monitorInterval","1");
-        brConfig.setString("tune.earlyStop.minIterations","3");
-        brConfig.setString("tune.earlyStop.patience","3");
-        //todo
-        brConfig.setString("train.useTunedHyperParameters","false");
-        //todo
-        brConfig.setString("train.iterations",config.getString("train.iterations"));
-        //todo
+
+
+        brConfig.setString("train.maxNumLinearRegUpdates","1");
+
         brConfig.setString("train.penalty",config.getString("train.penalty"));
-        //todo
+
         brConfig.setString("train.l1Ratio",config.getString("train.l1Ratio"));
         brConfig.setString("train.numComponents","1");
         brConfig.setString("train.randomInitialize","false");
@@ -144,7 +135,7 @@ public class AppBRLR {
         brConfig.setString("test","false");
         Config.copy(config,brConfig,"train.useInstanceWeights");
         Config.copy(config, brConfig,"output.modelFolder");
-        Config.copy(config,brConfig,"train.maxNumLinearRegUpdates");
+
         return brConfig;
     }
 
