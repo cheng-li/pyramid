@@ -180,14 +180,16 @@ public class BRLRCalibration {
         logger.info("test performance");
         logger.info(new MLMeasures(test.getNumClasses(),test.getMultiLabels(), predictions).toString());
 
+
         if (true) {
             logger.info("calibration performance on test set");
 
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
                     .collect(Collectors.toList());
+            double targerAccuracy = config.getDouble("calibrate.targetAccuracy");
 
-            eval(instances, setCalibrator, logger);
+            eval(instances, setCalibrator, logger, targerAccuracy);
         }
 
 
@@ -360,7 +362,7 @@ public class BRLRCalibration {
     }
 
 
-    private static CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger){
+    private static CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
@@ -370,6 +372,8 @@ public class BRLRCalibration {
         logger.info("sharpness="+sharpness);
         logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
         logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+        logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getFirst());
+        logger.info("autocoding percentage for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getSecond());
         CaliRes caliRes = new CaliRes();
         caliRes.mse = mse;
         caliRes.ace= ace;

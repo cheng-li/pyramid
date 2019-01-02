@@ -3,6 +3,9 @@ package edu.neu.ccs.pyramid.calibration;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.text.DecimalFormat;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Displayer {
@@ -53,6 +56,28 @@ public class Displayer {
         String result = sb.toString();
         return result;
 
+    }
+
+
+    public static Pair<Double, Double> confidenceThresholdForAccuraccyTarget(double targetaccuracy,Stream<Pair<Double, Integer>> stream){
+        Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(pair->pair.getFirst());
+        List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
+        int sumCorrect = 0;
+        double confidenceThreshold = 0;
+        double autocodePercentage = 0;
+        int size = list.size();
+        Pair<Double, Double> result =new Pair<>();
+        for (int i = 0; i < size; i++){
+            sumCorrect += list.get(i).getSecond();
+            double current_accuracy = (sumCorrect*1.0)/(i+1);
+            if (current_accuracy >= targetaccuracy ){
+                confidenceThreshold = list.get(i).getFirst();
+                autocodePercentage = (i+1)/(size*1.0);
+            }
+        }
+        result.setFirst(confidenceThreshold);
+        result.setSecond(autocodePercentage);
+        return result;
     }
 
 
