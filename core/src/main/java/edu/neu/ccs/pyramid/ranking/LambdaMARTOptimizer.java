@@ -16,8 +16,8 @@ public class LambdaMARTOptimizer extends GBOptimizer {
     private int numQueries;
 
 
-    public LambdaMARTOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory, double[] relevanceGrades, List<List<Integer>> instanceIdsInEachQuery) {
-        super(boosting, dataSet, factory);
+    public LambdaMARTOptimizer(LambdaMART lambdaMART, DataSet dataSet, double[] relevanceGrades, RegressorFactory factory, List<List<Integer>> instanceIdsInEachQuery) {
+        super(lambdaMART, dataSet, factory);
         this.relevanceGrades = relevanceGrades;
         this.instanceIdsInEachQuery = instanceIdsInEachQuery;
         this.numQueries = instanceIdsInEachQuery.size();
