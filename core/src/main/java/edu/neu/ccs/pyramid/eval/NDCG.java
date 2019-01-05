@@ -16,19 +16,19 @@ import java.util.stream.IntStream;
 public class NDCG {
     /**
      * all other ndcg methods use this one internally
-     * @param gradesInRandedList true relevance grades in the ranked list
+     * @param gradesInRankedList true relevance grades in the ranked list
      * @param truncation
      * @return
      */
-    public static double ndcg(int[] gradesInRandedList, int truncation){
+    public static double ndcg(double[] gradesInRankedList, int truncation){
         int truncationUsed = truncation;
-        if (truncation > gradesInRandedList.length){
+        if (truncation > gradesInRankedList.length){
             System.out.println("Warning: truncation "+truncation+" is bigger than the list length "
-                    +gradesInRandedList.length
+                    +gradesInRankedList.length
                     +". Try to use the list length as truncation");
-            truncationUsed = gradesInRandedList.length;
+            truncationUsed = gradesInRankedList.length;
         }
-        return dcg(gradesInRandedList,truncationUsed)/idcg(gradesInRandedList,truncationUsed);
+        return dcg(gradesInRankedList,truncationUsed)/idcg(gradesInRankedList,truncationUsed);
     }
 
     /**
@@ -36,7 +36,7 @@ public class NDCG {
      * @param gradesInRandedList true relevance grades in the ranked list
      * @return
      */
-    public static double ndcg(int[] gradesInRandedList){
+    public static double ndcg(double[] gradesInRandedList){
         int truncation = gradesInRandedList.length;
         return ndcg(gradesInRandedList,truncation);
     }
@@ -48,13 +48,13 @@ public class NDCG {
      * @param truncation
      * @return
      */
-    public static double ndcg(int[] labels, double[] scores, int truncation){
+    public static double ndcg(double[] labels, double[] scores, int truncation){
         if (labels.length!=scores.length){
             throw  new IllegalArgumentException("lengths are different");
         }
         int numData = labels.length;
         int[] sortedIndices = ArgSort.argSortDescending(scores);
-        int[] gradesSortedWithScores = new int[numData];
+        double[] gradesSortedWithScores = new double[numData];
         for (int i=0;i<numData;i++){
             gradesSortedWithScores[i] = labels[sortedIndices[i]];
         }
@@ -67,13 +67,13 @@ public class NDCG {
      * @param scores prediction score of each doc, original order as in data set
      * @return
      */
-    public static double ndcg(int[] labels, double[] scores){
+    public static double ndcg(double[] labels, double[] scores){
         return ndcg(labels,scores,labels.length);
     }
 
     public static double instanceNDCG(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel().mapToDouble(i->{
-            int[] binaryLabels = new int[classifier.getNumClasses()];
+            double[] binaryLabels = new double[classifier.getNumClasses()];
             MultiLabel multiLabel = dataSet.getMultiLabels()[i];
             for (int l:multiLabel.getMatchedLabels()) {
                 binaryLabels[l] = 1;
@@ -89,9 +89,10 @@ public class NDCG {
 
     //==========PRIVATE==========
 
-    private static double idcg(int[] gradesInRandedList, int truncation){
+    // ideal dcg
+    private static double idcg(double[] gradesInRankedList, int truncation){
         //should not sort the original one
-        int[] sortedGrades = Arrays.copyOf(gradesInRandedList, gradesInRandedList.length);
+        double[] sortedGrades = Arrays.copyOf(gradesInRankedList, gradesInRankedList.length);
         Arrays.sort(sortedGrades);
         ArrayUtils.reverse(sortedGrades);
         return dcg(sortedGrades,truncation);
@@ -100,14 +101,14 @@ public class NDCG {
     /**
      * second formula in http://en.wikipedia.org/wiki/Discounted_cumulative_gain
      * use base 2 log
-     * @param gradesInRandedList true relevance grades in the ranked list
+     * @param gradesInRankedList true relevance grades in the ranked list
      * @param truncation
      * @return
      */
-    private static double dcg(int[] gradesInRandedList, int truncation){
+    private static double dcg(double[] gradesInRankedList, int truncation){
         return IntStream.range(0, truncation).parallel()
                 .mapToDouble(i-> {
-                    double nominator = FastMath.pow(2, gradesInRandedList[i])-1;
+                    double nominator = FastMath.pow(2, gradesInRankedList[i])-1;
                     //rank starts at 1
                     double denominator = FastMath.log(2,i + 2);
                     return nominator/denominator;
