@@ -21,6 +21,13 @@ import java.util.stream.IntStream;
  */
 public class DataSetUtil {
 
+
+    public static RegDataSet shuffleRows(RegDataSet dataSet, int randomNumber){
+        List<Integer> indices = IntStream.range(0, dataSet.getNumDataPoints()).boxed().collect(Collectors.toList());
+        Collections.shuffle(indices, new Random(randomNumber));
+        return sampleData(dataSet, indices);
+    }
+
     /**
      *
      * @param dataSet
