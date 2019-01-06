@@ -1,15 +1,18 @@
 package edu.neu.ccs.pyramid.ranking;
 
 import edu.neu.ccs.pyramid.dataset.DataSet;
+import edu.neu.ccs.pyramid.eval.NDCG;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GBOptimizer;
 import edu.neu.ccs.pyramid.optimization.gradient_boosting.GradientBoosting;
 import edu.neu.ccs.pyramid.regression.RegressorFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
 public class LambdaMARTOptimizer extends GBOptimizer {
     private double[] relevanceGrades;
+    private int ndcgTruncationLevel=10;
 
     // format instanceIdsInEachQuery.get(query id).get(local instance id in query) = global instance id in dataset
     private List<List<Integer>> instanceIdsInEachQuery;
@@ -23,6 +26,9 @@ public class LambdaMARTOptimizer extends GBOptimizer {
         this.numQueries = instanceIdsInEachQuery.size();
     }
 
+    public void setNdcgTruncationLevel(int ndcgTruncationLevel) {
+        this.ndcgTruncationLevel = ndcgTruncationLevel;
+    }
 
     private List<Integer> instancesForQuery(int queryId){
         return instanceIdsInEachQuery.get(queryId);
@@ -36,14 +42,25 @@ public class LambdaMARTOptimizer extends GBOptimizer {
         //todo times ndcg delta
         for (int i=0;i<relevance.length;i++){
             if (grade>relevance[i]){
-                gradient += 1.0/(1+Math.exp(score - predictedScores[i]));
+                gradient += 1.0/(1+Math.exp(score - predictedScores[i]))*delta(predictedScores,relevance, dataIndexInQuery, i, ndcgTruncationLevel);
             }
 
             if (grade< relevance[i]){
-                gradient -= 1.0/(1+Math.exp(predictedScores[i]- score));
+                gradient -= 1.0/(1+Math.exp(predictedScores[i]- score))*delta(predictedScores,relevance, dataIndexInQuery, i, ndcgTruncationLevel);
             }
         }
         return gradient;
+    }
+
+    private double delta(double[] predictedScores, double[] relevance, int data1, int data2, int truncation){
+        double ndcg = NDCG.ndcg(relevance,predictedScores,truncation);
+        double[] swapped = Arrays.copyOf(relevance, relevance.length);
+        double data1Rel = relevance[data1];
+        double data2Rel = relevance[data2];
+        swapped[data1] = data2Rel;
+        swapped[data2] = data1Rel;
+        double swappedNDCG = NDCG.ndcg(swapped, predictedScores, truncation);
+        return Math.abs(swappedNDCG-ndcg);
     }
 
     // calculate gradients for all instances in a query

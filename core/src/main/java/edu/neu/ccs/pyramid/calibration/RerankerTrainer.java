@@ -63,12 +63,15 @@ public class RerankerTrainer {
     }
 
 
-    public Reranker trainLambdaMART(PredictionVectorizer.TrainData trainData, CBM cbm, PredictionVectorizer predictionVectorizer){
+    public Reranker trainLambdaMART(PredictionVectorizer.TrainData trainData, CBM cbm, PredictionVectorizer predictionVectorizer, int ndcgTruncationLevel){
         LambdaMART lambdaMART = new LambdaMART();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LambdaMARTOptimizer optimizer = new LambdaMARTOptimizer(lambdaMART, trainData.regDataSet, trainData.regDataSet.getLabels(), regTreeFactory, trainData.instancesForEachQuery);
+
+        optimizer.setNdcgTruncationLevel(ndcgTruncationLevel);
+
         if (monotonic){
             optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
         }
