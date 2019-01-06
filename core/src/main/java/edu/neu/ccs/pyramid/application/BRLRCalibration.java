@@ -105,9 +105,9 @@ public class BRLRCalibration {
 
 
 
-        Pair<RegDataSet,double[]> weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm);
-        RegDataSet calibratorTrainData = weightedCalibratorTrainData.getFirst();
-        double[] weights = weightedCalibratorTrainData.getSecond();
+        PredictionVectorizer.TrainData weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm);
+        RegDataSet calibratorTrainData = weightedCalibratorTrainData.regDataSet;
+        double[] weights = weightedCalibratorTrainData.instanceWeights;
 
         VectorCalibrator setCalibrator = null;
 

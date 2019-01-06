@@ -215,7 +215,7 @@ public class PredictionVectorizer implements Serializable {
         return monotonicity;
     }
 
-    private Pair<RegDataSet,double[]> createData(List<Instance> instances, LabelTranslator trainLabelTranslator){
+    private TrainData createData(List<Instance> instances, LabelTranslator trainLabelTranslator){
         RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(instances.size())
                 .numFeatures(instances.get(0).vector.size())
@@ -276,18 +276,31 @@ public class PredictionVectorizer implements Serializable {
             featureList.add(feature);
         }
         regDataSet.setFeatureList(featureList);
-        return new Pair<>(regDataSet,weights);
+
+        int numQueries = instances.stream().mapToInt(instance->instance.queryIndex).max().getAsInt()+1;
+        List<List<Integer>> instancesForEachQuery = new ArrayList<>();
+        for (int q=0;q<numQueries;q++){
+            instancesForEachQuery.add(new ArrayList<>());
+        }
+
+        for (int i=0;i<instances.size();i++){
+            int q = instances.get(i).queryIndex;
+            instancesForEachQuery.get(q).add(i);
+        }
+
+
+        return new TrainData(regDataSet, weights, instancesForEachQuery);
     }
 
-    public Pair<RegDataSet,double[]> createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm){
+    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm){
         List<Instance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm).stream())
+                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm, i).stream())
                 .collect(Collectors.toList());
         return createData(instances, cbm.getLabelTranslator());
     }
 
     private List<Instance> expand(Vector x, MultiLabel groundTruth,
-                                         CBM cbm){
+                                         CBM cbm, int queryId){
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
         Map<MultiLabel, Double> cdfMap = cdfMap(marginals);
@@ -314,6 +327,9 @@ public class PredictionVectorizer implements Serializable {
             } else {
                 throw new RuntimeException("unknown weight method");
             }
+
+            instance.queryIndex = queryId;
+
             instances.add(instance);
         }
 
@@ -350,6 +366,7 @@ public class PredictionVectorizer implements Serializable {
         public Vector vector;
         public double correctness;
         public double weight=1;
+        public int queryIndex;
     }
 
 
@@ -687,6 +704,19 @@ public class PredictionVectorizer implements Serializable {
             predictionVectorizer.labelCalibrator = labelCalibrator;
             predictionVectorizer.hierarchyRelation = hierarchy;
             return predictionVectorizer;
+        }
+    }
+
+    public static class TrainData{
+        public RegDataSet regDataSet;
+        public double[] instanceWeights;
+        public List<List<Integer>> instancesForEachQuery;
+
+
+        public TrainData(RegDataSet regDataSet, double[] instanceWeights, List<List<Integer>> instancesForEachQuery) {
+            this.regDataSet = regDataSet;
+            this.instanceWeights = instanceWeights;
+            this.instancesForEachQuery = instancesForEachQuery;
         }
     }
 }

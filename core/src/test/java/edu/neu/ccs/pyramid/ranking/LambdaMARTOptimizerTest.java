@@ -34,10 +34,10 @@ public class LambdaMARTOptimizerTest  {
         LambdaMARTOptimizer optimizer = new LambdaMARTOptimizer(lambdaMART,train, train.getLabels(),regTreeFactory, instancesInQuery);
 
         optimizer.initialize();
-        for (int i=0;i<50;i++){
+        for (int i=0;i<500;i++){
             System.out.println("==================================");
             System.out.println("iter "+i+"");
-            System.out.println("ndcg = "+ NDCG.ndcg(train.getLabels(),lambdaMART.predict(train)));
+            System.out.println("ndcg = "+ NDCG.ndcg(test.getLabels(),lambdaMART.predict(test)));
 //            for (int j=0;j<train.getNumDataPoints();j++){
 //                System.out.println("label = "+train.getLabels()[j]+" pred = "+lambdaMART.predict(train.getRow(j)));
 //            }

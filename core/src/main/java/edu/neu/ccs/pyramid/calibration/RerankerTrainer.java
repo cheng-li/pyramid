@@ -2,6 +2,8 @@ package edu.neu.ccs.pyramid.calibration;
 
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
+import edu.neu.ccs.pyramid.ranking.LambdaMART;
+import edu.neu.ccs.pyramid.ranking.LambdaMARTOptimizer;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoostOptimizer;
 import edu.neu.ccs.pyramid.regression.ls_logistic_boost.LSLogisticBoost;
@@ -58,6 +60,26 @@ public class RerankerTrainer {
         }
 
         return new Reranker(lsLogisticBoost, cbm, numCandidates,predictionVectorizer);
+    }
+
+
+    public Reranker trainLambdaMART(PredictionVectorizer.TrainData trainData, CBM cbm, PredictionVectorizer predictionVectorizer){
+        LambdaMART lambdaMART = new LambdaMART();
+
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        LambdaMARTOptimizer optimizer = new LambdaMARTOptimizer(lambdaMART, trainData.regDataSet, trainData.regDataSet.getLabels(), regTreeFactory, trainData.instancesForEachQuery);
+        if (monotonic){
+            optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
+        }
+        optimizer.setShrinkage(shrinkage);
+        optimizer.initialize();
+
+        for (int i=1;i<=numIterations;i++){
+            optimizer.iterate();
+        }
+
+        return new Reranker(lambdaMART, cbm, numCandidates,predictionVectorizer);
     }
 
 
