@@ -24,20 +24,24 @@ public class Displayer {
         double[] accs = new double[counts.length];
         double[] average_confidence = new double[counts.length];
 
+        double datasetSize = 0;
+
         for (int i = 0; i < counts.length; i++) {
             accs[i] = correct[i] / counts[i];
+            datasetSize += counts[i];
         }
         for (int j = 0; j < counts.length; j++) {
             average_confidence[j] = sumProbs[j] / counts[j];
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("#0.0000");
+        DecimalFormat df = new DecimalFormat("#0.0%");
         StringBuilder sb = new StringBuilder();
-        sb.append("interval\t\t").append("total\t\t").append("correct\t\t").append("incorrect\t\t").append("accuracy\t\t").append("average confidence\n");
+        sb.append("interval\t\t").append("total\t\t\t").append("correct\t\t").append("incorrect\t").append("accuracy\t").append("average confidence\n");
         for (int i = 0; i < 10; i++) {
             sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
                     .append(decimalFormat.format((i + 1) * 0.1)).append("]")
-                    .append("\t\t").append(counts[i]).append("\t\t").append(correct[i]).append("\t\t")
+                    .append("\t\t").append(counts[i]).append(" (").append(df.format((counts[i]/datasetSize))).append(")").append("\t\t").append(correct[i]).append("\t\t")
                     .append(counts[i] - correct[i]).append("\t\t");
                     if (Double.isFinite(accs[i])){
                         sb.append(decimalFormat.format(accs[i])).append("\t\t");
