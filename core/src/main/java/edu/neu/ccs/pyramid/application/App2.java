@@ -78,11 +78,18 @@ public class App2 {
 
         if (config.getBoolean("calibrate")){
             Config calibrationConfig = new Config();
-            calibrationConfig.setString("input.testSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.testData")).toString());
             calibrationConfig.setString("input.validSet",Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.validData")).toString());
             calibrationConfig.setString("input.model", Paths.get(config.getString("output.folder"),"model_app3").toString());
             calibrationConfig.setString("out",config.getString("output.folder"));
-            BRGBCalibration.main(calibrationConfig, logger);
+
+            MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(calibrationConfig.getString("input.validSet"),DataSetType.ML_CLF_SPARSE,true);
+            IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(calibrationConfig.getString("input.model"));
+
+
+            logger.info("start cardinality based set probability calibration");
+            CardinalityCalibrator cardinalityCalibrator = new CardinalityCalibrator(boosting, valid);
+            logger.info("finish cardinality based set probability calibration");
+            Serialization.serialize(cardinalityCalibrator, new File(calibrationConfig.getString("out"),"set_calibration"));
         }
 
 
@@ -101,6 +108,12 @@ public class App2 {
         }
 
         if (config.getBoolean("test")){
+
+            MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("input.folder"), "data_sets", config.getString("input.testData")).toString(),DataSetType.ML_CLF_SPARSE,true);
+            IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(Paths.get(config.getString("output.folder"),"model_app3").toString());
+            CardinalityCalibrator cardinalityCalibrator = (CardinalityCalibrator)Serialization.deserialize(Paths.get(config.getString("output.folder"),"set_calibration").toString());
+            BRGBCalibration.displayCardinalityCalibration(boosting, test, cardinalityCalibrator, logger);
+
             report(config,config.getString("input.testData"), logger);
             if (config.getString("predict.target").equals("subsetAccuracy")){
                 reportCalibrated(config,config.getString("input.testData"), logger);
