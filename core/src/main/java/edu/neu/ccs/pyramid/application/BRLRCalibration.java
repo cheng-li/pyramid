@@ -66,7 +66,7 @@ public class BRLRCalibration {
     private static void calibrate(Config config, Logger logger) throws Exception{
 
 
-        logger.info("start training calibrator");
+        logger.info("start training calibrators");
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
         //todo
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
@@ -74,6 +74,7 @@ public class BRLRCalibration {
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
 
 
+        logger.info("start training label calibrator");
         LabelCalibrator labelCalibrator = null;
         switch (config.getString("labelCalibrator")){
             case "isotonic":
@@ -83,7 +84,9 @@ public class BRLRCalibration {
                 labelCalibrator = new IdentityLabelCalibrator();
                 break;
         }
+        logger.info("finish training label calibrator");
 
+        logger.info("start training set calibrator");
 
         PredictionVectorizer predictionVectorizer = PredictionVectorizer.newBuilder()
                 .brProb(config.getBoolean("brProb"))
@@ -131,7 +134,7 @@ public class BRLRCalibration {
                 throw new IllegalArgumentException("illegal setCalibrator");
         }
 
-
+        logger.info("finish training set calibrator");
 
         Serialization.serialize(labelCalibrator,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
@@ -139,7 +142,7 @@ public class BRLRCalibration {
                 "calibrators",config.getString("output.calibratorFolder"),"set_calibrator").toFile());
         Serialization.serialize(predictionVectorizer,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
-        logger.info("finish training calibrator");
+        logger.info("finish training calibrators");
 
 
 
