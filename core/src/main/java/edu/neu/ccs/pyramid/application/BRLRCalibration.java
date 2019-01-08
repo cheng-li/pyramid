@@ -142,6 +142,44 @@ public class BRLRCalibration {
         logger.info("finish training calibrator");
 
 
+
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
+
+
+
+        MultiLabelClassifier classifier = null;
+        switch (config.getString("predict.mode")){
+            case "independent":
+                classifier = new IndependentPredictor(cbm,labelCalibrator);
+                break;
+            case "support":
+                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(cbm, labelCalibrator, support);
+                break;
+
+            case "reranker":
+                classifier = (Reranker)setCalibrator;
+                break;
+
+            default:
+                throw new IllegalArgumentException("illegal predict.mode");
+        }
+        MultiLabel[] predictions = classifier.predict(cal);
+
+        logger.info("classification performance on validation set");
+        logger.info(new MLMeasures(cal.getNumClasses(),cal.getMultiLabels(), predictions).toString());
+
+        if (true) {
+            logger.info("calibration performance on validation set");
+
+            List<PredictionVectorizer.Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
+                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
+                    .collect(Collectors.toList());
+            double targerAccuracy = config.getDouble("calibrate.targetAccuracy");
+
+            eval(instances, setCalibrator, logger, targerAccuracy);
+        }
+
+
     }
 
 
