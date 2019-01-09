@@ -64,9 +64,9 @@ public class Bucketer {
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder("Result{");
-            sb.append("averageX=").append(Arrays.toString(averageX));
-            sb.append(", averageY=").append(Arrays.toString(averageY));
-            sb.append(", count=").append(Arrays.toString(count));
+            sb.append("averageX=").append(Arrays.toString(averageX)).append("\n");
+            sb.append("averageY=").append(Arrays.toString(averageY)).append("\n");
+            sb.append("count=").append(Arrays.toString(count)).append("\n");
             sb.append('}');
             return sb.toString();
         }
