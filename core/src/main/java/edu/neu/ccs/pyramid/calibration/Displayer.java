@@ -85,6 +85,25 @@ public class Displayer {
     }
 
 
+    public static double autocodingPercentageForAccuraccyTarget(Stream<Pair<Double, Integer>> stream, double confidenceThreshold){
+        Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(pair->pair.getFirst());
+        List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
+
+        int size = list.size();
+        double result = 0;
+        for (int i = 0; i < size; i++){
+           if(list.get(i).getFirst() < confidenceThreshold){
+               result = (i*1.0)/size;
+           }else{
+               result = 1.0;
+           }
+        }
+        return result;
+    }
+
+
+
+
 
     public static String displayCalibrationResult(Stream<Pair<Double, Integer>> stream, int numBuckets){
         BucketInfo total = BucketInfo.aggregate(stream, numBuckets,0,1);

@@ -77,6 +77,13 @@ public class App1 {
 
         }
 
+        if (config.getBoolean("createCalibrationSet")){
+            try (ESIndex index = loadIndex(config, logger)){
+                createCalibrationSet(config, index, logger);
+            }
+
+        }
+
         if (config.getBoolean("createTestSet")){
             try (ESIndex index = loadIndex(config, logger)){
                 createTestSet(config, index, logger);
@@ -549,7 +556,55 @@ public class App1 {
     }
 
 
+    static LabelTranslator loadCalibrationLabelTranslator(Config config, ESIndex index, String[] validIndexIds,
+                                                    LabelTranslator trainLabelTranslator, Logger logger){
 
+        File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
+        Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
+        boolean validConsiderNew = config.getBoolean("calibration.considerNewLabel");
+
+        List<String> extLabels = new ArrayList<>();
+        for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
+            extLabels.add(trainLabelTranslator.toExtLabel(i));
+        }
+
+        Collection<Terms.Bucket> buckets = index.termAggregation(savedConfig.getString("train.label.field"), validIndexIds);
+        if (savedConfig.getBoolean("train.label.filterByPrefix")){
+            String prefix = savedConfig.getString("train.label.filter.prefix");
+            buckets = buckets.stream().filter(bucket -> bucket.getKeyAsString().startsWith(prefix)).collect(Collectors.toList());
+        }
+
+        logger.info("label distribution in data set:");
+        StringBuilder stringBuilder = new StringBuilder();
+        if (validConsiderNew){
+            List<String> newLabels = new ArrayList<>();
+            for (Terms.Bucket bucket: buckets){
+                stringBuilder.append(bucket.getKey());
+                stringBuilder.append(":");
+                stringBuilder.append(bucket.getDocCount());
+                stringBuilder.append(", ");
+                if (!extLabels.contains(bucket.getKey())){
+                    extLabels.add(bucket.getKeyAsString());
+                    newLabels.add(bucket.getKeyAsString());
+                }
+            }
+            if (!newLabels.isEmpty()){
+                logger.warning("found new labels in data set: "+newLabels);
+            }
+        }else{
+            for (Terms.Bucket bucket: buckets){
+                stringBuilder.append(bucket.getKey());
+                stringBuilder.append(":");
+                stringBuilder.append(bucket.getDocCount());
+                stringBuilder.append(", ");
+            }
+
+        }
+
+        logger.info(stringBuilder.toString());
+
+        return new LabelTranslator(extLabels);
+    }
 
 
 
@@ -678,6 +733,16 @@ public class App1 {
                 LabelTranslator labelTranslator = loadValidLabelTranslator(config, index, indexIds, trainLabelTranslator,logger);
                 dataSet = loadData(config, index, featureList, idTranslator,featureList.size(), labelTranslator, docFilter);
         }
+
+        if (trainTestValid.equals("calibration")){
+            LabelTranslator labelTranslator = loadCalibrationLabelTranslator(config, index, indexIds, trainLabelTranslator,logger);
+            dataSet = loadData(config, index, featureList, idTranslator,featureList.size(), labelTranslator, docFilter);
+        }
+
+
+
+
+
         dataSet.setFeatureList(featureList);
         File dataFile = new File(new File(archive,"data_sets"),datasetName);
 
@@ -719,6 +784,12 @@ public class App1 {
         String[] indexIds = getDocsForSplitFromQuery(index, config.getString("valid.splitQuery"));
         createDataSet(config, index, indexIds, config.getString("output.validFolder"),
                 config.getString("valid.splitQuery"), logger, "valid");
+    }
+
+    static void createCalibrationSet(Config config, ESIndex index, Logger logger) throws Exception{
+        String[] indexIds = getDocsForSplitFromQuery(index, config.getString("calibration.splitQuery"));
+        createDataSet(config, index, indexIds, config.getString("output.calibrationFolder"),
+                config.getString("calibration.splitQuery"), logger, "calibration");
     }
 
 //    public static String splitListToString(List<String> splitValues){
