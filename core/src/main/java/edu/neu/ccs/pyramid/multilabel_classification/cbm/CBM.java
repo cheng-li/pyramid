@@ -251,6 +251,18 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         return bmDistribution.marginals();
     }
 
+
+    @Override
+    public double predictClassProb(Vector vector, int classIndex) {
+        double[] pi = multiClassClassifier.predictClassProbs(vector);
+        double prob = 0;
+        for (int k=0;k<numComponents;k++){
+            prob += binaryClassifiers[k][classIndex].predictClassProb(vector,1) * pi[k];
+        }
+
+        return prob;
+    }
+
     /**
      * predict Sign(E(y|x))
      * @param vector

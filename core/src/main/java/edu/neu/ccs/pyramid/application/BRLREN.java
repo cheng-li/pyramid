@@ -56,107 +56,16 @@ public class BRLREN {
 
         new File(config.getString("output.dir")).mkdirs();
 
-        if (config.getBoolean("tune")){
-            logger.info("============================================================");
-            logger.info("Start hyper parameter tuning");
-            StopWatch stopWatch = new StopWatch();
-            stopWatch.start();
-            List<TuneResult> tuneResults = new ArrayList<>();
-            List<MultiLabelClfDataSet> dataSets = loadTrainValidData(config, logger);
-            List<Double> penalties = config.getDoubles("tune.penalty.candidates");
-            List<Double> l1Ratioes = config.getDoubles("tune.l1Ratio.candidates");
-            List<Integer> components = config.getIntegers("tune.numComponents.candidates");
-            for (double penalty: penalties){
-                for (double l1Ratio : l1Ratioes) {
-                    for (int component: components){
-                        StopWatch stopWatch1 = new StopWatch();
-                        stopWatch1.start();
-                        HyperParameters hyperParameters = new HyperParameters();
-                        hyperParameters.numComponents = component;
-                        hyperParameters.l1Ratio = l1Ratio;
-                        hyperParameters.penalty = penalty;
-                        logger.info("---------------------------");
-                        logger.info("Trying hyper parameters:");
-                        logger.info("train.numComponents = "+hyperParameters.numComponents);
-                        logger.info("train.penalty = "+hyperParameters.penalty);
-                        logger.info("train.l1Ratio = "+hyperParameters.l1Ratio);
-                        TuneResult tuneResult = tune(config, hyperParameters, dataSets.get(0), dataSets.get(1), logger);
-                        logger.info("Found optimal train.iterations = "+tuneResult.hyperParameters.iterations);
-                        logger.info("Validation performance = "+tuneResult.performance);
-                        tuneResults.add(tuneResult);
-                        logger.info("Time spent on trying this set of hyper parameters = "+stopWatch1);
-                    }
-                }
-            }
 
-            Comparator<TuneResult> comparator = Comparator.comparing(res->res.performance);
-
-            TuneResult best;
-            String predictTarget = config.getString("tune.targetMetric");
-            switch (predictTarget){
-                case "instance_set_accuracy":
-                    best = tuneResults.stream().max(comparator).get();
-                    break;
-                case "instance_f1":
-                    best = tuneResults.stream().max(comparator).get();
-                    break;
-                case "instance_hamming_loss":
-                    best = tuneResults.stream().min(comparator).get();
-                    break;
-                case "label_map":
-                    best = tuneResults.stream().max(comparator).get();
-                    break;
-                default:
-                    throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
-            }
-
-
-            logger.info("---------------------------");
-            logger.info("Hyper parameter tuning done.");
-            logger.info("Time spent on entire hyper parameter tuning = "+stopWatch);
-            logger.info("Best validation performance = "+best.performance);
-            logger.info("Best hyper parameters:");
-            logger.info("train.numComponents = "+best.hyperParameters.numComponents);
-            logger.info("train.penalty = "+best.hyperParameters.penalty);
-            logger.info("train.l1Ratio = "+best.hyperParameters.l1Ratio);
-            logger.info("train.iterations = "+best.hyperParameters.iterations);
-            Config tunedHypers = best.hyperParameters.asConfig();
-            tunedHypers.store(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","tuned_hyper_parameters.properties").toFile());
-            logger.info("Tuned hyper parameters saved to "+Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","tuned_hyper_parameters.properties").toFile().getAbsolutePath());
-            logger.info("============================================================");
-        }
 
         if (config.getBoolean("train")){
             logger.info("============================================================");
-            if (config.getBoolean("train.useTunedHyperParameters")){
-                File hyperFile = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","tuned_hyper_parameters.properties").toFile();
-                if (!hyperFile.exists()){
-                    logger.info("train.useTunedHyperParameters is set to true. But no tuned hyper parameters can be found in the output directory.");
-                    logger.info("Please either run hyper parameter tuning, or provide hyper parameters manually and set train.useTunedHyperParameters=false.");
-                    System.exit(1);
-                }
-                Config tunedHypers = new Config(hyperFile);
-                HyperParameters hyperParameters = new HyperParameters(tunedHypers);
-                logger.info("Start training with tuned hyper parameters:");
-                logger.info("train.numComponents = "+hyperParameters.numComponents);
-                logger.info("train.penalty = "+hyperParameters.penalty);
-                logger.info("train.l1Ratio = "+hyperParameters.l1Ratio);
-                logger.info("train.iterations = "+hyperParameters.iterations);
+            HyperParameters hyperParameters = new HyperParameters(config);
 
 
-                MultiLabelClfDataSet trainSet = loadTrainData(config);
-                train(config, hyperParameters, trainSet, logger);
-            } else {
-                HyperParameters hyperParameters = new HyperParameters(config);
-                logger.info("Start training with given hyper parameters:");
-                logger.info("train.numComponents = "+hyperParameters.numComponents);
-                logger.info("train.penalty = "+hyperParameters.penalty);
-                logger.info("train.l1Ratio = "+hyperParameters.l1Ratio);
-                logger.info("train.iterations = "+hyperParameters.iterations);
-
-                MultiLabelClfDataSet trainSet = loadTrainData(config);
-                train(config, hyperParameters, trainSet, logger);
-            }
+            MultiLabelClfDataSet trainSet = loadTrainData(config);
+            MultiLabelClfDataSet validSet = loadValidData(config);
+            train(config, hyperParameters, trainSet, validSet, logger);
             logger.info("============================================================");
         }
 
@@ -171,122 +80,15 @@ public class BRLREN {
         if (args.length != 1) {
             throw new IllegalArgumentException("Please specify a properties file.");
         }
-        
-        
+
         Config config = new Config(args[0]);
 
         main(config);
-
-
     }
 
 
-    private static TuneResult tune(Config config, HyperParameters hyperParameters, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet validSet,
-                                   Logger logger) throws Exception{
 
-        CBM cbm = newCBM(config, trainSet, hyperParameters, logger);
-        EarlyStopper earlyStopper = loadNewEarlyStopper(config);
-
-        ENCBMOptimizer optimizer = getOptimizer(config, hyperParameters, cbm, trainSet);
-        if (config.getBoolean("train.randomInitialize")) {
-            optimizer.randInitialize();
-        } else {
-            optimizer.initialize();
-        }
-
-        MultiLabelClassifier classifier;
-        String predictTarget = config.getString("tune.targetMetric");
-        switch (predictTarget){
-            case "instance_set_accuracy":
-                AccPredictor accPredictor = new AccPredictor(cbm);
-                accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
-                classifier = accPredictor;
-                break;
-            case "instance_f1":
-                PluginF1 pluginF1 = new PluginF1(cbm);
-                List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
-                pluginF1.setSupport(support);
-                pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
-                classifier = pluginF1;
-                break;
-            case "instance_hamming_loss":
-                MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
-                marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
-                classifier = marginalPredictor;
-                break;
-
-            case "label_map":
-                AccPredictor accPredictor2 = new AccPredictor(cbm);
-                accPredictor2.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
-                classifier = accPredictor2;
-                break;
-            default:
-                throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
-        }
-
-        int interval = config.getInt("tune.monitorInterval");
-
-        for (int iter = 1; true; iter++){
-
-            if (VERBOSE){
-                logger.info("iteration "+iter );
-            }
-
-
-            optimizer.iterate();
-
-            if (iter%interval==0){
-
-
-                MLMeasures validMeasures = new MLMeasures(classifier,validSet);
-                if (VERBOSE){
-                    logger.info("validation performance with "+predictTarget+" optimal predictor:");
-                    logger.info(validMeasures.toString());
-                }
-
-                switch (predictTarget){
-                    case "instance_set_accuracy":
-                        earlyStopper.add(iter,validMeasures.getInstanceAverage().getAccuracy());
-                        break;
-                    case "instance_f1":
-                        earlyStopper.add(iter,validMeasures.getInstanceAverage().getF1());
-                        break;
-                    case "instance_hamming_loss":
-                        earlyStopper.add(iter,validMeasures.getInstanceAverage().getHammingLoss());
-                        break;
-                    case "label_map":
-                        List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
-                        double map = MAP.mapBySupport(cbm, validSet,support);
-                        earlyStopper.add(iter,map);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("predictTarget should be instance_set_accuracy or instance_f1");
-                }
-
-                if (earlyStopper.shouldStop()){
-                    if (VERBOSE){
-                        logger.info("Early Stopper: the training should stop now!");
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        if (VERBOSE){
-            logger.info("done!");
-        }
-
-        hyperParameters.iterations = earlyStopper.getBestIteration();
-        TuneResult tuneResult = new TuneResult();
-        tuneResult.hyperParameters = hyperParameters;
-        tuneResult.performance = earlyStopper.getBestValue();
-        return tuneResult;
-
-    }
-
-
-    private static void train(Config config, HyperParameters hyperParameters, MultiLabelClfDataSet trainSet,
+    private static void train(Config config, HyperParameters hyperParameters, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet validSet,
                               Logger logger) throws Exception{
 
         List<Integer> unobservedLabels = DataSetUtil.unobservedLabels(trainSet);
@@ -297,7 +99,7 @@ public class BRLREN {
             FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"analysis","unobserved_labels.txt").toFile(), ListUtil.toSimpleString(unobservedLabels));
         }
         String output = config.getString("output.dir");
-
+        EarlyStopper earlyStopper = loadNewEarlyStopper();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -312,19 +114,49 @@ public class BRLREN {
         }
         logger.info("Initialization done");
 
-        for (int iter=1;iter<=hyperParameters.iterations;iter++){
+
+        AccPredictor accPredictor = new AccPredictor(cbm);
+        accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
+        CBM bestModel = null;
+
+        int interval = 1;
+        for (int iter=1;true;iter++){
+
             logger.info("Training progress: iteration "+iter );
             optimizer.iterate();
+
+            if (iter%interval==0){
+                MLMeasures validMeasures = new MLMeasures(accPredictor,validSet);
+                if (VERBOSE){
+                    logger.info("validation performance");
+                    logger.info(validMeasures.toString());
+                }
+                earlyStopper.add(iter,validMeasures.getInstanceAverage().getAccuracy());
+                if (earlyStopper.getBestIteration()==iter){
+                    bestModel = (CBM)Serialization.deepCopy(cbm);
+                }
+
+
+                if (earlyStopper.shouldStop()){
+                    if (VERBOSE){
+                        logger.info("Early Stopper: the training should stop now!");
+                        logger.info("Early Stopper: best iteration found = "+earlyStopper.getBestIteration());
+                        logger.info("Early Stopper: best validation performance = "+earlyStopper.getBestValue());
+                    }
+
+                    break;
+                }
+            }
         }
 
         logger.info("training done!");
         logger.info("time spent on training = "+stopWatch);
 
-        Serialization.serialize(cbm, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
+        Serialization.serialize(bestModel, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
         Serialization.serialize(support, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","support"));
 
-        featureImportance(config, cbm, trainSet.getFeatureList(), trainSet.getLabelTranslator(),logger);
+        featureImportance(config, bestModel, trainSet.getFeatureList(), trainSet.getLabelTranslator(),logger);
     }
 
 
@@ -459,51 +291,17 @@ public class BRLREN {
     }
 
 
-
-    private static EarlyStopper loadNewEarlyStopper(Config config){
-        String earlyStopMetric = config.getString("tune.targetMetric");
-        int patience = config.getInt("tune.earlyStop.patience");
-        EarlyStopper.Goal earlyStopGoal = null;
-        switch (earlyStopMetric){
-            case "instance_set_accuracy":
-                earlyStopGoal = EarlyStopper.Goal.MAXIMIZE;
-                break;
-            case "instance_f1":
-                earlyStopGoal = EarlyStopper.Goal.MAXIMIZE;
-                break;
-            case "instance_hamming_loss":
-                earlyStopGoal = EarlyStopper.Goal.MINIMIZE;
-                break;
-            case "label_map":
-                earlyStopGoal = EarlyStopper.Goal.MAXIMIZE;
-                break;
-            default:
-                throw new IllegalArgumentException("unsupported tune.targetMetric "+earlyStopMetric);
-        }
-
-        EarlyStopper earlyStopper = new EarlyStopper(earlyStopGoal,patience);
-        earlyStopper.setMinimumIterations(config.getInt("tune.earlyStop.minIterations"));
+    private static EarlyStopper loadNewEarlyStopper(){
+        int patience = 5;
+        EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MAXIMIZE,patience);
+        earlyStopper.setMinimumIterations(5);
         return earlyStopper;
     }
 
-    private static List<MultiLabelClfDataSet> loadTrainValidData(Config config, Logger logger) throws Exception{
-        String validPath = config.getString("input.validData");
-        List<MultiLabelClfDataSet> datasets = new ArrayList<>();
-        MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
 
-        if (validPath.isEmpty()){
-            logger.info("No external validation data is provided. Use random 20% of the training data for validation.");
-            Pair<MultiLabelClfDataSet, MultiLabelClfDataSet> dataSetPair = DataSetUtil.splitToTrainValidation(trainSet,0.8);
-            MultiLabelClfDataSet subTrain = dataSetPair.getFirst();
-            MultiLabelClfDataSet validSet  = dataSetPair.getSecond();
-            datasets.add(subTrain);
-            datasets.add(validSet);
-        } else {
-            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
-            datasets.add(trainSet);
-            datasets.add(validSet);
-        }
-        return datasets;
+    private static MultiLabelClfDataSet loadValidData(Config config) throws Exception{
+        MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
+        return validSet;
     }
 
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
@@ -525,7 +323,6 @@ public class BRLREN {
     private static class HyperParameters{
         double penalty;
         double l1Ratio;
-        int iterations;
         int numComponents;
 
         HyperParameters() {
@@ -534,7 +331,6 @@ public class BRLREN {
         HyperParameters(Config config) {
             penalty = config.getDouble("train.penalty");
             l1Ratio = config.getDouble("train.l1Ratio");
-            iterations = config.getInt("train.iterations");
             numComponents = config.getInt("train.numComponents");
         }
 
@@ -542,7 +338,6 @@ public class BRLREN {
             Config config = new Config();
             config.setDouble("train.penalty", penalty);
             config.setDouble("train.l1Ratio", l1Ratio);
-            config.setInt("train.iterations", iterations);
             config.setInt("train.numComponents", numComponents);
             return config;
         }
@@ -550,10 +345,6 @@ public class BRLREN {
 
     }
 
-    private static class TuneResult{
-        HyperParameters hyperParameters;
-        double performance;
-    }
 
     private static boolean containsNovelClass(MultiLabel multiLabel, List<Integer> novelLabels){
         for (int l:novelLabels){

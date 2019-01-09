@@ -43,7 +43,7 @@ public class BRGBCalibration {
 
     }
 
-    private static void original( IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger) throws Exception{
+    public static void original( IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, Logger logger) throws Exception{
 
 
         PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
@@ -97,7 +97,7 @@ public class BRGBCalibration {
     }
 
 
-    private static void displayCardinalityCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, CardinalityCalibrator scaling, Logger logger) throws Exception{
+    public static void displayCardinalityCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet dataSet, CardinalityCalibrator scaling, Logger logger) throws Exception{
         PluginPredictor<IMLGradientBoosting> pluginPredictorTmp = new SubsetAccPredictor(boosting);
         final  PluginPredictor<IMLGradientBoosting> pluginPredictor = pluginPredictorTmp;
 

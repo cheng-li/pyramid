@@ -66,7 +66,7 @@ public class BRLRCalibration {
     private static void calibrate(Config config, Logger logger) throws Exception{
 
 
-        logger.info("start training calibrator");
+        logger.info("start training calibrators");
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
         //todo
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
@@ -74,6 +74,7 @@ public class BRLRCalibration {
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
 
 
+        logger.info("start training label calibrator");
         LabelCalibrator labelCalibrator = null;
         switch (config.getString("labelCalibrator")){
             case "isotonic":
@@ -83,7 +84,9 @@ public class BRLRCalibration {
                 labelCalibrator = new IdentityLabelCalibrator();
                 break;
         }
+        logger.info("finish training label calibrator");
 
+        logger.info("start training set calibrator");
 
         PredictionVectorizer predictionVectorizer = PredictionVectorizer.newBuilder()
                 .brProb(config.getBoolean("brProb"))
@@ -134,7 +137,7 @@ public class BRLRCalibration {
                 throw new IllegalArgumentException("illegal setCalibrator");
         }
 
-
+        logger.info("finish training set calibrator");
 
         Serialization.serialize(labelCalibrator,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
@@ -142,7 +145,45 @@ public class BRLRCalibration {
                 "calibrators",config.getString("output.calibratorFolder"),"set_calibrator").toFile());
         Serialization.serialize(predictionVectorizer,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
-        logger.info("finish training calibrator");
+        logger.info("finish training calibrators");
+
+
+
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
+
+
+
+        MultiLabelClassifier classifier = null;
+        switch (config.getString("predict.mode")){
+            case "independent":
+                classifier = new IndependentPredictor(cbm,labelCalibrator);
+                break;
+            case "support":
+                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(cbm, labelCalibrator, support);
+                break;
+
+            case "reranker":
+                classifier = (Reranker)setCalibrator;
+                break;
+
+            default:
+                throw new IllegalArgumentException("illegal predict.mode");
+        }
+        MultiLabel[] predictions = classifier.predict(cal);
+
+        logger.info("classification performance on validation set");
+        logger.info(new MLMeasures(cal.getNumClasses(),cal.getMultiLabels(), predictions).toString());
+
+        if (true) {
+            logger.info("calibration performance on validation set");
+
+            List<PredictionVectorizer.Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
+                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
+                    .collect(Collectors.toList());
+            double targerAccuracy = config.getDouble("calibrate.targetAccuracy");
+
+            eval(instances, setCalibrator, logger, targerAccuracy);
+        }
 
 
     }
@@ -183,14 +224,16 @@ public class BRLRCalibration {
         logger.info("test performance");
         logger.info(new MLMeasures(test.getNumClasses(),test.getMultiLabels(), predictions).toString());
 
+
         if (true) {
             logger.info("calibration performance on test set");
 
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
                     .collect(Collectors.toList());
+            double targerAccuracy = config.getDouble("calibrate.targetAccuracy");
 
-            eval(instances, setCalibrator, logger);
+            eval(instances, setCalibrator, logger, targerAccuracy);
         }
 
 
@@ -363,7 +406,7 @@ public class BRLRCalibration {
     }
 
 
-    private static CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger){
+    private static CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
@@ -373,6 +416,8 @@ public class BRLRCalibration {
         logger.info("sharpness="+sharpness);
         logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
         logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+        logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getFirst());
+        logger.info("autocoding percentage for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getSecond());
         CaliRes caliRes = new CaliRes();
         caliRes.mse = mse;
         caliRes.ace= ace;
