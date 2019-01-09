@@ -248,18 +248,11 @@ public class PredictionVectorizer implements Serializable {
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
         Map<MultiLabel, Integer> positionMap = positionMap(marginals);
         List<Instance> instances = new ArrayList<>();
-        Set<MultiLabel> candidates = new HashSet<>();
-        MultiLabel empty = new MultiLabel();
-        candidates.add(empty);
-        candidates.add(groundTruth);
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
 
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         for (int i=0;i<numCandidates;i++){
             MultiLabel multiLabel = dynamicProgramming.nextHighestVector();
-            candidates.add(multiLabel);
-        }
-        BMDistribution bmDistribution = cbm.computeBM(x,0.001);
-        for (MultiLabel multiLabel: candidates){
             instances.add(createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap)));
         }
         return instances;
