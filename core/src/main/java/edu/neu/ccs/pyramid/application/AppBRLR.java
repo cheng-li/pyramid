@@ -77,7 +77,7 @@ public class AppBRLR {
 
     private static Config createApp1Config(Config config){
         Config app1Config = new Config();
-        String[] same = {"output.folder","output.trainFolder","output.testFolder","output.validFolder","output.log",
+        String[] same = {"output.folder","output.trainFolder","output.testFolder","output.calibrationFolder","output.validFolder","output.log",
                 "train.feature.useInitialFeatures","train.feature.categFeature.filter",
                 "train.feature.categFeature.percentThreshold","train.feature.ngram.n","train.feature.ngram.minDf","train.feature.ngram.slop",
                 "train.feature.missingValue",
@@ -86,12 +86,12 @@ public class AppBRLR {
                 "train.feature.filterNgramsByKeyWords","train.feature.filterNgrams.keyWordsFile",
                 "train.feature.filterNgramsByRegex", "train.feature.filterNgrams.regex",
                 "train.feature.useCodeDescription", "train.feature.codeDesc.File", "train.feature.codeDesc.analyzer",
-                "train.feature.codeDesc.matchField", "train.feature.codeDesc.minMatchPercentage","test.considerNewLabel","valid.considerNewLabel","train.label.minDF",
+                "train.feature.codeDesc.matchField", "train.feature.codeDesc.minMatchPercentage","test.considerNewLabel","valid.considerNewLabel","calibration.considerNewLabel","train.label.minDF",
                 "index.indexName","index.clusterName","index.documentType","index.clientType",
                 "index.hosts","index.ports","train.label.field","train.label.filterByPrefix","train.label.filter.prefix",
                 "train.feature.featureFieldPrefix","train.feature.ngram.extractionFields",
-                "train.splitQuery","test.splitQuery","valid.splitQuery",
-                "train.feature.ngram.matchScoreType","createTrainSet","createTestSet","createValidSet",
+                "train.splitQuery","test.splitQuery","valid.splitQuery", "calibration.splitQuery",
+                "train.feature.ngram.matchScoreType","createTrainSet","createTestSet","createValidSet","createCalibrationSet",
                 "train.feature.ngram.selection", "train.feature.ngram.selectPerLabel",
                 "train.label.order","train.useInstanceWeights","train.weight.field"
 
@@ -108,6 +108,7 @@ public class AppBRLR {
         brConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
         brConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         brConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
+        brConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         brConfig.setString("output.dir",config.getString("output.folder"));
         brConfig.setString("output.verbose","true");
         brConfig.setString("output.log",config.getString("output.log"));
@@ -145,6 +146,7 @@ public class AppBRLR {
         calConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
         calConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         calConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets", config.getString("output.validFolder")).toString());
+        calConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         calConfig.setString("output.dir",config.getString("output.folder"));
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
