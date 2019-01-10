@@ -86,19 +86,16 @@ public class Displayer {
 
 
     public static double autocodingPercentageForAccuraccyTarget(Stream<Pair<Double, Integer>> stream, double confidenceThreshold){
-        Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(pair->pair.getFirst());
-        List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
 
+        List<Pair<Double,Integer>> list = stream.collect(Collectors.toList());
+        int sum = 0;
         int size = list.size();
-        double result = 0;
-        for (int i = 0; i < size; i++){
-           if(list.get(i).getFirst() < confidenceThreshold){
-               result = (i*1.0)/size;
-           }else{
-               result = 1.0;
-           }
+        for (int i = 0; i<size; i++){
+            if (list.get(i).getFirst() >= confidenceThreshold){
+                sum++;
+            }
         }
-        return result;
+        return (sum*1.0)/size;
     }
 
 

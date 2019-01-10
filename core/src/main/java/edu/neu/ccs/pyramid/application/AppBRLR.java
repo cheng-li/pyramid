@@ -108,6 +108,7 @@ public class AppBRLR {
         brConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
         brConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         brConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
+        brConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         brConfig.setString("output.dir",config.getString("output.folder"));
         brConfig.setString("output.verbose","true");
         brConfig.setString("output.log",config.getString("output.log"));
@@ -145,6 +146,7 @@ public class AppBRLR {
         calConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
         calConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         calConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets", config.getString("output.validFolder")).toString());
+        calConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         calConfig.setString("output.dir",config.getString("output.folder"));
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));

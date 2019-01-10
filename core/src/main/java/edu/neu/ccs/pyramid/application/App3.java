@@ -121,6 +121,8 @@ public class App3 {
         app2Config.setString("input.trainData",config.getString("output.trainFolder"));
         app2Config.setString("input.testData",config.getString("output.testFolder"));
         app2Config.setString("input.validData",config.getString("output.validFolder"));
+        app2Config.setString("input.calibrationData",config.getString("output.calibrationFolder"));
+
         return app2Config;
     }
 

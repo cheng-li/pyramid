@@ -561,7 +561,7 @@ public class App1 {
 
         File metaDataFolder = new File(config.getString("output.folder"),"meta_data");
         Config savedConfig = new Config(new File(metaDataFolder, "saved_config_app1"));
-        boolean validConsiderNew = config.getBoolean("calibration.considerNewLabel");
+        boolean caliConsiderNew = config.getBoolean("calibration.considerNewLabel");
 
         List<String> extLabels = new ArrayList<>();
         for (int i=0;i<trainLabelTranslator.getNumClasses();i++){
@@ -576,7 +576,7 @@ public class App1 {
 
         logger.info("label distribution in data set:");
         StringBuilder stringBuilder = new StringBuilder();
-        if (validConsiderNew){
+        if (caliConsiderNew){
             List<String> newLabels = new ArrayList<>();
             for (Terms.Bucket bucket: buckets){
                 stringBuilder.append(bucket.getKey());

@@ -69,7 +69,7 @@ public class BRLRCalibration {
 
         logger.info("start training calibrators");
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
-        //todo
+
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.calibrationData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
 
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
@@ -171,6 +171,8 @@ public class BRLRCalibration {
         }
         MultiLabel[] predictions = classifier.predict(cal);
 
+        MultiLabel[] predictions_valid = classifier.predict(valid);
+
 
         if (true) {
             logger.info("calibration performance on calibration set");
@@ -184,13 +186,13 @@ public class BRLRCalibration {
         }
 
         logger.info("classification performance on valid set");
-        logger.info(new MLMeasures(cal.getNumClasses(),valid.getMultiLabels(), predictions).toString());
+        logger.info(new MLMeasures(valid.getNumClasses(),valid.getMultiLabels(), predictions_valid).toString());
 
         if (true) {
             logger.info("calibration performance on valid set");
 
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions[i],valid.getMultiLabels()[i]))
+                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
                     .collect(Collectors.toList());
             double targetAccuracy = config.getDouble("calibrate.targetAccuracy");
 
