@@ -272,7 +272,7 @@ public class CBM implements MultiLabelClassifier.ClassProbEstimator, MultiLabelC
         double[] probs = predictClassProbs(vector);
         MultiLabel prediction = new MultiLabel();
         for (int l=0;l<numLabels;l++){
-            if (probs[l]>0.5){
+            if (probs[l]>=0.5){
                 prediction.addLabel(l);
             }
         }

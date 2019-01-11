@@ -2,6 +2,7 @@ package edu.neu.ccs.pyramid.calibration;
 
 import edu.neu.ccs.pyramid.util.Pair;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -26,9 +27,7 @@ public class Bucketer {
 
         Comparator<Pair<Double,Double>> comparator = Comparator.comparing(pair->pair.getFirst());
         List<Pair<Double,Double>> sortedPairs = pairs.stream().sorted(comparator).collect(Collectors.toList());
-
-
-
+        
         double[] averageX = new double[numBuckets];
         double[] averageY = new double[numBuckets];
         double[] count = new double[numBuckets];
@@ -56,10 +55,24 @@ public class Bucketer {
 
     }
 
-    public static class Result{
+    public static class Result implements Serializable {
+        private static final long serialVersionUID = 1L;
         double[] averageX;
         double[] averageY;
         double[] count;
+
+
+        public double[] getAverageX() {
+            return averageX;
+        }
+
+        public double[] getAverageY() {
+            return averageY;
+        }
+
+        public double[] getCount() {
+            return count;
+        }
 
         @Override
         public String toString() {

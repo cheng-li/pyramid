@@ -30,7 +30,7 @@ public class MarginalPredictor implements PluginPredictor<CBM> {
         double[] probs = bmDistribution.marginals();
         MultiLabel prediction = new MultiLabel();
         for (int l=0;l<cbm.getNumClasses();l++){
-            if (probs[l]>0.5){
+            if (probs[l]>=0.5){
                 prediction.addLabel(l);
             }
         }

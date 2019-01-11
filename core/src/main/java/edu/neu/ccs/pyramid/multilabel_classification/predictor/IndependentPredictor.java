@@ -2,9 +2,11 @@ package edu.neu.ccs.pyramid.multilabel_classification.predictor;
 
 import edu.neu.ccs.pyramid.calibration.IdentityLabelCalibrator;
 import edu.neu.ccs.pyramid.calibration.LabelCalibrator;
+import edu.neu.ccs.pyramid.calibration.VectorIsoSetCalibrator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 public class IndependentPredictor implements PluginPredictor<MultiLabelClassifier.ClassProbEstimator> {
@@ -34,10 +36,27 @@ public class IndependentPredictor implements PluginPredictor<MultiLabelClassifie
         double[] uncalibrated = classifier.predictClassProbs(vector);
         double[] calibrated = labelCalibrator.calibratedClassProbs(uncalibrated);
         for (int k=0;k<getNumClasses();k++){
-            if (calibrated[k] > 0.5){
+            if (calibrated[k] >= 0.5){
                 prediction.addLabel(k);
             }
         }
         return prediction;
+    }
+
+
+    public Pair<MultiLabel, Double> predictWithConfidence(Vector vector){
+        MultiLabel prediction = new MultiLabel();
+        double[] uncalibrated = classifier.predictClassProbs(vector);
+        double[] calibrated = labelCalibrator.calibratedClassProbs(uncalibrated);
+        double prod = 1;
+        for (int k=0;k<getNumClasses();k++){
+            if (calibrated[k] >= 0.5){
+                prediction.addLabel(k);
+                prod *= calibrated[k];
+            } else {
+                prod *= 1-calibrated[k];
+            }
+        }
+        return new Pair<>(prediction,prod);
     }
 }

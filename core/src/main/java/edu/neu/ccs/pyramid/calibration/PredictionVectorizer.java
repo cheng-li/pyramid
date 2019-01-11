@@ -356,12 +356,11 @@ public class PredictionVectorizer implements Serializable {
                                                          Optional<Map<MultiLabel,Integer>> positionMap, Optional<Map<MultiLabel,Double>> cdfMap){
         Instance instance = new Instance();
         instance.vector=feature(bmDistribution, multiLabel,calibratedMarginals, positionMap, cdfMap);
-        //todo
-        instance.correctness = FMeasure.f1(multiLabel,groundtruth);
-//        instance.correctness = 0;
-//        if (multiLabel.equals(groundtruth)){
-//            instance.correctness=1;
-//        }
+//        instance.correctness = FMeasure.f1(multiLabel,groundtruth);
+        instance.correctness = 0;
+        if (multiLabel.equals(groundtruth)){
+            instance.correctness=1;
+        }
         return instance;
     }
 

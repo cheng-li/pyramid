@@ -26,7 +26,7 @@ public class CalibratedHammingPredictor implements PluginPredictor<IMLGradientBo
         double[] uncalibrated = imlGradientBoosting.predictClassProbs(vector);
         double[] calibrated = labelIsotonicScaling.calibratedClassProbs(uncalibrated);
         for (int k=0;k<getNumClasses();k++){
-            if (calibrated[k] > 0.5){
+            if (calibrated[k] >= 0.5){
                 prediction.addLabel(k);
             }
         }

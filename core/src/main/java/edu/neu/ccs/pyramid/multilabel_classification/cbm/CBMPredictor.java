@@ -297,7 +297,7 @@ public class CBMPredictor {
 
         MultiLabel predict = new MultiLabel();
         for (int l=0; l<numLabels; l++) {
-            if (probs[maxK][l][1] > 0.5) {
+            if (probs[maxK][l][1] >= 0.5) {
                 predict.addLabel(l);
             }
         }
