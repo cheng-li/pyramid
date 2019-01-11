@@ -11,21 +11,22 @@ import java.util.stream.Collectors;
 
 public class Bucketer {
 
+
     /**
      * the last bucket may contain more points
      * @param x group by x
      * @param y
-     * @param numBuckets
+     * @param numPointsInEachBucket
      * @return
      */
-    public static Result groupWithEqualSize(double[] x, double[] y, int numBuckets){
-        int numPointsInEachBucket = x.length/numBuckets;
+    public static Result groupWithEqualSize(double[] x, double[] y, int numPointsInEachBucket){
+        int numBuckets = x.length/numPointsInEachBucket;
         List<Pair<Double,Double>> pairs = new ArrayList<>();
         for (int i=0;i<x.length;i++){
             pairs.add(new Pair<>(x[i],y[i]));
         }
 
-        Comparator<Pair<Double,Double>> comparator = Comparator.comparing(pair->pair.getFirst());
+        Comparator<Pair<Double,Double>> comparator = Comparator.comparing(Pair::getFirst);
         List<Pair<Double,Double>> sortedPairs = pairs.stream().sorted(comparator).collect(Collectors.toList());
         
         double[] averageX = new double[numBuckets];

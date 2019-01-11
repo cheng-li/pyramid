@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 
 public class BucketerTest {
     public static void main(String[] args) throws Exception {
-        test2();
+        test1();
     }
 
 
