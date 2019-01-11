@@ -72,4 +72,13 @@ public class SupportPredictor implements PluginPredictor<MultiLabelClassifier.Cl
         double[] cali = labelCalibrator.calibratedClassProbs(uncali);
         return predict(cali,support);
     }
+
+
+
+    public Pair<MultiLabel,Double> predictWithConfidence(Vector vector) {
+        double[] uncali = classifier.predictClassProbs(vector);
+        double[] cali = labelCalibrator.calibratedClassProbs(uncali);
+        return support.stream().map(m->new Pair<>(m, prob(cali, m))).max(Comparator.comparing(Pair::getSecond))
+                .get();
+    }
 }
