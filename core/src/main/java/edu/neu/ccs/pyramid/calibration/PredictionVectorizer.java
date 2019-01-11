@@ -310,6 +310,7 @@ public class PredictionVectorizer implements Serializable {
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         for (int i=0;i<numCandidates;i++){
             MultiLabel multiLabel = dynamicProgramming.nextHighestVector();
+
             Instance instance = createInstance(bmDistribution, multiLabel,groundTruth,marginals,Optional.of(positionMap), Optional.of(cdfMap));
             if (weight.equals("uniform")){
                 instance.weight=1;
@@ -331,6 +332,7 @@ public class PredictionVectorizer implements Serializable {
             instance.queryIndex = queryId;
 
             instances.add(instance);
+
         }
 
         return instances;

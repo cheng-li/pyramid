@@ -18,25 +18,26 @@ public class BRGBCalibration {
     public static void main(Config config, Logger logger) throws Exception{
 
 
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testSet"),DataSetType.ML_CLF_SPARSE,true);
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validSet"),DataSetType.ML_CLF_SPARSE,true);
+        MultiLabelClfDataSet cali = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.calibrationSet"),DataSetType.ML_CLF_SPARSE,true);
         IMLGradientBoosting boosting = (IMLGradientBoosting)Serialization.deserialize(config.getString("input.model"));
 
-        original(boosting, test, logger);
+        //original(boosting, test, logger);
 
 
         logger.info("start cardinality based set probability calibration");
-        CardinalityCalibrator cardinalityCalibrator = new CardinalityCalibrator(boosting, valid);
+        CardinalityCalibrator cardinalityCalibrator = new CardinalityCalibrator(boosting, cali);
         logger.info("finish cardinality based set probability calibration");
 
+        logger.info("calibration performance on calibration set");
+        displayCardinalityCalibration(boosting, cali, cardinalityCalibrator, logger);
+        logger.info("calibration performance on validation set");
+        displayCardinalityCalibration(boosting, valid, cardinalityCalibrator, logger);
 
-        displayCardinalityCalibration(boosting, test, cardinalityCalibrator, logger);
+        //labelUncalibration(boosting,test,logger);
 
-        labelUncalibration(boosting,test,logger);
 
-        //jointLabelCalibration(boosting, test, valid, logger, config);
-
-        labelIsoCalibration(boosting, test, valid, logger, config);
+        labelIsoCalibration(boosting, cali, logger, config);
 
         Serialization.serialize(cardinalityCalibrator, new File(config.getString("out"),"set_calibration"));
 
@@ -123,31 +124,31 @@ public class BRGBCalibration {
     }
 
 
-    private static void labelIsoCalibration(IMLGradientBoosting boosting, MultiLabelClfDataSet testSet, MultiLabelClfDataSet validSet, Logger logger, Config config)throws Exception{
+    private static void labelIsoCalibration(IMLGradientBoosting boosting,  MultiLabelClfDataSet caliSet, Logger logger, Config config)throws Exception{
         logger.info("start calibrating label probability ");
-        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, validSet);
+        IMLGBLabelIsotonicScaling imlgbLabelIsotonicScaling = new IMLGBLabelIsotonicScaling(boosting, caliSet);
         logger.info("finish calibrating label probability");
 
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, testSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i-> {
-                    double[] probs = boosting.predictClassProbs(testSet.getRow(i));
-                    double[] calibrated = imlgbLabelIsotonicScaling.calibratedClassProbs(probs);
-                    Stream<Pair<Double,Integer>> pairs = IntStream.range(0, probs.length).mapToObj(a -> {
-                        Pair<Double, Integer> pair = new Pair<>();
-                        pair.setFirst(calibrated[a]);
-                        pair.setSecond(0);
-                        if (testSet.getMultiLabels()[i].matchClass(a)) {
-                            pair.setSecond(1);
-                        }
-                        return pair;
-                    });
-                    return pairs;
-                });
+//        Stream<Pair<Double,Integer>> stream = IntStream.range(0, testSet.getNumDataPoints()).parallel()
+//                .boxed().flatMap(i-> {
+//                    double[] probs = boosting.predictClassProbs(testSet.getRow(i));
+//                    double[] calibrated = imlgbLabelIsotonicScaling.calibratedClassProbs(probs);
+//                    Stream<Pair<Double,Integer>> pairs = IntStream.range(0, probs.length).mapToObj(a -> {
+//                        Pair<Double, Integer> pair = new Pair<>();
+//                        pair.setFirst(calibrated[a]);
+//                        pair.setSecond(0);
+//                        if (testSet.getMultiLabels()[i].matchClass(a)) {
+//                            pair.setSecond(1);
+//                        }
+//                        return pair;
+//                    });
+//                    return pairs;
+//                });
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("calibrated label probabilities\n");
-        sb.append(Displayer.displayCalibrationResult(stream));
-        logger.info(sb.toString());
+        //StringBuilder sb = new StringBuilder();
+        //sb.append("calibrated label probabilities\n");
+        //sb.append(Displayer.displayCalibrationResult(stream));
+        //logger.info(sb.toString());
         Serialization.serialize(imlgbLabelIsotonicScaling, new File(config.getString("out"),"label_calibration"));
 
     }
