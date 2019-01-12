@@ -11,6 +11,11 @@ import java.util.stream.Collectors;
 
 public class Bucketer {
 
+    public static Result groupWithEqualSize(List<Pair<Double,Double>> pairs, int numPointsInEachBucket){
+        double[] x = pairs.stream().mapToDouble(p->p.getFirst()).toArray();
+        double[] y = pairs.stream().mapToDouble(p->p.getSecond()).toArray();
+        return groupWithEqualSize(x,y,numPointsInEachBucket);
+    }
 
     /**
      * the last bucket may contain more points
