@@ -76,12 +76,17 @@ public class BRLRCalibration {
 
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
 
+        List<Integer> labelCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==0).boxed().collect(Collectors.toList());
+        List<Integer> setCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==1).boxed().collect(Collectors.toList());
+
+        MultiLabelClfDataSet labelCalData = DataSetUtil.sampleData(cal, labelCalIndices);
+        MultiLabelClfDataSet setCalData = DataSetUtil.sampleData(cal, setCalIndices);
 
         logger.info("start training label calibrator");
         LabelCalibrator labelCalibrator = null;
         switch (config.getString("labelCalibrator")){
             case "isotonic":
-                labelCalibrator = new IsoLabelCalibrator(cbm, cal);
+                labelCalibrator = new IsoLabelCalibrator(cbm, labelCalData);
                 break;
             case "none":
                 labelCalibrator = new IdentityLabelCalibrator();
@@ -110,8 +115,7 @@ public class BRLRCalibration {
 
 
 
-
-        PredictionVectorizer.TrainData weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(cal,cbm);
+        PredictionVectorizer.TrainData weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(setCalData,cbm);
         RegDataSet calibratorTrainData = weightedCalibratorTrainData.regDataSet;
         double[] weights = weightedCalibratorTrainData.instanceWeights;
 
