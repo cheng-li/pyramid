@@ -12,9 +12,8 @@ import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-import org.ojalgo.access.Access2D;
-import org.ojalgo.matrix.BasicMatrix;
 import org.ojalgo.matrix.PrimitiveMatrix;
+import org.ojalgo.matrix.PrimitiveMatrix.DenseReceiver;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +23,8 @@ import java.util.stream.IntStream;
  * Created by chengli on 12/25/15.
  */
 public class CBMInspector {
-    private static BasicMatrix.Factory<PrimitiveMatrix> factory = PrimitiveMatrix.FACTORY;
+
+    private static PrimitiveMatrix.Factory factory = PrimitiveMatrix.FACTORY;
 
     public static Set<Integer> usedFeatures(CBM cbm){
         Set<Integer> all = new HashSet<>();
@@ -226,7 +226,7 @@ public class CBMInspector {
             }
         }
         // column vector
-        Access2D.Builder<PrimitiveMatrix> meanBuilder = factory.getBuilder(numClasses,1);
+        DenseReceiver meanBuilder = factory.makeDense(numClasses, 1);
         for (int l=0;l<numClasses;l++){
             double sum = 0;
             for (int k=0;k<numClusters;k++){
@@ -234,41 +234,41 @@ public class CBMInspector {
             }
             meanBuilder.set(l,0,sum);
         }
-        BasicMatrix mean = meanBuilder.build();
+        PrimitiveMatrix mean = meanBuilder.build();
 //        System.out.println(mean);
 
-        List<BasicMatrix> mus  = new ArrayList<>();
+        List<PrimitiveMatrix> mus = new ArrayList<>();
         for (int k=0;k<numClusters;k++){
-            Access2D.Builder<PrimitiveMatrix> muBuilder = factory.getBuilder(numClasses,1);
+            DenseReceiver muBuilder = factory.makeDense(numClasses, 1);
             for (int l=0;l<numClasses;l++){
                 muBuilder.set(l,0,probabilities[k][l]);
             }
-            BasicMatrix muK = muBuilder.build();
+            PrimitiveMatrix muK = muBuilder.build();
             mus.add(muK);
         }
 
-        List<BasicMatrix> sigmas = new ArrayList<>();
+        List<PrimitiveMatrix> sigmas = new ArrayList<>();
         for (int k=0;k<numClusters;k++){
-            Access2D.Builder<PrimitiveMatrix> sigmaBuilder = factory.getBuilder(numClasses,numClasses);
+            DenseReceiver sigmaBuilder = factory.makeDense(numClasses, numClasses);
             for (int l=0;l<numClasses;l++){
                 double v= probabilities[k][l]*(1-probabilities[k][l]);
                 sigmaBuilder.set(l,l,v);
             }
-            BasicMatrix sigmaK = sigmaBuilder.build();
+            PrimitiveMatrix sigmaK = sigmaBuilder.build();
             sigmas.add(sigmaK);
         }
 
-        BasicMatrix covariance = factory.makeZero(numClasses,numClasses);
+        PrimitiveMatrix covariance = factory.makeZero(numClasses, numClasses);
         for (int k=0;k<numClusters;k++){
-            BasicMatrix muk = mus.get(k);
-            BasicMatrix toadd = (sigmas.get(k).add(muk.multiply(muk.transpose()))).multiply(proportions[k]);
+            PrimitiveMatrix muk = mus.get(k);
+            PrimitiveMatrix toadd = (sigmas.get(k).add(muk.multiply(muk.transpose()))).multiply(proportions[k]);
             covariance = covariance.add(toadd);
         }
         covariance = covariance.subtract(mean.multiply(mean.transpose()));
 
 //        System.out.println("covariance = "+ Matrices.display(covariance));
 
-        Access2D.Builder<PrimitiveMatrix> correlationBuilder = factory.getBuilder(numClasses,numClasses);
+        DenseReceiver correlationBuilder = factory.makeDense(numClasses, numClasses);
 
         for (int l=0;l<numClasses;l++){
             for (int j=0;j<numClasses;j++){
@@ -277,7 +277,7 @@ public class CBMInspector {
             }
         }
 
-        BasicMatrix correlation = correlationBuilder.build();
+        PrimitiveMatrix correlation = correlationBuilder.build();
 //        System.out.println("correlation = "+ Matrices.display(correlation));
 
         List<Pair<String,Double>> list = new ArrayList<>();
