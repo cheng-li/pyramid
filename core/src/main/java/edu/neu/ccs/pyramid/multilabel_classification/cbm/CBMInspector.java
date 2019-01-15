@@ -12,7 +12,6 @@ import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-import org.ojalgo.structure.Access2D;
 import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.PrimitiveMatrix.DenseReceiver;
 
@@ -227,7 +226,7 @@ public class CBMInspector {
             }
         }
         // column vector
-        DenseReceiver meanBuilder = factory.getBuilder(numClasses, 1);
+        DenseReceiver meanBuilder = factory.makeDense(numClasses, 1);
         for (int l=0;l<numClasses;l++){
             double sum = 0;
             for (int k=0;k<numClusters;k++){
@@ -240,7 +239,7 @@ public class CBMInspector {
 
         List<PrimitiveMatrix> mus = new ArrayList<>();
         for (int k=0;k<numClusters;k++){
-            DenseReceiver muBuilder = factory.getBuilder(numClasses, 1);
+            DenseReceiver muBuilder = factory.makeDense(numClasses, 1);
             for (int l=0;l<numClasses;l++){
                 muBuilder.set(l,0,probabilities[k][l]);
             }
@@ -250,7 +249,7 @@ public class CBMInspector {
 
         List<PrimitiveMatrix> sigmas = new ArrayList<>();
         for (int k=0;k<numClusters;k++){
-            DenseReceiver sigmaBuilder = factory.getBuilder(numClasses, numClasses);
+            DenseReceiver sigmaBuilder = factory.makeDense(numClasses, numClasses);
             for (int l=0;l<numClasses;l++){
                 double v= probabilities[k][l]*(1-probabilities[k][l]);
                 sigmaBuilder.set(l,l,v);
@@ -269,7 +268,7 @@ public class CBMInspector {
 
 //        System.out.println("covariance = "+ Matrices.display(covariance));
 
-        DenseReceiver correlationBuilder = factory.getBuilder(numClasses, numClasses);
+        DenseReceiver correlationBuilder = factory.makeDense(numClasses, numClasses);
 
         for (int l=0;l<numClasses;l++){
             for (int j=0;j<numClasses;j++){
