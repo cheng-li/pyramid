@@ -1,6 +1,6 @@
 package edu.neu.ccs.pyramid.util;
 
-import org.ojalgo.matrix.BasicMatrix;
+import org.ojalgo.matrix.PrimitiveMatrix;
 import org.ojalgo.matrix.decomposition.Cholesky;
 import org.ojalgo.matrix.store.MatrixStore;
 
@@ -28,7 +28,7 @@ public class Matrices {
 //    }
 
 
-    public static String display(BasicMatrix matrix){
+    public static String display(PrimitiveMatrix matrix) {
         long row = matrix.countRows();
         long column = matrix.countColumns();
         StringBuilder sb = new StringBuilder();
