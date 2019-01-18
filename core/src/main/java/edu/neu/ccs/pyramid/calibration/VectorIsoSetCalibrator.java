@@ -36,4 +36,8 @@ public class VectorIsoSetCalibrator implements Serializable, VectorCalibrator {
         return isotonicRegression.predict(vector.get(scoreIndex));
     }
 
+
+    public IsotonicRegression getIsotonicRegression() {
+        return isotonicRegression;
+    }
 }
