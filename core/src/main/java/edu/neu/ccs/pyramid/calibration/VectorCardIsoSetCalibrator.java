@@ -37,6 +37,10 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
     }
 
 
+    public IsotonicRegression getIsotonicReg(int card) {
+        return calibrations.get(card);
+    }
+
     public double calibrate(Vector vector){
         double uncalibrated = vector.get(scoreIndex);
         int cardinality = (int)vector.get(cardIndex);
