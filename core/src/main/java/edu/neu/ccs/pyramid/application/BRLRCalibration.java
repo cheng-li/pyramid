@@ -109,12 +109,12 @@ public class BRLRCalibration {
                 .labelProbs(config.getBoolean("labelProbs"))
                 .position(config.getBoolean("position"))
                 .logScale(config.getBoolean("logScale"))
-                .numCandidates(config.getInt("numCandidates"))
+
                 .weight(config.getString("weight"))
                 .build(train,labelCalibrator);
 
-        
-        PredictionVectorizer.TrainData weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(setCalData,cbm);
+
+        PredictionVectorizer.TrainData weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(setCalData,cbm, config.getInt("numCandidates"));
         RegDataSet calibratorTrainData = weightedCalibratorTrainData.regDataSet;
         double[] weights = weightedCalibratorTrainData.instanceWeights;
 

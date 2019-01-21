@@ -38,7 +38,7 @@ public class PredictionVectorizer implements Serializable {
     private double[][][] pairPriors;
     private List<Pair<Integer,Integer>> implications;
     private LabelCalibrator labelCalibrator;
-    private int numCandidates;
+//    private int numCandidates;
     private Hierarchy hierarchyRelation;
     private String weight;
 
@@ -55,7 +55,6 @@ public class PredictionVectorizer implements Serializable {
         position = builder.position;
         encodeLabel = builder.encodeLabel;
         labelProbs = builder.labelProbs;
-        numCandidates = builder.numCandidates;
         hierarchy = builder.hierarchy;
         weight = builder.weight;
         cdf = builder.cdf;
@@ -135,7 +134,8 @@ public class PredictionVectorizer implements Serializable {
             if (positionMap.isPresent()){
                 pos = positionMap.get().getOrDefault(multiLabel,Integer.MAX_VALUE);
             } else {
-                pos = findPosition(multiLabel,calibratedMarginals);
+                //todo
+                pos = findPosition(multiLabel,calibratedMarginals,50);
             }
             vector.set(8,pos);
         }
@@ -154,7 +154,8 @@ public class PredictionVectorizer implements Serializable {
             if (cdfMap.isPresent()){
                 cdfValue = cdfMap.get().getOrDefault(multiLabel,1.0);
             } else {
-                cdfValue = findCDF(multiLabel, calibratedMarginals);
+                //todo
+                cdfValue = findCDF(multiLabel, calibratedMarginals,50);
             }
             vector.set(10, cdfValue);
 
@@ -292,18 +293,18 @@ public class PredictionVectorizer implements Serializable {
         return new TrainData(regDataSet, weights, instancesForEachQuery);
     }
 
-    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm){
+    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, CBM cbm,  int numCandidates){
         List<Instance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm, i).stream())
+                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], cbm, i, numCandidates).stream())
                 .collect(Collectors.toList());
         return createData(instances, cbm.getLabelTranslator());
     }
 
     private List<Instance> expand(Vector x, MultiLabel groundTruth,
-                                         CBM cbm, int queryId){
+                                         CBM cbm, int queryId, int numCandidates){
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
-        Map<MultiLabel, Integer> positionMap = positionMap(marginals);
-        Map<MultiLabel, Double> cdfMap = cdfMap(marginals);
+        Map<MultiLabel, Integer> positionMap = positionMap(marginals, numCandidates);
+        Map<MultiLabel, Double> cdfMap = cdfMap(marginals, numCandidates);
         List<Instance> instances = new ArrayList<>();
 
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
@@ -383,7 +384,7 @@ public class PredictionVectorizer implements Serializable {
 
 
 
-    private int findPosition(MultiLabel multiLabel, double[] marginals){
+    private int findPosition(MultiLabel multiLabel, double[] marginals, int numCandidates){
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         for (int i=0;i<numCandidates;i++) {
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
@@ -395,7 +396,7 @@ public class PredictionVectorizer implements Serializable {
     }
 
 
-    private double findCDF(MultiLabel multiLabel, double[] marginals){
+    private double findCDF(MultiLabel multiLabel, double[] marginals, int numCandidates){
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         double cdf = 0;
         for (int i=0;i<numCandidates;i++) {
@@ -409,7 +410,7 @@ public class PredictionVectorizer implements Serializable {
         return 1;
     }
 
-    public Map<MultiLabel, Integer> positionMap(double[] marginals){
+    public Map<MultiLabel, Integer> positionMap(double[] marginals, int numCandidates){
         Map<MultiLabel, Integer> map = new HashMap<>();
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         for (int i=0;i<numCandidates;i++) {
@@ -419,7 +420,7 @@ public class PredictionVectorizer implements Serializable {
         return map;
     }
 
-    public Map<MultiLabel, Double> cdfMap(double[] marginals){
+    public Map<MultiLabel, Double> cdfMap(double[] marginals, int numCandidates){
         Map<MultiLabel, Double> map = new HashMap<>();
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         double cdf = 0;
@@ -573,7 +574,6 @@ public class PredictionVectorizer implements Serializable {
         private boolean position=true;
         private boolean encodeLabel=true;
         private boolean labelProbs=false;
-        private int numCandidates=50;
         private boolean hierarchy=false;
         private boolean cdf = true;
         private String weight="uniform";
@@ -641,10 +641,7 @@ public class PredictionVectorizer implements Serializable {
             return this;
         }
 
-        public Builder numCandidates(int val) {
-            numCandidates = val;
-            return this;
-        }
+
 
         public Builder hierarchy(boolean val){
             hierarchy = val;

@@ -24,8 +24,8 @@ public class TopKFinder {
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
 
-        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
-        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals, top);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals, top);
 
 
         for (int i=0;i<top;i++) {
@@ -44,8 +44,8 @@ public class TopKFinder {
                                                      List<MultiLabel> support,
                                                      int top){
         double[] marginals = labelCalibrator.calibratedClassProbs(cbm.predictClassProbs(x));
-        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
-        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals, top);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals, top);
         BMDistribution bmDistribution = cbm.computeBM(x,0.001);
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
         return support.stream().map(multiLabel -> {

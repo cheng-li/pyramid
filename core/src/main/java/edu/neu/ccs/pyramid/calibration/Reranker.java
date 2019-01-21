@@ -68,8 +68,8 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
      public MultiLabel predict(Vector vector) {
         double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
 
-        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
-        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals, numCandidate);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals,numCandidate);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
         BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
@@ -103,8 +103,8 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     public MultiLabel predictByGFM(Vector vector){
         double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
 
-        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals);
-        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals);
+        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals, numCandidate);
+        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals, numCandidate);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<MultiLabel> multiLabels = new ArrayList<>();
         List<Double> probabilities = new ArrayList<>();
