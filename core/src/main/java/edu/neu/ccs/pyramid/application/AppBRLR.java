@@ -148,6 +148,9 @@ public class AppBRLR {
         calConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets", config.getString("output.validFolder")).toString());
         calConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         calConfig.setString("output.dir",config.getString("output.folder"));
+        calConfig.setString("input.calibrationFolder",config.getString("output.calibrationFolder"));
+        calConfig.setString("input.validFolder",config.getString("output.validFolder"));
+        calConfig.setString("input.testFolder",config.getString("output.testFolder"));
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
         calConfig.setString("output.log",config.getString("output.log"));

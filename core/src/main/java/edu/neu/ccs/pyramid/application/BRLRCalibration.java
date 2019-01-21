@@ -113,8 +113,7 @@ public class BRLRCalibration {
                 .weight(config.getString("weight"))
                 .build(train,labelCalibrator);
 
-
-
+        
         PredictionVectorizer.TrainData weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(setCalData,cbm);
         RegDataSet calibratorTrainData = weightedCalibratorTrainData.regDataSet;
         double[] weights = weightedCalibratorTrainData.instanceWeights;
@@ -182,21 +181,21 @@ public class BRLRCalibration {
 
 
         if (true) {
-            logger.info("calibration performance on calibration set");
+            logger.info("calibration performance on "+config.getString("input.calibrationFolder")+ " set");
 
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
                     .collect(Collectors.toList());
             double targerAccuracy = config.getDouble("calibrate.targetAccuracy");
 
-            eval(instances, setCalibrator, logger, targerAccuracy);
+            evalWithoutAutocoding(instances, setCalibrator, logger, targerAccuracy);
         }
 
-        logger.info("classification performance on valid set");
+        logger.info("classification performance on "+config.getString("input.validFolder")+" set");
         logger.info(new MLMeasures(valid.getNumClasses(),valid.getMultiLabels(), predictions_valid).toString());
 
         if (true) {
-            logger.info("calibration performance on valid set");
+            logger.info("calibration performance on "+ config.getString("input.validFolder")+" set");
 
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
@@ -259,7 +258,7 @@ public class BRLRCalibration {
 
 
         if (true) {
-            logger.info("calibration performance on test set");
+            logger.info("calibration performance on "+config.getString("input.testFolder")+" set");
 
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
@@ -267,7 +266,8 @@ public class BRLRCalibration {
             double targetAccuracy = config.getDouble("calibrate.targetAccuracy");
 
             evalWithoutAutocoding(instances, setCalibrator, logger, targetAccuracy);
-            logger.info("autocoding percentage for target accuracy "+targetAccuracy+" on test set = "+ Displayer.autocodingPercentageForAccuraccyTarget(generateStream(instances,setCalibrator),confidenceThreshold));
+            logger.info("autocoding percentage for target accuracy "+targetAccuracy+" on "+config.getString("input.testFolder")+" set = "+ Displayer.autocodingPercentageForAccuraccyTarget(generateStream(instances,setCalibrator),confidenceThreshold).getFirst());
+            logger.info("accuracy in autocoding bucket = "+ Displayer.autocodingPercentageForAccuraccyTarget(generateStream(instances,setCalibrator),confidenceThreshold).getSecond());
 
         }
 
