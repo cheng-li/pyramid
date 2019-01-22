@@ -67,7 +67,7 @@ public class Displayer {
         Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(pair->pair.getFirst());
         List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
         int sumCorrect = 0;
-        double confidenceThreshold = 0;
+        double confidenceThreshold = 1;
         double autocodePercentage = 0;
         int size = list.size();
         Pair<Double, Double> result =new Pair<>();
@@ -88,7 +88,7 @@ public class Displayer {
     }
 
 
-    public static Pair<Double,Double> autocodingPercentageForAccuraccyTarget(Stream<Pair<Double, Integer>> stream, double confidenceThreshold){
+    public static CTATresult autocodingPercentageForAccuraccyTarget(Stream<Pair<Double, Integer>> stream, double confidenceThreshold){
 
         List<Pair<Double,Integer>> list = stream.collect(Collectors.toList());
         int sum = 0;
@@ -102,12 +102,13 @@ public class Displayer {
                 }
             }
         }
-        Pair<Double,Double> pair =new Pair<>();
-        pair.setFirst((sum*1.0)/size);
-        pair.setSecond((correct*1.0)/sum);
-        return pair;
+        CTATresult ctaTresult = new CTATresult();
+        ctaTresult.autocodingPercent = (sum*1.0)/size;
+        ctaTresult.autocodingAccuracy = (correct*1.0)/sum;
+        ctaTresult.numAutocodeDocs = sum;
+        ctaTresult.numCorrectAutocodeDocs = correct;
+        return ctaTresult;
     }
-
 
 
 
@@ -152,5 +153,12 @@ public class Displayer {
         String result = sb.toString();
         return result;
 
+    }
+
+    public static class CTATresult{
+        public double autocodingPercent;
+        public double autocodingAccuracy;
+        public int numAutocodeDocs;
+        public int numCorrectAutocodeDocs;
     }
 }

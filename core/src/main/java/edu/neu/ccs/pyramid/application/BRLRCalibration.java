@@ -49,6 +49,10 @@ public class BRLRCalibration {
             calibrate(config, logger);
         }
 
+        if(config.getBoolean("tuneCTAT")){
+            tuneCTAT(config,logger);
+        }
+
         if (config.getBoolean("test")){
             test(config, logger);
         }
@@ -186,7 +190,7 @@ public class BRLRCalibration {
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
                     .collect(Collectors.toList());
-            double targerAccuracy = config.getDouble("calibrate.targetAccuracy");
+            double targerAccuracy = config.getDouble("CTAT.targetAccuracy");
 
             evalWithoutAutocoding(instances, setCalibrator, logger, targerAccuracy);
         }
@@ -200,22 +204,74 @@ public class BRLRCalibration {
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
                     .collect(Collectors.toList());
-            double targetAccuracy = config.getDouble("calibrate.targetAccuracy");
+            double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
 
             evalWithoutAutocoding(instances, setCalibrator, logger, targetAccuracy);
 
-            Pair<Double, Double> pair = Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(instances,setCalibrator));
-            logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +pair.getFirst());
-            logger.info("autocoding percentage for target accuracy "+targetAccuracy +" = " +pair.getSecond());
 
-            FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                    "calibrators",config.getString("output.calibratorFolder"),"confidence_threshold").toFile(),pair.getFirst().toString());
 
         }
 
 
 
     }
+
+
+    private static void tuneCTAT(Config config, Logger logger)throws Exception{
+        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE,true);
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
+        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
+        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"set_calibrator").toFile());
+        PredictionVectorizer predictionVectorizer = (PredictionVectorizer) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
+
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
+
+
+
+        MultiLabelClassifier classifier = null;
+        switch (config.getString("predict.mode")){
+            case "independent":
+                classifier = new IndependentPredictor(cbm,labelCalibrator);
+                break;
+            case "support":
+                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(cbm, labelCalibrator, support);
+                break;
+
+            case "reranker":
+                classifier = (Reranker)setCalibrator;
+                break;
+
+            default:
+                throw new IllegalArgumentException("illegal predict.mode");
+        }
+
+        MultiLabel[] predictions_valid = classifier.predict(valid);
+
+        List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
+                .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
+                .collect(Collectors.toList());
+        double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
+        double confidenceThreshold = Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(instances,setCalibrator)).getFirst();
+
+
+        logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +confidenceThreshold);
+
+        FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                   "ctat",config.getString("CTAT.name")).toFile(),""+confidenceThreshold);
+
+
+
+
+    }
+
+
+
+
+
+
 
 
     private static void test(Config config, Logger logger) throws Exception{
@@ -229,7 +285,7 @@ public class BRLRCalibration {
                 "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
 
         double confidenceThreshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "calibrators",config.getString("output.calibratorFolder"),"confidence_threshold").toFile()));
+                "ctat",config.getString("CTAT.name")).toFile()));
 
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
 
@@ -263,11 +319,14 @@ public class BRLRCalibration {
             List<PredictionVectorizer.Instance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
                     .boxed().map(i -> predictionVectorizer.createInstance(cbm, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
                     .collect(Collectors.toList());
-            double targetAccuracy = config.getDouble("calibrate.targetAccuracy");
+            double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
 
             evalWithoutAutocoding(instances, setCalibrator, logger, targetAccuracy);
-            logger.info("autocoding percentage for target accuracy "+targetAccuracy+" on "+config.getString("input.testFolder")+" set = "+ Displayer.autocodingPercentageForAccuraccyTarget(generateStream(instances,setCalibrator),confidenceThreshold).getFirst());
-            logger.info("accuracy in autocoding bucket = "+ Displayer.autocodingPercentageForAccuraccyTarget(generateStream(instances,setCalibrator),confidenceThreshold).getSecond());
+            Displayer.CTATresult ctaTresult = Displayer.autocodingPercentageForAccuraccyTarget(generateStream(instances,setCalibrator),confidenceThreshold);
+            logger.info("autocoding percentage for target accuracy "+targetAccuracy+" on "+config.getString("input.testFolder")+" set = "+ ctaTresult.autocodingPercent);
+            logger.info("autocoding accuracy = "+ ctaTresult.autocodingAccuracy);
+            logger.info("number of autocoded documents = "+ctaTresult.numAutocodeDocs);
+            logger.info("number of correct autocoded documents = "+ctaTresult.numCorrectAutocodeDocs);
 
         }
 

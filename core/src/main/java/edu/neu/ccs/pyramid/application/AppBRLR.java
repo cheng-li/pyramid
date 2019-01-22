@@ -153,6 +153,7 @@ public class AppBRLR {
         calConfig.setString("input.testFolder",config.getString("output.testFolder"));
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
+        calConfig.setString("tuneCTAT",config.getString("tuneCTAT"));
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");
@@ -176,7 +177,8 @@ public class AppBRLR {
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         Config.copy(config, calConfig,"output.modelFolder");
-        Config.copy(config, calConfig, "calibrate.targetAccuracy");
+        Config.copy(config, calConfig, "CTAT.targetAccuracy");
+        Config.copy(config, calConfig, "CTAT.name");
         Config.copy(config, calConfig,"report.showPredictionDetail");
         Config.copy(config, calConfig,"report.rule.limit");
         Config.copy(config, calConfig,"report.numDocsPerFile");
