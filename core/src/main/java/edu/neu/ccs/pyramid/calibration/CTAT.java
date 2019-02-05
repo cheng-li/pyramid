@@ -112,6 +112,7 @@ public class CTAT {
             }
         }
         Summary summary = new Summary();
+        summary.confidenceThreshold=confidenceThreshold;
         summary.autoCodingPercentage = (sum*1.0)/size;
         summary.autoCodingAccuracy = (correct*1.0)/sum;
         summary.numAutoCoded = sum;

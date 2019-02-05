@@ -265,7 +265,7 @@ public class BRLRCalibration {
         double confidenceThresholdClipped = CTAT.clip(confidenceThreshold,config.getDouble("CTAT.lowerBound"),config.getDouble("CTAT.upperBound"));
 
         FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "ctat",config.getString("CTAT.name")+"_clipped").toFile(),""+confidenceThreshold);
+                "ctat",config.getString("CTAT.name")+"_clipped").toFile(),""+confidenceThresholdClipped);
 
     }
 
