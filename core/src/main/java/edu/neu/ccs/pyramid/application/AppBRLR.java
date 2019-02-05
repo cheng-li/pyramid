@@ -179,6 +179,8 @@ public class AppBRLR {
         Config.copy(config, calConfig,"output.modelFolder");
         Config.copy(config, calConfig, "CTAT.targetAccuracy");
         Config.copy(config, calConfig, "CTAT.name");
+        Config.copy(config, calConfig, "CTAT.lowerBound");
+        Config.copy(config, calConfig, "CTAT.upperBound");
         Config.copy(config, calConfig,"report.showPredictionDetail");
         Config.copy(config, calConfig,"report.rule.limit");
         Config.copy(config, calConfig,"report.numDocsPerFile");

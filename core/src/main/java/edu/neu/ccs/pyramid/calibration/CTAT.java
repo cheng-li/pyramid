@@ -61,6 +61,18 @@ public class CTAT {
     }
 
 
+    public static double clip(double original, double lowerBound, double upperBound){
+        if (original>upperBound){
+            return upperBound;
+        }
+
+        if (original<lowerBound){
+            return lowerBound;
+        }
+
+        return original;
+    }
+
     public static Summary findThreshold(Stream<Pair<Double, Integer>> stream, double targetAccuracy){
         Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(Pair::getFirst);
         List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());

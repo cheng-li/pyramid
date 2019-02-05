@@ -262,8 +262,10 @@ public class BRLRCalibration {
         FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                    "ctat",config.getString("CTAT.name")).toFile(),""+confidenceThreshold);
 
+        double confidenceThresholdClipped = CTAT.clip(confidenceThreshold,config.getDouble("CTAT.lowerBound"),config.getDouble("CTAT.upperBound"));
 
-
+        FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "ctat",config.getString("CTAT.name")+"_clipped").toFile(),""+confidenceThreshold);
 
     }
 
@@ -284,8 +286,7 @@ public class BRLRCalibration {
         PredictionVectorizer predictionVectorizer = (PredictionVectorizer) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
 
-        double confidenceThreshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "ctat",config.getString("CTAT.name")).toFile()));
+
 
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
 
@@ -322,13 +323,24 @@ public class BRLRCalibration {
             double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
 
             eval(instances, setCalibrator, logger, targetAccuracy);
+
+            double confidenceThreshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                    "ctat",config.getString("CTAT.name")).toFile()));
             CTAT.Summary summary = CTAT.applyThreshold(generateStream(instances,setCalibrator),confidenceThreshold);
-            logger.info("autocoding performance on dataset "+config.getString("input.testFolder")+"  with confidence threshold "+summary.getConfidenceThreshold());
+            logger.info("autocoding performance on dataset "+config.getString("input.testFolder")+"  with unclipped confidence threshold "+summary.getConfidenceThreshold());
             logger.info("autocoding percentage = "+ summary.getAutoCodingPercentage());
             logger.info("autocoding accuracy = "+ summary.getAutoCodingAccuracy());
             logger.info("number of autocoded documents = "+ summary.getNumAutoCoded());
             logger.info("number of correct autocoded documents = "+ summary.getNumCorrectAutoCoded());
 
+            double confidenceThresholdClipped = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                    "ctat",config.getString("CTAT.name")+"_clipped").toFile()));
+            CTAT.Summary summaryClipped = CTAT.applyThreshold(generateStream(instances,setCalibrator),confidenceThresholdClipped);
+            logger.info("autocoding performance on dataset "+config.getString("input.testFolder")+"  with clipped confidence threshold "+summaryClipped.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ summaryClipped.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ summaryClipped.getAutoCodingAccuracy());
+            logger.info("number of autocoded documents = "+ summaryClipped.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ summaryClipped.getNumCorrectAutoCoded());
         }
 
 
