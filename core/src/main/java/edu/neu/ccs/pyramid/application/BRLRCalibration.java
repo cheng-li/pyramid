@@ -192,7 +192,7 @@ public class BRLRCalibration {
                     .collect(Collectors.toList());
             double targerAccuracy = config.getDouble("CTAT.targetAccuracy");
 
-            evalWithoutAutocoding(instances, setCalibrator, logger, targerAccuracy);
+            eval(instances, setCalibrator, logger, targerAccuracy);
         }
 
         logger.info("classification performance on "+config.getString("input.validFolder")+" set");
@@ -206,7 +206,7 @@ public class BRLRCalibration {
                     .collect(Collectors.toList());
             double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
 
-            evalWithoutAutocoding(instances, setCalibrator, logger, targetAccuracy);
+            eval(instances, setCalibrator, logger, targetAccuracy);
 
 
 
@@ -254,7 +254,7 @@ public class BRLRCalibration {
                 .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
                 .collect(Collectors.toList());
         double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
-        double confidenceThreshold = Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(instances,setCalibrator)).getFirst();
+        double confidenceThreshold = CTAT.findThreshold(generateStream(instances,setCalibrator),targetAccuracy).getConfidenceThreshold();
 
 
         logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +confidenceThreshold);
@@ -321,12 +321,13 @@ public class BRLRCalibration {
                     .collect(Collectors.toList());
             double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
 
-            evalWithoutAutocoding(instances, setCalibrator, logger, targetAccuracy);
-            Displayer.CTATresult ctaTresult = Displayer.autocodingPercentageForAccuraccyTarget(generateStream(instances,setCalibrator),confidenceThreshold);
-            logger.info("autocoding percentage for target accuracy "+targetAccuracy+" on "+config.getString("input.testFolder")+" set = "+ ctaTresult.autocodingPercent);
-            logger.info("autocoding accuracy = "+ ctaTresult.autocodingAccuracy);
-            logger.info("number of autocoded documents = "+ctaTresult.numAutocodeDocs);
-            logger.info("number of correct autocoded documents = "+ctaTresult.numCorrectAutocodeDocs);
+            eval(instances, setCalibrator, logger, targetAccuracy);
+            CTAT.Summary summary = CTAT.applyThreshold(generateStream(instances,setCalibrator),confidenceThreshold);
+            logger.info("autocoding performance on dataset "+config.getString("input.testFolder")+"  with confidence threshold "+summary.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ summary.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ summary.getAutoCodingAccuracy());
+            logger.info("number of autocoded documents = "+ summary.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ summary.getNumCorrectAutoCoded());
 
         }
 
@@ -500,26 +501,8 @@ public class BRLRCalibration {
     }
 
 
-    private static CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
-        double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
-        double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
-        double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
-        logger.info("mse="+mse);
-        logger.info("absolute calibration error="+ace);
-        logger.info("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
-        logger.info("sharpness="+sharpness);
-        logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
-        logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
-        logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getFirst());
-        logger.info("autocoding percentage for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getSecond());
-        CaliRes caliRes = new CaliRes();
-        caliRes.mse = mse;
-        caliRes.ace= ace;
-        caliRes.sharpness = sharpness;
-        return caliRes;
-    }
 
-    private static CaliRes evalWithoutAutocoding(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
+    private static CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
