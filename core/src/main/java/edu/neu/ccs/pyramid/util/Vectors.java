@@ -5,6 +5,8 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.SequentialAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
+import java.util.List;
+
 /**
  * Created by chengli on 1/3/16.
  */
@@ -13,6 +15,24 @@ public class Vectors {
     public static double cosine(Vector vector1, Vector vector2){
         double prod = vector1.dot(vector2);
         return prod/(vector1.norm(2)*vector2.norm(2));
+    }
+
+    public static Vector conatenateToSparseRandom(List<Vector> vectors){
+        int size = 0;
+        for (Vector vector: vectors){
+            size += vector.size();
+        }
+        Vector concatenated = new RandomAccessSparseVector(size);
+        int offset = 0;
+        for (Vector vector: vectors){
+            for (Vector.Element nonZeros: vector.nonZeroes()) {
+                int index = nonZeros.index();
+                double value = nonZeros.get();
+                concatenated.set(index+offset,value);
+            }
+            offset += vector.size();
+        }
+        return concatenated;
     }
 
     public static Vector concatenate(Vector vector, Vector vector2){
