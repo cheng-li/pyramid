@@ -10,20 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BRProbFeatureExtractor implements PredictionFeatureExtractor{
-    private double[] calibratedLabelProbs;
-
-    public BRProbFeatureExtractor(double[] calibratedLabelProbs) {
-        this.calibratedLabelProbs = calibratedLabelProbs;
-    }
-
-    public BRProbFeatureExtractor(MultiLabelClassifier.ClassProbEstimator classProbEstimator, Vector instance, LabelCalibrator labelCalibrator){
-        double[] uncalibrated = classProbEstimator.predictClassProbs(instance);
-        this.calibratedLabelProbs = labelCalibrator.calibratedClassProbs(uncalibrated);
-
-    }
+    private static final long serialVersionUID = 1L;
 
     @Override
-    public Vector extractFeatures(MultiLabel prediction) {
+    public Vector extractFeatures(PredictionCandidate predictionCandidate) {
+        MultiLabel prediction = predictionCandidate.multiLabel;
+        double[] calibratedLabelProbs = predictionCandidate.labelProbs;
         double prod = 1;
         for (int l=0;l<calibratedLabelProbs.length;l++){
             if (prediction.matchClass(l)){

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public class PriorFeatureExtractor implements PredictionFeatureExtractor {
+    private static final long serialVersionUID = 1L;
     private Map<MultiLabel,Double> priors;
 
     public PriorFeatureExtractor(MultiLabelClfDataSet dataSet){
@@ -36,9 +37,9 @@ public class PriorFeatureExtractor implements PredictionFeatureExtractor {
     }
 
     @Override
-    public Vector extractFeatures(MultiLabel prediction) {
+    public Vector extractFeatures(PredictionCandidate prediction) {
         Vector vector = new DenseVector(1);
-        double prior = priors.getOrDefault(prediction,0.0);
+        double prior = priors.getOrDefault(prediction.multiLabel,0.0);
         vector.set(0,prior);
         return vector;
     }

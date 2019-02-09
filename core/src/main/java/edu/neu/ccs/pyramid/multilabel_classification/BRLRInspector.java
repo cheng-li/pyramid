@@ -1,9 +1,6 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
-import edu.neu.ccs.pyramid.calibration.LabelCalibrator;
-import edu.neu.ccs.pyramid.calibration.PredictionVectorizer;
-import edu.neu.ccs.pyramid.calibration.TopKFinder;
-import edu.neu.ccs.pyramid.calibration.VectorCalibrator;
+import edu.neu.ccs.pyramid.calibration.*;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -29,7 +26,7 @@ public class BRLRInspector {
                                                                   VectorCalibrator setCalibrator,
                                                                   MultiLabelClfDataSet dataSet,
                                                                   MultiLabelClassifier classifier,
-                                                                  PredictionVectorizer predictionVectorizer,
+                                                                  PredictionFeatureExtractor predictionFeatureExtractor,
                                                                   int dataPointIndex, int ruleLimit,
                                                                   int labelSetLimit, double classProbThreshold){
         MultiLabelPredictionAnalysis predictionAnalysis = new MultiLabelPredictionAnalysis();
@@ -45,7 +42,11 @@ public class BRLRInspector {
         double[] classProbs = cbm.predictClassProbs(dataSet.getRow(dataPointIndex));
         double[] calibratedClassProbs = labelCalibrator.calibratedClassProbs(classProbs);
 
-        predictionAnalysis.setProbForTrueLabels(setCalibrator.calibrate(predictionVectorizer.feature(cbm,dataSet.getRow(dataPointIndex),dataSet.getMultiLabels()[dataPointIndex])));
+        PredictionCandidate trueCandidate = new PredictionCandidate();
+        trueCandidate.x = dataSet.getRow(dataPointIndex);
+        trueCandidate.multiLabel = dataSet.getMultiLabels()[dataPointIndex];
+        trueCandidate.labelProbs = calibratedClassProbs;
+        predictionAnalysis.setProbForTrueLabels(setCalibrator.calibrate(predictionFeatureExtractor.extractFeatures(trueCandidate)));
 
         MultiLabel predictedLabels = classifier.predict(dataSet.getRow(dataPointIndex));
         List<Integer> internalPrediction = predictedLabels.getMatchedLabelsOrdered();
@@ -53,7 +54,12 @@ public class BRLRInspector {
         List<String> prediction = internalPrediction.stream().map(labelTranslator::toExtLabel).collect(Collectors.toList());
         predictionAnalysis.setPrediction(prediction);
 
-        predictionAnalysis.setProbForPredictedLabels(setCalibrator.calibrate(predictionVectorizer.feature(cbm,dataSet.getRow(dataPointIndex),predictedLabels)));
+        PredictionCandidate predictedCandidate = new PredictionCandidate();
+        predictedCandidate.x = dataSet.getRow(dataPointIndex);
+        predictedCandidate.multiLabel = predictedLabels;
+        predictedCandidate.labelProbs = calibratedClassProbs;
+
+        predictionAnalysis.setProbForPredictedLabels(setCalibrator.calibrate(predictionFeatureExtractor.extractFeatures(predictedCandidate)));
 
         List<Integer> classes = new ArrayList<Integer>();
         for (int k = 0; k < cbm.getNumClasses(); k++){
@@ -86,10 +92,10 @@ public class BRLRInspector {
         List<Pair<MultiLabel,Double>> topK;
         if (classifier instanceof SupportPredictor){
             topK = TopKFinder.topKinSupport(dataSet.getRow(dataPointIndex),cbm,labelCalibrator,setCalibrator,
-                    predictionVectorizer,((SupportPredictor)classifier).getSupport(),labelSetLimit);
+                    predictionFeatureExtractor,((SupportPredictor)classifier).getSupport(),labelSetLimit);
         } else {
             topK = TopKFinder.topK(dataSet.getRow(dataPointIndex),cbm,labelCalibrator,setCalibrator,
-                    predictionVectorizer,labelSetLimit);
+                    predictionFeatureExtractor,labelSetLimit);
         }
 
         List<MultiLabelPredictionAnalysis.LabelSetProbInfo> labelSetRanking = topK.stream()

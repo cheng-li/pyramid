@@ -96,27 +96,32 @@ public class BRLRCalibration {
 
         logger.info("start training set calibrator");
 
-        PredictionVectorizer predictionVectorizer = PredictionVectorizer.newBuilder()
-                .brProb(config.getBoolean("brProb"))
-                .setPrior(config.getBoolean("setPrior"))
-                .cardPrior(config.getBoolean("cardPrior"))
-                .card(config.getBoolean("card"))
-                .pairPrior(config.getBoolean("pairPrior"))
-                .encodeLabel(config.getBoolean("encodeLabel"))
-                .f1Prior(config.getBoolean("f1Prior"))
-                .cbmProb(config.getBoolean("cbmProb"))
-                .implication(config.getBoolean("implication"))
-                .labelProbs(config.getBoolean("labelProbs"))
-                .position(config.getBoolean("position"))
-                .logScale(config.getBoolean("logScale"))
+        List<PredictionFeatureExtractor> extractors = new ArrayList<>();
 
-                .weight(config.getString("weight"))
-                .build(train,labelCalibrator);
+        if (config.getBoolean("brProb")){
+            extractors.add(new BRProbFeatureExtractor());
+        }
+
+        if (config.getBoolean("setPrior")){
+            extractors.add(new PriorFeatureExtractor(train));
+        }
+
+        if (config.getBoolean("card")){
+            extractors.add(new CardFeatureExtractor());
+        }
+
+        if (config.getBoolean("encodeLabel")){
+            extractors.add(new LabelBinaryFeatureExtractor(cbm.getNumClasses(),train.getLabelTranslator()));
+        }
+
+        PredictionFeatureExtractor predictionFeatureExtractor = new CombinedPredictionFeatureExtractor(extractors);
+
+        CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
+        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(cal,cbm,config.getInt("numCandidates"));
 
 
-        PredictionVectorizer.TrainData weightedCalibratorTrainData = predictionVectorizer.createCaliTrainingData(setCalData,cbm, config.getInt("numCandidates"));
-        RegDataSet calibratorTrainData = weightedCalibratorTrainData.regDataSet;
-        double[] weights = weightedCalibratorTrainData.instanceWeights;
+        RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
+        double[] weights = caliTrainingData.instanceWeights;
 
         VectorCalibrator setCalibrator = null;
 
@@ -131,7 +136,7 @@ public class BRLRCalibration {
                             .numIterations(config.getInt("numIterations"))
                             .numLeaves(config.getInt("numLeaves"))
                             .build();
-                setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionVectorizer);
+                setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionFeatureExtractor,labelCalibrator);
                 break;
             case "isotonic":
                 setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,1);
@@ -149,8 +154,8 @@ public class BRLRCalibration {
                 "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
         Serialization.serialize(setCalibrator,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"set_calibrator").toFile());
-        Serialization.serialize(predictionVectorizer,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
+        Serialization.serialize(predictionFeatureExtractor,Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"prediction_feature_extractor").toFile());
         logger.info("finish training calibrators");
 
 
@@ -183,8 +188,8 @@ public class BRLRCalibration {
         if (true) {
             logger.info("calibration performance on "+config.getString("input.calibrationFolder")+ " set");
 
-            List<PredictionVectorizer.Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
+            List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
                     .collect(Collectors.toList());
             double targerAccuracy = config.getDouble("calibrate.targetAccuracy");
 
@@ -197,8 +202,8 @@ public class BRLRCalibration {
         if (true) {
             logger.info("calibration performance on "+ config.getString("input.validFolder")+" set");
 
-            List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
+            List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
                     .collect(Collectors.toList());
             double targetAccuracy = config.getDouble("calibrate.targetAccuracy");
 
@@ -225,8 +230,8 @@ public class BRLRCalibration {
                 "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
         VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"set_calibrator").toFile());
-        PredictionVectorizer predictionVectorizer = (PredictionVectorizer) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
+        PredictionFeatureExtractor predictionFeatureExtractor = (PredictionFeatureExtractor) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"prediction_feature_extractor").toFile());
 
         double confidenceThreshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"confidence_threshold").toFile()));
@@ -256,12 +261,13 @@ public class BRLRCalibration {
         logger.info("test performance");
         logger.info(new MLMeasures(test.getNumClasses(),test.getMultiLabels(), predictions).toString());
 
+        CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
 
         if (true) {
             logger.info("calibration performance on "+config.getString("input.testFolder")+" set");
 
-            List<PredictionVectorizer.Instance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
+            List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(cbm, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
                     .collect(Collectors.toList());
             double targetAccuracy = config.getDouble("calibrate.targetAccuracy");
 
@@ -281,7 +287,7 @@ public class BRLRCalibration {
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(cbm, labelCalibrator, setCalibrator,
-                    test, i, fClassifier,predictionVectorizer);
+                    test, i, fClassifier,predictionFeatureExtractor);
             ParallelFileWriter.mapToString(mapper,list, csv,100);
         }
 
@@ -293,7 +299,7 @@ public class BRLRCalibration {
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> topKSets(config, cbm, labelCalibrator, setCalibrator,
-                    test, i, fClassifier,predictionVectorizer);
+                    test, i, fClassifier,predictionFeatureExtractor);
             ParallelFileWriter.mapToString(mapper,list, csv,100);
         }
 
@@ -314,7 +320,7 @@ public class BRLRCalibration {
                 int start = i*numDocsPerFile;
                 int end = start+numDocsPerFile;
                 List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,test.getNumDataPoints())).parallel().mapToObj(a->
-                        BRLRInspector.analyzePrediction(cbm, labelCalibrator, setCalibrator, test, fClassifier, predictionVectorizer, a,  ruleLimit,labelSetLimit, probThreshold))
+                        BRLRInspector.analyzePrediction(cbm, labelCalibrator, setCalibrator, test, fClassifier, predictionFeatureExtractor, a,  ruleLimit,labelSetLimit, probThreshold))
                         .collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
                 File testDataFile = new File(config.getString("input.testData"));
@@ -339,7 +345,7 @@ public class BRLRCalibration {
                                                              MultiLabelClfDataSet dataSet,
                                                              int dataPointIndex,
                                                              MultiLabelClassifier classifier,
-                                                            PredictionVectorizer predictionVectorizer){
+                                                            PredictionFeatureExtractor predictionFeatureExtractor){
         StringBuilder sb = new StringBuilder();
         MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
@@ -377,7 +383,11 @@ public class BRLRCalibration {
                     .append("\t").append(match).append("\n");
         }
 
-        Vector feature = predictionVectorizer.feature(cbm,dataSet.getRow(dataPointIndex),predicted);
+        PredictionCandidate predictedCandidate = new PredictionCandidate();
+        predictedCandidate.multiLabel = predicted;
+        predictedCandidate.labelProbs = calibratedClassProbs;
+        predictedCandidate.x = dataSet.getRow(dataPointIndex);
+        Vector feature = predictionFeatureExtractor.extractFeatures(predictedCandidate);
         double probability = setCalibrator.calibrate(feature);
 
 
@@ -404,8 +414,7 @@ public class BRLRCalibration {
                                 LabelCalibrator labelCalibrator,
                                 VectorCalibrator setCalibrator,
                                 MultiLabelClfDataSet dataSet,
-                                int dataPointIndex, MultiLabelClassifier classifier,
-                                  PredictionVectorizer predictionVectorizer){
+                                int dataPointIndex, MultiLabelClassifier classifier, PredictionFeatureExtractor predictionVectorizer){
         StringBuilder sb = new StringBuilder();
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
@@ -441,26 +450,8 @@ public class BRLRCalibration {
     }
 
 
-    private static CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
-        double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
-        double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
-        double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
-        logger.info("mse="+mse);
-        logger.info("absolute calibration error="+ace);
-        logger.info("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
-        logger.info("sharpness="+sharpness);
-        logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
-        logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
-        logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getFirst());
-        logger.info("autocoding percentage for target accuracy "+targetAccuracy +" = " +Displayer.confidenceThresholdForAccuraccyTarget(targetAccuracy,generateStream(predictions,calibrator)).getSecond());
-        CaliRes caliRes = new CaliRes();
-        caliRes.mse = mse;
-        caliRes.ace= ace;
-        caliRes.sharpness = sharpness;
-        return caliRes;
-    }
 
-    private static CaliRes evalWithoutAutocoding(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
+    private static CaliRes evalWithoutAutocoding(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger, Double targetAccuracy){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
@@ -482,7 +473,7 @@ public class BRLRCalibration {
 
 
 
-    private static Stream<Pair<Double,Integer>> generateStream(List<PredictionVectorizer.Instance> predictions, VectorCalibrator vectorCalibrator){
+    private static Stream<Pair<Double,Integer>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
         return predictions.stream()
                 .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),(int)pred.correctness));
     }

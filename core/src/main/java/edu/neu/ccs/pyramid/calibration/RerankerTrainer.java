@@ -22,15 +22,17 @@ public class RerankerTrainer {
     private int minDataPerLeaf;
 
 
-    public Reranker train(RegDataSet regDataSet, double[] instanceWeights, CBM cbm, PredictionVectorizer predictionVectorizer){
+    public Reranker train(RegDataSet regDataSet, double[] instanceWeights, CBM cbm,
+                          PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator){
         LSBoost lsBoost = new LSBoost();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        System.out.println("weights = "+ Arrays.toString(instanceWeights));
         LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         if (monotonic){
-            optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
+            int[][] mono = new int[1][regDataSet.getNumFeatures()];
+            mono[0] = predictionFeatureExtractor.featureMonotonicity();
+            optimizer.setMonotonicity(mono);
         }
         optimizer.setShrinkage(shrinkage);
         optimizer.initialize();
@@ -39,51 +41,51 @@ public class RerankerTrainer {
             optimizer.iterate();
         }
 
-        return new Reranker(lsBoost, cbm, numCandidates,predictionVectorizer);
+        return new Reranker(lsBoost, cbm, numCandidates,predictionFeatureExtractor, labelCalibrator);
     }
 
 
-    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, CBM cbm, PredictionVectorizer predictionVectorizer){
-        LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
-
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
-        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
-        if (monotonic){
-            optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
-        }
-        optimizer.setShrinkage(shrinkage);
-        optimizer.initialize();
-
-        for (int i=1;i<=numIterations;i++){
-            optimizer.iterate();
-        }
-
-        return new Reranker(lsLogisticBoost, cbm, numCandidates,predictionVectorizer);
-    }
-
-
-    public Reranker trainLambdaMART(PredictionVectorizer.TrainData trainData, CBM cbm, PredictionVectorizer predictionVectorizer, int ndcgTruncationLevel){
-        LambdaMART lambdaMART = new LambdaMART();
-
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
-        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        LambdaMARTOptimizer optimizer = new LambdaMARTOptimizer(lambdaMART, trainData.regDataSet, trainData.regDataSet.getLabels(), regTreeFactory, trainData.instancesForEachQuery);
-
-        optimizer.setNdcgTruncationLevel(ndcgTruncationLevel);
-
-        if (monotonic){
-            optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
-        }
-        optimizer.setShrinkage(shrinkage);
-        optimizer.initialize();
-
-        for (int i=1;i<=numIterations;i++){
-            optimizer.iterate();
-        }
-
-        return new Reranker(lambdaMART, cbm, numCandidates,predictionVectorizer);
-    }
+//    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, CBM cbm, PredictionVectorizer predictionVectorizer){
+//        LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
+//
+//        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
+//        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+//        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
+//        if (monotonic){
+//            optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
+//        }
+//        optimizer.setShrinkage(shrinkage);
+//        optimizer.initialize();
+//
+//        for (int i=1;i<=numIterations;i++){
+//            optimizer.iterate();
+//        }
+//
+//        return new Reranker(lsLogisticBoost, cbm, numCandidates,predictionVectorizer);
+//    }
+//
+//
+//    public Reranker trainLambdaMART(PredictionVectorizer.TrainData trainData, CBM cbm, PredictionVectorizer predictionVectorizer, int ndcgTruncationLevel){
+//        LambdaMART lambdaMART = new LambdaMART();
+//
+//        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
+//        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+//        LambdaMARTOptimizer optimizer = new LambdaMARTOptimizer(lambdaMART, trainData.regDataSet, trainData.regDataSet.getLabels(), regTreeFactory, trainData.instancesForEachQuery);
+//
+//        optimizer.setNdcgTruncationLevel(ndcgTruncationLevel);
+//
+//        if (monotonic){
+//            optimizer.setMonotonicity(predictionVectorizer.getMonotonicityConstraints(cbm.getNumClasses()));
+//        }
+//        optimizer.setShrinkage(shrinkage);
+//        optimizer.initialize();
+//
+//        for (int i=1;i<=numIterations;i++){
+//            optimizer.iterate();
+//        }
+//
+//        return new Reranker(lambdaMART, cbm, numCandidates,predictionVectorizer);
+//    }
 
 
     private RerankerTrainer(Builder builder) {

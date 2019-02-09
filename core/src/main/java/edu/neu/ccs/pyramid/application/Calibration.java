@@ -154,10 +154,10 @@ public class Calibration {
         if (true) {
             logger.info("calibration performance on test set");
 
-            List<PredictionVectorizer.Instance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
+            List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
                     .boxed().map(i -> {
 
-                        PredictionVectorizer.Instance instance = new PredictionVectorizer.Instance();
+                        CalibrationDataGenerator.CalibrationInstance instance = new CalibrationDataGenerator.CalibrationInstance();
                         instance.vector = calTestData.getRow(i);
                         instance.correctness=calTestData.getLabels()[i];
                         return instance;
@@ -176,7 +176,7 @@ public class Calibration {
     }
 
 
-    private static BRLRCalibration.CaliRes eval(List<PredictionVectorizer.Instance> predictions, VectorCalibrator calibrator, Logger logger){
+    private static BRLRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
@@ -195,7 +195,7 @@ public class Calibration {
 
 
 
-    private static Stream<Pair<Double,Integer>> generateStream(List<PredictionVectorizer.Instance> predictions, VectorCalibrator vectorCalibrator){
+    private static Stream<Pair<Double,Integer>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
         return predictions.stream()
                 .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),(int)pred.correctness));
     }

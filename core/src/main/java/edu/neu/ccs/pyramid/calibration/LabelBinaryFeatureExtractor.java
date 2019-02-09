@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LabelBinaryFeatureExtractor implements PredictionFeatureExtractor{
+    private static final long serialVersionUID = 1L;
+
     int numLabelsInModel;
     LabelTranslator labelTranslator;
 
@@ -19,9 +21,9 @@ public class LabelBinaryFeatureExtractor implements PredictionFeatureExtractor{
     }
 
     @Override
-    public Vector extractFeatures(MultiLabel prediction) {
+    public Vector extractFeatures(PredictionCandidate prediction) {
         Vector vector = new RandomAccessSparseVector(numLabelsInModel);
-        for (int l: prediction.getMatchedLabels()){
+        for (int l: prediction.multiLabel.getMatchedLabels()){
             vector.set(l,1);
         }
         return vector;

@@ -1,58 +1,51 @@
 package edu.neu.ccs.pyramid.calibration;
 
-import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.RegDataSet;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
-import edu.neu.ccs.pyramid.multilabel_classification.cbm.AccPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.BMDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.Pair;
-import edu.neu.ccs.pyramid.util.PrintUtil;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     private static final long serialVersionUID = 1L;
     Regressor regressor;
-    CBM cbm;
+    MultiLabelClassifier.ClassProbEstimator classProbEstimator;
     int numCandidate;
-    private PredictionVectorizer predictionVectorizer;
+    private PredictionFeatureExtractor predictionFeatureExtractor;
+    private LabelCalibrator labelCalibrator;
 
 
-    public Reranker(Regressor regressor, CBM cbm, int numCandidate, PredictionVectorizer predictionVectorizer) {
+    public Reranker(Regressor regressor, ClassProbEstimator classProbEstimator, int numCandidate,
+                    PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator) {
         this.regressor = regressor;
-        this.cbm = cbm;
+        this.classProbEstimator = classProbEstimator;
         this.numCandidate = numCandidate;
-        this.predictionVectorizer = predictionVectorizer;
-    }
-
-    public PredictionVectorizer getPredictionVectorizer() {
-        return predictionVectorizer;
-    }
-
-    public CBM getCbm() {
-        return cbm;
+        this.predictionFeatureExtractor = predictionFeatureExtractor;
+        this.labelCalibrator = labelCalibrator;
     }
 
 
 
     @Override
     public int getNumClasses() {
-        return cbm.getNumClasses();
+        return classProbEstimator.getNumClasses();
     }
 
     public double prob(Vector vector, MultiLabel multiLabel){
-        double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
-        BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
-        Vector feature = predictionVectorizer.feature(bmDistribution, multiLabel,marginals,Optional.empty(), Optional.empty());
+        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
+        PredictionCandidate predictionCandidate = new PredictionCandidate();
+        predictionCandidate.x = vector;
+        predictionCandidate.labelProbs = marginals;
+        predictionCandidate.multiLabel = multiLabel;
+        Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
         double score = regressor.predict(feature);
         if (score>1){
             score=1;
@@ -66,16 +59,19 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
 
     @Override
      public MultiLabel predict(Vector vector) {
-        double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
+        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
 
-        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals, numCandidate);
-        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals,numCandidate);
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
-        BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
         for (int i=0;i<numCandidate;i++){
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            Vector feature = predictionVectorizer.feature(bmDistribution, candidate,marginals,Optional.of(positionMap), Optional.of(cdfMap));
+
+            PredictionCandidate predictionCandidate = new PredictionCandidate();
+            predictionCandidate.x = vector;
+            predictionCandidate.labelProbs = marginals;
+            predictionCandidate.multiLabel = candidate;
+
+            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
             double score = regressor.predict(feature);
             candidates.add(new Pair<>(candidate,score));
         }
@@ -101,38 +97,41 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
 
 
     public MultiLabel predictByGFM(Vector vector){
-        double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
-
-        Map<MultiLabel,Integer> positionMap = predictionVectorizer.positionMap(marginals, numCandidate);
-        Map<MultiLabel,Double> cdfMap = predictionVectorizer.cdfMap(marginals, numCandidate);
+        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<MultiLabel> multiLabels = new ArrayList<>();
         List<Double> probabilities = new ArrayList<>();
-        BMDistribution bmDistribution = cbm.computeBM(vector,0.001);
+
         for (int i=0;i<numCandidate;i++){
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            Vector feature = predictionVectorizer.feature(bmDistribution, candidate,marginals,Optional.of(positionMap), Optional.of(cdfMap));
+
+            PredictionCandidate predictionCandidate = new PredictionCandidate();
+            predictionCandidate.x = vector;
+            predictionCandidate.labelProbs = marginals;
+            predictionCandidate.multiLabel = candidate;
+
+            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
             double score = regressor.predict(feature);
             multiLabels.add(candidate);
             probabilities.add(score);
         }
         GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
-        return generalF1Predictor.predict(cbm.getNumClasses(),multiLabels,probabilities);
+        return generalF1Predictor.predict(classProbEstimator.getNumClasses(),multiLabels,probabilities);
     }
 
 
 
-    public boolean isInTopK(Vector vector,  MultiLabel groundTruth){
-        double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(cbm.predictClassProbs(vector));
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        for (int i=0;i<numCandidate;i++) {
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            if (candidate.equals(groundTruth)){
-                return true;
-            }
-        }
-        return false;
-    }
+//    public boolean isInTopK(Vector vector,  MultiLabel groundTruth){
+//        double[] marginals = predictionVectorizer.getLabelCalibrator().calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
+//        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+//        for (int i=0;i<numCandidate;i++) {
+//            MultiLabel candidate = dynamicProgramming.nextHighestVector();
+//            if (candidate.equals(groundTruth)){
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     @Override
     public FeatureList getFeatureList() {

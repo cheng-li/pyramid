@@ -9,10 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CardFeatureExtractor implements PredictionFeatureExtractor{
+    private static final long serialVersionUID = 1L;
+
     @Override
-    public Vector extractFeatures(MultiLabel prediction) {
+    public Vector extractFeatures(PredictionCandidate prediction) {
         Vector vector = new DenseVector(1);
-        vector.set(0,prediction.getNumMatchedLabels());
+        vector.set(0,prediction.multiLabel.getNumMatchedLabels());
         return vector;
     }
 
