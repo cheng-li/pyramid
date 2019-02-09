@@ -125,13 +125,14 @@ public class BRLRCalibration {
 
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
+        System.out.println("dimension="+calibratorTrainData.getNumFeatures());
         double[] weights = caliTrainingData.instanceWeights;
 
         VectorCalibrator setCalibrator = null;
 
         switch (config.getString("setCalibrator")){
             case "cardinality_isotonic":
-                setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 1, 3);
+                setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 2);
                 break;
             case "reranker":
                 RerankerTrainer rerankerTrainer = RerankerTrainer.newBuilder()
@@ -143,10 +144,10 @@ public class BRLRCalibration {
                 setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionFeatureExtractor,labelCalibrator);
                 break;
             case "isotonic":
-                setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,1);
+                setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0);
                 break;
             case "none":
-                setCalibrator = new VectorIdentityCalibrator(1);
+                setCalibrator = new VectorIdentityCalibrator(0);
                 break;
             default:
                 throw new IllegalArgumentException("illegal setCalibrator");

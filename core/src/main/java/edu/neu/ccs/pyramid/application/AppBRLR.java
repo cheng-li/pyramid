@@ -160,6 +160,7 @@ public class AppBRLR {
         calConfig.setString("cardPrior","false");
         calConfig.setString("card","true");
         calConfig.setString("pairPrior","false");
+        //todo
         calConfig.setString("encodeLabel","false");
         calConfig.setString("f1Prior","false");
         calConfig.setString("cbmProb","false");
