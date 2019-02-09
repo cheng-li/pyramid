@@ -63,51 +63,6 @@ public class Displayer {
     }
 
 
-    public static Pair<Double, Double> confidenceThresholdForAccuraccyTarget(double targetaccuracy,Stream<Pair<Double, Integer>> stream){
-        Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(pair->pair.getFirst());
-        List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
-        int sumCorrect = 0;
-        double confidenceThreshold = 0;
-        double autocodePercentage = 0;
-        int size = list.size();
-        Pair<Double, Double> result =new Pair<>();
-        for (int i = 0; i < size; i++){
-            sumCorrect += list.get(i).getSecond();
-            double current_accuracy = (sumCorrect*1.0)/(i+1);
-            if (i==size-1||(i<size-1&&(!list.get(i).getFirst().equals(list.get(i+1).getFirst())))){
-                if (current_accuracy >= targetaccuracy ){
-                    confidenceThreshold = list.get(i).getFirst();
-                    autocodePercentage = (i+1)/(size*1.0);
-                }
-            }
-
-        }
-        result.setFirst(confidenceThreshold);
-        result.setSecond(autocodePercentage);
-        return result;
-    }
-
-
-    public static Pair<Double,Double> autocodingPercentageForAccuraccyTarget(Stream<Pair<Double, Integer>> stream, double confidenceThreshold){
-
-        List<Pair<Double,Integer>> list = stream.collect(Collectors.toList());
-        int sum = 0;
-        int correct = 0;
-        int size = list.size();
-        for (int i = 0; i<size; i++){
-            if (list.get(i).getFirst() >= confidenceThreshold){
-                sum++;
-                if(list.get(i).getSecond() == 1){
-                    correct += 1;
-                }
-            }
-        }
-        Pair<Double,Double> pair =new Pair<>();
-        pair.setFirst((sum*1.0)/size);
-        pair.setSecond((correct*1.0)/sum);
-        return pair;
-    }
-
 
 
 
@@ -153,4 +108,6 @@ public class Displayer {
         return result;
 
     }
+
+
 }
