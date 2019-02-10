@@ -77,6 +77,7 @@ public class CalibrationDataGenerator {
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.multiLabel = multiLabel;
             predictionCandidate.labelProbs = marginals;
+            predictionCandidate.x = x;
             CalibrationInstance calibrationInstance = createInstance(groundTruth,predictionCandidate);
             calibrationInstance.weight=1;
             calibrationInstance.queryIndex = queryId;

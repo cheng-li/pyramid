@@ -170,6 +170,8 @@ public class AppBRLR {
         calConfig.setString("numCandidates",config.getString("calibrate.numCandidates"));
         calConfig.setString("numIterations",config.getString("calibrate.reranker.numIterations"));
         calConfig.setString("numLeaves",config.getString("calibrate.reranker.numLeaves"));
+        calConfig.setString("useInstanceFeatures",config.getString("calibrate.reranker.useInstanceFeatures"));
+        calConfig.setString("instanceFeatureIds",config.getString("calibrate.reranker.instanceFeatureIds"));
         calConfig.setEqual("monotonic=true");
         calConfig.setEqual("logScale=false");
         Config.copy(config,calConfig,"report.labelSetLimit");

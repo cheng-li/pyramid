@@ -118,6 +118,11 @@ public class BRLRCalibration {
             extractors.add(new LabelBinaryFeatureExtractor(cbm.getNumClasses(),train.getLabelTranslator()));
         }
 
+        if (config.getBoolean("useInstanceFeatures")){
+            extractors.add(new InstanceFeatureExtractor(config.getString("instanceFeatureIds"),train.getFeatureList()));
+        }
+
+
         PredictionFeatureExtractor predictionFeatureExtractor = new CombinedPredictionFeatureExtractor(extractors);
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
@@ -125,7 +130,6 @@ public class BRLRCalibration {
 
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
-        System.out.println("dimension="+calibratorTrainData.getNumFeatures());
         double[] weights = caliTrainingData.instanceWeights;
 
         VectorCalibrator setCalibrator = null;
