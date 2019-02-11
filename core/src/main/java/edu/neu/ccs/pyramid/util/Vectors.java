@@ -12,6 +12,16 @@ import java.util.List;
  */
 public class Vectors {
 
+    public static double[] toArray(Vector vector){
+        double[] arr = new double[vector.size()];
+        for (Vector.Element nonZero: vector.nonZeroes()){
+            int index = nonZero.index();
+            double v = nonZero.get();
+            arr[index] = v;
+        }
+        return arr;
+    }
+
     public static double cosine(Vector vector1, Vector vector2){
         double prod = vector1.dot(vector2);
         return prod/(vector1.norm(2)*vector2.norm(2));

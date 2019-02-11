@@ -96,6 +96,44 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     }
 
 
+    public MultiLabel predict(Vector vector, double[] uncalibratedLabelScores) {
+        double[] marginals = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
+
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
+        for (int i=0;i<numCandidate;i++){
+            MultiLabel candidate = dynamicProgramming.nextHighestVector();
+
+            PredictionCandidate predictionCandidate = new PredictionCandidate();
+            predictionCandidate.x = vector;
+            predictionCandidate.labelProbs = marginals;
+            predictionCandidate.multiLabel = candidate;
+
+            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
+            double score = regressor.predict(feature);
+            candidates.add(new Pair<>(candidate,score));
+        }
+        //todo
+//        AccPredictor accPredictor = new AccPredictor(cbm);
+//        accPredictor.setComponentContributionThreshold(0.001);
+//        MultiLabel cbmPre = accPredictor.predict(vector);
+//        Vector feature = predictionVectorizer.feature(bmDistribution, cbmPre,marginals,Optional.of(positionMap));
+//        double score = regressor.predict(feature);
+//        candidates.add(new Pair<>(cbmPre,score));
+
+
+        Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
+//        double maxC = candidates.stream().max(comparator).map(pair->pair.getSecond()).get();
+//        List<MultiLabel> ties = candidates.stream().filter(pair->pair.getSecond()==maxC).map(pair->pair.getFirst()).collect(Collectors.toList());
+//        if (ties.size()>1){
+//            System.out.println("marginals = "+ PrintUtil.printWithIndex(marginals));
+//            System.out.println("number of ties = "+ties.size()+", "+ties);
+//        }
+
+        return candidates.stream().max(comparator).map(pair->pair.getFirst()).get();
+    }
+
+
     public MultiLabel predictByGFM(Vector vector){
         double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);

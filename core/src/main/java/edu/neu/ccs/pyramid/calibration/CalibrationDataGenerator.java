@@ -8,6 +8,7 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.Vectors;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
@@ -27,6 +28,14 @@ public class CalibrationDataGenerator {
     public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, MultiLabelClassifier.ClassProbEstimator classProbEstimator, int numCandidates){
         List<CalibrationInstance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
                 .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], classProbEstimator , i, numCandidates).stream())
+                .collect(Collectors.toList());
+        return createData(instances);
+    }
+
+
+    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, List<Vector> uncalibratedLabelScores, int numCandidates){
+        List<CalibrationInstance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
+                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], Vectors.toArray(uncalibratedLabelScores.get(i)) , i, numCandidates).stream())
                 .collect(Collectors.toList());
         return createData(instances);
     }
@@ -67,7 +76,13 @@ public class CalibrationDataGenerator {
 
     private List<CalibrationInstance> expand(Vector x, MultiLabel groundTruth,
                                              MultiLabelClassifier.ClassProbEstimator classProbEstimator, int queryId, int numCandidates){
-        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(x));
+        double[] uncalibratedLabelScores = classProbEstimator.predictClassProbs(x);
+        return expand(x, groundTruth, uncalibratedLabelScores, queryId, numCandidates);
+    }
+
+    private List<CalibrationInstance> expand(Vector x, MultiLabel groundTruth,
+                                             double[] uncalibratedLabelScores, int queryId, int numCandidates){
+        double[] marginals = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
         List<CalibrationInstance> calibrationInstances = new ArrayList<>();
 
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
@@ -101,17 +116,17 @@ public class CalibrationDataGenerator {
 
     public CalibrationInstance createInstance(MultiLabelClassifier.ClassProbEstimator classProbEstimator, Vector x,
                                               MultiLabel prediction, MultiLabel groundtruth){
-        CalibrationInstance calibrationInstance = new CalibrationInstance();
+        double[] uncalibratedLabelScores = classProbEstimator.predictClassProbs(x);
+        return createInstance(x, uncalibratedLabelScores, prediction, groundtruth);
+    }
+
+    public CalibrationInstance createInstance(Vector x, double[] uncalibratedLabelScores,
+                                              MultiLabel prediction, MultiLabel groundtruth){
         PredictionCandidate predictionCandidate = new PredictionCandidate();
         predictionCandidate.x = x;
         predictionCandidate.multiLabel = prediction;
-        predictionCandidate.labelProbs = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(x));
-        calibrationInstance.vector= predictionFeatureExtractor.extractFeatures(predictionCandidate);
-        calibrationInstance.correctness = 0;
-        if (groundtruth.equals(predictionCandidate.multiLabel)){
-            calibrationInstance.correctness=1;
-        }
-        return calibrationInstance;
+        predictionCandidate.labelProbs = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
+        return createInstance(groundtruth,predictionCandidate);
     }
 
     public static class TrainData{
