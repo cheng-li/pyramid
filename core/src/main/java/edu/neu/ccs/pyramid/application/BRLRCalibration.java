@@ -144,7 +144,6 @@ public class BRLRCalibration {
                 RerankerTrainer rerankerTrainer = RerankerTrainer.newBuilder()
                             .numCandidates(config.getInt("numCandidates"))
                             .monotonic(config.getBoolean("monotonic"))
-                            .numIterations(config.getInt("numIterations"))
                             .numLeaves(config.getInt("numLeaves"))
                             .build();
                 setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet);

@@ -20,7 +20,6 @@ import java.util.Arrays;
 
 public class RerankerTrainer {
     private int numLeaves;
-    private int numIterations;
     private boolean monotonic;
     private int numCandidates;
     private double shrinkage;
@@ -114,7 +113,6 @@ public class RerankerTrainer {
 
     private RerankerTrainer(Builder builder) {
         numLeaves = builder.numLeaves;
-        numIterations = builder.numIterations;
         monotonic = builder.monotonic;
         numCandidates = builder.numCandidates;
         shrinkage = builder.shrinkage;
@@ -129,7 +127,6 @@ public class RerankerTrainer {
 
     public static final class Builder {
         private int numLeaves = 10;
-        private int numIterations = 100;
         private boolean monotonic = true;
         private int numCandidates = 50;
         private double shrinkage = 0.1;
@@ -143,10 +140,6 @@ public class RerankerTrainer {
             return this;
         }
 
-        public Builder numIterations(int val) {
-            numIterations = val;
-            return this;
-        }
 
         public Builder monotonic(boolean val) {
             monotonic = val;
