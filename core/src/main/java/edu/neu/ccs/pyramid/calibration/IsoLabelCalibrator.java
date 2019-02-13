@@ -62,6 +62,29 @@ public class IsoLabelCalibrator implements LabelCalibrator {
     }
 
 
+    public IsoLabelCalibrator(List<Vector> probabilities, MultiLabelClfDataSet multiLabelClfDataSet) {
+        this.isotonicRegressionList = new ArrayList<>();
+        int numClasses = probabilities.get(0).size();
+        for (int l= 0; l < numClasses; l++) {
+            final int calssIndex = l;
+            Stream<Pair<Double,Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+                    .mapToObj(i->{
+                        double prob = probabilities.get(i).get(calssIndex);
+                        Pair<Double,Integer> pair = new Pair<>();
+                        pair.setFirst(prob);
+                        pair.setSecond(0);
+                        if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
+                            pair.setSecond(1);
+                        }
+                        return pair;
+                    });
+
+            IsotonicRegression isotonicRegression = new IsotonicRegression(stream);
+            isotonicRegressionList.add(isotonicRegression);
+        }
+    }
+
+
     public double calibratedClassProb(double prob, int labelIndex){
         return isotonicRegressionList.get(labelIndex).predict(prob);
     }

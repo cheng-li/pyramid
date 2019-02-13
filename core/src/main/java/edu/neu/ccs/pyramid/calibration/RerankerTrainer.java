@@ -1,7 +1,10 @@
 package edu.neu.ccs.pyramid.calibration;
 
 import edu.neu.ccs.pyramid.dataset.RegDataSet;
+import edu.neu.ccs.pyramid.eval.MSE;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
+import edu.neu.ccs.pyramid.optimization.EarlyStopper;
 import edu.neu.ccs.pyramid.ranking.LambdaMART;
 import edu.neu.ccs.pyramid.ranking.LambdaMARTOptimizer;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
@@ -10,7 +13,9 @@ import edu.neu.ccs.pyramid.regression.ls_logistic_boost.LSLogisticBoost;
 import edu.neu.ccs.pyramid.regression.ls_logistic_boost.LSLogisticBoostOptimizer;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
 import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
+import edu.neu.ccs.pyramid.util.Serialization;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 public class RerankerTrainer {
@@ -22,8 +27,8 @@ public class RerankerTrainer {
     private int minDataPerLeaf;
 
 
-    public Reranker train(RegDataSet regDataSet, double[] instanceWeights, CBM cbm,
-                          PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator){
+    public Reranker train(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
+                          PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
         LSBoost lsBoost = new LSBoost();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
@@ -36,13 +41,32 @@ public class RerankerTrainer {
         }
         optimizer.setShrinkage(shrinkage);
         optimizer.initialize();
-
-        for (int i=1;i<=numIterations;i++){
+        EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE,5);
+        LSBoost bestModel = null;
+        for (int i = 1; true; i++){
             optimizer.iterate();
+            double mse = MSE.mse(lsBoost, validation);
+            if (i%10==0){
+                earlyStopper.add(i,mse);
+                if (earlyStopper.getBestIteration()==i){
+                    try {
+                        bestModel = (LSBoost) Serialization.deepCopy(lsBoost);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (earlyStopper.shouldStop()){
+                    break;
+                }
+            }
         }
-
-        return new Reranker(lsBoost, cbm, numCandidates,predictionFeatureExtractor, labelCalibrator);
+//        System.out.println("best iteration = "+earlyStopper.getBestIteration());
+        return new Reranker(bestModel, classProbEstimator, numCandidates,predictionFeatureExtractor, labelCalibrator);
     }
+
+
 
 
 //    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, CBM cbm, PredictionVectorizer predictionVectorizer){

@@ -128,6 +128,8 @@ public class BRLRCalibration {
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
         CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,cbm,config.getInt("numCandidates"));
 
+        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,cbm,config.getInt("numCandidates"));
+
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
         double[] weights = caliTrainingData.instanceWeights;
@@ -145,7 +147,7 @@ public class BRLRCalibration {
                             .numIterations(config.getInt("numIterations"))
                             .numLeaves(config.getInt("numLeaves"))
                             .build();
-                setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionFeatureExtractor,labelCalibrator);
+                setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet);
                 break;
             case "isotonic":
                 setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0);
