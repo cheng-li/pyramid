@@ -39,9 +39,11 @@ public class AppBRLR {
         Config app1Config = createApp1Config(config);
         Config brConfig = createBRLRENConfig(config);
         Config calConfig = createBRCalibrationConfig(config);
+        Config predictConfig = createBRPredictionConfig(config);
         App1.main(app1Config);
         BRLREN.main(brConfig);
-        BRLRCalibration.main(calConfig);
+        BRCalibration.main(calConfig);
+        BRPrediction.main(predictConfig);
 
     }
 
@@ -187,7 +189,36 @@ public class AppBRLR {
         Config.copy(config, calConfig,"report.rule.limit");
         Config.copy(config, calConfig,"report.numDocsPerFile");
         Config.copy(config, calConfig,"report.classProbThreshold");
+        calConfig.setString("dataSetType","sparse_sequential");
 
         return calConfig;
+    }
+
+    private static Config createBRPredictionConfig(Config config){
+        Config predictConfig = new Config();
+        predictConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        predictConfig.setString("output.dir",config.getString("output.folder"));
+        predictConfig.setString("input.calibrationFolder",config.getString("output.calibrationFolder"));
+        predictConfig.setString("input.testFolder",config.getString("output.testFolder"));
+        predictConfig.setString("test",config.getString("test"));
+        predictConfig.setString("output.log",config.getString("output.log"));
+
+        Config.copy(config,predictConfig,"report.labelSetLimit");
+        Config.copy(config,predictConfig,"output.calibratorFolder");
+        Config.copy(config,predictConfig,"predict.mode");
+        predictConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
+        predictConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
+        Config.copy(config, predictConfig,"output.modelFolder");
+        Config.copy(config, predictConfig, "CTAT.targetAccuracy");
+        Config.copy(config, predictConfig, "CTAT.name");
+        Config.copy(config, predictConfig, "CTAT.lowerBound");
+        Config.copy(config, predictConfig, "CTAT.upperBound");
+        Config.copy(config, predictConfig,"report.showPredictionDetail");
+        Config.copy(config, predictConfig,"report.rule.limit");
+        Config.copy(config, predictConfig,"report.numDocsPerFile");
+        Config.copy(config, predictConfig,"report.classProbThreshold");
+        predictConfig.setString("dataSetType","sparse_sequential");
+
+        return predictConfig;
     }
 }

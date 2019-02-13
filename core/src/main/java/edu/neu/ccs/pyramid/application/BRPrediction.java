@@ -54,7 +54,19 @@ public class BRPrediction {
     }
 
     private static void test(Config config, Logger logger) throws Exception{
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
+        DataSetType dataSetType;
+        switch (config.getString("dataSetType")){
+            case "sparse_random":
+                dataSetType = DataSetType.ML_CLF_SPARSE;
+                break;
+            case "sparse_sequential":
+                dataSetType = DataSetType.ML_CLF_SEQ_SPARSE;
+                break;
+            default:
+                throw new IllegalArgumentException("unknown dataSetType");
+        }
+
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), dataSetType, true);
         MultiLabelClassifier.ClassProbEstimator classProbEstimator= (MultiLabelClassifier.ClassProbEstimator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
         LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
