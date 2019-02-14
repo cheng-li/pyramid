@@ -50,7 +50,7 @@ public class BRLREN {
         }
 
 
-        logger.info(config.toString());
+//        logger.info(config.toString());
 
         VERBOSE = config.getBoolean("output.verbose");
 

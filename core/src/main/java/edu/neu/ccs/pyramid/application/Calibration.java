@@ -176,7 +176,7 @@ public class Calibration {
     }
 
 
-    private static BRLRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger){
+    private static BRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
@@ -186,7 +186,7 @@ public class Calibration {
         logger.info("sharpness="+sharpness);
         logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
         logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
-        BRLRCalibration.CaliRes caliRes = new BRLRCalibration.CaliRes();
+        BRCalibration.CaliRes caliRes = new BRCalibration.CaliRes();
         caliRes.mse = mse;
         caliRes.ace= ace;
         caliRes.sharpness = sharpness;

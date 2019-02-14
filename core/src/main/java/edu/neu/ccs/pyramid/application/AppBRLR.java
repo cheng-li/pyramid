@@ -72,9 +72,11 @@ public class AppBRLR {
         Config app1Config = createApp1Config(config);
         Config brConfig = createBRLRENConfig(config);
         Config calConfig = createBRCalibrationConfig(config);
+        Config predictConfig = createBRPredictionConfig(config);
         App1.main(app1Config);
         BRLREN.main(brConfig);
-        BRLRCalibration.main(calConfig);
+        BRCalibration.main(calConfig);
+        BRPrediction.main(predictConfig);
     }
 
     private static Config createApp1Config(Config config){

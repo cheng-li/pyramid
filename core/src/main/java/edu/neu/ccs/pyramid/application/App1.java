@@ -59,7 +59,7 @@ public class App1 {
             logger.setUseParentHandlers(false);
         }
         
-        logger.info(config.toString());
+//        logger.info(config.toString());
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 

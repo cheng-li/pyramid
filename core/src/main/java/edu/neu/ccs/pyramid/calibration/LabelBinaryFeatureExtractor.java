@@ -24,7 +24,10 @@ public class LabelBinaryFeatureExtractor implements PredictionFeatureExtractor{
     public Vector extractFeatures(PredictionCandidate prediction) {
         Vector vector = new RandomAccessSparseVector(numLabelsInModel);
         for (int l: prediction.multiLabel.getMatchedLabels()){
-            vector.set(l,1);
+            if (l<numLabelsInModel){
+                vector.set(l,1);
+            }
+
         }
         return vector;
     }
