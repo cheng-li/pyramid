@@ -154,6 +154,7 @@ public class AppBRLR {
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
         calConfig.setString("tuneCTAT",config.getString("tuneCTAT"));
+        calConfig.setString("validate",config.getString("validate"));
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");

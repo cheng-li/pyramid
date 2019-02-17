@@ -53,6 +53,10 @@ public class BRLRCalibration {
             tuneCTAT(config,logger);
         }
 
+        if (config.getBoolean("validate")){
+            validate(config, logger);
+        }
+
         if (config.getBoolean("test")){
             test(config, logger);
         }
@@ -158,59 +162,59 @@ public class BRLRCalibration {
         logger.info("finish training calibrators");
 
 
-
-        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
-
-
-
-        MultiLabelClassifier classifier = null;
-        switch (config.getString("predict.mode")){
-            case "independent":
-                classifier = new IndependentPredictor(cbm,labelCalibrator);
-                break;
-            case "support":
-                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(cbm, labelCalibrator, support);
-                break;
-
-            case "reranker":
-                classifier = (Reranker)setCalibrator;
-                break;
-
-            default:
-                throw new IllegalArgumentException("illegal predict.mode");
-        }
-        MultiLabel[] predictions = classifier.predict(cal);
-
-        MultiLabel[] predictions_valid = classifier.predict(valid);
-
-
-        if (true) {
-            logger.info("calibration performance on "+config.getString("input.calibrationFolder")+ " set");
-
-            List<PredictionVectorizer.Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
-                    .collect(Collectors.toList());
-            double targerAccuracy = config.getDouble("CTAT.targetAccuracy");
-
-            eval(instances, setCalibrator, logger, targerAccuracy);
-        }
-
-        logger.info("classification performance on "+config.getString("input.validFolder")+" set");
-        logger.info(new MLMeasures(valid.getNumClasses(),valid.getMultiLabels(), predictions_valid).toString());
-
-        if (true) {
-            logger.info("calibration performance on "+ config.getString("input.validFolder")+" set");
-
-            List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
-                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
-                    .collect(Collectors.toList());
-            double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
-
-            eval(instances, setCalibrator, logger, targetAccuracy);
+//
+//        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
+//
+//
+//
+//        MultiLabelClassifier classifier = null;
+//        switch (config.getString("predict.mode")){
+//            case "independent":
+//                classifier = new IndependentPredictor(cbm,labelCalibrator);
+//                break;
+//            case "support":
+//                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(cbm, labelCalibrator, support);
+//                break;
+//
+//            case "reranker":
+//                classifier = (Reranker)setCalibrator;
+//                break;
+//
+//            default:
+//                throw new IllegalArgumentException("illegal predict.mode");
+//        }
+//        MultiLabel[] predictions = classifier.predict(cal);
+//
+//        MultiLabel[] predictions_valid = classifier.predict(valid);
 
 
-
-        }
+//        if (true) {
+//            logger.info("calibration performance on "+config.getString("input.calibrationFolder")+ " set");
+//
+//            List<PredictionVectorizer.Instance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
+//                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
+//                    .collect(Collectors.toList());
+//            double targerAccuracy = config.getDouble("CTAT.targetAccuracy");
+//
+//            eval(instances, setCalibrator, logger, targerAccuracy);
+//        }
+//
+//        logger.info("classification performance on "+config.getString("input.validFolder")+" set");
+//        logger.info(new MLMeasures(valid.getNumClasses(),valid.getMultiLabels(), predictions_valid).toString());
+//
+//        if (true) {
+//            logger.info("calibration performance on "+ config.getString("input.validFolder")+" set");
+//
+//            List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
+//                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
+//                    .collect(Collectors.toList());
+//            double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
+//
+//            eval(instances, setCalibrator, logger, targetAccuracy);
+//
+//
+//
+//        }
 
 
 
@@ -274,7 +278,120 @@ public class BRLRCalibration {
 
 
 
+    private static void validate(Config config, Logger logger) throws Exception{
+        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
+        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
+        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"set_calibrator").toFile());
+        PredictionVectorizer predictionVectorizer = (PredictionVectorizer) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                "calibrators",config.getString("output.calibratorFolder"),"prediction_vectorizer").toFile());
 
+
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
+
+
+
+        MultiLabelClassifier classifier = null;
+        switch (config.getString("predict.mode")){
+            case "independent":
+                classifier = new IndependentPredictor(cbm,labelCalibrator);
+                break;
+            case "support":
+                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(cbm, labelCalibrator, support);
+                break;
+
+            case "reranker":
+                classifier = (Reranker)setCalibrator;
+                break;
+
+            default:
+                throw new IllegalArgumentException("illegal predict.mode");
+        }
+
+        MultiLabel[] predictions = classifier.predict(valid);
+
+        logger.info("validation performance");
+        logger.info(new MLMeasures(valid.getNumClasses(),valid.getMultiLabels(), predictions).toString());
+
+
+        if (true) {
+            logger.info("calibration performance on "+config.getString("input.validFolder")+" set");
+
+            List<PredictionVectorizer.Instance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
+                    .boxed().map(i -> predictionVectorizer.createInstance(cbm, valid.getRow(i),predictions[i],valid.getMultiLabels()[i]))
+                    .collect(Collectors.toList());
+            double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
+
+            eval(instances, setCalibrator, logger, targetAccuracy);
+
+            double confidenceThreshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                    "ctat",config.getString("CTAT.name")).toFile()));
+            CTAT.Summary summary = CTAT.applyThreshold(generateStream(instances,setCalibrator),confidenceThreshold);
+            logger.info("autocoding performance on dataset "+config.getString("input.validFolder")+"  with unclipped confidence threshold "+summary.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ summary.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ summary.getAutoCodingAccuracy());
+            logger.info("number of autocoded documents = "+ summary.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ summary.getNumCorrectAutoCoded());
+
+            double confidenceThresholdClipped = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
+                    "ctat",config.getString("CTAT.name")+"_clipped").toFile()));
+            CTAT.Summary summaryClipped = CTAT.applyThreshold(generateStream(instances,setCalibrator),confidenceThresholdClipped);
+            logger.info("autocoding performance on dataset "+config.getString("input.validFolder")+"  with clipped confidence threshold "+summaryClipped.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ summaryClipped.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ summaryClipped.getAutoCodingAccuracy());
+            logger.info("number of autocoded documents = "+ summaryClipped.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ summaryClipped.getNumCorrectAutoCoded());
+        }
+
+        MultiLabelClassifier fClassifier = classifier;
+
+        boolean simpleCSV = true;
+        if (simpleCSV){
+            File validDataFile = new File(config.getString("input.validData"));
+            File csv = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",validDataFile.getName()+"_reports","report.csv").toFile();
+            csv.getParentFile().mkdirs();
+            List<Integer> list = IntStream.range(0,valid.getNumDataPoints()).boxed().collect(Collectors.toList());
+            ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(cbm, labelCalibrator, setCalibrator,
+                    valid, i, fClassifier,predictionVectorizer);
+            ParallelFileWriter.mapToString(mapper,list, csv,100);
+        }
+
+
+        boolean rulesToJson = config.getBoolean("report.showPredictionDetail");
+        if (rulesToJson){
+            logger.info("start writing rules to json");
+            int ruleLimit = config.getInt("report.rule.limit");
+            int numDocsPerFile = config.getInt("report.numDocsPerFile");
+            int numFiles = (int)Math.ceil((double)valid.getNumDataPoints()/numDocsPerFile);
+
+            double probThreshold=config.getDouble("report.classProbThreshold");
+            int labelSetLimit = config.getInt("report.labelSetLimit");
+
+
+            IntStream.range(0,numFiles).forEach(i->{
+                int start = i*numDocsPerFile;
+                int end = start+numDocsPerFile;
+                List<MultiLabelPredictionAnalysis> partition = IntStream.range(start,Math.min(end,valid.getNumDataPoints())).parallel().mapToObj(a->
+                        BRLRInspector.analyzePrediction(cbm, labelCalibrator, setCalibrator, valid, fClassifier, predictionVectorizer, a,  ruleLimit,labelSetLimit, probThreshold))
+                        .collect(Collectors.toList());
+                ObjectMapper mapper = new ObjectMapper();
+                File validDataFile = new File(config.getString("input.validData"));
+                File jsonFile = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",validDataFile.getName()+"_reports","report_"+(i+1)+".json").toFile();
+                try {
+                    mapper.writeValue(jsonFile, partition);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                logger.info("progress = "+ Progress.percentage(i+1,numFiles));
+            });
+
+            logger.info("finish writing rules to json");
+        }
+
+
+    }
 
     private static void test(Config config, Logger logger) throws Exception{
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
