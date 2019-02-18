@@ -7,6 +7,10 @@ import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.CalibrationEval;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 
+import edu.neu.ccs.pyramid.feature.CategoricalFeature;
+import edu.neu.ccs.pyramid.feature.Feature;
+import edu.neu.ccs.pyramid.feature.FeatureList;
+import edu.neu.ccs.pyramid.feature.Ngram;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 
 import edu.neu.ccs.pyramid.multilabel_classification.predictor.IndependentPredictor;
@@ -20,7 +24,9 @@ import java.io.File;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -127,8 +133,26 @@ public class BRCalibration {
             extractors.add(new LabelBinaryFeatureExtractor(classProbEstimator.getNumClasses(),train.getLabelTranslator()));
         }
 
-        if (config.getBoolean("useInstanceFeatures")){
-            extractors.add(new InstanceFeatureExtractor(config.getString("instanceFeatureIds"),train.getFeatureList()));
+        if (config.getBoolean("useInitialFeatures")){
+            Set<String> prefixes = new HashSet<>(config.getStrings("featureFieldPrefix"));
+            FeatureList featureList = train.getFeatureList();
+            List<Integer> featureIds = new ArrayList<>();
+            for (int j=0;j<featureList.size();j++){
+                Feature feature = featureList.get(j);
+                if (feature instanceof CategoricalFeature){
+                    if (matchPrefixes(((CategoricalFeature) feature).getVariableName(),prefixes)){
+                        featureIds.add(j);
+                    }
+                } else {
+                    if ( !(feature instanceof Ngram)){
+                        if (matchPrefixes(feature.getName(),prefixes)){
+                            featureIds.add(j);
+                        }
+                    }
+                }
+            }
+
+            extractors.add(new InstanceFeatureExtractor(featureIds,train.getFeatureList()));
         }
 
 
@@ -232,6 +256,15 @@ public class BRCalibration {
 
     }
 
+
+    private static boolean matchPrefixes(String name, Set<String> prefixes){
+        for (String prefix: prefixes){
+            if (name.startsWith(prefix)){
+                return true;
+            }
+        }
+        return false;
+    }
 
     private static void tuneCTAT(Config config, Logger logger)throws Exception{
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE,true);
