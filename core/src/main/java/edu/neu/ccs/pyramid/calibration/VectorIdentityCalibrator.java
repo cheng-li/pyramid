@@ -1,8 +1,10 @@
 package edu.neu.ccs.pyramid.calibration;
 
-import edu.neu.ccs.pyramid.calibration.VectorCalibrator;
+
 import org.apache.mahout.math.Vector;
-import scala.Serializable;
+
+import java.io.Serializable;
+
 
 public class VectorIdentityCalibrator implements Serializable, VectorCalibrator {
     private static final long serialVersionUID = 1L;

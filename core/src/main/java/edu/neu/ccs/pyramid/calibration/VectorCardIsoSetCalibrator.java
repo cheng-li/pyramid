@@ -6,8 +6,9 @@ import edu.neu.ccs.pyramid.regression.IsotonicRegression;
 import edu.neu.ccs.pyramid.util.ArgMin;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
-import scala.Serializable;
 
+
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
