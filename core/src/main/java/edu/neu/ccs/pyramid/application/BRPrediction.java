@@ -1,5 +1,8 @@
 package edu.neu.ccs.pyramid.application;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.calibration.*;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -11,6 +14,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysi
 import edu.neu.ccs.pyramid.multilabel_classification.predictor.IndependentPredictor;
 import edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor;
 import edu.neu.ccs.pyramid.util.*;
+import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.mahout.math.Vector;
 
@@ -20,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -75,7 +80,7 @@ public class BRPrediction {
         PredictionFeatureExtractor predictionFeatureExtractor = (PredictionFeatureExtractor) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"prediction_feature_extractor").toFile());
 
-
+        File testDataFile = new File(config.getString("input.testData"));
 
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
 
@@ -100,7 +105,8 @@ public class BRPrediction {
         MultiLabel[] predictions = classifier.predict(test);
 
         logger.info("test performance");
-        logger.info(new MLMeasures(test.getNumClasses(),test.getMultiLabels(), predictions).toString());
+        MLMeasures mlMeasures = new MLMeasures(test.getNumClasses(),test.getMultiLabels(), predictions);
+        logger.info(mlMeasures.toString());
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
 
@@ -137,7 +143,7 @@ public class BRPrediction {
 
         boolean simpleCSV = true;
         if (simpleCSV){
-            File testDataFile = new File(config.getString("input.testData"));
+
             File csv = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","report.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
@@ -149,7 +155,7 @@ public class BRPrediction {
 
         boolean topSets = true;
         if (topSets){
-            File testDataFile = new File(config.getString("input.testData"));
+
             File csv = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","top_sets.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
@@ -178,7 +184,6 @@ public class BRPrediction {
                         BRInspector.analyzePrediction(classProbEstimator, labelCalibrator, setCalibrator, test, fClassifier, predictionFeatureExtractor, a,  ruleLimit,labelSetLimit, probThreshold))
                         .collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
-                File testDataFile = new File(config.getString("input.testData"));
                 File jsonFile = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","report_"+(i+1)+".json").toFile();
                 try {
                     mapper.writeValue(jsonFile, partition);
@@ -189,6 +194,86 @@ public class BRPrediction {
             });
 
             logger.info("finish writing rules to json");
+        }
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+
+            logger.info("start writing individual label performance to json");
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+            logger.info("finish writing individual label performance to json");
+        }
+
+
+        boolean dataInfoToJson = true;
+        if (dataInfoToJson){
+            logger.info("start writing data info to json");
+            Set<String> modelLabels = IntStream.range(0,classifier.getNumClasses()).mapToObj(i->fClassifier.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
+
+            Set<String> dataSetLabels = DataSetUtil.gatherLabels(test).stream().map(i -> test.getLabelTranslator().toExtLabel(i))
+                    .collect(Collectors.toSet());
+
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","data_info.json").toFile(), JsonEncoding.UTF8);
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("dataSet",testDataFile.getName());
+            jsonGenerator.writeNumberField("numClassesInModel",classifier.getNumClasses());
+            jsonGenerator.writeNumberField("numClassesInDataSet",dataSetLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelDataSetCombined",test.getNumClasses());
+            Set<String> modelNotDataLabels = SetUtil.complement(modelLabels, dataSetLabels);
+            Set<String> dataNotModelLabels = SetUtil.complement(dataSetLabels,modelLabels);
+            jsonGenerator.writeNumberField("numClassesInDataSetButNotModel",dataNotModelLabels.size());
+            jsonGenerator.writeNumberField("numClassesInModelButNotDataSet",modelNotDataLabels.size());
+            jsonGenerator.writeArrayFieldStart("classesInDataSetButNotModel");
+            for (String label: dataNotModelLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeArrayFieldStart("classesInModelButNotDataSet");
+            for (String label: modelNotDataLabels){
+                jsonGenerator.writeObject(label);
+            }
+            jsonGenerator.writeEndArray();
+            jsonGenerator.writeNumberField("labelCardinality",test.labelCardinality());
+
+            jsonGenerator.writeEndObject();
+            jsonGenerator.close();
+            logger.info("finish writing data info to json");
+        }
+
+
+        boolean performanceToJson = true;
+        if (performanceToJson){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","performance.json").toFile(),mlMeasures);
+        }
+
+
+        if (config.getBoolean("report.produceHTML")){
+            logger.info("start producing html files");
+
+            Config savedApp1Config = new Config(Paths.get(config.getString("output.dir"), "meta_data","saved_config_app1").toFile());
+
+            List<String> hosts = savedApp1Config.getStrings("index.hosts");
+            List<Integer> ports = savedApp1Config.getIntegers("index.ports");
+
+            //todo make it better
+            if (savedApp1Config.getString("index.clientType").equals("node")){
+                hosts = new ArrayList<>();
+                for (int port: ports){
+                    hosts.add("localhost");
+                }
+                //default setting
+                hosts.add("localhost");
+                ports.add(9200);
+            }
+            try (Visualizer visualizer = new Visualizer(logger, hosts, ports)){
+                visualizer.produceHtml(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports").toFile());
+                logger.info("finish producing html files");
+            }
+
+
         }
 
     }

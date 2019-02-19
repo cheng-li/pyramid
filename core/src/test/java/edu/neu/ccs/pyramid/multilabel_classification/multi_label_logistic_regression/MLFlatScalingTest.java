@@ -26,7 +26,7 @@ public class MLFlatScalingTest {
         MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(new File(DATASETS, "ohsumed/3/train.trec"), DataSetType.ML_CLF_SPARSE, true);
         IMLGradientBoosting boosting = new IMLGradientBoosting(dataSet.getNumClasses());
         List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
-        boosting.setAssignments(assignments);
+
 
         IMLGBConfig trainConfig = new IMLGBConfig.Builder(dataSet)
                 .numLeaves(2).learningRate(0.1).numSplitIntervals(1000).minDataPerLeaf(2)

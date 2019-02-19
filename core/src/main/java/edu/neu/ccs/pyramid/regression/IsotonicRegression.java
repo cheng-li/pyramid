@@ -1,13 +1,12 @@
 package edu.neu.ccs.pyramid.regression;
 
 import edu.neu.ccs.pyramid.calibration.BucketInfo;
-import edu.neu.ccs.pyramid.calibration.StreamGenerator;
+
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
-import java.io.Serializable;
-import java.text.DecimalFormat;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -69,12 +68,6 @@ public class IsotonicRegression implements Regressor{
 
 
 
-    public static IsotonicRegression train(StreamGenerator streamGenerator){
-        Stream<Pair<Vector,Integer>> stream = streamGenerator.generateStream();
-        Stream singleStream = stream.map(s->new Pair<>(s.getFirst().get(0),s.getSecond()));
-        IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream);
-        return isotonicRegression;
-    }
 
     public static IsotonicRegression train(Stream<Pair<Vector,Integer>> stream){
         Stream singleStream = stream.map(s->new Pair<>(s.getFirst().get(0),s.getSecond()));

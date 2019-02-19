@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.application;
 import edu.neu.ccs.pyramid.configuration.Config;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -105,15 +106,14 @@ public class App3 {
 
     private static Config createApp2Config(Config config){
         Config app2Config = new Config();
-        String[] same = {"output.folder","output.log", "train","calibrate","test","tune","predict.target","train.warmStart","train.usePrior",
+        String[] same = {"output.folder","output.log", "train","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf",
         "train.numSplitIntervals","train.batchSize", "train.minibatchLifeSpan", "train.fullScanInterval", "train.numActiveFeatures",
                 "train.showTrainProgress","train.showValidProgress", "train.showProgress.sampleSize",
                 "train.earlyStop.patience","train.earlyStop.minIterations","train.earlyStop",
                 "train.earlyStop.absoluteChange", "train.earlyStop.relativeChange",
-                "train.showProgress.interval","train.generateReports","train.randomSeed","tune.FMeasure.beta", "report.order",
-        "report.topFeatures.limit","report.rule.limit","report.numDocsPerFile","report.classProbThreshold","report.labelSetLimit",
-                "report.showPredictionDetail","report.produceHTML"};
+                "train.showProgress.interval","train.randomSeed",
+                "output.modelFolder"};
 
         Config.copyExisting(config,app2Config,same);
 
@@ -124,6 +124,92 @@ public class App3 {
         app2Config.setString("input.calibrationData",config.getString("output.calibrationFolder"));
 
         return app2Config;
+    }
+
+
+    private static Config createBRCalibrationConfig(Config config){
+        Config calConfig = new Config();
+        calConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
+        calConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        calConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets", config.getString("output.validFolder")).toString());
+        calConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
+        calConfig.setString("output.dir",config.getString("output.folder"));
+        calConfig.setString("input.calibrationFolder",config.getString("output.calibrationFolder"));
+        calConfig.setString("input.validFolder",config.getString("output.validFolder"));
+        calConfig.setString("input.testFolder",config.getString("output.testFolder"));
+        calConfig.setString("calibrate",config.getString("calibrate"));
+        calConfig.setString("test",config.getString("test"));
+        calConfig.setString("tuneCTAT",config.getString("tuneCTAT"));
+        calConfig.setString("output.log",config.getString("output.log"));
+        calConfig.setString("setPrior","true");
+        calConfig.setString("brProb","true");
+        calConfig.setString("cardPrior","false");
+        calConfig.setString("card","true");
+        calConfig.setString("pairPrior","false");
+        //todo
+        calConfig.setString("encodeLabel","true");
+        calConfig.setString("f1Prior","false");
+        calConfig.setString("cbmProb","false");
+        calConfig.setString("implication","false");
+        calConfig.setEqual("labelProbs=false");
+        calConfig.setEqual("position=false");
+        calConfig.setString("numCandidates",config.getString("calibrate.numCandidates"));
+        calConfig.setString("numLeaves",config.getString("calibrate.reranker.numLeaves"));
+        calConfig.setString("useInitialFeatures",config.getString("calibrate.reranker.useInitialFeatures"));
+        calConfig.setString("featureFieldPrefix",config.getString("calibrate.reranker.featureFieldPrefix"));
+        calConfig.setEqual("monotonic=true");
+        calConfig.setEqual("logScale=false");
+        Config.copy(config,calConfig,"report.labelSetLimit");
+        Config.copy(config,calConfig,"output.calibratorFolder");
+        Config.copy(config,calConfig,"predict.mode");
+        calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
+        calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
+        Config.copy(config, calConfig,"output.modelFolder");
+        Config.copy(config, calConfig, "CTAT.targetAccuracy");
+        Config.copy(config, calConfig, "CTAT.name");
+        Config.copy(config, calConfig, "CTAT.lowerBound");
+        Config.copy(config, calConfig, "CTAT.upperBound");
+        Config.copy(config, calConfig,"report.showPredictionDetail");
+        Config.copy(config, calConfig,"report.rule.limit");
+        Config.copy(config, calConfig,"report.numDocsPerFile");
+        Config.copy(config, calConfig,"report.classProbThreshold");
+        calConfig.setString("dataSetType","sparse_random");
+
+        return calConfig;
+    }
+
+    private static Config createBRPredictionConfig(Config config){
+        Config predictConfig = new Config();
+        predictConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        predictConfig.setString("output.dir",config.getString("output.folder"));
+        predictConfig.setString("input.calibrationFolder",config.getString("output.calibrationFolder"));
+        predictConfig.setString("input.testFolder",config.getString("output.testFolder"));
+        predictConfig.setString("test",config.getString("test"));
+        predictConfig.setString("output.log",config.getString("output.log"));
+
+
+        Config.copy(config,predictConfig,"output.calibratorFolder");
+        Config.copy(config,predictConfig,"predict.mode");
+        predictConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
+        predictConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
+        Config.copy(config, predictConfig,"output.modelFolder");
+        Config.copy(config, predictConfig, "CTAT.targetAccuracy");
+        Config.copy(config, predictConfig, "CTAT.name");
+        Config.copy(config, predictConfig, "CTAT.lowerBound");
+        Config.copy(config, predictConfig, "CTAT.upperBound");
+        Config.copy(config, predictConfig,"report.showPredictionDetail");
+        Config.copy(config, predictConfig,"report.rule.limit");
+        Config.copy(config, predictConfig,"report.numDocsPerFile");
+        Config.copy(config,predictConfig,"report.labelSetLimit");
+        Config.copy(config, predictConfig,"report.classProbThreshold");
+        //todo implement
+        Config.copy(config, predictConfig,"report.topFeatures.limit");
+        //todo implement
+        Config.copy(config, predictConfig,"report.produceHTML");
+
+        predictConfig.setString("dataSetType","sparse_random");
+
+        return predictConfig;
     }
 
 

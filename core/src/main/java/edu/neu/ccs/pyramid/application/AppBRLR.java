@@ -112,7 +112,6 @@ public class AppBRLR {
         brConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
         brConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         brConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
-        brConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         brConfig.setString("output.dir",config.getString("output.folder"));
         brConfig.setString("output.verbose","true");
         brConfig.setString("output.log",config.getString("output.log"));
@@ -136,8 +135,6 @@ public class AppBRLR {
         brConfig.setString("train.skipDataThreshold","0.00001");
         brConfig.setString("train.skipLabelThreshold","0.00001");
         brConfig.setString("train.smoothStrength","0.0001");
-        brConfig.setString("report.labelProbThreshold",config.getString("report.classProbThreshold"));
-        brConfig.setString("test","false");
         Config.copy(config,brConfig,"train.useInstanceWeights");
         Config.copy(config, brConfig,"output.modelFolder");
 

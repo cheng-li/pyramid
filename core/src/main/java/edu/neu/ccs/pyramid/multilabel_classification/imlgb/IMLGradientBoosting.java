@@ -23,17 +23,12 @@ import java.util.stream.IntStream;
  * Created by chengli on 10/8/14.
  */
 public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstimator, MultiLabelClassifier.ClassProbEstimator {
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = 4L;
     private List<List<Regressor>> regressors;
     private int numClasses;
-    /**
-     * legal assignments of labels, optional
-     */
-    private List<MultiLabel> assignments;
+
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
-    @Deprecated
-    private PredictFashion predictFashion = PredictFashion.INDEPENDENT;
 
     public IMLGradientBoosting(int numClasses) {
         this.numClasses = numClasses;
@@ -48,13 +43,6 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
         return numClasses;
     }
 
-    public List<MultiLabel> getAssignments() {
-        return assignments;
-    }
-
-    public void setAssignments(List<MultiLabel> assignments) {
-        this.assignments = assignments;
-    }
 
     void addRegressor(Regressor regressor, int k){
         this.regressors.get(k).add(regressor);
@@ -175,43 +163,7 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
 
 
 
-    public double predictAssignmentProbWithConstraint(Vector vector, MultiLabel assignment){
-        if (this.assignments==null){
-            throw new RuntimeException("CRF is used but legal assignments is not specified!");
-        }
-        if (!this.assignments.contains(assignment)){
-            return 0;
-        }
-        double[] classScores = predictClassScores(vector);
-        double[] assignmentScores = new double[this.assignments.size()];
-        for (int i=0;i<assignments.size();i++){
-            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
-        }
-        double logNumerator = calAssignmentScore(assignment,classScores);
-        double logDenominator = MathUtil.logSumExp(assignmentScores);
-        double pro = Math.exp(logNumerator-logDenominator);
-        return pro;
-    }
 
-    public double[] predictAllAssignmentProbsWithConstraint(Vector vector){
-        if (this.assignments==null){
-            throw new RuntimeException("CRF is used but legal assignments is not specified!");
-        }
-
-        double[] classScores = predictClassScores(vector);
-        double[] assignmentScores = new double[this.assignments.size()];
-        for (int i=0;i<assignments.size();i++){
-            assignmentScores[i] = calAssignmentScore(assignments.get(i),classScores);
-        }
-        double logDenominator = MathUtil.logSumExp(assignmentScores);
-        double[] probs = new double[assignments.size()];
-        for (int i=0;i<assignments.size();i++){
-            double logNumerator = calAssignmentScore(assignments.get(i),classScores);
-            double pro = Math.exp(logNumerator-logDenominator);
-            probs[i] = pro;
-        }
-        return probs;
-    }
 
     public double[] predictAssignmentScores(Vector vector, List<MultiLabel> multiLabels){
 
@@ -301,7 +253,4 @@ public class IMLGradientBoosting implements MultiLabelClassifier.ClassScoreEstim
     }
 
 
-    public static enum PredictFashion {
-        CRF, INDEPENDENT, CRF_PLUS_HIGH_PROB
-    }
 }
