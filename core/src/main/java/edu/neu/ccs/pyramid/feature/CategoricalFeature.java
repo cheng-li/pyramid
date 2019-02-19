@@ -70,7 +70,7 @@ public class CategoricalFeature extends Feature {
     @Override
     public String simpleString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(name).append("[").append(variableName).append("]").append("(").append("categorical").append(")");
+        sb.append(name);
         return sb.toString();
     }
 
