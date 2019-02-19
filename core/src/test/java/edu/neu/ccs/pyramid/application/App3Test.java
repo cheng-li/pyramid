@@ -1,7 +1,5 @@
 package edu.neu.ccs.pyramid.application;
 
-import junit.framework.TestCase;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +17,7 @@ public class App3Test{
 
         runs.stream().parallel().forEach(s -> {
             try {
-                App3.main(s);
+                AppBRGB.main(s);
             } catch (Exception e) {
                 e.printStackTrace();
             }

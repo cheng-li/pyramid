@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
 /**
  * Created by chengli on 6/4/17.
  */
-public class App2 {
+public class BRGB {
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("Please specify a properties file.");

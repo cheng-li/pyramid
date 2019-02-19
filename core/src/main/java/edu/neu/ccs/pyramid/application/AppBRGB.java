@@ -13,7 +13,7 @@ import java.util.logging.SimpleFormatter;
  * a wrapper that chains App1 and App2
  * Created by chengli on 6/13/15.
  */
-public class App3 {
+public class AppBRGB {
     public static void main(String[] args) throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("Please specify a properties file.");
@@ -42,12 +42,12 @@ public class App3 {
         output.mkdirs();
 
         Config app1Config = createApp1Config(config);
-        Config app2Config = createApp2Config(config);
+        Config app2Config = createGBConfig(config);
         Config calConfig = createBRCalibrationConfig(config);
         Config predictConfig = createBRPredictionConfig(config);
 
         App1.main(app1Config);
-        App2.main(app2Config);
+        BRGB.main(app2Config);
         BRCalibration.main(calConfig);
         BRPrediction.main(predictConfig);
     }
@@ -75,12 +75,12 @@ public class App3 {
         output.mkdirs();
 
         Config app1Config = createApp1Config(config);
-        Config app2Config = createApp2Config(config);
+        Config app2Config = createGBConfig(config);
         Config calConfig = createBRCalibrationConfig(config);
         Config predictConfig = createBRPredictionConfig(config);
 
         App1.main(app1Config);
-        App2.main(app2Config);
+        BRGB.main(app2Config);
         BRCalibration.main(calConfig);
         BRPrediction.main(predictConfig);
     }
@@ -112,8 +112,8 @@ public class App3 {
     }
 
 
-    private static Config createApp2Config(Config config){
-        Config app2Config = new Config();
+    private static Config createGBConfig(Config config){
+        Config gbConfig = new Config();
         String[] same = {"output.folder","output.log", "train","train.warmStart","train.usePrior",
         "train.numIterations","train.numLeaves","train.learningRate","train.minDataPerLeaf",
         "train.numSplitIntervals","train.batchSize", "train.minibatchLifeSpan", "train.fullScanInterval", "train.numActiveFeatures",
@@ -123,14 +123,14 @@ public class App3 {
                 "train.showProgress.interval","train.randomSeed",
                 "output.modelFolder"};
 
-        Config.copyExisting(config,app2Config,same);
+        Config.copyExisting(config,gbConfig,same);
 
-        app2Config.setString("input.folder",config.getString("output.folder"));
-        app2Config.setString("input.trainData",config.getString("output.trainFolder"));
-        app2Config.setString("input.testData",config.getString("output.testFolder"));
-        app2Config.setString("input.validData",config.getString("output.validFolder"));
+        gbConfig.setString("input.folder",config.getString("output.folder"));
+        gbConfig.setString("input.trainData",config.getString("output.trainFolder"));
+        gbConfig.setString("input.testData",config.getString("output.testFolder"));
+        gbConfig.setString("input.validData",config.getString("output.validFolder"));
 
-        return app2Config;
+        return gbConfig;
     }
 
 
