@@ -43,9 +43,13 @@ public class App3 {
 
         Config app1Config = createApp1Config(config);
         Config app2Config = createApp2Config(config);
+        Config calConfig = createBRCalibrationConfig(config);
+        Config predictConfig = createBRPredictionConfig(config);
 
         App1.main(app1Config);
         App2.main(app2Config);
+        BRCalibration.main(calConfig);
+        BRPrediction.main(predictConfig);
     }
 
     public static void main(Config config) throws Exception{
@@ -72,9 +76,13 @@ public class App3 {
 
         Config app1Config = createApp1Config(config);
         Config app2Config = createApp2Config(config);
+        Config calConfig = createBRCalibrationConfig(config);
+        Config predictConfig = createBRPredictionConfig(config);
 
         App1.main(app1Config);
         App2.main(app2Config);
+        BRCalibration.main(calConfig);
+        BRPrediction.main(predictConfig);
     }
 
     private static Config createApp1Config(Config config){
@@ -121,7 +129,6 @@ public class App3 {
         app2Config.setString("input.trainData",config.getString("output.trainFolder"));
         app2Config.setString("input.testData",config.getString("output.testFolder"));
         app2Config.setString("input.validData",config.getString("output.validFolder"));
-        app2Config.setString("input.calibrationData",config.getString("output.calibrationFolder"));
 
         return app2Config;
     }
@@ -143,23 +150,13 @@ public class App3 {
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");
-        calConfig.setString("cardPrior","false");
         calConfig.setString("card","true");
-        calConfig.setString("pairPrior","false");
-        //todo
         calConfig.setString("encodeLabel","true");
-        calConfig.setString("f1Prior","false");
-        calConfig.setString("cbmProb","false");
-        calConfig.setString("implication","false");
-        calConfig.setEqual("labelProbs=false");
-        calConfig.setEqual("position=false");
         calConfig.setString("numCandidates",config.getString("calibrate.numCandidates"));
         calConfig.setString("numLeaves",config.getString("calibrate.reranker.numLeaves"));
         calConfig.setString("useInitialFeatures",config.getString("calibrate.reranker.useInitialFeatures"));
         calConfig.setString("featureFieldPrefix",config.getString("calibrate.reranker.featureFieldPrefix"));
         calConfig.setEqual("monotonic=true");
-        calConfig.setEqual("logScale=false");
-        Config.copy(config,calConfig,"report.labelSetLimit");
         Config.copy(config,calConfig,"output.calibratorFolder");
         Config.copy(config,calConfig,"predict.mode");
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
@@ -169,10 +166,6 @@ public class App3 {
         Config.copy(config, calConfig, "CTAT.name");
         Config.copy(config, calConfig, "CTAT.lowerBound");
         Config.copy(config, calConfig, "CTAT.upperBound");
-        Config.copy(config, calConfig,"report.showPredictionDetail");
-        Config.copy(config, calConfig,"report.rule.limit");
-        Config.copy(config, calConfig,"report.numDocsPerFile");
-        Config.copy(config, calConfig,"report.classProbThreshold");
         calConfig.setString("dataSetType","sparse_random");
 
         return calConfig;
@@ -202,9 +195,6 @@ public class App3 {
         Config.copy(config, predictConfig,"report.numDocsPerFile");
         Config.copy(config,predictConfig,"report.labelSetLimit");
         Config.copy(config, predictConfig,"report.classProbThreshold");
-        //todo implement
-        Config.copy(config, predictConfig,"report.topFeatures.limit");
-        //todo implement
         Config.copy(config, predictConfig,"report.produceHTML");
 
         predictConfig.setString("dataSetType","sparse_random");

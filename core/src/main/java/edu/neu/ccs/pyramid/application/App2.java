@@ -63,7 +63,6 @@ public class App2 {
         }
 
 
-        logger.info(config.toString());
 
         new File(config.getString("output.folder")).mkdirs();
 
@@ -301,9 +300,8 @@ public class App2 {
 
         if (topFeaturesToFile){
             logger.info("start writing top features");
-            int limit = config.getInt("report.topFeatures.limit");
             List<TopFeatures> topFeaturesList = IntStream.range(0,boosting.getNumClasses())
-                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, limit)).collect(Collectors.toList());
+                    .mapToObj(k -> IMLGBInspector.topFeatures(boosting, k, Integer.MAX_VALUE)).collect(Collectors.toList());
             ObjectMapper mapper = new ObjectMapper();
             String file = "top_features.json";
             mapper.writeValue(new File(analysisFolder,file), topFeaturesList);

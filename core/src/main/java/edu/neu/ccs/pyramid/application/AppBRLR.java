@@ -158,23 +158,13 @@ public class AppBRLR {
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");
-        calConfig.setString("cardPrior","false");
         calConfig.setString("card","true");
-        calConfig.setString("pairPrior","false");
-        //todo
         calConfig.setString("encodeLabel","true");
-        calConfig.setString("f1Prior","false");
-        calConfig.setString("cbmProb","false");
-        calConfig.setString("implication","false");
-        calConfig.setEqual("labelProbs=false");
-        calConfig.setEqual("position=false");
         calConfig.setString("numCandidates",config.getString("calibrate.numCandidates"));
         calConfig.setString("numLeaves",config.getString("calibrate.reranker.numLeaves"));
         calConfig.setString("useInitialFeatures",config.getString("calibrate.reranker.useInitialFeatures"));
         calConfig.setString("featureFieldPrefix",config.getString("calibrate.reranker.featureFieldPrefix"));
         calConfig.setEqual("monotonic=true");
-        calConfig.setEqual("logScale=false");
-        Config.copy(config,calConfig,"report.labelSetLimit");
         Config.copy(config,calConfig,"output.calibratorFolder");
         Config.copy(config,calConfig,"predict.mode");
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
@@ -184,10 +174,6 @@ public class AppBRLR {
         Config.copy(config, calConfig, "CTAT.name");
         Config.copy(config, calConfig, "CTAT.lowerBound");
         Config.copy(config, calConfig, "CTAT.upperBound");
-        Config.copy(config, calConfig,"report.showPredictionDetail");
-        Config.copy(config, calConfig,"report.rule.limit");
-        Config.copy(config, calConfig,"report.numDocsPerFile");
-        Config.copy(config, calConfig,"report.classProbThreshold");
         calConfig.setString("dataSetType","sparse_sequential");
 
         return calConfig;
@@ -216,6 +202,7 @@ public class AppBRLR {
         Config.copy(config, predictConfig,"report.rule.limit");
         Config.copy(config, predictConfig,"report.numDocsPerFile");
         Config.copy(config, predictConfig,"report.classProbThreshold");
+        predictConfig.setString("report.produceHTML","false");
         predictConfig.setString("dataSetType","sparse_sequential");
 
         return predictConfig;
