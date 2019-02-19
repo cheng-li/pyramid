@@ -155,6 +155,7 @@ public class AppBRLR {
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
         calConfig.setString("tuneCTAT",config.getString("tuneCTAT"));
+        calConfig.setString("validate",config.getString("validate"));
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");
@@ -181,11 +182,11 @@ public class AppBRLR {
 
     private static Config createBRPredictionConfig(Config config){
         Config predictConfig = new Config();
+        predictConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
         predictConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         predictConfig.setString("output.dir",config.getString("output.folder"));
-        predictConfig.setString("input.calibrationFolder",config.getString("output.calibrationFolder"));
-        predictConfig.setString("input.testFolder",config.getString("output.testFolder"));
         predictConfig.setString("test",config.getString("test"));
+        predictConfig.setString("validate",config.getString("validate"));
         predictConfig.setString("output.log",config.getString("output.log"));
 
         Config.copy(config,predictConfig,"report.labelSetLimit");

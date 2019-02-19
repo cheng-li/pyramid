@@ -49,8 +49,12 @@ public class BRPrediction {
         }
 
 
+        if (config.getBoolean("validate")){
+            report(config, config.getString("input.validData"), logger);
+        }
+
         if (config.getBoolean("test")){
-            test(config, logger);
+            report(config, config.getString("input.testData"), logger);
         }
 
         if (fileHandler!=null){
@@ -58,7 +62,7 @@ public class BRPrediction {
         }
     }
 
-    private static void test(Config config, Logger logger) throws Exception{
+    private static void report(Config config, String dataPath, Logger logger) throws Exception{
         DataSetType dataSetType;
         switch (config.getString("dataSetType")){
             case "sparse_random":
@@ -71,7 +75,7 @@ public class BRPrediction {
                 throw new IllegalArgumentException("unknown dataSetType");
         }
 
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.testData"), dataSetType, true);
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(dataPath, dataSetType, true);
         MultiLabelClassifier.ClassProbEstimator classProbEstimator= (MultiLabelClassifier.ClassProbEstimator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
         LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
@@ -80,11 +84,11 @@ public class BRPrediction {
         PredictionFeatureExtractor predictionFeatureExtractor = (PredictionFeatureExtractor) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                 "calibrators",config.getString("output.calibratorFolder"),"prediction_feature_extractor").toFile());
 
-        File testDataFile = new File(config.getString("input.testData"));
+        File testDataFile = new File(dataPath);
 
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
 
-
+        String reportFolder = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports").toString();
 
         MultiLabelClassifier classifier = null;
         switch (config.getString("predict.mode")){
@@ -104,14 +108,14 @@ public class BRPrediction {
         }
         MultiLabel[] predictions = classifier.predict(test);
 
-        logger.info("test performance");
+        logger.info("classification performance on dataset "+testDataFile.getName());
         MLMeasures mlMeasures = new MLMeasures(test.getNumClasses(),test.getMultiLabels(), predictions);
         logger.info(mlMeasures.toString());
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
 
         if (true) {
-            logger.info("calibration performance on "+config.getString("input.testFolder")+" set");
+            logger.info("calibration performance on dataset "+testDataFile.getName());
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
                     .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
@@ -122,7 +126,7 @@ public class BRPrediction {
             double confidenceThreshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                     "ctat",config.getString("CTAT.name")).toFile()));
             CTAT.Summary summary = CTAT.applyThreshold(BRCalibration.generateStream(instances,setCalibrator),confidenceThreshold);
-            logger.info("autocoding performance on dataset "+config.getString("input.testFolder")+"  with unclipped confidence threshold "+summary.getConfidenceThreshold());
+            logger.info("autocoding performance with unclipped confidence threshold "+summary.getConfidenceThreshold());
             logger.info("autocoding percentage = "+ summary.getAutoCodingPercentage());
             logger.info("autocoding accuracy = "+ summary.getAutoCodingAccuracy());
             logger.info("number of autocoded documents = "+ summary.getNumAutoCoded());
@@ -131,7 +135,7 @@ public class BRPrediction {
             double confidenceThresholdClipped = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
                     "ctat",config.getString("CTAT.name")+"_clipped").toFile()));
             CTAT.Summary summaryClipped = CTAT.applyThreshold(BRCalibration.generateStream(instances,setCalibrator),confidenceThresholdClipped);
-            logger.info("autocoding performance on dataset "+config.getString("input.testFolder")+"  with clipped confidence threshold "+summaryClipped.getConfidenceThreshold());
+            logger.info("autocoding performance with clipped confidence threshold "+summaryClipped.getConfidenceThreshold());
             logger.info("autocoding percentage = "+ summaryClipped.getAutoCodingPercentage());
             logger.info("autocoding accuracy = "+ summaryClipped.getAutoCodingAccuracy());
             logger.info("number of autocoded documents = "+ summaryClipped.getNumAutoCoded());
@@ -144,7 +148,7 @@ public class BRPrediction {
         boolean simpleCSV = true;
         if (simpleCSV){
 
-            File csv = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","report.csv").toFile();
+            File csv = Paths.get(reportFolder,"report.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(classProbEstimator, labelCalibrator, setCalibrator,
@@ -156,7 +160,7 @@ public class BRPrediction {
         boolean topSets = true;
         if (topSets){
 
-            File csv = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","top_sets.csv").toFile();
+            File csv = Paths.get(reportFolder,"top_sets.csv").toFile();
             csv.getParentFile().mkdirs();
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
             ParallelStringMapper<Integer> mapper = (list1, i) -> topKSets(config, classProbEstimator, labelCalibrator, setCalibrator,
@@ -184,7 +188,7 @@ public class BRPrediction {
                         BRInspector.analyzePrediction(classProbEstimator, labelCalibrator, setCalibrator, test, fClassifier, predictionFeatureExtractor, a,  ruleLimit,labelSetLimit, probThreshold))
                         .collect(Collectors.toList());
                 ObjectMapper mapper = new ObjectMapper();
-                File jsonFile = Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","report_"+(i+1)+".json").toFile();
+                File jsonFile = Paths.get(reportFolder,"report_"+(i+1)+".json").toFile();
                 try {
                     mapper.writeValue(jsonFile, partition);
                 } catch (IOException e) {
@@ -201,21 +205,30 @@ public class BRPrediction {
 
             logger.info("start writing individual label performance to json");
             ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+            objectMapper.writeValue(Paths.get(reportFolder,"individual_performance.json").toFile(),mlMeasures.getMacroAverage());
             logger.info("finish writing individual label performance to json");
         }
 
+        boolean dataConfigToJson = true;
+        if (dataConfigToJson){
+            logger.info("start writing data config to json");
+            File dataConfigFile = Paths.get(dataPath,"data_config.json").toFile();
+            if (dataConfigFile.exists()){
+                FileUtils.copyFileToDirectory(dataConfigFile,new File(reportFolder));
+            }
+            logger.info("finish writing data config to json");
+        }
 
         boolean dataInfoToJson = true;
         if (dataInfoToJson){
             logger.info("start writing data info to json");
-            Set<String> modelLabels = IntStream.range(0,classifier.getNumClasses()).mapToObj(i->fClassifier.getLabelTranslator().toExtLabel(i))
+            Set<String> modelLabels = IntStream.range(0,classifier.getNumClasses()).mapToObj(i->classProbEstimator.getLabelTranslator().toExtLabel(i))
                     .collect(Collectors.toSet());
 
             Set<String> dataSetLabels = DataSetUtil.gatherLabels(test).stream().map(i -> test.getLabelTranslator().toExtLabel(i))
                     .collect(Collectors.toSet());
 
-            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","data_info.json").toFile(), JsonEncoding.UTF8);
+            JsonGenerator jsonGenerator = new JsonFactory().createGenerator(Paths.get(reportFolder,"data_info.json").toFile(), JsonEncoding.UTF8);
             jsonGenerator.writeStartObject();
             jsonGenerator.writeStringField("dataSet",testDataFile.getName());
             jsonGenerator.writeNumberField("numClassesInModel",classifier.getNumClasses());
@@ -246,7 +259,7 @@ public class BRPrediction {
         boolean performanceToJson = true;
         if (performanceToJson){
             ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.writeValue(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports","performance.json").toFile(),mlMeasures);
+            objectMapper.writeValue(Paths.get(reportFolder,"performance.json").toFile(),mlMeasures);
         }
 
 
@@ -269,7 +282,7 @@ public class BRPrediction {
                 ports.add(9200);
             }
             try (Visualizer visualizer = new Visualizer(logger, hosts, ports)){
-                visualizer.produceHtml(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"predictions",testDataFile.getName()+"_reports").toFile());
+                visualizer.produceHtml(new File(reportFolder));
                 logger.info("finish producing html files");
             }
 

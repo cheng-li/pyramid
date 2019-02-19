@@ -173,11 +173,11 @@ public class AppBRGB {
 
     private static Config createBRPredictionConfig(Config config){
         Config predictConfig = new Config();
+        predictConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
         predictConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         predictConfig.setString("output.dir",config.getString("output.folder"));
-        predictConfig.setString("input.calibrationFolder",config.getString("output.calibrationFolder"));
-        predictConfig.setString("input.testFolder",config.getString("output.testFolder"));
         predictConfig.setString("test",config.getString("test"));
+        predictConfig.setString("validate",config.getString("validate"));
         predictConfig.setString("output.log",config.getString("output.log"));
 
 
