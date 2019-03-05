@@ -42,10 +42,11 @@ public class RerankerTrainer {
         optimizer.initialize();
         EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE,5);
         LSBoost bestModel = null;
-        for (int i = 1; true; i++){
+        for (int i = 1; i<1000; i++){
             optimizer.iterate();
-            double mse = MSE.mse(lsBoost, validation);
+
             if (i%10==0){
+                double mse = MSE.mse(lsBoost, validation);
                 earlyStopper.add(i,mse);
                 if (earlyStopper.getBestIteration()==i){
                     try {
