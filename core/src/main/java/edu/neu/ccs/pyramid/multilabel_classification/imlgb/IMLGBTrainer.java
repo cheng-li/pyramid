@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ public class IMLGBTrainer {
     private IMLGradientBoosting boosting;
 
     private boolean[] shouldStop;
+    private double[] instanceWeights;
 
 
     public IMLGBTrainer(IMLGBConfig config,
@@ -60,6 +62,8 @@ public class IMLGBTrainer {
 //        List<MultiLabel> assignments = DataSetUtil.gatherMultiLabels(dataSet);
 //        boosting.setAssignments(assignments);
         this.shouldStop = new boolean[numClasses];
+        this.instanceWeights = new double[dataSet.getNumDataPoints()];
+        Arrays.fill(instanceWeights,1.0);
     }
 
     public IMLGBTrainer(IMLGBConfig config,
@@ -81,6 +85,8 @@ public class IMLGBTrainer {
         }
         this.shouldStop = shouldStop;
         this.initStagedClassScoreMatrix(boosting, shouldStop);
+        this.instanceWeights = new double[dataSet.getNumDataPoints()];
+        Arrays.fill(instanceWeights,1.0);
     }
 
     public void setShouldStop(int classIndex){
@@ -92,6 +98,10 @@ public class IMLGBTrainer {
 
     public boolean[] getShouldStop() {
         return shouldStop;
+    }
+
+    public void setInstanceWeights(double[] instanceWeights) {
+        this.instanceWeights = instanceWeights;
     }
 
     public void iterate(){
@@ -346,6 +356,7 @@ public class IMLGBTrainer {
             RegressionTree regressionTree = ActiveRegTreeTrainer.fit(regTreeConfig,
                     this.config.getDataSet(),
                     gradients,
+                    instanceWeights,
                     leafOutputCalculator,
                     activeFeatures,
                     true);
@@ -371,6 +382,7 @@ public class IMLGBTrainer {
             RegressionTree regressionTree = ActiveRegTreeTrainer.fit(regTreeConfig,
                     this.config.getDataSet(),
                     gradients,
+                    instanceWeights,
                     leafOutputCalculator,
                     activeFeatures,
                     false);

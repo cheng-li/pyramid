@@ -22,6 +22,7 @@ import edu.neu.ccs.pyramid.util.*;
 import edu.neu.ccs.pyramid.visualization.Visualizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
 import org.apache.mahout.math.Vector;
 
 import java.io.*;
@@ -88,6 +89,17 @@ public class BRGB {
         return dataSet;
     }
 
+    private static double[] loadInstanceWeights(Config config){
+        File file = new File(config.getString("input.trainData"),"instance_weights.txt");
+        double[] weights = new double[0];
+        try {
+            weights = FileUtils.readLines(file).stream().mapToDouble(Double::parseDouble).toArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return weights;
+    }
+
     static void train(Config config, Logger logger) throws Exception{
         String output = config.getString("output.folder");
         int numIterations = config.getInt("train.numIterations");
@@ -101,7 +113,14 @@ public class BRGB {
         stopWatch.start();
 
         MultiLabelClfDataSet allTrainData = loadData(config,config.getString("input.trainData"));
-        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, config.getInt("train.showProgress.sampleSize"),0+randomSeed);
+        double[] instanceWeights = new double[allTrainData.getNumDataPoints()];
+        Arrays.fill(instanceWeights,1.0);
+
+        if (config.getBoolean("train.useInstanceWeights")){
+            instanceWeights = loadInstanceWeights(config);
+        }
+
+        MultiLabelClfDataSet trainSetForEval = minibatch(allTrainData, instanceWeights, config.getInt("train.showProgress.sampleSize"),0+randomSeed).getFirst();
 
         MultiLabelClfDataSet validSet = loadData(config,config.getString("input.validData"));
 
@@ -204,7 +223,8 @@ public class BRGB {
             logger.info("iteration "+i);
 
             if(i%minibatchLifeSpan == 1||i==startIter) {
-                trainBatch = minibatch(allTrainData, config.getInt("train.batchSize"),i+randomSeed);
+                Pair<MultiLabelClfDataSet, double[]> sampled = minibatch(allTrainData, instanceWeights, config.getInt("train.batchSize"),i+randomSeed);
+                trainBatch = sampled.getFirst();
                 IMLGBConfig imlgbConfig = new IMLGBConfig.Builder(trainBatch)
                         .learningRate(learningRate)
                         .minDataPerLeaf(minDataPerLeaf)
@@ -215,6 +235,7 @@ public class BRGB {
                         .build();
 
                 trainer = new IMLGBTrainer(imlgbConfig, boosting, shouldStop);
+                trainer.setInstanceWeights(sampled.getSecond());
             }
 
             if (i % interval == 1) {
@@ -349,11 +370,12 @@ public class BRGB {
 
 
 
-    private static MultiLabelClfDataSet minibatch(MultiLabelClfDataSet allData, int minibatchSize, int interation){
+    private static Pair<MultiLabelClfDataSet,double[]> minibatch(MultiLabelClfDataSet allData, double[] instanceWeights, int minibatchSize, int interation){
         List<Integer> all = IntStream.range(0, allData.getNumDataPoints()).boxed().collect(Collectors.toList());
         Collections.shuffle(all, new Random(interation));
         List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
-        return DataSetUtil.sampleData(allData, keep);
+        double[] subsetWeights = keep.stream().mapToDouble(i->instanceWeights[i]).toArray();
+        return new Pair<>(DataSetUtil.sampleData(allData, keep),subsetWeights);
     }
 
     public static class CheckPoint implements Serializable{
