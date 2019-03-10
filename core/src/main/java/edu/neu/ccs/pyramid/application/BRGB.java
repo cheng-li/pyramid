@@ -90,7 +90,7 @@ public class BRGB {
     }
 
     private static double[] loadInstanceWeights(Config config){
-        File file = new File(config.getString("input.trainData"),"instance_weights.txt");
+        File file = Paths.get(config.getString("output.folder"),"data_sets",config.getString("input.trainData"),"instance_weights.txt").toFile();
         double[] weights = new double[0];
         try {
             weights = FileUtils.readLines(file).stream().mapToDouble(Double::parseDouble).toArray();
@@ -370,11 +370,17 @@ public class BRGB {
 
 
 
-    private static Pair<MultiLabelClfDataSet,double[]> minibatch(MultiLabelClfDataSet allData, double[] instanceWeights, int minibatchSize, int interation){
+    private static Pair<MultiLabelClfDataSet,double[]> minibatch(MultiLabelClfDataSet allData, double[] instanceWeights, int minibatchSize, int iteration){
         List<Integer> all = IntStream.range(0, allData.getNumDataPoints()).boxed().collect(Collectors.toList());
-        Collections.shuffle(all, new Random(interation));
+        Collections.shuffle(all, new Random(iteration));
         List<Integer> keep = all.stream().limit(minibatchSize).collect(Collectors.toList());
         double[] subsetWeights = keep.stream().mapToDouble(i->instanceWeights[i]).toArray();
+        // renormalize the weights to have total weight equal to the number of instances, in order to make minDataPerLeaf happy
+        double total = MathUtil.arraySum(subsetWeights);
+        for (int i=0;i<subsetWeights.length;i++){
+            subsetWeights[i] *= minibatchSize/total;
+        }
+
         return new Pair<>(DataSetUtil.sampleData(allData, keep),subsetWeights);
     }
 

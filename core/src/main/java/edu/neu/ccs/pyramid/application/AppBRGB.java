@@ -120,7 +120,7 @@ public class AppBRGB {
                 "train.showTrainProgress","train.showValidProgress", "train.showProgress.sampleSize",
                 "train.earlyStop.patience","train.earlyStop.minIterations","train.earlyStop",
                 "train.earlyStop.absoluteChange", "train.earlyStop.relativeChange",
-                "train.showProgress.interval","train.randomSeed",
+                "train.showProgress.interval","train.randomSeed","train.useInstanceWeights",
                 "output.modelFolder"};
 
         Config.copyExisting(config,gbConfig,same);
