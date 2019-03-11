@@ -1,10 +1,14 @@
 package edu.neu.ccs.pyramid.application;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
+import edu.neu.ccs.pyramid.eval.AveragePrecision;
+import edu.neu.ccs.pyramid.eval.LogLikelihood;
+import edu.neu.ccs.pyramid.eval.MAP;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
@@ -86,6 +90,9 @@ public class CBMGB {
                 case "instance_hamming_loss":
                     best = tuneResults.stream().min(comparator).get();
                     break;
+                case "instance_log_likelihood":
+                    best = tuneResults.stream().max(comparator).get();
+                    break;
                 default:
                     throw new IllegalArgumentException("tune.targetMetric should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
             }
@@ -147,7 +154,7 @@ public class CBMGB {
 
 
     private static TuneResult tune(Config config, HyperParameters hyperParameters, MultiLabelClfDataSet trainSet, MultiLabelClfDataSet validSet) throws Exception{
-
+        List<Integer> unobservedLabels = DataSetUtil.unobservedLabels(trainSet);
         CBM cbm = newCBM(config,trainSet, hyperParameters);
         EarlyStopper earlyStopper = loadNewEarlyStopper(config);
 
@@ -173,6 +180,12 @@ public class CBMGB {
                 MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
                 marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
                 classifier = marginalPredictor;
+                break;
+            case "instance_log_likelihood":
+                // acc predictor seems to be the best match for log likelihood
+                AccPredictor accPredictor1 = new AccPredictor(cbm);
+                accPredictor1.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
+                classifier = accPredictor1;
                 break;
             default:
                 throw new IllegalArgumentException("predictTarget should be instance_set_accuracy, instance_f1 or instance_hamming_loss");
@@ -207,6 +220,9 @@ public class CBMGB {
                         break;
                     case "instance_hamming_loss":
                         earlyStopper.add(iter,validMeasures.getInstanceAverage().getHammingLoss());
+                        break;
+                    case "instance_log_likelihood":
+                        earlyStopper.add(iter, LogLikelihood.averageLogLikelihood(cbm, validSet, unobservedLabels));
                         break;
                     default:
                         throw new IllegalArgumentException("predictTarget should be instance_set_accuracy or instance_f1");
@@ -279,32 +295,32 @@ public class CBMGB {
         System.out.println();
 
         System.out.println("Making predictions on test set with 3 different predictors designed for different metrics:");
-        reportAccPrediction(config, cbm, testSet);
-        reportF1Prediction(config, cbm, testSet);
-        reportHammingPrediction(config, cbm, testSet);
-        reportGeneral(config, cbm, testSet);
+        reportAccPrediction(config, cbm, testSet, "test");
+        reportF1Prediction(config, cbm, testSet, "test");
+        reportHammingPrediction(config, cbm, testSet, "test");
+        reportGeneral(config, cbm, testSet, "test");
         System.out.println();
     }
 
-    private static void reportAccPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+    private static void reportAccPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet, String name) throws Exception{
         System.out.println("============================================================");
-        System.out.println("Making predictions on test set with the instance set accuracy optimal predictor");
+        System.out.println("Making predictions on "+name +" set with the instance set accuracy optimal predictor");
         String output = config.getString("output.dir");
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
         MultiLabel[] predictions = accPredictor.predict(dataSet);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
-        System.out.println("test performance with the instance set accuracy optimal predictor");
+        System.out.println(name+" performance with the instance set accuracy optimal predictor");
         System.out.println(mlMeasures);
-        File performanceFile = Paths.get(output,"test_predictions", "instance_accuracy_optimal","performance.txt").toFile();
+        File performanceFile = Paths.get(output,name+"_predictions", "instance_accuracy_optimal","performance.txt").toFile();
         FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
-        System.out.println("test performance is saved to "+performanceFile.toString());
+        System.out.println(name+" performance is saved to "+performanceFile.toString());
 
 
         // Here we do not use approximation
         double[] setProbs = IntStream.range(0, predictions.length).parallel().
                 mapToDouble(i->cbm.predictAssignmentProb(dataSet.getRow(i),predictions[i])).toArray();
-        File predictionFile = Paths.get(output,"test_predictions", "instance_accuracy_optimal","predictions.txt").toFile();
+        File predictionFile = Paths.get(output,name+"_predictions", "instance_accuracy_optimal","predictions.txt").toFile();
         try (BufferedWriter br = new BufferedWriter(new FileWriter(predictionFile))){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
                 br.write(predictions[i].toString());
@@ -315,13 +331,19 @@ public class CBMGB {
         }
 
         System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(output,name+"_predictions", "instance_accuracy_optimal","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+        }
         System.out.println("============================================================");
     }
 
 
-    private static void reportF1Prediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+    private static void reportF1Prediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet, String name) throws Exception{
         System.out.println("============================================================");
-        System.out.println("Making predictions on test set with the instance F1 optimal predictor");
+        System.out.println("Making predictions on "+name+" set with the instance F1 optimal predictor");
         String output = config.getString("output.dir");
         PluginF1 pluginF1 = new PluginF1(cbm);
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(output, "support"));
@@ -329,17 +351,17 @@ public class CBMGB {
         pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
         MultiLabel[] predictions = pluginF1.predict(dataSet);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
-        System.out.println("test performance with the instance F1 optimal predictor");
+        System.out.println(name+" performance with the instance F1 optimal predictor");
         System.out.println(mlMeasures);
-        File performanceFile = Paths.get(output,"test_predictions", "instance_f1_optimal","performance.txt").toFile();
+        File performanceFile = Paths.get(output,name+"_predictions", "instance_f1_optimal","performance.txt").toFile();
         FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
-        System.out.println("test performance is saved to "+performanceFile.toString());
+        System.out.println(name+" performance is saved to "+performanceFile.toString());
 
 
         // Here we do not use approximation
         double[] setProbs = IntStream.range(0, predictions.length).parallel().
                 mapToDouble(i->cbm.predictAssignmentProb(dataSet.getRow(i),predictions[i])).toArray();
-        File predictionFile = Paths.get(output,"test_predictions", "instance_f1_optimal","predictions.txt").toFile();
+        File predictionFile = Paths.get(output,name+"_predictions", "instance_f1_optimal","predictions.txt").toFile();
         try (BufferedWriter br = new BufferedWriter(new FileWriter(predictionFile))){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
                 br.write(predictions[i].toString());
@@ -350,28 +372,34 @@ public class CBMGB {
         }
 
         System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(output,name+"_predictions", "instance_f1_optimal","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+        }
         System.out.println("============================================================");
     }
 
-    private static void reportHammingPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+    private static void reportHammingPrediction(Config config, CBM cbm, MultiLabelClfDataSet dataSet, String name) throws Exception{
         System.out.println("============================================================");
-        System.out.println("Making predictions on test set with the instance Hamming loss optimal predictor");
+        System.out.println("Making predictions on "+name+" set with the instance Hamming loss optimal predictor");
         String output = config.getString("output.dir");
         MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
         marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
         MultiLabel[] predictions = marginalPredictor.predict(dataSet);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
-        System.out.println("test performance with the instance Hamming loss optimal predictor");
+        System.out.println(name+" performance with the instance Hamming loss optimal predictor");
         System.out.println(mlMeasures);
-        File performanceFile = Paths.get(output,"test_predictions", "instance_hamming_loss_optimal","performance.txt").toFile();
+        File performanceFile = Paths.get(output,name+"_predictions", "instance_hamming_loss_optimal","performance.txt").toFile();
         FileUtils.writeStringToFile(performanceFile, mlMeasures.toString());
-        System.out.println("test performance is saved to "+performanceFile.toString());
+        System.out.println(name+" performance is saved to "+performanceFile.toString());
 
 
         // Here we do not use approximation
         double[] setProbs = IntStream.range(0, predictions.length).parallel().
                 mapToDouble(i->cbm.predictAssignmentProb(dataSet.getRow(i),predictions[i])).toArray();
-        File predictionFile = Paths.get(output,"test_predictions", "instance_hamming_loss_optimal","predictions.txt").toFile();
+        File predictionFile = Paths.get(output,name+"_predictions", "instance_hamming_loss_optimal","predictions.txt").toFile();
         try (BufferedWriter br = new BufferedWriter(new FileWriter(predictionFile))){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
                 br.write(predictions[i].toString());
@@ -382,15 +410,29 @@ public class CBMGB {
         }
 
         System.out.println("predicted sets and their probabilities are saved to "+predictionFile.getAbsolutePath());
+
+        boolean individualPerformance = true;
+        if (individualPerformance){
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(Paths.get(output,name+"_predictions", "instance_hamming_loss_optimal","individual_performance.json").toFile(),mlMeasures.getMacroAverage());
+        }
         System.out.println("============================================================");
     }
 
 
-    private static void reportGeneral(Config config, CBM cbm, MultiLabelClfDataSet dataSet) throws Exception{
+    private static void reportGeneral(Config config, CBM cbm, MultiLabelClfDataSet dataSet, String name) throws Exception{
         System.out.println("============================================================");
         System.out.println("computing other predictor-independent metrics");
+
+        System.out.println("label averaged MAP");
+        System.out.println(MAP.map(cbm, dataSet));
+        System.out.println("instance averaged MAP");
+        System.out.println(MAP.instanceMAP(cbm, dataSet));
+        System.out.println("global AP truncated at 30");
+        System.out.println(AveragePrecision.globalAveragePrecisionTruncated(cbm, dataSet, 30));
+
         String output = config.getString("output.dir");
-        File labelProbFile = Paths.get(output, "test_predictions",  "label_probabilities.txt").toFile();
+        File labelProbFile = Paths.get(output, name+"_predictions",  "label_probabilities.txt").toFile();
         double labelProbThreshold = config.getDouble("report.labelProbThreshold");
 
         try (BufferedWriter br = new BufferedWriter(new FileWriter(labelProbFile))){
@@ -415,12 +457,12 @@ public class CBMGB {
                 .mapToDouble(i->logLikelihoods[i]).average().getAsDouble();
 
 
-        File logLikelihoodFile = Paths.get(output, "test_predictions", "ground_truth_log_likelihood.txt").toFile();
+        File logLikelihoodFile = Paths.get(output, name+"_predictions", "ground_truth_log_likelihood.txt").toFile();
         FileUtils.writeStringToFile(logLikelihoodFile, PrintUtil.toMutipleLines(logLikelihoods));
-        System.out.println("individual log likelihood of the test ground truth label set is written to "+logLikelihoodFile.getAbsolutePath());
+        System.out.println("individual log likelihood of the "+name +" ground truth label set is written to "+logLikelihoodFile.getAbsolutePath());
 
-        System.out.println("average log likelihood of the test ground truth label sets = "+average);
-        if (!unobservedLabels.isEmpty()){
+        System.out.println("average log likelihood of the "+name+" ground truth label sets = "+average);
+        if (!unobservedLabels.isEmpty()&&name.equals("test")){
             System.out.println("This is computed by ignoring test instances with new labels unobserved during training");
             System.out.println("The following labels do not actually appear in the training set and therefore cannot be learned:");
             System.out.println(ListUtil.toSimpleString(unobservedLabels));
@@ -505,6 +547,9 @@ public class CBMGB {
             case "instance_hamming_loss":
                 earlyStopGoal = EarlyStopper.Goal.MINIMIZE;
                 break;
+            case "instance_log_likelihood":
+                earlyStopGoal = EarlyStopper.Goal.MAXIMIZE;
+                break;
             default:
                 throw new IllegalArgumentException("unsupported tune.targetMetric "+earlyStopMetric);
         }
@@ -538,7 +583,7 @@ public class CBMGB {
         String validPath = config.getString("input.validData");
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.trainData"));
 
-        if (validPath.isEmpty()){
+        if (validPath.isEmpty()||!config.getBoolean("train.useValidData")){
             return trainSet;
         } else {
             MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseRandom(config.getString("input.validData"));

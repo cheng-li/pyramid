@@ -284,17 +284,17 @@ public class CBMLR {
         Serialization.serialize(cbm, new File(output,"model"));
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
         Serialization.serialize(support, new File(output,"support"));
-        featureImportance(config, cbm, trainSet.getFeatureList(), trainSet.getLabelTranslator());
+
 
 
         System.out.println();
 
-        System.out.println("Making predictions on train set with 3 different predictors designed for different metrics:");
-        reportAccPrediction(config, cbm, trainSet, "train");
-        reportF1Prediction(config, cbm, trainSet, "train");
-        reportHammingPrediction(config, cbm, trainSet, "train");
-        reportGeneral(config, cbm, trainSet, "train");
-        System.out.println();
+//        System.out.println("Making predictions on train set with 3 different predictors designed for different metrics:");
+//        reportAccPrediction(config, cbm, trainSet, "train");
+//        reportF1Prediction(config, cbm, trainSet, "train");
+//        reportHammingPrediction(config, cbm, trainSet, "train");
+//        reportGeneral(config, cbm, trainSet, "train");
+//        System.out.println();
     }
 
     private static void test(Config config) throws Exception{
@@ -482,35 +482,7 @@ public class CBMLR {
         }
     }
 
-    //todo currently only for br
-    private static void featureImportance(Config config, CBM cbm, FeatureList featureList, LabelTranslator mlLabelTranslator) throws Exception{
-        String output = config.getString("output.dir");
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int l=0;l<cbm.getNumClasses();l++){
-            if (cbm.getBinaryClassifiers()[0][l] instanceof LogisticRegression){
-                LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
-                logisticRegression.setFeatureList(featureList);
-                List<String> labels = new ArrayList<>();
-                labels.add("not_"+mlLabelTranslator.toExtLabel(l));
-                labels.add(mlLabelTranslator.toExtLabel(l));
-                LabelTranslator labelTranslator = new LabelTranslator(labels);
-                logisticRegression.setLabelTranslator(labelTranslator);
-                TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,100);
-                stringBuilder.append("label "+l+" ("+mlLabelTranslator.toExtLabel(l)+")").append(": ");
-                for (int f=0;f<topFeatures.getTopFeatures().size();f++){
-                    Feature feature = topFeatures.getTopFeatures().get(f);
-                    double utility = topFeatures.getUtilities().get(f);
-                    stringBuilder.append(feature.getIndex()).append(" (").append(feature.getName()).append(")")
-                            .append(":").append(utility)
-                            .append(", ");
-                }
-                stringBuilder.append("\n");
-            }
 
-        }
-        FileUtils.writeStringToFile(new File(output,"top_features.txt"),stringBuilder.toString());
-
-    }
 
 
     private static LRCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
@@ -538,7 +510,6 @@ public class CBMLR {
                 .setNumComponents(hyperParameters.numComponents)
                 .setMultiClassClassifierType("lr")
                 .setBinaryClassifierType("lr")
-                .setDense(true)
                 .build();
         String allowEmpty = config.getString("predict.allowEmpty");
         switch (allowEmpty){

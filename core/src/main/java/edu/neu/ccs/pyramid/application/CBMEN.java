@@ -303,13 +303,12 @@ public class CBMEN {
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
         Serialization.serialize(support, new File(output,"support"));
 
-        featureImportance(config, cbm, trainSet.getFeatureList(), trainSet.getLabelTranslator());
 
-        System.out.println("Making predictions on train set with 3 different predictors designed for different metrics:");
-        reportAccPrediction(config, cbm, trainSet, "train");
-        reportF1Prediction(config, cbm, trainSet, "train");
-        reportHammingPrediction(config, cbm, trainSet, "train");
-        reportGeneral(config, cbm, trainSet, "train");
+//        System.out.println("Making predictions on train set with 3 different predictors designed for different metrics:");
+//        reportAccPrediction(config, cbm, trainSet, "train");
+//        reportF1Prediction(config, cbm, trainSet, "train");
+//        reportHammingPrediction(config, cbm, trainSet, "train");
+//        reportGeneral(config, cbm, trainSet, "train");
     }
 
     private static void test(Config config) throws Exception{
@@ -500,53 +499,6 @@ public class CBMEN {
         }
     }
 
-    //todo currently only for br
-    private static void featureImportance(Config config, CBM cbm, FeatureList featureList, LabelTranslator mlLabelTranslator) throws Exception{
-
-        System.out.println("number of selected features in all labels (union)= "+CBMInspector.usedFeatures(cbm).size());
-        int[] featuresByEach = CBMInspector.usedFeaturesByEachLabel(cbm);
-        double average = Arrays.stream(featuresByEach).average().getAsDouble();
-        System.out.println("average number of selected features in each label ="+average);
-
-        StringBuilder sbcount = new StringBuilder();
-        for (int l=0;l<featuresByEach.length;l++){
-            sbcount.append(mlLabelTranslator.toExtLabel(l)).append(":").append(featuresByEach[l]).append("\n");
-        }
-
-        String output = config.getString("output.dir");
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(new File(output,"top_features.txt")))){
-            for (int l=0;l<cbm.getNumClasses();l++){
-                if (cbm.getBinaryClassifiers()[0][l] instanceof LogisticRegression){
-                    LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][l];
-                    logisticRegression.setFeatureList(featureList);
-                    List<String> labels = new ArrayList<>();
-                    labels.add("not_"+mlLabelTranslator.toExtLabel(l));
-                    labels.add(mlLabelTranslator.toExtLabel(l));
-                    LabelTranslator labelTranslator = new LabelTranslator(labels);
-                    logisticRegression.setLabelTranslator(labelTranslator);
-                    TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,Integer.MAX_VALUE);
-                    bw.write("label "+l+" ("+mlLabelTranslator.toExtLabel(l)+")");
-                    bw.write(": ");
-                    for (int f=0;f<topFeatures.getTopFeatures().size();f++){
-                        Feature feature = topFeatures.getTopFeatures().get(f);
-                        double utility = topFeatures.getUtilities().get(f);
-                        bw.write(feature.getIndex());
-                        bw.write(" (");
-                        bw.write(feature.getName());
-                        bw.write(")");
-                        bw.write(":");
-                        bw.write(""+utility);
-                        bw.write(", ");
-                    }
-                    bw.write("\n");
-                }
-            }
-        }
-
-        System.out.println("feature count in each label is saved to the file "+new File(output,"feature_count_in_each_label.txt").getAbsolutePath());
-        FileUtils.writeStringToFile(new File(output,"feature_count_in_each_label.txt"),sbcount.toString());
-
-    }
 
     private static ENCBMOptimizer getOptimizer(Config config, HyperParameters hyperParameters, CBM cbm, MultiLabelClfDataSet trainSet){
         ENCBMOptimizer optimizer = new ENCBMOptimizer(cbm, trainSet);
@@ -579,7 +531,6 @@ public class CBMEN {
                 .setNumComponents(hyperParameters.numComponents)
                 .setMultiClassClassifierType("elasticnet")
                 .setBinaryClassifierType("elasticnet")
-                .setDense(true)
                 .build();
 
         cbm.setLabelTranslator(trainSet.getLabelTranslator());
@@ -665,9 +616,15 @@ public class CBMEN {
     }
 
     private static MultiLabelClfDataSet loadTrainData(Config config) throws Exception{
+        String validPath = config.getString("input.validData");
         MultiLabelClfDataSet trainSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.trainData"));
-        return trainSet;
 
+        if (validPath.isEmpty()||!config.getBoolean("train.useValidData")){
+            return trainSet;
+        } else {
+            MultiLabelClfDataSet validSet = TRECFormat.loadMultiLabelClfDataSetAutoSparseSequential(config.getString("input.validData"));
+            return DataSetUtil.concatenateByRow(trainSet, validSet);
+        }
 
     }
 
