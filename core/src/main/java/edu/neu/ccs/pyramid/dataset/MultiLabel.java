@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.dataset;
 import edu.neu.ccs.pyramid.util.ListUtil;
 import edu.neu.ccs.pyramid.util.PrintUtil;
 import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 import java.io.Serializable;
@@ -48,6 +49,20 @@ public class MultiLabel implements Serializable{
      */
     public Vector toVector(int length){
         Vector vector = new DenseVector(length);
+        for (int i = labels.nextSetBit(0); i >= 0; i = labels.nextSetBit(i+1)){
+            vector.set(i,1);
+        }
+        return vector;
+    }
+
+
+    /**
+     * return binary vector
+     * @param length
+     * @return
+     */
+    public Vector toVectorRandomSparse(int length){
+        Vector vector = new RandomAccessSparseVector(length);
         for (int i = labels.nextSetBit(0); i >= 0; i = labels.nextSetBit(i+1)){
             vector.set(i,1);
         }

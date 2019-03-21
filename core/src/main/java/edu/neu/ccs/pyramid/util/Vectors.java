@@ -46,7 +46,20 @@ public class Vectors {
     }
 
     public static Vector concatenate(Vector vector, Vector vector2){
-        Vector con = new DenseVector(vector.size()+vector2.size());
+
+        Vector con = null;
+        if (vector instanceof DenseVector){
+            con = new DenseVector(vector.size()+vector2.size());
+        }
+        if (vector instanceof RandomAccessSparseVector){
+            con = new RandomAccessSparseVector(vector.size()+vector2.size());
+        }
+
+        if (vector instanceof SequentialAccessSparseVector){
+            con = new SequentialAccessSparseVector(vector.size()+vector2.size());
+        }
+
+
 
 
         for (Vector.Element nonZeros: vector.nonZeroes()){
