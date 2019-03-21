@@ -15,6 +15,18 @@ public class TwoBR implements MultiLabelClassifier{
     private boolean useXStage2 = false;
 
 
+    public void setStage1BR(ClassProbEstimator stage1BR) {
+        this.stage1BR = stage1BR;
+    }
+
+    public void setStage2BR(ClassProbEstimator stage2BR) {
+        this.stage2BR = stage2BR;
+    }
+
+    public void setUseXStage2(boolean useXStage2) {
+        this.useXStage2 = useXStage2;
+    }
+
     @Override
     public int getNumClasses() {
         return stage1BR.getNumClasses();
