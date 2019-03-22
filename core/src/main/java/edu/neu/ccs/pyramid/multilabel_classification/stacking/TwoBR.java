@@ -10,6 +10,7 @@ import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 
 public class TwoBR implements MultiLabelClassifier{
+    private static final long serialVersionUID = 1L;
     private MultiLabelClassifier.ClassProbEstimator stage1BR;
     private MultiLabelClassifier.ClassProbEstimator stage2BR;
     private boolean useXStage2 = false;
