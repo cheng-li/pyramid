@@ -117,7 +117,7 @@ public class BRLREN {
 
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
-        CBM bestModel = null;
+
 
         int interval = 1;
         for (int iter=1;true;iter++){
@@ -133,7 +133,8 @@ public class BRLREN {
                 }
                 earlyStopper.add(iter,validMeasures.getInstanceAverage().getAccuracy());
                 if (earlyStopper.getBestIteration()==iter){
-                    bestModel = (CBM)Serialization.deepCopy(cbm);
+//                    bestModel = (CBM)Serialization.deepCopy(cbm);
+                    Serialization.serialize(cbm, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
                 }
 
 
@@ -152,10 +153,11 @@ public class BRLREN {
         logger.info("training done!");
         logger.info("time spent on training = "+stopWatch);
 
-        Serialization.serialize(bestModel, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
+
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(trainSet);
         Serialization.serialize(support, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","support"));
 
+        CBM bestModel = (CBM) Serialization.deserialize(Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
         featureImportance(config, bestModel, trainSet.getFeatureList(), trainSet.getLabelTranslator(),logger);
     }
 

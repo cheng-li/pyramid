@@ -12,6 +12,9 @@ public class Serialization {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(bos);
         out.writeObject(serializableObj);
+        out.flush();
+        out.close();
+        bos.close();
 
         //De-serialization of object
         ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
