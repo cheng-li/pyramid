@@ -5,15 +5,23 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.CalibrationEval;
 
+import edu.neu.ccs.pyramid.eval.MSE;
+import edu.neu.ccs.pyramid.optimization.EarlyStopper;
+import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
+import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoostOptimizer;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeConfig;
+import edu.neu.ccs.pyramid.regression.regression_tree.RegTreeFactory;
 import edu.neu.ccs.pyramid.util.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
 
 
 import java.io.File;
-import java.io.Serializable;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -67,20 +75,74 @@ public class Calibration {
 
         logger.info("start training calibrator");
 
-        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
+        MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.calibData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
+
+        MultiLabel[] calPred = loadPredictions(config.getString("input.calibPredictions"));
+
+        int[] ids = loadIds(config.getString("input.calibPredictions"));
+        Vector[] calibScore = loadFeatures(config.getString("input.calibPredictions"));
+
+        Pair<RegDataSet,PredictionFeatureExtractor> pair = createCaliData(cal,calPred,calibScore, ids, train);
+        RegDataSet calibratorTrainData = pair.getFirst();
+        int[] monotonicity = pair.getSecond().featureMonotonicity();
+
+        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
 
         MultiLabel[] validPred = loadPredictions(config.getString("input.validPredictions"));
 
-        int[] ids = loadIds(config.getString("input.validPredictions"));
-        double[] validScore = loadScores(config.getString("input.validPredictions"));
+        int[] validids = loadIds(config.getString("input.validPredictions"));
+        Vector[] validScore = loadFeatures(config.getString("input.validPredictions"));
 
-        RegDataSet calibratorTrainData = createCaliData(cal,validPred,validScore, ids);
+        RegDataSet validRegData = createCaliData(valid,validPred,validScore, validids, train).getFirst();
 
-        VectorCalibrator setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 1);
+        LSBoost lsBoost = trainCalibrator(calibratorTrainData,validRegData,monotonicity);
 
-        Serialization.serialize(setCalibrator,Paths.get(config.getString("output.dir"),"set_calibrator").toFile());
+        VectorCalibrator vectorCalibrator = new RegressorCalibrator(lsBoost);
+
+        Serialization.serialize(vectorCalibrator,Paths.get(config.getString("output.dir"),"set_calibrator").toFile());
+        Serialization.serialize(pair.getSecond(),Paths.get(config.getString("output.dir"),"prediction_feature_extractor").toFile());
 
         logger.info("finish training calibrator");
+    }
+
+    private static LSBoost trainCalibrator(RegDataSet calib, RegDataSet valid, int[] monotonicity){
+        LSBoost lsBoost = new LSBoost();
+
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(10).setMinDataPerLeaf(5);
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, calib, regTreeFactory, calib.getLabels());
+        if (true){
+            int[][] mono = new int[1][calib.getNumFeatures()];
+            mono[0] = monotonicity;
+            optimizer.setMonotonicity(mono);
+        }
+        optimizer.setShrinkage(0.1);
+        optimizer.initialize();
+        EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE,5);
+        LSBoost bestModel = null;
+        for (int i = 1; i<1000; i++){
+            optimizer.iterate();
+
+            if (i%10==0){
+                double mse = MSE.mse(lsBoost, valid);
+                earlyStopper.add(i,mse);
+                if (earlyStopper.getBestIteration()==i){
+                    try {
+                        bestModel = (LSBoost) Serialization.deepCopy(lsBoost);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (earlyStopper.shouldStop()){
+                    break;
+                }
+            }
+        }
+        return bestModel;
     }
 
 
@@ -101,12 +163,17 @@ public class Calibration {
     }
 
 
-    private static double[] loadScores(String file) throws Exception{
+    private static Vector[] loadFeatures(String file) throws Exception{
         List<String> lines = FileUtils.readLines(new File(file));
-        double[] scores = new double[lines.size()];
+        Vector[] scores = new Vector[lines.size()];
         for (int i=0;i<lines.size();i++){
             String split = lines.get(i).split(Pattern.quote("("))[1].replace(")","");
-            scores[i] = Double.parseDouble(split);
+            String[] features = split.split(",");
+            Vector vector = new DenseVector(features.length);
+            for (int j=0;j<features.length;j++){
+                vector.set(j,Double.parseDouble(features[j]));
+            }
+            scores[i] = vector;
         }
         return scores;
     }
@@ -121,14 +188,31 @@ public class Calibration {
         return ids;
     }
 
-    private static RegDataSet createCaliData(MultiLabelClfDataSet multiLabelClfDataSet, MultiLabel[] predictions, double[] scores, int[] ids){
+    private static Pair<RegDataSet,PredictionFeatureExtractor> createCaliData(MultiLabelClfDataSet multiLabelClfDataSet, MultiLabel[] predictions, Vector[] scores, int[] ids, MultiLabelClfDataSet train){
+
+        int numFeatures = 2 + train.getNumClasses() + scores[0].size();
+
         RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
                 .numDataPoints(predictions.length)
-                .numFeatures(2)
+                .numFeatures(numFeatures)
                 .build();
+
+        List<PredictionFeatureExtractor> extractors = new ArrayList<>();
+        extractors.add(new PriorFeatureExtractor(train));
+        extractors.add(new CardFeatureExtractor());
+        extractors.add(new LabelBinaryFeatureExtractor(train.getNumClasses(),train.getLabelTranslator()));
+        List<Integer> featureIds = IntStream.range(0,scores[0].size()).boxed().collect(Collectors.toList());
+        extractors.add(new InstanceFeatureExtractor(featureIds,train.getFeatureList()));
+        PredictionFeatureExtractor predictionFeatureExtractor = new CombinedPredictionFeatureExtractor(extractors);
+
         for (int i=0;i<predictions.length;i++){
-            regDataSet.setFeatureValue(i,0,scores[i]);
-            regDataSet.setFeatureValue(i,1,predictions[i].getNumMatchedLabels());
+            PredictionCandidate predictionCandidate = new PredictionCandidate();
+            predictionCandidate.multiLabel = predictions[i];
+            predictionCandidate.x = scores[i];
+            Vector row = predictionFeatureExtractor.extractFeatures(predictionCandidate);
+            for (int j=0;j<regDataSet.getNumFeatures();j++){
+                regDataSet.setFeatureValue(i,j,row.get(j));
+            }
             int id = ids[i];
             if (multiLabelClfDataSet.getMultiLabels()[id].equals(predictions[i])){
                 regDataSet.setLabel(i,1);
@@ -136,7 +220,36 @@ public class Calibration {
                 regDataSet.setLabel(i,0);
             }
         }
-        return regDataSet;
+        return new Pair<>(regDataSet,predictionFeatureExtractor);
+    }
+
+
+
+    private static Pair<RegDataSet,PredictionFeatureExtractor> createCaliData(MultiLabelClfDataSet multiLabelClfDataSet, MultiLabel[] predictions, Vector[] scores, int[] ids, PredictionFeatureExtractor predictionFeatureExtractor){
+
+        int numFeatures = predictionFeatureExtractor.featureMonotonicity().length;
+
+        RegDataSet regDataSet = RegDataSetBuilder.getBuilder()
+                .numDataPoints(predictions.length)
+                .numFeatures(numFeatures)
+                .build();
+
+        for (int i=0;i<predictions.length;i++){
+            PredictionCandidate predictionCandidate = new PredictionCandidate();
+            predictionCandidate.multiLabel = predictions[i];
+            predictionCandidate.x = scores[i];
+            Vector row = predictionFeatureExtractor.extractFeatures(predictionCandidate);
+            for (int j=0;j<regDataSet.getNumFeatures();j++){
+                regDataSet.setFeatureValue(i,j,row.get(j));
+            }
+            int id = ids[i];
+            if (multiLabelClfDataSet.getMultiLabels()[id].equals(predictions[i])){
+                regDataSet.setLabel(i,1);
+            } else {
+                regDataSet.setLabel(i,0);
+            }
+        }
+        return new Pair<>(regDataSet,predictionFeatureExtractor);
     }
 
 
@@ -145,12 +258,14 @@ public class Calibration {
 
         VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"set_calibrator").toFile());
 
+        PredictionFeatureExtractor predictionFeatureExtractor = (PredictionFeatureExtractor) Serialization.deserialize(Paths.get(config.getString("output.dir"),"prediction_feature_extractor").toFile());
+
         MultiLabel[] predictions = loadPredictions(config.getString("input.testPredictions"));
-        double[] scores = loadScores(config.getString("input.testPredictions"));
+        Vector[] scores = loadFeatures(config.getString("input.testPredictions"));
 
         int[] ids = loadIds(config.getString("input.testPredictions"));
 
-        RegDataSet calTestData = createCaliData(test,predictions,scores, ids);
+        RegDataSet calTestData = createCaliData(test,predictions,scores, ids, predictionFeatureExtractor).getFirst();
         if (true) {
             logger.info("calibration performance on test set");
 
