@@ -5,6 +5,7 @@ import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.CalibrationEval;
 
+import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.eval.MSE;
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
 import edu.neu.ccs.pyramid.regression.least_squares_boost.LSBoost;
@@ -285,7 +286,7 @@ public class Calibration {
 
 
 
-        double[] calibratedProbs = IntStream.range(0,test.getNumDataPoints()).parallel()
+        double[] calibratedProbs = IntStream.range(0,testRegData.getNumDataPoints()).parallel()
                 .mapToDouble(i->setCalibrator.calibrate(testRegData.getRow(i))).toArray();
         String result = PrintUtil.toMutipleLines(calibratedProbs);
         FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"test_calibrated_probabilities.txt").toFile(),result);
@@ -317,6 +318,9 @@ public class Calibration {
             stringBuilder.append(i).append(": ").append(rerankedPredictions[i].toSimpleString()).append("\n");
         }
         FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"test_reranked_predictions.txt").toFile(),stringBuilder.toString());
+
+        logger.info("test performance");
+        logger.info(new MLMeasures(test.getNumClasses(),test.getMultiLabels(),rerankedPredictions).toString());
     }
 
 
@@ -328,7 +332,7 @@ public class Calibration {
         logger.info("absolute calibration error="+ace);
         logger.info("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
         logger.info("sharpness="+sharpness);
-        logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
+        logger.info("uncertainty="+CalibrationEval.variance(generateStream(predictions,calibrator)));
         logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
         BRCalibration.CaliRes caliRes = new BRCalibration.CaliRes();
         caliRes.mse = mse;
