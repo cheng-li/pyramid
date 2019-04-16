@@ -22,7 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -72,7 +74,6 @@ public class Calibration {
 
     private static void calibrate(Config config, Logger logger) throws Exception{
 
-
         logger.info("start training calibrator");
 
         MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.trainData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
@@ -81,28 +82,29 @@ public class Calibration {
 
         MultiLabel[] calPred = loadPredictions(config.getString("input.calibPredictions"));
 
-        int[] ids = loadIds(config.getString("input.calibPredictions"));
+        int[] calIds = loadIds(config.getString("input.calibPredictions"));
         Vector[] calibScore = loadFeatures(config.getString("input.calibPredictions"));
 
-        Pair<RegDataSet,PredictionFeatureExtractor> pair = createCaliData(cal,calPred,calibScore, ids, train);
-        RegDataSet calibratorTrainData = pair.getFirst();
+        Pair<RegDataSet,PredictionFeatureExtractor> pair = createCaliData(cal,calPred,calibScore, calIds, train);
+        RegDataSet calibRegData = pair.getFirst();
+        PredictionFeatureExtractor predictionFeatureExtractor = pair.getSecond();
         int[] monotonicity = pair.getSecond().featureMonotonicity();
 
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE, true);
 
         MultiLabel[] validPred = loadPredictions(config.getString("input.validPredictions"));
 
-        int[] validids = loadIds(config.getString("input.validPredictions"));
+        int[] validIds = loadIds(config.getString("input.validPredictions"));
         Vector[] validScore = loadFeatures(config.getString("input.validPredictions"));
 
-        RegDataSet validRegData = createCaliData(valid,validPred,validScore, validids, train).getFirst();
+        RegDataSet validRegData = createCaliData(valid,validPred,validScore, validIds, predictionFeatureExtractor).getFirst();
 
-        LSBoost lsBoost = trainCalibrator(calibratorTrainData,validRegData,monotonicity);
+        LSBoost lsBoost = trainCalibrator(calibRegData,validRegData,monotonicity);
 
         VectorCalibrator vectorCalibrator = new RegressorCalibrator(lsBoost);
 
         Serialization.serialize(vectorCalibrator,Paths.get(config.getString("output.dir"),"set_calibrator").toFile());
-        Serialization.serialize(pair.getSecond(),Paths.get(config.getString("output.dir"),"prediction_feature_extractor").toFile());
+        Serialization.serialize(predictionFeatureExtractor,Paths.get(config.getString("output.dir"),"prediction_feature_extractor").toFile());
 
         logger.info("finish training calibrator");
     }
@@ -171,7 +173,7 @@ public class Calibration {
             String[] features = split.split(",");
             Vector vector = new DenseVector(features.length);
             for (int j=0;j<features.length;j++){
-                vector.set(j,Double.parseDouble(features[j]));
+                vector.set(j,Double.parseDouble(features[j].trim()));
             }
             scores[i] = vector;
         }
@@ -265,7 +267,7 @@ public class Calibration {
 
         int[] ids = loadIds(config.getString("input.testPredictions"));
 
-        RegDataSet calTestData = createCaliData(test,predictions,scores, ids, predictionFeatureExtractor).getFirst();
+        RegDataSet testRegData = createCaliData(test,predictions,scores, ids, predictionFeatureExtractor).getFirst();
         if (true) {
             logger.info("calibration performance on test set");
 
@@ -273,8 +275,8 @@ public class Calibration {
                     .boxed().map(i -> {
 
                         CalibrationDataGenerator.CalibrationInstance instance = new CalibrationDataGenerator.CalibrationInstance();
-                        instance.vector = calTestData.getRow(i);
-                        instance.correctness=calTestData.getLabels()[i];
+                        instance.vector = testRegData.getRow(i);
+                        instance.correctness=testRegData.getLabels()[i];
                         return instance;
                     })
                     .collect(Collectors.toList());
@@ -284,10 +286,37 @@ public class Calibration {
 
 
         double[] calibratedProbs = IntStream.range(0,test.getNumDataPoints()).parallel()
-                .mapToDouble(i->setCalibrator.calibrate(calTestData.getRow(i))).toArray();
+                .mapToDouble(i->setCalibrator.calibrate(testRegData.getRow(i))).toArray();
         String result = PrintUtil.toMutipleLines(calibratedProbs);
         FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"test_calibrated_probabilities.txt").toFile(),result);
         logger.info("calibrated probabilities for test predictions are saved in "+Paths.get(config.getString("output.dir"),"test_calibrated_probabilities.txt").toFile().getAbsolutePath());
+
+        Map<Integer,Res> bestPredictions = new HashMap<>();
+        for (int i=0;i<ids.length;i++){
+            int id = ids[i];
+            MultiLabel prediction = predictions[i];
+            double confidence = calibratedProbs[i];
+            Res res = new Res(prediction,confidence);
+            if (bestPredictions.containsKey(id)){
+                Res old = bestPredictions.get(id);
+                if (res.confidence>old.confidence){
+                    bestPredictions.put(id,res);
+                }
+            } else {
+                bestPredictions.put(id,res);
+            }
+        }
+
+        MultiLabel[] rerankedPredictions = new MultiLabel[test.getNumDataPoints()];
+        for (int i=0;i<rerankedPredictions.length;i++){
+            rerankedPredictions[i] = bestPredictions.get(i).prediction;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i=0;i<rerankedPredictions.length;i++){
+            stringBuilder.append(i).append(": ").append(rerankedPredictions[i].toSimpleString()).append("\n");
+        }
+        FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"test_reranked_predictions.txt").toFile(),stringBuilder.toString());
     }
 
 
@@ -313,6 +342,17 @@ public class Calibration {
     private static Stream<Pair<Double,Integer>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
         return predictions.stream()
                 .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),(int)pred.correctness));
+    }
+
+
+    private static class Res{
+        public Res(MultiLabel prediction, double confidence) {
+            this.prediction = prediction;
+            this.confidence = confidence;
+        }
+
+        MultiLabel prediction;
+        double confidence;
     }
 
 }
