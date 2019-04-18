@@ -32,7 +32,9 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         this.labelCalibrator = labelCalibrator;
     }
 
-
+    public Regressor getRegressor() {
+        return regressor;
+    }
 
     @Override
     public int getNumClasses() {

@@ -24,6 +24,9 @@ public class RerankerTrainer {
     private int numCandidates;
     private double shrinkage;
     private int minDataPerLeaf;
+    private int maxIter;
+
+
 
 
     public Reranker train(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
@@ -42,7 +45,7 @@ public class RerankerTrainer {
         optimizer.initialize();
         EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE,5);
         LSBoost bestModel = null;
-        for (int i = 1; i<1000; i++){
+        for (int i = 1; i<=maxIter; i++){
             optimizer.iterate();
 
             if (i%10==0){
@@ -118,6 +121,7 @@ public class RerankerTrainer {
         numCandidates = builder.numCandidates;
         shrinkage = builder.shrinkage;
         minDataPerLeaf = builder.minDataPerLeaf;
+        maxIter = builder.maxIter;
 
     }
 
@@ -132,6 +136,7 @@ public class RerankerTrainer {
         private int numCandidates = 50;
         private double shrinkage = 0.1;
         private int minDataPerLeaf=5;
+        private int maxIter=1000;
 
         private Builder() {
         }
@@ -159,6 +164,11 @@ public class RerankerTrainer {
 
         public Builder minDataPerLeaf(int val){
             minDataPerLeaf = val;
+            return this;
+        }
+
+        public Builder maxIter(int val){
+            maxIter = val;
             return this;
         }
 
