@@ -100,7 +100,9 @@ public class BRPrediction {
                 break;
 
             case "reranker":
-                classifier = (Reranker)setCalibrator;
+                Reranker reranker = (Reranker)setCalibrator;
+                reranker.setAllowEmpty(config.getBoolean("predict.allowEmpty"));
+                classifier = reranker;
                 break;
 
             default:

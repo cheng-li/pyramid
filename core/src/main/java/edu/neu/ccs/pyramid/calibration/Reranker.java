@@ -21,6 +21,7 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     int numCandidate;
     private PredictionFeatureExtractor predictionFeatureExtractor;
     private LabelCalibrator labelCalibrator;
+    private transient boolean allowEmpty = true;
 
 
     public Reranker(Regressor regressor, ClassProbEstimator classProbEstimator, int numCandidate,
@@ -34,6 +35,15 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
 
     public Regressor getRegressor() {
         return regressor;
+    }
+
+
+    public boolean allowEmpty() {
+        return allowEmpty;
+    }
+
+    public void setAllowEmpty(boolean allowEmpty) {
+        this.allowEmpty = allowEmpty;
     }
 
     @Override
@@ -67,6 +77,10 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
         for (int i=0;i<numCandidate;i++){
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
+
+            if (!allowEmpty&&candidate.getNumMatchedLabels()==0){
+                continue;
+            }
 
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.x = vector;

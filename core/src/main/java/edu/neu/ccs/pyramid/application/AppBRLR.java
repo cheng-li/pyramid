@@ -168,6 +168,7 @@ public class AppBRLR {
         calConfig.setEqual("monotonic=true");
         Config.copy(config,calConfig,"output.calibratorFolder");
         Config.copy(config,calConfig,"predict.mode");
+        Config.copy(config,calConfig,"predict.allowEmpty");
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         Config.copy(config, calConfig,"output.modelFolder");
@@ -192,6 +193,7 @@ public class AppBRLR {
         Config.copy(config,predictConfig,"report.labelSetLimit");
         Config.copy(config,predictConfig,"output.calibratorFolder");
         Config.copy(config,predictConfig,"predict.mode");
+        Config.copy(config,predictConfig,"predict.allowEmpty");
         predictConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         predictConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         Config.copy(config, predictConfig,"output.modelFolder");

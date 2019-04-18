@@ -217,7 +217,9 @@ public class BRCalibration {
                 break;
 
             case "reranker":
-                classifier = (Reranker)setCalibrator;
+                Reranker reranker = (Reranker)setCalibrator;
+                reranker.setAllowEmpty(config.getBoolean("predict.allowEmpty"));
+                classifier = reranker;
                 break;
 
             default:
@@ -290,7 +292,9 @@ public class BRCalibration {
                 break;
 
             case "reranker":
-                classifier = (Reranker)setCalibrator;
+                Reranker reranker = (Reranker)setCalibrator;
+                reranker.setAllowEmpty(config.getBoolean("predict.allowEmpty"));
+                classifier = reranker;
                 break;
 
             default:
