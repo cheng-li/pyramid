@@ -9,6 +9,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.cbm.BMDistribution;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
 import edu.neu.ccs.pyramid.regression.Regressor;
+import edu.neu.ccs.pyramid.util.ArgMax;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -21,7 +22,9 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     int numCandidate;
     private PredictionFeatureExtractor predictionFeatureExtractor;
     private LabelCalibrator labelCalibrator;
-    private transient boolean allowEmpty = true;
+    private transient int minPredictionSize = 0;
+    private transient int maxPredictionSize = Integer.MAX_VALUE;
+
 
 
     public Reranker(Regressor regressor, ClassProbEstimator classProbEstimator, int numCandidate,
@@ -38,12 +41,12 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     }
 
 
-    public boolean allowEmpty() {
-        return allowEmpty;
+    public void setMinPredictionSize(int minPredictionSize) {
+        this.minPredictionSize = minPredictionSize;
     }
 
-    public void setAllowEmpty(boolean allowEmpty) {
-        this.allowEmpty = allowEmpty;
+    public void setMaxPredictionSize(int maxPredictionSize) {
+        this.maxPredictionSize = maxPredictionSize;
     }
 
     @Override
@@ -78,7 +81,7 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         for (int i=0;i<numCandidate;i++){
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
 
-            if (!allowEmpty&&candidate.getNumMatchedLabels()==0){
+            if (candidate.getNumMatchedLabels()<minPredictionSize||candidate.getNumMatchedLabels()>maxPredictionSize){
                 continue;
             }
 
@@ -91,13 +94,20 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
             double score = regressor.predict(feature);
             candidates.add(new Pair<>(candidate,score));
         }
-        //todo
-//        AccPredictor accPredictor = new AccPredictor(cbm);
-//        accPredictor.setComponentContributionThreshold(0.001);
-//        MultiLabel cbmPre = accPredictor.predict(vector);
-//        Vector feature = predictionVectorizer.feature(bmDistribution, cbmPre,marginals,Optional.of(positionMap));
-//        double score = regressor.predict(feature);
-//        candidates.add(new Pair<>(cbmPre,score));
+        // if all top candidates are invalid, at the most probable single label
+        if (candidates.isEmpty()){
+            int mostProbable = ArgMax.argMax(marginals);
+            MultiLabel candidate = new MultiLabel();
+            candidate.addLabel(mostProbable);
+            PredictionCandidate predictionCandidate = new PredictionCandidate();
+            predictionCandidate.x = vector;
+            predictionCandidate.labelProbs = marginals;
+            predictionCandidate.multiLabel = candidate;
+
+            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
+            double score = regressor.predict(feature);
+            candidates.add(new Pair<>(candidate,score));
+        }
 
 
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
@@ -108,7 +118,7 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
 //            System.out.println("number of ties = "+ties.size()+", "+ties);
 //        }
 
-        return candidates.stream().max(comparator).map(pair->pair.getFirst()).get();
+        return candidates.stream().max(comparator).map(Pair::getFirst).get();
     }
 
 

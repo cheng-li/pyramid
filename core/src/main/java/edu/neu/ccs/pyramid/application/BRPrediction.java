@@ -101,7 +101,8 @@ public class BRPrediction {
 
             case "reranker":
                 Reranker reranker = (Reranker)setCalibrator;
-                reranker.setAllowEmpty(config.getBoolean("predict.allowEmpty"));
+                reranker.setMinPredictionSize(config.getInt("predict.minSize"));
+                reranker.setMaxPredictionSize(config.getInt("predict.maxSize"));
                 classifier = reranker;
                 break;
 
