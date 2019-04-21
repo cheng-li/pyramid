@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.calibration.*;
+import edu.neu.ccs.pyramid.classification.PriorProbClassifier;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
@@ -157,6 +158,14 @@ public class BRInspector {
     //only show the positive class score calculation
     public static ClassScoreCalculation decisionProcess(CBM cbm, LabelTranslator labelTranslator, double prob,
                                                         Vector vector, int classIndex, int limit){
+        if (cbm.getBinaryClassifiers()[0][classIndex] instanceof PriorProbClassifier){
+            PriorProbClassifier priorProbClassifier = (PriorProbClassifier) cbm.getBinaryClassifiers()[0][classIndex];
+            ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
+                    priorProbClassifier.predictClassProb(vector,1));
+            classScoreCalculation.setClassProbability(prob);
+
+            return classScoreCalculation;
+        }
         LogisticRegression logisticRegression = (LogisticRegression)cbm.getBinaryClassifiers()[0][classIndex];
         ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
                 logisticRegression.predictClassScore(vector,1));
