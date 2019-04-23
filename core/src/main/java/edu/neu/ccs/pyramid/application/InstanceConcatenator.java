@@ -23,9 +23,8 @@ public class InstanceConcatenator {
 
         List<MultiLabelClfDataSet> dataSets = new ArrayList<>();
         for (String input: inputs){
-            //todo
-//            MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(input, DataSetType.ML_CLF_SPARSE,true);
-            MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(input, DataSetType.ML_CLF_DENSE,true);
+            MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(input, DataSetType.ML_CLF_SPARSE,true);
+//            MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(input, DataSetType.ML_CLF_DENSE,true);
             dataSets.add(dataSet);
         }
 
