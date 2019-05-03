@@ -1,7 +1,9 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * for one leaf node, record lower bounds and upper bounds of different features
@@ -9,10 +11,12 @@ import java.util.Map;
 public class Bounds {
     private Map<Integer,Double> lowerBounds;
     private Map<Integer,Double> upperBounds;
+    Set<Integer> usedFeatures;
 
     private Bounds() {
         this.lowerBounds = new HashMap<>();
         this.upperBounds = new HashMap<>();
+        this.usedFeatures = new HashSet<>();
     }
 
 
@@ -25,6 +29,7 @@ public class Bounds {
             }
             Node parent = node.getParent();
             int featureIndex = parent.getFeatureIndex();
+            usedFeatures.add(featureIndex);
             double threshold = parent.getThreshold();
             if (node==parent.getLeftChild()){
                 double existingUpper = upperBounds.getOrDefault(featureIndex,Double.POSITIVE_INFINITY);
@@ -52,5 +57,9 @@ public class Bounds {
 
     double getUpperBound(int featureIndex){
         return upperBounds.getOrDefault(featureIndex,Double.POSITIVE_INFINITY);
+    }
+
+    Set<Integer> getUsedFeatures() {
+        return usedFeatures;
     }
 }
