@@ -1453,4 +1453,27 @@ public class DataSetUtil {
             }
         }
     }
+
+
+    /**
+     *
+     * @param dataSet
+     * @param desiredLabelOrder e.g., [3,9,1,2,5,...]
+     */
+    public static void changeLabelOrder(MultiLabelClfDataSet dataSet, List<Integer> desiredLabelOrder){
+        Map<Integer,Integer> map = new HashMap<>();
+        for (int l=0;l<desiredLabelOrder.size();l++){
+            map.put(desiredLabelOrder.get(l),l);
+        }
+
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            MultiLabel multiLabel = dataSet.getMultiLabels()[i].copy();
+            dataSet.getMultiLabels()[i].removeAllLabels();
+            for (int l: multiLabel.getMatchedLabels()){
+                dataSet.getMultiLabels()[i].addLabel(map.get(l));
+            }
+        }
+
+        //todo deal with label translator
+    }
 }
