@@ -11,6 +11,25 @@ import java.util.stream.Collectors;
 
 public class MonotonicityConstraintFinder {
 
+
+    public static boolean isMonotonic(List<Node> leaves, int[] monotonicity){
+        List<Pair<Integer,Integer>> pairs = findComparablePairs(leaves, monotonicity);
+
+        for (Pair<Integer,Integer> pair: pairs){
+            Node node1 = leaves.get(pair.getFirst());
+            Node node2 = leaves.get(pair.getSecond());
+            if (!(node1.getValue()<=node2.getValue())){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isMonotonic(RegressionTree tree, int[] monotonicity){
+        List<Node> leaves = tree.getLeaves();
+        return isMonotonic(leaves, monotonicity);
+    }
+
     public static List<Pair<Integer,Integer>> findComparablePairs(List<Node> leaves, int[] monotonicity){
         List<Bounds> boundsList = leaves.stream().map(Bounds::new).collect(Collectors.toList());
         List<Pair<Integer,Integer>> pairs = new ArrayList<>();

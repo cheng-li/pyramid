@@ -64,6 +64,10 @@ public class RegressionTree implements Regressor, Serializable {
         }
     }
 
+    List<Node> getLeaves() {
+        return leaves;
+    }
+
     //todo deal with reduction and probabilities
     public static RegressionTree newStump(int featureIndex, double threshold,
                                           double leftOutput, double rightOutput){
