@@ -20,10 +20,24 @@ public class MonotonicityPostProcessor {
      */
     public static void changeOutput(List<Node> leaves, int[] monotonicity){
         List<Pair<Integer,Integer>> constraints = MonotonicityConstraintFinder.findComparablePairs(leaves, monotonicity);
-        if (!MonotonicityConstraintFinder.isMonotonic(leaves,monotonicity)){
+
+        //todo debugging
+        List<Pair<Integer,Integer>> violatingPairs = MonotonicityConstraintFinder.findViolatingPairs(leaves, monotonicity);
+        if (!violatingPairs.isEmpty()){
             System.out.println("NOT monotonic");
         }
         System.out.println("constraints = "+constraints);
+        for (Pair<Integer,Integer> pair: constraints){
+            System.out.println("-----------------");
+            Bounds bound1 = new Bounds(leaves.get(pair.getFirst()));
+            Bounds bound2 = new Bounds(leaves.get(pair.getSecond()));
+            System.out.println("smaller node "+pair.getFirst()+" = "+bound1);
+            System.out.println("bigger node "+pair.getSecond()+" = "+bound2);
+            System.out.println("-----------------");
+        }
+
+
+        System.out.println("violating pairs = "+violatingPairs);
 
         PhysicalStore.Factory<Double, PrimitiveDenseStore> storeFactory = PrimitiveDenseStore.FACTORY;
         int numNodes = leaves.size();

@@ -1,9 +1,9 @@
 package edu.neu.ccs.pyramid.regression.regression_tree;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import edu.neu.ccs.pyramid.feature.FeatureList;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * for one leaf node, record lower bounds and upper bounds of different features
@@ -61,5 +61,29 @@ public class Bounds {
 
     Set<Integer> getUsedFeatures() {
         return usedFeatures;
+    }
+
+
+    @Override
+    public String toString() {
+        List<Integer> usedFeaturesSorted = usedFeatures.stream().sorted().collect(Collectors.toList());
+        final StringBuilder sb = new StringBuilder();
+        for (int j: usedFeaturesSorted){
+            sb.append("feature "+j).append(":").append("(")
+                    .append(getLowerBound(j)).append(",").append(getUpperBound(j))
+                    .append("]").append("  ");
+        }
+        return sb.toString();
+    }
+
+    public String toString(FeatureList featureList) {
+        List<Integer> usedFeaturesSorted = usedFeatures.stream().sorted().collect(Collectors.toList());
+        final StringBuilder sb = new StringBuilder();
+        for (int j: usedFeaturesSorted){
+            sb.append("feature "+featureList.get(j).getName()).append(":").append("(")
+                    .append(getLowerBound(j)).append(",").append(getUpperBound(j))
+                    .append("]").append("  ");
+        }
+        return sb.toString();
     }
 }

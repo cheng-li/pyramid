@@ -11,6 +11,20 @@ import java.util.stream.Collectors;
 
 public class MonotonicityConstraintFinder {
 
+    public static List<Pair<Integer,Integer>> findViolatingPairs(List<Node> leaves, int[] monotonicity){
+        List<Pair<Integer,Integer>> comparablePairs = findComparablePairs(leaves, monotonicity);
+        List<Pair<Integer,Integer>> violatingPairs = new ArrayList<>();
+        for (Pair<Integer,Integer> pair: comparablePairs){
+            Node node1 = leaves.get(pair.getFirst());
+            Node node2 = leaves.get(pair.getSecond());
+            if (!(node1.getValue()<=node2.getValue())){
+                violatingPairs.add(pair);
+            }
+        }
+        return violatingPairs;
+    }
+
+
 
     public static boolean isMonotonic(List<Node> leaves, int[] monotonicity){
         List<Pair<Integer,Integer>> pairs = findComparablePairs(leaves, monotonicity);
