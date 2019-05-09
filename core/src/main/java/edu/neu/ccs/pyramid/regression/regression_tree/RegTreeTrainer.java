@@ -6,7 +6,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
-import java.util.concurrent.*;
+
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -137,32 +137,7 @@ public class RegTreeTrainer {
 
         setLeavesOutputs(regTreeConfig, tree.leaves,leafOutputCalculator, labels);
 
-        ExecutorService executor = Executors.newCachedThreadPool();
-        Callable<List<Double>> task = new MonotonicityPostProcessor(tree.leaves,monotonicity);
-        Future<List<Double>> future = executor.submit(task);
-        try {
-            List<Double> relabeling = future.get(1, TimeUnit.MINUTES);
-            for (int i=0;i<tree.leaves.size();i++){
-                tree.leaves.get(i).setValue(relabeling.get(i));
-            }
-            System.out.println("after fixing");
-            System.out.println(relabeling);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            System.out.println("TIME OUT!");
-        }
-        finally {
-            future.cancel(true);
-        }
-
-        executor.shutdown();
-
-        if (!MonotonicityConstraintFinder.isMonotonic(tree.leaves, monotonicity)){
-            System.out.println("STILL NOT MONOTONIC!");
-        }
+        MonotonicityPostProcessor.changeOutput(tree.leaves,monotonicity);
 
         cleanLeaves(tree.leaves);
         normalizeReductions(tree,dataSet);
