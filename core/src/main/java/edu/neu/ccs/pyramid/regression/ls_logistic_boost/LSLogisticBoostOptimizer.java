@@ -65,24 +65,25 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
 
     private double gradientForInstance(int i){
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
+        return labels[i] - p;
         //todo
-        double g = -2*(p-labels[i])*(1-p)*p;
-        if (labels[i]>=1 && p < 0.95){
-            g = -2*(p-labels[i]);
-        }
-
-        if (labels[i]<=0 && p > 0.05){
-            g = -2*(p-labels[i]);
-        }
-//        double g = -2*(p-labels[i]);
-//        if (Math.abs(g)<1){
-//            g = MathUtil.sign(g)*1;
+//        double g = -2*(p-labels[i])*(1-p)*p;
+//        if (labels[i]>=1 && p < 0.95){
+//            g = -2*(p-labels[i]);
 //        }
-//        if (labels[i]==1){
-//            System.out.println("**********");
+//
+//        if (labels[i]<=0 && p > 0.05){
+//            g = -2*(p-labels[i]);
 //        }
-//        System.out.println("p="+p+" label="+labels[i]+" g="+g);
-        return g;
+////        double g = -2*(p-labels[i]);
+////        if (Math.abs(g)<1){
+////            g = MathUtil.sign(g)*1;
+////        }
+////        if (labels[i]==1){
+////            System.out.println("**********");
+////        }
+////        System.out.println("p="+p+" label="+labels[i]+" g="+g);
+//        return g;
 //        return -2*(p-labels[i])*(1-p)*p;
 //        return -2*(p-labels[i]);
     }
