@@ -21,8 +21,8 @@ public class MonotonicityConstraintFinder {
         return (b-a)>=-0.00001;
     }
 
-    public static List<Pair<Integer,Integer>> findViolatingPairs(List<Node> leaves, int[] monotonicity){
-        List<Pair<Integer,Integer>> comparablePairs = findComparablePairs(leaves, monotonicity);
+    public static List<Pair<Integer,Integer>> findViolatingPairs(List<Node> leaves, int[] monotonicity, boolean strong){
+        List<Pair<Integer,Integer>> comparablePairs = findComparablePairs(leaves, monotonicity, strong);
         List<Pair<Integer,Integer>> violatingPairs = new ArrayList<>();
         for (Pair<Integer,Integer> pair: comparablePairs){
             Node node1 = leaves.get(pair.getFirst());
@@ -36,8 +36,8 @@ public class MonotonicityConstraintFinder {
 
 
 
-    public static boolean isMonotonic(List<Node> leaves, int[] monotonicity){
-        List<Pair<Integer,Integer>> pairs = findComparablePairs(leaves, monotonicity);
+    public static boolean isMonotonic(List<Node> leaves, int[] monotonicity, boolean strong){
+        List<Pair<Integer,Integer>> pairs = findComparablePairs(leaves, monotonicity, strong);
 
         for (Pair<Integer,Integer> pair: pairs){
             Node node1 = leaves.get(pair.getFirst());
@@ -49,12 +49,12 @@ public class MonotonicityConstraintFinder {
         return true;
     }
 
-    public static boolean isMonotonic(RegressionTree tree, int[] monotonicity){
+    public static boolean isMonotonic(RegressionTree tree, int[] monotonicity, boolean strong){
         List<Node> leaves = tree.getLeaves();
-        return isMonotonic(leaves, monotonicity);
+        return isMonotonic(leaves, monotonicity, strong);
     }
 
-    public static List<Pair<Integer,Integer>> findComparablePairs(List<Node> leaves, int[] monotonicity){
+    public static List<Pair<Integer,Integer>> findComparablePairs(List<Node> leaves, int[] monotonicity, boolean strong){
         List<Bounds> boundsList = leaves.stream().map(Bounds::new).collect(Collectors.toList());
         List<Pair<Integer,Integer>> pairs = new ArrayList<>();
         for (int i=0;i<leaves.size();i++){
@@ -62,7 +62,7 @@ public class MonotonicityConstraintFinder {
                 if (i!=j){
                     Bounds bounds1 = boundsList.get(i);
                     Bounds bounds2 = boundsList.get(j);
-                    if (leq(bounds1, bounds2, monotonicity)){
+                    if (leq(bounds1, bounds2, monotonicity, strong)){
                         pairs.add(new Pair<>(i,j));
                     }
                 }
@@ -71,7 +71,22 @@ public class MonotonicityConstraintFinder {
         return pairs;
     }
 
-    private static boolean leq(Bounds smallOne, Bounds bigOne, int[] monotonicity){
+    private static boolean leq(Bounds smallOne, Bounds bigOne, int[] monotonicity, boolean strong){
+        if (strong){
+            return leqStrong(smallOne, bigOne, monotonicity);
+        } else {
+            return leqWeak(smallOne, bigOne, monotonicity);
+        }
+    }
+
+    /**
+     * strong constraint
+     * @param smallOne
+     * @param bigOne
+     * @param monotonicity
+     * @return
+     */
+    private static boolean leqStrong(Bounds smallOne, Bounds bigOne, int[] monotonicity){
         Set<Integer> usedFeatures = new HashSet<>();
         usedFeatures.addAll(smallOne.getUsedFeatures());
         usedFeatures.addAll(bigOne.getUsedFeatures());
@@ -86,6 +101,38 @@ public class MonotonicityConstraintFinder {
             if (monotonicity[j]==0){
                 //non monotonic feature
                 if (!((smallOne.getLowerBound(j)<bigOne.getUpperBound(j)) && (bigOne.getLowerBound(j)<smallOne.getUpperBound(j)))){
+                    return false;
+                }
+            }
+        }
+
+        return true;
+
+    }
+
+
+    /**
+     * weak constraint
+     * @param smallOne
+     * @param bigOne
+     * @param monotonicity
+     * @return
+     */
+    private static boolean leqWeak(Bounds smallOne, Bounds bigOne, int[] monotonicity){
+        Set<Integer> usedFeatures = new HashSet<>();
+        usedFeatures.addAll(smallOne.getUsedFeatures());
+        usedFeatures.addAll(bigOne.getUsedFeatures());
+        for (int j: usedFeatures){
+            if (monotonicity[j]==1){
+                //monotonic feature
+                if (! ((smallOne.getLowerBound(j)<=bigOne.getLowerBound(j)) && (smallOne.getUpperBound(j)<=bigOne.getUpperBound(j)))){
+                    return false;
+                }
+            }
+
+            if (monotonicity[j]==0){
+                //non monotonic feature
+                if (!((smallOne.getLowerBound(j)==bigOne.getLowerBound(j)) && (smallOne.getUpperBound(j)==bigOne.getUpperBound(j)))){
                     return false;
                 }
             }

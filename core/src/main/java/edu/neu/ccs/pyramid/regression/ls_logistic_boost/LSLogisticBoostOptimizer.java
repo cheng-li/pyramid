@@ -17,6 +17,8 @@ import java.util.stream.IntStream;
 public class LSLogisticBoostOptimizer extends GBOptimizer {
     private static final Logger logger = LogManager.getLogger();
     private double[] labels;
+    private int iteration = 0;
+    private double decay=1.0;
 
     /**
      *
@@ -39,6 +41,10 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
 
     public LSLogisticBoostOptimizer(GradientBoosting boosting, RegDataSet dataSet, RegressorFactory factory) {
         this(boosting,  dataSet, factory, dataSet.getLabels());
+    }
+
+    public void setDecay(double decay) {
+        this.decay = decay;
     }
 
     @Override
@@ -64,8 +70,10 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
     }
 
     private double gradientForInstance(int i){
+        // (1-lambda)*SE + lambda*KL
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
-        return labels[i] - p;
+        double lambda = 1.0/(1.0+decay*iteration);
+        return lambda*(labels[i] - p)+(1-lambda)*(labels[i]-p)*p*(1-p);
         //todo
 //        double g = -2*(p-labels[i])*(1-p)*p;
 //        if (labels[i]>=1 && p < 0.95){
@@ -95,6 +103,6 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
 
     @Override
     protected void updateOthers() {
-        return;
+        iteration++;
     }
 }

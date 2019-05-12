@@ -19,11 +19,12 @@ public class MonotonicityPostProcessor{
      * @param leaves
      * @param monotonicity
      */
-    public static void changeOutput(List<Node> leaves, int[] monotonicity){
-        List<Pair<Integer,Integer>> constraints = MonotonicityConstraintFinder.findComparablePairs(leaves, monotonicity);
+    public static void changeOutput(List<Node> leaves, int[] monotonicity, boolean strongConstraint){
 
-        //todo debugging
-        List<Pair<Integer,Integer>> violatingPairs = MonotonicityConstraintFinder.findViolatingPairs(leaves, monotonicity);
+        List<Pair<Integer,Integer>> constraints = MonotonicityConstraintFinder.findComparablePairs(leaves, monotonicity, strongConstraint);
+
+
+        List<Pair<Integer,Integer>> violatingPairs = MonotonicityConstraintFinder.findViolatingPairs(leaves, monotonicity, strongConstraint);
         if (!violatingPairs.isEmpty()){
             System.out.println("NOT monotonic");
         }
@@ -96,10 +97,10 @@ public class MonotonicityPostProcessor{
 
         System.out.println("after fixing");
         System.out.println(PrintUtil.printWithIndex(leaves.stream().mapToDouble(Node::getValue).toArray()));
-        if (!MonotonicityConstraintFinder.isMonotonic(leaves, monotonicity)){
+        if (!MonotonicityConstraintFinder.isMonotonic(leaves, monotonicity, strongConstraint)){
             System.out.println("STILL NOT MONOTONIC!");
             System.out.println("violating pairs");
-            System.out.println(PrintUtil.printWithIndex(MonotonicityConstraintFinder.findViolatingPairs(leaves, monotonicity)));
+            System.out.println(PrintUtil.printWithIndex(MonotonicityConstraintFinder.findViolatingPairs(leaves, monotonicity, strongConstraint)));
         }
     }
 
