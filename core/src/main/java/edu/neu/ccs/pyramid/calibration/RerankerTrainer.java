@@ -25,6 +25,7 @@ public class RerankerTrainer {
     private double shrinkage;
     private int minDataPerLeaf;
     private int maxIter;
+    private boolean strongMonotonicity;
 
 
 
@@ -33,7 +34,7 @@ public class RerankerTrainer {
                           PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
         LSBoost lsBoost = new LSBoost();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setStrongMonotonicity(strongMonotonicity);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         if (monotonic){
@@ -77,7 +78,7 @@ public class RerankerTrainer {
                                      double decay){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf);
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setStrongMonotonicity(strongMonotonicity);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         optimizer.setDecay(decay);
@@ -145,6 +146,7 @@ public class RerankerTrainer {
         shrinkage = builder.shrinkage;
         minDataPerLeaf = builder.minDataPerLeaf;
         maxIter = builder.maxIter;
+        strongMonotonicity = builder.strongMonotonicity;
 
     }
 
@@ -160,6 +162,7 @@ public class RerankerTrainer {
         private double shrinkage = 0.1;
         private int minDataPerLeaf=5;
         private int maxIter=1000;
+        private boolean strongMonotonicity=false;
 
         private Builder() {
         }
@@ -172,6 +175,11 @@ public class RerankerTrainer {
 
         public Builder monotonic(boolean val) {
             monotonic = val;
+            return this;
+        }
+
+        public Builder strongMonotonicity(boolean val) {
+            strongMonotonicity = val;
             return this;
         }
 

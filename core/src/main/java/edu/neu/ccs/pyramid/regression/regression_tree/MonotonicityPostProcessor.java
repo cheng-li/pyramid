@@ -25,6 +25,11 @@ public class MonotonicityPostProcessor{
 
 
         List<Pair<Integer,Integer>> violatingPairs = MonotonicityConstraintFinder.findViolatingPairs(leaves, monotonicity, strongConstraint);
+        if (violatingPairs.isEmpty()){
+            System.out.println("already monotonic");
+            return;
+        }
+
         if (!violatingPairs.isEmpty()){
             System.out.println("NOT monotonic");
         }

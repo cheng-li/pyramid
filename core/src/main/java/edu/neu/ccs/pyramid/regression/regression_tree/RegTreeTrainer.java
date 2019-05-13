@@ -137,7 +137,7 @@ public class RegTreeTrainer {
 
         setLeavesOutputs(regTreeConfig, tree.leaves,leafOutputCalculator, labels);
 
-        MonotonicityPostProcessor.changeOutput(tree.leaves,monotonicity,false);
+        MonotonicityPostProcessor.changeOutput(tree.leaves,monotonicity,regTreeConfig.isStrongMonotonicity());
 
         cleanLeaves(tree.leaves);
         normalizeReductions(tree,dataSet);
