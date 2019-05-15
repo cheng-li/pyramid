@@ -73,8 +73,12 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
         // (1-lambda)*SE + lambda*KL
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
         double lambda = 1.0/(1.0+decay*iteration);
+//        if (i%100==0){
+//            System.out.println("instance "+i+", lambda="+lambda+", kl contribute="+lambda*(labels[i] - p)+", se contribute="+(1-lambda)*(labels[i]-p)*p*(1-p));
+//        }
+
         return lambda*(labels[i] - p)+(1-lambda)*(labels[i]-p)*p*(1-p);
-        //todo
+//        //todo
 //        double g = -2*(p-labels[i])*(1-p)*p;
 //        if (labels[i]>=1 && p < 0.95){
 //            g = -2*(p-labels[i]);
@@ -94,6 +98,13 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
 //        return g;
 //        return -2*(p-labels[i])*(1-p)*p;
 //        return -2*(p-labels[i]);
+
+//        if (iteration<200){
+//            return (labels[i] - p);
+//        } else {
+//            return (labels[i]-p)*p*(1-p);
+//        }
+
     }
 
     @Override

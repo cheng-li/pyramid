@@ -97,6 +97,9 @@ public class RerankerTrainer {
 
             if (i%10==0){
                 double mse = MSE.mse(lsLogisticBoost, validation);
+                //todo
+//                double trainMse = MSE.mse(lsLogisticBoost, regDataSet);
+//                System.out.println("iter="+i+", train mse="+trainMse+" , valid mse="+mse);
                 earlyStopper.add(i,mse);
                 if (earlyStopper.getBestIteration()==i){
                     try {
