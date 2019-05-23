@@ -1476,4 +1476,22 @@ public class DataSetUtil {
 
         //todo deal with label translator
     }
+
+    public static void zeroOutColumn(DataSet dataSet, int columnIndex){
+        List<Integer> old = new ArrayList<>();
+        for (Vector.Element element: dataSet.getColumn(columnIndex).nonZeroes()){
+            old.add(element.index());
+        }
+        for (int i: old){
+            dataSet.setFeatureValue(i,columnIndex,0);
+        }
+    }
+
+    public static void zeroOutColumns(DataSet dataSet, List<Integer> columnIndices){
+        for (int j: columnIndices){
+            zeroOutColumn(dataSet,j);
+        }
+    }
+    
+
 }
