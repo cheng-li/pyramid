@@ -74,6 +74,53 @@ public class RerankerTrainer {
 
 
     public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
+                                     PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation,
+                                     double[] noiseRates0, double[] noiseRates1){
+        LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
+
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setStrongMonotonicity(strongMonotonicity);
+        RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
+        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
+        optimizer.setNoiseRates0(noiseRates0);
+        optimizer.setNoiseRates1(noiseRates1);
+        if (monotonic){
+            int[][] mono = new int[1][regDataSet.getNumFeatures()];
+            mono[0] = predictionFeatureExtractor.featureMonotonicity();
+            optimizer.setMonotonicity(mono);
+        }
+        optimizer.setShrinkage(shrinkage);
+        optimizer.initialize();
+
+        EarlyStopper earlyStopper = new EarlyStopper(EarlyStopper.Goal.MINIMIZE,5);
+        LSLogisticBoost bestModel = null;
+        for (int i = 1; i<=maxIter; i++){
+            optimizer.iterate();
+
+            if (i%10==0){
+                double mse = MSE.mse(lsLogisticBoost, validation);
+                //todo
+//                double trainMse = MSE.mse(lsLogisticBoost, regDataSet);
+//                System.out.println("iter="+i+", train mse="+trainMse+" , valid mse="+mse);
+                earlyStopper.add(i,mse);
+                if (earlyStopper.getBestIteration()==i){
+                    try {
+                        bestModel = (LSLogisticBoost) Serialization.deepCopy(lsLogisticBoost);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (earlyStopper.shouldStop()){
+                    break;
+                }
+            }
+        }
+        return new Reranker(bestModel, classProbEstimator, numCandidates,predictionFeatureExtractor, labelCalibrator);
+    }
+
+
+    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
                                      PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
@@ -115,6 +162,8 @@ public class RerankerTrainer {
         }
         return new Reranker(bestModel, classProbEstimator, numCandidates,predictionFeatureExtractor, labelCalibrator);
     }
+
+
 //
 //
 //    public Reranker trainLambdaMART(PredictionVectorizer.TrainData trainData, CBM cbm, PredictionVectorizer predictionVectorizer, int ndcgTruncationLevel){
