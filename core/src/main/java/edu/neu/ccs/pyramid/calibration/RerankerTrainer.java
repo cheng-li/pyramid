@@ -74,14 +74,12 @@ public class RerankerTrainer {
 
 
     public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
-                                     PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation,
-                                     double decay){
+                                     PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setStrongMonotonicity(strongMonotonicity);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
-        optimizer.setDecay(decay);
         if (monotonic){
             int[][] mono = new int[1][regDataSet.getNumFeatures()];
             mono[0] = predictionFeatureExtractor.featureMonotonicity();

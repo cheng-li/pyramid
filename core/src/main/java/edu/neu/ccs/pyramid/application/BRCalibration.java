@@ -180,7 +180,7 @@ public class BRCalibration {
                         .numLeaves(config.getInt("numLeaves"))
                         .strongMonotonicity(false)
                         .build();
-                setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,classProbEstimator,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet,0.001);
+                setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,classProbEstimator,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet);
                 break;
             case "isotonic":
                 setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0);

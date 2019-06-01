@@ -17,8 +17,9 @@ import java.util.stream.IntStream;
 public class LSLogisticBoostOptimizer extends GBOptimizer {
     private static final Logger logger = LogManager.getLogger();
     private double[] labels;
-    private int iteration = 0;
-    private double decay=1.0;
+    private double[] noiseRates0;
+    private double[] noiseRates1;
+
 
     /**
      *
@@ -31,20 +32,30 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
     public LSLogisticBoostOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory, double[] weights, double[] labels) {
         super(boosting, dataSet, factory, weights);
         this.labels = labels;
+        this.noiseRates1 = new double[dataSet.getNumDataPoints()];
+        this.noiseRates0 = new double[dataSet.getNumDataPoints()];
     }
 
     public LSLogisticBoostOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory, double[] labels) {
         super(boosting, dataSet, factory);
         this.labels = labels;
+        this.noiseRates1 = new double[dataSet.getNumDataPoints()];
+        this.noiseRates0 = new double[dataSet.getNumDataPoints()];
     }
 
 
     public LSLogisticBoostOptimizer(GradientBoosting boosting, RegDataSet dataSet, RegressorFactory factory) {
         this(boosting,  dataSet, factory, dataSet.getLabels());
+        this.noiseRates1 = new double[dataSet.getNumDataPoints()];
+        this.noiseRates0 = new double[dataSet.getNumDataPoints()];
     }
 
-    public void setDecay(double decay) {
-        this.decay = decay;
+    public void setNoiseRates0(double[] noiseRates0) {
+        this.noiseRates0 = noiseRates0;
+    }
+
+    public void setNoiseRates1(double[] noiseRates1) {
+        this.noiseRates1 = noiseRates1;
     }
 
     @Override
@@ -70,40 +81,8 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
     }
 
     private double gradientForInstance(int i){
-        // (1-lambda)*SE + lambda*KL
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
-        double lambda = 1.0/(1.0+decay*iteration);
-//        if (i%100==0){
-//            System.out.println("instance "+i+", lambda="+lambda+", kl contribute="+lambda*(labels[i] - p)+", se contribute="+(1-lambda)*(labels[i]-p)*p*(1-p));
-//        }
-
-        return lambda*(labels[i] - p)+(1-lambda)*(labels[i]-p)*p*(1-p);
-//        //todo
-//        double g = -2*(p-labels[i])*(1-p)*p;
-//        if (labels[i]>=1 && p < 0.95){
-//            g = -2*(p-labels[i]);
-//        }
-//
-//        if (labels[i]<=0 && p > 0.05){
-//            g = -2*(p-labels[i]);
-//        }
-////        double g = -2*(p-labels[i]);
-////        if (Math.abs(g)<1){
-////            g = MathUtil.sign(g)*1;
-////        }
-////        if (labels[i]==1){
-////            System.out.println("**********");
-////        }
-////        System.out.println("p="+p+" label="+labels[i]+" g="+g);
-//        return g;
-//        return -2*(p-labels[i])*(1-p)*p;
-//        return -2*(p-labels[i]);
-
-//        if (iteration<200){
-//            return (labels[i] - p);
-//        } else {
-//            return (labels[i]-p)*p*(1-p);
-//        }
+       return labels[i]-p - (1-p)*noiseRates0[i] + p*noiseRates1[i];
 
     }
 
@@ -113,7 +92,5 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
     }
 
     @Override
-    protected void updateOthers() {
-        iteration++;
-    }
+    protected void updateOthers() { }
 }
