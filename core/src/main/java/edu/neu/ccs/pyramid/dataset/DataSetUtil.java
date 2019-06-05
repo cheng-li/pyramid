@@ -607,7 +607,7 @@ public class DataSetUtil {
                 double value = element.get();
                 dataSet.setFeatureValue(dataIndex,j,value);
             }
-            dataSet.setLabels(dataIndex,dataSet1.getMultiLabels()[i]);
+            dataSet.setLabels(dataIndex,dataSet1.getMultiLabels()[i].copy());
             dataIndex+=1;
         }
 
@@ -618,7 +618,7 @@ public class DataSetUtil {
                 double value = element.get();
                 dataSet.setFeatureValue(dataIndex,j,value);
             }
-            dataSet.setLabels(dataIndex,dataSet2.getMultiLabels()[i]);
+            dataSet.setLabels(dataIndex,dataSet2.getMultiLabels()[i].copy());
             dataIndex+=1;
         }
 
@@ -695,7 +695,7 @@ public class DataSetUtil {
                     double value = element.get();
                     dataSet.setFeatureValue(dataIndex,j,value);
                 }
-                dataSet.setLabels(dataIndex,ds.getMultiLabels()[i]);
+                dataSet.setLabels(dataIndex,ds.getMultiLabels()[i].copy());
                 idTranslator.addData(dataIndex,ds.getIdTranslator().toExtId(i));
                 dataIndex+=1;
             }
