@@ -158,11 +158,12 @@ public class CTAT {
             Pair<Double,Double> pair = sorted.get(i);
             total+=1;
             correct += pair.getSecond();
-            fractions.add(total/predictionResults.size());
+
             double current = pair.getFirst();
             if ((i<sorted.size()-1&&!sorted.get(i).getFirst().equals(sorted.get(i+1).getFirst()))||i==sorted.size()-1){
                 thresholds.add(current);
                 accuracies.add(correct*1.0/total);
+                fractions.add(total/predictionResults.size());
             }
         }
 
