@@ -176,7 +176,6 @@ public class BRCalibration {
             case "reranker":
                 RerankerTrainer rerankerTrainer = RerankerTrainer.newBuilder()
                         .numCandidates(config.getInt("numCandidates"))
-                        .monotonic(config.getBoolean("monotonic"))
                         .numLeaves(config.getInt("numLeaves"))
                         .monotonicityType("weak")
                         .build();

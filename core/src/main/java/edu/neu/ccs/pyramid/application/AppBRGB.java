@@ -156,7 +156,6 @@ public class AppBRGB {
         calConfig.setString("numLeaves",config.getString("calibrate.reranker.numLeaves"));
         calConfig.setString("useInitialFeatures",config.getString("calibrate.reranker.useInitialFeatures"));
         calConfig.setString("featureFieldPrefix",config.getString("calibrate.reranker.featureFieldPrefix"));
-        calConfig.setEqual("monotonic=true");
         Config.copy(config,calConfig,"output.calibratorFolder");
         Config.copy(config,calConfig,"predict.mode");
         Config.copy(config,calConfig,"predict.minSize");
