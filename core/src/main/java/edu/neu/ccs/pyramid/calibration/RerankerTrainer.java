@@ -20,11 +20,11 @@ import java.util.Arrays;
 
 public class RerankerTrainer {
     private int numLeaves;
-    private boolean monotonic;
     private int numCandidates;
     private double shrinkage;
     private int minDataPerLeaf;
     private int maxIter;
+    //"none", "weak", "strong", "xgboost"
     private String monotonicityType;
 
 
@@ -37,7 +37,7 @@ public class RerankerTrainer {
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
-        if (monotonic){
+        if (!monotonicityType.equals("none")){
             int[][] mono = new int[1][regDataSet.getNumFeatures()];
             mono[0] = predictionFeatureExtractor.featureMonotonicity();
             optimizer.setMonotonicity(mono);
@@ -83,7 +83,7 @@ public class RerankerTrainer {
         LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         optimizer.setNoiseRates0(noiseRates0);
         optimizer.setNoiseRates1(noiseRates1);
-        if (monotonic){
+        if (!monotonicityType.equals("none")){
             int[][] mono = new int[1][regDataSet.getNumFeatures()];
             mono[0] = predictionFeatureExtractor.featureMonotonicity();
             optimizer.setMonotonicity(mono);
@@ -127,7 +127,7 @@ public class RerankerTrainer {
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
-        if (monotonic){
+        if (!monotonicityType.equals("none")){
             int[][] mono = new int[1][regDataSet.getNumFeatures()];
             mono[0] = predictionFeatureExtractor.featureMonotonicity();
             optimizer.setMonotonicity(mono);
@@ -191,7 +191,6 @@ public class RerankerTrainer {
 
     private RerankerTrainer(Builder builder) {
         numLeaves = builder.numLeaves;
-        monotonic = builder.monotonic;
         numCandidates = builder.numCandidates;
         shrinkage = builder.shrinkage;
         minDataPerLeaf = builder.minDataPerLeaf;
@@ -207,11 +206,11 @@ public class RerankerTrainer {
 
     public static final class Builder {
         private int numLeaves = 10;
-        private boolean monotonic = true;
         private int numCandidates = 50;
         private double shrinkage = 0.1;
         private int minDataPerLeaf=5;
         private int maxIter=1000;
+        //"none", "weak", "strong", "xgboost"
         private String monotonicityType="none";
 
         private Builder() {
@@ -223,10 +222,6 @@ public class RerankerTrainer {
         }
 
 
-        public Builder monotonic(boolean val) {
-            monotonic = val;
-            return this;
-        }
 
         public Builder monotonicityType(String val) {
             monotonicityType = val;

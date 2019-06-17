@@ -12,6 +12,7 @@ public class RegTreeConfig {
     private int minDataPerLeaf=0;
     private boolean parallel=true;
     private int numActiveFeatures=10;
+    //"none", "weak", "strong", "xgboost"
     private String monotonicityType="none";
 
 
