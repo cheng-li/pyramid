@@ -25,7 +25,7 @@ public class RerankerTrainer {
     private double shrinkage;
     private int minDataPerLeaf;
     private int maxIter;
-    private boolean strongMonotonicity;
+    private String monotonicityType;
 
 
 
@@ -34,7 +34,7 @@ public class RerankerTrainer {
                           PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
         LSBoost lsBoost = new LSBoost();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setStrongMonotonicity(strongMonotonicity);
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSBoostOptimizer optimizer = new LSBoostOptimizer(lsBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         if (monotonic){
@@ -78,7 +78,7 @@ public class RerankerTrainer {
                                      double[] noiseRates0, double[] noiseRates1){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setStrongMonotonicity(strongMonotonicity);
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         optimizer.setNoiseRates0(noiseRates0);
@@ -124,7 +124,7 @@ public class RerankerTrainer {
                                      PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
-        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setStrongMonotonicity(strongMonotonicity);
+        RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
         LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
         if (monotonic){
@@ -196,7 +196,7 @@ public class RerankerTrainer {
         shrinkage = builder.shrinkage;
         minDataPerLeaf = builder.minDataPerLeaf;
         maxIter = builder.maxIter;
-        strongMonotonicity = builder.strongMonotonicity;
+        monotonicityType = builder.monotonicityType;
 
     }
 
@@ -212,7 +212,7 @@ public class RerankerTrainer {
         private double shrinkage = 0.1;
         private int minDataPerLeaf=5;
         private int maxIter=1000;
-        private boolean strongMonotonicity=false;
+        private String monotonicityType="none";
 
         private Builder() {
         }
@@ -228,8 +228,8 @@ public class RerankerTrainer {
             return this;
         }
 
-        public Builder strongMonotonicity(boolean val) {
-            strongMonotonicity = val;
+        public Builder monotonicityType(String val) {
+            monotonicityType = val;
             return this;
         }
 

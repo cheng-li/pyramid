@@ -178,7 +178,7 @@ public class BRCalibration {
                         .numCandidates(config.getInt("numCandidates"))
                         .monotonic(config.getBoolean("monotonic"))
                         .numLeaves(config.getInt("numLeaves"))
-                        .strongMonotonicity(false)
+                        .monotonicityType("weak")
                         .build();
                 setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,classProbEstimator,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet);
                 break;

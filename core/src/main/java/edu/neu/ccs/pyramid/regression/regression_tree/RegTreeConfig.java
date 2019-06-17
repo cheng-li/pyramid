@@ -12,7 +12,7 @@ public class RegTreeConfig {
     private int minDataPerLeaf=0;
     private boolean parallel=true;
     private int numActiveFeatures=10;
-    private boolean strongMonotonicity=false;
+    private String monotonicityType="none";
 
 
     public RegTreeConfig setMaxNumLeaves(int maxNumLeaves) {
@@ -43,8 +43,8 @@ public class RegTreeConfig {
         return this;
     }
 
-    public RegTreeConfig setStrongMonotonicity(boolean strongMonotonicity) {
-        this.strongMonotonicity = strongMonotonicity;
+    public RegTreeConfig setMonotonicityType(String monotonicityType) {
+        this.monotonicityType = monotonicityType;
         return this;
     }
 
@@ -71,7 +71,8 @@ public class RegTreeConfig {
         return parallel;
     }
 
-    public boolean isStrongMonotonicity() {
-        return strongMonotonicity;
+
+    public String getMonotonicityType() {
+        return monotonicityType;
     }
 }
