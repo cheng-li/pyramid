@@ -80,7 +80,6 @@ public class CTAT {
         Summary summary = new Summary();
         int numCorrect = 0;
         int size = list.size();
-        Pair<Double, Double> result =new Pair<>();
         for (int i = 0; i < size; i++){
             numCorrect += list.get(i).getSecond();
             double accuracy = (numCorrect*1.0)/(i+1);

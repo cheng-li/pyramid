@@ -7,7 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.calibration.*;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
+import edu.neu.ccs.pyramid.eval.FMeasure;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
+import edu.neu.ccs.pyramid.eval.Precision;
+import edu.neu.ccs.pyramid.eval.Recall;
 import edu.neu.ccs.pyramid.multilabel_classification.BRInspector;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
@@ -149,14 +152,25 @@ public class BRPrediction {
         MultiLabelClassifier fClassifier = classifier;
 
         boolean simpleCSV = true;
+
         if (simpleCSV){
 
             File csv = Paths.get(reportFolder,"report.csv").toFile();
             csv.getParentFile().mkdirs();
+            if(csv.exists()){
+                csv.delete();
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("doc_id").append("\t").append("predictions").append("\t").append("prediction_type").append("\t")
+                    .append("confidence").append("\t").append("correctness").append("\t").append("ground_truth").append("\t")
+                    .append("precision").append("\t").append("recall").append("\t").append("F1").append("\n");
+
+            FileUtils.writeStringToFile(csv,sb.toString());
             List<Integer> list = IntStream.range(0,test.getNumDataPoints()).boxed().collect(Collectors.toList());
+
             ParallelStringMapper<Integer> mapper = (list1, i) -> simplePredictionAnalysisCalibrated(classProbEstimator, labelCalibrator, setCalibrator,
                     test, i, fClassifier,predictionFeatureExtractor);
-            ParallelFileWriter.mapToString(mapper,list, csv,100);
+            ParallelFileWriter.mapToString(mapper,list, csv,100,true);
         }
 
 
@@ -303,6 +317,7 @@ public class BRPrediction {
                                                             MultiLabelClassifier classifier,
                                                             PredictionFeatureExtractor predictionFeatureExtractor){
         StringBuilder sb = new StringBuilder();
+
         MultiLabel trueLabels = dataSet.getMultiLabels()[dataPointIndex];
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
@@ -310,6 +325,7 @@ public class BRPrediction {
         double[] calibratedClassProbs = labelCalibrator.calibratedClassProbs(classProbs);
 
         MultiLabel predicted = classifier.predict(dataSet.getRow(dataPointIndex));
+
 
         List<Integer> classes = new ArrayList<Integer>();
         for (int k = 0; k < dataSet.getNumClasses(); k++){
@@ -336,7 +352,8 @@ public class BRPrediction {
             }
             sb.append(id).append("\t").append(labelTranslator.toExtLabel(label)).append("\t")
                     .append("single").append("\t").append(prob)
-                    .append("\t").append(match).append("\n");
+                    .append("\t").append(match).append("\t").append("NA").append("\t").append("NA").append("\t")
+                    .append("NA").append("\t").append("NA").append("\n");
         }
 
         PredictionCandidate predictedCandidate = new PredictionCandidate();
@@ -348,8 +365,10 @@ public class BRPrediction {
 
 
         List<Integer> predictedList = predicted.getMatchedLabelsOrdered();
+        MultiLabel prediction = new MultiLabel();
         sb.append(id).append("\t");
         for (int i=0;i<predictedList.size();i++){
+            prediction.addLabel(predictedList.get(i));
             sb.append(labelTranslator.toExtLabel(predictedList.get(i)));
             if (i!=predictedList.size()-1){
                 sb.append(",");
@@ -360,7 +379,26 @@ public class BRPrediction {
         if (predicted.equals(trueLabels)){
             setMatch=1;
         }
-        sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\n");
+
+        List<Integer> truthList = trueLabels.getMatchedLabels().stream().sorted().collect(Collectors.toList());
+        StringBuilder sbLabels = new StringBuilder();
+        for(int i = 0; i < truthList.size(); i++){
+            if(i!=truthList.size()-1){
+                sbLabels.append(labelTranslator.toExtLabel(truthList.get(i))).append(",");
+
+            }else{
+
+                sbLabels.append(labelTranslator.toExtLabel(truthList.get(i)));
+            }
+        }
+        double precision = Precision.precision(trueLabels,prediction);
+        double recall = Recall.recall(trueLabels,prediction);
+        double f1 = FMeasure.f1(precision,recall);
+
+
+        sb.append("set").append("\t").append(probability).append("\t").append(setMatch).append("\t")
+                .append(sbLabels.toString()).append("\t").append(precision).append("\t").append(recall).append("\t")
+                .append(f1).append("\n");
         return sb.toString();
     }
 

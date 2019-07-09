@@ -74,6 +74,20 @@ public class Recall {
         return r / multiLabels.length;
     }
 
+    public static double recall(MultiLabel label, MultiLabel prediction) {
+
+        if (label.getMatchedLabels().size() == 0){
+            return 1.0;
+        } else {
+            return MultiLabel.intersection(label, prediction).size() * 1.0 / label.getMatchedLabels().size();
+        }
+    }
+
+
+
+
+
+
     @Deprecated
     /**
      * Please see function: double recall(MultiLabel[] multiLabels, List<MultiLabel> predictions);
