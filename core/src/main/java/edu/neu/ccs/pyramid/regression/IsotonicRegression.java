@@ -62,7 +62,7 @@ public class IsotonicRegression implements Regressor{
 
 
 
-    public IsotonicRegression(Stream<Pair<Double,Integer>> stream){
+    public IsotonicRegression(Stream<Pair<Double,Double>> stream){
         this(new WeightedInput(stream));
     }
 
@@ -209,9 +209,9 @@ public class IsotonicRegression implements Regressor{
         private double[] accsNonempty;
         private double[] countsNonEmpty;
 
-        public WeightedInput(Stream<Pair<Double,Integer>> stream) {
+        public WeightedInput(Stream<Pair<Double,Double>> stream) {
             //todo deal with the stream better
-            List<Pair<Double,Integer>> streamCopy = stream.collect(Collectors.toList());
+            List<Pair<Double,Double>> streamCopy = stream.collect(Collectors.toList());
             double min = streamCopy.stream().mapToDouble(Pair::getFirst).min().getAsDouble();
             double max = streamCopy.stream().mapToDouble(Pair::getFirst).max().getAsDouble();
             final int numBuckets = 10000;

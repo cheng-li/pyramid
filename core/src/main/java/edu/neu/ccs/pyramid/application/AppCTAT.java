@@ -50,8 +50,8 @@ public class AppCTAT {
 
         String validReportPath = config.getString("validReportPath");
         String testReportPath = config.getString("testReportPath");
-        Stream<Pair<Double, Integer>> validStream = ReportUtils.getConfidenceCorrectness(validReportPath).stream();
-        List<Pair<Double, Integer>> testList = ReportUtils.getConfidenceCorrectness(testReportPath);
+        Stream<Pair<Double, Double>> validStream = ReportUtils.getConfidenceCorrectness(validReportPath).stream();
+        List<Pair<Double, Double>> testList = ReportUtils.getConfidenceCorrectness(testReportPath);
 
         CTAT.Summary summaryValid = CTAT.findThreshold(validStream,config.getDouble("CTAT.targetAccuracy"));
         double ctat = summaryValid.getConfidenceThreshold();

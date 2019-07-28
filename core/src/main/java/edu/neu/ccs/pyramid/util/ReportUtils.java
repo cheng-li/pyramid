@@ -104,18 +104,18 @@ public class ReportUtils {
 
 
 
-    public static List<Pair<Double, Integer>> getConfidenceCorrectness(String reportPath)throws Exception{
+    public static List<Pair<Double, Double>> getConfidenceCorrectness(String reportPath)throws Exception{
 
         List<String> lines = FileUtils.readLines(new File(reportPath));
         List<String> filteredLines = lines.stream().filter(line->line.split("\t")[2].equals("set")).collect(Collectors.toList());
-        List<Pair<Double,Integer>> list = new ArrayList<>();
+        List<Pair<Double,Double>> list = new ArrayList<>();
 
         for(int i = 0; i < filteredLines.size(); i++){
-            Pair<Double,Integer> pair = new Pair<>();
+            Pair<Double,Double> pair = new Pair<>();
             String[] line = filteredLines.get(i).split("\t");
 
             pair.setFirst(Double.parseDouble(line[3]));
-            pair.setSecond(Integer.parseInt(line[4]));
+            pair.setSecond(Double.parseDouble(line[4]));
             list.add(pair);
 
         }

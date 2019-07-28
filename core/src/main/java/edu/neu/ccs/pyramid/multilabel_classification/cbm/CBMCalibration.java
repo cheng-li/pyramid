@@ -55,15 +55,15 @@ public class CBMCalibration {
         Serialization.serialize(isotonicRegression, Paths.get(out,"calibration").toFile());
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(0.001);
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, test.getNumDataPoints()).parallel().mapToObj(i->{
+        Stream<Pair<Double,Double>> stream = IntStream.range(0, test.getNumDataPoints()).parallel().mapToObj(i->{
             MultiLabel pre = accPredictor.predict(test.getRow(i));
             double pro = cbm.predictAssignmentProb(test.getRow(i),pre,0.001);
             double calibrated = isotonicRegression.predict(pro);
-            int correct = 0;
+            double correct = 0;
             if (pre.equals(test.getMultiLabels()[i])){
                 correct = 1;
             }
-            Pair<Double,Integer>  pair = new Pair<>(calibrated,correct);
+            Pair<Double,Double>  pair = new Pair<>(calibrated,correct);
             return pair;
         });
         System.out.println(Displayer.displayCalibrationResult(stream));
@@ -82,7 +82,7 @@ public class CBMCalibration {
 
         for (int cardinality: cardinalities){
 
-            Stream<Pair<Double,Integer>> stream =  IntStream.range(0, valid.getNumDataPoints()).parallel()
+            Stream<Pair<Double,Double>> stream =  IntStream.range(0, valid.getNumDataPoints()).parallel()
                     .boxed().flatMap(i-> {
                         MultiLabel pre = accPredictor.predict(valid.getRow(i));
                         Set<MultiLabel> copy = new HashSet<>(support);
@@ -93,13 +93,13 @@ public class CBMCalibration {
                         final List<MultiLabel>  filtered = candidate.stream().filter(a->a.getNumMatchedLabels()==cardinality).collect(Collectors.toList());
                         double[] probs = cbm.predictAssignmentProbs(valid.getRow(i), filtered, 0.001);
 
-                        Stream<Pair<Double,Integer>> pairs = IntStream.range(0, filtered.size())
+                        Stream<Pair<Double,Double>> pairs = IntStream.range(0, filtered.size())
                                 .mapToObj(a -> {
-                                    Pair<Double, Integer> pair = new Pair<>();
+                                    Pair<Double, Double> pair = new Pair<>();
                                     pair.setFirst(probs[a]);
-                                    pair.setSecond(0);
+                                    pair.setSecond(0.0);
                                     if (filtered.get(a).equals(valid.getMultiLabels()[i])) {
-                                        pair.setSecond(1);
+                                        pair.setSecond(1.0);
                                     }
                                     return pair;
                                 });
@@ -115,16 +115,16 @@ public class CBMCalibration {
     public static void displayCardinalityBased(CBM cbm, MultiLabelClfDataSet test, Map<Integer,IsotonicRegression> calibrations){
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(0.001);
-        Stream<Pair<Double,Integer>> stream =  IntStream.range(0, test.getNumDataPoints()).parallel()
+        Stream<Pair<Double,Double>> stream =  IntStream.range(0, test.getNumDataPoints()).parallel()
                 .boxed().map(i-> {
                     MultiLabel pre = accPredictor.predict(test.getRow(i));
                     double pro = cbm.predictAssignmentProb(test.getRow(i),pre,0.001);
                     double calibrated = calibrations.get(pre.getNumMatchedLabels()).predict(pro);
-                    int correct = 0;
+                    double correct = 0;
                     if (pre.equals(test.getMultiLabels()[i])){
                         correct = 1;
                     }
-                    Pair<Double,Integer>  pair = new Pair<>(calibrated,correct);
+                    Pair<Double,Double>  pair = new Pair<>(calibrated,correct);
                     return pair;
                 });
 
@@ -135,14 +135,14 @@ public class CBMCalibration {
     private static void uncalibrated(CBM cbm, MultiLabelClfDataSet test){
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(0.001);
-        Stream<Pair<Double,Integer>> stream = IntStream.range(0, test.getNumDataPoints()).parallel().mapToObj(i->{
+        Stream<Pair<Double,Double>> stream = IntStream.range(0, test.getNumDataPoints()).parallel().mapToObj(i->{
             MultiLabel pre = accPredictor.predict(test.getRow(i));
             double pro = cbm.predictAssignmentProb(test.getRow(i),pre,0.001);
-            int correct = 0;
+            double correct = 0;
             if (pre.equals(test.getMultiLabels()[i])){
                 correct = 1;
             }
-            Pair<Double,Integer>  pair = new Pair<>(pro,correct);
+            Pair<Double,Double>  pair = new Pair<>(pro,correct);
             return pair;
         });
 
@@ -152,7 +152,7 @@ public class CBMCalibration {
     private static IsotonicRegression trainIso(CBM cbm, List<MultiLabel> support, MultiLabelClfDataSet valid) {
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(0.001);
-        Stream<Pair<Double, Integer>> stream = IntStream.range(0, valid.getNumDataPoints()).parallel().boxed().
+        Stream<Pair<Double, Double>> stream = IntStream.range(0, valid.getNumDataPoints()).parallel().boxed().
                 flatMap(i -> {
                     MultiLabel pre = accPredictor.predict(valid.getRow(i));
                     Set<MultiLabel> copy = new HashSet<>(support);
@@ -161,13 +161,13 @@ public class CBMCalibration {
                     }
                     List<MultiLabel> candidate = new ArrayList<>(copy);
                     double[] probs = cbm.predictAssignmentProbs(valid.getRow(i), candidate, 0.001);
-                    Stream<Pair<Double, Integer>> pairs = IntStream.range(0, candidate.size()).mapToObj(c -> {
+                    Stream<Pair<Double, Double>> pairs = IntStream.range(0, candidate.size()).mapToObj(c -> {
                         double pro = probs[c];
-                        int correct = 0;
+                        double correct = 0;
                         if (candidate.get(c).equals(valid.getMultiLabels()[i])) {
                             correct = 1;
                         }
-                        return new Pair<Double, Integer>(pro, correct);
+                        return new Pair<Double, Double>(pro, correct);
                     });
                     return pairs;
                 });

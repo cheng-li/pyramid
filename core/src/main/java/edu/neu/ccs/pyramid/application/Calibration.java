@@ -343,9 +343,9 @@ public class Calibration {
 
 
 
-    private static Stream<Pair<Double,Integer>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
+    private static Stream<Pair<Double,Double>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
         return predictions.stream()
-                .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),(int)pred.correctness));
+                .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),pred.correctness));
     }
 
 
