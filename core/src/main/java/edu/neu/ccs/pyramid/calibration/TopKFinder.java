@@ -65,6 +65,7 @@ public class TopKFinder {
             for (int i=0;i<minSetSize;i++){
                 candidate.addLabel(sorted[i]);
             }
+            candidates.add(candidate);
         }
 
         for (MultiLabel candidate: candidates){

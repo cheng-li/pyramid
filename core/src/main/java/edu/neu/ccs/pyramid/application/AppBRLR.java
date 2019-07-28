@@ -163,7 +163,7 @@ public class AppBRLR {
         calConfig.setString("input.testFolder",config.getString("output.testFolder"));
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
-        calConfig.setString("tuneThreshold",config.getString("tuneThreshold"));
+
         calConfig.setString("validate",config.getString("validate"));
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
@@ -240,6 +240,7 @@ public class AppBRLR {
         config.copy(config,automationConfig,"threshold.name");
         Config.copy(config, automationConfig, "threshold.lowerBound");
         Config.copy(config, automationConfig, "threshold.upperBound");
+        Config.copy(config, automationConfig, "tuneThreshold");
 
 
         return automationConfig;

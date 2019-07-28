@@ -231,6 +231,7 @@ public class AppBRGB {
         config.copy(config,automationConfig,"threshold.name");
         Config.copy(config, automationConfig, "threshold.lowerBound");
         Config.copy(config, automationConfig, "threshold.upperBound");
+        Config.copy(config, automationConfig, "tuneThreshold");
 
 
         return automationConfig;
