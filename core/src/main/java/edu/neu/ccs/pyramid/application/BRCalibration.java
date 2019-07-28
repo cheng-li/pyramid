@@ -54,9 +54,6 @@ public class BRCalibration {
             calibrate(config, logger);
         }
 
-        if(config.getBoolean("tuneCTAT")){
-            tuneCTAT(config,logger);
-        }
 
 
         if (fileHandler!=null){
@@ -270,70 +267,15 @@ public class BRCalibration {
         return false;
     }
 
-    private static void tuneCTAT(Config config, Logger logger)throws Exception{
-        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), DataSetType.ML_CLF_SEQ_SPARSE,true);
-        MultiLabelClassifier.ClassProbEstimator classProbEstimator = (MultiLabelClassifier.ClassProbEstimator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
-        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "calibrators",config.getString("output.calibratorFolder"),"label_calibrator").toFile());
-        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "calibrators",config.getString("output.calibratorFolder"),"set_calibrator").toFile());
-        PredictionFeatureExtractor predictionFeatureExtractor = (PredictionFeatureExtractor) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "calibrators",config.getString("output.calibratorFolder"),"prediction_feature_extractor").toFile());
-
-        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
 
 
 
-        MultiLabelClassifier classifier = null;
-        switch (config.getString("predict.mode")){
-            case "independent":
-                classifier = new IndependentPredictor(classProbEstimator,labelCalibrator);
-                break;
-            case "support":
-                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(classProbEstimator, labelCalibrator, support);
-                break;
-
-            case "reranker":
-                Reranker reranker = (Reranker)setCalibrator;
-                reranker.setMinPredictionSize(config.getInt("predict.minSize"));
-                reranker.setMaxPredictionSize(config.getInt("predict.maxSize"));
-                classifier = reranker;
-                break;
-
-            default:
-                throw new IllegalArgumentException("illegal predict.mode");
-        }
-
-        MultiLabel[] predictions_valid = classifier.predict(valid);
-
-        CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
-
-        List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
-                .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
-                .collect(Collectors.toList());
-        double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
-        double confidenceThreshold = CTAT.findThreshold(generateStream(instances,setCalibrator),targetAccuracy).getConfidenceThreshold();
-
-
-        logger.info("confidence threshold for target accuracy "+targetAccuracy +" = " +confidenceThreshold);
-
-        FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "ctat",config.getString("CTAT.name")).toFile(),""+confidenceThreshold);
-
-        double confidenceThresholdClipped = CTAT.clip(confidenceThreshold,config.getDouble("CTAT.lowerBound"),config.getDouble("CTAT.upperBound"));
-
-        FileUtils.writeStringToFile(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                "ctat",config.getString("CTAT.name")+"_clipped").toFile(),""+confidenceThresholdClipped);
-
-    }
-
-
-
-
-    public static Stream<Pair<Double,Integer>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
+    public static Stream<Pair<Double,Double>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
         return predictions.stream()
-                .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),(int)pred.correctness));
+                .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),pred.correctness));
+
     }
+
 
     public static BRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));

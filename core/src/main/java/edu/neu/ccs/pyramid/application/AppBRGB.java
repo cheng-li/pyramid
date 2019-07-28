@@ -45,11 +45,15 @@ public class AppBRGB {
         Config app2Config = createGBConfig(config);
         Config calConfig = createBRCalibrationConfig(config);
         Config predictConfig = createBRPredictionConfig(config);
+        Config autoConfig = createBRAutomationConfig(config);
 
         App1.main(app1Config);
         BRGB.main(app2Config);
         BRCalibration.main(calConfig);
-        BRPrediction.main(predictConfig);
+        BRPrediction.reportValid(predictConfig);
+        BRAutomation.tuneThreshold(autoConfig);
+        BRPrediction.reportTest(predictConfig);
+        BRAutomation.showTestPerformance(autoConfig);
     }
 
     public static void main(Config config) throws Exception{
@@ -78,11 +82,15 @@ public class AppBRGB {
         Config app2Config = createGBConfig(config);
         Config calConfig = createBRCalibrationConfig(config);
         Config predictConfig = createBRPredictionConfig(config);
+        Config autoConfig = createBRAutomationConfig(config);
 
         App1.main(app1Config);
         BRGB.main(app2Config);
         BRCalibration.main(calConfig);
-        BRPrediction.main(predictConfig);
+        BRPrediction.reportValid(predictConfig);
+        BRAutomation.tuneThreshold(autoConfig);
+        BRPrediction.reportTest(predictConfig);
+        BRAutomation.showTestPerformance(autoConfig);
     }
 
     private static Config createApp1Config(Config config){
@@ -146,7 +154,7 @@ public class AppBRGB {
         calConfig.setString("input.testFolder",config.getString("output.testFolder"));
         calConfig.setString("calibrate",config.getString("calibrate"));
         calConfig.setString("test",config.getString("test"));
-        calConfig.setString("tuneCTAT",config.getString("tuneCTAT"));
+        calConfig.setString("tuneThreshold",config.getString("tuneThreshold"));
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");
@@ -164,10 +172,11 @@ public class AppBRGB {
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         Config.copy(config, calConfig,"output.modelFolder");
-        Config.copy(config, calConfig, "CTAT.targetAccuracy");
-        Config.copy(config, calConfig, "CTAT.name");
-        Config.copy(config, calConfig, "CTAT.lowerBound");
-        Config.copy(config, calConfig, "CTAT.upperBound");
+        Config.copy(config, calConfig, "threshold.targetValue");
+        Config.copy(config, calConfig, "threshold.targetMetric");
+        Config.copy(config,calConfig,"threshold.name");
+        Config.copy(config, calConfig, "threshold.lowerBound");
+        Config.copy(config, calConfig, "threshold.upperBound");
         calConfig.setString("dataSetType","sparse_random");
 
         return calConfig;
@@ -190,10 +199,11 @@ public class AppBRGB {
         predictConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         predictConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
         Config.copy(config, predictConfig,"output.modelFolder");
-        Config.copy(config, predictConfig, "CTAT.targetAccuracy");
-        Config.copy(config, predictConfig, "CTAT.name");
-        Config.copy(config, predictConfig, "CTAT.lowerBound");
-        Config.copy(config, predictConfig, "CTAT.upperBound");
+        Config.copy(config, predictConfig, "threshold.targetValue");
+        Config.copy(config, predictConfig, "threshold.targetMetric");
+        config.copy(config,predictConfig,"threshold.name");
+        Config.copy(config, predictConfig, "threshold.lowerBound");
+        Config.copy(config, predictConfig, "threshold.upperBound");
         Config.copy(config, predictConfig,"report.showPredictionDetail");
         Config.copy(config, predictConfig,"report.rule.limit");
         Config.copy(config, predictConfig,"report.numDocsPerFile");
@@ -204,6 +214,26 @@ public class AppBRGB {
         predictConfig.setString("dataSetType","sparse_random");
 
         return predictConfig;
+    }
+
+    private static Config createBRAutomationConfig(Config config){
+        Config automationConfig = new Config();
+        automationConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
+        automationConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        automationConfig.setString("output.dir",config.getString("output.folder"));
+        automationConfig.setString("test",config.getString("test"));
+        automationConfig.setString("validate",config.getString("validate"));
+        automationConfig.setString("output.log",config.getString("output.log"));
+
+        Config.copy(config, automationConfig,"output.modelFolder");
+        Config.copy(config, automationConfig, "threshold.targetValue");
+        Config.copy(config, automationConfig, "threshold.targetMetric");
+        config.copy(config,automationConfig,"threshold.name");
+        Config.copy(config, automationConfig, "threshold.lowerBound");
+        Config.copy(config, automationConfig, "threshold.upperBound");
+
+
+        return automationConfig;
     }
 
 

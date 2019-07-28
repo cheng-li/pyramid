@@ -65,6 +65,57 @@ public class BRPrediction {
         }
     }
 
+    public static void reportValid(Config config) throws Exception{
+        Logger logger = Logger.getAnonymousLogger();
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
+        }
+
+
+        if (config.getBoolean("validate")){
+            report(config, config.getString("input.validData"), logger);
+        }
+
+
+        if (fileHandler!=null){
+            fileHandler.close();
+        }
+    }
+
+
+    public static void reportTest(Config config) throws Exception{
+        Logger logger = Logger.getAnonymousLogger();
+        String logFile = config.getString("output.log");
+        FileHandler fileHandler = null;
+        if (!logFile.isEmpty()){
+            new File(logFile).getParentFile().mkdirs();
+            //todo should append?
+            fileHandler = new FileHandler(logFile, true);
+            java.util.logging.Formatter formatter = new SimpleFormatter();
+            fileHandler.setFormatter(formatter);
+            logger.addHandler(fileHandler);
+            logger.setUseParentHandlers(false);
+        }
+
+
+        if (config.getBoolean("test")){
+            report(config, config.getString("input.testData"), logger);
+        }
+
+
+        if (fileHandler!=null){
+            fileHandler.close();
+        }
+    }
+
     private static void report(Config config, String dataPath, Logger logger) throws Exception{
         DataSetType dataSetType;
         switch (config.getString("dataSetType")){
@@ -121,32 +172,17 @@ public class BRPrediction {
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
 
         if (true) {
-            logger.info("calibration performance on dataset "+testDataFile.getName());
+            logger.info("calibration performance on dataset " + testDataFile.getName());
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, test.getRow(i),predictions[i],test.getMultiLabels()[i]))
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, test.getRow(i), predictions[i], test.getMultiLabels()[i]))
                     .collect(Collectors.toList());
 
             BRCalibration.eval(instances, setCalibrator, logger);
 
-            double confidenceThreshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                    "ctat",config.getString("CTAT.name")).toFile()));
-            CTAT.Summary summary = CTAT.applyThreshold(BRCalibration.generateStream(instances,setCalibrator),confidenceThreshold);
-            logger.info("autocoding performance with unclipped confidence threshold "+summary.getConfidenceThreshold());
-            logger.info("autocoding percentage = "+ summary.getAutoCodingPercentage());
-            logger.info("autocoding accuracy = "+ summary.getAutoCodingAccuracy());
-            logger.info("number of autocoded documents = "+ summary.getNumAutoCoded());
-            logger.info("number of correct autocoded documents = "+ summary.getNumCorrectAutoCoded());
-
-            double confidenceThresholdClipped = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models",
-                    "ctat",config.getString("CTAT.name")+"_clipped").toFile()));
-            CTAT.Summary summaryClipped = CTAT.applyThreshold(BRCalibration.generateStream(instances,setCalibrator),confidenceThresholdClipped);
-            logger.info("autocoding performance with clipped confidence threshold "+summaryClipped.getConfidenceThreshold());
-            logger.info("autocoding percentage = "+ summaryClipped.getAutoCodingPercentage());
-            logger.info("autocoding accuracy = "+ summaryClipped.getAutoCodingAccuracy());
-            logger.info("number of autocoded documents = "+ summaryClipped.getNumAutoCoded());
-            logger.info("number of correct autocoded documents = "+ summaryClipped.getNumCorrectAutoCoded());
         }
+
+
 
 
         MultiLabelClassifier fClassifier = classifier;
@@ -162,7 +198,7 @@ public class BRPrediction {
             }
             StringBuilder sb = new StringBuilder();
             sb.append("doc_id").append("\t").append("predictions").append("\t").append("prediction_type").append("\t")
-                    .append("confidence").append("\t").append("correctness").append("\t").append("ground_truth").append("\t")
+                    .append("confidence").append("\t").append("truth").append("\t").append("ground_truth").append("\t")
                     .append("precision").append("\t").append("recall").append("\t").append("F1").append("\n");
 
             FileUtils.writeStringToFile(csv,sb.toString());
@@ -413,6 +449,8 @@ public class BRPrediction {
         String id = dataSet.getIdTranslator().toExtId(dataPointIndex);
         LabelTranslator labelTranslator = dataSet.getLabelTranslator();
         int top = config.getInt("report.labelSetLimit");
+        int minSize = config.getInt("predict.minSize");
+        int maxSize = config.getInt("predict.maxSize");
 
         List<Pair<MultiLabel,Double>> topK;
         if (classifier instanceof SupportPredictor){
@@ -420,7 +458,7 @@ public class BRPrediction {
                     predictionVectorizer,((SupportPredictor)classifier).getSupport(),top);
         } else {
             topK = TopKFinder.topK(dataSet.getRow(dataPointIndex),classProbEstimator,labelCalibrator,setCalibrator,
-                    predictionVectorizer,top);
+                    predictionVectorizer,minSize, maxSize, top);
         }
 
 
