@@ -60,7 +60,7 @@ public class AppEnsemble {
         String ensembleName = config.getString("ensembleModelName");
         String testFolder = config.getString("testFolder");
         String validFolder = config.getString("validFolder");
-        double targetAccuracy = config.getDouble("CTAT.targetAccuracy");
+        double targetValue = config.getDouble("threshold.targetValue");
 
 
         logger.info("start loading all reports and getting ground truth");
@@ -114,117 +114,83 @@ public class AppEnsemble {
 
 
 
-        if(config.getBoolean("tuneCTAT")){
+        if(config.getBoolean("tuneThreshold")){
 
-            logger.info("start tuning CTAT");
-            double lowerBound = config.getDouble("CTAT.lowerBound");
-            double upperBound = config.getDouble("CTAT.upperBound");
+            logger.info("start tuning confidence threshold");
+            Stream<Pair<Double,Double>> streamValid;
+            double threshold = 1.1;
+            if(config.getString("threshold.targetMetric").equals("accuracy")){
 
-            Stream<Pair<Double,Integer>> streamValidCTAT = ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
-            CTAT.Summary validSummary = CTAT.findThreshold(streamValidCTAT,targetAccuracy);
-            double ctat = validSummary.getConfidenceThreshold();
-            double ctat_clipped = ctat;
-            FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models","ctat",config.getString("CTAT.name")).toFile(),""+ctat);
-            if(ctat > upperBound){
-                ctat_clipped = upperBound;
-                }
+                streamValid = ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
+                CTAT.Summary validSummary = CTAT.findThreshold(streamValid,targetValue);
+                threshold = validSummary.getConfidenceThreshold();
 
-            if(ctat < lowerBound){
-                ctat_clipped = lowerBound;
-                }
-
-            FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models","ctat",config.getString("CTAT.name")+"_clipped").toFile(),""+ctat_clipped);
-
-            logger.info("tuning CTAT is done");
-
-            List<Pair<Double,Integer>> testStream = ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
-            CTAT.Summary testSummary_unclipped = CTAT.applyThreshold(testStream.stream(),ctat);
-            CTAT.Summary testSummary_clipped = CTAT.applyThreshold(testStream.stream(),ctat_clipped);
-
-            logger.info("*****************");
-            logger.info("autocoding performance with unclipped confidence threshold "+testSummary_unclipped.getConfidenceThreshold());
-            logger.info("autocoding percentage = "+ testSummary_unclipped.getAutoCodingPercentage());
-            logger.info("autocoding accuracy = "+ testSummary_unclipped.getAutoCodingAccuracy());
-            logger.info("number of autocoded documents = "+ testSummary_unclipped.getNumAutoCoded());
-            logger.info("number of correct autocoded documents = "+ testSummary_unclipped.getNumCorrectAutoCoded());
-
-            logger.info("*****************");
-
-            logger.info("autocoding performance with clipped confidence threshold "+testSummary_clipped.getConfidenceThreshold());
-            logger.info("autocoding percentage = "+ testSummary_clipped.getAutoCodingPercentage());
-            logger.info("autocoding accuracy = "+ testSummary_clipped.getAutoCodingAccuracy());
-            logger.info("number of autocoded documents = "+ testSummary_clipped.getNumAutoCoded());
-            logger.info("number of correct autocoded documents = "+ testSummary_clipped.getNumCorrectAutoCoded());
-
-        }
-
-        if(config.getBoolean("generateBreakDownPerformanceTable")){
-
-
-            logger.info("start generating break down performance report");
-            String pathToSaveReport = Paths.get(config.getString("output.folder"),"model_predictions",config.getString("ensembleModelName"),"predictions",config.getString("testFolder")+"_reports","report_breakDown.csv").toString();
-            String ensembleTestReport = Paths.get(config.getString("output.folder"),"model_predictions",config.getString("ensembleModelName"),"predictions",config.getString("testFolder")+"_reports","report.csv").toString();
-            double ctatBreakDown = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models","ctat",config.getString("CTAT.name")+"_clipped").toFile()));
-            Map<String,String> idPc1 = loadSplitVariable(config,testDocIds);
-            ReportUtils.generateBreakDownReport(config,idPc1,ensembleTestReport,testDocIds,ctatBreakDown,pathToSaveReport);
-            logger.info("break down performance report generated");
-
-        }
-
-        if(config.getBoolean("tuneCTFT")){
-
-            logger.info("start tuning CTFT");
-            double lowerBound = config.getDouble("CTFT.lowerBound");
-            double upperBound = config.getDouble("CTFT.upperBound");
-
-            Stream<Pair<Double,Double>> streamValidCTFT = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
-
-           CTFT.Summary summary_valid = CTFT.findThreshold(streamValidCTFT,config.getDouble("CTFT.targetF1"));
-           double ctft = summary_valid.getConfidenceThreshold();
-           FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models","ctft",config.getString("CTFT.name")).toFile(),""+ctft);
-
-           double ctft_clipped = ctft;
-
-           if(ctft > upperBound){
-                ctft_clipped = upperBound;
             }
 
-            if(ctft < lowerBound){
-                ctft_clipped = lowerBound;
+            if(config.getString("threshold.targetMetric").equals("f1")){
+                streamValid =  ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
+                CTFT.Summary summary_valid = CTFT.findThreshold(streamValid,targetValue);
+                threshold = summary_valid.getConfidenceThreshold();
+            }
+            FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
+                    "threshold",config.getString("threshold.name")).toFile(),""+threshold);
+
+            double confidenceThresholdClipped = CTAT.clip(threshold,config.getDouble("threshold.lowerBound"),config.getDouble("threshold.upperBound"));
+
+            FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
+                    "threshold",config.getString("threshold.name")+"_clipped").toFile(),""+confidenceThresholdClipped);
+
+            logger.info("tuning threshold is done");
+
+            List<Pair<Double,Double>> testStream;
+            if(config.getString("threshold.targetMetric").equals("accuracy")){
+                testStream = ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+                CTAT.Summary testSummary_unclipped = CTAT.applyThreshold(testStream.stream(),threshold);
+                CTAT.Summary testSummary_clipped = CTAT.applyThreshold(testStream.stream(),confidenceThresholdClipped);
+                logger.info("*****************");
+                logger.info("autocoding performance with unclipped CTAT "+testSummary_unclipped.getConfidenceThreshold());
+                logger.info("autocoding percentage = "+ testSummary_unclipped.getAutoCodingPercentage());
+                logger.info("autocoding accuracy = "+ testSummary_unclipped.getAutoCodingAccuracy());
+                logger.info("number of autocoded documents = "+ testSummary_unclipped.getNumAutoCoded());
+                logger.info("number of correct autocoded documents = "+ testSummary_unclipped.getNumCorrectAutoCoded());
+
+                logger.info("*****************");
+
+                logger.info("autocoding performance with clipped CTAT "+testSummary_clipped.getConfidenceThreshold());
+                logger.info("autocoding percentage = "+ testSummary_clipped.getAutoCodingPercentage());
+                logger.info("autocoding accuracy = "+ testSummary_clipped.getAutoCodingAccuracy());
+                logger.info("number of autocoded documents = "+ testSummary_clipped.getNumAutoCoded());
+                logger.info("number of correct autocoded documents = "+ testSummary_clipped.getNumCorrectAutoCoded());
+
             }
 
-            FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models","ctft",config.getString("CTFT.name")+"_clipped").toFile(),""+ctft_clipped);
+            if(config.getString("threshold.targetMetric").equals("f1")){
+                testStream = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+                CTFT.Summary summary_test = CTFT.applyThreshold(testStream.stream(),threshold);
+                CTFT.Summary summary_test_clipped = CTFT.applyThreshold(testStream.stream(),confidenceThresholdClipped);
+                logger.info("*****************");
+                logger.info("autocoding performance with unclipped CTFT "+summary_test.getConfidenceThreshold());
+                logger.info("autocoding percentage = "+ summary_test.getAutoCodingPercentage());
+                logger.info("autocoding accuracy = "+ summary_test.getAutoCodingAccuracy());
+                logger.info("autocoding F1 = "+ summary_test.getAutoCodingF1());
+                logger.info("number of autocoded documents = "+ summary_test.getNumAutoCoded());
+                logger.info("number of correct autocoded documents = "+ summary_test.getNumCorrectAutoCoded());
+
+                logger.info("*****************");
+
+                logger.info("autocoding performance with clipped CTFT "+summary_test_clipped.getConfidenceThreshold());
+                logger.info("autocoding percentage = "+ summary_test_clipped.getAutoCodingPercentage());
+                logger.info("autocoding accuracy = "+ summary_test_clipped.getAutoCodingAccuracy());
+                logger.info("autocoding F1 = "+ summary_test_clipped.getAutoCodingF1());
+                logger.info("number of autocoded documents = "+ summary_test_clipped.getNumAutoCoded());
+                logger.info("number of correct autocoded documents = "+ summary_test_clipped.getNumCorrectAutoCoded());
 
 
-            List<Pair<Double,Double>> listTestCTFT = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
 
-            CTFT.Summary summary_test = CTFT.applyThreshold(listTestCTFT.stream(),ctft);
-            CTFT.Summary summary_test_clipped = CTFT.applyThreshold(listTestCTFT.stream(),ctft_clipped);
-
-            logger.info("tuning CTFT is done");
-
-            logger.info("*****************");
-
-
-            logger.info("autocoding performance with unclipped CTFT "+summary_test.getConfidenceThreshold());
-            logger.info("autocoding percentage = "+ summary_test.getAutoCodingPercentage());
-            logger.info("autocoding accuracy = "+ summary_test.getAutoCodingAccuracy());
-            logger.info("autocoding F1 = "+ summary_test.getAutoCodingF1());
-            logger.info("number of autocoded documents = "+ summary_test.getNumAutoCoded());
-            logger.info("number of correct autocoded documents = "+ summary_test.getNumCorrectAutoCoded());
-
-            logger.info("*****************");
-
-            logger.info("autocoding performance with clipped CTFT "+summary_test_clipped.getConfidenceThreshold());
-            logger.info("autocoding percentage = "+ summary_test_clipped.getAutoCodingPercentage());
-            logger.info("autocoding accuracy = "+ summary_test_clipped.getAutoCodingAccuracy());
-            logger.info("autocoding F1 = "+ summary_test_clipped.getAutoCodingF1());
-            logger.info("number of autocoded documents = "+ summary_test_clipped.getNumAutoCoded());
-            logger.info("number of correct autocoded documents = "+ summary_test_clipped.getNumCorrectAutoCoded());
+            }
 
 
         }
-
 
 
 
@@ -310,7 +276,7 @@ public class AppEnsemble {
 
     }
 
-    private static LabelTranslator getLabelTranslatorEnsemble(Config config,String dataSetFolder)throws Exception{
+    public static LabelTranslator getLabelTranslatorEnsemble(Config config,String dataSetFolder)throws Exception{
 
         Set<String> allExtLabelsSet = new HashSet<>();
         List<String> modelPaths = config.getStrings("modelPaths");
@@ -337,7 +303,7 @@ public class AppEnsemble {
 
         StringBuilder sb = new StringBuilder();
         sb.append("doc_id").append("\t").append("prediction").append("\t").append("prediction_type").append("\t")
-                .append("confidence").append("\t").append("correctness").append("\t").append("ground_truth").append("\t")
+                .append("confidence").append("\t").append("truth").append("\t").append("ground_truth").append("\t")
                 .append("precison").append("\t").append("recall").append("\t").append("F1").append("\t")
                 .append("model").append("\n");
 
