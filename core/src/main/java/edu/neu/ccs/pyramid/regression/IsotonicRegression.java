@@ -7,6 +7,7 @@ import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -19,41 +20,41 @@ import java.util.stream.Stream;
  * http://stat.wikia.com/wiki/Isotonic_regression
  */
 
-public class IsotonicRegression implements Regressor{
+public class IsotonicRegression implements Regressor {
     private static final long serialVersionUID = 1L;
     //sorted locations
     private double[] locations;
     private double[] values;
 
     /**
-     *
      * @param locations unsorted
      * @param numbers
      */
     public IsotonicRegression(double[] locations, double[] numbers) {
-        List<Pair<Double, Double>> sorted = IntStream.range(0, locations.length).mapToObj(i->new Pair<>(locations[i], numbers[i]))
-                .sorted(Comparator.comparing(pair->pair.getFirst())).collect(Collectors.toList());
-        double[] sortedLocations  = sorted.stream().mapToDouble(p->p.getFirst()).toArray();
-        double[] sortedNumbers  = sorted.stream().mapToDouble(p->p.getSecond()).toArray();
+        List<Pair<Double, Double>> sorted = IntStream.range(0, locations.length).mapToObj(i -> new Pair<>(locations[i], numbers[i]))
+                .sorted(Comparator.comparing(pair -> pair.getFirst())).collect(Collectors.toList());
+        double[] sortedLocations = sorted.stream().mapToDouble(p -> p.getFirst()).toArray();
+        double[] sortedNumbers = sorted.stream().mapToDouble(p -> p.getSecond()).toArray();
         double[] weights = new double[numbers.length];
         Arrays.fill(weights, 1.0);
-        this.locations=sortedLocations;
+        this.locations = sortedLocations;
         this.values = fit(sortedNumbers, weights);
+        shrink();
     }
 
     /**
-     *
      * @param locations unsorted
      * @param numbers
      */
     public IsotonicRegression(double[] locations, double[] numbers, double[] weights) {
-        List<Element> sorted = IntStream.range(0, locations.length).mapToObj(i->new Element(locations[i], numbers[i], weights[i]))
-                .sorted(Comparator.comparing(element->element.location)).collect(Collectors.toList());
-        double[] sortedLocations  = sorted.stream().mapToDouble(p->p.location).toArray();
-        double[] sortedNumbers  = sorted.stream().mapToDouble(p->p.number).toArray();
-        double[] sortedWeights  = sorted.stream().mapToDouble(p->p.weight).toArray();
-        this.locations=sortedLocations;
+        List<Element> sorted = IntStream.range(0, locations.length).mapToObj(i -> new Element(locations[i], numbers[i], weights[i]))
+                .sorted(Comparator.comparing(element -> element.location)).collect(Collectors.toList());
+        double[] sortedLocations = sorted.stream().mapToDouble(p -> p.location).toArray();
+        double[] sortedNumbers = sorted.stream().mapToDouble(p -> p.number).toArray();
+        double[] sortedWeights = sorted.stream().mapToDouble(p -> p.weight).toArray();
+        this.locations = sortedLocations;
         this.values = fit(sortedNumbers, sortedWeights);
+        shrink();
     }
 
     public IsotonicRegression(WeightedInput weightedInput) {
@@ -61,16 +62,13 @@ public class IsotonicRegression implements Regressor{
     }
 
 
-
-    public IsotonicRegression(Stream<Pair<Double,Double>> stream){
+    public IsotonicRegression(Stream<Pair<Double, Double>> stream) {
         this(new WeightedInput(stream));
     }
 
 
-
-
-    public static IsotonicRegression train(Stream<Pair<Vector,Integer>> stream){
-        Stream singleStream = stream.map(s->new Pair<>(s.getFirst().get(0),s.getSecond()));
+    public static IsotonicRegression train(Stream<Pair<Vector, Integer>> stream) {
+        Stream singleStream = stream.map(s -> new Pair<>(s.getFirst().get(0), s.getSecond()));
         IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream);
         return isotonicRegression;
     }
@@ -84,38 +82,43 @@ public class IsotonicRegression implements Regressor{
         return values;
     }
 
-    public double predict(double location){
-        if (location<=locations[0]){
+    public double predict(double location) {
+        if (location <= locations[0]) {
             return values[0];
         }
 
-        if (location>=locations[locations.length-1]){
-            return values[values.length-1];
+        if (location >= locations[locations.length - 1]) {
+            return values[values.length - 1];
         }
 
         //use binary search
         int l = locations.length;
-        int start=0;
-        int end = l-1;
+        int start = 0;
+        int end = l - 1;
 
-        while(end-start>1){
-            int middle = (start+end)/2;
-            if (locations[middle]==location){
+        while (end - start > 1) {
+            int middle = (start + end) / 2;
+            if (locations[middle] == location) {
                 return values[middle];
-            } else if (locations[middle]>location){
+            } else if (locations[middle] > location) {
                 end = middle;
-            } else{
+            } else {
                 start = middle;
             }
         }
 
-        if (start==end){
+        if (start == end) {
             return values[start];
         } else {
-            return (location-locations[start])*(values[end]-values[start])/(locations[end]-locations[start])+values[start];
+            return (location - locations[start]) * (values[end] - values[start]) / (locations[end] - locations[start]) + values[start];
         }
 
     }
+
+
+
+
+
 
 
 
@@ -169,6 +172,23 @@ public class IsotonicRegression implements Regressor{
         }
         double[] p =  fit1Based(a1Based, w1Based);
         return Arrays.copyOfRange(p,1,p.length);
+
+    }
+
+    private void shrink(){
+        List<Double> uniqueLocations = new ArrayList<>();
+        List<Double> uniqueValues = new ArrayList<>();
+        double last = Double.NEGATIVE_INFINITY;
+        for(int i = 0; i < locations.length; i++){
+            if (values[i]!=last){
+                uniqueLocations.add(locations[i]);
+                uniqueValues.add(values[i]);
+                last = values[i];
+            }
+        }
+
+        this.locations = uniqueLocations.stream().mapToDouble(a->a).toArray();
+        this.values = uniqueValues.stream().mapToDouble(a->a).toArray();
     }
 
     @Override
