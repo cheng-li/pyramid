@@ -2,10 +2,7 @@ package edu.neu.ccs.pyramid.dataset;
 
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
-import edu.neu.ccs.pyramid.util.Pair;
-import edu.neu.ccs.pyramid.util.Sampling;
-import edu.neu.ccs.pyramid.util.SetUtil;
-import edu.neu.ccs.pyramid.util.Translator;
+import edu.neu.ccs.pyramid.util.*;
 import org.apache.mahout.math.*;
 import org.apache.mahout.math.Vector;
 
@@ -1490,6 +1487,34 @@ public class DataSetUtil {
     public static void zeroOutColumns(DataSet dataSet, List<Integer> columnIndices){
         for (int j: columnIndices){
             zeroOutColumn(dataSet,j);
+        }
+    }
+
+    public static double[] getNormalizationConstants(DataSet dataSet){
+        double[] constants = new double[dataSet.getNumFeatures()];
+        for (int j=0;j<dataSet.getNumFeatures();j++){
+            Vector vector = dataSet.getColumn(j);
+            constants[j] = MathUtil.maxAbsoluteValue(vector);
+        }
+        return constants;
+    }
+
+
+    public static void normalize(DataSet dataSet, double[] normalizationConstants){
+        for (int j=0;j<dataSet.getNumFeatures();j++){
+            Vector column = dataSet.getColumn(j);
+            List<Integer> indices = new ArrayList<>();
+            List<Double> values = new ArrayList<>();
+            for (Vector.Element nonzero: column.nonZeroes()){
+                indices.add(nonzero.index());
+                values.add(nonzero.get());
+            }
+
+            for (int i=0;i<indices.size();i++){
+                int dataId = indices.get(i);
+                double old = values.get(i);
+                dataSet.setFeatureValue(dataId,j,old/normalizationConstants[j]);
+            }
         }
     }
     

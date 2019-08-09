@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.util;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.mahout.math.Vector;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -161,6 +162,19 @@ public class MathUtil {
             }
         }
         return norm;
+    }
+
+
+
+    public static double maxAbsoluteValue(Vector vector){
+        double max = 0;
+        for (Vector.Element nonzero: vector.nonZeroes()){
+            double abs = Math.abs(nonzero.get());
+            if (abs>max){
+                max = abs;
+            }
+        }
+        return max;
     }
 
     /**

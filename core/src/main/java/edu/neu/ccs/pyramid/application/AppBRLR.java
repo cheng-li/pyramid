@@ -97,7 +97,7 @@ public class AppBRLR {
                 "train.splitQuery","test.splitQuery","valid.splitQuery", "calibration.splitQuery",
                 "train.feature.ngram.matchScoreType","createTrainSet","createTestSet","createValidSet","createCalibrationSet",
                 "train.feature.ngram.selection", "train.feature.ngram.selectPerLabel",
-                "train.label.order","train.useInstanceWeights","train.weight.field"
+                "train.label.order","train.useInstanceWeights","train.weight.field","train.feature.normalize"
 
         };
 
