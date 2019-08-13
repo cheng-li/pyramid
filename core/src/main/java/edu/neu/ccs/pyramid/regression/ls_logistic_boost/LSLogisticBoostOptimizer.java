@@ -36,6 +36,18 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
         this.noiseRates0 = new double[dataSet.getNumDataPoints()];
     }
 
+
+    public LSLogisticBoostOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory, double[] weights, double[] labels,
+                                    double[] noiseRates0, double[] noiseRates1) {
+        super(boosting, dataSet, factory, weights);
+        this.labels = labels;
+        this.noiseRates0 = noiseRates0;
+        this.noiseRates1 = noiseRates1;
+        for (int i=0;i<dataSet.getNumDataPoints();i++){
+            weights[i] = weights[i]/(1-noiseRates0[i]-noiseRates1[i]);
+        }
+    }
+
     public LSLogisticBoostOptimizer(GradientBoosting boosting, DataSet dataSet, RegressorFactory factory, double[] labels) {
         super(boosting, dataSet, factory);
         this.labels = labels;
@@ -50,13 +62,13 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
         this.noiseRates0 = new double[dataSet.getNumDataPoints()];
     }
 
-    public void setNoiseRates0(double[] noiseRates0) {
-        this.noiseRates0 = noiseRates0;
-    }
-
-    public void setNoiseRates1(double[] noiseRates1) {
-        this.noiseRates1 = noiseRates1;
-    }
+//    public void setNoiseRates0(double[] noiseRates0) {
+//        this.noiseRates0 = noiseRates0;
+//    }
+//
+//    public void setNoiseRates1(double[] noiseRates1) {
+//        this.noiseRates1 = noiseRates1;
+//    }
 
     @Override
     protected void addPriors() {
@@ -83,6 +95,8 @@ public class LSLogisticBoostOptimizer extends GBOptimizer {
     private double gradientForInstance(int i){
         double p = Sigmoid.sigmoid(scoreMatrix.getScoresForData(i)[0]);
        return labels[i]-p - (1-p)*noiseRates0[i] + p*noiseRates1[i];
+        //todo
+//        return (labels[i]-p - (1-p)*noiseRates0[i] + p*noiseRates1[i])/(1-noiseRates0[i]-noiseRates1[i]);
 
     }
 

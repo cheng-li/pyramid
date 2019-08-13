@@ -80,9 +80,9 @@ public class RerankerTrainer {
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
         RegTreeFactory regTreeFactory = new RegTreeFactory(regTreeConfig);
-        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels());
-        optimizer.setNoiseRates0(noiseRates0);
-        optimizer.setNoiseRates1(noiseRates1);
+        LSLogisticBoostOptimizer optimizer = new LSLogisticBoostOptimizer(lsLogisticBoost, regDataSet, regTreeFactory, instanceWeights, regDataSet.getLabels(), noiseRates0, noiseRates1);
+//        optimizer.setNoiseRates0(noiseRates0);
+//        optimizer.setNoiseRates1(noiseRates1);
         if (!monotonicityType.equals("none")){
             int[][] mono = new int[1][regDataSet.getNumFeatures()];
             mono[0] = predictionFeatureExtractor.featureMonotonicity();
