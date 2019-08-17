@@ -319,9 +319,12 @@ public class CBMLR {
         System.out.println("============================================================");
         System.out.println("Making predictions on "+name +" set with the instance set accuracy optimal predictor");
         String output = config.getString("output.dir");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
         MultiLabel[] predictions = accPredictor.predict(dataSet);
+        System.out.println("time spent on prediction = "+stopWatch);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
         System.out.println(name+" performance with the instance set accuracy optimal predictor");
         System.out.println(mlMeasures);
@@ -362,7 +365,10 @@ public class CBMLR {
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(output, "support"));
         pluginF1.setSupport(support);
         pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         MultiLabel[] predictions = pluginF1.predict(dataSet);
+        System.out.println("time spent on prediction = "+stopWatch);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
         System.out.println(name+" performance with the instance F1 optimal predictor");
         System.out.println(mlMeasures);
@@ -400,7 +406,10 @@ public class CBMLR {
         String output = config.getString("output.dir");
         MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
         marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         MultiLabel[] predictions = marginalPredictor.predict(dataSet);
+        System.out.println("time spent on prediction = "+stopWatch);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
         System.out.println(name+" performance with the instance Hamming loss optimal predictor");
         System.out.println(mlMeasures);

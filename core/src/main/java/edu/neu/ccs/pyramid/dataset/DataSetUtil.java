@@ -1476,4 +1476,13 @@ public class DataSetUtil {
 
         //todo deal with label translator
     }
+
+
+    public static void printStats(MultiLabelClfDataSet dataSet){
+        System.out.println("number of instances = "+dataSet.getNumDataPoints());
+        System.out.println("number of features = "+dataSet.getNumFeatures());
+        System.out.println("number of labels = "+dataSet.getNumClasses());
+        System.out.println("number of label combinations = "+gatherMultiLabels(dataSet).size());
+        System.out.println("cardinality = "+IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(i->dataSet.getMultiLabels()[i].getNumMatchedLabels()).average().getAsDouble());
+    }
 }
