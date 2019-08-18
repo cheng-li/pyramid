@@ -8,10 +8,12 @@ import edu.neu.ccs.pyramid.eval.FMeasure;
 import edu.neu.ccs.pyramid.eval.Precision;
 import edu.neu.ccs.pyramid.eval.Recall;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
+import edu.neu.ccs.pyramid.util.FileUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.ReportUtils;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
+import sun.rmi.runtime.Log;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -25,42 +27,6 @@ import java.util.stream.Stream;
 
 public class AppCombSUM {
 
-    private static Map<String,Pair<String,Double>> getEnsemblePrediction(Config config, String folderName) throws Exception{
-        List<String> modelPaths = config.getStrings("modelPaths");
-
-        List<Map<String,Map<String,Pair<Double,Double>>>> mapLists = new ArrayList<>();
-
-        int limit = config.getInt("kvalue");
-        for(int i = 0; i < modelPaths.size(); i++){
-            String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
-            mapLists.add(gettopKset(reportPath,limit));
-        }
-        return getFinalPrediction(mapLists);
-    }
-
-    private static List<Map<String,Pair<Double,Double>>> getConfidenceRankLists(Config config, String folderName, Map<String,Pair<String,Double>> ensemblePrediction) throws Exception{
-        List<String> modelPaths = config.getStrings("modelPaths");
-        List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",folderName+"_reports","report.csv").toString());
-        List<Map<String,Pair<Double,Double>>> confideceRankLists = new ArrayList<>();
-        for(int i = 0; i < modelPaths.size(); i++) {
-            String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
-
-            Map<String,Map<String,Pair<Double,Double>>> allKSetsMap = gettopKset(reportPath,20);
-            confideceRankLists.add(getConfidenceRank(allKSetsMap,ensemblePrediction,docIds));
-        }
-        return confideceRankLists;
-
-    }
-
-    private static Map<String,String> getGroundTruth(Config config, String folderName) throws Exception{
-        List<String> modelPaths = config.getStrings("modelPaths");
-        String path = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+folderName;
-
-        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(path, DataSetType.ML_CLF_SPARSE,true);
-
-        Map<String,String> groundTruth= ReportUtils.getIDGroundTruth(dataSet);
-        return groundTruth;
-    }
 
     public static void main(String[] args)throws Exception{
         if (args.length !=1){
@@ -87,176 +53,32 @@ public class AppCombSUM {
         File output = new File(config.getString("output.folder"));
         output.mkdirs();
 
-        List<String> modelPaths = config.getStrings("modelPaths");
-        String testFolder = config.getString("testFolder");
-        String validFolder = config.getString("validFolder");
-        String calibFolder = config.getString("calibFolder");
-        int limit = config.getInt("kvalue");
-        double targetValue = config.getDouble("threshold.targetValue");
-        String ensembleName = config.getString("ensembleModelName");
 
 
-//        List<Map<String,Map<String,Pair<Double,Double>>>> validMapsLists = new ArrayList<>();
-//        List<Map<String,Map<String,Pair<Double,Double>>>> testMapsLists = new ArrayList<>();
-//        List<Map<String,Map<String,Pair<Double,Double>>>> calibMapsLists = new ArrayList<>();
-
-
-//        for(int i = 0; i < modelPaths.size(); i++){
-//            String validReportpath = Paths.get(modelPaths.get(i),"predictions",validFolder+"_reports","top_sets.csv").toString();
-//            String testReportPath = Paths.get(modelPaths.get(i),"predictions",testFolder+"_reports","top_sets.csv").toString();
-//            String calibReportPath = Paths.get(modelPaths.get(i),"predictions",calibFolder+"_reports","top_sets.csv").toString();
-//            validMapsLists.add(gettopKset(validReportpath,limit));
-//            testMapsLists.add(gettopKset(testReportPath,limit));
-//            calibMapsLists.add(gettopKset(calibReportPath,limit));
-//        }
-//        Map<String,Pair<String,Double>> validMap = getFinalPrediction(validMapsLists);
-//        Map<String,Pair<String,Double>> testMap = getFinalPrediction(testMapsLists);
-//        Map<String,Pair<String,Double>> calibMap = getFinalPrediction(calibMapsLists);
-
-
-        Map<String,Pair<String,Double>> validMap = getEnsemblePrediction(config,validFolder);
-        Map<String,Pair<String,Double>> testMap = getEnsemblePrediction(config,testFolder);
-        Map<String,Pair<String,Double>> calibMap = getEnsemblePrediction(config,calibFolder);
-
-//        List<Map<String,Pair<Double,Double>>> validConfideceRankLists = new ArrayList<>();
-//        List<Map<String,Pair<Double,Double>>> testConfideceRankLists = new ArrayList<>();
-
-
-
-//        List<String> validDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",validFolder+"_reports","report.csv").toString());
-//        List<String> testDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",testFolder+"_reports","report.csv").toString());
-//        List<String> calibDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
-
-//        for(int i = 0; i < modelPaths.size(); i++) {
-//            String validReportPath = Paths.get(modelPaths.get(i),"predictions",validFolder+"_reports","top_sets.csv").toString();
-//            String testReportPath = Paths.get(modelPaths.get(i),"predictions",testFolder+"_reports","top_sets.csv").toString();
-//            Map<String,Map<String,Pair<Double,Double>>> validAllKSetsMap = gettopKset(validReportPath,20);
-//            Map<String,Map<String,Pair<Double,Double>>> testAllKSetsMap = gettopKset(testReportPath,20);
-//            validConfideceRankLists.add(getConfidenceRank(validAllKSetsMap,validMap,validDocIds));
-//            testConfideceRankLists.add(getConfidenceRank(testAllKSetsMap,testMap,testDocIds));
-//
-//        }
-
-
-        List<Map<String,Pair<Double,Double>>> validConfideceRankLists = getConfidenceRankLists(config,validFolder,validMap);
-        List<Map<String,Pair<Double,Double>>> testConfideceRankLists = getConfidenceRankLists(config, testFolder, testMap);
-
-//        String validSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+validFolder;
-//        String testSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+testFolder;
-//        String calibSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+calibFolder;
-//        MultiLabelClfDataSet validSet0 = TRECFormat.loadMultiLabelClfDataSet(validSetPath0, DataSetType.ML_CLF_SPARSE,true);
-//        MultiLabelClfDataSet testSet0 = TRECFormat.loadMultiLabelClfDataSet(testSetPath0, DataSetType.ML_CLF_SPARSE,true);
-//        MultiLabelClfDataSet calibSet0 = TRECFormat.loadMultiLabelClfDataSet(calibSetPath0, DataSetType.ML_CLF_SPARSE,true);
-
-
-
-        Map<String,String> groundTruthValid = getGroundTruth(config,validFolder);
-        Map<String,String> groundTruthTest = getGroundTruth(config,testFolder);
-        Map<String,String> groundTruthCalib = getGroundTruth(config,calibFolder);
-
-        LabelTranslator newLabelTranslatorValid = AppEnsemble.getLabelTranslatorEnsemble(config,validFolder);
-        LabelTranslator newLabelTranslatorTest = AppEnsemble.getLabelTranslatorEnsemble(config,testFolder);
-        LabelTranslator newLabelTranslatorCalib = AppEnsemble.getLabelTranslatorEnsemble(config,calibFolder);
-
-        IsotonicRegression isotonicRegression = trainIsoRegression(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
-        Serialization.serialize(isotonicRegression, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
-
-        generateReport(validMap,config,validFolder,newLabelTranslatorValid,groundTruthValid,validConfideceRankLists,isotonicRegression);
-        generateReport(testMap,config,testFolder,newLabelTranslatorTest,groundTruthTest,testConfideceRankLists,isotonicRegression);
-
-
-
-
-        if(config.getBoolean("tuneThreshold")){
-
-            logger.info("start tuning confidence threshold");
-            Stream<Pair<Double,Double>> streamValid;
-            double threshold = 1.1;
-            if(config.getString("threshold.targetMetric").equals("accuracy")){
-
-                streamValid = edu.neu.ccs.pyramid.util.ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
-                CTAT.Summary validSummary = CTAT.findThreshold(streamValid,targetValue);
-                threshold = validSummary.getConfidenceThreshold();
-
-            }
-
-            if(config.getString("threshold.targetMetric").equals("f1")){
-                streamValid =  edu.neu.ccs.pyramid.util.ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
-                CTFT.Summary summary_valid = CTFT.findThreshold(streamValid,targetValue);
-                threshold = summary_valid.getConfidenceThreshold();
-            }
-            FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
-                    "threshold",config.getString("threshold.name")).toFile(),""+threshold);
-
-            double confidenceThresholdClipped = CTAT.clip(threshold,config.getDouble("threshold.lowerBound"),config.getDouble("threshold.upperBound"));
-
-            FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
-                    "threshold",config.getString("threshold.name")+"_clipped").toFile(),""+confidenceThresholdClipped);
-
-            logger.info("tuning threshold is done");
-
-            List<Pair<Double,Double>> testStream;
-            if(config.getString("threshold.targetMetric").equals("accuracy")){
-                testStream = edu.neu.ccs.pyramid.util.ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
-                CTAT.Summary testSummary_unclipped = CTAT.applyThreshold(testStream.stream(),threshold);
-                CTAT.Summary testSummary_clipped = CTAT.applyThreshold(testStream.stream(),confidenceThresholdClipped);
-                logger.info("*****************");
-                logger.info("autocoding performance with unclipped CTAT "+testSummary_unclipped.getConfidenceThreshold());
-                logger.info("autocoding percentage = "+ testSummary_unclipped.getAutoCodingPercentage());
-                logger.info("autocoding accuracy = "+ testSummary_unclipped.getAutoCodingAccuracy());
-                logger.info("number of autocoded documents = "+ testSummary_unclipped.getNumAutoCoded());
-                logger.info("number of correct autocoded documents = "+ testSummary_unclipped.getNumCorrectAutoCoded());
-
-                logger.info("*****************");
-
-                logger.info("autocoding performance with clipped CTAT "+testSummary_clipped.getConfidenceThreshold());
-                logger.info("autocoding percentage = "+ testSummary_clipped.getAutoCodingPercentage());
-                logger.info("autocoding accuracy = "+ testSummary_clipped.getAutoCodingAccuracy());
-                logger.info("number of autocoded documents = "+ testSummary_clipped.getNumAutoCoded());
-                logger.info("number of correct autocoded documents = "+ testSummary_clipped.getNumCorrectAutoCoded());
-
-            }
-
-            if(config.getString("threshold.targetMetric").equals("f1")){
-                testStream = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
-                CTFT.Summary summary_test = CTFT.applyThreshold(testStream.stream(),threshold);
-                CTFT.Summary summary_test_clipped = CTFT.applyThreshold(testStream.stream(),confidenceThresholdClipped);
-                logger.info("*****************");
-                logger.info("autocoding performance with unclipped CTFT "+summary_test.getConfidenceThreshold());
-                logger.info("autocoding percentage = "+ summary_test.getAutoCodingPercentage());
-                logger.info("autocoding accuracy = "+ summary_test.getAutoCodingAccuracy());
-                logger.info("autocoding F1 = "+ summary_test.getAutoCodingF1());
-                logger.info("number of autocoded documents = "+ summary_test.getNumAutoCoded());
-                logger.info("number of correct autocoded documents = "+ summary_test.getNumCorrectAutoCoded());
-
-                logger.info("*****************");
-
-                logger.info("autocoding performance with clipped CTFT "+summary_test_clipped.getConfidenceThreshold());
-                logger.info("autocoding percentage = "+ summary_test_clipped.getAutoCodingPercentage());
-                logger.info("autocoding accuracy = "+ summary_test_clipped.getAutoCodingAccuracy());
-                logger.info("autocoding F1 = "+ summary_test_clipped.getAutoCodingF1());
-                logger.info("number of autocoded documents = "+ summary_test_clipped.getNumAutoCoded());
-                logger.info("number of correct autocoded documents = "+ summary_test_clipped.getNumCorrectAutoCoded());
-
-
-
-            }
-
-
+        if (config.getBoolean("calibrate")){
+            calibrate(config,logger);
         }
 
 
+        if (config.getBoolean("validate")){
+            report(config,config.getString("validFolder"));
+        }
 
 
+        if(config.getBoolean("tuneThreshold")){
+            tuneThreshold(config,logger);
+
+        }
+
+        if (config.getBoolean("test")){
+            report(config,config.getString("testFolder"));
+            testAutomation(config,logger);
+        }
 
 
         if (fileHandler!=null){
             fileHandler.close();
         }
-
-
-
-
 
     }
 
@@ -480,6 +302,148 @@ public class AppCombSUM {
         return finalList.get(0);
     }
 
+    private static Map<String,Pair<String,Double>> getEnsemblePrediction(Config config, String folderName) throws Exception{
+        List<String> modelPaths = config.getStrings("modelPaths");
+
+        List<Map<String,Map<String,Pair<Double,Double>>>> mapLists = new ArrayList<>();
+
+        int limit = config.getInt("kvalue");
+        for(int i = 0; i < modelPaths.size(); i++){
+            String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
+            mapLists.add(gettopKset(reportPath,limit));
+        }
+        return getFinalPrediction(mapLists);
+    }
+
+    private static List<Map<String,Pair<Double,Double>>> getConfidenceRankLists(Config config, String folderName, Map<String,Pair<String,Double>> ensemblePrediction) throws Exception{
+        List<String> modelPaths = config.getStrings("modelPaths");
+        List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",folderName+"_reports","report.csv").toString());
+        List<Map<String,Pair<Double,Double>>> confideceRankLists = new ArrayList<>();
+        for(int i = 0; i < modelPaths.size(); i++) {
+            String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
+
+            Map<String,Map<String,Pair<Double,Double>>> allKSetsMap = gettopKset(reportPath,20);
+            confideceRankLists.add(getConfidenceRank(allKSetsMap,ensemblePrediction,docIds));
+        }
+        return confideceRankLists;
+
+    }
+
+    private static Map<String,String> getGroundTruth(Config config, String folderName) throws Exception{
+        List<String> modelPaths = config.getStrings("modelPaths");
+        String path = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+folderName;
+
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(path, DataSetType.ML_CLF_SPARSE,true);
+
+        Map<String,String> groundTruth= ReportUtils.getIDGroundTruth(dataSet);
+        return groundTruth;
+    }
+
+
+    private static void tuneThreshold(Config config, Logger logger) throws Exception{
+        logger.info("start tuning confidence threshold");
+        Stream<Pair<Double,Double>> streamValid;
+        double threshold = 1.1;
+        double targetValue = config.getDouble("threshold.targetValue");
+        String ensembleName = config.getString("ensembleModelName");
+        String validFolder = config.getString("validFolder");
+        if(config.getString("threshold.targetMetric").equals("accuracy")){
+
+            streamValid = edu.neu.ccs.pyramid.util.ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
+            CTAT.Summary validSummary = CTAT.findThreshold(streamValid,targetValue);
+            threshold = validSummary.getConfidenceThreshold();
+
+        }
+
+        if(config.getString("threshold.targetMetric").equals("f1")){
+            streamValid =  edu.neu.ccs.pyramid.util.ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",validFolder+"_reports","report.csv").toString()).stream();
+            CTFT.Summary summary_valid = CTFT.findThreshold(streamValid,targetValue);
+            threshold = summary_valid.getConfidenceThreshold();
+        }
+        FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
+                "threshold",config.getString("threshold.name")).toFile(),""+threshold);
+
+        double confidenceThresholdClipped = CTAT.clip(threshold,config.getDouble("threshold.lowerBound"),config.getDouble("threshold.upperBound"));
+
+        FileUtils.writeStringToFile(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
+                "threshold",config.getString("threshold.name")+"_clipped").toFile(),""+confidenceThresholdClipped);
+
+        logger.info("tuning threshold is done");
+    }
+
+    private static void calibrate(Config config, Logger logger) throws Exception{
+        String calibFolder = config.getString("calibFolder");
+        LabelTranslator newLabelTranslatorCalib = AppEnsemble.getLabelTranslatorEnsemble(config,calibFolder);
+        Map<String,String> groundTruthCalib = getGroundTruth(config,calibFolder);
+        Map<String,Pair<String,Double>> calibMap = getEnsemblePrediction(config,calibFolder);
+        IsotonicRegression isotonicRegression = trainIsoRegression(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
+        Serialization.serialize(isotonicRegression, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
+    }
+
+
+    private static void report(Config config, String folderName) throws Exception{
+        Map<String,Pair<String,Double>> map = getEnsemblePrediction(config,folderName);
+        LabelTranslator labelTranslatorEnsemble = AppEnsemble.getLabelTranslatorEnsemble(config,folderName);
+        Map<String,String> groundTruth = getGroundTruth(config,folderName);
+        List<Map<String,Pair<Double,Double>>> confidenceRankLists = getConfidenceRankLists(config,folderName,map);
+        IsotonicRegression isotonicRegression = (IsotonicRegression)Serialization.deserialize(Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
+        generateReport(map,config,folderName,labelTranslatorEnsemble,groundTruth,confidenceRankLists,isotonicRegression);
+    }
+
+
+    private static void testAutomation(Config config, Logger logger) throws Exception{
+        List<Pair<Double,Double>> testStream;
+        String ensembleName = config.getString("ensembleModelName");
+        String testFolder = config.getString("testFolder");
+        double threshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
+                "threshold",config.getString("threshold.name")).toFile()));
+        double confidenceThresholdClipped = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
+                "threshold",config.getString("threshold.name")+"_clipped").toFile()));
+
+        if(config.getString("threshold.targetMetric").equals("accuracy")){
+            testStream = edu.neu.ccs.pyramid.util.ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+            CTAT.Summary testSummary_unclipped = CTAT.applyThreshold(testStream.stream(),threshold);
+            CTAT.Summary testSummary_clipped = CTAT.applyThreshold(testStream.stream(),confidenceThresholdClipped);
+            logger.info("*****************");
+            logger.info("autocoding performance with unclipped CTAT "+testSummary_unclipped.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ testSummary_unclipped.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ testSummary_unclipped.getAutoCodingAccuracy());
+            logger.info("number of autocoded documents = "+ testSummary_unclipped.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ testSummary_unclipped.getNumCorrectAutoCoded());
+
+            logger.info("*****************");
+
+            logger.info("autocoding performance with clipped CTAT "+testSummary_clipped.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ testSummary_clipped.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ testSummary_clipped.getAutoCodingAccuracy());
+            logger.info("number of autocoded documents = "+ testSummary_clipped.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ testSummary_clipped.getNumCorrectAutoCoded());
+
+        }
+
+        if(config.getString("threshold.targetMetric").equals("f1")){
+            testStream = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+            CTFT.Summary summary_test = CTFT.applyThreshold(testStream.stream(),threshold);
+            CTFT.Summary summary_test_clipped = CTFT.applyThreshold(testStream.stream(),confidenceThresholdClipped);
+            logger.info("*****************");
+            logger.info("autocoding performance with unclipped CTFT "+summary_test.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ summary_test.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ summary_test.getAutoCodingAccuracy());
+            logger.info("autocoding F1 = "+ summary_test.getAutoCodingF1());
+            logger.info("number of autocoded documents = "+ summary_test.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ summary_test.getNumCorrectAutoCoded());
+
+            logger.info("*****************");
+
+            logger.info("autocoding performance with clipped CTFT "+summary_test_clipped.getConfidenceThreshold());
+            logger.info("autocoding percentage = "+ summary_test_clipped.getAutoCodingPercentage());
+            logger.info("autocoding accuracy = "+ summary_test_clipped.getAutoCodingAccuracy());
+            logger.info("autocoding F1 = "+ summary_test_clipped.getAutoCodingF1());
+            logger.info("number of autocoded documents = "+ summary_test_clipped.getNumAutoCoded());
+            logger.info("number of correct autocoded documents = "+ summary_test_clipped.getNumCorrectAutoCoded());
+
+        }
+    }
 
 
 
