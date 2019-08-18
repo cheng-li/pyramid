@@ -83,7 +83,7 @@ public class AppCombSUM {
     }
 
 
-    private static IsotonicRegression trainIsoRegression(Map<String,Pair<String,Double>> map,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
+    private static IsotonicRegression trainIsoRegression(Map<String,Pair<MultiLabel,Double>> map,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
         List<String> modelPaths = config.getStrings("modelPaths");
         String calibFolder = config.getString("calibFolder");
         List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
@@ -91,30 +91,13 @@ public class AppCombSUM {
         double[] numbers = new double[docIds.size()];
         for (int i = 0; i < docIds.size(); i++) {
             String docId = docIds.get(i);
-            Pair<String, Double> docInfo = map.get(docId);
+            Pair<MultiLabel, Double> docInfo = map.get(docId);
 
-            String[] labels = groundTruth.get(docId).split(",");
-
-            MultiLabel pre = new MultiLabel();
-            MultiLabel lab = new MultiLabel();
-
-            String pres = docInfo.getFirst();
-            if (!pres.isEmpty()) {
-                String[] predictions = docInfo.getFirst().split(",");
-                for (String prediction : predictions) {
-
-                    pre.addLabel(labelTranslator.toIntLabel(prediction.trim()));
-                }
-            }
-
-            for (String label : labels) {
-
-                lab.addLabel(labelTranslator.toIntLabel(label.trim()));
-            }
-
+            MultiLabel pre = docInfo.getFirst();
+            MultiLabel lab = new MultiLabel(groundTruth.get(docId),labelTranslator);
 
             double truth = 0;
-            if (pre.getMatchedLabels().equals(lab.getMatchedLabels())) {
+            if (pre.equals(lab)) {
                 truth = 1;
             }
 
@@ -130,7 +113,7 @@ public class AppCombSUM {
 
     }
 
-    private static void generateReport(Map<String,Pair<String,Double>> map,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Double>>> confideceRankLists,IsotonicRegression isotonicRegression)throws Exception{
+    private static void generateReport(Map<String,Pair<MultiLabel,Double>> map,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Integer>>> confideceRankLists,IsotonicRegression isotonicRegression)throws Exception{
 
         List<String> modelPaths = config.getStrings("modelPaths");
         List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",dataSetFolder+"_reports","report.csv").toString());
@@ -138,7 +121,7 @@ public class AppCombSUM {
         StringBuilder sb = new StringBuilder();
         sb.append("doc_id").append("\t").append("prediction").append("\t").append("prediction_type").append("\t")
                 .append("confidence").append("\t").append("truth").append("\t").append("ground_truth").append("\t")
-                .append("precison").append("\t").append("recall").append("\t").append("F1").append("\t")
+                .append("precision").append("\t").append("recall").append("\t").append("F1").append("\t")
                 .append("gb-tenant_confidence").append("\t").append("gb-tenant_rank").append("\t").append("lr-tenant_confidence").append("\t")
                 .append("lr-tenant_rank").append("\t").append("gb-common_confidence").append("\t").append("gb-common_rank").append("\t")
                 .append("lr-common_confidence").append("\t").append("lr-common_rank").append("\n");
@@ -147,28 +130,15 @@ public class AppCombSUM {
 
         for (int i = 0; i < docIds.size(); i++) {
             String docId = docIds.get(i);
-            Pair<String,Double> docInfo = map.get(docId);
+            Pair<MultiLabel,Double> docInfo = map.get(docId);
 
             sb.append(docId).append("\t").append(docInfo.getFirst()).append("\t").append("set").append("\t")
                     .append(isotonicRegression.predict(map.get(docId).getSecond())).append("\t");
-            String[] labels = groundTruth.get(docId).split(",");
 
-            MultiLabel pre = new MultiLabel();
-            MultiLabel lab = new MultiLabel();
 
-            String pres = docInfo.getFirst();
-            if(!pres.isEmpty()){
-                String[] predictions = docInfo.getFirst().split(",");
-                for(String prediction:predictions){
+            MultiLabel pre = docInfo.getFirst();
+            MultiLabel lab = new MultiLabel(groundTruth.get(docId),labelTranslator);
 
-                    pre.addLabel(labelTranslator.toIntLabel(prediction.trim()));
-                }
-            }
-
-            for(String label : labels){
-
-                lab.addLabel(labelTranslator.toIntLabel(label.trim()));
-            }
 
             double precision = Precision.precision(lab,pre);
             double recall = Recall.recall(lab,pre);
@@ -194,19 +164,17 @@ public class AppCombSUM {
     }
 
 
-    private static Map<String,Pair<Double,Double>> getConfidenceRank(Map<String,Map<String,Pair<Double,Double>>> allksetsMap,Map<String,Pair<String,Double>> predictionMap,List<String> docIds){
-        Map<String,Pair<Double,Double>> resultMap = new HashMap<>();
+    private static Map<String,Pair<Double,Integer>> getConfidenceRank(Map<String,TopSets> allksetsMap,Map<String,Pair<MultiLabel,Double>> predictionMap,List<String> docIds){
+        Map<String,Pair<Double,Integer>> resultMap = new HashMap<>();
         for(int i = 0; i < docIds.size(); i++){
             String docId = docIds.get(i);
-            Map<String,Pair<Double,Double>> topKsets = allksetsMap.get(docId);
-            String prediction = predictionMap.get(docId).getFirst();
-            for(String key : topKsets.keySet()){
-                if(Arrays.stream(key.split(",")).sorted().collect(Collectors.toSet()).equals(Arrays.stream(prediction.split(",")).sorted().collect(Collectors.toSet()))){
-                    resultMap.put(docId,topKsets.get(key));
-                }
-            }
-            if(!resultMap.containsKey(docId)){
-                resultMap.put(docId,new Pair<>(0.0,0.0));
+            TopSets topKsets = allksetsMap.get(docId);
+            MultiLabel prediction = predictionMap.get(docId).getFirst();
+
+            if (topKsets.contains(prediction)){
+                resultMap.put(docId,new Pair<>(topKsets.getConfidence(prediction),topKsets.getRank(prediction)));
+            } else {
+                resultMap.put(docId,new Pair<>(0.0,0));
             }
 
         }
@@ -217,17 +185,11 @@ public class AppCombSUM {
 
     }
 
+    
 
+    private static Map<String,TopSets> getTopKset(String reportPath,int limit, LabelTranslator labelTranslator)throws Exception{
 
-
-
-
-
-
-
-    private static Map<String,Map<String,Pair<Double,Double>>> gettopKset(String reportPath,int limit)throws Exception{
-
-        Map<String,Map<String,Pair<Double,Double>>> mapDocsSets = new HashMap<>();
+        Map<String,TopSets> mapDocsSets = new HashMap<>();
         List<String> lines = FileUtils.readLines(new File(reportPath));
         lines.stream().forEach(line->{
             String[] lineInfo = line.split("\t");
@@ -235,26 +197,24 @@ public class AppCombSUM {
             String pres = lineInfo[1];
             double confi = Double.parseDouble(lineInfo[2]);
             if(!mapDocsSets.containsKey(docId)){
-                Map<String,Pair<Double,Double>> map = new HashMap<>();
-                mapDocsSets.put(docId,map);
+                TopSets topSets = new TopSets();
+                mapDocsSets.put(docId,topSets);
 
             }
             if(mapDocsSets.get(docId).size() < limit) {
-                double rank = mapDocsSets.get(docId).size()+1;
-                mapDocsSets.get(docId).put(pres, new Pair<>(confi,rank));
+                MultiLabel prediction = new MultiLabel(pres,labelTranslator);
+                mapDocsSets.get(docId).add(prediction,confi);
             }
         });
 
         return mapDocsSets;
-
-
-
     }
 
 
-    private static Map<String,Pair<String,Double>> getFinalPrediction(List<Map<String,Map<String,Pair<Double,Double>>>> list){
+
+    private static Map<String,Pair<MultiLabel,Double>> getFinalPrediction(List<Map<String,TopSets>> list){
         List<String> docIds = list.get(0).keySet().stream().sorted().collect(Collectors.toList());
-        Map<String,Pair<String,Double>> map = new HashMap<>();
+        Map<String,Pair<MultiLabel,Double>> map = new HashMap<>();
 
         docIds.stream().forEach(docId->{
             map.put(docId,getFinalPredictionDoc(docId,list));
@@ -264,65 +224,62 @@ public class AppCombSUM {
     }
 
 
+    private static Pair<MultiLabel,Double> getFinalPredictionDoc(String docId,List<Map<String,TopSets>> list){
 
-
-    private static Pair<String,Double> getFinalPredictionDoc(String docId,List<Map<String,Map<String,Pair<Double,Double>>>> list){
-
-        Set<String> set = new HashSet<>();
+        Set<MultiLabel> candidateSets = new HashSet<>();
 
         for(int i = 0; i < list.size(); i++){
             if (list.get(i).get(docId)==null){
                 System.out.println("list "+i +" does not contain "+docId);
             }
-            set.addAll(list.get(i).get(docId).entrySet().stream().map(entry->entry.getKey()).collect(Collectors.toSet()));
+            candidateSets.addAll(list.get(i).get(docId).allSets());
         }
 
-        Comparator<Pair<String,Double>> comparator = Comparator.comparing(Pair::getSecond);
-        List<Pair<String,Double>> listResult = new ArrayList<>();
-        for(String codeSet : set){
+        Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(Pair::getSecond);
+        List<Pair<MultiLabel,Double>> listResult = new ArrayList<>();
+        for(MultiLabel codeSet : candidateSets){
 
             double confidenceSum = 0;
 
             for(int i = 0; i < list.size(); i++){
-                Map<String,Pair<Double,Double>> map = list.get(i).get(docId);
-                if(map.containsKey(codeSet)){
-                    Pair<Double,Double> pair = map.get(codeSet);
-                    confidenceSum += pair.getFirst();
-
+                TopSets topSets = list.get(i).get(docId);
+                if(topSets.contains(codeSet)){
+                    confidenceSum += topSets.getConfidence(codeSet);
                 }
 
             }
             listResult.add(new Pair<>(codeSet,(confidenceSum*1.0)/list.size()));
-
         }
 
 
-        List<Pair<String,Double>>finalList = listResult.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        List<Pair<MultiLabel,Double>>finalList = listResult.stream().sorted(comparator.reversed()).collect(Collectors.toList());
 
         return finalList.get(0);
     }
 
-    private static Map<String,Pair<String,Double>> getEnsemblePrediction(Config config, String folderName) throws Exception{
+    private static Map<String,Pair<MultiLabel,Double>> getEnsemblePrediction(Config config, String folderName) throws Exception{
         List<String> modelPaths = config.getStrings("modelPaths");
+        LabelTranslator labelTranslator = getLabelTranslatorEnsemble(config,folderName);
 
-        List<Map<String,Map<String,Pair<Double,Double>>>> mapLists = new ArrayList<>();
+        List<Map<String,TopSets>> mapLists = new ArrayList<>();
 
         int limit = config.getInt("kvalue");
         for(int i = 0; i < modelPaths.size(); i++){
             String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
-            mapLists.add(gettopKset(reportPath,limit));
+            mapLists.add(getTopKset(reportPath,limit,labelTranslator));
         }
         return getFinalPrediction(mapLists);
     }
 
-    private static List<Map<String,Pair<Double,Double>>> getConfidenceRankLists(Config config, String folderName, Map<String,Pair<String,Double>> ensemblePrediction) throws Exception{
+    private static List<Map<String,Pair<Double,Integer>>> getConfidenceRankLists(Config config, String folderName, Map<String,Pair<MultiLabel,Double>> ensemblePrediction) throws Exception{
         List<String> modelPaths = config.getStrings("modelPaths");
+        LabelTranslator labelTranslator = getLabelTranslatorEnsemble(config,folderName);
         List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",folderName+"_reports","report.csv").toString());
-        List<Map<String,Pair<Double,Double>>> confideceRankLists = new ArrayList<>();
+        List<Map<String,Pair<Double,Integer>>> confideceRankLists = new ArrayList<>();
         for(int i = 0; i < modelPaths.size(); i++) {
             String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
 
-            Map<String,Map<String,Pair<Double,Double>>> allKSetsMap = gettopKset(reportPath,20);
+            Map<String,TopSets> allKSetsMap = getTopKset(reportPath,20,labelTranslator);
             confideceRankLists.add(getConfidenceRank(allKSetsMap,ensemblePrediction,docIds));
         }
         return confideceRankLists;
@@ -371,21 +328,40 @@ public class AppCombSUM {
         logger.info("tuning threshold is done");
     }
 
+
+    public static LabelTranslator getLabelTranslatorEnsemble(Config config,String dataSetFolder)throws Exception{
+
+        Set<String> allExtLabelsSet = new HashSet<>();
+        List<String> modelPaths = config.getStrings("modelPaths");
+        for(int i = 0; i < modelPaths.size(); i++){
+            LabelTranslator labelTranslator = (LabelTranslator) Serialization.deserialize(Paths.get(modelPaths.get(i).split("model_predictions")[0],"data_sets",dataSetFolder,"label_translator.ser").toFile());
+            allExtLabelsSet.addAll(labelTranslator.getAllExtLabels());
+        }
+        List<String> allExtLabels = allExtLabelsSet.stream().sorted()
+                .collect(Collectors.toList());
+
+        LabelTranslator newLabelTranslator = new LabelTranslator(allExtLabels);
+        return newLabelTranslator;
+
+
+
+    }
+    
     private static void calibrate(Config config, Logger logger) throws Exception{
         String calibFolder = config.getString("calibFolder");
-        LabelTranslator newLabelTranslatorCalib = AppEnsemble.getLabelTranslatorEnsemble(config,calibFolder);
+        LabelTranslator newLabelTranslatorCalib = getLabelTranslatorEnsemble(config,calibFolder);
         Map<String,String> groundTruthCalib = getGroundTruth(config,calibFolder);
-        Map<String,Pair<String,Double>> calibMap = getEnsemblePrediction(config,calibFolder);
+        Map<String,Pair<MultiLabel,Double>> calibMap = getEnsemblePrediction(config,calibFolder);
         IsotonicRegression isotonicRegression = trainIsoRegression(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
         Serialization.serialize(isotonicRegression, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
     }
 
 
     private static void report(Config config, String folderName) throws Exception{
-        Map<String,Pair<String,Double>> map = getEnsemblePrediction(config,folderName);
-        LabelTranslator labelTranslatorEnsemble = AppEnsemble.getLabelTranslatorEnsemble(config,folderName);
+        Map<String,Pair<MultiLabel,Double>> map = getEnsemblePrediction(config,folderName);
+        LabelTranslator labelTranslatorEnsemble = getLabelTranslatorEnsemble(config,folderName);
         Map<String,String> groundTruth = getGroundTruth(config,folderName);
-        List<Map<String,Pair<Double,Double>>> confidenceRankLists = getConfidenceRankLists(config,folderName,map);
+        List<Map<String,Pair<Double,Integer>>> confidenceRankLists = getConfidenceRankLists(config,folderName,map);
         IsotonicRegression isotonicRegression = (IsotonicRegression)Serialization.deserialize(Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
         generateReport(map,config,folderName,labelTranslatorEnsemble,groundTruth,confidenceRankLists,isotonicRegression);
     }
@@ -445,6 +421,43 @@ public class AppCombSUM {
         }
     }
 
+    
+    private static class TopSets{
+        private Map<MultiLabel,Double> predictionToConfidence;
+        private Map<MultiLabel,Integer> predictionToRank;
+
+        public TopSets() {
+            predictionToConfidence = new HashMap<>();
+            predictionToRank = new HashMap<>();
+        }
+
+        void add(MultiLabel multiLabel, double confidence){
+            int rank = predictionToConfidence.size()+1;
+            predictionToConfidence.put(multiLabel,confidence);
+            predictionToRank.put(multiLabel,rank);
+        }
+        
+        int size(){
+            return predictionToConfidence.size();
+        }
+
+        Set<MultiLabel> allSets(){
+            return predictionToConfidence.keySet();
+        }
+
+        boolean contains(MultiLabel multiLabel){
+            return predictionToConfidence.containsKey(multiLabel);
+        }
+
+        double getConfidence(MultiLabel multiLabel){
+            return predictionToConfidence.get(multiLabel);
+        }
+
+        int getRank(MultiLabel multiLabel){
+            return predictionToRank.get(multiLabel);
+        }
+        
+    }
 
 
 }
