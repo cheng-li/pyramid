@@ -25,6 +25,43 @@ import java.util.stream.Stream;
 
 public class AppCombSUM {
 
+    private static Map<String,Pair<String,Double>> getEnsemblePrediction(Config config, String folderName) throws Exception{
+        List<String> modelPaths = config.getStrings("modelPaths");
+
+        List<Map<String,Map<String,Pair<Double,Double>>>> mapLists = new ArrayList<>();
+
+        int limit = config.getInt("kvalue");
+        for(int i = 0; i < modelPaths.size(); i++){
+            String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
+            mapLists.add(gettopKset(reportPath,limit));
+        }
+        return getFinalPrediction(mapLists);
+    }
+
+    private static List<Map<String,Pair<Double,Double>>> getConfidenceRankLists(Config config, String folderName, Map<String,Pair<String,Double>> ensemblePrediction) throws Exception{
+        List<String> modelPaths = config.getStrings("modelPaths");
+        List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",folderName+"_reports","report.csv").toString());
+        List<Map<String,Pair<Double,Double>>> confideceRankLists = new ArrayList<>();
+        for(int i = 0; i < modelPaths.size(); i++) {
+            String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
+
+            Map<String,Map<String,Pair<Double,Double>>> allKSetsMap = gettopKset(reportPath,20);
+            confideceRankLists.add(getConfidenceRank(allKSetsMap,ensemblePrediction,docIds));
+        }
+        return confideceRankLists;
+
+    }
+
+    private static Map<String,String> getGroundTruth(Config config, String folderName) throws Exception{
+        List<String> modelPaths = config.getStrings("modelPaths");
+        String path = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+folderName;
+
+        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(path, DataSetType.ML_CLF_SPARSE,true);
+
+        Map<String,String> groundTruth= ReportUtils.getIDGroundTruth(dataSet);
+        return groundTruth;
+    }
+
     public static void main(String[] args)throws Exception{
         if (args.length !=1){
             throw new IllegalArgumentException("Please specify a properties file.");
@@ -58,61 +95,74 @@ public class AppCombSUM {
         double targetValue = config.getDouble("threshold.targetValue");
         String ensembleName = config.getString("ensembleModelName");
 
-        List<String> validDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",validFolder+"_reports","report.csv").toString());
-        List<String> testDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",testFolder+"_reports","report.csv").toString());
-        List<String> calibDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
 
-        List<Map<String,Map<String,Pair<Double,Double>>>> validMapsLists = new ArrayList<>();
-        List<Map<String,Map<String,Pair<Double,Double>>>> testMapsLists = new ArrayList<>();
-        List<Map<String,Map<String,Pair<Double,Double>>>> calibMapsLists = new ArrayList<>();
+//        List<Map<String,Map<String,Pair<Double,Double>>>> validMapsLists = new ArrayList<>();
+//        List<Map<String,Map<String,Pair<Double,Double>>>> testMapsLists = new ArrayList<>();
+//        List<Map<String,Map<String,Pair<Double,Double>>>> calibMapsLists = new ArrayList<>();
 
 
-        for(int i = 0; i < modelPaths.size(); i++){
-            String validReportpath = Paths.get(modelPaths.get(i),"predictions",validFolder+"_reports","top_sets.csv").toString();
-            String testReportPath = Paths.get(modelPaths.get(i),"predictions",testFolder+"_reports","top_sets.csv").toString();
-            String calibReportPath = Paths.get(modelPaths.get(i),"predictions",calibFolder+"_reports","top_sets.csv").toString();
-            validMapsLists.add(gettopKset(validReportpath,limit));
-            testMapsLists.add(gettopKset(testReportPath,limit));
-            calibMapsLists.add(gettopKset(calibReportPath,limit));
-        }
-        Map<String,Pair<String,Double>> validMap = getFinalPrediction(validMapsLists);
-        Map<String,Pair<String,Double>> testMap = getFinalPrediction(testMapsLists);
-        Map<String,Pair<String,Double>> calibMap = getFinalPrediction(calibMapsLists);
+//        for(int i = 0; i < modelPaths.size(); i++){
+//            String validReportpath = Paths.get(modelPaths.get(i),"predictions",validFolder+"_reports","top_sets.csv").toString();
+//            String testReportPath = Paths.get(modelPaths.get(i),"predictions",testFolder+"_reports","top_sets.csv").toString();
+//            String calibReportPath = Paths.get(modelPaths.get(i),"predictions",calibFolder+"_reports","top_sets.csv").toString();
+//            validMapsLists.add(gettopKset(validReportpath,limit));
+//            testMapsLists.add(gettopKset(testReportPath,limit));
+//            calibMapsLists.add(gettopKset(calibReportPath,limit));
+//        }
+//        Map<String,Pair<String,Double>> validMap = getFinalPrediction(validMapsLists);
+//        Map<String,Pair<String,Double>> testMap = getFinalPrediction(testMapsLists);
+//        Map<String,Pair<String,Double>> calibMap = getFinalPrediction(calibMapsLists);
 
-        List<Map<String,Pair<Double,Double>>> validConfideceRankLists = new ArrayList<>();
-        List<Map<String,Pair<Double,Double>>> testConfideceRankLists = new ArrayList<>();
 
-        for(int i = 0; i < modelPaths.size(); i++) {
-            String validReportPath = Paths.get(modelPaths.get(i),"predictions",validFolder+"_reports","top_sets.csv").toString();
-            String testReportPath = Paths.get(modelPaths.get(i),"predictions",testFolder+"_reports","top_sets.csv").toString();
-            Map<String,Map<String,Pair<Double,Double>>> validAllKSetsMap = gettopKset(validReportPath,20);
-            Map<String,Map<String,Pair<Double,Double>>> testAllKSetsMap = gettopKset(testReportPath,20);
-            validConfideceRankLists.add(getConfidenceRank(validAllKSetsMap,validMap,validDocIds));
-            testConfideceRankLists.add(getConfidenceRank(testAllKSetsMap,testMap,testDocIds));
+        Map<String,Pair<String,Double>> validMap = getEnsemblePrediction(config,validFolder);
+        Map<String,Pair<String,Double>> testMap = getEnsemblePrediction(config,testFolder);
+        Map<String,Pair<String,Double>> calibMap = getEnsemblePrediction(config,calibFolder);
 
-        }
+//        List<Map<String,Pair<Double,Double>>> validConfideceRankLists = new ArrayList<>();
+//        List<Map<String,Pair<Double,Double>>> testConfideceRankLists = new ArrayList<>();
 
 
 
-        String validSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+validFolder;
-        String testSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+testFolder;
-        String calibSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+calibFolder;
-        MultiLabelClfDataSet validSet0 = TRECFormat.loadMultiLabelClfDataSet(validSetPath0, DataSetType.ML_CLF_SPARSE,true);
-        MultiLabelClfDataSet testSet0 = TRECFormat.loadMultiLabelClfDataSet(testSetPath0, DataSetType.ML_CLF_SPARSE,true);
-        MultiLabelClfDataSet calibSet0 = TRECFormat.loadMultiLabelClfDataSet(calibSetPath0, DataSetType.ML_CLF_SPARSE,true);
+//        List<String> validDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",validFolder+"_reports","report.csv").toString());
+//        List<String> testDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",testFolder+"_reports","report.csv").toString());
+//        List<String> calibDocIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
+
+//        for(int i = 0; i < modelPaths.size(); i++) {
+//            String validReportPath = Paths.get(modelPaths.get(i),"predictions",validFolder+"_reports","top_sets.csv").toString();
+//            String testReportPath = Paths.get(modelPaths.get(i),"predictions",testFolder+"_reports","top_sets.csv").toString();
+//            Map<String,Map<String,Pair<Double,Double>>> validAllKSetsMap = gettopKset(validReportPath,20);
+//            Map<String,Map<String,Pair<Double,Double>>> testAllKSetsMap = gettopKset(testReportPath,20);
+//            validConfideceRankLists.add(getConfidenceRank(validAllKSetsMap,validMap,validDocIds));
+//            testConfideceRankLists.add(getConfidenceRank(testAllKSetsMap,testMap,testDocIds));
+//
+//        }
+
+
+        List<Map<String,Pair<Double,Double>>> validConfideceRankLists = getConfidenceRankLists(config,validFolder,validMap);
+        List<Map<String,Pair<Double,Double>>> testConfideceRankLists = getConfidenceRankLists(config, testFolder, testMap);
+
+//        String validSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+validFolder;
+//        String testSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+testFolder;
+//        String calibSetPath0 = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+calibFolder;
+//        MultiLabelClfDataSet validSet0 = TRECFormat.loadMultiLabelClfDataSet(validSetPath0, DataSetType.ML_CLF_SPARSE,true);
+//        MultiLabelClfDataSet testSet0 = TRECFormat.loadMultiLabelClfDataSet(testSetPath0, DataSetType.ML_CLF_SPARSE,true);
+//        MultiLabelClfDataSet calibSet0 = TRECFormat.loadMultiLabelClfDataSet(calibSetPath0, DataSetType.ML_CLF_SPARSE,true);
+
+
+
+        Map<String,String> groundTruthValid = getGroundTruth(config,validFolder);
+        Map<String,String> groundTruthTest = getGroundTruth(config,testFolder);
+        Map<String,String> groundTruthCalib = getGroundTruth(config,calibFolder);
 
         LabelTranslator newLabelTranslatorValid = AppEnsemble.getLabelTranslatorEnsemble(config,validFolder);
         LabelTranslator newLabelTranslatorTest = AppEnsemble.getLabelTranslatorEnsemble(config,testFolder);
         LabelTranslator newLabelTranslatorCalib = AppEnsemble.getLabelTranslatorEnsemble(config,calibFolder);
 
-        Map<String,String> groundTruthValid = ReportUtils.getIDGroundTruth(validSet0);
-        Map<String,String> groundTruthTest = ReportUtils.getIDGroundTruth(testSet0);
-        Map<String,String> groundTruthCalib = ReportUtils.getIDGroundTruth(calibSet0);
+        IsotonicRegression isotonicRegression = trainIsoRegression(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
+        Serialization.serialize(isotonicRegression, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
 
-        IsotonicRegression isotonicRegression = trainIsoRegression(calibMap,calibDocIds,config,newLabelTranslatorCalib,groundTruthCalib);
-
-        generateReport(validMap,validDocIds,config,validFolder,newLabelTranslatorValid,groundTruthValid,validConfideceRankLists,isotonicRegression);
-        generateReport(testMap,testDocIds,config,testFolder,newLabelTranslatorTest,groundTruthTest,testConfideceRankLists,isotonicRegression);
+        generateReport(validMap,config,validFolder,newLabelTranslatorValid,groundTruthValid,validConfideceRankLists,isotonicRegression);
+        generateReport(testMap,config,testFolder,newLabelTranslatorTest,groundTruthTest,testConfideceRankLists,isotonicRegression);
 
 
 
@@ -211,8 +261,10 @@ public class AppCombSUM {
     }
 
 
-    private static IsotonicRegression trainIsoRegression(Map<String,Pair<String,Double>> map,List<String> docIds,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
-
+    private static IsotonicRegression trainIsoRegression(Map<String,Pair<String,Double>> map,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
+        List<String> modelPaths = config.getStrings("modelPaths");
+        String calibFolder = config.getString("calibFolder");
+        List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
         double[] locations = new double[docIds.size()];
         double[] numbers = new double[docIds.size()];
         for (int i = 0; i < docIds.size(); i++) {
@@ -251,12 +303,16 @@ public class AppCombSUM {
         }
 
         IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
-        Serialization.serialize(isotonicRegression, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
+
         return isotonicRegression;
 
     }
 
-    private static void generateReport(Map<String,Pair<String,Double>> map,List<String> docIds,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Double>>> confideceRankLists,IsotonicRegression isotonicRegression)throws Exception{
+    private static void generateReport(Map<String,Pair<String,Double>> map,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Double>>> confideceRankLists,IsotonicRegression isotonicRegression)throws Exception{
+
+        List<String> modelPaths = config.getStrings("modelPaths");
+        List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",dataSetFolder+"_reports","report.csv").toString());
+
         StringBuilder sb = new StringBuilder();
         sb.append("doc_id").append("\t").append("prediction").append("\t").append("prediction_type").append("\t")
                 .append("confidence").append("\t").append("truth").append("\t").append("ground_truth").append("\t")
