@@ -121,6 +121,7 @@ public class AppBRLR {
         brConfig.setString("input.trainData", Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.trainFolder")).toString());
         brConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
         brConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
+        brConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         brConfig.setString("output.dir",config.getString("output.folder"));
         brConfig.setString("output.verbose","true");
         brConfig.setString("output.log",config.getString("output.log"));
@@ -196,6 +197,7 @@ public class AppBRLR {
         Config predictConfig = new Config();
         predictConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
         predictConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        predictConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         predictConfig.setString("output.dir",config.getString("output.folder"));
         predictConfig.setString("test",config.getString("test"));
         predictConfig.setString("validate",config.getString("validate"));
@@ -229,6 +231,7 @@ public class AppBRLR {
         Config automationConfig = new Config();
         automationConfig.setString("input.validData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.validFolder")).toString());
         automationConfig.setString("input.testData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.testFolder")).toString());
+        automationConfig.setString("input.calibrationData",Paths.get(config.getString("output.folder"),"data_sets",config.getString("output.calibrationFolder")).toString());
         automationConfig.setString("output.dir",config.getString("output.folder"));
         automationConfig.setString("test",config.getString("test"));
         automationConfig.setString("validate",config.getString("validate"));

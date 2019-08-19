@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class AppEnsemble {
@@ -345,7 +344,7 @@ public class AppEnsemble {
             double f1 = FMeasure.f1(precision,recall);
 
 
-            sb.append(setPredictionMax.docId).append("\t").append(setPredictionMax.prediction).append("\t")
+            sb.append(setPredictionMax.docId).append("\t").append(sortLabels(setPredictionMax.prediction)).append("\t")
                     .append(setPredictionMax.predictionType).append("\t").append(setPredictionMax.confidence).append("\t")
                     .append(setPredictionMax.correctness).append("\t").append(groundTruth.get(docId)).append("\t")
                     .append(precision).append("\t").append(recall).append("\t").append(f1).append("\t")
@@ -372,7 +371,18 @@ public class AppEnsemble {
 
 
 
-
+    private static String sortLabels(String string){
+        String[] split = string.split(",");
+        List<String> list = new ArrayList<>();
+        for (String str: split){
+            String trimmed = str.trim();
+            if (!trimmed.isEmpty()){
+                list.add(trimmed);
+            }
+        }
+        Collections.sort(list);
+        return list.toString().replaceAll("\\]","").replaceAll("\\[","");
+    }
 
 
 

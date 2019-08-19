@@ -36,34 +36,6 @@ import java.util.stream.IntStream;
 
 
 public class BRPrediction {
-    public static void main(Config config) throws Exception{
-
-        Logger logger = Logger.getAnonymousLogger();
-        String logFile = config.getString("output.log");
-        FileHandler fileHandler = null;
-        if (!logFile.isEmpty()){
-            new File(logFile).getParentFile().mkdirs();
-            //todo should append?
-            fileHandler = new FileHandler(logFile, true);
-            java.util.logging.Formatter formatter = new SimpleFormatter();
-            fileHandler.setFormatter(formatter);
-            logger.addHandler(fileHandler);
-            logger.setUseParentHandlers(false);
-        }
-
-
-        if (config.getBoolean("validate")){
-            report(config, config.getString("input.validData"), logger);
-        }
-
-        if (config.getBoolean("test")){
-            report(config, config.getString("input.testData"), logger);
-        }
-
-        if (fileHandler!=null){
-            fileHandler.close();
-        }
-    }
 
     public static void reportValid(Config config) throws Exception{
         Logger logger = Logger.getAnonymousLogger();
@@ -82,6 +54,7 @@ public class BRPrediction {
 
         if (config.getBoolean("validate")){
             report(config, config.getString("input.validData"), logger);
+            report(config, config.getString("input.calibrationData"), logger);
         }
 
 

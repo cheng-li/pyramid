@@ -132,7 +132,7 @@ public class AppCombSUM {
             String docId = docIds.get(i);
             Pair<MultiLabel,Double> docInfo = map.get(docId);
 
-            sb.append(docId).append("\t").append(docInfo.getFirst()).append("\t").append("set").append("\t")
+            sb.append(docId).append("\t").append(docInfo.getFirst().toStringWithExtLabels(labelTranslator).replaceAll("\\[","").replaceAll("\\]","")).append("\t").append("set").append("\t")
                     .append(isotonicRegression.predict(map.get(docId).getSecond())).append("\t");
 
 
@@ -185,7 +185,7 @@ public class AppCombSUM {
 
     }
 
-    
+
 
     private static Map<String,TopSets> getTopKset(String reportPath,int limit, LabelTranslator labelTranslator)throws Exception{
 
@@ -263,7 +263,7 @@ public class AppCombSUM {
 
         List<Map<String,TopSets>> mapLists = new ArrayList<>();
 
-        int limit = config.getInt("kvalue");
+        int limit = config.getInt("topKSets");
         for(int i = 0; i < modelPaths.size(); i++){
             String reportPath = Paths.get(modelPaths.get(i),"predictions",folderName+"_reports","top_sets.csv").toString();
             mapLists.add(getTopKset(reportPath,limit,labelTranslator));
