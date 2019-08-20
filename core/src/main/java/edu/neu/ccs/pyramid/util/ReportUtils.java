@@ -264,14 +264,19 @@ public class ReportUtils {
 
         for(int i = 0; i < dataSet.getNumDataPoints(); i++) {
             String docID = dataSet.getIdTranslator().toExtId(i);
-            String[] prediction = idPredictions.get(docID).split(",");
             MultiLabel pre = new MultiLabel();
-            for (int j = 0; j < prediction.length; j++) {
+            if(!idPredictions.get(docID).isEmpty()) {
+                String[] prediction = idPredictions.get(docID).split(",");
 
-                pre.addLabel(labelTranslator.toIntLabel(prediction[j]));
+
+                for (int j = 0; j < prediction.length; j++) {
+
+                    pre.addLabel(labelTranslator.toIntLabel(prediction[j].trim()));
+
+                }
+
+                predictions[i] = pre;
             }
-
-            predictions[i] = pre;
         }
 
 
