@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.calibration;
 import edu.neu.ccs.pyramid.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,10 +28,10 @@ public class CTAT {
         if (confidence.length!=correctness.length){
             throw new IllegalArgumentException("confidence.length!=correctness.length");
         }
-        Stream<Pair<Double, Integer>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
-            Pair<Double,Integer> pair = new Pair<>(confidence[i],0);
+        Stream<Pair<Double, Double>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
+            Pair<Double,Double> pair = new Pair<>(confidence[i],0.0);
             if (correctness[i]){
-                pair.setSecond(1);
+                pair.setSecond(1.0);
             }
             return pair;
         });
@@ -50,10 +51,10 @@ public class CTAT {
         if (confidence.length!=correctness.length){
             throw new IllegalArgumentException("confidence.length!=correctness.length");
         }
-        Stream<Pair<Double, Integer>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
-            Pair<Double,Integer> pair = new Pair<>(confidence[i],0);
+        Stream<Pair<Double, Double>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
+            Pair<Double,Double> pair = new Pair<>(confidence[i],0.0);
             if (correctness[i]){
-                pair.setSecond(1);
+                pair.setSecond(1.0);
             }
             return pair;
         });
@@ -73,13 +74,12 @@ public class CTAT {
         return original;
     }
 
-    public static Summary findThreshold(Stream<Pair<Double, Integer>> stream, double targetAccuracy){
-        Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(Pair::getFirst);
-        List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
+    public static Summary findThreshold(Stream<Pair<Double, Double>> stream, double targetAccuracy){
+        Comparator<Pair<Double, Double>> comparator = Comparator.comparing(Pair::getFirst);
+        List<Pair<Double,Double>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
         Summary summary = new Summary();
         int numCorrect = 0;
         int size = list.size();
-        Pair<Double, Double> result =new Pair<>();
         for (int i = 0; i < size; i++){
             numCorrect += list.get(i).getSecond();
             double accuracy = (numCorrect*1.0)/(i+1);
@@ -98,8 +98,8 @@ public class CTAT {
     }
 
 
-    public static Summary applyThreshold(Stream<Pair<Double, Integer>> stream, double confidenceThreshold){
-        List<Pair<Double,Integer>> list = stream.collect(Collectors.toList());
+    public static Summary applyThreshold(Stream<Pair<Double, Double>> stream, double confidenceThreshold){
+        List<Pair<Double,Double>> list = stream.collect(Collectors.toList());
         int sum = 0;
         int correct = 0;
         int size = list.size();
@@ -123,47 +123,53 @@ public class CTAT {
     public static class AllThresholdResult{
         public List<Double> thresholds;
         public List<Double>  accuracies;
+        public List<Double> percentages;
         public List<Double> interpolatedAccuracies;
 
         @Override
         public String toString() {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("confidence").append("\t").append("accuracy").append("\t").append("interpolated accuracy").append("\n");
+            stringBuilder.append("confidence").append("\t").append("percentage").append("\t").append("accuracy").append("\t").append("interpolated accuracy").append("\n");
             for (int i=0;i<thresholds.size();i++){
-                stringBuilder.append(thresholds.get(i)).append("\t").append(accuracies.get(i)).append("\t").append(interpolatedAccuracies.get(i)).append("\n");
+                stringBuilder.append(thresholds.get(i)).append("\t").append(percentages.get(i)).append("\t").append(accuracies.get(i)).append("\t").append(interpolatedAccuracies.get(i)).append("\n");
             }
             return stringBuilder.toString();
         }
     }
 
 
-    public static AllThresholdResult showAllThresholds(List<Pair<Double,Integer>> predictionResults){
-        Comparator<Pair<Double,Integer>> comparator = Comparator.comparing(Pair::getFirst);
-        List<Pair<Double,Integer>> sorted = predictionResults.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+    /**
+     *
+     * @param predictionResults pair of (confidence, correctness)
+     * @return
+     */
+    public static AllThresholdResult showAllThresholds(List<Pair<Double,Double>> predictionResults){
+        Comparator<Pair<Double,Double>> comparator = Comparator.comparing(Pair::getFirst);
+        List<Pair<Double,Double>> sorted = predictionResults.stream().sorted(comparator.reversed()).collect(Collectors.toList());
 
 
-        int total = 0;
-        int correct = 0;
-        List<Double> thresholdsDecreasing = new ArrayList<>();
-        List<Double> accuraciesDecreasing = new ArrayList<>();
+        double total = 0;
+        double correct = 0;
+        List<Double> thresholds = new ArrayList<>();
+        List<Double> accuracies = new ArrayList<>();
+        List<Double> fractions = new ArrayList<>();
         for (int i=0;i<sorted.size();i++){
-            Pair<Double,Integer> pair = sorted.get(i);
+            Pair<Double,Double> pair = sorted.get(i);
             total+=1;
             correct += pair.getSecond();
+
             double current = pair.getFirst();
             if ((i<sorted.size()-1&&!sorted.get(i).getFirst().equals(sorted.get(i+1).getFirst()))||i==sorted.size()-1){
-                thresholdsDecreasing.add(current);
-                accuraciesDecreasing.add(correct*1.0/total);
+                thresholds.add(current);
+                accuracies.add(correct*1.0/total);
+                fractions.add(total/predictionResults.size());
             }
         }
 
-        List<Double> thresholds = new ArrayList<>();
-        List<Double> accuracies = new ArrayList<>();
+        Collections.reverse(thresholds);
+        Collections.reverse(accuracies);
+        Collections.reverse(fractions);
 
-        for (int i=0;i<thresholdsDecreasing.size();i++){
-            thresholds.add(thresholdsDecreasing.get(thresholdsDecreasing.size()-1-i));
-            accuracies.add(accuraciesDecreasing.get(accuraciesDecreasing.size()-1-i));
-        }
 
         List<Double> interpolatedAccuracies = interpolatedAccuracies(accuracies);
 
@@ -171,6 +177,7 @@ public class CTAT {
         allThresholdResult.accuracies = accuracies;
         allThresholdResult.thresholds = thresholds;
         allThresholdResult.interpolatedAccuracies = interpolatedAccuracies;
+        allThresholdResult.percentages=fractions;
         return allThresholdResult;
     }
 

@@ -79,9 +79,11 @@ public class IMLGBInspector {
             }
         }
         Comparator<Map.Entry<Feature,Double>> comparator = Comparator.comparing(Map.Entry::getValue);
-        List<Feature> list = totalContributions.entrySet().stream().sorted(comparator.reversed()).limit(limit)
-                .map(Map.Entry::getKey).collect(Collectors.toList());
+        List<Map.Entry<Feature,Double>> topKList = totalContributions.entrySet().stream().sorted(comparator.reversed()).limit(limit).collect(Collectors.toList());
+        List<Feature> list = topKList.stream().map(Map.Entry::getKey).collect(Collectors.toList());
+        List<Double> utilities = topKList.stream().map(Map.Entry::getValue).collect(Collectors.toList());
         TopFeatures topFeatures = new TopFeatures();
+        topFeatures.setUtilities(utilities);
         topFeatures.setTopFeatures(list);
         topFeatures.setClassIndex(classIndex);
         LabelTranslator labelTranslator = boosting.getLabelTranslator();

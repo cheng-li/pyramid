@@ -29,10 +29,10 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
         }
 
         for (int cardinality : cardinalities) {
-            Stream<Pair<Double, Integer>> stream = IntStream.range(0, regDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double, Double>> stream = IntStream.range(0, regDataSet.getNumDataPoints()).parallel()
                     .boxed().filter(i->((int)regDataSet.getRow(i).get(cardIndex))==cardinality)
                     //todo deal with regression labels
-                    .map(i->new Pair<>(regDataSet.getRow(i).get(scoreIndex),(int)regDataSet.getLabels()[i]));
+                    .map(i->new Pair<>(regDataSet.getRow(i).get(scoreIndex),regDataSet.getLabels()[i]));
             calibrations.put(cardinality, new IsotonicRegression(stream));
         }
     }

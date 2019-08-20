@@ -41,7 +41,7 @@ public class BucketerTest {
         System.out.println("prediction");
         System.out.println(Arrays.toString(prediction));
 
-        String dis = Displayer.displayCalibrationResult(IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i-> new Pair<>(isotonicRegression.predict(dataSet.getRow(i).get(1)),(int)dataSet.getLabels()[i])));
+        String dis = Displayer.displayCalibrationResult(IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i-> new Pair<>(isotonicRegression.predict(dataSet.getRow(i).get(1)),dataSet.getLabels()[i])));
         System.out.println(dis);
     }
 

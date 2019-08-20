@@ -33,6 +33,18 @@ public class MultiLabel implements Serializable{
         }
     }
 
+    public MultiLabel(String string, LabelTranslator labelTranslator){
+        this();
+        String[] split = string.split(",");
+        for (String str: split){
+            String trimmed = str.trim();
+            if (!trimmed.isEmpty()){
+                int index = labelTranslator.toIntLabel(trimmed);
+                this.addLabel(index);
+            }
+        }
+    }
+
 
     public MultiLabel copy(){
         MultiLabel c= new MultiLabel();

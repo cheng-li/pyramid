@@ -3,6 +3,7 @@ package edu.neu.ccs.pyramid.classification.logistic_regression;
 import edu.neu.ccs.pyramid.classification.ClassProbability;
 import edu.neu.ccs.pyramid.classification.PredictionAnalysis;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
+import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.IdTranslator;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
 import edu.neu.ccs.pyramid.feature.*;
@@ -43,6 +44,42 @@ public class LogisticRegressionInspector {
         Comparator<FeatureUtility> comparator = Comparator.comparing(featureUtility->Math.abs(featureUtility.getUtility()));
         List<FeatureUtility> list = IntStream.range(0, weights.size())
                 .mapToObj(i -> new FeatureUtility(featureList.get(i)).setUtility(weights.get(i)))
+//                .filter(featureUtility -> featureUtility.getUtility()>0)
+                .sorted(comparator.reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
+        TopFeatures topFeatures = new TopFeatures();
+        topFeatures.setTopFeatures(list.stream().map(FeatureUtility::getFeature).collect(Collectors.toList()));
+        topFeatures.setUtilities(list.stream().map(FeatureUtility::getUtility).collect(Collectors.toList()));
+        topFeatures.setClassIndex(classIndex);
+        LabelTranslator labelTranslator = logisticRegression.getLabelTranslator();
+        topFeatures.setClassName(labelTranslator.toExtLabel(classIndex));
+        return topFeatures;
+    }
+
+
+    public static TopFeatures topFeatures(LogisticRegression logisticRegression,
+                                          DataSet dataSet,
+                                          int classIndex,
+                                          int limit){
+        FeatureList featureList = logisticRegression.getFeatureList();
+        Vector weights = logisticRegression.getWeights().getWeightsWithoutBiasForClass(classIndex);
+        Comparator<FeatureUtility> comparator = Comparator.comparing(featureUtility->Math.abs(featureUtility.getUtility()));
+        List<FeatureUtility> list = IntStream.range(0, weights.size()).parallel()
+                .mapToObj(i ->
+                {
+                    Vector column = dataSet.getColumn(i);
+                    if (column.getNumNonZeroElements()==0){
+                        return new FeatureUtility(featureList.get(i)).setUtility(0);
+                    }
+                    double weight = weights.get(i);
+                    double sum = 0;
+                    for (Vector.Element element: column.nonZeroes()){
+                        sum += weight*element.get();
+                    }
+                    sum /= column.getNumNonZeroElements();
+                    return new FeatureUtility(featureList.get(i)).setUtility(sum);
+                })
 //                .filter(featureUtility -> featureUtility.getUtility()>0)
                 .sorted(comparator.reversed())
                 .limit(limit)
