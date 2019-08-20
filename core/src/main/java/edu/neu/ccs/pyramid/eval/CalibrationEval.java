@@ -7,11 +7,11 @@ import java.util.stream.Stream;
 
 public class CalibrationEval {
     
-    public static double mse(Stream<Pair<Double, Integer>> stream){
+    public static double mse(Stream<Pair<Double, Double>> stream){
         return stream.mapToDouble(pair->Math.pow(pair.getFirst()-pair.getSecond(),2)).average().getAsDouble();
     }
 
-    public static double absoluteError(Stream<Pair<Double, Integer>> stream, int numBuckets){
+    public static double absoluteError(Stream<Pair<Double, Double>> stream, int numBuckets){
         BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets,0,1);
         double sum = 0;
         for (int i=0;i<bucketInfo.getNumBuckets();i++){
@@ -21,7 +21,7 @@ public class CalibrationEval {
         return sum/bucketInfo.getTotalCount();
     }
 
-    public static double squareError(Stream<Pair<Double, Integer>> stream, int numBuckets){
+    public static double squareError(Stream<Pair<Double, Double>> stream, int numBuckets){
         BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets,0,1);
         double[] aveLabels = bucketInfo.getAveLabels();
         double sum = 0;
@@ -34,7 +34,7 @@ public class CalibrationEval {
         return sum/bucketInfo.getTotalCount();
     }
 
-    public static double sharpness(Stream<Pair<Double, Integer>> stream, int numBuckets){
+    public static double sharpness(Stream<Pair<Double, Double>> stream, int numBuckets){
 
         BucketInfo bucketInfo = BucketInfo.aggregate(stream, numBuckets,0,1);
         double[] accuracies = new double[bucketInfo.getNumBuckets()];
@@ -59,7 +59,7 @@ public class CalibrationEval {
         return sum/(total-1);
     }
 
-    public static double variance(Stream<Pair<Double, Integer>> stream){
+    public static double variance(Stream<Pair<Double, Double>> stream){
         VarResult varResult = stream.collect(()->new VarResult(),VarResult::add, VarResult::add);
         double count = varResult.count;
         double sum = varResult.sum;
@@ -84,7 +84,7 @@ public class CalibrationEval {
             this.sumSquare += varResult.sumSquare;
         }
 
-         void add(Pair<Double, Integer> pair){
+         void add(Pair<Double, Double> pair){
             this.sum += pair.getSecond();
             this.count += 1;
             this.sumSquare += Math.pow(pair.getSecond(),2);

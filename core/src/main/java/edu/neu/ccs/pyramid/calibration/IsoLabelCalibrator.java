@@ -22,14 +22,14 @@ public class IsoLabelCalibrator implements LabelCalibrator {
         this.isotonicRegressionList = new ArrayList<>();
         for (int l= 0; l < multiLabelClassifier.getNumClasses(); l++) {
             final int calssIndex = l;
-            Stream<Pair<Double,Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double,Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                     .mapToObj(i->{
                         double prob = multiLabelClassifier.predictClassProb(multiLabelClfDataSet.getRow(i), calssIndex);
-                        Pair<Double,Integer> pair = new Pair<>();
+                        Pair<Double,Double> pair = new Pair<>();
                         pair.setFirst(prob);
-                        pair.setSecond(0);
+                        pair.setSecond(0.0);
                         if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
-                            pair.setSecond(1);
+                            pair.setSecond(1.0);
                         }
                         return pair;
                     });
@@ -44,14 +44,14 @@ public class IsoLabelCalibrator implements LabelCalibrator {
         int numClasses = probabilities[0].size();
         for (int l= 0; l < numClasses; l++) {
             final int calssIndex = l;
-            Stream<Pair<Double,Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double,Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                     .mapToObj(i->{
                         double prob = probabilities[i].get(calssIndex);
-                        Pair<Double,Integer> pair = new Pair<>();
+                        Pair<Double,Double> pair = new Pair<>();
                         pair.setFirst(prob);
-                        pair.setSecond(0);
+                        pair.setSecond(0.0);
                         if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
-                            pair.setSecond(1);
+                            pair.setSecond(1.0);
                         }
                         return pair;
                     });
@@ -67,14 +67,14 @@ public class IsoLabelCalibrator implements LabelCalibrator {
         int numClasses = probabilities.get(0).size();
         for (int l= 0; l < numClasses; l++) {
             final int calssIndex = l;
-            Stream<Pair<Double,Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double,Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                     .mapToObj(i->{
                         double prob = probabilities.get(i).get(calssIndex);
-                        Pair<Double,Integer> pair = new Pair<>();
+                        Pair<Double,Double> pair = new Pair<>();
                         pair.setFirst(prob);
-                        pair.setSecond(0);
+                        pair.setSecond(0.0);
                         if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
-                            pair.setSecond(1);
+                            pair.setSecond(1.0);
                         }
                         return pair;
                     });

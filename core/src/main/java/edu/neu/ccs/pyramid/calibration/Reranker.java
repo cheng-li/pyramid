@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.multilabel_classification.cbm.CBM;
 import edu.neu.ccs.pyramid.multilabel_classification.plugin_rule.GeneralF1Predictor;
 import edu.neu.ccs.pyramid.regression.Regressor;
 import edu.neu.ccs.pyramid.util.ArgMax;
+import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -77,28 +78,26 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
         double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
 
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<MultiLabel> multiLabels = new ArrayList<>();
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
-        for (int i=0;i<numCandidate;i++){
+        for (int i=0;i<numCandidate;i++) {
             MultiLabel candidate = dynamicProgramming.nextHighestVector();
 
-            if (candidate.getNumMatchedLabels()<minPredictionSize||candidate.getNumMatchedLabels()>maxPredictionSize){
-                continue;
+            if (candidate.getNumMatchedLabels() >= minPredictionSize && candidate.getNumMatchedLabels() <= maxPredictionSize) {
+                multiLabels.add(candidate);
             }
 
-            PredictionCandidate predictionCandidate = new PredictionCandidate();
-            predictionCandidate.x = vector;
-            predictionCandidate.labelProbs = marginals;
-            predictionCandidate.multiLabel = candidate;
-
-            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
-            double score = regressor.predict(feature);
-            candidates.add(new Pair<>(candidate,score));
         }
-        // if all top candidates are invalid, at the most probable single label
-        if (candidates.isEmpty()){
-            int mostProbable = ArgMax.argMax(marginals);
-            MultiLabel candidate = new MultiLabel();
-            candidate.addLabel(mostProbable);
+        if (multiLabels.isEmpty()){
+            int[] sorted = ArgSort.argSortDescending(marginals);
+            MultiLabel multiLabel = new MultiLabel();
+            for (int i=0;i<minPredictionSize;i++){
+                multiLabel.addLabel(sorted[i]);
+            }
+            multiLabels.add(multiLabel);
+        }
+
+        for (MultiLabel candidate: multiLabels){
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.x = vector;
             predictionCandidate.labelProbs = marginals;

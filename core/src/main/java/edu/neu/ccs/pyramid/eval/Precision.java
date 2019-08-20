@@ -103,6 +103,24 @@ public class Precision {
         return p / multiLabels.length;
     }
 
+
+    public static double precision(MultiLabel label, MultiLabel prediction){
+
+        if (prediction.getMatchedLabels().size() == 0){
+            return 1.0;
+        } else {
+            return MultiLabel.intersection(label, prediction).size() * 1.0 / prediction.getMatchedLabels().size();
+        }
+
+    }
+
+
+
+
+
+
+
+
     @Deprecated
     /**
      * see function: double precision(MultiLabel[] multiLabels, List<MultiLabel> predictions)

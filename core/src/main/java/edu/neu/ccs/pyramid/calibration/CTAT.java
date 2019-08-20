@@ -28,10 +28,10 @@ public class CTAT {
         if (confidence.length!=correctness.length){
             throw new IllegalArgumentException("confidence.length!=correctness.length");
         }
-        Stream<Pair<Double, Integer>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
-            Pair<Double,Integer> pair = new Pair<>(confidence[i],0);
+        Stream<Pair<Double, Double>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
+            Pair<Double,Double> pair = new Pair<>(confidence[i],0.0);
             if (correctness[i]){
-                pair.setSecond(1);
+                pair.setSecond(1.0);
             }
             return pair;
         });
@@ -51,10 +51,10 @@ public class CTAT {
         if (confidence.length!=correctness.length){
             throw new IllegalArgumentException("confidence.length!=correctness.length");
         }
-        Stream<Pair<Double, Integer>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
-            Pair<Double,Integer> pair = new Pair<>(confidence[i],0);
+        Stream<Pair<Double, Double>> stream = IntStream.range(0, confidence.length).mapToObj(i->{
+            Pair<Double,Double> pair = new Pair<>(confidence[i],0.0);
             if (correctness[i]){
-                pair.setSecond(1);
+                pair.setSecond(1.0);
             }
             return pair;
         });
@@ -74,13 +74,12 @@ public class CTAT {
         return original;
     }
 
-    public static Summary findThreshold(Stream<Pair<Double, Integer>> stream, double targetAccuracy){
-        Comparator<Pair<Double, Integer>> comparator = Comparator.comparing(Pair::getFirst);
-        List<Pair<Double,Integer>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
+    public static Summary findThreshold(Stream<Pair<Double, Double>> stream, double targetAccuracy){
+        Comparator<Pair<Double, Double>> comparator = Comparator.comparing(Pair::getFirst);
+        List<Pair<Double,Double>> list = stream.sorted(comparator.reversed()).collect(Collectors.toList());
         Summary summary = new Summary();
         int numCorrect = 0;
         int size = list.size();
-        Pair<Double, Double> result =new Pair<>();
         for (int i = 0; i < size; i++){
             numCorrect += list.get(i).getSecond();
             double accuracy = (numCorrect*1.0)/(i+1);
@@ -99,8 +98,8 @@ public class CTAT {
     }
 
 
-    public static Summary applyThreshold(Stream<Pair<Double, Integer>> stream, double confidenceThreshold){
-        List<Pair<Double,Integer>> list = stream.collect(Collectors.toList());
+    public static Summary applyThreshold(Stream<Pair<Double, Double>> stream, double confidenceThreshold){
+        List<Pair<Double,Double>> list = stream.collect(Collectors.toList());
         int sum = 0;
         int correct = 0;
         int size = list.size();
@@ -158,11 +157,12 @@ public class CTAT {
             Pair<Double,Double> pair = sorted.get(i);
             total+=1;
             correct += pair.getSecond();
-            fractions.add(total/predictionResults.size());
+
             double current = pair.getFirst();
             if ((i<sorted.size()-1&&!sorted.get(i).getFirst().equals(sorted.get(i+1).getFirst()))||i==sorted.size()-1){
                 thresholds.add(current);
                 accuracies.add(correct*1.0/total);
+                fractions.add(total/predictionResults.size());
             }
         }
 

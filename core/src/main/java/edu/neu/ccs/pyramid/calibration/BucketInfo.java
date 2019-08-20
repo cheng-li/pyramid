@@ -37,7 +37,7 @@ public class BucketInfo {
 //    }
 
 
-    public static BucketInfo aggregate(Stream<Pair<Double,Integer>> stream, int numBuckets, double minValue, double maxValue){
+    public static BucketInfo aggregate(Stream<Pair<Double,Double>> stream, int numBuckets, double minValue, double maxValue){
         return stream.collect(()->new BucketInfo(numBuckets, minValue, maxValue),BucketInfo::add, BucketInfo::addAll);
     }
 
@@ -93,7 +93,7 @@ public class BucketInfo {
     }
 
 
-    public void add(Pair<Double,Integer> pair){
+    public void add(Pair<Double,Double> pair){
         final int numBuckets = this.counts.length;
         double bucketLength = (maxValue-minValue)/numBuckets;
         double prob = pair.getFirst();

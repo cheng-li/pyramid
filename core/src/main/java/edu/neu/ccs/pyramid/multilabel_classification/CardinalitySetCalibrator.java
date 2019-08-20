@@ -27,17 +27,17 @@ public class CardinalitySetCalibrator implements Serializable {
         }
 
         for (int cardinality : cardinalities) {
-            Stream<Pair<Double, Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double, Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                     .boxed().flatMap(i -> {
                         double[] probs = multiLabelClassifier.predictAssignmentProbs(multiLabelClfDataSet.getRow(i), support);
-                        Stream<Pair<Double, Integer>> pairs = IntStream.range(0, probs.length)
+                        Stream<Pair<Double, Double>> pairs = IntStream.range(0, probs.length)
                                 .filter(a -> support.get(a).getNumMatchedLabels() == cardinality)
                                 .mapToObj(a -> {
-                                    Pair<Double, Integer> pair = new Pair<>();
+                                    Pair<Double, Double> pair = new Pair<>();
                                     pair.setFirst(probs[a]);
-                                    pair.setSecond(0);
+                                    pair.setSecond(0.0);
                                     if (support.get(a).equals(multiLabelClfDataSet.getMultiLabels()[i])) {
-                                        pair.setSecond(1);
+                                        pair.setSecond(1.0);
                                     }
                                     return pair;
                                 });

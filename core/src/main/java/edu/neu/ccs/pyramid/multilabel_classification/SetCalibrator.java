@@ -22,15 +22,15 @@ public class SetCalibrator implements Serializable {
 
     public SetCalibrator(MultiLabelClassifier.AssignmentProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet,
                          List<MultiLabel> support) {
-        Stream<Pair<Double,Integer>> stream =  IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+        Stream<Pair<Double,Double>> stream =  IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                 .boxed().flatMap(i-> {
                     double[] probs = multiLabelClassifier.predictAssignmentProbs(multiLabelClfDataSet.getRow(i),support);
-                    Stream<Pair<Double,Integer>> pairs = IntStream.range(0, probs.length).mapToObj(a -> {
-                        Pair<Double, Integer> pair = new Pair<>();
+                    Stream<Pair<Double,Double>> pairs = IntStream.range(0, probs.length).mapToObj(a -> {
+                        Pair<Double, Double> pair = new Pair<>();
                         pair.setFirst(probs[a]);
-                        pair.setSecond(0);
+                        pair.setSecond(0.0);
                         if (support.get(a).equals(multiLabelClfDataSet.getMultiLabels()[i])) {
-                            pair.setSecond(1);
+                            pair.setSecond(1.0);
                         }
                         return pair;
                     });
