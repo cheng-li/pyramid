@@ -115,16 +115,18 @@ public class AppCombSUM {
 
     private static void generateReport(Map<String,Pair<MultiLabel,Double>> map,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Integer>>> confideceRankLists,IsotonicRegression isotonicRegression)throws Exception{
 
+        List<String> modelNames = config.getStrings("modelNames");
         List<String> modelPaths = config.getStrings("modelPaths");
         List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",dataSetFolder+"_reports","report.csv").toString());
 
         StringBuilder sb = new StringBuilder();
         sb.append("doc_id").append("\t").append("prediction").append("\t").append("prediction_type").append("\t")
                 .append("confidence").append("\t").append("truth").append("\t").append("ground_truth").append("\t")
-                .append("precision").append("\t").append("recall").append("\t").append("F1").append("\t")
-                .append("gb-tenant_confidence").append("\t").append("gb-tenant_rank").append("\t").append("lr-tenant_confidence").append("\t")
-                .append("lr-tenant_rank").append("\t").append("gb-common_confidence").append("\t").append("gb-common_rank").append("\t")
-                .append("lr-common_confidence").append("\t").append("lr-common_rank").append("\n");
+                .append("precision").append("\t").append("recall").append("\t").append("F1").append("\t");
+        for(int i = 0; i < modelNames.size(); i++){
+            sb.append(modelNames.get(i)).append("_confidence").append("\t").append(modelNames.get(i)).append("_rank").append("\t");
+        }
+        sb.append("\n");
 
 
 
