@@ -83,6 +83,36 @@ public class AppCombSUM {
     }
 
 
+//    private static IsotonicRegression trainIsoRegression(Map<String,Pair<MultiLabel,Double>> map,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
+//        List<String> modelPaths = config.getStrings("modelPaths");
+//        String calibFolder = config.getString("calibFolder");
+//        List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
+//        double[] locations = new double[docIds.size()];
+//        double[] numbers = new double[docIds.size()];
+//        for (int i = 0; i < docIds.size(); i++) {
+//            String docId = docIds.get(i);
+//            Pair<MultiLabel, Double> docInfo = map.get(docId);
+//
+//            MultiLabel pre = docInfo.getFirst();
+//            MultiLabel lab = new MultiLabel(groundTruth.get(docId),labelTranslator);
+//
+//            double truth = 0;
+//            if (pre.equals(lab)) {
+//                truth = 1;
+//            }
+//
+//            double confidence = map.get(docId).getSecond();
+//            locations[i] = confidence;
+//            numbers[i] = truth;
+//
+//        }
+//
+//        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
+//
+//        return isotonicRegression;
+//
+//    }
+
     private static IsotonicRegression trainIsoRegression(Map<String,Pair<MultiLabel,Double>> map,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
         List<String> modelPaths = config.getStrings("modelPaths");
         String calibFolder = config.getString("calibFolder");
@@ -96,14 +126,10 @@ public class AppCombSUM {
             MultiLabel pre = docInfo.getFirst();
             MultiLabel lab = new MultiLabel(groundTruth.get(docId),labelTranslator);
 
-            double truth = 0;
-            if (pre.equals(lab)) {
-                truth = 1;
-            }
-
+            double f1 = FMeasure.f1(pre,lab);
             double confidence = map.get(docId).getSecond();
             locations[i] = confidence;
-            numbers[i] = truth;
+            numbers[i] = f1;
 
         }
 
@@ -112,6 +138,16 @@ public class AppCombSUM {
         return isotonicRegression;
 
     }
+
+
+
+
+
+
+
+
+
+
 
     private static void generateReport(Map<String,Pair<MultiLabel,Double>> map,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Integer>>> confideceRankLists,IsotonicRegression isotonicRegression)throws Exception{
 
