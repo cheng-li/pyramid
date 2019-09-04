@@ -30,7 +30,12 @@ public class IsotonicRegression implements Regressor {
      * @param locations unsorted
      * @param numbers
      */
-    public IsotonicRegression(double[] locations, double[] numbers) {
+//    public IsotonicRegression(double[] locations, double[] numbers) {
+//        this(locations,numbers,true);
+//    }
+
+
+    public IsotonicRegression(double[] locations, double[] numbers, boolean interpolate) {
         List<Pair<Double, Double>> sorted = IntStream.range(0, locations.length).mapToObj(i -> new Pair<>(locations[i], numbers[i]))
                 .sorted(Comparator.comparing(pair -> pair.getFirst())).collect(Collectors.toList());
         double[] sortedLocations = sorted.stream().mapToDouble(p -> p.getFirst()).toArray();
@@ -39,14 +44,23 @@ public class IsotonicRegression implements Regressor {
         Arrays.fill(weights, 1.0);
         this.locations = sortedLocations;
         this.values = fit(sortedNumbers, weights);
-        shrink();
+        if (interpolate){
+            shrink();
+        }
+
     }
 
-    /**
-     * @param locations unsorted
-     * @param numbers
-     */
-    public IsotonicRegression(double[] locations, double[] numbers, double[] weights) {
+//    /**
+//     * @param locations unsorted
+//     * @param numbers
+//     */
+//    public IsotonicRegression(double[] locations, double[] numbers, double[] weights) {
+//        this(locations, numbers, weights, true);
+//    }
+
+
+
+    public IsotonicRegression(double[] locations, double[] numbers, double[] weights, boolean interpolate) {
         List<Element> sorted = IntStream.range(0, locations.length).mapToObj(i -> new Element(locations[i], numbers[i], weights[i]))
                 .sorted(Comparator.comparing(element -> element.location)).collect(Collectors.toList());
         double[] sortedLocations = sorted.stream().mapToDouble(p -> p.location).toArray();
@@ -54,22 +68,25 @@ public class IsotonicRegression implements Regressor {
         double[] sortedWeights = sorted.stream().mapToDouble(p -> p.weight).toArray();
         this.locations = sortedLocations;
         this.values = fit(sortedNumbers, sortedWeights);
-        shrink();
+        if (interpolate){
+            shrink();
+        }
+
     }
 
-    public IsotonicRegression(WeightedInput weightedInput) {
-        this(weightedInput.locationNonEmpty, weightedInput.accsNonempty, weightedInput.countsNonEmpty);
+    public IsotonicRegression(WeightedInput weightedInput, boolean interpolate) {
+        this(weightedInput.locationNonEmpty, weightedInput.accsNonempty, weightedInput.countsNonEmpty, interpolate);
     }
 
 
-    public IsotonicRegression(Stream<Pair<Double, Double>> stream) {
-        this(new WeightedInput(stream));
+    public IsotonicRegression(Stream<Pair<Double, Double>> stream, boolean interpolate) {
+        this(new WeightedInput(stream), interpolate);
     }
 
 
-    public static IsotonicRegression train(Stream<Pair<Vector, Integer>> stream) {
+    public static IsotonicRegression train(Stream<Pair<Vector, Integer>> stream, boolean interpolate) {
         Stream singleStream = stream.map(s -> new Pair<>(s.getFirst().get(0), s.getSecond()));
-        IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(singleStream, interpolate);
         return isotonicRegression;
     }
 

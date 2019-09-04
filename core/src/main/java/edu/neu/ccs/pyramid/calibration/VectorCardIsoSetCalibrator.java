@@ -19,7 +19,7 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
     private int scoreIndex;
     private int cardIndex;
 
-    public VectorCardIsoSetCalibrator(RegDataSet regDataSet, int scoreIndex, int cardIndex) {
+    public VectorCardIsoSetCalibrator(RegDataSet regDataSet, int scoreIndex, int cardIndex, boolean interpolate) {
         this.scoreIndex = scoreIndex;
         this.cardIndex = cardIndex;
         this.calibrations = new HashMap<>();
@@ -33,7 +33,7 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
                     .boxed().filter(i->((int)regDataSet.getRow(i).get(cardIndex))==cardinality)
                     //todo deal with regression labels
                     .map(i->new Pair<>(regDataSet.getRow(i).get(scoreIndex),regDataSet.getLabels()[i]));
-            calibrations.put(cardinality, new IsotonicRegression(stream));
+            calibrations.put(cardinality, new IsotonicRegression(stream, interpolate));
         }
     }
 
