@@ -149,7 +149,7 @@ public class ReportUtils {
 
         for (int i = 0;i < dataSet.getNumDataPoints();i++) {
             String docID = dataSet.getIdTranslator().toExtId(i);
-            String groundTruth = dataSet.getMultiLabels()[i].toStringWithExtLabels(dataSet.getLabelTranslator()).split("\\[")[1].split("\\]")[0];
+            String groundTruth = dataSet.getMultiLabels()[i].toStringWithExtLabels(dataSet.getLabelTranslator()).replace("[","").replace("]","");
             map.put(docID,groundTruth);
 
         }
