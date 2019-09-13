@@ -84,20 +84,34 @@ public class TopKFinder {
     }
 
     public static List<Pair<MultiLabel,Double>> topKinSupport(Vector x, MultiLabelClassifier.ClassProbEstimator classProbEstimator, LabelCalibrator labelCalibrator,
-                                                     VectorCalibrator vectorCalibrator, PredictionFeatureExtractor predictionFeatureExtractor,
-                                                     List<MultiLabel> support,
-                                                     int top){
+                                                              VectorCalibrator vectorCalibrator, PredictionFeatureExtractor predictionFeatureExtractor,
+                                                              List<MultiLabel> support,
+                                                              int top){
         double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(x));
-        Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        return support.stream().map(multiLabel -> {
+        Set<MultiLabel> supportSet = new HashSet<>(support);
+        List<Pair<MultiLabel,Double>> list = new ArrayList<>();
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<MultiLabel> candidates = new ArrayList<>();
+        for (int i=0;i<top;i++) {
+            MultiLabel candidate = dynamicProgramming.nextHighestVector();
+            if (supportSet.contains(candidate)){
+                candidates.add(candidate);
+            }
+        }
+
+        for (MultiLabel candidate: candidates){
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.x = x;
             predictionCandidate.labelProbs = marginals;
-            predictionCandidate.multiLabel = multiLabel;
+            predictionCandidate.multiLabel = candidate;
+
             Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
             double pro = vectorCalibrator.calibrate(feature);
-            return new Pair<>(multiLabel,pro);
-        }).sorted(comparator.reversed()).limit(top).collect(Collectors.toList());
+            list.add(new Pair<>(candidate,pro));
+        }
+
+        Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
+        return list.stream().sorted(comparator.reversed()).collect(Collectors.toList());
     }
 
 
