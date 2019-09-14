@@ -39,6 +39,9 @@ public class IsoLabelCalibrator implements LabelCalibrator {
 ////        }
 ////    }
 
+    public IsoLabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet) {
+        this(multiLabelClassifier,multiLabelClfDataSet,false);
+    }
 
     public IsoLabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet, boolean interpolate) {
         this.isotonicRegressionList = new ArrayList<>();
