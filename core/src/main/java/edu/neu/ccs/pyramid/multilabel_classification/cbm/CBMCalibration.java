@@ -105,7 +105,7 @@ public class CBMCalibration {
                                 });
                         return pairs;
                     });
-            calibrations.put(cardinality, new IsotonicRegression(stream));
+            calibrations.put(cardinality, new IsotonicRegression(stream,false));
         }
 
         return calibrations;
@@ -171,7 +171,7 @@ public class CBMCalibration {
                     });
                     return pairs;
                 });
-        IsotonicRegression isotonicRegression = new IsotonicRegression(stream);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(stream,false);
         return isotonicRegression;
     }
 

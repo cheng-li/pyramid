@@ -133,7 +133,7 @@ public class AppCombSUM {
 
         }
 
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers, true);
 
         return isotonicRegression;
 
