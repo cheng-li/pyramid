@@ -46,13 +46,9 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
         double uncalibrated = vector.get(scoreIndex);
         int cardinality = (int)vector.get(cardIndex);
         //deal with unseen cardinality
-        List<Integer> cards = new ArrayList<>(calibrations.keySet());
-        Collections.sort(cards);
-        double[] diff = new double[cards.size()];
-        for (int i=0;i<cards.size();i++){
-            diff[i] = Math.abs(cardinality-cards.get(i));
+        if (!calibrations.containsKey(cardinality)){
+            return 0;
         }
-        int closest = cards.get(ArgMin.argMin(diff));
-        return calibrations.get(closest).predict(uncalibrated);
+        return calibrations.get(cardinality).predict(uncalibrated);
     }
 }
