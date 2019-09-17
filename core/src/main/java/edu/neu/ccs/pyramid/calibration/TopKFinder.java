@@ -88,18 +88,9 @@ public class TopKFinder {
                                                               List<MultiLabel> support,
                                                               int top){
         double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(x));
-        Set<MultiLabel> supportSet = new HashSet<>(support);
         List<Pair<MultiLabel,Double>> list = new ArrayList<>();
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        List<MultiLabel> candidates = new ArrayList<>();
-        for (int i=0;i<top;i++) {
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            if (supportSet.contains(candidate)){
-                candidates.add(candidate);
-            }
-        }
 
-        for (MultiLabel candidate: candidates){
+        for (MultiLabel candidate: support){
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.x = x;
             predictionCandidate.labelProbs = marginals;
@@ -111,7 +102,7 @@ public class TopKFinder {
         }
 
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        return list.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        return list.stream().sorted(comparator.reversed()).limit(top).collect(Collectors.toList());
     }
 
 

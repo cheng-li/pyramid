@@ -211,7 +211,7 @@ public class BRCalibration {
                 classifier = new IndependentPredictor(classProbEstimator,labelCalibrator);
                 break;
             case "support":
-                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(classProbEstimator, labelCalibrator, support);
+                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(classProbEstimator, labelCalibrator, setCalibrator, predictionFeatureExtractor,support);
                 break;
 
             case "reranker":
