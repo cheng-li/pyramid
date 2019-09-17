@@ -11,7 +11,7 @@
     <groupId>edu.neu.ccs.pyramid</groupId>
     <artifactId>pyramid-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.12.3</version>
+    <version>0.12.4</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <elasticsearch.version>5.4.1</elasticsearch.version>
