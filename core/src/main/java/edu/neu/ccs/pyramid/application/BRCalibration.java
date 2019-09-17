@@ -102,7 +102,7 @@ public class BRCalibration {
         LabelCalibrator labelCalibrator = null;
         switch (config.getString("labelCalibrator")){
             case "isotonic":
-                labelCalibrator = new IsoLabelCalibrator(classProbEstimator, labelCalData, config.getBoolean("calibrate.isotonic.interpolate"));
+                labelCalibrator = new IsoLabelCalibrator(classProbEstimator, labelCalData, false);
                 break;
             case "none":
                 labelCalibrator = new IdentityLabelCalibrator();
@@ -168,7 +168,7 @@ public class BRCalibration {
 
         switch (config.getString("setCalibrator")){
             case "cardinality_isotonic":
-                setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 2, config.getBoolean("calibrate.isotonic.interpolate"));
+                setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 2, false);
                 break;
             case "reranker":
                 RerankerTrainer rerankerTrainer = RerankerTrainer.newBuilder()
@@ -180,7 +180,7 @@ public class BRCalibration {
                 setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,classProbEstimator,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet,0.001);
                 break;
             case "isotonic":
-                setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0, config.getBoolean("calibrate.isotonic.interpolate"));
+                setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0, false);
                 break;
             case "none":
                 setCalibrator = new VectorIdentityCalibrator(0);
