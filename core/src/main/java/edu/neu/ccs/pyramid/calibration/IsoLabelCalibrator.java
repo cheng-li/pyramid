@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -14,9 +15,18 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class IsoLabelCalibrator implements LabelCalibrator {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     List<IsotonicRegression> isotonicRegressionList;
+    private double confidenceUpperBound=0.99;
+    private double confidenceLowerBound=0.01;
 
+    public void setConfidenceUpperBound(double confidenceUpperBound) {
+        this.confidenceUpperBound = confidenceUpperBound;
+    }
+
+    public void setConfidenceLowerBound(double confidenceLowerBound) {
+        this.confidenceLowerBound = confidenceLowerBound;
+    }
 
 //    public IsoLabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet) {
 ////        this.isotonicRegressionList = new ArrayList<>();
@@ -111,7 +121,8 @@ public class IsoLabelCalibrator implements LabelCalibrator {
 
 
     public double calibratedClassProb(double prob, int labelIndex){
-        return isotonicRegressionList.get(labelIndex).predict(prob);
+        double unbounded =  isotonicRegressionList.get(labelIndex).predict(prob);
+        return MathUtil.boundBy(unbounded,confidenceLowerBound,confidenceUpperBound);
     }
 
     public double[] calibratedClassProbs(double[]probs){
