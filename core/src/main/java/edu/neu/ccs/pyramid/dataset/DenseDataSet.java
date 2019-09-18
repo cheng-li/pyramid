@@ -47,6 +47,10 @@ class DenseDataSet extends AbstractDataSet implements DataSet{
         if ((!this.hasMissingValue()) && Double.isNaN(featureValue)){
             throw new IllegalArgumentException("missing value is not allowed in this data set");
         }
+
+        if (Double.isInfinite(featureValue)){
+            throw new IllegalArgumentException("feature value cannot be infinity");
+        }
         this.featureRows[dataPointIndex].set(featureIndex, featureValue);
         this.featureColumns[featureIndex].set(dataPointIndex, featureValue);
     }
