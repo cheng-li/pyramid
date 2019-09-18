@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import edu.neu.ccs.pyramid.eval.SafeDivide;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.util.*;
@@ -1513,7 +1514,8 @@ public class DataSetUtil {
             for (int i=0;i<indices.size();i++){
                 int dataId = indices.get(i);
                 double old = values.get(i);
-                dataSet.setFeatureValue(dataId,j,old/normalizationConstants[j]);
+                // if normalization constant is 0, use 0 as the normalized value
+                dataSet.setFeatureValue(dataId,j, SafeDivide.divide(old,old/normalizationConstants[j],0.0));
             }
         }
     }
