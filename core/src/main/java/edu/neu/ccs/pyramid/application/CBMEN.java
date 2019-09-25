@@ -36,15 +36,7 @@ import java.util.stream.IntStream;
 public class CBMEN {
     private static boolean VERBOSE = false;
 
-    public static void main(String[] args) throws Exception {
-
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Please specify a properties file.");
-        }
-
-        Config config = new Config(args[0]);
-
-        System.out.println(config);
+    public static void main(Config config) throws Exception{
 
         VERBOSE = config.getBoolean("output.verbose");
 
@@ -159,7 +151,17 @@ public class CBMEN {
             test(config);
             System.out.println("============================================================");
         }
+    }
 
+    public static void main(String[] args) throws Exception {
+
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Please specify a properties file.");
+        }
+
+        Config config = new Config(args[0]);
+        System.out.println(config);
+        main(config);
     }
 
 
