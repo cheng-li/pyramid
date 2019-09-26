@@ -197,4 +197,62 @@ public class BRInspector {
 
         return classScoreCalculation;
     }
+
+
+
+    public static ClassScoreCalculation decisionProcessWObias(CBM cbm, LabelTranslator labelTranslator, double prob,
+                                                        Vector vector, int classIndex, int limit){
+        if (cbm.getBinaryClassifiers()[0][classIndex] instanceof PriorProbClassifier){
+            PriorProbClassifier priorProbClassifier = (PriorProbClassifier) cbm.getBinaryClassifiers()[0][classIndex];
+            ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
+                    priorProbClassifier.predictClassProb(vector,1));
+            classScoreCalculation.setClassProbability(prob);
+
+            return classScoreCalculation;
+        }
+        LogisticRegression logisticRegression = (LogisticRegression)cbm.getBinaryClassifiers()[0][classIndex];
+        ClassScoreCalculation classScoreCalculation = new ClassScoreCalculation(classIndex,labelTranslator.toExtLabel(classIndex),
+                logisticRegression.predictClassScore(vector,1));
+        classScoreCalculation.setClassProbability(prob);
+
+        List<LinearRule> linearRules = new ArrayList<>();
+
+        //todo speed up using sparsity
+        for (int j=0;j<logisticRegression.getNumFeatures();j++){
+            Feature feature = logisticRegression.getFeatureList().get(j);
+            double weight = logisticRegression.getWeights().getWeightsWithoutBiasForClass(1).get(j);
+            double featureValue = vector.get(j);
+            double score = weight*featureValue;
+            LinearRule rule = new LinearRule();
+            rule.setFeature(feature);
+            rule.setFeatureValue(featureValue);
+            rule.setScore(score);
+            rule.setWeight(weight);
+            linearRules.add(rule);
+        }
+
+        Comparator<LinearRule> comparator = Comparator.comparing(decision -> Math.abs(decision.getScore()));
+        List<LinearRule> sorted = linearRules.stream().sorted(comparator.reversed()).limit(limit).collect(Collectors.toList());
+
+        for (LinearRule linearRule : sorted){
+            classScoreCalculation.addRule(linearRule);
+        }
+
+        return classScoreCalculation;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

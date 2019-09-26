@@ -36,12 +36,12 @@ public class BucketerTest {
 
         Bucketer.Result result  = Bucketer.groupWithEqualSize(x,y,1000);
         System.out.println(result);
-        IsotonicRegression isotonicRegression = new IsotonicRegression(x,y);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(x,y,false);
         double[] prediction = Arrays.stream(result.averageX).map(isotonicRegression::predict).toArray();
         System.out.println("prediction");
         System.out.println(Arrays.toString(prediction));
 
-        String dis = Displayer.displayCalibrationResult(IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i-> new Pair<>(isotonicRegression.predict(dataSet.getRow(i).get(1)),(int)dataSet.getLabels()[i])));
+        String dis = Displayer.displayCalibrationResult(IntStream.range(0,dataSet.getNumDataPoints()).mapToObj(i-> new Pair<>(isotonicRegression.predict(dataSet.getRow(i).get(1)),dataSet.getLabels()[i])));
         System.out.println(dis);
     }
 

@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGradientBoosting;
 import edu.neu.ccs.pyramid.regression.IsotonicRegression;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
@@ -14,79 +15,114 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class IsoLabelCalibrator implements LabelCalibrator {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     List<IsotonicRegression> isotonicRegressionList;
+    private double confidenceUpperBound=0.99;
+    private double confidenceLowerBound=0.01;
 
+    public void setConfidenceUpperBound(double confidenceUpperBound) {
+        this.confidenceUpperBound = confidenceUpperBound;
+    }
+
+    public void setConfidenceLowerBound(double confidenceLowerBound) {
+        this.confidenceLowerBound = confidenceLowerBound;
+    }
+
+//    public IsoLabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet) {
+////        this.isotonicRegressionList = new ArrayList<>();
+////        for (int l= 0; l < multiLabelClassifier.getNumClasses(); l++) {
+////            final int calssIndex = l;
+////            Stream<Pair<Double,Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+////                    .mapToObj(i->{
+////                        double prob = multiLabelClassifier.predictClassProb(multiLabelClfDataSet.getRow(i), calssIndex);
+////                        Pair<Double,Double> pair = new Pair<>();
+////                        pair.setFirst(prob);
+////                        pair.setSecond(0.0);
+////                        if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
+////                            pair.setSecond(1.0);
+////                        }
+////                        return pair;
+////                    });
+////
+////            IsotonicRegression isotonicRegression = new IsotonicRegression(stream);
+////            isotonicRegressionList.add(isotonicRegression);
+////        }
+////    }
 
     public IsoLabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet) {
+        this(multiLabelClassifier,multiLabelClfDataSet,false);
+    }
+
+    public IsoLabelCalibrator(MultiLabelClassifier.ClassProbEstimator multiLabelClassifier, MultiLabelClfDataSet multiLabelClfDataSet, boolean interpolate) {
         this.isotonicRegressionList = new ArrayList<>();
         for (int l= 0; l < multiLabelClassifier.getNumClasses(); l++) {
             final int calssIndex = l;
-            Stream<Pair<Double,Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double,Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                     .mapToObj(i->{
                         double prob = multiLabelClassifier.predictClassProb(multiLabelClfDataSet.getRow(i), calssIndex);
-                        Pair<Double,Integer> pair = new Pair<>();
+                        Pair<Double,Double> pair = new Pair<>();
                         pair.setFirst(prob);
-                        pair.setSecond(0);
+                        pair.setSecond(0.0);
                         if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
-                            pair.setSecond(1);
+                            pair.setSecond(1.0);
                         }
                         return pair;
                     });
 
-            IsotonicRegression isotonicRegression = new IsotonicRegression(stream);
+            IsotonicRegression isotonicRegression = new IsotonicRegression(stream,interpolate);
             isotonicRegressionList.add(isotonicRegression);
         }
     }
 
-    public IsoLabelCalibrator(Vector[] probabilities, MultiLabelClfDataSet multiLabelClfDataSet) {
+    public IsoLabelCalibrator(Vector[] probabilities, MultiLabelClfDataSet multiLabelClfDataSet, boolean interpolate) {
         this.isotonicRegressionList = new ArrayList<>();
         int numClasses = probabilities[0].size();
         for (int l= 0; l < numClasses; l++) {
             final int calssIndex = l;
-            Stream<Pair<Double,Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double,Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                     .mapToObj(i->{
                         double prob = probabilities[i].get(calssIndex);
-                        Pair<Double,Integer> pair = new Pair<>();
+                        Pair<Double,Double> pair = new Pair<>();
                         pair.setFirst(prob);
-                        pair.setSecond(0);
+                        pair.setSecond(0.0);
                         if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
-                            pair.setSecond(1);
+                            pair.setSecond(1.0);
                         }
                         return pair;
                     });
 
-            IsotonicRegression isotonicRegression = new IsotonicRegression(stream);
+            IsotonicRegression isotonicRegression = new IsotonicRegression(stream, interpolate);
             isotonicRegressionList.add(isotonicRegression);
         }
     }
 
 
-    public IsoLabelCalibrator(List<Vector> probabilities, MultiLabelClfDataSet multiLabelClfDataSet) {
+    public IsoLabelCalibrator(List<Vector> probabilities, MultiLabelClfDataSet multiLabelClfDataSet, boolean interpolate) {
         this.isotonicRegressionList = new ArrayList<>();
         int numClasses = probabilities.get(0).size();
         for (int l= 0; l < numClasses; l++) {
             final int calssIndex = l;
-            Stream<Pair<Double,Integer>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
+            Stream<Pair<Double,Double>> stream = IntStream.range(0, multiLabelClfDataSet.getNumDataPoints()).parallel()
                     .mapToObj(i->{
                         double prob = probabilities.get(i).get(calssIndex);
-                        Pair<Double,Integer> pair = new Pair<>();
+                        Pair<Double,Double> pair = new Pair<>();
                         pair.setFirst(prob);
-                        pair.setSecond(0);
+                        pair.setSecond(0.0);
                         if (multiLabelClfDataSet.getMultiLabels()[i].matchClass(calssIndex)){
-                            pair.setSecond(1);
+                            pair.setSecond(1.0);
                         }
                         return pair;
                     });
 
-            IsotonicRegression isotonicRegression = new IsotonicRegression(stream);
+            IsotonicRegression isotonicRegression = new IsotonicRegression(stream, interpolate);
             isotonicRegressionList.add(isotonicRegression);
         }
     }
 
 
     public double calibratedClassProb(double prob, int labelIndex){
-        return isotonicRegressionList.get(labelIndex).predict(prob);
+        double unbounded =  isotonicRegressionList.get(labelIndex).predict(prob);
+        return MathUtil.boundBy(unbounded,confidenceLowerBound,confidenceUpperBound);
     }
 
     public double[] calibratedClassProbs(double[]probs){

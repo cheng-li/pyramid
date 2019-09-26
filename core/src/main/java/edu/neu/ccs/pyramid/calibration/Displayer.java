@@ -15,7 +15,7 @@ public class Displayer {
      * @param stream containing calibrated confidence
      * @return
      */
-    public static String displayCalibrationResult(Stream<Pair<Double, Integer>> stream){
+    public static String displayCalibrationResult(Stream<Pair<Double, Double>> stream){
         final int numBuckets = 10;
         BucketInfo total = BucketInfo.aggregate(stream, numBuckets,0,1);
         double[] counts = total.getCounts();
@@ -67,7 +67,7 @@ public class Displayer {
 
 
 
-    public static String displayCalibrationResult(Stream<Pair<Double, Integer>> stream, int numBuckets){
+    public static String displayCalibrationResult(Stream<Pair<Double, Double>> stream, int numBuckets){
         BucketInfo total = BucketInfo.aggregate(stream, numBuckets,0,1);
         double[] counts = total.getCounts();
         double[] correct = total.getSumLabels();

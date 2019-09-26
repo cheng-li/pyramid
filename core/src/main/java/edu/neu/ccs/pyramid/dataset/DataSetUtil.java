@@ -1478,6 +1478,7 @@ public class DataSetUtil {
     }
 
 
+
     public static void printStats(MultiLabelClfDataSet dataSet){
         System.out.println("number of instances = "+dataSet.getNumDataPoints());
         System.out.println("number of features = "+dataSet.getNumFeatures());
@@ -1485,4 +1486,22 @@ public class DataSetUtil {
         System.out.println("number of label combinations = "+gatherMultiLabels(dataSet).size());
         System.out.println("cardinality = "+IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(i->dataSet.getMultiLabels()[i].getNumMatchedLabels()).average().getAsDouble());
     }
+
+    public static void zeroOutColumn(DataSet dataSet, int columnIndex){
+        List<Integer> old = new ArrayList<>();
+        for (Vector.Element element: dataSet.getColumn(columnIndex).nonZeroes()){
+            old.add(element.index());
+        }
+        for (int i: old){
+            dataSet.setFeatureValue(i,columnIndex,0);
+        }
+    }
+
+    public static void zeroOutColumns(DataSet dataSet, List<Integer> columnIndices){
+        for (int j: columnIndices){
+            zeroOutColumn(dataSet,j);
+        }
+    }
+    
+
 }

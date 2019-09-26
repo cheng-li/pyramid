@@ -44,7 +44,7 @@ public class IsotonicRegressionTest  {
             locations[i] = Sampling.doubleUniform(-Math.PI/2, Math.PI/2);
             numbers[i] = Math.sin(locations[i])+Sampling.doubleUniform(-0.2,0.2);
         }
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers,false);
         List<Double> grid =Grid.uniform(-Math.PI/2, Math.PI/2,1000);
         double[] gridValues = grid.stream().mapToDouble(g->isotonicRegression.predict(g)).toArray();
 
@@ -70,7 +70,7 @@ public class IsotonicRegressionTest  {
                 numbers[i]=1;
             }
         }
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers,false);
         List<Double> grid =Grid.uniform(-2, 2,1000);
         double[] gridValues = grid.stream().mapToDouble(g->isotonicRegression.predict(g)).toArray();
 
@@ -96,7 +96,7 @@ public class IsotonicRegressionTest  {
                 numbers[i]=1;
             }
         }
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers,false);
         List<Double> grid =Grid.uniform(0, 1,1000);
         double[] gridValues = grid.stream().mapToDouble(g->isotonicRegression.predict(g)).toArray();
 
@@ -133,7 +133,7 @@ public class IsotonicRegressionTest  {
         double[] numbersMerged = list.stream().mapToDouble(p->p.getSecond()).toArray();
 
 
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locationsMerged, numbersMerged);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(locationsMerged, numbersMerged,false);
         List<Double> grid =Grid.uniform(0, 1,1000);
         double[] gridValues = grid.stream().mapToDouble(g->isotonicRegression.predict(g)).toArray();
 

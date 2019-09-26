@@ -78,6 +78,7 @@ public class CategoricalFeature extends Feature {
         @Override
         public void serialize(CategoricalFeature feature, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
             jsonGenerator.writeStartObject();
+            jsonGenerator.writeNumberField("index",feature.index);
             jsonGenerator.writeStringField("name",feature.name);
             jsonGenerator.writeStringField("type","categorical");
             jsonGenerator.writeStringField("variable",feature.variableName);

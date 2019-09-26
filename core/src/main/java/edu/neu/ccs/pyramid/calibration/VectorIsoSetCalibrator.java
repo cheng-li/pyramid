@@ -17,20 +17,20 @@ public class VectorIsoSetCalibrator implements Serializable, VectorCalibrator {
     private IsotonicRegression isotonicRegression;
     private int scoreIndex;
 
-    public VectorIsoSetCalibrator(ClfDataSet clfDataSet, int scoreIndex) {
-        this.scoreIndex = scoreIndex;
-        Stream<Pair<Double, Integer>> stream = IntStream.range(0, clfDataSet.getNumDataPoints())
-                .mapToObj(i->new Pair<>(clfDataSet.getRow(i).get(scoreIndex),clfDataSet.getLabels()[i]));
-        isotonicRegression = new IsotonicRegression(stream);
+//    public VectorIsoSetCalibrator(ClfDataSet clfDataSet, int scoreIndex) {
+//        this.scoreIndex = scoreIndex;
+//        Stream<Pair<Double, Double>> stream = IntStream.range(0, clfDataSet.getNumDataPoints())
+//                .mapToObj(i->new Pair<Double,Double>(clfDataSet.getRow(i).get(scoreIndex),(double)clfDataSet.getLabels()[i]));
+//        isotonicRegression = new IsotonicRegression(stream);
+//
+//    }
 
-    }
-
-    public VectorIsoSetCalibrator(RegDataSet regDataSet, int scoreIndex) {
+    public VectorIsoSetCalibrator(RegDataSet regDataSet, int scoreIndex, boolean interpolate) {
         this.scoreIndex = scoreIndex;
-        Stream<Pair<Double, Integer>> stream = IntStream.range(0, regDataSet.getNumDataPoints())
+        Stream<Pair<Double, Double>> stream = IntStream.range(0, regDataSet.getNumDataPoints())
                 //todo deal with regression labels
-                .mapToObj(i->new Pair<>(regDataSet.getRow(i).get(scoreIndex),(int)regDataSet.getLabels()[i]));
-        isotonicRegression = new IsotonicRegression(stream);
+                .mapToObj(i->new Pair<>(regDataSet.getRow(i).get(scoreIndex),regDataSet.getLabels()[i]));
+        isotonicRegression = new IsotonicRegression(stream, interpolate);
     }
 
     public double calibrate(Vector vector){
