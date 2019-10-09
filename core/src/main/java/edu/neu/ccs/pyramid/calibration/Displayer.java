@@ -37,7 +37,7 @@ public class Displayer {
         DecimalFormat decimalFormat = new DecimalFormat("#0.0000");
         DecimalFormat df = new DecimalFormat("#0.0%");
         StringBuilder sb = new StringBuilder();
-        sb.append("interval\t\t").append("total\t\t\t").append("correct\t\t").append("incorrect\t").append("accuracy\t").append("average confidence\n");
+        sb.append("interval\t\t").append("total\t\t\t").append("correct\t\t").append("incorrect\t").append("accuracy\t").append("average_confidence\n");
         for (int i = 0; i < 10; i++) {
             sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
                     .append(decimalFormat.format((i + 1) * 0.1)).append("]")
@@ -61,6 +61,55 @@ public class Displayer {
         return result;
 
     }
+
+
+
+    public static String displayCalibrationForF1Result(Stream<Pair<Double, Double>> stream){
+        final int numBuckets = 10;
+        BucketInfo total = BucketInfo.aggregate(stream, numBuckets,0,1);
+        double[] counts = total.getCounts();
+        double[] sumF1 = total.getSumLabels();
+        double[] sumProbs = total.getSumProbs();
+        double[] averageF1 = new double[counts.length];
+        double[] average_confidence = new double[counts.length];
+
+        double datasetSize = 0;
+
+        for (int i = 0; i < counts.length; i++) {
+            averageF1[i] = sumF1[i] / counts[i];
+            datasetSize += counts[i];
+        }
+        for (int j = 0; j < counts.length; j++) {
+            average_confidence[j] = sumProbs[j] / counts[j];
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat("#0.0000");
+        DecimalFormat df = new DecimalFormat("#0.0%");
+        StringBuilder sb = new StringBuilder();
+        sb.append("interval\t\t").append("total\t\t\t").append("average_F1\t").append("average_confidence\n");
+        for (int i = 0; i < 10; i++) {
+            sb.append("[").append(decimalFormat.format(i * 0.1)).append(",")
+                    .append(decimalFormat.format((i + 1) * 0.1)).append("]")
+                    .append("\t\t").append(counts[i]).append(" (").append(df.format((counts[i]/datasetSize))).append(")").append("\t\t");
+            if (Double.isFinite(averageF1[i])){
+                sb.append(decimalFormat.format(averageF1[i])).append("\t\t");
+            } else {
+                sb.append("N/A").append("\t\t");
+            }
+
+            if (Double.isFinite(average_confidence[i])){
+                sb.append(decimalFormat.format(average_confidence[i])).append("\n");
+            } else {
+                sb.append("N/A").append("\n");
+            }
+
+        }
+
+        String result = sb.toString();
+        return result;
+
+    }
+
 
 
 
