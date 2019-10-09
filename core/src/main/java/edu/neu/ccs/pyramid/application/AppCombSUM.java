@@ -389,12 +389,18 @@ public class AppCombSUM {
         Map<String,String> groundTruthCalib = getGroundTruth(config,calibFolder);
         Map<String,Pair<MultiLabel,Double>> calibMap = getEnsemblePrediction(config,calibFolder);
         IsotonicRegression isotonicRegression = null;
-        if(trainingTarget.equals("f1")){
-            isotonicRegression = trainIsoRegressionForF1(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
+        switch (trainingTarget){
+            case "f1":
+                isotonicRegression = trainIsoRegressionForF1(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
+                break;
+            case "accuracy":
+                isotonicRegression = trainIsoRegressionForAccuracy(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
+                break;
+            default:
+                throw new IllegalArgumentException("illegal argument for calibrate.isotonic.target");
+
         }
-        if(trainingTarget.equals("accuracy")){
-            isotonicRegression = trainIsoRegressionForAccuracy(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
-        }
+
         Serialization.serialize(isotonicRegression, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
     }
 
@@ -414,15 +420,19 @@ public class AppCombSUM {
         String ensembleName = config.getString("ensembleModelName");
         String testFolder = config.getString("testFolder");
         List<Pair<Double,Double>> testList;
-        if(config.getString("calibrate.isotonic.target").equals("f1")){
-            testList = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
-            Displayer.displayCalibrationForF1Result(testList.stream());
 
-        }
+        switch (config.getString("calibrate.isotonic.target")){
+            case "f1":
+                testList = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+                logger.info(Displayer.displayCalibrationForF1Result(testList.stream()));
+                break;
+            case "accuracy":
+                testList = ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+                logger.info(Displayer.displayCalibrationResult(testList.stream()));
+                break;
+            default:
+                throw new IllegalArgumentException("illegal argument for calibrate.isotonic.target");
 
-        if(config.getString("calibrate.isotonic.target").equals("accuracy")){
-            testList = ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
-            Displayer.displayCalibrationResult(testList.stream());
         }
 
         double threshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
