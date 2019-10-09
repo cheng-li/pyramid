@@ -607,7 +607,7 @@ public class DataSetUtil {
                 double value = element.get();
                 dataSet.setFeatureValue(dataIndex,j,value);
             }
-            dataSet.setLabels(dataIndex,dataSet1.getMultiLabels()[i]);
+            dataSet.setLabels(dataIndex,dataSet1.getMultiLabels()[i].copy());
             dataIndex+=1;
         }
 
@@ -618,7 +618,7 @@ public class DataSetUtil {
                 double value = element.get();
                 dataSet.setFeatureValue(dataIndex,j,value);
             }
-            dataSet.setLabels(dataIndex,dataSet2.getMultiLabels()[i]);
+            dataSet.setLabels(dataIndex,dataSet2.getMultiLabels()[i].copy());
             dataIndex+=1;
         }
 
@@ -695,7 +695,7 @@ public class DataSetUtil {
                     double value = element.get();
                     dataSet.setFeatureValue(dataIndex,j,value);
                 }
-                dataSet.setLabels(dataIndex,ds.getMultiLabels()[i]);
+                dataSet.setLabels(dataIndex,ds.getMultiLabels()[i].copy());
                 idTranslator.addData(dataIndex,ds.getIdTranslator().toExtId(i));
                 dataIndex+=1;
             }
@@ -1475,6 +1475,16 @@ public class DataSetUtil {
         }
 
         //todo deal with label translator
+    }
+
+
+
+    public static void printStats(MultiLabelClfDataSet dataSet){
+        System.out.println("number of instances = "+dataSet.getNumDataPoints());
+        System.out.println("number of features = "+dataSet.getNumFeatures());
+        System.out.println("number of labels = "+dataSet.getNumClasses());
+        System.out.println("number of label combinations = "+gatherMultiLabels(dataSet).size());
+        System.out.println("cardinality = "+IntStream.range(0,dataSet.getNumDataPoints()).mapToDouble(i->dataSet.getMultiLabels()[i].getNumMatchedLabels()).average().getAsDouble());
     }
 
     public static void zeroOutColumn(DataSet dataSet, int columnIndex){

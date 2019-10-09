@@ -36,15 +36,7 @@ import java.util.stream.IntStream;
 public class CBMEN {
     private static boolean VERBOSE = false;
 
-    public static void main(String[] args) throws Exception {
-
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Please specify a properties file.");
-        }
-
-        Config config = new Config(args[0]);
-
-        System.out.println(config);
+    public static void main(Config config) throws Exception{
 
         VERBOSE = config.getBoolean("output.verbose");
 
@@ -159,7 +151,17 @@ public class CBMEN {
             test(config);
             System.out.println("============================================================");
         }
+    }
 
+    public static void main(String[] args) throws Exception {
+
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Please specify a properties file.");
+        }
+
+        Config config = new Config(args[0]);
+        System.out.println(config);
+        main(config);
     }
 
 
@@ -335,7 +337,10 @@ public class CBMEN {
         String output = config.getString("output.dir");
         AccPredictor accPredictor = new AccPredictor(cbm);
         accPredictor.setComponentContributionThreshold(config.getDouble("predict.piThreshold"));
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         MultiLabel[] predictions = accPredictor.predict(dataSet);
+        System.out.println("time spent on prediction = "+stopWatch);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
         System.out.println(name+" performance with the instance set accuracy optimal predictor");
         System.out.println(mlMeasures);
@@ -376,7 +381,10 @@ public class CBMEN {
         List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(new File(output, "support"));
         pluginF1.setSupport(support);
         pluginF1.setPiThreshold(config.getDouble("predict.piThreshold"));
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         MultiLabel[] predictions = pluginF1.predict(dataSet);
+        System.out.println("time spent on prediction = "+stopWatch);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
         System.out.println(name+" performance with the instance F1 optimal predictor");
         System.out.println(mlMeasures);
@@ -415,7 +423,10 @@ public class CBMEN {
         String output = config.getString("output.dir");
         MarginalPredictor marginalPredictor = new MarginalPredictor(cbm);
         marginalPredictor.setPiThreshold(config.getDouble("predict.piThreshold"));
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         MultiLabel[] predictions = marginalPredictor.predict(dataSet);
+        System.out.println("time spent on prediction = "+stopWatch);
         MLMeasures mlMeasures = new MLMeasures(dataSet.getNumClasses(),dataSet.getMultiLabels(),predictions);
         System.out.println(name+" performance with the instance Hamming loss optimal predictor");
         System.out.println(mlMeasures);

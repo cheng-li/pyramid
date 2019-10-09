@@ -11,12 +11,14 @@ import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.Vectors;
 import org.apache.mahout.math.Vector;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class CalibrationDataGenerator {
+public class CalibrationDataGenerator implements Serializable {
+    private static final long serialVersionUID = 1L;
     private LabelCalibrator labelCalibrator;
     private PredictionFeatureExtractor predictionFeatureExtractor;
 

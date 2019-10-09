@@ -19,7 +19,7 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
     private int scoreIndex;
     private int cardIndex;
 
-    public VectorCardIsoSetCalibrator(RegDataSet regDataSet, int scoreIndex, int cardIndex) {
+    public VectorCardIsoSetCalibrator(RegDataSet regDataSet, int scoreIndex, int cardIndex, boolean interpolate) {
         this.scoreIndex = scoreIndex;
         this.cardIndex = cardIndex;
         this.calibrations = new HashMap<>();
@@ -33,7 +33,7 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
                     .boxed().filter(i->((int)regDataSet.getRow(i).get(cardIndex))==cardinality)
                     //todo deal with regression labels
                     .map(i->new Pair<>(regDataSet.getRow(i).get(scoreIndex),regDataSet.getLabels()[i]));
-            calibrations.put(cardinality, new IsotonicRegression(stream));
+            calibrations.put(cardinality, new IsotonicRegression(stream, interpolate));
         }
     }
 
@@ -46,13 +46,9 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
         double uncalibrated = vector.get(scoreIndex);
         int cardinality = (int)vector.get(cardIndex);
         //deal with unseen cardinality
-        List<Integer> cards = new ArrayList<>(calibrations.keySet());
-        Collections.sort(cards);
-        double[] diff = new double[cards.size()];
-        for (int i=0;i<cards.size();i++){
-            diff[i] = Math.abs(cardinality-cards.get(i));
+        if (!calibrations.containsKey(cardinality)){
+            return 0;
         }
-        int closest = cards.get(ArgMin.argMin(diff));
-        return calibrations.get(closest).predict(uncalibrated);
+        return calibrations.get(cardinality).predict(uncalibrated);
     }
 }

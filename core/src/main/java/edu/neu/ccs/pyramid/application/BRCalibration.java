@@ -102,7 +102,7 @@ public class BRCalibration {
         LabelCalibrator labelCalibrator = null;
         switch (config.getString("labelCalibrator")){
             case "isotonic":
-                labelCalibrator = new IsoLabelCalibrator(classProbEstimator, labelCalData);
+                labelCalibrator = new IsoLabelCalibrator(classProbEstimator, labelCalData, false);
                 break;
             case "none":
                 labelCalibrator = new IdentityLabelCalibrator();
@@ -168,19 +168,18 @@ public class BRCalibration {
 
         switch (config.getString("setCalibrator")){
             case "cardinality_isotonic":
-                setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 2);
+                setCalibrator = new VectorCardIsoSetCalibrator(calibratorTrainData, 0, 2, false);
                 break;
             case "reranker":
                 RerankerTrainer rerankerTrainer = RerankerTrainer.newBuilder()
                         .numCandidates(config.getInt("numCandidates"))
-                        .monotonic(config.getBoolean("monotonic"))
                         .numLeaves(config.getInt("numLeaves"))
-                        .strongMonotonicity(false)
+                        .monotonicityType("weak")
                         .build();
-                setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,classProbEstimator,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet,0.001);
+                setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,classProbEstimator,predictionFeatureExtractor,labelCalibrator, caliValidData.regDataSet);
                 break;
             case "isotonic":
-                setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0);
+                setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0, false);
                 break;
             case "none":
                 setCalibrator = new VectorIdentityCalibrator(0);
@@ -211,7 +210,7 @@ public class BRCalibration {
                 classifier = new IndependentPredictor(classProbEstimator,labelCalibrator);
                 break;
             case "support":
-                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(classProbEstimator, labelCalibrator, support);
+                classifier = new edu.neu.ccs.pyramid.multilabel_classification.predictor.SupportPredictor(classProbEstimator, labelCalibrator, setCalibrator, predictionFeatureExtractor,support);
                 break;
 
             case "reranker":

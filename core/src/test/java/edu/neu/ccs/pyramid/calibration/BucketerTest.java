@@ -36,7 +36,7 @@ public class BucketerTest {
 
         Bucketer.Result result  = Bucketer.groupWithEqualSize(x,y,1000);
         System.out.println(result);
-        IsotonicRegression isotonicRegression = new IsotonicRegression(x,y);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(x,y,false);
         double[] prediction = Arrays.stream(result.averageX).map(isotonicRegression::predict).toArray();
         System.out.println("prediction");
         System.out.println(Arrays.toString(prediction));

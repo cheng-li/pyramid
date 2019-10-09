@@ -71,10 +71,6 @@ public class AppCombSUM {
 
         if (config.getBoolean("test")){
             report(config,config.getString("testFolder"));
-            String ensembleName = config.getString("ensembleModelName");
-            String testFolder = config.getString("testFolder");
-            logger.info(Displayer.displayCalibrationForF1Result(ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString()).stream()));
-
             testAutomation(config,logger);
         }
 
@@ -110,7 +106,7 @@ public class AppCombSUM {
 
         }
 
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers,true);
 
         return isotonicRegression;
 
@@ -136,7 +132,7 @@ public class AppCombSUM {
 
         }
 
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
+        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers,true);
 
         return isotonicRegression;
 

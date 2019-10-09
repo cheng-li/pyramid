@@ -363,5 +363,16 @@ public class MathUtil {
         return res;
     }
 
+    public static double boundBy(double value, double lowerBound, double upperBound){
+        if (value<lowerBound){
+            return lowerBound;
+        }
+
+        if (value>upperBound){
+            return upperBound;
+        }
+
+        return value;
+    }
 
 }
