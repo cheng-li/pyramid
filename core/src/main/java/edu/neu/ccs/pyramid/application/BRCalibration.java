@@ -104,7 +104,7 @@ public class BRCalibration {
             case "isotonic":
                 labelCalibrator = new IsoLabelCalibrator(classProbEstimator, labelCalData, false);
                 break;
-            case "none":
+            case "identity":
                 labelCalibrator = new IdentityLabelCalibrator();
                 break;
         }
@@ -156,10 +156,11 @@ public class BRCalibration {
         PredictionFeatureExtractor predictionFeatureExtractor = new CombinedPredictionFeatureExtractor(extractors);
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
-        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,classProbEstimator,config.getInt("numCandidates"));
+        CalibrationDataGenerator.TrainData caliTrainingData;
+        CalibrationDataGenerator.TrainData caliValidData;
 
-        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,classProbEstimator,config.getInt("numCandidates"));
-
+        caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"));
+        caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"));
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
         double[] weights = caliTrainingData.instanceWeights;
@@ -181,8 +182,11 @@ public class BRCalibration {
             case "isotonic":
                 setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0, false);
                 break;
-            case "none":
+            case "identity":
                 setCalibrator = new VectorIdentityCalibrator(0);
+                break;
+            case "zero":
+                setCalibrator = new ZeroCalibrator();
                 break;
             default:
                 throw new IllegalArgumentException("illegal setCalibrator");
@@ -232,7 +236,7 @@ public class BRCalibration {
             logger.info("calibration performance on "+config.getString("input.calibrationFolder")+ " set");
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, cal.getRow(i),predictions[i],cal.getMultiLabels()[i],config.getString("calibrate.target")))
                     .collect(Collectors.toList());
 
             eval(instances, setCalibrator, logger);
@@ -245,7 +249,7 @@ public class BRCalibration {
             logger.info("calibration performance on "+ config.getString("input.validFolder")+" set");
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i],config.getString("calibrate.target")))
                     .collect(Collectors.toList());
 
             eval(instances, setCalibrator, logger);
