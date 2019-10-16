@@ -318,11 +318,9 @@ public class AppCombSUM {
 
     private static Map<String,String> getGroundTruth(Config config, String folderName) throws Exception{
         List<String> modelPaths = config.getStrings("modelPaths");
-        String path = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+folderName;
+        String reportPath = Paths.get(modelPaths.get(0),"predictions",folderName+"_reports","report.csv").toString();
 
-        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(path, DataSetType.ML_CLF_SPARSE,true);
-
-        Map<String,String> groundTruth= ReportUtils.getIDGroundTruth(dataSet);
+        Map<String,String> groundTruth= ReportUtils.getIDGroundTruth(reportPath);
         return groundTruth;
     }
 

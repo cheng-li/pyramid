@@ -158,6 +158,19 @@ public class ReportUtils {
 
     }
 
+    public static Map<String,String> getIDGroundTruth(String ReportPath)throws Exception{
+
+        List<String> lines = FileUtils.readLines(new File(ReportPath));
+        List<String> filteredLines = lines.stream().filter(line->line.split("\t")[2].equals("set")).collect(Collectors.toList());
+        Map<String,String> map = new HashMap<>();
+        for(int i = 0; i < filteredLines.size(); i++){
+            String[] line = filteredLines.get(i).split("\t");
+            map.put(line[0],line[5]);
+        }
+        return map;
+
+    }
+
     public static Map<String,Double> getIDConfidence(String reportFile)throws Exception{
 
         List<String> lines = FileUtils.readLines(new File(reportFile));
