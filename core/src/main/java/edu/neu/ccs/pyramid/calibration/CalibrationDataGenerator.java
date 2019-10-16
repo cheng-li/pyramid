@@ -122,7 +122,7 @@ public class CalibrationDataGenerator implements Serializable {
                 calibrationInstance.correctness = FMeasure.f1(predictionCandidate.multiLabel,groundtruth);
                 break;
             default:
-                throw new IllegalArgumentException("illegal calibrate target");
+                throw new IllegalArgumentException("illegal calibrate.target");
         }
 
         return calibrationInstance;

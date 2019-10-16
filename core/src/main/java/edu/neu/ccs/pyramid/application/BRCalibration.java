@@ -239,7 +239,7 @@ public class BRCalibration {
                     .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, cal.getRow(i),predictions[i],cal.getMultiLabels()[i],config.getString("calibrate.target")))
                     .collect(Collectors.toList());
 
-            eval(instances, setCalibrator, logger);
+            eval(instances, setCalibrator, logger,config.getString("calibrate.target"));
         }
 
         logger.info("classification performance on "+config.getString("input.validFolder")+" set");
@@ -252,7 +252,7 @@ public class BRCalibration {
                     .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i],config.getString("calibrate.target")))
                     .collect(Collectors.toList());
 
-            eval(instances, setCalibrator, logger);
+            eval(instances, setCalibrator, logger,config.getString("calibrate.target"));
 
         }
 
@@ -280,7 +280,7 @@ public class BRCalibration {
     }
 
 
-    public static BRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger){
+    public static BRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger,String calibrateTarget){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
@@ -289,7 +289,18 @@ public class BRCalibration {
         logger.info("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
         logger.info("sharpness="+sharpness);
         logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
-        logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+        switch (calibrateTarget){
+            case "accuracy":
+                logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+                break;
+            case "f1":
+                logger.info(Displayer.displayCalibrationForF1Result(generateStream(predictions,calibrator)));
+                break;
+            default:
+                throw new IllegalArgumentException("illegal calibrate.target");
+
+        }
+
 
         BRCalibration.CaliRes caliRes = new BRCalibration.CaliRes();
         caliRes.mse = mse;

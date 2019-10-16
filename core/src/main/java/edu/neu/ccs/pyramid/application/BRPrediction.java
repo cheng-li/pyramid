@@ -148,10 +148,10 @@ public class BRPrediction {
             logger.info("calibration performance on dataset " + testDataFile.getName());
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, test.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, test.getRow(i), predictions[i], test.getMultiLabels()[i]))
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, test.getRow(i), predictions[i], test.getMultiLabels()[i],config.getString("calibrate.target")))
                     .collect(Collectors.toList());
 
-            BRCalibration.eval(instances, setCalibrator, logger);
+            BRCalibration.eval(instances, setCalibrator, logger,config.getString("calibrate.target"));
 
         }
 
