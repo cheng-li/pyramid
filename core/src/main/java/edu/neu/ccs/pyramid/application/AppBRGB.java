@@ -171,6 +171,7 @@ public class AppBRGB {
         Config.copy(config,calConfig,"predict.maxSize");
         calConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         calConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
+        Config.copy(config, calConfig,"calibrate.target");
         Config.copy(config, calConfig,"output.modelFolder");
         Config.copy(config, calConfig, "threshold.targetValue");
         Config.copy(config, calConfig, "threshold.targetMetric");
@@ -201,6 +202,7 @@ public class AppBRGB {
         Config.copy(config,predictConfig,"predict.maxSize");
         predictConfig.setString("labelCalibrator",config.getString("calibrate.labelCalibrator"));
         predictConfig.setString("setCalibrator",config.getString("calibrate.setCalibrator"));
+        Config.copy(config,predictConfig,"calibrate.target");
         Config.copy(config, predictConfig,"output.modelFolder");
         Config.copy(config, predictConfig, "threshold.targetValue");
         Config.copy(config, predictConfig, "threshold.targetMetric");

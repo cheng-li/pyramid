@@ -390,7 +390,7 @@ public class AppCombSUM {
             case "isotonic":
                 setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0, true);
                 break;
-            case "none":
+            case "identity":
                 setCalibrator = new VectorIdentityCalibrator(0);
                 break;
             case "zero":
