@@ -1,17 +1,10 @@
 package edu.neu.ccs.pyramid.multilabel_classification.cbm;
 
-import edu.neu.ccs.pyramid.classification.Classifier;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
-import edu.neu.ccs.pyramid.util.BernoulliDistribution;
 import edu.neu.ccs.pyramid.util.MathUtil;
-import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution;
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.Vector;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Created by Rainicy on 11/27/15.
@@ -31,15 +24,15 @@ public class CBMPredictor {
 
     /**
      * p[c|x]
-     * cache for cluster probability, format:logisticProb[numClusters]
+     * cache for cluster probability
      */
-    private double[] logisticProb;
+    private double[] pi;
 
     /**
      * logP[c|x]
-     * cache for cluster log probability, format:logisticLgProb[numClusters]
+     * cache for cluster log probability
      */
-    private double[] logisticLogProb;
+    private double[] logPi;
 
     /**
      * log P[y|x, c]
@@ -70,13 +63,13 @@ public class CBMPredictor {
     public CBMPredictor(BMDistribution bmDistribution) {
         this.numClusters = bmDistribution.numComponents;
         this.numLabels = bmDistribution.numLabels;
-        this.logisticProb = new double[numClusters];
-        this.logisticLogProb = bmDistribution.logProportions;
+        this.pi = new double[numClusters];
+        this.logPi = bmDistribution.logProportions;
         this.probs = new double[numClusters][numLabels][2];
         this.logProbs = new double[numClusters][numLabels][2];
 
         for (int k=0; k<numClusters; k++) {
-            this.logisticProb[k] = Math.exp(this.logisticLogProb[k]);
+            this.pi[k] = Math.exp(this.logPi[k]);
             for (int l = 0; l < numLabels; l++) {
                 logProbs[k][l] = bmDistribution.logClassProbs[k][l];
                 for (int i=0; i<2; i++) {
@@ -86,48 +79,7 @@ public class CBMPredictor {
         }
     }
 
-    // todo fix
-//    public MultiLabel predictByGreedy() {
-//        Vector predVector = new DenseVector(numLabels);
-//        double prevLogProb;
-//        if (allowEmpty) {
-//            prevLogProb = logProbYnGivenXnLogisticProb(predVector);
-//        } else {
-//            prevLogProb = Double.NEGATIVE_INFINITY;
-//        }
-//
-//        Set<Integer> labelSet = IntStream.range(0, numLabels).boxed().collect(Collectors.toSet());
-//        while (!labelSet.isEmpty()) {
-//            double curLogProb = Double.NEGATIVE_INFINITY;
-//            int curLebel=-1;
-//            // find the maximum one
-//            for (int k : labelSet) {
-//                Vector curVector = new DenseVector((DenseVector) predVector, false);
-//                curVector.set(k, 1.0);
-//                double logProb = logProbYnGivenXnLogisticProb(curVector);
-//                if (logProb > curLogProb) {
-//                    curLebel = k;
-//                    curLogProb = logProb;
-//                }
-//            }
-//
-//            if (curLogProb > prevLogProb) {
-//                predVector.set(curLebel, 1.0);
-//                prevLogProb = curLogProb;
-//                labelSet.remove(curLebel);
-//            } else {
-//                break;
-//            }
-//        }
-//
-//        MultiLabel predLabel = new MultiLabel();
-//        for (int l=0; l<numLabels; l++) {
-//            if (predVector.get(l) == 1.0) {
-//                predLabel.addLabel(l);
-//            }
-//        }
-//        return predLabel;
-//    }
+
 
     public MultiLabel predictByDynamic() {
         // initialization
@@ -145,13 +97,13 @@ public class CBMPredictor {
         // 2) save condition for sum_{r!=k} (pi^r * D^r)
         double[] sumPiD = new double[numClusters];
         for (int k=0; k<numClusters; k++) {
-            cond1[k] = maxClusterProb[k] - 1.0/logisticProb[k] + 1;
+            cond1[k] = maxClusterProb[k] - 1.0/ pi[k] + 1;
             double sum = 0.0;
             for (int r=0; r<numClusters; r++) {
                 if (r == k) {
                     continue;
                 }
-                sum += logisticProb[r] * maxClusterProb[r];
+                sum += pi[r] * maxClusterProb[r];
             }
             sumPiD[k] = sum;
         }
@@ -221,15 +173,73 @@ public class CBMPredictor {
     }
 
 
+    private double computeThreshold(double[] componentProbs){
+        double sum = 0;
+        for (int k=0;k<numClusters;k++){
+            sum += pi[k]*componentProbs[k];
+        }
+        return sum;
+    }
+
+    public MultiLabel predictByDynamic2() {
+        // initialization
+        DynamicProgramming[] DPs = new DynamicProgramming[numClusters];
+        double[] minClusterProb = new double[numClusters];
+        for (int k=0; k<numClusters; k++) {
+            DPs[k]=new DynamicProgramming(probs[k], logProbs[k]);
+            minClusterProb[k] = Double.POSITIVE_INFINITY;
+        }
+
+
+        double maxLogProb = Double.NEGATIVE_INFINITY;
+        MultiLabel bestMultiLabel = new MultiLabel();
+
+        int maxIter = 10;
+
+        for (int iter=0;iter<maxIter;iter++) {
+            for (int k=0;k<numClusters;k++) {
+                DynamicProgramming dp = DPs[k];
+                double prob = dp.nextHighestProb();
+                MultiLabel multiLabel = dp.nextHighestVector();
+
+                minClusterProb[k] = prob;
+
+                double threshold = computeThreshold(minClusterProb);
+
+                boolean isCandidateValid = true;
+                if ((multiLabel.getNumMatchedLabels()==0) && !allowEmpty){
+                    isCandidateValid=false;
+                }
+
+                if (isCandidateValid){
+                    double logProb = logProbYnGivenXnLogisticProb(multiLabel);
+                    if (logProb >= maxLogProb) {
+                        bestMultiLabel = multiLabel;
+                        maxLogProb = logProb;
+                    }
+                }
+
+                //stop condition
+
+                if (Math.exp(maxLogProb)>=threshold){
+                    return bestMultiLabel;
+                }
+            }
+        }
+
+        return bestMultiLabel;
+    }
+
+
 
     private boolean checkStop(double q, double c1, double maxLogProb, double sumPiDk, int k) {
         if (q <= c1) {
             return true;
         }
-        if (q * logisticProb[k] <= Math.exp(maxLogProb) / numClusters) {
+        if (q * pi[k] <= Math.exp(maxLogProb) / numClusters) {
             return true;
         }
-        if (logisticProb[k] * q + sumPiDk <= Math.exp(maxLogProb)) {
+        if (pi[k] * q + sumPiDk <= Math.exp(maxLogProb)) {
             return true;
         }
 
@@ -287,11 +297,11 @@ public class CBMPredictor {
     public MultiLabel predictByHardAssignment() {
         // find the max cluster
         int maxK = 0;
-        double maxPi = logisticLogProb[0];
-        for (int k=1; k<logisticLogProb.length; k++) {
-            if (maxPi < logisticLogProb[k]) {
+        double maxPi = logPi[0];
+        for (int k = 1; k< logPi.length; k++) {
+            if (maxPi < logPi[k]) {
                 maxK = k;
-                maxPi = logisticLogProb[k];
+                maxPi = logPi[k];
             }
         }
 
@@ -307,9 +317,9 @@ public class CBMPredictor {
 
     private double logProbYnGivenXnLogisticProb(MultiLabel Y) {
         double[] logPYnk = clusterConditionalLogProbArr(Y);
-        double[] sumLog = new double[logisticLogProb.length];
+        double[] sumLog = new double[logPi.length];
         for (int k=0; k<numClusters; k++) {
-            sumLog[k] = logisticLogProb[k] + logPYnk[k];
+            sumLog[k] = logPi[k] + logPYnk[k];
         }
 
         return MathUtil.logSumExp(sumLog);
