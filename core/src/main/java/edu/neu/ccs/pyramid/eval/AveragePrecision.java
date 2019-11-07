@@ -1,10 +1,7 @@
 package edu.neu.ccs.pyramid.eval;
 
 import edu.neu.ccs.pyramid.classification.Classifier;
-import edu.neu.ccs.pyramid.dataset.ClfDataSet;
-import edu.neu.ccs.pyramid.dataset.DataSet;
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.ArgSort;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -261,6 +258,19 @@ public class AveragePrecision {
         fn = label.size() - tp;
 
         return Precision.precision(tp,fp);
+    }
+
+    // average precision on a label; sort instances
+    private static double labelAveragePrecision(MultiLabelClassifier.ClassScoreEstimator classifier, MultiLabelClfDataSet dataSet, int labelIndex){
+        int numClassesInModel = classifier.getNumClasses();
+        if (labelIndex>=numClassesInModel){
+            return 0;
+        }
+
+        int[] binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(),labelIndex);
+        double[] scores = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i->classifier.predictClassScore(dataSet.getRow(i),labelIndex)).toArray();
+        return AveragePrecision.averagePrecision(binaryLabels, scores);
     }
 
 
