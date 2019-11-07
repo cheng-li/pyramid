@@ -81,7 +81,7 @@ public class CBMPredictor {
 
 
 
-    public MultiLabel predictByDynamic() {
+    public MultiLabel predictByDynamic2() {
         // initialization
         Map<Integer, DynamicProgramming> DPs = new HashMap<>();
         double[] maxClusterProb = new double[numClusters];
@@ -181,7 +181,7 @@ public class CBMPredictor {
         return sum;
     }
 
-    public MultiLabel predictByDynamic2() {
+    public MultiLabel predictByDynamic() {
         // initialization
         DynamicProgramming[] DPs = new DynamicProgramming[numClusters];
         double[] minClusterProb = new double[numClusters];
