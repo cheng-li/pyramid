@@ -261,7 +261,7 @@ public class AveragePrecision {
     }
 
     // average precision on a label; sort instances
-    private static double labelAveragePrecision(MultiLabelClassifier.ClassScoreEstimator classifier, MultiLabelClfDataSet dataSet, int labelIndex){
+    public static double labelAveragePrecision(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet, int labelIndex){
         int numClassesInModel = classifier.getNumClasses();
         if (labelIndex>=numClassesInModel){
             return 0;
@@ -269,7 +269,7 @@ public class AveragePrecision {
 
         int[] binaryLabels = DataSetUtil.toBinaryLabels(dataSet.getMultiLabels(),labelIndex);
         double[] scores = IntStream.range(0, dataSet.getNumDataPoints()).parallel()
-                .mapToDouble(i->classifier.predictClassScore(dataSet.getRow(i),labelIndex)).toArray();
+                .mapToDouble(i->classifier.predictClassProb(dataSet.getRow(i),labelIndex)).toArray();
         return AveragePrecision.averagePrecision(binaryLabels, scores);
     }
 

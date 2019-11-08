@@ -140,6 +140,7 @@ public class BRPrediction {
 
         logger.info("classification performance on dataset "+testDataFile.getName());
         MLMeasures mlMeasures = new MLMeasures(test.getNumClasses(),test.getMultiLabels(), predictions);
+        mlMeasures.getMacroAverage().updateAveragePrecision(classProbEstimator,test);
         logger.info(mlMeasures.toString());
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);

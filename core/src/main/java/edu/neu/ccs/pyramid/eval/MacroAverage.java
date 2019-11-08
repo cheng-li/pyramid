@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.neu.ccs.pyramid.dataset.DataSet;
 import edu.neu.ccs.pyramid.dataset.LabelTranslator;
+import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
+import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.MathUtil;
 import edu.neu.ccs.pyramid.util.PrintUtil;
 import org.apache.mahout.math.Vector;
 
@@ -14,7 +17,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.stream.IntStream;
-
 /**
  * Based on
  * Koyejo, Oluwasanmi O., et al. "Consistent Multilabel Classification."
@@ -24,7 +26,7 @@ import java.util.stream.IntStream;
  */
 @JsonSerialize(using = MacroAverage.Serializer.class)
 public class MacroAverage implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     private int numClasses;
     private double f1;
     private double overlap;
@@ -32,6 +34,7 @@ public class MacroAverage implements Serializable {
     private double recall;
     private double hammingLoss;
     private double binaryAccuracy;
+    private double averagePrecision;
     // per class counts
     private int[] labelWiseTP;
     private int[] labelWiseTN;
@@ -44,6 +47,7 @@ public class MacroAverage implements Serializable {
     private double[] labelWiseF1;
     private double[] labelWiseHammingLoss;
     private double[] labelWiseAccuracy;
+    private double[] labelWiseAveragePrecision;
 
     private LabelTranslator labelTranslator;
 
@@ -63,6 +67,7 @@ public class MacroAverage implements Serializable {
         this.labelWiseF1 = new double[numClasses];
         this.labelWiseHammingLoss = new double[numClasses];
         this.labelWiseAccuracy = new double[numClasses];
+        this.labelWiseAveragePrecision = new double[numClasses];
 
 
         IntStream.range(0,numClasses).parallel().forEach(l->{
@@ -106,6 +111,12 @@ public class MacroAverage implements Serializable {
         binaryAccuracy = Arrays.stream(labelWiseAccuracy).average().getAsDouble();
 
         this.labelTranslator = LabelTranslator.newDefaultLabelTranslator(numClasses);
+    }
+
+    public void updateAveragePrecision(MultiLabelClassifier.ClassProbEstimator classifier, MultiLabelClfDataSet dataSet){
+        this.labelWiseAveragePrecision = new double[dataSet.getNumClasses()];
+        IntStream.range(0,dataSet.getNumClasses()).forEach(k->labelWiseAveragePrecision[k]=AveragePrecision.labelAveragePrecision(classifier,dataSet,k));
+        this.averagePrecision = MathUtil.arraySum(labelWiseAveragePrecision)/labelWiseAveragePrecision.length;
     }
 
     public void setLabelTranslator(LabelTranslator labelTranslator) {
@@ -228,6 +239,9 @@ public class MacroAverage implements Serializable {
                 jsonGenerator.writeNumberField("recall",macroAverage.labelWiseRecall[k]);
                 jsonGenerator.writeNumberField("f1",macroAverage.labelWiseF1[k]);
                 jsonGenerator.writeNumberField("accuracy",macroAverage.labelWiseAccuracy[k]);
+                if (macroAverage.labelWiseAveragePrecision!=null){
+                    jsonGenerator.writeNumberField("average precision",macroAverage.labelWiseAveragePrecision[k]);
+                }
                 jsonGenerator.writeEndObject();
             }
             jsonGenerator.writeEndArray();
