@@ -211,8 +211,9 @@ public class IsotonicRegression implements Regressor {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("IsotonicRegression{");
-        sb.append("locations=").append(Arrays.toString(locations));
-        sb.append(", values=").append(Arrays.toString(values));
+        for (int i=0;i<locations.length;i++){
+            sb.append(locations[i]).append(":").append(values[i]).append(", ");
+        }
         sb.append('}');
         return sb.toString();
     }

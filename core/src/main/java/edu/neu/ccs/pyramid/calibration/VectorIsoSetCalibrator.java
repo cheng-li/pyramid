@@ -41,4 +41,12 @@ public class VectorIsoSetCalibrator implements Serializable, VectorCalibrator {
     public IsotonicRegression getIsotonicRegression() {
         return isotonicRegression;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("VectorIsoSetCalibrator{");
+        sb.append("isotonicRegression=").append(isotonicRegression);
+        sb.append('}');
+        return sb.toString();
+    }
 }

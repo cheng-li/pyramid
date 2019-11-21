@@ -51,4 +51,15 @@ public class VectorCardIsoSetCalibrator implements Serializable, VectorCalibrato
         }
         return calibrations.get(cardinality).predict(uncalibrated);
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("VectorCardIsoSetCalibrator{");
+        for (int k:calibrations.keySet()){
+            sb.append("card "+k).append(":\n");
+            sb.append(calibrations.get(k)).append("\n");
+        }
+        sb.append('}');
+        return sb.toString();
+    }
 }
