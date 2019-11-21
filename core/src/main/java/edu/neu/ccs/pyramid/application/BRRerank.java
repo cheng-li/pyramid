@@ -98,11 +98,12 @@ public class BRRerank {
 
         PredictionFeatureExtractor predictionFeatureExtractor = new CombinedPredictionFeatureExtractor(extractors);
 
+        List<MultiLabel> support = DataSetUtil.gatherMultiLabels(train);
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
-        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,cbm,config.getInt("numTrainCandidates"),config.getString("calibrate.target"));
+        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,cbm,config.getInt("numTrainCandidates"),config.getString("calibrate.target"),support, 0);
 
-        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,cbm,config.getInt("numTrainCandidates"),config.getString("calibrate.target"));
+        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,cbm,config.getInt("numTrainCandidates"),config.getString("calibrate.target"),support,0);
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
         double[] weights = caliTrainingData.instanceWeights;

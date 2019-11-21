@@ -65,45 +65,21 @@ public class SupportPredictor implements PluginPredictor<MultiLabelClassifier.Cl
         return classifier;
     }
 
-
-    //todo make it better
-    // should dp be used here?
-    // should candidate number be a parameter?
     @Override
     public MultiLabel predict(Vector vector) {
         double[] uncali = classifier.predictClassProbs(vector);
         double[] marginals = labelCalibrator.calibratedClassProbs(uncali);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
+        for (MultiLabel candidate: support){
+            PredictionCandidate predictionCandidate = new PredictionCandidate();
+            predictionCandidate.x = vector;
+            predictionCandidate.labelProbs = marginals;
+            predictionCandidate.multiLabel = candidate;
 
-        Set<MultiLabel> supportSet = new HashSet<>(support);
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        for (int i=0;i<=50;i++){
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            if (supportSet.contains(candidate)){
-                PredictionCandidate predictionCandidate = new PredictionCandidate();
-                predictionCandidate.x = vector;
-                predictionCandidate.labelProbs = marginals;
-                predictionCandidate.multiLabel = candidate;
-
-                Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
-                double score = setCalibrator.calibrate(feature);
-                candidates.add(new Pair<>(candidate,score));
-            }
+            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
+            double score = setCalibrator.calibrate(feature);
+            candidates.add(new Pair<>(candidate,score));
         }
-
-        if (candidates.isEmpty()){
-            for (MultiLabel candidate: support){
-                PredictionCandidate predictionCandidate = new PredictionCandidate();
-                predictionCandidate.x = vector;
-                predictionCandidate.labelProbs = marginals;
-                predictionCandidate.multiLabel = candidate;
-
-                Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
-                double score = setCalibrator.calibrate(feature);
-                candidates.add(new Pair<>(candidate,score));
-            }
-        }
-
 
 
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(Pair::getSecond);

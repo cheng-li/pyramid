@@ -90,6 +90,7 @@ public class BRCalibration {
 
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), dataSetType, true);
 
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
         MultiLabelClassifier.ClassProbEstimator classProbEstimator = (MultiLabelClassifier.ClassProbEstimator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
 
         List<Integer> labelCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==0).boxed().collect(Collectors.toList());
@@ -159,8 +160,8 @@ public class BRCalibration {
         CalibrationDataGenerator.TrainData caliTrainingData;
         CalibrationDataGenerator.TrainData caliValidData;
 
-        caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"));
-        caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"));
+        caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"),support, 10);
+        caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"), support, 10);
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
         double[] weights = caliTrainingData.instanceWeights;
@@ -204,7 +205,7 @@ public class BRCalibration {
 
 
 
-        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
+
 
 
 
