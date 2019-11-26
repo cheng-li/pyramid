@@ -155,6 +155,9 @@ public class CalibrationDataGenerator implements Serializable {
         predictionCandidate.x = x;
         predictionCandidate.multiLabel = prediction;
         predictionCandidate.labelProbs = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(predictionCandidate.labelProbs);
+        List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(50);
+        predictionCandidate.sparseJoint = sparseJoint;
         return createInstance(groundtruth,predictionCandidate,calibrateTarget);
     }
 

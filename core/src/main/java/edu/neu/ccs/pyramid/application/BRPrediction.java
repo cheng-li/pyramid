@@ -12,6 +12,7 @@ import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.eval.Precision;
 import edu.neu.ccs.pyramid.eval.Recall;
 import edu.neu.ccs.pyramid.multilabel_classification.BRInspector;
+import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelPredictionAnalysis;
 import edu.neu.ccs.pyramid.multilabel_classification.predictor.IndependentPredictor;
@@ -369,6 +370,9 @@ public class BRPrediction {
         predictedCandidate.multiLabel = predicted;
         predictedCandidate.labelProbs = calibratedClassProbs;
         predictedCandidate.x = dataSet.getRow(dataPointIndex);
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(calibratedClassProbs);
+        List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(50);
+        predictedCandidate.sparseJoint = sparseJoint;
         Vector feature = predictionFeatureExtractor.extractFeatures(predictedCandidate);
         double probability = setCalibrator.calibrate(feature);
 

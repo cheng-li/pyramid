@@ -70,12 +70,14 @@ public class SupportPredictor implements PluginPredictor<MultiLabelClassifier.Cl
         double[] uncali = classifier.predictClassProbs(vector);
         double[] marginals = labelCalibrator.calibratedClassProbs(uncali);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(50);
         for (MultiLabel candidate: support){
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.x = vector;
             predictionCandidate.labelProbs = marginals;
             predictionCandidate.multiLabel = candidate;
-
+            predictionCandidate.sparseJoint = sparseJoint;
             Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
             double score = setCalibrator.calibrate(feature);
             candidates.add(new Pair<>(candidate,score));
