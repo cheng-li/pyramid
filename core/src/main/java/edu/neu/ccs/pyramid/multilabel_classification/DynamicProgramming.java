@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.multilabel_classification;
 
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -114,6 +115,15 @@ public class DynamicProgramming {
 
     public PriorityQueue<Candidate> getQueue() {
         return queue;
+    }
+
+    public List<Pair<MultiLabel,Double>> topK(int k){
+        List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
+        for (int i=0;i<k;i++){
+            Candidate candidate = nextHighest();
+            candidates.add(new Pair<>(candidate.multiLabel,candidate.probability));
+        }
+        return candidates;
     }
 
     /**

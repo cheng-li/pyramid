@@ -10,6 +10,7 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
+import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Vectors;
 import org.apache.mahout.math.Vector;
 
@@ -89,30 +90,28 @@ public class CalibrationDataGenerator implements Serializable {
                                             List<MultiLabel> support, int numSupportCandidates){
         double[] marginals = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
         List<CalibrationInstance> calibrationInstances = new ArrayList<>();
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<Pair<MultiLabel,Double>> topK = dynamicProgramming.topK(numCandidates);
 
         // add a few random candidates from support
         List<MultiLabel> supportList = new ArrayList<>(support);
         Collections.shuffle(supportList,new Random(queryId));
+        List<MultiLabel> candidates = new ArrayList<>();
         for (int i=0;i<numSupportCandidates;i++){
-            MultiLabel multiLabel = supportList.get(i);
-            PredictionCandidate predictionCandidate = new PredictionCandidate();
-            predictionCandidate.multiLabel = multiLabel;
-            predictionCandidate.labelProbs = marginals;
-            predictionCandidate.x = x;
-            CalibrationInstance calibrationInstance = createInstance(groundTruth,predictionCandidate,calibrateTarget);
-            calibrationInstance.weight=1;
-            calibrationInstance.queryIndex = queryId;
-            calibrationInstances.add(calibrationInstance);
+            candidates.add(supportList.get(i));
         }
 
         // add top K from DP
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        for (int i=0;i<numCandidates;i++){
-            MultiLabel multiLabel = dynamicProgramming.nextHighestVector();
+        for (Pair<MultiLabel,Double> pair: topK){
+            candidates.add(pair.getFirst());
+        }
+
+        for (MultiLabel multiLabel: candidates){
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.multiLabel = multiLabel;
             predictionCandidate.labelProbs = marginals;
             predictionCandidate.x = x;
+            predictionCandidate.sparseJoint = topK;
             CalibrationInstance calibrationInstance = createInstance(groundTruth,predictionCandidate,calibrateTarget);
             calibrationInstance.weight=1;
             calibrationInstance.queryIndex = queryId;

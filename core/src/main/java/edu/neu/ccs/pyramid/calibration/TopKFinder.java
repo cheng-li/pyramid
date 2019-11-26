@@ -22,24 +22,7 @@ public class TopKFinder {
     public static List<Pair<MultiLabel,Double>> topK(Vector x, MultiLabelClassifier.ClassProbEstimator classProbEstimator, LabelCalibrator labelCalibrator,
                                                      VectorCalibrator vectorCalibrator, PredictionFeatureExtractor predictionFeatureExtractor,
                                                      int top){
-        List<Pair<MultiLabel,Double>> list = new ArrayList<>();
-        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(x));
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-
-        for (int i=0;i<top;i++) {
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            PredictionCandidate predictionCandidate = new PredictionCandidate();
-            predictionCandidate.x = x;
-            predictionCandidate.labelProbs = marginals;
-            predictionCandidate.multiLabel = candidate;
-
-            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
-            double pro = vectorCalibrator.calibrate(feature);
-            list.add(new Pair<>(candidate,pro));
-        }
-
-        Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        return list.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        return topK(x, classProbEstimator, labelCalibrator, vectorCalibrator,predictionFeatureExtractor,0,Integer.MAX_VALUE,top);
     }
 
 
@@ -47,40 +30,40 @@ public class TopKFinder {
                                                      VectorCalibrator vectorCalibrator, PredictionFeatureExtractor predictionFeatureExtractor,
                                                      int minSetSize, int maxSetSize,
                                                      int top){
-        List<Pair<MultiLabel,Double>> list = new ArrayList<>();
-        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(x));
+        double[] uncalibratedMarginals = classProbEstimator.predictClassProbs(x);
+        double[] marginals = labelCalibrator.calibratedClassProbs(uncalibratedMarginals);
+
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        //todo better
+        List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(50);
 
-        List<MultiLabel> candidates = new ArrayList<>();
-        for (int i=0;i<top;i++) {
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-            if (candidate.getNumMatchedLabels()>=minSetSize&&candidate.getNumMatchedLabels()<=maxSetSize){
-                candidates.add(candidate);
-            }
-        }
+        List<MultiLabel> multiLabels = sparseJoint.stream().map(pair->pair.getFirst())
+                .filter(candidate->candidate.getNumMatchedLabels() >= minSetSize && candidate.getNumMatchedLabels() <= maxSetSize)
+                .collect(Collectors.toList());
+        List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
 
-        if (candidates.isEmpty()){
+        if (multiLabels.isEmpty()){
             int[] sorted = ArgSort.argSortDescending(marginals);
-            MultiLabel candidate = new MultiLabel();
+            MultiLabel multiLabel = new MultiLabel();
             for (int i=0;i<minSetSize;i++){
-                candidate.addLabel(sorted[i]);
+                multiLabel.addLabel(sorted[i]);
             }
-            candidates.add(candidate);
+            multiLabels.add(multiLabel);
         }
 
-        for (MultiLabel candidate: candidates){
+        for (MultiLabel candidate: multiLabels){
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.x = x;
             predictionCandidate.labelProbs = marginals;
             predictionCandidate.multiLabel = candidate;
-
+            predictionCandidate.sparseJoint = sparseJoint;
             Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
-            double pro = vectorCalibrator.calibrate(feature);
-            list.add(new Pair<>(candidate,pro));
+            double score = vectorCalibrator.calibrate(feature);
+            candidates.add(new Pair<>(candidate,score));
         }
 
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-        return list.stream().sorted(comparator.reversed()).collect(Collectors.toList());
+        return candidates.stream().sorted(comparator.reversed()).limit(top).collect(Collectors.toList());
     }
 
     public static List<Pair<MultiLabel,Double>> topKinSupport(Vector x, MultiLabelClassifier.ClassProbEstimator classProbEstimator, LabelCalibrator labelCalibrator,
@@ -88,6 +71,12 @@ public class TopKFinder {
                                                               List<MultiLabel> support,
                                                               int top){
         double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(x));
+
+
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        //todo better
+        List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(50);
+
         List<Pair<MultiLabel,Double>> list = new ArrayList<>();
 
         for (MultiLabel candidate: support){
@@ -95,6 +84,7 @@ public class TopKFinder {
             predictionCandidate.x = x;
             predictionCandidate.labelProbs = marginals;
             predictionCandidate.multiLabel = candidate;
+            predictionCandidate.sparseJoint = sparseJoint;
 
             Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
             double pro = vectorCalibrator.calibrate(feature);

@@ -158,7 +158,10 @@ public class AppBRGB {
         calConfig.setString("tuneThreshold",config.getString("tuneThreshold"));
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
-        calConfig.setString("brProb","true");
+        //todo
+//        calConfig.setString("brProb","true");
+        calConfig.setString("brProb",config.getString("calibrate.brProb"));
+        calConfig.setString("expectedF1",config.getString("calibrate.expectedF1"));
         calConfig.setString("card","true");
         calConfig.setString("encodeLabel","true");
         calConfig.setString("numCandidates",config.getString("calibrate.numCandidates"));

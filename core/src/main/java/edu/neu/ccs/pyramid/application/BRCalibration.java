@@ -116,7 +116,12 @@ public class BRCalibration {
         List<PredictionFeatureExtractor> extractors = new ArrayList<>();
 
         if (config.getBoolean("brProb")){
+            //todo order matters; the first one will be used by iso, card iso
             extractors.add(new BRProbFeatureExtractor());
+        }
+
+        if (config.getBoolean("expectedF1")){
+            extractors.add(new ExpectedF1FeatureExtractor());
         }
 
         if (config.getBoolean("setPrior")){

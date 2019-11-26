@@ -4,6 +4,7 @@ import edu.neu.ccs.pyramid.dataset.MultiLabel;
 import edu.neu.ccs.pyramid.eval.FMeasure;
 import edu.neu.ccs.pyramid.feature.Feature;
 import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
+import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -16,16 +17,13 @@ public class ExpectedF1FeatureExtractor implements PredictionFeatureExtractor {
     @Override
     public Vector extractFeatures(PredictionCandidate predictionCandidate) {
         MultiLabel prediction = predictionCandidate.multiLabel;
-        double[] calibratedLabelProbs = predictionCandidate.labelProbs;
         double expectation = 0;
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(calibratedLabelProbs);
-        for (int i=0;i<50;i++){
-            DynamicProgramming.Candidate candidate = dynamicProgramming.nextHighest();
-            MultiLabel multiLabel = candidate.getMultiLabel();
-            double prob = candidate.getProbability();
+        List<Pair<MultiLabel,Double>> sparseJoint = predictionCandidate.sparseJoint;
+        for (Pair<MultiLabel,Double> pair: sparseJoint){
+            MultiLabel multiLabel = pair.getFirst();
+            double prob = pair.getSecond();
             expectation += FMeasure.f1(prediction,multiLabel)*prob;
         }
-
         Vector vector = new DenseVector(1);
         vector.set(0,expectation);
         return vector;
