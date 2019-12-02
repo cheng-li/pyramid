@@ -162,6 +162,8 @@ public class AppBRGB {
 //        calConfig.setString("brProb","true");
         calConfig.setString("brProb",config.getString("calibrate.brProb"));
         calConfig.setString("expectedF1",config.getString("calibrate.expectedF1"));
+        calConfig.setString("expectedPrecision",config.getString("calibrate.expectedPrecision"));
+        calConfig.setString("expectedRecall",config.getString("calibrate.expectedRecall"));
         calConfig.setString("card","true");
         calConfig.setString("encodeLabel","true");
         calConfig.setString("numCandidates",config.getString("calibrate.numCandidates"));
