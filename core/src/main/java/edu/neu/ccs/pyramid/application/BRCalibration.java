@@ -124,6 +124,15 @@ public class BRCalibration {
             extractors.add(new ExpectedF1FeatureExtractor());
         }
 
+        if (config.getBoolean("expectedPrecision")){
+            extractors.add(new ExpectedPrecisionFeatureExtractor());
+        }
+
+        if (config.getBoolean("expectedRecall")){
+            extractors.add(new ExpectedRecallFeatureExtractor());
+        }
+
+
         if (config.getBoolean("setPrior")){
             extractors.add(new PriorFeatureExtractor(train));
         }
