@@ -169,6 +169,9 @@ public class AppBRLR {
         calConfig.setString("output.log",config.getString("output.log"));
         calConfig.setString("setPrior","true");
         calConfig.setString("brProb","true");
+        calConfig.setString("expectedF1","true");
+        calConfig.setString("expectedPrecision","true");
+        calConfig.setString("expectedRecall","true");
         calConfig.setString("card","true");
         calConfig.setString("encodeLabel","true");
         calConfig.setString("numCandidates",config.getString("calibrate.numCandidates"));
