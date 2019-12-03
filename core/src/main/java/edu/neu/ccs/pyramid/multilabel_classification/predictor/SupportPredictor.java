@@ -2,14 +2,13 @@ package edu.neu.ccs.pyramid.multilabel_classification.predictor;
 
 import edu.neu.ccs.pyramid.calibration.*;
 import edu.neu.ccs.pyramid.dataset.MultiLabel;
+import edu.neu.ccs.pyramid.multilabel_classification.DynamicProgramming;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.PluginPredictor;
 import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SupportPredictor implements PluginPredictor<MultiLabelClassifier.ClassProbEstimator> {
@@ -71,12 +70,14 @@ public class SupportPredictor implements PluginPredictor<MultiLabelClassifier.Cl
         double[] uncali = classifier.predictClassProbs(vector);
         double[] marginals = labelCalibrator.calibratedClassProbs(uncali);
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(50);
         for (MultiLabel candidate: support){
             PredictionCandidate predictionCandidate = new PredictionCandidate();
             predictionCandidate.x = vector;
             predictionCandidate.labelProbs = marginals;
             predictionCandidate.multiLabel = candidate;
-
+            predictionCandidate.sparseJoint = sparseJoint;
             Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
             double score = setCalibrator.calibrate(feature);
             candidates.add(new Pair<>(candidate,score));

@@ -1,19 +1,17 @@
 package edu.neu.ccs.pyramid.application;
 
-import edu.neu.ccs.pyramid.calibration.CTAT;
-import edu.neu.ccs.pyramid.calibration.CTFT;
+import edu.neu.ccs.pyramid.calibration.*;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.FMeasure;
 import edu.neu.ccs.pyramid.eval.Precision;
 import edu.neu.ccs.pyramid.eval.Recall;
-import edu.neu.ccs.pyramid.regression.IsotonicRegression;
-import edu.neu.ccs.pyramid.util.FileUtil;
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.ReportUtils;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
-
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -83,59 +81,52 @@ public class AppCombSUM {
     }
 
 
-//    private static IsotonicRegression trainIsoRegression(Map<String,Pair<MultiLabel,Double>> map,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
-//        List<String> modelPaths = config.getStrings("modelPaths");
-//        String calibFolder = config.getString("calibFolder");
-//        List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
-//        double[] locations = new double[docIds.size()];
-//        double[] numbers = new double[docIds.size()];
-//        for (int i = 0; i < docIds.size(); i++) {
-//            String docId = docIds.get(i);
-//            Pair<MultiLabel, Double> docInfo = map.get(docId);
-//
-//            MultiLabel pre = docInfo.getFirst();
-//            MultiLabel lab = new MultiLabel(groundTruth.get(docId),labelTranslator);
-//
-//            double truth = 0;
-//            if (pre.equals(lab)) {
-//                truth = 1;
-//            }
-//
-//            double confidence = map.get(docId).getSecond();
-//            locations[i] = confidence;
-//            numbers[i] = truth;
-//
-//        }
-//
-//        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers);
-//
-//        return isotonicRegression;
-//
-//    }
+    private static RegDataSet generateCalibratorTrainData(Map<String,Pair<MultiLabel,Double>> map, Config config, LabelTranslator labelTranslator, Map<String,String> groundTruth)throws Exception{
 
-    private static IsotonicRegression trainIsoRegression(Map<String,Pair<MultiLabel,Double>> map,Config config,LabelTranslator labelTranslator,Map<String,String> groundTruth)throws Exception {
+        RegDataSet regDataSet = RegDataSetBuilder.getBuilder().numDataPoints(groundTruth.size()).numFeatures(1).build();
         List<String> modelPaths = config.getStrings("modelPaths");
         String calibFolder = config.getString("calibFolder");
         List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",calibFolder+"_reports","report.csv").toString());
-        double[] locations = new double[docIds.size()];
-        double[] numbers = new double[docIds.size()];
-        for (int i = 0; i < docIds.size(); i++) {
-            String docId = docIds.get(i);
-            Pair<MultiLabel, Double> docInfo = map.get(docId);
 
+        for(int i = 0; i <docIds.size(); i++){
+
+            String docId = docIds.get(i);
+            double confidence = map.get(docId).getSecond();
+            regDataSet.setFeatureValue(i,0,confidence);
+
+            Pair<MultiLabel, Double> docInfo = map.get(docId);
             MultiLabel pre = docInfo.getFirst();
             MultiLabel lab = new MultiLabel(groundTruth.get(docId),labelTranslator);
 
-            double f1 = FMeasure.f1(pre,lab);
-            double confidence = map.get(docId).getSecond();
-            locations[i] = confidence;
-            numbers[i] = f1;
+            switch (config.getString("calibrate.target")){
+                case "f1":
+                    double f1 = FMeasure.f1(pre,lab);
+                    regDataSet.setLabel(i,f1);
+                    break;
+                case "accuracy":
+                    double truth = 0;
+                    if (pre.equals(lab)) {
+                        truth = 1;
+                    }
+                    regDataSet.setLabel(i,truth);
+                    break;
+                default:
+                    throw new IllegalArgumentException("illegal argument for calibrate.isotonic.target");
+
+            }
+
 
         }
 
-        IsotonicRegression isotonicRegression = new IsotonicRegression(locations, numbers, true);
+        return regDataSet;
 
-        return isotonicRegression;
+
+
+
+
+
+
+
 
     }
     
@@ -147,7 +138,7 @@ public class AppCombSUM {
 
 
 
-    private static void generateReport(Map<String,Pair<MultiLabel,Double>> map,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Integer>>> confideceRankLists,IsotonicRegression isotonicRegression)throws Exception{
+    private static void generateReport(Map<String,Pair<MultiLabel,Double>> map,Config config,String dataSetFolder,LabelTranslator labelTranslator,Map<String,String> groundTruth,List<Map<String,Pair<Double,Integer>>> confideceRankLists,VectorCalibrator setCalibrator)throws Exception{
         List<String> modelNames = config.getStrings("modelNames");
         List<String> modelPaths = config.getStrings("modelPaths");
         List<String> docIds = ReportUtils.getDocIds(Paths.get(modelPaths.get(0),"predictions",dataSetFolder+"_reports","report.csv").toString());
@@ -167,9 +158,12 @@ public class AppCombSUM {
         for (int i = 0; i < docIds.size(); i++) {
             String docId = docIds.get(i);
             Pair<MultiLabel,Double> docInfo = map.get(docId);
+//todo change 1 to feature number for reranker
+            Vector confidenceVector = new DenseVector(1);
+            confidenceVector.set(0,map.get(docId).getSecond());
 
             sb.append(docId).append("\t").append(docInfo.getFirst().toStringWithExtLabels(labelTranslator).replaceAll("\\[","").replaceAll("\\]","")).append("\t").append("set").append("\t")
-                    .append(isotonicRegression.predict(map.get(docId).getSecond())).append("\t");
+                    .append(setCalibrator.calibrate(confidenceVector)).append("\t");
 
 
             MultiLabel pre = docInfo.getFirst();
@@ -324,11 +318,9 @@ public class AppCombSUM {
 
     private static Map<String,String> getGroundTruth(Config config, String folderName) throws Exception{
         List<String> modelPaths = config.getStrings("modelPaths");
-        String path = modelPaths.get(0).split("model_predictions")[0]+"data_sets/"+folderName;
+        String reportPath = Paths.get(modelPaths.get(0),"predictions",folderName+"_reports","report.csv").toString();
 
-        MultiLabelClfDataSet dataSet = TRECFormat.loadMultiLabelClfDataSet(path, DataSetType.ML_CLF_SPARSE,true);
-
-        Map<String,String> groundTruth= ReportUtils.getIDGroundTruth(dataSet);
+        Map<String,String> groundTruth= ReportUtils.getIDGroundTruth(reportPath);
         return groundTruth;
     }
 
@@ -388,8 +380,28 @@ public class AppCombSUM {
         LabelTranslator newLabelTranslatorCalib = getLabelTranslatorEnsemble(config,calibFolder);
         Map<String,String> groundTruthCalib = getGroundTruth(config,calibFolder);
         Map<String,Pair<MultiLabel,Double>> calibMap = getEnsemblePrediction(config,calibFolder);
-        IsotonicRegression isotonicRegression = trainIsoRegression(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
-        Serialization.serialize(isotonicRegression, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
+
+        RegDataSet calibratorTrainData = generateCalibratorTrainData(calibMap,config,newLabelTranslatorCalib,groundTruthCalib);
+
+        VectorCalibrator setCalibrator = null;
+
+        switch (config.getString("calibrate.calibrator")){
+
+            case "isotonic":
+                setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0, true);
+                break;
+            case "identity":
+                setCalibrator = new VectorIdentityCalibrator(0);
+                break;
+            case "zero":
+                setCalibrator = new ZeroCalibrator();
+                break;
+
+            default:
+                throw new IllegalArgumentException("illegal setCalibrator");
+        }
+
+        Serialization.serialize(setCalibrator, Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
     }
 
 
@@ -398,8 +410,8 @@ public class AppCombSUM {
         LabelTranslator labelTranslatorEnsemble = getLabelTranslatorEnsemble(config,folderName);
         Map<String,String> groundTruth = getGroundTruth(config,folderName);
         List<Map<String,Pair<Double,Integer>>> confidenceRankLists = getConfidenceRankLists(config,folderName,map);
-        IsotonicRegression isotonicRegression = (IsotonicRegression)Serialization.deserialize(Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
-        generateReport(map,config,folderName,labelTranslatorEnsemble,groundTruth,confidenceRankLists,isotonicRegression);
+        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("output.folder"), "model_predictions", config.getString("ensembleModelName"), "models","set_calibrator"));
+        generateReport(map,config,folderName,labelTranslatorEnsemble,groundTruth,confidenceRankLists,setCalibrator);
     }
 
 
@@ -407,6 +419,22 @@ public class AppCombSUM {
         List<Pair<Double,Double>> testStream;
         String ensembleName = config.getString("ensembleModelName");
         String testFolder = config.getString("testFolder");
+        List<Pair<Double,Double>> testList;
+
+        switch (config.getString("calibrate.target")){
+            case "f1":
+                testList = ReportUtils.getConfidenceF1(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+                logger.info(Displayer.displayCalibrationForF1Result(testList.stream()));
+                break;
+            case "accuracy":
+                testList = ReportUtils.getConfidenceCorrectness(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"predictions",testFolder+"_reports","report.csv").toString());
+                logger.info(Displayer.displayCalibrationResult(testList.stream()));
+                break;
+            default:
+                throw new IllegalArgumentException("illegal argument for calibrate.isotonic.target");
+
+        }
+
         double threshold = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",
                 "threshold",config.getString("threshold.name")).toFile()));
         double confidenceThresholdClipped = Double.parseDouble(FileUtils.readFileToString(Paths.get(config.getString("output.folder"),"model_predictions",ensembleName,"models",

@@ -15,6 +15,7 @@ import edu.neu.ccs.pyramid.util.Pair;
 import org.apache.mahout.math.Vector;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Reranker implements MultiLabelClassifier, VectorCalibrator {
     private static final long serialVersionUID = 1L;
@@ -57,10 +58,14 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
 
     public double prob(Vector vector, MultiLabel multiLabel){
         double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
+        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+        List<Pair<MultiLabel,Double>> topK = dynamicProgramming.topK(numCandidate);
+
         PredictionCandidate predictionCandidate = new PredictionCandidate();
         predictionCandidate.x = vector;
         predictionCandidate.labelProbs = marginals;
         predictionCandidate.multiLabel = multiLabel;
+        predictionCandidate.sparseJoint = topK;
         Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
         double score = regressor.predict(feature);
         if (score>1){
@@ -75,19 +80,22 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
 
     @Override
      public MultiLabel predict(Vector vector) {
-        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
+        double[] uncalibratedMarginals = classProbEstimator.predictClassProbs(vector);
+        return predict(vector, uncalibratedMarginals);
+    }
+
+
+    public MultiLabel predict(Vector vector, double[] uncalibratedLabelScores) {
+        double[] marginals = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
 
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        List<MultiLabel> multiLabels = new ArrayList<>();
+        List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(numCandidate);
+
+        List<MultiLabel> multiLabels = sparseJoint.stream().map(pair->pair.getFirst())
+                .filter(candidate->candidate.getNumMatchedLabels() >= minPredictionSize && candidate.getNumMatchedLabels() <= maxPredictionSize)
+                .collect(Collectors.toList());
         List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
-        for (int i=0;i<numCandidate;i++) {
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
 
-            if (candidate.getNumMatchedLabels() >= minPredictionSize && candidate.getNumMatchedLabels() <= maxPredictionSize) {
-                multiLabels.add(candidate);
-            }
-
-        }
         if (multiLabels.isEmpty()){
             int[] sorted = ArgSort.argSortDescending(marginals);
             MultiLabel multiLabel = new MultiLabel();
@@ -102,85 +110,39 @@ public class Reranker implements MultiLabelClassifier, VectorCalibrator {
             predictionCandidate.x = vector;
             predictionCandidate.labelProbs = marginals;
             predictionCandidate.multiLabel = candidate;
-
+            predictionCandidate.sparseJoint = sparseJoint;
             Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
             double score = regressor.predict(feature);
             candidates.add(new Pair<>(candidate,score));
         }
 
-
         Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-//        double maxC = candidates.stream().max(comparator).map(pair->pair.getSecond()).get();
-//        List<MultiLabel> ties = candidates.stream().filter(pair->pair.getSecond()==maxC).map(pair->pair.getFirst()).collect(Collectors.toList());
-//        if (ties.size()>1){
-//            System.out.println("marginals = "+ PrintUtil.printWithIndex(marginals));
-//            System.out.println("number of ties = "+ties.size()+", "+ties);
-//        }
-
         return candidates.stream().max(comparator).map(Pair::getFirst).get();
     }
 
 
-    public MultiLabel predict(Vector vector, double[] uncalibratedLabelScores) {
-        double[] marginals = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
-
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        List<Pair<MultiLabel,Double>> candidates = new ArrayList<>();
-        for (int i=0;i<numCandidate;i++){
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-
-            PredictionCandidate predictionCandidate = new PredictionCandidate();
-            predictionCandidate.x = vector;
-            predictionCandidate.labelProbs = marginals;
-            predictionCandidate.multiLabel = candidate;
-
-            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
-            double score = regressor.predict(feature);
-            candidates.add(new Pair<>(candidate,score));
-        }
-        //todo
-//        AccPredictor accPredictor = new AccPredictor(cbm);
-//        accPredictor.setComponentContributionThreshold(0.001);
-//        MultiLabel cbmPre = accPredictor.predict(vector);
-//        Vector feature = predictionVectorizer.feature(bmDistribution, cbmPre,marginals,Optional.of(positionMap));
-//        double score = regressor.predict(feature);
-//        candidates.add(new Pair<>(cbmPre,score));
-
-
-        Comparator<Pair<MultiLabel,Double>> comparator = Comparator.comparing(pair->pair.getSecond());
-//        double maxC = candidates.stream().max(comparator).map(pair->pair.getSecond()).get();
-//        List<MultiLabel> ties = candidates.stream().filter(pair->pair.getSecond()==maxC).map(pair->pair.getFirst()).collect(Collectors.toList());
-//        if (ties.size()>1){
-//            System.out.println("marginals = "+ PrintUtil.printWithIndex(marginals));
-//            System.out.println("number of ties = "+ties.size()+", "+ties);
+//    public MultiLabel predictByGFM(Vector vector){
+//        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
+//        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
+//        List<MultiLabel> multiLabels = new ArrayList<>();
+//        List<Double> probabilities = new ArrayList<>();
+//
+//        for (int i=0;i<numCandidate;i++){
+//            MultiLabel candidate = dynamicProgramming.nextHighestVector();
+//
+//            PredictionCandidate predictionCandidate = new PredictionCandidate();
+//            predictionCandidate.x = vector;
+//            predictionCandidate.labelProbs = marginals;
+//            predictionCandidate.multiLabel = candidate;
+//
+//            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
+//            double score = regressor.predict(feature);
+//            multiLabels.add(candidate);
+//            probabilities.add(score);
 //        }
-
-        return candidates.stream().max(comparator).map(pair->pair.getFirst()).get();
-    }
-
-
-    public MultiLabel predictByGFM(Vector vector){
-        double[] marginals = labelCalibrator.calibratedClassProbs(classProbEstimator.predictClassProbs(vector));
-        DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
-        List<MultiLabel> multiLabels = new ArrayList<>();
-        List<Double> probabilities = new ArrayList<>();
-
-        for (int i=0;i<numCandidate;i++){
-            MultiLabel candidate = dynamicProgramming.nextHighestVector();
-
-            PredictionCandidate predictionCandidate = new PredictionCandidate();
-            predictionCandidate.x = vector;
-            predictionCandidate.labelProbs = marginals;
-            predictionCandidate.multiLabel = candidate;
-
-            Vector feature = predictionFeatureExtractor.extractFeatures(predictionCandidate);
-            double score = regressor.predict(feature);
-            multiLabels.add(candidate);
-            probabilities.add(score);
-        }
-        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
-        return generalF1Predictor.predict(classProbEstimator.getNumClasses(),multiLabels,probabilities);
-    }
+//        GeneralF1Predictor generalF1Predictor = new GeneralF1Predictor();
+//        return generalF1Predictor.predict(classProbEstimator.getNumClasses(),multiLabels,probabilities);
+//    }
 
 
 

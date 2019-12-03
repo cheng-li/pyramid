@@ -17,8 +17,8 @@ import java.util.stream.Stream;
 public class IsoLabelCalibrator implements LabelCalibrator {
     private static final long serialVersionUID = 2L;
     List<IsotonicRegression> isotonicRegressionList;
-    private double confidenceUpperBound=0.99;
-    private double confidenceLowerBound=0.01;
+    private double confidenceUpperBound=0.999999;
+    private double confidenceLowerBound=0.000001;
 
     public void setConfidenceUpperBound(double confidenceUpperBound) {
         this.confidenceUpperBound = confidenceUpperBound;

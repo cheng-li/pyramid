@@ -90,6 +90,7 @@ public class BRCalibration {
 
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("input.validData"), dataSetType, true);
 
+        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
         MultiLabelClassifier.ClassProbEstimator classProbEstimator = (MultiLabelClassifier.ClassProbEstimator) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
 
         List<Integer> labelCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==0).boxed().collect(Collectors.toList());
@@ -104,7 +105,7 @@ public class BRCalibration {
             case "isotonic":
                 labelCalibrator = new IsoLabelCalibrator(classProbEstimator, labelCalData, false);
                 break;
-            case "none":
+            case "identity":
                 labelCalibrator = new IdentityLabelCalibrator();
                 break;
         }
@@ -115,8 +116,22 @@ public class BRCalibration {
         List<PredictionFeatureExtractor> extractors = new ArrayList<>();
 
         if (config.getBoolean("brProb")){
+            //todo order matters; the first one will be used by iso, card iso
             extractors.add(new BRProbFeatureExtractor());
         }
+
+        if (config.getBoolean("expectedF1")){
+            extractors.add(new ExpectedF1FeatureExtractor());
+        }
+
+        if (config.getBoolean("expectedPrecision")){
+            extractors.add(new ExpectedPrecisionFeatureExtractor());
+        }
+
+        if (config.getBoolean("expectedRecall")){
+            extractors.add(new ExpectedRecallFeatureExtractor());
+        }
+
 
         if (config.getBoolean("setPrior")){
             extractors.add(new PriorFeatureExtractor(train));
@@ -156,10 +171,11 @@ public class BRCalibration {
         PredictionFeatureExtractor predictionFeatureExtractor = new CombinedPredictionFeatureExtractor(extractors);
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
-        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,classProbEstimator,config.getInt("numCandidates"));
+        CalibrationDataGenerator.TrainData caliTrainingData;
+        CalibrationDataGenerator.TrainData caliValidData;
 
-        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,classProbEstimator,config.getInt("numCandidates"));
-
+        caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"),support, 10);
+        caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,classProbEstimator,config.getInt("numCandidates"),config.getString("calibrate.target"), support, 10);
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
         double[] weights = caliTrainingData.instanceWeights;
@@ -181,8 +197,11 @@ public class BRCalibration {
             case "isotonic":
                 setCalibrator = new VectorIsoSetCalibrator(calibratorTrainData,0, false);
                 break;
-            case "none":
+            case "identity":
                 setCalibrator = new VectorIdentityCalibrator(0);
+                break;
+            case "zero":
+                setCalibrator = new ZeroCalibrator();
                 break;
             default:
                 throw new IllegalArgumentException("illegal setCalibrator");
@@ -200,7 +219,7 @@ public class BRCalibration {
 
 
 
-        List<MultiLabel> support = (List<MultiLabel>) Serialization.deserialize(Paths.get(config.getString("output.dir"),"model_predictions",config.getString("output.modelFolder"),"models","support").toFile());
+
 
 
 
@@ -232,10 +251,10 @@ public class BRCalibration {
             logger.info("calibration performance on "+config.getString("input.calibrationFolder")+ " set");
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, cal.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, cal.getRow(i),predictions[i],cal.getMultiLabels()[i]))
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, cal.getRow(i),predictions[i],cal.getMultiLabels()[i],config.getString("calibrate.target")))
                     .collect(Collectors.toList());
 
-            eval(instances, setCalibrator, logger);
+            eval(instances, setCalibrator, logger,config.getString("calibrate.target"));
         }
 
         logger.info("classification performance on "+config.getString("input.validFolder")+" set");
@@ -245,10 +264,10 @@ public class BRCalibration {
             logger.info("calibration performance on "+ config.getString("input.validFolder")+" set");
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, valid.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i]))
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(classProbEstimator, valid.getRow(i),predictions_valid[i],valid.getMultiLabels()[i],config.getString("calibrate.target")))
                     .collect(Collectors.toList());
 
-            eval(instances, setCalibrator, logger);
+            eval(instances, setCalibrator, logger,config.getString("calibrate.target"));
 
         }
 
@@ -276,7 +295,7 @@ public class BRCalibration {
     }
 
 
-    public static BRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger){
+    public static BRCalibration.CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator, Logger logger,String calibrateTarget){
         double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
         double ace = CalibrationEval.absoluteError(generateStream(predictions,calibrator),10);
         double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
@@ -285,7 +304,18 @@ public class BRCalibration {
         logger.info("square calibration error="+CalibrationEval.squareError(generateStream(predictions,calibrator),10));
         logger.info("sharpness="+sharpness);
         logger.info("variance="+CalibrationEval.variance(generateStream(predictions,calibrator)));
-        logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+        switch (calibrateTarget){
+            case "accuracy":
+                logger.info(Displayer.displayCalibrationResult(generateStream(predictions,calibrator)));
+                break;
+            case "f1":
+                logger.info(Displayer.displayCalibrationForF1Result(generateStream(predictions,calibrator)));
+                break;
+            default:
+                throw new IllegalArgumentException("illegal calibrate.target");
+
+        }
+
 
         BRCalibration.CaliRes caliRes = new BRCalibration.CaliRes();
         caliRes.mse = mse;
