@@ -722,13 +722,20 @@ public class App1 {
         LabelTranslator trainLabelTranslator = (LabelTranslator)Serialization.deserialize(new File(metaDataFolder,"label_translator.ser"));
         FeatureList featureList = (FeatureList)Serialization.deserialize(new File(metaDataFolder,"feature_list.ser"));
         MultiLabelClfDataSet dataSet=null;
+        if (trainTestValid.equals("train")){
+            dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), trainLabelTranslator, docFilter);
+            if (config.getBoolean("train.feature.normalize")){
+                double[] normalizationConstants = DataSetUtil.getNormalizationConstants(dataSet);
+                Serialization.serialize(normalizationConstants,Paths.get(config.getString("output.folder"),"meta_data","normalization_constants"));
+            }
+        }
+
         if (trainTestValid.equals("test")){
             LabelTranslator labelTranslator = loadTestLabelTranslator(config, index, indexIds, trainLabelTranslator, logger);
             dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), labelTranslator, docFilter);
+
         }
-        if (trainTestValid.equals("train")){
-                dataSet = loadData(config, index, featureList, idTranslator, featureList.size(), trainLabelTranslator, docFilter);
-        }
+
         if (trainTestValid.equals("valid")){
                 LabelTranslator labelTranslator = loadValidLabelTranslator(config, index, indexIds, trainLabelTranslator,logger);
                 dataSet = loadData(config, index, featureList, idTranslator,featureList.size(), labelTranslator, docFilter);
@@ -739,7 +746,10 @@ public class App1 {
             dataSet = loadData(config, index, featureList, idTranslator,featureList.size(), labelTranslator, docFilter);
         }
 
-
+        if (config.getBoolean("train.feature.normalize")){
+            double[] normalizationConstants = (double[])Serialization.deserialize(Paths.get(config.getString("output.folder"),"meta_data","normalization_constants"));
+            DataSetUtil.normalize(dataSet,normalizationConstants);
+        }
 
 
 
