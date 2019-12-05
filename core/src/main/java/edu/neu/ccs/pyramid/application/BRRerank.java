@@ -101,9 +101,9 @@ public class BRRerank {
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(train);
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
-        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,cbm,config.getInt("numTrainCandidates"),config.getString("calibrate.target"),support, 0);
+        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,cbm,config.getInt("numTrainCandidates"),"accuracy",support, 0);
 
-        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,cbm,config.getInt("numTrainCandidates"),config.getString("calibrate.target"),support,0);
+        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,cbm,config.getInt("numTrainCandidates"),"accuracy",support,0);
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
         double[] weights = caliTrainingData.instanceWeights;
@@ -214,7 +214,7 @@ public class BRRerank {
         if (true) {
 
             List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, dataset.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(cbm, dataset.getRow(i),predictions[i],dataset.getMultiLabels()[i],config.getString("calibrate.target")))
+                    .boxed().map(i -> calibrationDataGenerator.createInstance(cbm, dataset.getRow(i),predictions[i],dataset.getMultiLabels()[i],"accuracy"))
                     .collect(Collectors.toList());
 
             CaliRes caliRes = eval(instances, setCalibrator);
