@@ -1,6 +1,7 @@
 package edu.neu.ccs.pyramid.application;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegression;
 import edu.neu.ccs.pyramid.classification.logistic_regression.LogisticRegressionInspector;
 import edu.neu.ccs.pyramid.configuration.Config;
@@ -12,6 +13,7 @@ import edu.neu.ccs.pyramid.feature.FeatureList;
 import edu.neu.ccs.pyramid.feature.TopFeatures;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.multilabel_classification.cbm.*;
+import edu.neu.ccs.pyramid.multilabel_classification.imlgb.IMLGBInspector;
 import edu.neu.ccs.pyramid.optimization.EarlyStopper;
 import edu.neu.ccs.pyramid.util.ListUtil;
 import edu.neu.ccs.pyramid.util.Pair;
@@ -133,7 +135,7 @@ public class BRLREN {
                 }
                 earlyStopper.add(iter,validMeasures.getInstanceAverage().getAccuracy());
                 if (earlyStopper.getBestIteration()==iter){
-//                    bestModel = (CBM)Serialization.deepCopy(cbm);
+
                     Serialization.serialize(cbm, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
                 }
 
@@ -158,11 +160,48 @@ public class BRLREN {
         Serialization.serialize(support, Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","support"));
 
         CBM bestModel = (CBM) Serialization.deserialize(Paths.get(output,"model_predictions",config.getString("output.modelFolder"),"models","classifier"));
-        featureImportance(config, bestModel, trainSet.getFeatureList(), trainSet.getLabelTranslator(),logger);
+
+        boolean topFeaturesToFile = true;
+
+        if (topFeaturesToFile){
+            File analysisFolder = Paths.get(output, "model_predictions",config.getString("output.modelFolder"),"analysis").toFile();
+            analysisFolder.mkdirs();
+            logger.info("start writing top features");
+            List<TopFeatures> topFeaturesList = IntStream.range(0,bestModel.getNumClasses())
+                    .mapToObj(k ->topFeatures(bestModel, trainSet.getFeatureList(), trainSet.getLabelTranslator(), k, 100)).collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
+            String file = "top_features.json";
+            mapper.writeValue(new File(analysisFolder,file), topFeaturesList);
+
+            StringBuilder sb = new StringBuilder();
+            for (int l=0;l<bestModel.getNumClasses();l++){
+                sb.append("-------------------------").append("\n");
+                sb.append(bestModel.getLabelTranslator().toExtLabel(l)).append(":").append("\n");
+                for (Feature feature: topFeaturesList.get(l).getTopFeatures()){
+                    sb.append(feature.simpleString()).append(", ");
+                }
+                sb.append("\n");
+            }
+            FileUtils.writeStringToFile(new File(analysisFolder, "top_features.txt"), sb.toString());
+
+            logger.info("finish writing top features");
+        }
+
     }
 
 
-
+    private static TopFeatures topFeatures(CBM cbm, FeatureList featureList, LabelTranslator mlLabelTranslator, int classIndex,
+                                           int limit){
+        LogisticRegression logisticRegression = (LogisticRegression) cbm.getBinaryClassifiers()[0][classIndex];
+        logisticRegression.setFeatureList(featureList);
+        List<String> labels = new ArrayList<>();
+        labels.add("not_"+mlLabelTranslator.toExtLabel(classIndex));
+        labels.add(mlLabelTranslator.toExtLabel(classIndex));
+        LabelTranslator labelTranslator = new LabelTranslator(labels);
+        logisticRegression.setLabelTranslator(labelTranslator);
+        TopFeatures topFeatures = LogisticRegressionInspector.topFeatures(logisticRegression, 1,limit);
+        return topFeatures;
+    }
 
 
     //todo currently only for br
