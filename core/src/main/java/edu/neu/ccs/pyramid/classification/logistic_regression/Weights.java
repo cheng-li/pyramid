@@ -39,7 +39,6 @@ public class Weights implements Serializable {
             this.numFeatures = numFeatures;
             this.weightVector = new DenseVector((numFeatures + 1)*numClasses);
         }
-
     }
 
     public Weights(int numClasses, int numFeatures) {

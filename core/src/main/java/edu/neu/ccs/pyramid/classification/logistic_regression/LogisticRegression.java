@@ -18,13 +18,21 @@ import java.util.stream.IntStream;
  */
 public class LogisticRegression implements Classifier.ProbabilityEstimator, Classifier.ScoreEstimator {
     private static final long serialVersionUID = 2L;
+
+    private boolean symmetry = false; // whether the binary LR is symmetric; numClasses==1 is required
     private int numClasses;
     private int numFeatures;
-    private Weights weights;
+    private Weights weights; // TODO: add sparse option to Weights
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
 
-
+    public LogisticRegression(int numClasses, int numFeatures, boolean random, boolean symmetry) {
+        this(numClasses, numFeatures, random);
+        this.symmetry = symmetry;
+        if (symmetry) {
+            assert numClasses == 1 : "  One Class is required for Symmetric (Binary) LogisticRegression";
+        }
+    }
 
     public LogisticRegression(int numClasses, int numFeatures, boolean random) {
         this.numClasses = numClasses;
@@ -58,6 +66,7 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         for (int l=0;l<numClasses;l++){
             weights.setBiasForClass(scores[l],l);
         }
+        this.symmetry = false;
     }
 
 
@@ -70,6 +79,10 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return this.numClasses;
     }
 
+    public boolean isSymmetry() {
+        return this.symmetry;
+    }
+
     public int getNumFeatures() {
         return numFeatures;
     }
@@ -77,9 +90,9 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     @Override
     public int predict(Vector vector){
         double[] scores = predictClassScores(vector);
-        double maxScore = Double.NEGATIVE_INFINITY;
         int predictedClass = 0;
-        for (int k=0;k<this.numClasses;k++){
+        double maxScore = Double.NEGATIVE_INFINITY;
+        for (int k=0;k<scores.length;k++){
             double scoreClassK = scores[k];
             if (scoreClassK > maxScore){
                 maxScore = scoreClassK;
@@ -89,16 +102,30 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return predictedClass;
     }
 
+    /**
+     * the linear scores for given class k
+     * when symmetry = true; k=0 for positive score; and the negative score=0;
+     * when symmetry = false; k stands for the class number
+     * @param dataPoint
+     * @param k
+     * @return
+     */
     public double predictClassScore(Vector dataPoint, int k){
         double score = 0;
         score += this.weights.getBiasForClass(k);
         // use our own implementation
 //        score += this.weights.getWeightsWithoutBiasForClass(k).dot(dataPoint);
-        score += Vectors.dot(weights.getWeightsWithoutBiasForClass(k),dataPoint);
+        score += Vectors.dot(weights.getWeightsWithoutBiasForClass(k),dataPoint); // TODO: switch the weights to sparse
         return score;
     }
 
     public double[] predictClassScores(Vector dataPoint){
+        if (this.symmetry) {
+            double[] scores = new double[2];
+            scores[1] = predictClassScore(dataPoint, 0);
+            return scores;
+        }
+
         double[] scores = new double[this.numClasses];
         for (int k=0;k<this.numClasses;k++){
             scores[k] = predictClassScore(dataPoint, k);
@@ -109,9 +136,25 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     @Override
     public double[] predictClassProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
-        double[] probVector = new double[this.numClasses];
+        double[] probVector = new double[scoreVector.length];
         double logDenominator = MathUtil.logSumExp(scoreVector);
-        for (int k=0;k<this.numClasses;k++){
+        for (int k=0;k<scoreVector.length;k++){
+            double logNumerator = scoreVector[k];
+            double pro = Math.exp(logNumerator-logDenominator);
+            probVector[k]=pro;
+        }
+        return probVector;
+    }
+
+    /**
+     * when the scoreVector is given, ignoring the predictClassScores step.
+     * @param scoreVector
+     * @return
+     */
+    public double[] predictClassProbs(double[] scoreVector) {
+        double[] probVector = new double[scoreVector.length];
+        double logDenominator = MathUtil.logSumExp(scoreVector);
+        for (int k=0;k<scoreVector.length;k++){
             double logNumerator = scoreVector[k];
             double pro = Math.exp(logNumerator-logDenominator);
             probVector[k]=pro;
@@ -122,9 +165,9 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
 
     public double[] predictLogClassProbs(Vector vector){
         double[] scoreVector = this.predictClassScores(vector);
-        double[] logProbVector = new double[this.numClasses];
+        double[] logProbVector = new double[scoreVector.length];
         double logDenominator = MathUtil.logSumExp(scoreVector);
-        for (int k=0;k<this.numClasses;k++) {
+        for (int k=0;k<scoreVector.length;k++) {
             double logNumerator = scoreVector[k];
             logProbVector[k]=logNumerator-logDenominator;
         }
@@ -174,6 +217,49 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
                 .mapToDouble(i -> logLikelihood(dataSet.getRow(i), targets[i], weights[i]))
                 .sum();
+    }
+
+    /**
+     * when the targets are exclusive, e.g. multi-class, targets<numClasses
+     * @param dataSet
+     * @param targets
+     * @return
+     */
+    public double dataSetLogLikelihood(DataSet dataSet, int[] targets) {
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> logLikelihood(dataSet.getRow(i), targets[i], 1))
+                .sum();
+    }
+
+    /**
+     * when the targets are exclusive, e.g. multi-class
+     * @param dataSet
+     * @param targets
+     * @param weights
+     * @return
+     */
+    public double dataSetLogLikelihood(DataSet dataSet, int[] targets, double[] weights) {
+        return IntStream.range(0, dataSet.getNumDataPoints()).parallel()
+                .mapToDouble(i -> logLikelihood(dataSet.getRow(i), targets[i], weights[i]))
+                .sum();
+    }
+
+    /**
+     * logLikelihood for each datapoint, while target is exclusive, e.g. multi-class
+     * @param vector
+     * @param target
+     * @return
+     */
+    double logLikelihood(Vector vector, int target, double weight) {
+        int[] targets = symmetry ? new int[2] : new int[numClasses];
+        targets[target] = 1;
+        double[] scoreVector = this.predictClassScores(vector);
+        double logDenominator = MathUtil.logSumExp(scoreVector);
+        double logNumberator = 0.0;
+        for (int k=0; k<scoreVector.length; k++) {
+            logNumberator += targets[k] * scoreVector[k];
+        }
+        return weight*(logNumberator - logDenominator);
     }
 
 

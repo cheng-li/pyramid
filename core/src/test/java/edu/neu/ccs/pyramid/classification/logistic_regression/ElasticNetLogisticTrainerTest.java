@@ -1,5 +1,6 @@
 package edu.neu.ccs.pyramid.classification.logistic_regression;
 
+import com.google.common.base.Stopwatch;
 import edu.neu.ccs.pyramid.configuration.Config;
 import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ElasticNetLogisticTrainerTest {
-    private static final Config config = new Config("config/local.properties");
+    private static final Config config = new Config("/Users/Rainicy/Documents/pyramid/core/config/en_general_logistic_regression.properties");
     private static final String DATASETS = config.getString("input.datasets");
     private static final String TMP = config.getString("output.tmp");
     public static void main(String[] args) throws Exception{
@@ -29,7 +30,7 @@ public class ElasticNetLogisticTrainerTest {
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
         loggerConfig.setLevel(Level.OFF);
         ctx.updateLoggers();
-        test3();
+        test8();
     }
 
     private static void test1() throws Exception{
@@ -176,4 +177,49 @@ public class ElasticNetLogisticTrainerTest {
 
     }
 
+    /**
+     * Test for ElasticNet optimizer for  general logistic regression.
+     * @throws Exception
+     */
+    private static void test8() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "train"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "test"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println(dataSet.getMetaInfo());
+        LogisticRegression logisticRegression = new LogisticRegression(dataSet.getNumClasses(),dataSet.getNumFeatures());
+        ElasticNetLogisticTrainer trainer = ElasticNetLogisticTrainer.newBuilder(logisticRegression, dataSet)
+                .setL1Ratio(0.1).setRegularization(0.001).setLineSearch(false).build();
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        trainer.optimize();
+        long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        stopwatch.stop();
+        System.out.println("used memory= " + used/1024/1024 + " Mb");
+        System.out.println("total time = " + stopwatch);
+        System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
+        System.out.println("test accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
+    }
+
+    /**
+     * Test for ElasticNet optimizer for  general logistic regression.
+     * @throws Exception
+     */
+    private static void test9() throws Exception{
+        ClfDataSet dataSet = TRECFormat.loadClfDataSet(new File(DATASETS, "train"),
+                DataSetType.CLF_SPARSE, true);
+        ClfDataSet testSet = TRECFormat.loadClfDataSet(new File(DATASETS, "test"),
+                DataSetType.CLF_SPARSE, true);
+        System.out.println(dataSet.getMetaInfo());
+        LogisticRegression lR = new LogisticRegression(1, dataSet.getNumFeatures(), false, true);
+        ElasticNetBinaryLogisticTrainer trainer = ElasticNetBinaryLogisticTrainer.newBuilder(lR, dataSet)
+                .setL1Ratio(0.1).setRegularization(0.001).setLineSearch(false).build();
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        trainer.optimize();
+        long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        stopwatch.stop();
+        System.out.println("used memory= " + used/1024/1024 + " Mb");
+        System.out.println("total time = " + stopwatch);
+        System.out.println("training accuracy = "+ Accuracy.accuracy(lR,dataSet));
+        System.out.println("test accuracy = "+ Accuracy.accuracy(lR,testSet));
+    }
 }
