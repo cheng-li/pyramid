@@ -63,7 +63,17 @@ public class ENLogisticTrainerTest {
                 .setLineSearch(config.getBoolean("line_search"))
                 .setMaxNumLinearRegUpdates(config.getInt("max_iter_linear_regression")).build();
         Stopwatch stopwatch = Stopwatch.createStarted();
-        trainer.optimize();
+        for (int i = 0; i<config.getInt("iter"); i++) {
+            trainer.iterate();
+            if (config.getBoolean("show_iter")) {
+                System.out.print("loss = " + trainer.getLoss());
+                System.out.print("\ttraining accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
+                System.out.println("\ttest accuracy = "+ Accuracy.accuracy(logisticRegression,testSet));
+            }
+            if (trainer.getTerminator().shouldTerminate()) {
+                break;
+            }
+        }
         long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         stopwatch.stop();
         System.out.println("used memory= " + used/1024/1024 + " Mb");
@@ -89,7 +99,17 @@ public class ENLogisticTrainerTest {
                 .setLineSearch(config.getBoolean("line_search"))
                 .setMaxNumLinearRegUpdates(config.getInt("max_iter_linear_regression")).build();
         Stopwatch stopwatch = Stopwatch.createStarted();
-        trainer.optimize();
+        for (int i = 0; i<config.getInt("iter"); i++) {
+            trainer.iterate();
+            if (config.getBoolean("show_iter")) {
+                System.out.print("loss = " + trainer.getLoss());
+                System.out.print("\ttraining accuracy = "+ Accuracy.accuracy(lR,dataSet));
+                System.out.println("\ttest accuracy = "+ Accuracy.accuracy(lR,testSet));
+            }
+            if (trainer.getTerminator().shouldTerminate()) {
+                break;
+            }
+        }
         long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         stopwatch.stop();
         System.out.println("used memory= " + used/1024/1024 + " Mb");
