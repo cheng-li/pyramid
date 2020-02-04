@@ -9,8 +9,10 @@ import edu.neu.ccs.pyramid.dataset.ClfDataSet;
 import edu.neu.ccs.pyramid.dataset.DataSetType;
 import edu.neu.ccs.pyramid.dataset.TRECFormat;
 import edu.neu.ccs.pyramid.eval.Accuracy;
+import edu.neu.ccs.pyramid.eval.ConfusionMatrix;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  *
@@ -74,8 +76,26 @@ public class ENLogisticTrainerTest {
                 break;
             }
         }
-        long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         stopwatch.stop();
+
+        long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+
+
+        System.out.print("training ");
+        ConfusionMatrix cm = new ConfusionMatrix(logisticRegression, dataSet);
+        System.out.print("confusion matrix:");
+        for (int i=0; i<cm.getMatrix().length; i++ ){
+            System.out.print(Arrays.toString(cm.getMatrix()[i]));
+        }
+        System.out.println();
+        System.out.print("testing ");
+        cm = new ConfusionMatrix(logisticRegression, testSet);
+        System.out.print("confusion matrix:");
+        for (int i=0; i<cm.getMatrix().length; i++ ){
+            System.out.print(Arrays.toString(cm.getMatrix()[i]));
+        }
+        System.out.println();
+
         System.out.println("used memory= " + used/1024/1024 + " Mb");
         System.out.println("total time = " + stopwatch);
         System.out.println("training accuracy = "+ Accuracy.accuracy(logisticRegression,dataSet));
@@ -110,8 +130,24 @@ public class ENLogisticTrainerTest {
                 break;
             }
         }
-        long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         stopwatch.stop();
+
+        long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+
+        System.out.print("training ");
+        ConfusionMatrix cm = new ConfusionMatrix(lR, dataSet);
+        System.out.print("confusion matrix:");
+        for (int i=0; i<cm.getMatrix().length; i++ ){
+            System.out.print(Arrays.toString(cm.getMatrix()[i]));
+        }
+        System.out.println();
+        System.out.print("testing ");
+        cm = new ConfusionMatrix(lR, testSet);
+        System.out.print("confusion matrix:");
+        for (int i=0; i<cm.getMatrix().length; i++ ){
+            System.out.print(Arrays.toString(cm.getMatrix()[i]));
+        }
+        System.out.println();
         System.out.println("used memory= " + used/1024/1024 + " Mb");
         System.out.println("total time = " + stopwatch);
         System.out.println("training accuracy = "+ Accuracy.accuracy(lR,dataSet));
