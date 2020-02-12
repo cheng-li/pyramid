@@ -26,12 +26,23 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     private FeatureList featureList;
     private LabelTranslator labelTranslator;
 
+    /**
+     * Logistic Regression Constructor when symmetry is an option.
+     * @param numClasses
+     * @param numFeatures
+     * @param random
+     * @param symmetry
+     */
     public LogisticRegression(int numClasses, int numFeatures, boolean random, boolean symmetry) {
-        this(numClasses, numFeatures, random);
-        this.symmetry = symmetry;
         if (symmetry) {
-            assert numClasses == 1 : "  One Class is required for Symmetric (Binary) LogisticRegression";
+            assert numClasses == 2 : " Binary Class is required for Symmetric (Binary) LogisticRegression";
         }
+
+        this.symmetry = symmetry;
+        this.numClasses = numClasses;
+        this.numFeatures = numFeatures;
+        // if symmetry, only creates one class weight vector.
+        this.weights = new Weights(symmetry ? 1 : numClasses, numFeatures, random);
     }
 
     public LogisticRegression(int numClasses, int numFeatures, boolean random) {
@@ -66,7 +77,6 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
         for (int l=0;l<numClasses;l++){
             weights.setBiasForClass(scores[l],l);
         }
-        this.symmetry = false;
     }
 
 
@@ -111,6 +121,11 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
      * @return
      */
     public double predictClassScore(Vector dataPoint, int k){
+        if (this.symmetry) {
+            return k == 0 ? 0 : this.weights.getBiasForClass(0) +
+                    Vectors.dot(weights.getWeightsWithoutBiasForClass(0), dataPoint);
+        }
+
         double score = 0;
         score += this.weights.getBiasForClass(k);
         // use our own implementation
@@ -120,12 +135,6 @@ public class LogisticRegression implements Classifier.ProbabilityEstimator, Clas
     }
 
     public double[] predictClassScores(Vector dataPoint){
-        if (this.symmetry) {
-            double[] scores = new double[2];
-            scores[1] = predictClassScore(dataPoint, 0);
-            return scores;
-        }
-
         double[] scores = new double[this.numClasses];
         for (int k=0;k<this.numClasses;k++){
             scores[k] = predictClassScore(dataPoint, k);

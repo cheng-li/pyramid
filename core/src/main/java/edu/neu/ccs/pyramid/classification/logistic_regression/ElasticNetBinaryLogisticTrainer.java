@@ -330,7 +330,6 @@ public class ElasticNetBinaryLogisticTrainer {
         // N
         private double[] weights;
         private double sumWeights;
-        private int numClasses;
 
         // when p>>N, logistic regression with 0 regularization is ill-defined
         // use a small regularization

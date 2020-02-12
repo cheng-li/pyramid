@@ -32,8 +32,10 @@ public class ElasticNetLogisticTrainer {
     private LogisticRegression logisticRegression;
     private DataSet dataSet;
     private int numClasses;
-//    private int[] labels;
+    private boolean symmetry = false;
     // y_nl: number of datapoint and number of labels
+    // TODO: target should be sparse
+    // TODO: why not #label * #datapoint
     private double[][] targets;
     // instances weights
     private double[] weights;
@@ -72,11 +74,15 @@ public class ElasticNetLogisticTrainer {
     }
 
     public static Builder newBuilder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels){
-        return new Builder(logisticRegression, dataSet, numClasses, labels);
+        return new Builder(logisticRegression, dataSet, numClasses, labels, false);
     }
 
     public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet){
         return new Builder(logisticRegression, dataSet);
+    }
+
+    public static Builder newBuilder(LogisticRegression logisticRegression, ClfDataSet dataSet, boolean symmetry) {
+        return new Builder(logisticRegression, dataSet, symmetry);
     }
 
     public void optimize(){
@@ -176,8 +182,12 @@ public class ElasticNetLogisticTrainer {
 
 
     public void iterate(){
-        for (int k=0;k<numClasses;k++){
-            optimizeOneClass(k);
+        if (symmetry) {
+            optimizeOneClass(1);
+        } else {
+            for (int k=0;k<numClasses;k++){
+                optimizeOneClass(k);
+            }
         }
         terminator.add(getLoss());
     }
@@ -197,9 +207,9 @@ public class ElasticNetLogisticTrainer {
         double[] instanceWeights = new double[numDataPoints];
         IntStream.range(0,numDataPoints).parallel().forEach(i ->
         {
-            double prob = logisticRegression.predictClassProbs(dataSet.getRow(i))[classIndex];
-            // TODO: following is calculated twice.
-            double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
+            double[] classScores = logisticRegression.predictClassScores(dataSet.getRow(i));
+            double prob = logisticRegression.predictClassProbs(classScores)[classIndex];
+//            double classScore = logisticRegression.predictClassScore(dataSet.getRow(i),classIndex);
             double y = targets[i][classIndex];
             double frac = 0;
             double tmpP = prob*(1-prob);
@@ -216,7 +226,7 @@ public class ElasticNetLogisticTrainer {
                 frac=-1;
             }
 
-            realLabels[i] = classScore + frac;
+            realLabels[i] = classScores[classIndex] + frac;
             instanceWeights[i] = (weights[i]*tmpP);
         });
 
@@ -227,9 +237,8 @@ public class ElasticNetLogisticTrainer {
 
         // in glmnet algorithm:
         // this correspond to moving towards the search direction with step size 1
-        // TODO: use the oldWeights
         LinearRegression linearRegression = new LinearRegression(dataSet.getNumFeatures(),
-                logisticRegression.getWeights().getWeightsForClass(classIndex));
+                logisticRegression.getWeights().getWeightsForClass(this.symmetry ? 0 : classIndex));
         // use default epsilon
         ElasticNetLinearRegOptimizer linearRegTrainer = new ElasticNetLinearRegOptimizer(linearRegression,dataSet,realLabels,instanceWeights,sumWeights);
         linearRegTrainer.setRegularization(this.regularization);
@@ -270,8 +279,12 @@ public class ElasticNetLogisticTrainer {
 
     private void updateClassProbs(int dataPointIndex){
         double[] probs = logisticRegression.predictClassProbs(dataSet.getRow(dataPointIndex));
-        for (int k=0;k<numClasses;k++){
-            this.probabilityMatrix[k][dataPointIndex]=probs[k];
+        if (symmetry) {
+            this.probabilityMatrix[0][dataPointIndex] = probs[1];
+        } else {
+            for (int k=0;k<numClasses;k++){
+                this.probabilityMatrix[k][dataPointIndex]=probs[k];
+            }
         }
     }
 
@@ -304,7 +317,7 @@ public class ElasticNetLogisticTrainer {
 
 
     private double penalty(){
-        return IntStream.range(0,logisticRegression.getNumClasses()).parallel().mapToDouble(k -> penalty(k)).sum();
+        return IntStream.range(0,this.symmetry ? 1 : logisticRegression.getNumClasses()).parallel().mapToDouble(k -> penalty(k)).sum();
     }
 
     private double penalty(int k) {
@@ -370,20 +383,23 @@ public class ElasticNetLogisticTrainer {
     }
 
     private double calEmpricalCount(int parameterIndex){
+        // when symmetry = trie:
+        // classIndex = 0
+        // featureIndex = parameterIndex - 1
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
         //bias
         if (featureIndex == -1){
             for (int i=0;i<dataSet.getNumDataPoints();i++){
-                count += targets[i][classIndex];
+                count += targets[i][this.symmetry ? 1 : classIndex];
             }
         } else {
             Vector featureColumn = dataSet.getColumn(featureIndex);
             for (Vector.Element element: featureColumn.nonZeroes()){
                 int dataPointIndex = element.index();
                 double featureValue = element.get();
-                count += featureValue * targets[dataPointIndex][classIndex];
+                count += featureValue * targets[dataPointIndex][this.symmetry ? 1 : classIndex];
             }
         }
         return count;
@@ -401,6 +417,9 @@ public class ElasticNetLogisticTrainer {
     }
 
     private double calPredictedCount(int parameterIndex){
+        // when symmetry = true
+        // classIndex = 0
+        // featureIndex = parameterIndex - 1
         int classIndex = logisticRegression.getWeights().getClassIndex(parameterIndex);
         int featureIndex = logisticRegression.getWeights().getFeatureIndex(parameterIndex);
         double count = 0;
@@ -425,13 +444,13 @@ public class ElasticNetLogisticTrainer {
     public static class Builder{
         private LogisticRegression logisticRegression;
         private DataSet dataSet;
-//        private int[] labels;
         // N * L
         private double[][] targets;
         // N
         private double[] weights;
         private double sumWeights;
         private int numClasses;
+        private boolean symmetry = false;
 
         // when p>>N, logistic regression with 0 regularization is ill-defined
         // use a small regularization
@@ -443,13 +462,18 @@ public class ElasticNetLogisticTrainer {
         private int maxNumLinearRegUpdates=10;
 
 
-        public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels) {
+
+        public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, int[] labels, boolean symmetry) {
+            if (symmetry) {
+                assert numClasses == 2: " Binary Class is required for a symmetric Trainer";
+            }
+
             int numDataPoints = dataSet.getNumDataPoints();
             double[][] targs = new double[numDataPoints][numClasses];
             for (int i=0; i<numDataPoints; i++) {
                 targs[i][labels[i]] = 1.0;
             }
-
+            this.symmetry = symmetry;
             this.logisticRegression = logisticRegression;
             this.dataSet = dataSet;
             this.numClasses = numClasses;
@@ -457,10 +481,15 @@ public class ElasticNetLogisticTrainer {
             this.weights = new double[dataSet.getNumDataPoints()];
             Arrays.fill(this.weights, 1);
             this.sumWeights = Arrays.stream(weights).parallel().sum();
+
+        }
+
+        public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet, boolean symmetry) {
+            this(logisticRegression, dataSet, dataSet.getNumClasses(), dataSet.getLabels(), symmetry);
         }
 
         public Builder(LogisticRegression logisticRegression, ClfDataSet dataSet) {
-            this(logisticRegression, dataSet, dataSet.getNumClasses(), dataSet.getLabels());
+            this(logisticRegression, dataSet, dataSet.getNumClasses(), dataSet.getLabels(), false);
         }
 
         public Builder(LogisticRegression logisticRegression, DataSet dataSet, int numClasses, double[][] targets) {
@@ -530,17 +559,27 @@ public class ElasticNetLogisticTrainer {
             trainer.weights = weights;
             trainer.sumWeights = sumWeights;
             trainer.numClasses = numClasses;
+            trainer.symmetry = symmetry;
             trainer.regularization = this.regularization;
             trainer.l1Ratio = this.l1Ratio;
-            trainer.epsilon = this.epsilon;
             trainer.lineSearch = this.lineSearch;
             trainer.numParameters = logisticRegression.getWeights().totalSize();
-            trainer.empiricalCounts = new DenseVector(trainer.numParameters);
-            trainer.predictedCounts = new DenseVector(trainer.numParameters);
-            trainer.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
-            trainer.updateEmpricalCounts();
-            trainer.updateClassProbMatrix();
-            trainer.updatePredictedCounts();
+
+            // initialize the parameters only when lineSearch is true
+            if (this.lineSearch) {
+                trainer.empiricalCounts = new DenseVector(trainer.numParameters);
+                trainer.predictedCounts = new DenseVector(trainer.numParameters);
+
+                if (symmetry) {
+                    trainer.probabilityMatrix = new double[1][dataSet.getNumDataPoints()];
+                } else {
+                    trainer.probabilityMatrix = new double[numClasses][dataSet.getNumDataPoints()];
+                }
+                trainer.updateEmpricalCounts();
+                trainer.updateClassProbMatrix();
+                trainer.updatePredictedCounts();
+            }
+
             trainer.terminator = new Terminator();
             trainer.maxNumLinearRegUpdates = maxNumLinearRegUpdates;
             return trainer;
