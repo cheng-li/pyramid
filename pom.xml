@@ -21,8 +21,6 @@
          <groupId>org.apache.mahout</groupId>
          <artifactId>mahout-math</artifactId>
          <version>0.13.0</version>
-         <scope>system</scope>
-         <systemPath>/Users/Rainicy/Documents/apache/mahout/classes/artifacts/mahout_math_jar/mahout-math.jar</systemPath>
        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
