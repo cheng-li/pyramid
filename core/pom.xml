@@ -212,6 +212,7 @@
                 <configuration>
                     <descriptor>src/assembly/bin.xml</descriptor>
                     <finalName>pyramid-${project.version}</finalName>
+                    <tarLongFileMode>posix</tarLongFileMode>
                     <outputDirectory>${project.build.directory}/releases/</outputDirectory>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
