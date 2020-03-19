@@ -1,16 +1,10 @@
 package edu.neu.ccs.pyramid.application;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.reflect.ClassPath;
-import edu.neu.ccs.pyramid.Version;
+
 import edu.neu.ccs.pyramid.configuration.Config;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Launch an app based on the string name of the app
@@ -50,19 +44,9 @@ public class AppLauncher {
 
 
 
-    private static String matchClass(String className) throws Exception{
-        // deal with normal names
-        String lower = className.toLowerCase();
-        String realName = null;
-        ClassPath classPath = ClassPath.from(Thread.currentThread().getContextClassLoader());
-        ImmutableSet<ClassPath.ClassInfo> classes = classPath.getTopLevelClasses("edu.neu.ccs.pyramid.application");
-        for (ClassPath.ClassInfo classInfo: classes){
-            if (classInfo.getSimpleName().toLowerCase().equals(lower)){
-                realName = classInfo.getName();
-                break;
-            }
-        }
-        return realName;
+    private static String matchClass(String className) {
+
+        return "edu.neu.ccs.pyramid.application."+className;
     }
 
     private static void invokeMain(String className, String[] args) throws Exception{
