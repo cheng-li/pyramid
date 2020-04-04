@@ -49,7 +49,7 @@ public class RerankerTrainer {
         for (int i = 1; i<=maxIter; i++){
             optimizer.iterate();
 
-            if (i%10==0){
+            if (i%10==0|| i==maxIter){
                 double mse = MSE.mse(lsBoost, validation);
                 earlyStopper.add(i,mse);
                 if (earlyStopper.getBestIteration()==i){

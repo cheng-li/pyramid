@@ -123,6 +123,7 @@ public class BRRerank {
                         .numLeaves(config.getInt("numLeaves"))
                         .shrinkage(config.getDouble("shrinkage"))
                         .monotonicityType(config.getString("monotonicityType"))
+                        .maxIter(config.getInt("maxIteration"))
                         .build();
                 if (config.getString("trainingObjective").equals("MSE")){
                     setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionFeatureExtractor, labelCalibrator, caliValidData.regDataSet);
@@ -252,7 +253,7 @@ public class BRRerank {
         cali.setString("predict.mode",config.getString("predictMode"));
         String[] toCopy={"setPrior","brProb","card","encodeLabel","numTrainCandidates",
                 "numPredictCandidates","shrinkage","numLeaves","labelCalibrator",
-                "setCalibrator","minDataPerLeaf","trainingObjective"};
+                "setCalibrator","minDataPerLeaf","trainingObjective","maxIteration"};
         Config.copy(config,cali,toCopy);
         return cali;
 
