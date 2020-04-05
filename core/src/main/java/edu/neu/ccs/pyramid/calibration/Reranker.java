@@ -18,14 +18,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Reranker implements MultiLabelClassifier, VectorCalibrator {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     Regressor regressor;
     MultiLabelClassifier.ClassProbEstimator classProbEstimator;
     int numCandidate;
     private PredictionFeatureExtractor predictionFeatureExtractor;
     private LabelCalibrator labelCalibrator;
-    private transient int minPredictionSize = 0;
-    private transient int maxPredictionSize = Integer.MAX_VALUE;
+    private int minPredictionSize = 0;
+    private int maxPredictionSize = Integer.MAX_VALUE;
 
 
 
