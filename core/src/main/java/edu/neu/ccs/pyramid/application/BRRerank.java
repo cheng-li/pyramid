@@ -207,7 +207,7 @@ public class BRRerank {
         System.out.println("classification performance on test set");
         MultiLabelClfDataSet dataset = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"test").toFile(),DataSetType.ML_CLF_SPARSE,true);
         MultiLabel[] predictions = FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile())
-                .stream().skip(1).map(line->new MultiLabel(line.split("\t")[0].replace("{","").replace("}",""),dataset.getLabelTranslator()))
+                .stream().skip(1).map(line->new MultiLabel(line.split("\t")[0].replace("{","").replace("}","")))
                 .toArray(MultiLabel[]::new);
 
         MLMeasures mlMeasures =new MLMeasures(dataset.getNumClasses(),dataset.getMultiLabels(), predictions);
