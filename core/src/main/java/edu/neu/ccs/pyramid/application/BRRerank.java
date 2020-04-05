@@ -200,7 +200,7 @@ public class BRRerank {
         }
 
         FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile(),stringBuilder.toString());
-        System.out.println("set predictions and confidence scores are saved to "+Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toString());
+        System.out.println("set predictions and confidence scores are saved to "+Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toString()+"\n");
     }
 
     private static void classification_eval(Config config) throws Exception{
