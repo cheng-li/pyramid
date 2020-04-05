@@ -173,16 +173,21 @@ public class BRRerank {
         MultiLabel[] predictions = classifier.predict(dataset);
 
 
-        List<Double> confidenceScores = IntStream.range(0, dataset.getNumDataPoints()).parallel()
+        List<CalibInfo> confidenceScores = IntStream.range(0, dataset.getNumDataPoints()).parallel()
                 .boxed().map(i -> {CalibrationDataGenerator.CalibrationInstance predictionInstance = calibrationDataGenerator.createInstance(cbm, dataset.getRow(i),predictions[i],dataset.getMultiLabels()[i],"accuracy");
-                    double confidence = setCalibrator.calibrate(predictionInstance.vector);
-                    return confidence; }
+                    double calibrated = setCalibrator.calibrate(predictionInstance.vector);
+                    CalibInfo calibInfo = new CalibInfo();
+                    calibInfo.uncalibrated = predictionInstance.vector.get(0);
+                    calibInfo.calibrated = calibrated;
+                    calibInfo.accuracy = predictionInstance.correctness;
+                    return calibInfo; }
                     ).collect(Collectors.toList());
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("set_prediction").append("\t").append("confidence").append("\t").append("ground_truth").append("\t").append("set accuracy").append("\n");
+        stringBuilder.append("set_prediction").append("\t").append("uncalibrated_confidence").append("\t").append("calibrated_confidence").append("\t").append("ground_truth").append("\t").append("set_accuracy").append("\n");
         for (int i=0;i<dataset.getNumDataPoints();i++){
             stringBuilder.append(predictions[i]).append("\t")
-                    .append(confidenceScores.get(i)).append("\t")
+                    .append(confidenceScores.get(i).uncalibrated).append("\t")
+                    .append(confidenceScores.get(i).calibrated).append("\t")
                     .append(dataset.getMultiLabels()[i]).append("\t")
                     .append(predictions[i].equals(dataset.getMultiLabels()[i])?1:0).append("\n");
         }
@@ -209,8 +214,8 @@ public class BRRerank {
     private static void calibration_eval(Config config) throws Exception{
         List<Pair<Double,Double>> confidenceVsAccuracy= FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile())
                 .stream().skip(1).map(line->{
-                    double conf = Double.parseDouble(line.split("\t")[1]);
-                    double acc = Double.parseDouble(line.split("\t")[3]);
+                    double conf = Double.parseDouble(line.split("\t")[2]);
+                    double acc = Double.parseDouble(line.split("\t")[4]);
                     Pair<Double,Double> pair = new Pair<>(conf,acc);
                     return pair;
                 }).collect(Collectors.toList());
@@ -441,5 +446,11 @@ public class BRRerank {
                 "# users do not need to modify this.\n" +
                 "pyramid.class=CBMEN";
         return Config.newConfigFromString(de);
+    }
+
+    private static class CalibInfo{
+        private double uncalibrated;
+        private double calibrated;
+        private double accuracy;
     }
 }
