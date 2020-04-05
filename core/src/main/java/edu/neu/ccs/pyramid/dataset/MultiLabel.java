@@ -35,6 +35,9 @@ public class MultiLabel implements Serializable{
 
     public MultiLabel(String string, LabelTranslator labelTranslator){
         this();
+        if (string.isEmpty()){
+            return;
+        }
         String[] split = string.split(",");
         for (String str: split){
             String trimmed = str.trim();
