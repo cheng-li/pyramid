@@ -144,8 +144,45 @@ public class BRRerank {
                 throw new IllegalArgumentException("illegal setCalibrator");
         }
 
+        Serialization.serialize(labelCalibrator,Paths.get(config.getString("output"),"models","label_calibrator"));
+        Serialization.serialize(setCalibrator,Paths.get(config.getString("output"),"models","set_calibrator"));
+        Serialization.serialize(predictionFeatureExtractor,Paths.get(config.getString("output"),"models","calibration_feature_extractor"));
+
+
         showPerformance(config, test, cbm, labelCalibrator, setCalibrator, calibrationDataGenerator, "test");
     }
+
+//    private static void report(Config config) throws Exception{
+//        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"),DataSetType.ML_CLF_SPARSE,true);
+//        CBM cbm = (CBM) Serialization.deserialize(config.getString("cbm"));
+//        cbm.setAllowEmpty(config.getBoolean("allowEmpty"));
+//        MultiLabelClassifier classifier = null;
+//        switch (config.getString("predict.mode")){
+//
+//            case "independent":
+//                classifier = new IndependentPredictor(cbm,labelCalibrator);
+//                break;
+//            case "rerank":
+//                classifier = (Reranker)setCalibrator;
+//                break;
+//
+//            default:
+//                throw new IllegalArgumentException("illegal predict.mode");
+//        }
+//        MultiLabel[] predictions = classifier.predict(dataset);
+//
+//        MLMeasures mlMeasures =new MLMeasures(dataset.getNumClasses(),dataset.getMultiLabels(), predictions);
+//
+//        System.out.println("classification performance on test set");
+//        System.out.println(mlMeasures);
+//
+//        Paths.get(config.getString("output")).toFile().mkdirs();
+//        File accResult = Paths.get(config.getString("output"),dataName+"_accuracy.txt").toFile();
+//        FileUtils.writeStringToFile(accResult,""+mlMeasures.getInstanceAverage().getAccuracy());
+//
+//        File f1Result = Paths.get(config.getString("output"),dataName+"_f1.txt").toFile();
+//        FileUtils.writeStringToFile(f1Result,""+mlMeasures.getInstanceAverage().getF1());
+//    }
 
 
 
@@ -204,11 +241,11 @@ public class BRRerank {
         System.out.println("classification performance on test set");
         System.out.println(mlMeasures);
 
-        Paths.get(config.getString("output")).toFile().mkdirs();
-        File accResult = Paths.get(config.getString("output"),dataName+"_accuracy.txt").toFile();
+        Paths.get(config.getString("output"),"reports").toFile().mkdirs();
+        File accResult = Paths.get(config.getString("output"),"reports",dataName+"_accuracy.txt").toFile();
         FileUtils.writeStringToFile(accResult,""+mlMeasures.getInstanceAverage().getAccuracy());
 
-        File f1Result = Paths.get(config.getString("output"),dataName+"_f1.txt").toFile();
+        File f1Result = Paths.get(config.getString("output"),"reports",dataName+"_f1.txt").toFile();
         FileUtils.writeStringToFile(f1Result,""+mlMeasures.getInstanceAverage().getF1());
 
 
@@ -219,9 +256,9 @@ public class BRRerank {
                     .collect(Collectors.toList());
 
             CaliRes caliRes = eval(instances, setCalibrator);
-            FileUtils.writeStringToFile(Paths.get(config.getString("output"),dataName+"_mse.txt").toFile(),""+caliRes.mse);
-            FileUtils.writeStringToFile(Paths.get(config.getString("output"),dataName+"_sharpness.txt").toFile(),""+caliRes.sharpness);
-            FileUtils.writeStringToFile(Paths.get(config.getString("output"),dataName+"_alignment.txt").toFile(),""+caliRes.alignment);
+            FileUtils.writeStringToFile(Paths.get(config.getString("output"),"reports",dataName+"_mse.txt").toFile(),""+caliRes.mse);
+            FileUtils.writeStringToFile(Paths.get(config.getString("output"),"reports",dataName+"_sharpness.txt").toFile(),""+caliRes.sharpness);
+            FileUtils.writeStringToFile(Paths.get(config.getString("output"),"reports",dataName+"_alignment.txt").toFile(),""+caliRes.alignment);
         }
 
 
@@ -233,7 +270,7 @@ public class BRRerank {
 
         br.setString("input.trainData", Paths.get(config.getString("dataPath"),"train").toString());
         br.setString("input.testData", Paths.get(config.getString("dataPath"),"test").toString());
-        br.setString("output.dir",config.getString("outputDir"));
+        br.setString("output.dir",Paths.get(config.getString("outputDir"),"models").toString());
         br.setString("train.iterations",config.getString("BR.iteration"));
         br.setString("train.penalty",config.getString("BR.penalty"));
         br.setString("train.l1Ratio",config.getString("BR.l1Ratio"));
@@ -248,7 +285,7 @@ public class BRRerank {
         cali.setString("cal", Paths.get(config.getString("dataPath"),"cal").toString());
         cali.setString("valid", Paths.get(config.getString("dataPath"),"valid").toString());
         cali.setString("test", Paths.get(config.getString("dataPath"),"test").toString());
-        cali.setString("cbm",Paths.get(config.getString("outputDir"),"model").toString());
+        cali.setString("cbm",Paths.get(config.getString("outputDir"),"models","model").toString());
         cali.setString("output",config.getString("outputDir"));
         cali.setString("predict.mode",config.getString("predictMode"));
         String[] toCopy={"setPrior","brProb","card","encodeLabel","numTrainCandidates",
