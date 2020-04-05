@@ -11,15 +11,11 @@ import edu.neu.ccs.pyramid.multilabel_classification.predictor.IndependentPredic
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class BRRerank {
     public static void main(String[] args) throws Exception{
@@ -39,6 +35,9 @@ public class BRRerank {
 
         Config caliConfig  = produceCaliConfig(config);
         calibrate(caliConfig);
+        report(config);
+        calibration_eval(config);
+        classification_eval(config);
 
     }
 
@@ -147,82 +146,19 @@ public class BRRerank {
         Serialization.serialize(labelCalibrator,Paths.get(config.getString("output"),"models","label_calibrator"));
         Serialization.serialize(setCalibrator,Paths.get(config.getString("output"),"models","set_calibrator"));
         Serialization.serialize(predictionFeatureExtractor,Paths.get(config.getString("output"),"models","calibration_feature_extractor"));
-
-
-        showPerformance(config, test, cbm, labelCalibrator, setCalibrator, calibrationDataGenerator, "test");
     }
 
-//    private static void report(Config config) throws Exception{
-//        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"),DataSetType.ML_CLF_SPARSE,true);
-//        CBM cbm = (CBM) Serialization.deserialize(config.getString("cbm"));
-//        cbm.setAllowEmpty(config.getBoolean("allowEmpty"));
-//        MultiLabelClassifier classifier = null;
-//        switch (config.getString("predict.mode")){
-//
-//            case "independent":
-//                classifier = new IndependentPredictor(cbm,labelCalibrator);
-//                break;
-//            case "rerank":
-//                classifier = (Reranker)setCalibrator;
-//                break;
-//
-//            default:
-//                throw new IllegalArgumentException("illegal predict.mode");
-//        }
-//        MultiLabel[] predictions = classifier.predict(dataset);
-//
-//        MLMeasures mlMeasures =new MLMeasures(dataset.getNumClasses(),dataset.getMultiLabels(), predictions);
-//
-//        System.out.println("classification performance on test set");
-//        System.out.println(mlMeasures);
-//
-//        Paths.get(config.getString("output")).toFile().mkdirs();
-//        File accResult = Paths.get(config.getString("output"),dataName+"_accuracy.txt").toFile();
-//        FileUtils.writeStringToFile(accResult,""+mlMeasures.getInstanceAverage().getAccuracy());
-//
-//        File f1Result = Paths.get(config.getString("output"),dataName+"_f1.txt").toFile();
-//        FileUtils.writeStringToFile(f1Result,""+mlMeasures.getInstanceAverage().getF1());
-//    }
-
-
-
-    private static CaliRes eval(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator calibrator){
-        double mse = CalibrationEval.mse(generateStream(predictions,calibrator));
-        double sharpness = CalibrationEval.sharpness(generateStream(predictions,calibrator),10);
-        double alignent = CalibrationEval.squareError(generateStream(predictions,calibrator),10);
-
-        System.out.println("calibration performance on test set");
-        System.out.println("mse="+mse);
-        System.out.println("alignment error="+alignent);
-        System.out.println("sharpness="+sharpness);
-        System.out.println("uncertainty="+CalibrationEval.variance(generateStream(predictions,calibrator)));
-        CaliRes caliRes = new CaliRes();
-        caliRes.mse = mse;
-        caliRes.sharpness = sharpness;
-        caliRes.alignment = alignent;
-
-        return caliRes;
-    }
-
-    private static Stream<Pair<Double,Double>> generateStream(List<CalibrationDataGenerator.CalibrationInstance> predictions, VectorCalibrator vectorCalibrator){
-        return predictions.stream()
-                .parallel().map(pred->new Pair<>(vectorCalibrator.calibrate(pred.vector),(double)pred.correctness));
-    }
-
-
-    public static class CaliRes implements Serializable {
-        public static final long serialVersionUID = 446782166720638575L;
-        public double mse;
-        public double sharpness;
-        public double alignment;
-    }
-
-    private static void showPerformance(Config config, MultiLabelClfDataSet dataset, CBM cbm, LabelCalibrator labelCalibrator,
-                                        VectorCalibrator setCalibrator, CalibrationDataGenerator calibrationDataGenerator,
-                                        String dataName) throws Exception{
-
+    private static void report(Config config) throws Exception{
+        MultiLabelClfDataSet dataset = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"test").toFile(),DataSetType.ML_CLF_SPARSE,true);
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","model"));
+        cbm.setAllowEmpty(true);
         MultiLabelClassifier classifier = null;
-        switch (config.getString("predict.mode")){
+
+        LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","label_calibrator"));
+        VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","set_calibrator"));
+        PredictionFeatureExtractor predictionFeatureExtractor = (PredictionFeatureExtractor) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","calibration_feature_extractor"));
+        CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(labelCalibrator,predictionFeatureExtractor);
+        switch (config.getString("predictMode")){
 
             case "independent":
                 classifier = new IndependentPredictor(cbm,labelCalibrator);
@@ -236,33 +172,64 @@ public class BRRerank {
         }
         MultiLabel[] predictions = classifier.predict(dataset);
 
-        MLMeasures mlMeasures =new MLMeasures(dataset.getNumClasses(),dataset.getMultiLabels(), predictions);
 
-        System.out.println("classification performance on test set");
-        System.out.println(mlMeasures);
-
-        Paths.get(config.getString("output"),"reports").toFile().mkdirs();
-        File accResult = Paths.get(config.getString("output"),"reports",dataName+"_accuracy.txt").toFile();
-        FileUtils.writeStringToFile(accResult,""+mlMeasures.getInstanceAverage().getAccuracy());
-
-        File f1Result = Paths.get(config.getString("output"),"reports",dataName+"_f1.txt").toFile();
-        FileUtils.writeStringToFile(f1Result,""+mlMeasures.getInstanceAverage().getF1());
-
-
-        if (true) {
-
-            List<CalibrationDataGenerator.CalibrationInstance> instances = IntStream.range(0, dataset.getNumDataPoints()).parallel()
-                    .boxed().map(i -> calibrationDataGenerator.createInstance(cbm, dataset.getRow(i),predictions[i],dataset.getMultiLabels()[i],"accuracy"))
-                    .collect(Collectors.toList());
-
-            CaliRes caliRes = eval(instances, setCalibrator);
-            FileUtils.writeStringToFile(Paths.get(config.getString("output"),"reports",dataName+"_mse.txt").toFile(),""+caliRes.mse);
-            FileUtils.writeStringToFile(Paths.get(config.getString("output"),"reports",dataName+"_sharpness.txt").toFile(),""+caliRes.sharpness);
-            FileUtils.writeStringToFile(Paths.get(config.getString("output"),"reports",dataName+"_alignment.txt").toFile(),""+caliRes.alignment);
+        List<Double> confidenceScores = IntStream.range(0, dataset.getNumDataPoints()).parallel()
+                .boxed().map(i -> {CalibrationDataGenerator.CalibrationInstance predictionInstance = calibrationDataGenerator.createInstance(cbm, dataset.getRow(i),predictions[i],dataset.getMultiLabels()[i],"accuracy");
+                    double confidence = setCalibrator.calibrate(predictionInstance.vector);
+                    return confidence; }
+                    ).collect(Collectors.toList());
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("set_prediction").append("\t").append("confidence").append("\t").append("ground_truth").append("\t").append("set accuracy").append("\n");
+        for (int i=0;i<dataset.getNumDataPoints();i++){
+            stringBuilder.append(predictions[i]).append("\t")
+                    .append(confidenceScores.get(i)).append("\t")
+                    .append(dataset.getMultiLabels()[i]).append("\t")
+                    .append(predictions[i].equals(dataset.getMultiLabels()[i])?1:0).append("\n");
         }
 
+        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile(),stringBuilder.toString());
 
     }
+
+    private static void classification_eval(Config config) throws Exception{
+        System.out.println("classification performance on test set");
+        MultiLabelClfDataSet dataset = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"test").toFile(),DataSetType.ML_CLF_SPARSE,true);
+        MultiLabel[] predictions = FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile())
+                .stream().skip(1).map(line->new MultiLabel(line.split("\t")[0].replace("{","").replace("}",""),dataset.getLabelTranslator()))
+                .toArray(MultiLabel[]::new);
+
+        MLMeasures mlMeasures =new MLMeasures(dataset.getNumClasses(),dataset.getMultiLabels(), predictions);
+        System.out.println("classification performance");
+        System.out.println(mlMeasures);
+        Paths.get(config.getString("outputDir")).toFile().mkdirs();
+        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","classification_performance.txt").toFile(),mlMeasures.toString());
+
+    }
+
+    private static void calibration_eval(Config config) throws Exception{
+        List<Pair<Double,Double>> confidenceVsAccuracy= FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile())
+                .stream().skip(1).map(line->{
+                    double conf = Double.parseDouble(line.split("\t")[1]);
+                    double acc = Double.parseDouble(line.split("\t")[3]);
+                    Pair<Double,Double> pair = new Pair<>(conf,acc);
+                    return pair;
+                }).collect(Collectors.toList());
+        double mse = CalibrationEval.mse(confidenceVsAccuracy.stream());
+        double sharpness = CalibrationEval.sharpness(confidenceVsAccuracy.stream(),10);
+        double alignment = CalibrationEval.squareError(confidenceVsAccuracy.stream(),10);
+        double uncertainty=CalibrationEval.variance(confidenceVsAccuracy.stream());
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("mse=").append(mse).append("\n");
+        stringBuilder.append("alignment error=").append(alignment).append("\n");
+        stringBuilder.append("sharpness=").append(sharpness).append("\n");
+        stringBuilder.append("uncertainty=").append(uncertainty).append("\n");
+
+        System.out.println("calibration performance on test set");
+        System.out.println(stringBuilder.toString());
+
+        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","calibration_performance.txt").toFile(),stringBuilder.toString());
+    }
+
 
 
     private static Config produceBRConfig(Config config){
