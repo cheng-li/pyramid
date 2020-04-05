@@ -11,6 +11,8 @@ import edu.neu.ccs.pyramid.multilabel_classification.predictor.IndependentPredic
 import edu.neu.ccs.pyramid.util.Pair;
 import edu.neu.ccs.pyramid.util.Serialization;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.time.StopWatch;
+
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +50,6 @@ public class BRRerank {
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("valid"),DataSetType.ML_CLF_SPARSE,true);
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("cal"),DataSetType.ML_CLF_SPARSE,true);
 
-        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(config.getString("test"),DataSetType.ML_CLF_SPARSE,true);
         CBM cbm = (CBM) Serialization.deserialize(config.getString("cbm"));
         cbm.setAllowEmpty(config.getBoolean("allowEmpty"));
 
@@ -63,6 +64,9 @@ public class BRRerank {
             setCalData = DataSetUtil.sampleData(cal, setCalIndices);
         }
 
+        System.out.println("Start training calibrator");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         LabelCalibrator labelCalibrator = null;
         switch (config.getString("labelCalibrator")){
             case "isotonic":
@@ -143,6 +147,9 @@ public class BRRerank {
                 throw new IllegalArgumentException("illegal setCalibrator");
         }
 
+        System.out.println("Finish training calibrator");
+        System.out.println("time spent on calibrator training = "+stopWatch);
+        System.out.println();
         Serialization.serialize(labelCalibrator,Paths.get(config.getString("output"),"models","label_calibrator"));
         Serialization.serialize(setCalibrator,Paths.get(config.getString("output"),"models","set_calibrator"));
         Serialization.serialize(predictionFeatureExtractor,Paths.get(config.getString("output"),"models","calibration_feature_extractor"));
@@ -193,7 +200,7 @@ public class BRRerank {
         }
 
         FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile(),stringBuilder.toString());
-
+        System.out.println("set predictions and confidence scores are saved to "+Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toString());
     }
 
     private static void classification_eval(Config config) throws Exception{

@@ -52,9 +52,10 @@ public class CalibrationDataGenerator implements Serializable {
                 .build();
         double[] weights = new double[calibrationInstances.size()];
         for (int i = 0; i< calibrationInstances.size(); i++){
-            //todo sparse
-            for (int j=0;j<regDataSet.getNumFeatures();j++){
-                regDataSet.setFeatureValue(i,j, calibrationInstances.get(i).vector.get(j));
+            for (Vector.Element nonzero: calibrationInstances.get(i).vector.nonZeroes()){
+                int j = nonzero.index();
+                double v = nonzero.get();
+                regDataSet.setFeatureValue(i,j,v);
             }
             regDataSet.setLabel(i, calibrationInstances.get(i).correctness);
             weights[i] = calibrationInstances.get(i).weight;
