@@ -1,5 +1,9 @@
 package edu.neu.ccs.pyramid.dataset;
 
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -66,6 +70,23 @@ public class LabelTranslator implements Serializable{
             this.intToExt.put(i,extLabel);
             this.extToInt.put(extLabel,i);
         }
+    }
+
+    public static LabelTranslator loadFromTxtFile(File txtFile){
+        List<String> lines = null;
+        try {
+            lines = FileUtils.readLines(txtFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Map<Integer, String> intToExtMap = new HashMap<>();
+        for (String line: lines){
+            int splitIndex = line.indexOf("=");
+            int index = Integer.parseInt(line.substring(0,splitIndex));
+            String extLabel = line.substring(splitIndex+1);
+            intToExtMap.put(index,extLabel);
+        }
+        return new LabelTranslator(intToExtMap);
     }
 
 
