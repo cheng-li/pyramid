@@ -69,11 +69,18 @@ public class BRRerank {
 
         MultiLabelClfDataSet setCalData = cal;
 
+        LabelProbMatrix labelProbMatrix = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_cal","raw_label_scores.txt").toFile(),cal.getLabelTranslator());
+
+        LabelProbMatrix labelCalProbMatrix= null;
+        LabelProbMatrix setCalProbMatrix= null;
+
         if (config.getBoolean("splitCalibrationData")){
             List<Integer> labelCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==0).boxed().collect(Collectors.toList());
             List<Integer> setCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==1).boxed().collect(Collectors.toList());
             labelCalData = DataSetUtil.sampleData(cal, labelCalIndices);
             setCalData = DataSetUtil.sampleData(cal, setCalIndices);
+            labelCalProbMatrix = LabelProbUtil.sampleData(labelProbMatrix,labelCalIndices);
+            setCalProbMatrix = LabelProbUtil.sampleData(labelProbMatrix,setCalIndices);
         }
 
         System.out.println("Start training calibrator");
@@ -82,7 +89,7 @@ public class BRRerank {
         LabelCalibrator labelCalibrator = null;
         switch (config.getString("labelCalibrator")){
             case "isotonic":
-                IsoLabelCalibrator isoLabelCalibrator = new IsoLabelCalibrator(cbm, labelCalData);
+                IsoLabelCalibrator isoLabelCalibrator = new IsoLabelCalibrator(labelCalProbMatrix, labelCalData, false);
                 isoLabelCalibrator.setConfidenceLowerBound(0);
                 isoLabelCalibrator.setConfidenceUpperBound(1);
                 labelCalibrator = isoLabelCalibrator;

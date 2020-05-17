@@ -411,6 +411,28 @@ public class DataSetUtil {
     }
 
 
+    public static DataSet sampleData(DataSet dataSet, List<Integer> indices){
+        DataSet sample;
+        sample = DataSetBuilder.getBuilder().numDataPoints(indices.size())
+                .numFeatures(dataSet.getNumFeatures())
+                .missingValue(dataSet.hasMissingValue())
+                .density(dataSet.density())
+                .build();
+
+        for (int i=0;i<indices.size();i++){
+            int indexInOld = indices.get(i);
+            Vector oldVector = dataSet.getRow(indexInOld);
+            //copy row feature values, optimized for sparse vector
+            for (Vector.Element element: oldVector.nonZeroes()){
+                sample.setFeatureValue(i,element.index(),element.get());
+            }
+        }
+        sample.setFeatureList(dataSet.getFeatureList());
+        //ignore idTranslator as we may have duplicate extIds
+        return sample;
+    }
+
+
     public static Pair<DataSet, double[][]> sampleData(DataSet dataSet, double[][] targetDistribution, List<Integer> indices){
         DataSet sample;
         int numClasses = targetDistribution[0].length;

@@ -19,8 +19,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class LabelProbMatrix {
-    private LabelTranslator labelTranslator;
-    private DataSet matrix;
+    LabelTranslator labelTranslator;
+    DataSet matrix;
+
+    public LabelProbMatrix() {
+    }
 
     public LabelProbMatrix(int numRows, int numColumns, LabelTranslator labelTranslator) {
         this.matrix = DataSetBuilder.getBuilder()

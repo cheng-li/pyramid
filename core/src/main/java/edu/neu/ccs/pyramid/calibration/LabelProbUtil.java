@@ -1,14 +1,22 @@
 package edu.neu.ccs.pyramid.calibration;
 
 
+import edu.neu.ccs.pyramid.dataset.DataSetUtil;
 import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
 import edu.neu.ccs.pyramid.multilabel_classification.MultiLabelClassifier;
 import edu.neu.ccs.pyramid.util.Vectors;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class LabelProbUtil {
 
+    public static LabelProbMatrix sampleData(LabelProbMatrix labelProbMatrix, List<Integer> indices){
+        LabelProbMatrix sampled = new LabelProbMatrix();
+        sampled.matrix = DataSetUtil.sampleData(labelProbMatrix.matrix,indices);
+        sampled.labelTranslator = labelProbMatrix.labelTranslator;
+        return sampled;
+    }
 
 
     public static LabelProbMatrix calibrate(LabelProbMatrix labelProbMatrix, LabelCalibrator labelCalibrator,
