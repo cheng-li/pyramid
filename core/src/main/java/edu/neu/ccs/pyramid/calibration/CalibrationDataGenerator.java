@@ -1,9 +1,6 @@
 package edu.neu.ccs.pyramid.calibration;
 
-import edu.neu.ccs.pyramid.dataset.MultiLabel;
-import edu.neu.ccs.pyramid.dataset.MultiLabelClfDataSet;
-import edu.neu.ccs.pyramid.dataset.RegDataSet;
-import edu.neu.ccs.pyramid.dataset.RegDataSetBuilder;
+import edu.neu.ccs.pyramid.dataset.*;
 import edu.neu.ccs.pyramid.eval.FMeasure;
 import edu.neu.ccs.pyramid.eval.MLMeasures;
 import edu.neu.ccs.pyramid.feature.FeatureList;
@@ -21,25 +18,23 @@ import java.util.stream.IntStream;
 
 public class CalibrationDataGenerator implements Serializable {
     private static final long serialVersionUID = 1L;
-    private LabelCalibrator labelCalibrator;
     private PredictionFeatureExtractor predictionFeatureExtractor;
 
-    public CalibrationDataGenerator(LabelCalibrator labelCalibrator, PredictionFeatureExtractor predictionFeatureExtractor) {
-        this.labelCalibrator = labelCalibrator;
+    public CalibrationDataGenerator(PredictionFeatureExtractor predictionFeatureExtractor) {
         this.predictionFeatureExtractor = predictionFeatureExtractor;
     }
 
-    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, MultiLabelClassifier.ClassProbEstimator classProbEstimator, int numCandidates,String calibrateTarget, List<MultiLabel> support, int numSupportCandidates){
+    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, LabelProbMatrix probabilityMatrix, int numCandidates, String calibrateTarget, List<MultiLabel> support, int numSupportCandidates){
         List<CalibrationInstance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], classProbEstimator , i, numCandidates,calibrateTarget, support, numSupportCandidates).stream())
+                .boxed().flatMap(i -> expand(i,calDataSet.getRow(i),calDataSet.getMultiLabels()[i], probabilityMatrix, i, numCandidates,calibrateTarget, support, numSupportCandidates).stream())
                 .collect(Collectors.toList());
         return createData(instances);
     }
 
 
-    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, List<Vector> uncalibratedLabelScores, int numCandidates,String calibrateTarget, List<MultiLabel> support, int numSupportCandidates){
+    public TrainData createCaliTrainingData(MultiLabelClfDataSet calDataSet, List<Vector> labelScores, int numCandidates,String calibrateTarget, List<MultiLabel> support, int numSupportCandidates){
         List<CalibrationInstance> instances = IntStream.range(0, calDataSet.getNumDataPoints()).parallel()
-                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], Vectors.toArray(uncalibratedLabelScores.get(i)) , i, numCandidates,calibrateTarget, support, numSupportCandidates).stream())
+                .boxed().flatMap(i -> expand(calDataSet.getRow(i),calDataSet.getMultiLabels()[i], Vectors.toArray(labelScores.get(i)) , i, numCandidates,calibrateTarget, support, numSupportCandidates).stream())
                 .collect(Collectors.toList());
         return createData(instances);
     }
@@ -80,16 +75,15 @@ public class CalibrationDataGenerator implements Serializable {
         return new TrainData(regDataSet, weights, instancesForEachQuery);
     }
 
-    private List<CalibrationInstance> expand(Vector x, MultiLabel groundTruth,
-                                             MultiLabelClassifier.ClassProbEstimator classProbEstimator, int queryId, int numCandidates,String calibrateTarget,List<MultiLabel> support, int numSupportCandidates){
-        double[] uncalibratedLabelScores = classProbEstimator.predictClassProbs(x);
-        return expand(x, groundTruth, uncalibratedLabelScores, queryId, numCandidates,calibrateTarget, support, numSupportCandidates);
+    private List<CalibrationInstance> expand(int instanceId, Vector x, MultiLabel groundTruth,
+                                             LabelProbMatrix probabilityMatrix, int queryId, int numCandidates,String calibrateTarget,List<MultiLabel> support, int numSupportCandidates){
+        double[] labelProbs = Vectors.toArray(probabilityMatrix.getMatrix().getRow(instanceId));
+        return expand(x, groundTruth, labelProbs, queryId, numCandidates,calibrateTarget, support, numSupportCandidates);
     }
 
     private List<CalibrationInstance> expand(Vector x, MultiLabel groundTruth,
-                                             double[] uncalibratedLabelScores, int queryId, int numCandidates,String calibrateTarget,
+                                             double[] marginals, int queryId, int numCandidates,String calibrateTarget,
                                             List<MultiLabel> support, int numSupportCandidates){
-        double[] marginals = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
         List<CalibrationInstance> calibrationInstances = new ArrayList<>();
         DynamicProgramming dynamicProgramming = new DynamicProgramming(marginals);
         List<Pair<MultiLabel,Double>> topK = dynamicProgramming.topK(numCandidates);
@@ -144,18 +138,18 @@ public class CalibrationDataGenerator implements Serializable {
     }
 
 
-    public CalibrationInstance createInstance(MultiLabelClassifier.ClassProbEstimator classProbEstimator, Vector x,
+    public CalibrationInstance createInstance(LabelProbMatrix labelProbMatrix, int instanceId, Vector x,
                                               MultiLabel prediction, MultiLabel groundtruth,String calibrateTarget){
-        double[] uncalibratedLabelScores = classProbEstimator.predictClassProbs(x);
-        return createInstance(x, uncalibratedLabelScores, prediction, groundtruth,calibrateTarget);
+        double[] labelProbs = Vectors.toArray(labelProbMatrix.getMatrix().getRow(instanceId));
+        return createInstance(x, labelProbs, prediction, groundtruth,calibrateTarget);
     }
 
-    public CalibrationInstance createInstance(Vector x, double[] uncalibratedLabelScores,
+    public CalibrationInstance createInstance(Vector x, double[] labelProbs,
                                               MultiLabel prediction, MultiLabel groundtruth,String calibrateTarget){
         PredictionCandidate predictionCandidate = new PredictionCandidate();
         predictionCandidate.x = x;
         predictionCandidate.multiLabel = prediction;
-        predictionCandidate.labelProbs = labelCalibrator.calibratedClassProbs(uncalibratedLabelScores);
+        predictionCandidate.labelProbs = labelProbs;
         DynamicProgramming dynamicProgramming = new DynamicProgramming(predictionCandidate.labelProbs);
         List<Pair<MultiLabel,Double>> sparseJoint = dynamicProgramming.topK(50);
         predictionCandidate.sparseJoint = sparseJoint;
