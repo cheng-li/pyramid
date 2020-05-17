@@ -29,7 +29,7 @@ public class LabelProbUtil {
                     double[] calibratedProbs = labelCalibrator.calibratedClassProbs(rawProbs);
                     for (int j = 0; j < calibratedProbs.length; j++) {
                         if (calibratedProbs[j] >= threshold) {
-                            labelProbMatrix.getMatrix().setFeatureValue(i,j,calibratedProbs[j]);
+                            calibrated.getMatrix().setFeatureValue(i,j,calibratedProbs[j]);
                         }
                     }
                 });

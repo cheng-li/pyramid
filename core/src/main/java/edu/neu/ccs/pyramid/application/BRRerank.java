@@ -69,18 +69,18 @@ public class BRRerank {
 
         MultiLabelClfDataSet setCalData = cal;
 
-        LabelProbMatrix labelProbMatrix = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_cal","raw_label_scores.txt").toFile(),cal.getLabelTranslator());
+        LabelProbMatrix rawLabelProbMatrix = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_cal","raw_label_scores.txt").toFile(),cal.getLabelTranslator());
 
         LabelProbMatrix labelCalProbMatrix= null;
-        LabelProbMatrix setCalProbMatrix= null;
+
 
         if (config.getBoolean("splitCalibrationData")){
             List<Integer> labelCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==0).boxed().collect(Collectors.toList());
             List<Integer> setCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==1).boxed().collect(Collectors.toList());
             labelCalData = DataSetUtil.sampleData(cal, labelCalIndices);
             setCalData = DataSetUtil.sampleData(cal, setCalIndices);
-            labelCalProbMatrix = LabelProbUtil.sampleData(labelProbMatrix,labelCalIndices);
-            setCalProbMatrix = LabelProbUtil.sampleData(labelProbMatrix,setCalIndices);
+            labelCalProbMatrix = LabelProbUtil.sampleData(rawLabelProbMatrix,labelCalIndices);
+            
         }
 
         System.out.println("Start training calibrator");
@@ -98,6 +98,11 @@ public class BRRerank {
                 labelCalibrator = new IdentityLabelCalibrator();
                 break;
         }
+
+        LabelProbUtil.calibrate(rawLabelProbMatrix,labelCalibrator,0.0).writeToFile(Paths.get(config.getString("output"),"reports_cal","calibrated_label_scores.txt").toFile());
+
+
+
 
         List<PredictionFeatureExtractor> extractors = new ArrayList<>();
 
