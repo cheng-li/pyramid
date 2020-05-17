@@ -51,9 +51,9 @@ public class BRRerank {
         MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"valid").toFile(),DataSetType.ML_CLF_SPARSE,true);
         MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"cal").toFile(),DataSetType.ML_CLF_SPARSE,true);
         MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"test").toFile(),DataSetType.ML_CLF_SPARSE,true);
-        LabelProbUtil.genLabelProbMatrix(cbm,valid,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_valid","raw_label_scores.txt").toFile());
-        LabelProbUtil.genLabelProbMatrix(cbm,cal,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_cal","raw_label_scores.txt").toFile());
-        LabelProbUtil.genLabelProbMatrix(cbm,test,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_test","raw_label_scores.txt").toFile());
+        LabelProbUtil.genLabelProbMatrix(cbm,valid,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_valid","uncalibrated_label_confidence.txt").toFile());
+        LabelProbUtil.genLabelProbMatrix(cbm,cal,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_cal","uncalibrated_label_confidence.txt").toFile());
+        LabelProbUtil.genLabelProbMatrix(cbm,test,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_test","uncalibrated_label_confidence.txt").toFile());
     }
 
     public static void calibrate(Config config) throws Exception{
@@ -70,9 +70,9 @@ public class BRRerank {
 
 
 
-        LabelProbMatrix rawLabelProbMatrixCalib = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_cal","raw_label_scores.txt").toFile(),train.getLabelTranslator());
-        LabelProbMatrix rawLabelProbMatrixValid = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_valid","raw_label_scores.txt").toFile(),train.getLabelTranslator());
-        LabelProbMatrix rawLabelProbMatrixTest = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_test","raw_label_scores.txt").toFile(),train.getLabelTranslator());
+        LabelProbMatrix rawLabelProbMatrixCalib = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_cal","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
+        LabelProbMatrix rawLabelProbMatrixValid = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_valid","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
+        LabelProbMatrix rawLabelProbMatrixTest = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_test","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
 
         LabelProbMatrix labelCalProbMatrix= null;
 
@@ -103,11 +103,11 @@ public class BRRerank {
         }
 
         LabelProbMatrix calibratedLabelProbMatrixCalib = LabelProbUtil.calibrate(rawLabelProbMatrixCalib,labelCalibrator,0.0);
-        calibratedLabelProbMatrixCalib.writeToFile(Paths.get(config.getString("output"),"reports_cal","calibrated_label_scores.txt").toFile());
+        calibratedLabelProbMatrixCalib.writeToFile(Paths.get(config.getString("output"),"reports_cal","calibrated_label_confidence.txt").toFile());
         LabelProbMatrix calibratedLabelProbMatrixValid = LabelProbUtil.calibrate(rawLabelProbMatrixValid,labelCalibrator,0.0);
-        calibratedLabelProbMatrixValid.writeToFile(Paths.get(config.getString("output"),"reports_valid","calibrated_label_scores.txt").toFile());
+        calibratedLabelProbMatrixValid.writeToFile(Paths.get(config.getString("output"),"reports_valid","calibrated_label_confidence.txt").toFile());
         LabelProbMatrix calibratedLabelProbMatrixTest = LabelProbUtil.calibrate(rawLabelProbMatrixTest,labelCalibrator,0.0);
-        calibratedLabelProbMatrixTest.writeToFile(Paths.get(config.getString("output"),"reports_test","calibrated_label_scores.txt").toFile());
+        calibratedLabelProbMatrixTest.writeToFile(Paths.get(config.getString("output"),"reports_test","calibrated_label_confidence.txt").toFile());
 
         LabelProbMatrix setCalibLabelProbMatrix = null;
         MultiLabelClfDataSet setCalData = cal;
@@ -198,7 +198,7 @@ public class BRRerank {
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","model"));
         cbm.setAllowEmpty(true);
 
-        LabelProbMatrix calibratedLabelProbMatrixTest = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_test","calibrated_label_scores.txt").toFile(),cbm.getLabelTranslator());
+        LabelProbMatrix calibratedLabelProbMatrixTest = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_test","calibrated_label_confidence.txt").toFile(),cbm.getLabelTranslator());
 
         LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","label_calibrator"));
         VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","set_calibrator"));
@@ -242,14 +242,14 @@ public class BRRerank {
                     .append(predictions[i].equals(dataset.getMultiLabels()[i])?1:0).append("\n");
         }
 
-        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile(),stringBuilder.toString());
-        System.out.println("set predictions and confidence scores are saved to "+Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toString()+"\n");
+        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports_test","set_prediction_and_confidence.txt").toFile(),stringBuilder.toString());
+        System.out.println("set predictions and confidence scores are saved to "+Paths.get(config.getString("outputDir"),"reports_test","set_prediction_and_confidence.txt").toString()+"\n");
     }
 
     private static void classification_eval(Config config) throws Exception{
         System.out.println("classification performance on test set");
         MultiLabelClfDataSet dataset = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"test").toFile(),DataSetType.ML_CLF_SPARSE,true);
-        MultiLabel[] predictions = FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile())
+        MultiLabel[] predictions = FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports_test","set_prediction_and_confidence.txt").toFile())
                 .stream().skip(1).map(line->new MultiLabel(line.split("\t")[0].replace("{","").replace("}","")))
                 .toArray(MultiLabel[]::new);
 
@@ -257,12 +257,12 @@ public class BRRerank {
         System.out.println("classification performance");
         System.out.println(mlMeasures);
         Paths.get(config.getString("outputDir")).toFile().mkdirs();
-        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","classification_performance.txt").toFile(),mlMeasures.toString());
+        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports_test","classification_performance.txt").toFile(),mlMeasures.toString());
 
     }
 
     private static void calibration_eval(Config config) throws Exception{
-        List<Pair<Double,Double>> confidenceVsAccuracy= FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports","set_prediction_and_confidence.txt").toFile())
+        List<Pair<Double,Double>> confidenceVsAccuracy= FileUtils.readLines(Paths.get(config.getString("outputDir"),"reports_test","set_prediction_and_confidence.txt").toFile())
                 .stream().skip(1).map(line->{
                     double conf = Double.parseDouble(line.split("\t")[2]);
                     double acc = Double.parseDouble(line.split("\t")[4]);
@@ -282,7 +282,7 @@ public class BRRerank {
         System.out.println("calibration performance on test set");
         System.out.println(stringBuilder.toString());
 
-        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports","calibration_performance.txt").toFile(),stringBuilder.toString());
+        FileUtils.writeStringToFile(Paths.get(config.getString("outputDir"),"reports_test","calibration_performance.txt").toFile(),stringBuilder.toString());
     }
 
 
