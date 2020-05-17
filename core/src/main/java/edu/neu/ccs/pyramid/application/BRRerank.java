@@ -32,16 +32,25 @@ public class BRRerank {
             Config brConfig = produceBRConfig(config);
             CBMEN.main(brConfig);
             System.out.println("Finish training BR classifier");
+            writeRawScores(config);
         }
 
-        writeRawScores(config);
+
+        if (config.getBoolean("calibrate")){
+            Config caliConfig  = produceCaliConfig(config);
+            calibrate(caliConfig);
+        }
 
 
-        Config caliConfig  = produceCaliConfig(config);
-        calibrate(caliConfig);
-        report(config);
-        calibration_eval(config);
-        classification_eval(config);
+        if (config.getBoolean("predict")){
+            report(config);
+            calibration_eval(config);
+            classification_eval(config);   
+        }
+
+
+
+
 
     }
 
