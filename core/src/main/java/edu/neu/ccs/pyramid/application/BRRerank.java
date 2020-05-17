@@ -34,6 +34,8 @@ public class BRRerank {
             System.out.println("Finish training BR classifier");
         }
 
+        writeRawScores(config);
+
 
         Config caliConfig  = produceCaliConfig(config);
         calibrate(caliConfig);
@@ -43,6 +45,16 @@ public class BRRerank {
 
     }
 
+
+    private static void writeRawScores(Config config) throws Exception{
+        CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","model"));
+        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"valid").toFile(),DataSetType.ML_CLF_SPARSE,true);
+        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"cal").toFile(),DataSetType.ML_CLF_SPARSE,true);
+        MultiLabelClfDataSet test = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"test").toFile(),DataSetType.ML_CLF_SPARSE,true);
+        LabelProbUtil.genLabelProbMatrix(cbm,valid,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_valid","raw_label_scores.txt").toFile());
+        LabelProbUtil.genLabelProbMatrix(cbm,cal,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_cal","raw_label_scores.txt").toFile());
+        LabelProbUtil.genLabelProbMatrix(cbm,test,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_test","raw_label_scores.txt").toFile());
+    }
 
     public static void calibrate(Config config) throws Exception{
 

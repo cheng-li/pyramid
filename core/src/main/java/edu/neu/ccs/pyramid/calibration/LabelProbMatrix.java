@@ -108,6 +108,7 @@ public class LabelProbMatrix {
     }
 
     public void writeToFile(File file){
+        file.getParentFile().mkdirs();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file));
         ) {
             for (int i=0;i<matrix.getNumDataPoints();i++){
