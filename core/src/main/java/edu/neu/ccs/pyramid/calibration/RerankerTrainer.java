@@ -30,8 +30,8 @@ public class RerankerTrainer {
 
 
 
-    public Reranker train(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
-                          PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
+    public Reranker train(RegDataSet regDataSet, double[] instanceWeights,
+                          PredictionFeatureExtractor predictionFeatureExtractor, RegDataSet validation){
         LSBoost lsBoost = new LSBoost();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
@@ -67,14 +67,14 @@ public class RerankerTrainer {
             }
         }
 //        System.out.println("best iteration = "+earlyStopper.getBestIteration());
-        return new Reranker(bestModel, classProbEstimator, numCandidates,predictionFeatureExtractor, labelCalibrator);
+        return new Reranker(bestModel, numCandidates,predictionFeatureExtractor);
     }
 
 
 
 
-    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
-                                     PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation,
+    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights,
+                                     PredictionFeatureExtractor predictionFeatureExtractor,  RegDataSet validation,
                                      double[] noiseRates0, double[] noiseRates1){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
@@ -116,12 +116,12 @@ public class RerankerTrainer {
                 }
             }
         }
-        return new Reranker(bestModel, classProbEstimator, numCandidates,predictionFeatureExtractor, labelCalibrator);
+        return new Reranker(bestModel, numCandidates,predictionFeatureExtractor);
     }
 
 
-    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights, MultiLabelClassifier.ClassProbEstimator classProbEstimator,
-                                     PredictionFeatureExtractor predictionFeatureExtractor, LabelCalibrator labelCalibrator, RegDataSet validation){
+    public Reranker trainWithSigmoid(RegDataSet regDataSet, double[] instanceWeights,
+                                     PredictionFeatureExtractor predictionFeatureExtractor,  RegDataSet validation){
         LSLogisticBoost lsLogisticBoost = new LSLogisticBoost();
 
         RegTreeConfig regTreeConfig = new RegTreeConfig().setMaxNumLeaves(numLeaves).setMinDataPerLeaf(minDataPerLeaf).setMonotonicityType(monotonicityType);
@@ -160,7 +160,7 @@ public class RerankerTrainer {
                 }
             }
         }
-        return new Reranker(bestModel, classProbEstimator, numCandidates,predictionFeatureExtractor, labelCalibrator);
+        return new Reranker(bestModel, numCandidates,predictionFeatureExtractor);
     }
 
 

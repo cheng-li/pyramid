@@ -167,11 +167,11 @@ public class BRRerank {
                         .maxIter(config.getInt("maxIteration"))
                         .build();
                 if (config.getString("trainingObjective").equals("MSE")){
-                    setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,cbm,predictionFeatureExtractor, labelCalibrator, caliValidData.regDataSet);
+                    setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,predictionFeatureExtractor, caliValidData.regDataSet);
                 }
 
                 if (config.getString("trainingObjective").equals("KL")){
-                    setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,cbm,predictionFeatureExtractor, labelCalibrator, caliValidData.regDataSet);
+                    setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,predictionFeatureExtractor, caliValidData.regDataSet);
                 }
                 break;
 
@@ -197,26 +197,30 @@ public class BRRerank {
         MultiLabelClfDataSet dataset = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"test").toFile(),DataSetType.ML_CLF_SPARSE,true);
         CBM cbm = (CBM) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","model"));
         cbm.setAllowEmpty(true);
-        MultiLabelClassifier classifier = null;
+
         LabelProbMatrix calibratedLabelProbMatrixTest = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_test","calibrated_label_scores.txt").toFile(),cbm.getLabelTranslator());
 
         LabelCalibrator labelCalibrator = (LabelCalibrator) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","label_calibrator"));
         VectorCalibrator setCalibrator = (VectorCalibrator) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","set_calibrator"));
         PredictionFeatureExtractor predictionFeatureExtractor = (PredictionFeatureExtractor) Serialization.deserialize(Paths.get(config.getString("outputDir"),"models","calibration_feature_extractor"));
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(predictionFeatureExtractor);
+         MultiLabel[] predictions;
+
         switch (config.getString("predictMode")){
 
             case "independent":
-                classifier = new IndependentPredictor(cbm,labelCalibrator);
+                MultiLabelClassifier classifier = new IndependentPredictor(cbm,labelCalibrator);
+                predictions = classifier.predict(dataset);
                 break;
             case "rerank":
-                classifier = (Reranker)setCalibrator;
+                Reranker reranker = (Reranker)setCalibrator;
+                predictions = reranker.predict(dataset,calibratedLabelProbMatrixTest);
                 break;
 
             default:
                 throw new IllegalArgumentException("illegal predict.mode");
         }
-        MultiLabel[] predictions = classifier.predict(dataset);
+
 
 
         List<CalibInfo> confidenceScores = IntStream.range(0, dataset.getNumDataPoints()).parallel()
