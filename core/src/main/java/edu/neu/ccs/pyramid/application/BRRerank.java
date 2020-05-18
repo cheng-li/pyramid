@@ -36,11 +36,14 @@ public class BRRerank {
         }
 
 
-        if (config.getBoolean("calibrate")){
-            Config caliConfig  = produceCaliConfig(config);
-            calibrate(caliConfig);
+        if (config.getBoolean("trainLabelCalibrator")){
+            labelCalibration(config);
         }
 
+
+        if (config.getBoolean("trainSetCalibrator")){
+            setCalibration(config);
+        }
 
         if (config.getBoolean("predict")){
             report(config);
@@ -65,41 +68,25 @@ public class BRRerank {
         LabelProbUtil.genLabelProbMatrix(cbm,test,0).writeToFile(Paths.get(config.getString("outputDir"),"reports_test","uncalibrated_label_confidence.txt").toFile());
     }
 
-    public static void calibrate(Config config) throws Exception{
+    public static void labelCalibration(Config config) throws Exception{
+        MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"train").toFile(), DataSetType.ML_CLF_SPARSE,true);
+        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"cal").toFile(),DataSetType.ML_CLF_SPARSE,true);
 
-        MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(config.getString("train"), DataSetType.ML_CLF_SPARSE,true);
-        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(config.getString("valid"),DataSetType.ML_CLF_SPARSE,true);
-        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(config.getString("cal"),DataSetType.ML_CLF_SPARSE,true);
+        List<Integer> labelCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==0).boxed().collect(Collectors.toList());
+        MultiLabelClfDataSet labelCalData = DataSetUtil.sampleData(cal, labelCalIndices);
 
+        LabelProbMatrix rawLabelProbMatrixCalib = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_cal","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
+        LabelProbMatrix rawLabelProbMatrixValid = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_valid","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
+        LabelProbMatrix rawLabelProbMatrixTest = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_test","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
 
-        CBM cbm = (CBM) Serialization.deserialize(config.getString("cbm"));
-        cbm.setAllowEmpty(config.getBoolean("allowEmpty"));
-
-        MultiLabelClfDataSet labelCalData = cal;
-
-
-
-        LabelProbMatrix rawLabelProbMatrixCalib = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_cal","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
-        LabelProbMatrix rawLabelProbMatrixValid = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_valid","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
-        LabelProbMatrix rawLabelProbMatrixTest = new LabelProbMatrix(Paths.get(config.getString("output"),"reports_test","uncalibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
-
-        LabelProbMatrix labelCalProbMatrix= null;
+        LabelProbMatrix labelCalProbMatrix = LabelProbUtil.sampleData(rawLabelProbMatrixCalib,labelCalIndices);
 
 
-        if (config.getBoolean("splitCalibrationData")){
-            List<Integer> labelCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==0).boxed().collect(Collectors.toList());
-
-            labelCalData = DataSetUtil.sampleData(cal, labelCalIndices);
-
-            labelCalProbMatrix = LabelProbUtil.sampleData(rawLabelProbMatrixCalib,labelCalIndices);
-            
-        }
-
-        System.out.println("Start training calibrator");
+        System.out.println("Start training label calibrator");
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         LabelCalibrator labelCalibrator = null;
-        switch (config.getString("labelCalibrator")){
+        switch (config.getString("labelCalibrator.type")){
             case "isotonic":
                 IsoLabelCalibrator isoLabelCalibrator = new IsoLabelCalibrator(labelCalProbMatrix, labelCalData, false);
                 isoLabelCalibrator.setConfidenceLowerBound(0);
@@ -110,39 +97,54 @@ public class BRRerank {
                 labelCalibrator = new IdentityLabelCalibrator();
                 break;
         }
+        System.out.println("Finish training calibrator");
+        System.out.println("time spent on label calibrator training = "+stopWatch);
+        Serialization.serialize(labelCalibrator,Paths.get(config.getString("outputDir"),"models","label_calibrator"));
+
 
         LabelProbMatrix calibratedLabelProbMatrixCalib = LabelProbUtil.calibrate(rawLabelProbMatrixCalib,labelCalibrator,0.0);
-        calibratedLabelProbMatrixCalib.writeToFile(Paths.get(config.getString("output"),"reports_cal","calibrated_label_confidence.txt").toFile());
+        calibratedLabelProbMatrixCalib.writeToFile(Paths.get(config.getString("outputDir"),"reports_cal","calibrated_label_confidence.txt").toFile());
         LabelProbMatrix calibratedLabelProbMatrixValid = LabelProbUtil.calibrate(rawLabelProbMatrixValid,labelCalibrator,0.0);
-        calibratedLabelProbMatrixValid.writeToFile(Paths.get(config.getString("output"),"reports_valid","calibrated_label_confidence.txt").toFile());
+        calibratedLabelProbMatrixValid.writeToFile(Paths.get(config.getString("outputDir"),"reports_valid","calibrated_label_confidence.txt").toFile());
         LabelProbMatrix calibratedLabelProbMatrixTest = LabelProbUtil.calibrate(rawLabelProbMatrixTest,labelCalibrator,0.0);
-        calibratedLabelProbMatrixTest.writeToFile(Paths.get(config.getString("output"),"reports_test","calibrated_label_confidence.txt").toFile());
+        calibratedLabelProbMatrixTest.writeToFile(Paths.get(config.getString("outputDir"),"reports_test","calibrated_label_confidence.txt").toFile());
 
-        LabelProbMatrix setCalibLabelProbMatrix = null;
-        MultiLabelClfDataSet setCalData = cal;
-        if (config.getBoolean("splitCalibrationData")) {
-            List<Integer> setCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==1).boxed().collect(Collectors.toList());
-            setCalData = DataSetUtil.sampleData(cal, setCalIndices);
-            setCalibLabelProbMatrix = LabelProbUtil.sampleData(calibratedLabelProbMatrixCalib,setCalIndices);
-        }
+    }
+
+    public static void setCalibration(Config config) throws Exception{
+        MultiLabelClfDataSet train = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"train").toFile(), DataSetType.ML_CLF_SPARSE,true);
+        MultiLabelClfDataSet valid = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"valid").toFile(),DataSetType.ML_CLF_SPARSE,true);
+        MultiLabelClfDataSet cal = TRECFormat.loadMultiLabelClfDataSet(Paths.get(config.getString("dataPath"),"cal").toFile(),DataSetType.ML_CLF_SPARSE,true);
+
+        LabelProbMatrix calibratedLabelProbMatrixCalib = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_cal","calibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
+        LabelProbMatrix calibratedLabelProbMatrixValid = new LabelProbMatrix(Paths.get(config.getString("outputDir"),"reports_valid","calibrated_label_confidence.txt").toFile(),train.getLabelTranslator());
+
+        List<Integer> setCalIndices = IntStream.range(0, cal.getNumDataPoints()).filter(i->i%2==1).boxed().collect(Collectors.toList());
+        LabelProbMatrix setCalibLabelProbMatrix = LabelProbUtil.sampleData(calibratedLabelProbMatrixCalib,setCalIndices);;
+        MultiLabelClfDataSet setCalData = DataSetUtil.sampleData(cal, setCalIndices);;
+
+
+        System.out.println("Start training set calibrator");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
 
 
         List<PredictionFeatureExtractor> extractors = new ArrayList<>();
 
-        if (config.getBoolean("brProb")){
+        if (config.getBoolean("setCalibrator.brProb")){
             extractors.add(new BRProbFeatureExtractor());
         }
 
-        if (config.getBoolean("setPrior")){
+        if (config.getBoolean("setCalibrator.setPrior")){
             extractors.add(new PriorFeatureExtractor(train));
         }
 
-        if (config.getBoolean("card")){
+        if (config.getBoolean("setCalibrator.card")){
             extractors.add(new CardFeatureExtractor());
         }
 
-        if (config.getBoolean("encodeLabel")){
-            extractors.add(new LabelBinaryFeatureExtractor(cbm.getNumClasses(),train.getLabelTranslator()));
+        if (config.getBoolean("setCalibrator.encodeLabel")){
+            extractors.add(new LabelBinaryFeatureExtractor(train.getNumClasses(),train.getLabelTranslator()));
         }
 
 
@@ -151,16 +153,16 @@ public class BRRerank {
         List<MultiLabel> support = DataSetUtil.gatherMultiLabels(train);
 
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(predictionFeatureExtractor);
-        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,setCalibLabelProbMatrix,config.getInt("numTrainCandidates"),"accuracy",support, 0);
+        CalibrationDataGenerator.TrainData caliTrainingData = calibrationDataGenerator.createCaliTrainingData(setCalData,setCalibLabelProbMatrix,config.getInt("setCalibrator.numTrainCandidates"),"accuracy",support, 0);
 
-        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,calibratedLabelProbMatrixValid,config.getInt("numTrainCandidates"),"accuracy",support,0);
+        CalibrationDataGenerator.TrainData caliValidData = calibrationDataGenerator.createCaliTrainingData(valid,calibratedLabelProbMatrixValid,config.getInt("setCalibrator.numTrainCandidates"),"accuracy",support,0);
 
         RegDataSet calibratorTrainData = caliTrainingData.regDataSet;
         double[] weights = caliTrainingData.instanceWeights;
 
         VectorCalibrator setCalibrator = null;
 
-        switch (config.getString("setCalibrator")){
+        switch (config.getString("setCalibrator.type")){
             case "trivial":
                 setCalibrator = new VectorTrivialCalibrator(calibratorTrainData);
                 break;
@@ -169,17 +171,17 @@ public class BRRerank {
                 break;
             case "GB":
                 RerankerTrainer rerankerTrainer = RerankerTrainer.newBuilder()
-                        .numCandidates(config.getInt("numPredictCandidates"))
-                        .numLeaves(config.getInt("numLeaves"))
-                        .shrinkage(config.getDouble("shrinkage"))
-                        .monotonicityType(config.getString("monotonicityType"))
-                        .maxIter(config.getInt("maxIteration"))
+                        .numCandidates(config.getInt("setCalibrator.numTrainCandidates"))
+                        .numLeaves(config.getInt("setCalibrator.numLeaves"))
+                        .shrinkage(config.getDouble("setCalibrator.shrinkage"))
+                        .monotonicityType("none")
+                        .maxIter(config.getInt("setCalibrator.maxIteration"))
                         .build();
-                if (config.getString("trainingObjective").equals("MSE")){
+                if (config.getString("setCalibrator.trainingObjective").equals("MSE")){
                     setCalibrator = rerankerTrainer.train(calibratorTrainData, weights,predictionFeatureExtractor, caliValidData.regDataSet);
                 }
 
-                if (config.getString("trainingObjective").equals("KL")){
+                if (config.getString("setCalibrator.trainingObjective").equals("KL")){
                     setCalibrator = rerankerTrainer.trainWithSigmoid(calibratorTrainData, weights,predictionFeatureExtractor, caliValidData.regDataSet);
                 }
                 break;
@@ -194,12 +196,13 @@ public class BRRerank {
                 throw new IllegalArgumentException("illegal setCalibrator");
         }
 
-        System.out.println("Finish training calibrator");
-        System.out.println("time spent on calibrator training = "+stopWatch);
+        System.out.println("Finish training set calibrator");
+        System.out.println("time spent on set calibrator training = "+stopWatch);
+
         System.out.println();
-        Serialization.serialize(labelCalibrator,Paths.get(config.getString("output"),"models","label_calibrator"));
-        Serialization.serialize(setCalibrator,Paths.get(config.getString("output"),"models","set_calibrator"));
-        Serialization.serialize(predictionFeatureExtractor,Paths.get(config.getString("output"),"models","calibration_feature_extractor"));
+
+        Serialization.serialize(setCalibrator,Paths.get(config.getString("outputDir"),"models","set_calibrator"));
+        Serialization.serialize(predictionFeatureExtractor,Paths.get(config.getString("outputDir"),"models","calibration_feature_extractor"));
     }
 
     private static void report(Config config) throws Exception{
@@ -215,7 +218,7 @@ public class BRRerank {
         CalibrationDataGenerator calibrationDataGenerator = new CalibrationDataGenerator(predictionFeatureExtractor);
          MultiLabel[] predictions;
 
-        switch (config.getString("predictMode")){
+        switch (config.getString("predict.mode")){
 
             case "independent":
                 MultiLabelClassifier classifier = new IndependentPredictor(cbm,labelCalibrator);
@@ -309,31 +312,6 @@ public class BRRerank {
     }
 
 
-    private static Config produceCaliConfig(Config config){
-        Config cali = getCaliDefaultConfig();
-
-        cali.setString("train", Paths.get(config.getString("dataPath"),"train").toString());
-        cali.setString("cal", Paths.get(config.getString("dataPath"),"cal").toString());
-        cali.setString("valid", Paths.get(config.getString("dataPath"),"valid").toString());
-        cali.setString("test", Paths.get(config.getString("dataPath"),"test").toString());
-        cali.setString("cbm",Paths.get(config.getString("outputDir"),"models","model").toString());
-        cali.setString("output",config.getString("outputDir"));
-        cali.setString("predict.mode",config.getString("predictMode"));
-        String[] toCopy={"setPrior","brProb","card","encodeLabel","numTrainCandidates",
-                "numPredictCandidates","shrinkage","numLeaves","labelCalibrator",
-                "setCalibrator","minDataPerLeaf","trainingObjective","maxIteration"};
-        Config.copy(config,cali,toCopy);
-        return cali;
-
-    }
-
-    private static Config getCaliDefaultConfig(){
-        String de = "monotonicityType=none\n" +
-                "splitCalibrationData=true\n" +
-                "allowEmpty=true";
-        return Config.newConfigFromString(de);
-
-    }
 
     private static Config getBRDefaultConfig(){
         String de = "############## input and output ###############\n" +
